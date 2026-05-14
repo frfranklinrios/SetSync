@@ -40,8 +40,8 @@
         <div class="card">
             <div class="card-header">Informações</div>
             <div class="card-body small">
-                <p><strong>Criada em:</strong> {{ cifra.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
-                <p><strong>Última edição:</strong> {{ cifra.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><strong>Criada em:</strong> {{ cifra.created_at[:16].replace('T', ' ') }}</p>
+                <p><strong>Última edição:</strong> {{ cifra.updated_at[:16].replace('T', ' ') }}</p>
             </div>
         </div>
     </div>

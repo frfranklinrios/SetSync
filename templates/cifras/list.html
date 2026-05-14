@@ -16,7 +16,7 @@
                             <span class="badge bg-info">{{ cifra.tom_original }}</span>
                         </div>
                         <p class="mb-1">{{ cifra.artista }}</p>
-                        <small class="text-muted">Adicionada em {{ cifra.created_at.strftime('%d/%m/%Y') }}</small>
+                        <small class="text-muted">Adicionada em {{ cifra.created_at[:10] }}</small>
                     </a>
                 {% endfor %}
             </div>
