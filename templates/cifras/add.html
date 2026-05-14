@@ -1,0 +1,62 @@
+{% extends "index.html" %}
+
+{% block title %}Adicionar Cifra - {{ band.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <h2>Adicionar Nova Cifra</h2>
+        <p class="text-muted">{{ band.name }}</p>
+        
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="titulo" class="form-label">Título da Música</label>
+                <input type="text" class="form-control" id="titulo" name="titulo" required autofocus placeholder="Ex: Hotel California">
+            </div>
+            
+            <div class="mb-3">
+                <label for="artista" class="form-label">Artista</label>
+                <input type="text" class="form-control" id="artista" name="artista" required placeholder="Ex: Eagles">
+            </div>
+            
+            <div class="mb-3">
+                <label for="tom_original" class="form-label">Tom Original</label>
+                <input type="text" class="form-control" id="tom_original" name="tom_original" value="C" placeholder="Ex: C, G, D, Am, etc">
+                <small class="text-muted">Você poderá transposer depois</small>
+            </div>
+            
+            <div class="mb-3">
+                <label for="conteudo" class="form-label">Cifra (Acordes e Letras)</label>
+                <textarea class="form-control" id="conteudo" name="conteudo" rows="12" required placeholder="[Am] Verso 1
+Cole aqui a cifra da música...
+
+[E] Refrão
+E outros acordes..."></textarea>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">Salvar Cifra</button>
+                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">💡 Dica de Formato</div>
+            <div class="card-body small">
+                <p>Use colchetes para acordes:</p>
+                <pre>[Am] Verso
+[E7] Refrão</pre>
+                <hr>
+                <p>Acordes suportados:</p>
+                <ul class="mb-0">
+                    <li>Maiúsculas: A, B, C, D, E, F, G</li>
+                    <li>Acidentes: C#, Db, D#, Eb, etc</li>
+                    <li>Modificadores: m, maj7, m7, sus4</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

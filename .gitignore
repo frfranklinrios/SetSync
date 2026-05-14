@@ -1,0 +1,43 @@
+# Ambiente
+.env
+.venv
+env/
+venv/
+*.pyc
+__pycache__/
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.code-workspace
+
+# Banco de dados / dados persistentes
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Uploads / mídia gerada
+uploads/
+instance/
+
+# Sistema
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+*.pid
+
+# Distribuição / build
+dist/
+build/
+*.egg-info/
+.eggs/

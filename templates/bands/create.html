@@ -1,0 +1,32 @@
+{% extends "index.html" %}
+
+{% block title %}Criar Banda - Banda-App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <h2>Criar Nova Banda</h2>
+        
+        <div class="card mt-4">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nome da Banda</label>
+                        <input type="text" class="form-control" id="name" name="name" required autofocus>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição (opcional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Ex: Banda de covers, banda de rock..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Criar Banda</button>
+                        <a href="{{ url_for('bands.list_bands') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

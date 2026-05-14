@@ -1,0 +1,49 @@
+{% extends "index.html" %}
+
+{% block title %}Editar - {{ cifra.titulo }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <h2>Editar Cifra</h2>
+        <p class="text-muted">{{ band.name }}</p>
+        
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="titulo" class="form-label">Título da Música</label>
+                <input type="text" class="form-control" id="titulo" name="titulo" value="{{ cifra.titulo }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="artista" class="form-label">Artista</label>
+                <input type="text" class="form-control" id="artista" name="artista" value="{{ cifra.artista }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="tom_original" class="form-label">Tom Original</label>
+                <input type="text" class="form-control" id="tom_original" name="tom_original" value="{{ cifra.tom_original }}">
+            </div>
+            
+            <div class="mb-3">
+                <label for="conteudo" class="form-label">Cifra</label>
+                <textarea class="form-control" id="conteudo" name="conteudo" rows="12" required>{{ cifra.conteudo }}</textarea>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">Salvar Alterações</button>
+                <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Informações</div>
+            <div class="card-body small">
+                <p><strong>Criada em:</strong> {{ cifra.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><strong>Última edição:</strong> {{ cifra.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "index.html" %}
+
+{% block title %}{{ band.name }} - SetSync{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <h1 class="gradient-text mb-1">{{ band.name }}</h1>
+        <p class="text-muted lead">{{ band.description or 'Banda sem descrição' }}</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-6 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-users" style="color:var(--accent)"></i> Membros</h5>
+                        <p class="card-text">{{ members|length }} pessoa{{ '' if members|length == 1 else 's' }}</p>
+                        {% if is_admin %}
+                            <a href="{{ url_for('bands.members', band_id=band.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-cog"></i> Gerenciar Membros
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-music" style="color:var(--accent)"></i> Cifras</h5>
+                        <p class="card-text">{{ cifras|length }} cifra{{ '' if cifras|length == 1 else 's' }}</p>
+                        <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus"></i> Adicionar Cifra
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h3 class="gradient-text mt-4 mb-3"><i class="fas fa-list"></i> Setlist</h3>
+        {% if cifras %}
+            <div class="list-group">
+                {% for cifra in cifras | sort(attribute='titulo') %}
+                    <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="list-group-item list-group-item-action">
+                        <strong>{{ cifra.titulo }}</strong><br>
+                        <small class="text-muted"><i class="fas fa-user"></i> {{ cifra.artista }} &bull; <i class="fas fa-music"></i> Tom: {{ cifra.tom_original }}</small>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Nenhuma cifra adicionada ainda.
+                <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="fw-600">Adicionar primeira cifra</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        {% if is_admin %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header fw-600"><i class="fas fa-tools"></i> Ações</div>
+                <div class="card-body">
+                    <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                        <i class="fas fa-cog"></i> Configurações
+                    </a>
+                    <a href="{{ url_for('bands.members', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="fas fa-users"></i> Gerenciar Membros
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-header fw-600"><i class="fas fa-info-circle"></i> Informações</div>
+            <div class="card-body small">
+                <p class="mb-1"><strong>Criada em:</strong> {{ band.created_at[:10] }}</p>
+                <p class="mb-1"><strong>Proprietário:</strong> {{ owner.username if owner else '—' }}</p>
+                <p class="mb-0"><strong>Seu papel:</strong> {{ 'Proprietário' if band.owner_id == current_user.id else 'Membro' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .gradient-text {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .fw-600 { font-weight: 600; }
+</style>
+{% endblock %}

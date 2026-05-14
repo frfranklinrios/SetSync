@@ -1,0 +1,57 @@
+{% extends "index.html" %}
+
+{% block title %}Bandas - Banda-App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <h2>Minhas Bandas</h2>
+        
+        {% if owned %}
+            <h4 class="mt-4">Bandas Administradas</h4>
+            <div class="list-group">
+                {% for band in owned %}
+                    <a href="{{ url_for('bands.view', band_id=band.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">🎤 {{ band.name }}</h6>
+                            <span class="badge bg-primary">Admin</span>
+                        </div>
+                        <p class="mb-1">{{ band.description or 'Sem descrição' }}</p>
+                        <small class="text-muted">👥 {{ band.members|length }} | 🎵 {{ band.cifras|length }}</small>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        {% if member_of %}
+            <h4 class="mt-4">Bandas que Participo</h4>
+            <div class="list-group">
+                {% for band in member_of %}
+                    {% if band.owner_id != current_user.id %}
+                        <a href="{{ url_for('bands.view', band_id=band.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">🎸 {{ band.name }}</h6>
+                                <span class="badge bg-info">Membro</span>
+                            </div>
+                            <p class="mb-1">{{ band.description or 'Sem descrição' }}</p>
+                            <small class="text-muted">👥 {{ band.members|length }} | 🎵 {{ band.cifras|length }}</small>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        {% if not owned and not member_of %}
+            <div class="alert alert-warning mt-4">
+                Nenhuma banda encontrada
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <a href="{{ url_for('bands.create') }}" class="btn btn-primary btn-lg w-100">
+            + Criar Nova Banda
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "index.html" %}
+
+{% block title %}Dashboard - SetSync{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-lg-8">
+
+        <h1 class="fw-bold mb-1" style="font-size:1.6rem;">Olá, {{ current_user.username }}</h1>
+        <p class="text-muted mb-4" style="font-size:0.9rem;">Suas bandas e cifras</p>
+
+        {% if owned_bands %}
+            <p class="text-muted mb-2" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Minhas Bandas</p>
+            <div class="row g-3 mb-4">
+                {% for band in owned_bands %}
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-1">{{ band.name }}</h6>
+                            <p class="text-muted mb-3" style="font-size:0.825rem;">{{ band.description or '—' }}</p>
+                            <div class="d-flex gap-2 mb-3">
+                                <span class="badge bg-light text-muted border">{{ band.members|length }} membro{{ '' if band.members|length == 1 else 's' }}</span>
+                                <span class="badge bg-light text-muted border">{{ band.cifras|length }} cifra{{ '' if band.cifras|length == 1 else 's' }}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-primary btn-sm">Ver</a>
+                                <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">Config.</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if bands and bands|length > owned_bands|length %}
+            <p class="text-muted mb-2" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Bandas que Participo</p>
+            <div class="row g-3">
+                {% for band in bands %}
+                    {% if band.owner_id != current_user.id %}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-1">{{ band.name }}</h6>
+                                <p class="text-muted mb-3" style="font-size:0.825rem;">Por {{ band.owner.username }}</p>
+                                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-primary btn-sm">Ver Setlist</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if not owned_bands and not bands %}
+        <div class="alert alert-info mt-2">
+            <strong>Comece agora!</strong> Crie sua primeira banda ou aguarde um convite de um administrador.
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card mb-3">
+            <div class="card-body text-center py-4">
+                <p class="fw-bold mb-2">Criar Nova Banda</p>
+                <p class="text-muted mb-3" style="font-size:0.825rem;">Convide músicos e compartilhe cifras em tempo real.</p>
+                <a href="{{ url_for('bands.create') }}" class="btn btn-primary">+ Criar Banda</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Dicas Rápidas</div>
+            <div class="card-body" style="font-size:0.825rem;">
+                <p class="mb-1 fw-semibold">Setlist por Banda</p>
+                <p class="text-muted mb-3">Cada banda tem seu próprio setlist organizado</p>
+                <p class="mb-1 fw-semibold">Convites por Email</p>
+                <p class="text-muted mb-3">Adicione membros usando o email deles</p>
+                <p class="mb-1 fw-semibold">Transposição Automática</p>
+                <p class="text-muted mb-0">Ajuste acordes para qualquer tom em 1 clique</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

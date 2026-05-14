@@ -1,0 +1,70 @@
+{% extends "index.html" %}
+
+{% block title %}Membros - {{ band.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <h2>Membros da Banda</h2>
+        <p class="text-muted">{{ band.name }}</p>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">👥 Membros Atuais ({{ band.members|length }})</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for member in band.members %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ member.username }}</strong>
+                            <br>
+                            <small class="text-muted">{{ member.email }}</small>
+                            {% if band.owner_id == member.id %}
+                                <br><span class="badge bg-danger">Proprietário</span>
+                            {% endif %}
+                        </div>
+                        {% if band.owner_id != member.id and band.owner_id == current_user.id %}
+                            <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id=member.id) }}" method="POST">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza?')">
+                                    Remover
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Adicionar Membro</div>
+            <div class="card-body">
+                <form action="{{ url_for('bands.invite', band_id=band.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email do Usuário</label>
+                        <input type="email" class="form-control" id="email" name="email" required placeholder="usuario@email.com">
+                        <small class="text-muted">O usuário deve estar registrado no Banda-App</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Convidar</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">Dica</div>
+            <div class="card-body small">
+                <p>Convide usuários pelo email. Eles receberão acesso automático à banda.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col">
+        <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary">
+            ← Voltar para Banda
+        </a>
+    </div>
+</div>
+{% endblock %}

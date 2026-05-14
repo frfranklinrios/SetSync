@@ -1,0 +1,564 @@
+{% extends "index.html" %}
+{% block title %}{{ cifra.titulo }} — {{ cifra.artista }}{% endblock %}
+
+{% block content %}
+<style>
+/* ── CIFRA BASE ───────────────────────────────────────────── */
+.cifra-container {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1.05rem;
+    line-height: 2;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 1.75rem 2rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    transition: font-size 0.15s;
+}
+.chord { color: #2dd4bf; font-weight: 700; }
+.cifra-chords {
+    display: block;
+    background: rgba(45,212,191,0.07);
+    border-left: 2px solid rgba(45,212,191,0.35);
+    padding: 1px 8px;
+}
+.cifra-lyric { display: block; color: #94a3b8; padding: 1px 8px; }
+.transpose-select {
+    background: #0f172a; color: #2dd4bf;
+    border: 1px solid #2dd4bf; border-radius: 7px;
+    font-size: 0.875rem; padding: 0.45rem 0.75rem;
+    width: 100%; cursor: pointer;
+}
+.transpose-select:focus { outline: none; box-shadow: 0 0 0 3px rgba(45,212,191,0.15); }
+
+/* ── SETLIST SIDEBAR ──────────────────────────────────────── */
+.sl-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.55rem 0.75rem; text-decoration: none;
+    border-left: 3px solid transparent;
+    font-size: 0.82rem; color: #374151;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+}
+.sl-item:last-child { border-bottom: none; }
+.sl-item:hover { background: #f9fafb; }
+.sl-item.active {
+    border-left-color: var(--accent); color: var(--accent);
+    background: rgba(42,181,160,0.06); font-weight: 600;
+}
+.sl-num { font-size: 0.7rem; color: #9ca3af; min-width: 1.4rem; }
+.sl-key { font-size: 0.7rem; color: #9ca3af; margin-left: auto; }
+
+/* ── PERFORMANCE MODE ─────────────────────────────────────── */
+body.perf-active .navbar,
+body.perf-active footer,
+body.perf-active #normal-header,
+body.perf-active #cifra-title-row,
+body.perf-active #normal-sidebar,
+body.perf-active #nav-pager { display: none !important; }
+body.perf-active main.container {
+    max-width: 100% !important;
+    padding: 0 !important; margin: 0 !important;
+}
+body.perf-active #perf-bar { display: flex !important; }
+body.perf-active #cifra-col {
+    width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important;
+}
+body.perf-active .row.g-4 { --bs-gutter-x: 0; }
+body.perf-active .cifra-container {
+    border-radius: 0;
+    min-height: calc(100vh - 52px);
+    font-size: var(--perf-font, 1.1rem);
+    padding: 2rem 3vw;
+}
+
+/* ── TWO-COLUMN MODE ─────────────────────────────────────── */
+body.perf-active .cifra-container.two-col {
+    column-count: 2;
+    column-gap: 2.5rem;
+    column-rule: 1px solid rgba(45,212,191,0.12);
+    min-height: unset;
+    height: calc(100vh - 52px);
+    overflow-y: auto;
+    /* white-space: pre-wrap is kept — columns handle the flow */
+}
+body.perf-active .cifra-container.two-col .cifra-chords,
+body.perf-active .cifra-container.two-col .cifra-lyric {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+/* Pair chord+lyric blocks together across column breaks */
+body.perf-active .cifra-container.two-col .cifra-chords {
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+/* ── PERF BAR ─────────────────────────────────────────────── */
+#perf-bar {
+    display: none;
+    position: sticky; top: 0; z-index: 1050;
+    background: #0b1422;
+    border-bottom: 1px solid rgba(45,212,191,0.2);
+    padding: 0.5rem 1rem;
+    align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.pb-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(45,212,191,0.08);
+    border: 1px solid rgba(45,212,191,0.25);
+    color: #2dd4bf; border-radius: 6px;
+    padding: 0.35rem 0.8rem; font-size: 0.8rem;
+    cursor: pointer; white-space: nowrap;
+    text-decoration: none; transition: background 0.15s;
+    font-family: inherit;
+}
+.pb-btn:hover { background: rgba(45,212,191,0.18); color: #2dd4bf; }
+.pb-btn:disabled { opacity: 0.3; pointer-events: none; }
+.pb-btn.pb-exit {
+    border-color: rgba(239,68,68,0.35); color: #f87171;
+    background: rgba(239,68,68,0.07);
+}
+.pb-btn.pb-exit:hover { background: rgba(239,68,68,0.18); }
+.pb-btn.pb-on { background: rgba(45,212,191,0.28) !important; }
+.pb-song { flex: 1; min-width: 0; }
+.pb-title {
+    font-size: 0.95rem; font-weight: 700; color: #f1f5f9;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pb-meta { font-size: 0.72rem; color: #64748b; }
+.font-btns { display: flex; align-items: center; gap: 3px; }
+.font-btns button {
+    width: 26px; height: 26px; border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #94a3b8; cursor: pointer; font-size: 1rem; line-height: 1;
+    font-family: inherit;
+}
+.font-btns button:hover { background: rgba(255,255,255,0.14); }
+#font-val { font-size: 0.72rem; color: #64748b; min-width: 2.4rem; text-align: center; }
+
+/* ── SETLIST DRAWER ───────────────────────────────────────── */
+#drawer-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55); z-index: 1090;
+}
+#drawer-overlay.open { display: block; }
+#setlist-drawer {
+    position: fixed; top: 0; left: 0;
+    width: 280px; height: 100vh;
+    background: #080f1e;
+    border-right: 1px solid rgba(45,212,191,0.15);
+    z-index: 1100; overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+}
+#setlist-drawer.open { transform: translateX(0); }
+.drawer-hd {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: #334155;
+    padding: 1rem 1rem 0.65rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 0.25rem;
+}
+.dr-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.65rem 1rem; text-decoration: none;
+    color: #64748b; font-size: 0.82rem;
+    border-left: 3px solid transparent;
+    transition: all 0.12s;
+}
+.dr-item:hover { color: #cbd5e1; background: rgba(255,255,255,0.03); }
+.dr-item.active {
+    color: #2dd4bf; border-left-color: #2dd4bf;
+    background: rgba(45,212,191,0.08); font-weight: 600;
+}
+.dr-num { font-size: 0.68rem; color: #334155; min-width: 1.3rem; }
+.dr-key { font-size: 0.68rem; color: #334155; margin-left: auto; white-space: nowrap; }
+
+/* ── SCROLL BADGE ─────────────────────────────────────────── */
+#scroll-badge {
+    display: none; position: fixed;
+    bottom: 1.25rem; right: 1.25rem;
+    background: rgba(45,212,191,0.15);
+    border: 1px solid rgba(45,212,191,0.4);
+    color: #2dd4bf; font-size: 0.7rem;
+    padding: 0.3rem 0.8rem; border-radius: 20px;
+    z-index: 1200; cursor: pointer; user-select: none;
+}
+
+/* ── LIGHT THEME OVERRIDES (cifra page) ────────────────── */
+[data-theme="light"] .cifra-container {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+[data-theme="light"] .chord { color: #0d7e6b; }
+[data-theme="light"] .cifra-chords {
+    background: rgba(13,126,107,0.07);
+    border-left-color: rgba(13,126,107,0.3);
+}
+[data-theme="light"] .cifra-lyric { color: #475569; }
+[data-theme="light"] .transpose-select {
+    background: #fff; color: #1e293b; border-color: #d1d5db;
+}
+[data-theme="light"] .transpose-select:focus { box-shadow: 0 0 0 3px rgba(42,181,160,0.15); }
+[data-theme="light"] .sl-item { color: #374151; }
+[data-theme="light"] .sl-item:hover { background: #f9fafb; }
+/* perf bar light */
+[data-theme="light"] #perf-bar {
+    background: #f1f5f9;
+    border-bottom-color: #e2e8f0;
+}
+[data-theme="light"] .pb-btn {
+    background: rgba(42,181,160,0.09);
+    border-color: rgba(42,181,160,0.35);
+    color: var(--accent-dark);
+}
+[data-theme="light"] .pb-btn:hover  { background: rgba(42,181,160,0.2); color: var(--accent-dark); }
+[data-theme="light"] .pb-btn.pb-on  { background: rgba(42,181,160,0.28) !important; }
+[data-theme="light"] .pb-btn.pb-exit {
+    border-color: rgba(220,38,38,0.4); color: #dc2626;
+    background: rgba(220,38,38,0.07);
+}
+[data-theme="light"] .pb-btn.pb-exit:hover { background: rgba(220,38,38,0.16); }
+[data-theme="light"] .pb-title { color: #1e293b; }
+[data-theme="light"] .pb-meta  { color: #64748b; }
+[data-theme="light"] .font-btns button {
+    background: rgba(0,0,0,0.06);
+    border-color: rgba(0,0,0,0.15);
+    color: #475569;
+}
+[data-theme="light"] .font-btns button:hover { background: rgba(0,0,0,0.12); }
+[data-theme="light"] #font-val { color: #475569; }
+/* drawer light */
+[data-theme="light"] #setlist-drawer { background: #fff; border-right-color: #e2e8f0; }
+[data-theme="light"] .drawer-hd { color: #9ca3af; border-bottom-color: #f3f4f6; }
+[data-theme="light"] .dr-item { color: #4b5563; }
+[data-theme="light"] .dr-item:hover { color: #111827; background: #f9fafb; }
+[data-theme="light"] .dr-item.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(42,181,160,0.07);
+}
+[data-theme="light"] .dr-num, [data-theme="light"] .dr-key { color: #9ca3af; }
+[data-theme="light"] #drawer-overlay { background: rgba(0,0,0,0.3); }
+[data-theme="light"] #scroll-badge {
+    background: rgba(42,181,160,0.12);
+    border-color: rgba(42,181,160,0.4);
+    color: var(--accent);
+}
+[data-theme="light"] body.perf-active .cifra-container.two-col {
+    column-rule-color: rgba(42,181,160,0.2);
+}
+</style>
+
+<!-- DRAWER OVERLAY -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- SETLIST DRAWER (performance) -->
+<div id="setlist-drawer">
+    <div class="drawer-hd">Setlist &mdash; {{ band.name }}</div>
+    {% for s in setlist %}
+    <a class="dr-item {% if s.id == cifra.id %}active{% endif %}"
+       href="{{ url_for('cifras.view', cifra_id=s.id) }}{% if current_transpose != 0 %}?transpose={{ current_transpose }}{% endif %}">
+        <span class="dr-num">{{ loop.index }}.</span>
+        <span>
+            {{ s.titulo }}
+            <small class="d-block" style="color:#334155;font-size:0.68rem;">{{ s.artista }}</small>
+        </span>
+        <span class="dr-key">{{ s.tom_original }}</span>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- PERFORMANCE BAR -->
+<div id="perf-bar">
+    <button class="pb-btn" onclick="toggleDrawer()" title="Setlist (S)">&#9776; Setlist</button>
+    <button class="pb-btn" id="prev-btn" onclick="navPrev()" {% if not prev_cifra %}disabled{% endif %} title="Anterior (&#8592;)">&#8592; Ant.</button>
+    <div class="pb-song">
+        <div class="pb-title">{{ cifra.titulo }}</div>
+        <div class="pb-meta">{{ cifra.artista }} &middot; Tom {{ cifra.tom_original }}{% if current_transpose != 0 %} +{{ current_transpose }}st{% endif %} &middot; {{ cifra_index + 1 }}/{{ setlist|length }}</div>
+    </div>
+    <button class="pb-btn" id="next-btn" onclick="navNext()" {% if not next_cifra %}disabled{% endif %} title="Pr&#243;xima (&#8594;)">Pr&#243;x. &#8594;</button>
+    <div class="font-btns">
+        <button onclick="changeFontSize(-1)" title="Diminuir (-)">&#8722;</button>
+        <span id="font-val">100%</span>
+        <button onclick="changeFontSize(1)" title="Aumentar (+)">+</button>
+    </div>
+    <button class="pb-btn" id="cols-btn" onclick="toggleCols()" title="2 colunas (C)">&#9638; 2 col</button>
+    <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espa&#231;o)">&#9193; Scroll</button>
+    <button data-theme-toggle class="pb-btn" onclick="toggleTheme()" title="Tema dark/light (T)"><i class="fas fa-sun"></i></button>
+    <button class="pb-btn pb-exit" onclick="exitPerfMode()" title="Sair (Esc)">&#x2715; Sair</button>
+</div>
+
+<!-- AUTO-SCROLL BADGE -->
+<div id="scroll-badge" onclick="toggleScroll()">&#9193; rolando &mdash; toque para pausar</div>
+
+<!-- BACK LINK -->
+<div id="normal-header" class="mb-3">
+    <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">&#8592; {{ band.name }}</a>
+</div>
+
+<div class="row g-4">
+    <!-- CIFRA COLUMN -->
+    <div id="cifra-col" class="col-lg-8">
+
+        <div id="cifra-title-row" class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+            <div>
+                <h2 class="fw-bold mb-0" style="font-size:1.4rem;">{{ cifra.titulo }}</h2>
+                <p class="text-muted mb-0" style="font-size:0.875rem;">
+                    {{ cifra.artista }} &middot; Tom: <strong>{{ cifra.tom_original }}</strong>
+                    {% if current_transpose != 0 %}&nbsp;<span style="color:var(--accent);font-weight:600;">(+{{ current_transpose }}st)</span>{% endif %}
+                    <span class="text-muted ms-2" style="font-size:0.78rem;">{{ cifra_index + 1 }}/{{ setlist|length }}</span>
+                </p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-primary" onclick="enterPerfMode()" title="Tecla P">&#9654; Modo Tocar</button>
+                {% if is_member %}
+                <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                {% endif %}
+                {% if is_admin %}
+                <form action="{{ url_for('cifras.delete', cifra_id=cifra.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Deletar esta cifra?')">Deletar</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="cifra-container" id="cifra-body">{{ conteudo | highlight_chords | safe }}</div>
+
+        {% if setlist|length > 1 %}
+        <div id="nav-pager" class="d-flex justify-content-between mt-3">
+            {% if prev_cifra %}
+            <a href="{{ url_for('cifras.view', cifra_id=prev_cifra.id) }}{% if current_transpose != 0 %}?transpose={{ current_transpose }}{% endif %}"
+               class="btn btn-outline-secondary btn-sm">&#8592; {{ prev_cifra.titulo }}</a>
+            {% else %}<div></div>{% endif %}
+            {% if next_cifra %}
+            <a href="{{ url_for('cifras.view', cifra_id=next_cifra.id) }}{% if current_transpose != 0 %}?transpose={{ current_transpose }}{% endif %}"
+               class="btn btn-outline-secondary btn-sm">{{ next_cifra.titulo }} &#8594;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <div id="normal-sidebar" class="col-lg-4">
+
+        <div class="card mb-3">
+            <div class="card-header">Transpor</div>
+            <div class="card-body">
+                <p class="text-muted mb-2" style="font-size:0.8rem;">Escolha o tom</p>
+                <select class="transpose-select" onchange="location.href=CIFRA_BASE+'?transpose='+this.value">
+                    {% for semitones, label in transpositions.items() %}
+                    <option value="{{ semitones }}" {% if current_transpose == semitones %}selected{% endif %}>
+                        {{ label }}{% if semitones == 0 %} (Original){% elif semitones > 0 %} (+{{ semitones }}){% else %} ({{ semitones }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        {% if setlist|length > 1 %}
+        <div class="card mb-3">
+            <div class="card-header">
+                Setlist
+                <span class="text-muted" style="font-size:0.75rem;">({{ setlist|length }})</span>
+            </div>
+            <div class="card-body p-0">
+                {% for s in setlist %}
+                <a href="{{ url_for('cifras.view', cifra_id=s.id) }}{% if current_transpose != 0 %}?transpose={{ current_transpose }}{% endif %}"
+                   class="sl-item {% if s.id == cifra.id %}active{% endif %}">
+                    <span class="sl-num">{{ loop.index }}.</span>
+                    <span>{{ s.titulo }}</span>
+                    <span class="sl-key">{{ s.tom_original }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">Informa&#231;&#245;es</div>
+            <div class="card-body" style="font-size:0.825rem;">
+                <p class="mb-1 text-muted">Tom</p>
+                <p class="fw-bold mb-3" style="color:var(--accent);">{{ cifra.tom_original }}</p>
+                <p class="mb-1 text-muted">Banda</p>
+                <p class="fw-semibold mb-3">{{ band.name }}</p>
+                <p class="mb-1 text-muted">Adicionada</p>
+                <p class="mb-0">{{ cifra.created_at[:10] }}</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const CIFRA_BASE   = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
+const PREV_URL     = {% if prev_cifra %}"{{ url_for('cifras.view', cifra_id=prev_cifra.id) }}"{% else %}null{% endif %};
+const NEXT_URL     = {% if next_cifra %}"{{ url_for('cifras.view', cifra_id=next_cifra.id) }}"{% else %}null{% endif %};
+const CUR_TRANSPOSE = {{ current_transpose }};
+
+function tp() { return CUR_TRANSPOSE ? '?transpose=' + CUR_TRANSPOSE : ''; }
+function navPrev() { if (PREV_URL) location.href = PREV_URL + tp(); }
+function navNext() { if (NEXT_URL) location.href = NEXT_URL + tp(); }
+
+/* ── PERF MODE ─────────────────────────── */
+function enterPerfMode() {
+    document.body.classList.add('perf-active');
+    sessionStorage.setItem('perf', '1');
+    window.scrollTo(0, 0);
+}
+function exitPerfMode() {
+    document.body.classList.remove('perf-active');
+    sessionStorage.removeItem('perf');
+    closeDrawer();
+    stopScroll();
+}
+
+/* ── DRAWER ────────────────────────────── */
+function toggleDrawer() {
+    document.getElementById('setlist-drawer').classList.toggle('open');
+    document.getElementById('drawer-overlay').classList.toggle('open');
+}
+function closeDrawer() {
+    document.getElementById('setlist-drawer').classList.remove('open');
+    document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+/* ── FONT SIZE ─────────────────────────── */
+let fontStep = parseInt(sessionStorage.getItem('fontStep') || '0');
+const BASE_REM = 1.05;
+function applyFont() {
+    const rem = (BASE_REM + fontStep * 0.1).toFixed(2);
+    document.documentElement.style.setProperty('--perf-font', rem + 'rem');
+    document.getElementById('font-val').textContent =
+        Math.round(parseFloat(rem) / BASE_REM * 100) + '%';
+}
+function changeFontSize(d) {
+    fontStep = Math.max(-3, Math.min(6, fontStep + d));
+    sessionStorage.setItem('fontStep', fontStep);
+    applyFont();
+}
+
+/* ── AUTO-SCROLL ───────────────────────── */
+let isScrolling = false, lastTs = null, scrollAcc = 0;
+const SCROLL_SPEED = 0.03; // px/ms ~ 30px/s
+
+function scrollFrame(ts) {
+    if (!isScrolling) return;
+    if (!lastTs) lastTs = ts;
+    scrollAcc += (ts - lastTs) * SCROLL_SPEED;
+    lastTs = ts;
+    const px = Math.floor(scrollAcc);
+    if (px > 0) {
+        const el = document.getElementById('cifra-body');
+        const inTwoCol = el.classList.contains('two-col');
+        if (inTwoCol) {
+            el.scrollTop += px;
+            if (el.scrollTop >= el.scrollHeight - el.clientHeight - 10) { stopScroll(); return; }
+        } else {
+            window.scrollBy(0, px);
+            if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 10) { stopScroll(); return; }
+        }
+        scrollAcc -= px;
+    }
+    requestAnimationFrame(scrollFrame);
+}
+function startScroll() {
+    isScrolling = true; lastTs = null; scrollAcc = 0;
+    document.getElementById('scroll-btn').classList.add('pb-on');
+    document.getElementById('scroll-badge').style.display = 'block';
+    requestAnimationFrame(scrollFrame);
+}
+function stopScroll() {
+    isScrolling = false; lastTs = null;
+    document.getElementById('scroll-btn').classList.remove('pb-on');
+    document.getElementById('scroll-badge').style.display = 'none';
+}
+function toggleScroll() { if (isScrolling) stopScroll(); else startScroll(); }
+
+/* ── TWO COLUMNS ───────────────────────── */
+let twoColActive = sessionStorage.getItem('twoCols') === '1';
+function applyTwoCols() {
+    const el = document.getElementById('cifra-body');
+    const btn = document.getElementById('cols-btn');
+    if (twoColActive) {
+        el.classList.add('two-col');
+        btn.classList.add('pb-on');
+    } else {
+        el.classList.remove('two-col');
+        btn.classList.remove('pb-on');
+        // restore scroll when leaving two-col
+        window.scrollTo(0, 0);
+    }
+}
+function toggleCols() {
+    twoColActive = !twoColActive;
+    sessionStorage.setItem('twoCols', twoColActive ? '1' : '0');
+    applyTwoCols();
+    // two-col disables auto-scroll (no body scroll); scroll still works inside container
+    if (twoColActive && isScrolling) stopScroll();
+}
+
+/* ── KEYBOARD ──────────────────────────── */
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const perf = document.body.classList.contains('perf-active');
+    if (!perf) {
+        if (e.key === 'p' || e.key === 'P') { e.preventDefault(); enterPerfMode(); }
+        return;
+    }
+    switch (e.key) {
+        case 'Escape':     exitPerfMode();                       break;
+        case 'ArrowLeft':  navPrev();                            break;
+        case 'ArrowRight': navNext();                            break;
+        case ' ':          e.preventDefault(); toggleScroll();  break;
+        case '+': case '=': changeFontSize(1);                  break;
+        case '-':           changeFontSize(-1);                 break;
+        case 's': case 'S': toggleDrawer();                     break;
+        case 'c': case 'C': toggleCols();                       break;
+        case 't': case 'T': toggleTheme();                      break;
+    }
+});
+
+/* ── SWIPE / TOUCH NAV ─────────────────── */
+(function() {
+    const SWIPE_THRESHOLD = 50;   // px mínimo para considerar swipe
+    const SWIPE_MAX_VERT  = 120;  // px máximo vertical (evita scroll acidental)
+    let tx = 0, ty = 0, moved = false;
+
+    document.addEventListener('touchstart', function(e) {
+        if (!document.body.classList.contains('perf-active')) return;
+        if (e.touches.length !== 1) return;
+        tx = e.touches[0].clientX;
+        ty = e.touches[0].clientY;
+        moved = false;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function(e) {
+        if (!document.body.classList.contains('perf-active')) return;
+        moved = true;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+        if (!document.body.classList.contains('perf-active')) return;
+        if (!moved) return;                        // foi um tap, não swipe
+        const dx = e.changedTouches[0].clientX - tx;
+        const dy = e.changedTouches[0].clientY - ty;
+        if (Math.abs(dy) > SWIPE_MAX_VERT) return; // gesto vertical — ignorar
+        if (Math.abs(dx) < SWIPE_THRESHOLD) return; // deslize muito curto
+        if (dx < 0) navNext();   // ← deslize para esquerda  → próxima
+        else         navPrev();   // → deslize para direita   → anterior
+    }, { passive: true });
+})();
+
+/* ── INIT ──────────────────────────────── */
+window.addEventListener('DOMContentLoaded', function() {
+    applyFont();
+    applyTwoCols();
+    if (sessionStorage.getItem('perf') === '1') enterPerfMode();
+});
+</script>
+{% endblock %}

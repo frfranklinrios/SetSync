@@ -1,0 +1,46 @@
+{% extends "index.html" %}
+
+{% block title %}Registrar - SetSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-sm-10 col-md-6 col-lg-4">
+
+        <div class="text-center mb-5">
+            <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync" style="height:64px;">
+        </div>
+
+        <form method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuário</label>
+                <input type="text" class="form-control" id="username" name="username" required autofocus>
+                <div class="form-text">Mínimo 3 caracteres, único</div>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+                <div class="form-text">Mínimo 6 caracteres</div>
+            </div>
+            <div class="mb-4">
+                <label for="confirm" class="form-label">Confirmar Senha</label>
+                <input type="password" class="form-control" id="confirm" name="confirm" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Criar Conta</button>
+        </form>
+
+        <div class="d-flex align-items-center my-4">
+            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size:0.75rem;">OU</span><hr class="flex-grow-1">
+        </div>
+
+        <a href="{{ url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Registrar com Google</a>
+
+        <p class="text-center text-muted mt-4" style="font-size:0.875rem;">
+            Já tem conta? <a href="{{ url_for('auth.login') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Faça login</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
