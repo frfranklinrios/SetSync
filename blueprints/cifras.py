@@ -46,9 +46,6 @@ def view(cifra_id):
     if current_transpose != 0:
         conteudo = pychord_transpose_text(conteudo, current_transpose)
     # Destacar acordes válidos
-    conteudo = pychord_highlight_chords(conteudo)
-    print('CONTEUDO DA CIFRA:', repr(conteudo))
-
     setlist = get_band_cifras(cifra['band_id'])
     cifra_index = next((i for i, c in enumerate(setlist) if c['id'] == cifra_id), 0)
     prev_cifra = setlist[cifra_index - 1] if cifra_index > 0 else None

@@ -1,23 +1,154 @@
 {% extends "index.html" %}
-{% block title %}Modo Tocar: {{ setlist.name }}{% endblock %}
+{% block title %}Modo Tocar — {{ setlist.name }}{% endblock %}
+
 {% block content %}
-<h2>Modo Tocar: {{ setlist.name }}</h2>
-<p class="text-muted">Página {{ page }} de {{ total_pages }}</p>
-<div class="row">
-  {% for cifra in cifras %}
-    <div class="col-md-6 mb-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <h5 class="card-title">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</h5>
-          <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="btn btn-outline-primary">Ver Cifra</a>
-        </div>
+<style>
+  .tocar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .tocar-header h2 { font-size: 1.2rem; font-weight: 700; margin: 0; }
+
+  .tocar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .cifra-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg, #f8f9fa);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  [data-theme="dark"] .cifra-card { background: #0b1422; }
+
+  .cifra-card-header {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .cifra-card-header .titulo {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .cifra-card-header .artista {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .cifra-card-header .tom {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .cifra-card-body {
+    padding: 0.9rem 1rem;
+    flex: 1;
+    overflow-x: auto;
+  }
+
+  .cifra-content {
+    font-family: "Courier New", monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    color: var(--text);
+  }
+
+  .cifra-content .chord {
+    color: var(--accent, #2ab5a0);
+    font-weight: 700;
+  }
+
+  .cifra-content .cifra-chords {
+    display: block;
+    color: var(--accent, #2ab5a0);
+    font-weight: 700;
+  }
+
+  .cifra-content .cifra-lyric {
+    display: block;
+    color: var(--text);
+  }
+
+  .tocar-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  .tocar-pagination .page-info {
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+</style>
+
+<div class="tocar-header">
+  <div>
+    <h2><i class="fas fa-music me-2 accent"></i>{{ setlist.name }}</h2>
+    <span class="text-muted" style="font-size:0.8rem;">{{ band.name }} &mdash; Página {{ page }} de {{ total_pages }}</span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-list me-1"></i>Setlist
+    </a>
+    {% if page > 1 %}
+      <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page-1) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-chevron-left"></i> Anterior
+      </a>
+    {% endif %}
+    {% if page < total_pages %}
+      <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page+1) }}" class="btn btn-primary btn-sm">
+        Próxima <i class="fas fa-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+{% if cifras %}
+  <div class="tocar-grid">
+    {% for cifra in cifras %}
+    <div class="cifra-card">
+      <div class="cifra-card-header">
+        <span class="titulo">{{ cifra.titulo }}</span>
+        <span class="artista">{{ cifra.artista }}</span>
+        {% if cifra.tom_original %}
+          <span class="tom">Tom: {{ cifra.tom_original }}</span>
+        {% endif %}
+      </div>
+      <div class="cifra-card-body">
+        <div class="cifra-content">{{ cifra.conteudo | highlight_chords | safe }}</div>
       </div>
     </div>
-  {% endfor %}
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-info">Nenhuma música nesta página.</div>
+{% endif %}
+
+<div class="tocar-pagination">
+  {% if page > 1 %}
+    <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page-1) }}" class="btn btn-outline-secondary">
+      <i class="fas fa-chevron-left"></i> Anterior
+    </a>
+  {% endif %}
+  <span class="page-info">{{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}
+    <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page+1) }}" class="btn btn-primary">
+      Próxima <i class="fas fa-chevron-right"></i>
+    </a>
+  {% endif %}
 </div>
-<div class="d-flex justify-content-between mt-4">
-  <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page-1) }}" class="btn btn-secondary {% if page == 1 %}disabled{% endif %}">Anterior</a>
-  <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page+1) }}" class="btn btn-secondary {% if page == total_pages %}disabled{% endif %}">Próxima</a>
-</div>
-<a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-link mt-3">Voltar para Setlist</a>
 {% endblock %}
