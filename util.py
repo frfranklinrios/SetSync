@@ -12,15 +12,21 @@ def pychord_transpose_chord(chord_str, semitones):
     except Exception:
         return chord_str
 
+def _normalize_chord_for_pychord(chord_str):
+    """Converte notação com º/° para dim, que o pychord entende."""
+    return re.sub(r'[°º]', 'dim', chord_str)
+
+
 def pychord_highlight_chords(text):
-    """Destaca acordes usando pychord para validação."""
-    chord_regex = r'\b([A-G][#b]?(?:maj7|maj|min|sus|dim|aug|add|m|M|°|º|7|9|11|13|6|4|2|5|\+|\-|\(.*?\))*(?:/[A-G][#b]?)?)\b'
+    """Destaca acordes usando pychord para validação. Suporta º/° como diminuto."""
+    chord_regex = r'\b([A-G][#b]?(?:maj7|maj|min|sus2|sus4|sus|dim7|dim|aug|add9|add|m7b5|m7|m|7|9|11|13|6|5|4|2|[°º])*(?:/[A-G][#b]?)?)\b'
     not_recognized = set()
 
     def highlight(match):
         chord_str = match.group(1)
+        normalized = _normalize_chord_for_pychord(chord_str)
         try:
-            _ = Chord(chord_str)
+            _ = Chord(normalized)
             return f'<span class="chord">{chord_str}</span>'
         except Exception:
             not_recognized.add(chord_str)
@@ -32,12 +38,13 @@ def pychord_highlight_chords(text):
     return result
 
 def pychord_transpose_text(text, semitones):
-    """Transpõe todos os acordes de um texto usando pychord."""
-    chord_regex = r'\b([A-G][#b]?(?:maj7|maj|min|sus|dim|aug|add|m|M|°|º|7|9|11|13|6|4|2|5|\+|\-|\(.*?\))*(?:/[A-G][#b]?)?)\b'
+    """Transpõe todos os acordes de um texto usando pychord. Suporta º/° como diminuto."""
+    chord_regex = r'\b([A-G][#b]?(?:maj7|maj|min|sus2|sus4|sus|dim7|dim|aug|add9|add|m7b5|m7|m|7|9|11|13|6|5|4|2|[°º])*(?:/[A-G][#b]?)?)\b'
 
     def transp(match):
         chord_str = match.group(1)
-        return pychord_transpose_chord(chord_str, semitones)
+        normalized = _normalize_chord_for_pychord(chord_str)
+        return pychord_transpose_chord(normalized, semitones)
 
     return re.sub(chord_regex, transp, text)
 
@@ -56,7 +63,8 @@ NOTE_ALIASES = {
 }
 
 # Regex de acorde completo (base + modificadores + baixo opcional)
-_CHORD_MOD = r'(?:maj7|maj|min|m7b5|m7|m|dim7|dim|aug|sus2|sus4|sus|add9|add|7|9|11|13|6|5|4|2)?'
+# Inclui º e ° como símbolos de diminuto
+_CHORD_MOD = r'(?:maj7|maj|min|m7b5|m7|m|dim7|dim|aug|sus2|sus4|sus|add9|add|7|9|11|13|6|5|4|2|[°º])?'
 _CHORD_BASS = r'(?:/[A-G][#b]?)?'
 CHORD_INLINE_RE = re.compile(
     r'([A-G][#b]?' + _CHORD_MOD + _CHORD_BASS + r')'
@@ -166,7 +174,9 @@ def get_available_tones():
 
 def _is_chord_token(token):
     """Verifica se um token isolado é um acorde válido"""
-    return bool(CHORD_TOKEN_RE.match(token.strip('()[]{} ')))
+    t = token.strip('()[]{} ')
+    t = re.sub(r'[°º]', 'dim', t)
+    return bool(CHORD_TOKEN_RE.match(t))
 
 
 def _is_chord_line(line):
