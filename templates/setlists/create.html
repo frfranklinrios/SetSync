@@ -1,0 +1,17 @@
+{% extends "index.html" %}
+{% block title %}Nova Setlist - {{ band.name }}{% endblock %}
+{% block content %}
+<h2>Criar Setlist para {{ band.name }}</h2>
+<form method="POST">
+  <div class="mb-3">
+    <label for="name" class="form-label">Nome da Setlist</label>
+    <input type="text" class="form-control" id="name" name="name" required>
+  </div>
+  <div class="mb-3">
+    <label for="description" class="form-label">Descrição</label>
+    <textarea class="form-control" id="description" name="description"></textarea>
+  </div>
+  <button type="submit" class="btn btn-success">Criar</button>
+  <a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

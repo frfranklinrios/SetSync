@@ -1,0 +1,23 @@
+{% extends "index.html" %}
+{% block title %}Modo Tocar: {{ setlist.name }}{% endblock %}
+{% block content %}
+<h2>Modo Tocar: {{ setlist.name }}</h2>
+<p class="text-muted">Página {{ page }} de {{ total_pages }}</p>
+<div class="row">
+  {% for cifra in cifras %}
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</h5>
+          <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="btn btn-outline-primary">Ver Cifra</a>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+<div class="d-flex justify-content-between mt-4">
+  <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page-1) }}" class="btn btn-secondary {% if page == 1 %}disabled{% endif %}">Anterior</a>
+  <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page+1) }}" class="btn btn-secondary {% if page == total_pages %}disabled{% endif %}">Próxima</a>
+</div>
+<a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-link mt-3">Voltar para Setlist</a>
+{% endblock %}

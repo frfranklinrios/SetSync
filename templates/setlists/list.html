@@ -1,0 +1,18 @@
+{% extends "index.html" %}
+{% block title %}Setlists - {{ band.name }}{% endblock %}
+{% block content %}
+<h2>Setlists de {{ band.name }}</h2>
+<a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary mb-3">Nova Setlist</a>
+<ul class="list-group">
+  {% for setlist in setlists %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}">{{ setlist.name }}</a>
+      <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remover setlist?')">Excluir</button>
+      </form>
+    </li>
+  {% else %}
+    <li class="list-group-item">Nenhuma setlist cadastrada.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

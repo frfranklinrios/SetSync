@@ -35,7 +35,8 @@
             </div>
         </div>
         
-        <h3 class="gradient-text mt-4 mb-3"><i class="fas fa-list"></i> Setlist</h3>
+        <h3 class="gradient-text mt-4 mb-3"><i class="fas fa-list"></i> Setlists</h3>
+        <a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-outline-primary mb-3">Gerenciar Setlists</a>
         {% if cifras %}
             <div class="list-group">
                 {% for cifra in cifras | sort(attribute='titulo') %}

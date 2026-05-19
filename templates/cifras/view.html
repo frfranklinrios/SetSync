@@ -326,7 +326,13 @@ body.perf-active .cifra-container.two-col .cifra-chords {
             </div>
         </div>
 
-        <div class="cifra-container" id="cifra-body">{{ conteudo | highlight_chords | safe }}</div>
+        <div class="cifra-container" id="cifra-body">
+            {% if (conteudo|default(''))|string|trim %}
+                {{ conteudo | default('') | highlight_chords | safe }}
+            {% else %}
+                <em style="color: #888;">Cifra sem conteúdo.</em>
+            {% endif %}
+        </div>
 
         {% if setlist|length > 1 %}
         <div id="nav-pager" class="d-flex justify-content-between mt-3">

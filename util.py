@@ -1,5 +1,46 @@
+
+from pychord import Chord
 import re
 import html as html_lib
+
+def pychord_transpose_chord(chord_str, semitones):
+    """Transpõe um acorde usando pychord (mais robusto para acordes complexos)."""
+    try:
+        chord = Chord(chord_str)
+        chord.transpose(semitones)
+        return chord.symbol
+    except Exception:
+        return chord_str
+
+def pychord_highlight_chords(text):
+    """Destaca acordes usando pychord para validação."""
+    chord_regex = r'\b([A-G][#b]?(?:maj7|maj|min|sus|dim|aug|add|m|M|°|º|7|9|11|13|6|4|2|5|\+|\-|\(.*?\))*(?:/[A-G][#b]?)?)\b'
+    not_recognized = set()
+
+    def highlight(match):
+        chord_str = match.group(1)
+        try:
+            _ = Chord(chord_str)
+            return f'<span class="chord">{chord_str}</span>'
+        except Exception:
+            not_recognized.add(chord_str)
+            return chord_str
+
+    result = re.sub(chord_regex, highlight, text)
+    if not_recognized:
+        print("Acordes não reconhecidos pelo pychord:", not_recognized)
+    return result
+
+def pychord_transpose_text(text, semitones):
+    """Transpõe todos os acordes de um texto usando pychord."""
+    chord_regex = r'\b([A-G][#b]?(?:maj7|maj|min|sus|dim|aug|add|m|M|°|º|7|9|11|13|6|4|2|5|\+|\-|\(.*?\))*(?:/[A-G][#b]?)?)\b'
+
+    def transp(match):
+        chord_str = match.group(1)
+        return pychord_transpose_chord(chord_str, semitones)
+
+    return re.sub(chord_regex, transp, text)
+
 
 # Notas em ordem cromática
 NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -145,6 +186,8 @@ def highlight_chords_html(text):
     - Linhas de letra: texto normal
     Seguro contra XSS: o conteúdo do usuário é escapado antes de qualquer markup.
     """
+    if text is None:
+        text = ''
     lines = text.split('\n')
     result = []
 
@@ -177,10 +220,3 @@ def highlight_chords_html(text):
             result.append(f'<span class="cifra-lyric">{html_lib.escape(line)}</span>')
 
     return '\n'.join(result)
-    cifra = "Am - E - Am\nC - G - C\n[Am] Verso 1\n[E7] Refrão"
-    print("Original:")
-    print(cifra)
-    print("\nTransposto +2 semitons (A para B):")
-    print(transpose_text(cifra, 2))
-    print("\nTransposto -3 semitons:")
-    print(transpose_text(cifra, -3))

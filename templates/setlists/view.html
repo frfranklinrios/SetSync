@@ -1,0 +1,24 @@
+{% extends "index.html" %}
+{% block title %}Setlist: {{ setlist.name }}{% endblock %}
+{% block content %}
+<h2>{{ setlist.name }}</h2>
+<p class="text-muted">{{ setlist.description }}</p>
+<a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-secondary mb-3">Voltar para Setlists</a>
+
+<h4>Músicas na Setlist</h4>
+<ul class="list-group mb-3">
+  {% for cifra in cifras %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</a>
+      <form action="{{ url_for('setlists.remove_cifra', setlist_id=setlist.id, cifra_id=cifra.id) }}" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remover música da setlist?')">Remover</button>
+      </form>
+    </li>
+  {% else %}
+    <li class="list-group-item">Nenhuma música na setlist.</li>
+  {% endfor %}
+</ul>
+
+<a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary">Adicionar Música</a>
+<a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="btn btn-success ms-2">Modo Tocar</a>
+{% endblock %}

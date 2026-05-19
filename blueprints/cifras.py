@@ -1,8 +1,11 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from blueprints.auth import login_required
 from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra, 
                 delete_cifra, is_band_member, is_band_admin)
-from util import transpose_text, get_available_tones
+from util import transpose_text, get_available_tones, pychord_transpose_text, pychord_highlight_chords
 
 cifras_bp = Blueprint('cifras', __name__, url_prefix='/cifras')
 
@@ -38,9 +41,13 @@ def view(cifra_id):
     transpositions = get_available_tones()
     current_transpose = request.args.get('transpose', 0, type=int)
 
-    conteudo = cifra['conteudo']
+    conteudo = cifra['conteudo'] or ''
+    # Transpor usando pychord se possível
     if current_transpose != 0:
-        conteudo = transpose_text(conteudo, current_transpose)
+        conteudo = pychord_transpose_text(conteudo, current_transpose)
+    # Destacar acordes válidos
+    conteudo = pychord_highlight_chords(conteudo)
+    print('CONTEUDO DA CIFRA:', repr(conteudo))
 
     setlist = get_band_cifras(cifra['band_id'])
     cifra_index = next((i for i, c in enumerate(setlist) if c['id'] == cifra_id), 0)
@@ -75,11 +82,11 @@ def add(band_id):
         artista = request.form.get('artista', '').strip()
         tom_original = request.form.get('tom_original', 'C').strip()
         conteudo = request.form.get('conteudo', '').strip()
-        
-        if not all([titulo, artista, conteudo]):
+        if not titulo or not artista or not conteudo:
             flash('Preencha todos os campos', 'danger')
             return render_template('cifras/add.html', band=band)
-        
+        if conteudo is None or conteudo == '':
+            conteudo = '[Cifra sem conteúdo]'
         cifra_id = create_cifra(titulo, artista, tom_original, conteudo, band_id)
         flash(f'Cifra "{titulo}" adicionada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
@@ -107,7 +114,11 @@ def edit(cifra_id):
         artista = request.form.get('artista', '').strip() or cifra['artista']
         tom_original = request.form.get('tom_original', cifra['tom_original']).strip()
         conteudo = request.form.get('conteudo', '').strip() or cifra['conteudo']
-        
+        if not titulo or not artista or not conteudo:
+            flash('Preencha todos os campos', 'danger')
+            return render_template('cifras/edit.html', cifra=cifra, band=band)
+        if conteudo is None or conteudo == '':
+            conteudo = '[Cifra sem conteúdo]'
         update_cifra(cifra_id, titulo, artista, tom_original, conteudo)
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))

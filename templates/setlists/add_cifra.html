@@ -1,0 +1,18 @@
+{% extends "index.html" %}
+{% block title %}Adicionar Música à Setlist{% endblock %}
+{% block content %}
+<h2>Adicionar Música à Setlist: {{ setlist.name }}</h2>
+<form method="POST">
+  <div class="mb-3">
+    <label for="cifra_id" class="form-label">Escolha a música</label>
+    <select class="form-select" id="cifra_id" name="cifra_id" required>
+      <option value="">Selecione...</option>
+      {% for cifra in cifras %}
+        <option value="{{ cifra.id }}">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn btn-success">Adicionar</button>
+  <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

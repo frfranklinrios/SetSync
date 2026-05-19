@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from blueprints.auth import login_required
 from db import (create_band, get_band, get_user_bands, get_owned_bands, update_band,

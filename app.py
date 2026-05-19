@@ -1,14 +1,21 @@
+
 from flask import Flask, render_template, redirect, url_for, session
 from config import config
 from blueprints.auth import auth_bp, login_required
 from blueprints.bands import bands_bp
 from blueprints.cifras import cifras_bp
+from blueprints.setlists import setlists_bp
 from db import init_db
 from util import highlight_chords_html
 import os
+from flask_mail import Mail
+import email_config
+
 
 app = Flask(__name__)
 app.config.from_object(config['development'])
+app.config.from_object('email_config')
+mail = Mail(app)
 
 # Filtro Jinja2 para destaque de acordes
 app.jinja_env.filters['highlight_chords'] = highlight_chords_html
@@ -24,9 +31,14 @@ def before_request():
         session.permanent = True
 
 # Registrar blueprints
+
 app.register_blueprint(auth_bp)
 app.register_blueprint(bands_bp)
 app.register_blueprint(cifras_bp)
+app.register_blueprint(setlists_bp)
+
+print('MAPEAMENTO DE ROTAS:')
+print(app.url_map)
 
 @app.route('/')
 def index():
