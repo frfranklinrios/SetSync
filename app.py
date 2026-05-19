@@ -13,7 +13,8 @@ import email_config
 
 
 app = Flask(__name__)
-app.config.from_object(config['development'])
+env = os.getenv('FLASK_ENV', 'development')
+app.config.from_object(config.get(env, config['default']))
 app.config.from_object('email_config')
 mail = Mail(app)
 

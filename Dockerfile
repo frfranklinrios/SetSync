@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Instalar dependências de sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements
@@ -19,4 +20,4 @@ RUN mkdir -p data
 # Rodar com gunicorn em produção
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
