@@ -1,154 +1,273 @@
 {% extends "index.html" %}
-{% block title %}Modo Tocar — {{ setlist.name }}{% endblock %}
+{% block title %}Tocar — {{ setlist.name }}{% endblock %}
 
 {% block content %}
 <style>
-  .tocar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-  }
-  .tocar-header h2 { font-size: 1.2rem; font-weight: 700; margin: 0; }
-
-  .tocar-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1.25rem;
-  }
-
-  .cifra-card {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--bg, #f8f9fa);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  [data-theme="dark"] .cifra-card { background: #0b1422; }
-
-  .cifra-card-header {
-    padding: 0.7rem 1rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-  }
-  .cifra-card-header .titulo {
-    font-weight: 700;
-    font-size: 0.95rem;
-  }
-  .cifra-card-header .artista {
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-  .cifra-card-header .tom {
-    margin-left: auto;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--accent);
-    white-space: nowrap;
-  }
-
-  .cifra-card-body {
-    padding: 0.9rem 1rem;
-    flex: 1;
-    overflow-x: auto;
-  }
-
-  .cifra-content {
+/* layout */
+#tocar-app {
+    display: flex; flex-direction: column;
+    height: calc(100vh - 120px); min-height: 500px;
+}
+/* top bar */
+#tocar-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 0; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; flex-shrink: 0;
+}
+#tocar-bar .song-info { flex: 1; min-width: 0; }
+#tocar-bar .song-title {
+    font-weight: 700; font-size: 1rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#tocar-bar .song-meta { font-size: 0.75rem; color: var(--muted); }
+/* cifra area */
+#cifra-display { flex: 1; overflow-y: auto; padding: 1.25rem 0; }
+.cifra-body {
     font-family: "Courier New", monospace;
-    font-size: 0.82rem;
-    line-height: 1.65;
-    white-space: pre-wrap;
-    color: var(--text);
-  }
-
-  .cifra-content .chord {
-    color: var(--accent, #2ab5a0);
-    font-weight: 700;
-  }
-
-  .cifra-content .cifra-chords {
-    display: block;
-    color: var(--accent, #2ab5a0);
-    font-weight: 700;
-  }
-
-  .cifra-content .cifra-lyric {
-    display: block;
-    color: var(--text);
-  }
-
-  .tocar-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-  .tocar-pagination .page-info {
-    font-size: 0.875rem;
-    color: var(--muted);
-  }
+    line-height: 1.9; white-space: pre-wrap; word-break: break-word;
+}
+.cifra-body .chord { color: var(--accent); font-weight: 700; }
+.cifra-body .cifra-chords {
+    display: block; background: rgba(42,181,160,0.06);
+    border-left: 2px solid rgba(42,181,160,0.3); padding: 0 8px;
+}
+.cifra-body .cifra-lyric { display: block; color: var(--muted); padding: 0 8px; }
+/* bottom nav */
+#tocar-nav {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.65rem 0; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+#tocar-nav .nav-center {
+    flex: 1; display: flex; align-items: center;
+    justify-content: center; gap: 0.75rem; flex-wrap: wrap;
+}
+.prog-dots { display: flex; gap: 5px; align-items: center; }
+.prog-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--border);
+    cursor: pointer; transition: background 0.15s, transform 0.15s;
+}
+.prog-dot.active { background: var(--accent); transform: scale(1.35); }
+.prog-dot:hover { background: var(--muted); }
+/* sidebar */
+#tocar-sidebar {
+    position: fixed; top: 0; left: -300px;
+    width: 280px; height: 100vh; background: #0b1422;
+    border-right: 1px solid var(--border); z-index: 1050;
+    overflow-y: auto; transition: left 0.22s ease; padding: 1rem 0;
+}
+[data-theme="light"] #tocar-sidebar { background: #fff; }
+#tocar-sidebar.open { left: 0; }
+#sidebar-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 1040;
+}
+#sidebar-overlay.show { display: block; }
+.sl-drawer-hd {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted);
+    padding: 0 1rem 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem;
+}
+.sl-drawer-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 1rem; cursor: pointer; font-size: 0.82rem;
+    border-left: 3px solid transparent; color: var(--muted); transition: all 0.1s;
+}
+.sl-drawer-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.sl-drawer-item.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(42,181,160,0.08); font-weight: 600;
+}
+[data-theme="light"] .sl-drawer-item { color: #4b5563; }
+[data-theme="light"] .sl-drawer-item:hover { background: #f9fafb; color: #111; }
+.sl-drawer-num { font-size: 0.68rem; color: var(--muted); min-width: 1.4rem; }
+.sl-drawer-key { font-size: 0.68rem; color: var(--accent); margin-left: auto; }
+/* font control */
+.font-ctrl { display: flex; align-items: center; gap: 4px; }
+.font-ctrl button {
+    width: 26px; height: 26px; border: 1px solid var(--border);
+    border-radius: 5px; background: none; color: var(--muted);
+    cursor: pointer; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+}
+.font-ctrl button:hover { border-color: var(--muted); color: var(--text); }
+.font-ctrl span { font-size: 0.72rem; color: var(--muted); min-width: 2rem; text-align: center; }
+/* kbd hint */
+#kbd-hint {
+    position: fixed; bottom: 4.5rem; right: 1rem;
+    font-size: 0.7rem; color: var(--muted);
+    background: rgba(0,0,0,0.05); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.3rem 0.6rem;
+    pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 100;
+}
+[data-theme="dark"] #kbd-hint { background: rgba(255,255,255,0.04); }
+#kbd-hint.show { opacity: 1; }
+[data-theme="dark"] .cifra-body .cifra-lyric { color: #94a3b8; }
 </style>
 
-<div class="tocar-header">
-  <div>
-    <h2><i class="fas fa-music me-2 accent"></i>{{ setlist.name }}</h2>
-    <span class="text-muted" style="font-size:0.8rem;">{{ band.name }} &mdash; Página {{ page }} de {{ total_pages }}</span>
-  </div>
-  <div class="d-flex gap-2">
-    <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">
-      <i class="fas fa-list me-1"></i>Setlist
-    </a>
-    {% if page > 1 %}
-      <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page-1) }}" class="btn btn-outline-secondary btn-sm">
-        <i class="fas fa-chevron-left"></i> Anterior
-      </a>
-    {% endif %}
-    {% if page < total_pages %}
-      <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page+1) }}" class="btn btn-primary btn-sm">
-        Próxima <i class="fas fa-chevron-right"></i>
-      </a>
-    {% endif %}
-  </div>
-</div>
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-{% if cifras %}
-  <div class="tocar-grid">
-    {% for cifra in cifras %}
-    <div class="cifra-card">
-      <div class="cifra-card-header">
-        <span class="titulo">{{ cifra.titulo }}</span>
-        <span class="artista">{{ cifra.artista }}</span>
-        {% if cifra.tom_original %}
-          <span class="tom">Tom: {{ cifra.tom_original }}</span>
-        {% endif %}
-      </div>
-      <div class="cifra-card-body">
-        <div class="cifra-content">{{ cifra.conteudo | highlight_chords | safe }}</div>
-      </div>
+<div id="tocar-sidebar">
+    <div class="sl-drawer-hd">{{ setlist.name }}</div>
+    {% for cifra in all_cifras %}
+    <div class="sl-drawer-item" data-idx="{{ loop.index0 }}" onclick="goTo({{ loop.index0 }}); closeSidebar()">
+        <span class="sl-drawer-num">{{ loop.index }}.</span>
+        <span>
+            {{ cifra.titulo }}
+            <small class="d-block" style="font-size:0.68rem; color:var(--muted);">{{ cifra.artista }}</small>
+        </span>
+        <span class="sl-drawer-key">{{ cifra.tom_original }}</span>
     </div>
     {% endfor %}
-  </div>
-{% else %}
-  <div class="alert alert-info">Nenhuma música nesta página.</div>
-{% endif %}
-
-<div class="tocar-pagination">
-  {% if page > 1 %}
-    <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page-1) }}" class="btn btn-outline-secondary">
-      <i class="fas fa-chevron-left"></i> Anterior
-    </a>
-  {% endif %}
-  <span class="page-info">{{ page }} / {{ total_pages }}</span>
-  {% if page < total_pages %}
-    <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id, page=page+1) }}" class="btn btn-primary">
-      Próxima <i class="fas fa-chevron-right"></i>
-    </a>
-  {% endif %}
 </div>
+
+<div id="tocar-app">
+    <div id="tocar-bar">
+        <button class="btn btn-outline-secondary btn-sm" onclick="toggleSidebar()" title="Lista (L)">
+            <i class="fas fa-list"></i>
+        </button>
+        <div class="song-info">
+            <div class="song-title" id="bar-title">Carregando&#8230;</div>
+            <div class="song-meta" id="bar-meta"></div>
+        </div>
+        <div class="font-ctrl">
+            <button onclick="changeFontSize(-1)" title="Diminuir (-)">&#8722;</button>
+            <span id="font-val">100%</span>
+            <button onclick="changeFontSize(1)" title="Aumentar (+)">+</button>
+        </div>
+        <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm" title="Sair">
+            <i class="fas fa-times"></i>
+        </a>
+    </div>
+
+    <div id="cifra-display">
+        <div class="cifra-body" id="cifra-content" style="font-size: 1rem;"></div>
+    </div>
+
+    <div id="tocar-nav">
+        <button class="btn btn-outline-secondary btn-sm" id="btn-prev" onclick="prevSong()" title="Anterior (&#8592;)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="nav-center">
+            <div class="prog-dots" id="prog-dots"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btn-next" onclick="nextSong()" title="Pr&#243;xima (&#8594;)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+
+<div id="kbd-hint">&#8592; &#8594; navegar &#183; L lista &#183; +/- fonte &#183; Esc sair</div>
+
+<script id="cifras-data" type="application/json">
+[{% for cifra in all_cifras %}{"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+</script>
+
+<script>
+(function () {
+    var CIFRAS = JSON.parse(document.getElementById('cifras-data').textContent);
+    var current = 0;
+    var fontSize = 100;
+
+    function goTo(idx) {
+        if (idx < 0 || idx >= CIFRAS.length) return;
+        current = idx;
+        render();
+    }
+    window.goTo = goTo;
+    window.prevSong = function () { goTo(current - 1); };
+    window.nextSong = function () { goTo(current + 1); };
+
+    function render() {
+        var c = CIFRAS[current];
+        if (!c) return;
+        document.getElementById('cifra-display').scrollTop = 0;
+        document.getElementById('cifra-content').innerHTML = c.html;
+        document.getElementById('bar-title').textContent = c.titulo;
+        document.getElementById('bar-meta').textContent =
+            c.artista + ' \u00b7 Tom: ' + c.tom + ' \u00b7 ' + (current + 1) + '/' + CIFRAS.length;
+        document.getElementById('btn-prev').disabled = (current === 0);
+        document.getElementById('btn-next').disabled = (current === CIFRAS.length - 1);
+        document.querySelectorAll('.prog-dot').forEach(function (dot, i) {
+            dot.classList.toggle('active', i === current);
+        });
+        var progText = document.getElementById('prog-text');
+        if (progText) progText.textContent = (current + 1) + ' / ' + CIFRAS.length;
+        document.querySelectorAll('.sl-drawer-item').forEach(function (item, i) {
+            item.classList.toggle('active', i === current);
+        });
+    }
+
+    function buildDots() {
+        var container = document.getElementById('prog-dots');
+        container.innerHTML = '';
+        if (CIFRAS.length <= 15) {
+            CIFRAS.forEach(function (_, i) {
+                var dot = document.createElement('div');
+                dot.className = 'prog-dot' + (i === 0 ? ' active' : '');
+                dot.title = CIFRAS[i].titulo;
+                (function (idx) {
+                    dot.addEventListener('click', function () { goTo(idx); });
+                })(i);
+                container.appendChild(dot);
+            });
+        } else {
+            var span = document.createElement('span');
+            span.id = 'prog-text';
+            span.style.cssText = 'font-size:0.8rem; color:var(--muted);';
+            span.textContent = '1 / ' + CIFRAS.length;
+            container.appendChild(span);
+        }
+    }
+
+    window.changeFontSize = function (delta) {
+        fontSize = Math.max(60, Math.min(200, fontSize + delta * 10));
+        document.getElementById('cifra-content').style.fontSize = (fontSize / 100) + 'rem';
+        document.getElementById('font-val').textContent = fontSize + '%';
+    };
+
+    window.toggleSidebar = function () {
+        document.getElementById('tocar-sidebar').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('show');
+    };
+    window.closeSidebar = function () {
+        document.getElementById('tocar-sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('show');
+    };
+
+    document.addEventListener('keydown', function (e) {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+        switch (e.key) {
+            case 'ArrowLeft':  e.preventDefault(); window.prevSong(); break;
+            case 'ArrowRight': e.preventDefault(); window.nextSong(); break;
+            case 'l': case 'L': window.toggleSidebar(); break;
+            case '+': case '=': window.changeFontSize(1); break;
+            case '-': case '_': window.changeFontSize(-1); break;
+            case 'Escape':
+                if (document.getElementById('tocar-sidebar').classList.contains('open')) {
+                    window.closeSidebar();
+                } else {
+                    window.location.href = {{ url_for('setlists.view', setlist_id=setlist.id) | tojson }};
+                }
+                break;
+        }
+    });
+
+    var touchStartX = 0;
+    var display = document.getElementById('cifra-display');
+    display.addEventListener('touchstart', function (e) {
+        touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    display.addEventListener('touchend', function (e) {
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) { dx < 0 ? window.nextSong() : window.prevSong(); }
+    }, { passive: true });
+
+    var hint = document.getElementById('kbd-hint');
+    hint.classList.add('show');
+    setTimeout(function () { hint.classList.remove('show'); }, 3500);
+
+    buildDots();
+    render();
+})();
+</script>
 {% endblock %}

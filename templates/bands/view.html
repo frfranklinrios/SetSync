@@ -3,79 +3,134 @@
 {% block title %}{{ band.name }} - SetSync{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-lg-8">
-        <h1 class="gradient-text mb-1">{{ band.name }}</h1>
-        <p class="text-muted lead">{{ band.description or 'Banda sem descrição' }}</p>
-        
-        <div class="row mt-4">
-            <div class="col-md-6 mb-3">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-users" style="color:var(--accent)"></i> Membros</h5>
-                        <p class="card-text">{{ members|length }} pessoa{{ '' if members|length == 1 else 's' }}</p>
-                        {% if is_admin %}
-                            <a href="{{ url_for('bands.members', band_id=band.id) }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-cog"></i> Gerenciar Membros
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-3">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-music" style="color:var(--accent)"></i> Cifras</h5>
-                        <p class="card-text">{{ cifras|length }} cifra{{ '' if cifras|length == 1 else 's' }}</p>
-                        <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus"></i> Adicionar Cifra
-                        </a>
-                    </div>
-                </div>
-            </div>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item active">{{ band.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1 class="gradient-text mb-1" style="font-size:1.6rem;">{{ band.name }}</h1>
+        <p class="text-muted mb-0">{{ band.description or 'Sem descrição' }}</p>
+    </div>
+    {% if is_admin %}
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-cog me-1"></i> Configurações
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tabs de navegação -->
+<ul class="nav nav-tabs mb-4" id="bandTabs">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#tab-cifras">
+            <i class="fas fa-music me-1"></i> Cifras
+            <span class="badge bg-light text-muted border ms-1" style="font-size:0.7rem;">{{ cifras|length }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-setlists">
+            <i class="fas fa-list me-1"></i> Setlists
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-membros">
+            <i class="fas fa-users me-1"></i> Membros
+            <span class="badge bg-light text-muted border ms-1" style="font-size:0.7rem;">{{ members|length }}</span>
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Tab Cifras -->
+    <div class="tab-pane fade show active" id="tab-cifras">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0" style="font-size:0.875rem;">{{ cifras|length }} cifra{{ '' if cifras|length == 1 else 's' }} cadastrada{{ '' if cifras|length == 1 else 's' }}</p>
+            <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Nova Cifra
+            </a>
         </div>
-        
-        <h3 class="gradient-text mt-4 mb-3"><i class="fas fa-list"></i> Setlists</h3>
-        <a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-outline-primary mb-3">Gerenciar Setlists</a>
         {% if cifras %}
-            <div class="list-group">
-                {% for cifra in cifras | sort(attribute='titulo') %}
-                    <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="list-group-item list-group-item-action">
-                        <strong>{{ cifra.titulo }}</strong><br>
-                        <small class="text-muted"><i class="fas fa-user"></i> {{ cifra.artista }} &bull; <i class="fas fa-music"></i> Tom: {{ cifra.tom_original }}</small>
-                    </a>
-                {% endfor %}
+        <div class="list-group">
+            {% for cifra in cifras %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="text-decoration-none flex-grow-1">
+                    <span class="fw-semibold">{{ cifra.titulo }}</span>
+                    <small class="text-muted ms-2">{{ cifra.artista }}</small>
+                </a>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-muted border">{{ cifra.tom_original }}</span>
+                    {% if is_admin %}
+                    <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="btn btn-outline-secondary btn-sm py-0 px-2"><i class="fas fa-pen" style="font-size:0.7rem;"></i></a>
+                    <form action="{{ url_for('cifras.delete', cifra_id=cifra.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Excluir cifra {{ cifra.titulo }}?')">
+                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
+                    </form>
+                    {% endif %}
+                </div>
             </div>
+            {% endfor %}
+        </div>
         {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> Nenhuma cifra adicionada ainda.
-                <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="fw-600">Adicionar primeira cifra</a>
-            </div>
+        <div class="text-center py-5">
+            <i class="fas fa-music fa-2x text-muted mb-3"></i>
+            <p class="text-muted mb-3">Nenhuma cifra cadastrada ainda.</p>
+            <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra
+            </a>
+        </div>
         {% endif %}
     </div>
-    
-    <div class="col-lg-4">
-        {% if is_admin %}
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-header fw-600"><i class="fas fa-tools"></i> Ações</div>
-                <div class="card-body">
-                    <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
-                        <i class="fas fa-cog"></i> Configurações
-                    </a>
-                    <a href="{{ url_for('bands.members', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="fas fa-users"></i> Gerenciar Membros
-                    </a>
+
+    <!-- Tab Setlists -->
+    <div class="tab-pane fade" id="tab-setlists">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0" style="font-size:0.875rem;">Organize suas músicas em setlists</p>
+            {% if is_admin %}
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i> Nova Setlist
+                </a>
+                <a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
+                    Gerenciar
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="text-center py-4">
+            <i class="fas fa-list fa-2x text-muted mb-3"></i>
+            <p class="text-muted mb-3" style="font-size:0.875rem;">Acesse o gerenciador de setlists completo.</p>
+            <a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-list me-1"></i> Ver Todas as Setlists
+            </a>
+        </div>
+    </div>
+
+    <!-- Tab Membros -->
+    <div class="tab-pane fade" id="tab-membros">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0" style="font-size:0.875rem;">{{ members|length }} membro{{ '' if members|length == 1 else 's' }}</p>
+            {% if is_admin %}
+            <a href="{{ url_for('bands.members', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-user-plus me-1"></i> Gerenciar Membros
+            </a>
+            {% endif %}
+        </div>
+        <div class="list-group">
+            {% for member in members %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-semibold">{{ member.username }}</span>
+                    <small class="text-muted ms-2">{{ member.email }}</small>
                 </div>
+                <span class="badge bg-light text-muted border">
+                    {% if member.role == 'owner' %}Dono{% elif member.role == 'admin' %}Admin{% else %}Membro{% endif %}
+                </span>
             </div>
-        {% endif %}
-        
-        <div class="card border-0 shadow-sm">
-            <div class="card-header fw-600"><i class="fas fa-info-circle"></i> Informações</div>
-            <div class="card-body small">
-                <p class="mb-1"><strong>Criada em:</strong> {{ band.created_at[:10] }}</p>
-                <p class="mb-1"><strong>Proprietário:</strong> {{ owner.username if owner else '—' }}</p>
-                <p class="mb-0"><strong>Seu papel:</strong> {{ 'Proprietário' if band.owner_id == current_user.id else 'Membro' }}</p>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -87,6 +142,11 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
-    .fw-600 { font-weight: 600; }
+    .nav-tabs { border-bottom: 1px solid var(--border); }
+    .nav-tabs .nav-link { color: var(--muted); font-size: 0.875rem; border: none; padding: 0.6rem 1rem; border-bottom: 2px solid transparent; }
+    .nav-tabs .nav-link:hover { color: var(--text); border-color: transparent; background: none; }
+    .nav-tabs .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); background: none; font-weight: 600; }
+    [data-theme="dark"] .nav-tabs { border-color: var(--border); }
+    [data-theme="dark"] .nav-tabs .nav-link.active { color: var(--accent); }
 </style>
 {% endblock %}

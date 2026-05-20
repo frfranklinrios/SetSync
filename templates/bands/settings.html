@@ -3,28 +3,73 @@
 {% block title %}Configurações - {{ band.name }}{% endblock %}
 
 {% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item active">Configurações</li>
+    </ol>
+</nav>
+
 <div class="row justify-content-center">
     <div class="col-lg-6">
-        <h2>Configurações da Banda</h2>
-        <p class="text-muted">{{ band.name }}</p>
-        
-        <div class="card mt-4">
+        <h2 class="mb-1">Configurações</h2>
+        <p class="text-muted mb-4" style="font-size:0.875rem;">{{ band.name }}</p>
+
+        <div class="card mb-4">
+            <div class="card-header">Informações da Banda</div>
             <div class="card-body">
                 <form method="POST">
                     <div class="mb-3">
                         <label for="name" class="form-label">Nome da Banda</label>
                         <input type="text" class="form-control" id="name" name="name" value="{{ band.name }}" required>
                     </div>
-                    
                     <div class="mb-3">
                         <label for="description" class="form-label">Descrição</label>
                         <textarea class="form-control" id="description" name="description" rows="3">{{ band.description or '' }}</textarea>
                     </div>
-                    
-                    <div class="d-grid gap-2">
+                    <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">Salvar Alterações</button>
                         <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary">Cancelar</a>
                     </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-header text-danger" style="background:rgba(239,68,68,0.05); border-color:rgba(239,68,68,0.3);">
+                <i class="fas fa-exclamation-triangle me-1"></i> Zona de Perigo
+            </div>
+            <div class="card-body">
+                <p class="mb-1 fw-semibold text-danger" style="font-size:0.875rem;">Excluir esta banda</p>
+                <p class="text-muted mb-3" style="font-size:0.82rem;">Esta ação é irreversível. Todas as cifras e setlists serão removidas permanentemente.</p>
+                <button type="button" class="btn btn-outline-danger btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="fas fa-trash me-1"></i> Excluir Banda
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-danger"><i class="fas fa-trash me-2"></i>Excluir Banda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir <strong>{{ band.name }}</strong>?</p>
+                <p class="text-muted" style="font-size:0.82rem;">Todas as cifras e setlists serão removidas permanentemente. Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('bands.delete', band_id=band.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash me-1"></i> Confirmar Exclusão
+                    </button>
                 </form>
             </div>
         </div>

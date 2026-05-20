@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from blueprints.auth import login_required
-from db import (create_band, get_band, get_user_bands, get_owned_bands, update_band,
+from db import (create_band, get_band, get_user_bands, get_owned_bands, update_band, delete_band,
                 get_band_members, add_band_member, remove_band_member, is_band_member,
                 is_band_admin, get_user)
 
@@ -141,3 +141,19 @@ def remove_member(band_id, user_id_to_remove):
     user = get_user(user_id_to_remove)
     flash(f'{user["username"]} removido da banda', 'success')
     return redirect(url_for('bands.members', band_id=band_id))
+
+
+@bands_bp.route('/<band_id>/delete', methods=['POST'])
+@login_required
+def delete(band_id):
+    user_id = session['user_id']
+    band = get_band(band_id)
+
+    if not band or band['owner_id'] != user_id:
+        flash('Apenas o dono pode excluir a banda', 'danger')
+        return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
+
+    name = band['name']
+    delete_band(band_id)
+    flash(f'Banda "{name}" excluída com sucesso.', 'success')
+    return redirect(url_for('bands.list_bands'))

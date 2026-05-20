@@ -55,7 +55,7 @@ def reset_senha(token):
         else:
             db = __import__('db').get_db()
             c = db.cursor()
-            c.execute('UPDATE users SET password = ? WHERE email = ?', (generate_password_hash(password), email))
+            c.execute('UPDATE users SET password_hash = ? WHERE email = ?', (generate_password_hash(password), email))
             db.commit()
             db.close()
             message = 'Senha redefinida com sucesso!'

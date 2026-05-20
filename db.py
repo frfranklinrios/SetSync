@@ -22,7 +22,7 @@ def init_db():
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             email TEXT UNIQUE NOT NULL,
-            password TEXT,
+            password_hash TEXT,
             google_id TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -88,7 +88,7 @@ def create_user(username, email, password):
     try:
         user_id = str(uuid.uuid4())
         c.execute(
-            'INSERT INTO users (id, username, email, password) VALUES (?, ?, ?, ?)',
+            'INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)',
             (user_id, username, email, generate_password_hash(password))
         )
         db.commit()
@@ -164,9 +164,9 @@ def get_user_by_google_id(google_id):
 
 def verify_password(user_id, password):
     user = get_user(user_id)
-    if not user or not user.get('password'):
+    if not user or not user.get('password_hash'):
         return False
-    return check_password_hash(user['password'], password)
+    return check_password_hash(user['password_hash'], password)
 
 
 # ── Bands ──────────────────────────────────────────────────────────────────
@@ -202,6 +202,20 @@ def update_band(band_id, name, description):
     db = get_db()
     c = db.cursor()
     c.execute('UPDATE bands SET name = ?, description = ? WHERE id = ?', (name, description, band_id))
+    db.commit()
+    db.close()
+
+
+def delete_band(band_id):
+    db = get_db()
+    c = db.cursor()
+    # Remover em cascata: setlist_cifras → setlists → cifras → band_members → band
+    c.execute('''DELETE FROM setlist_cifras WHERE setlist_id IN
+                 (SELECT id FROM setlists WHERE band_id = ?)''', (band_id,))
+    c.execute('DELETE FROM setlists WHERE band_id = ?', (band_id,))
+    c.execute('DELETE FROM cifras WHERE band_id = ?', (band_id,))
+    c.execute('DELETE FROM band_members WHERE band_id = ?', (band_id,))
+    c.execute('DELETE FROM bands WHERE id = ?', (band_id,))
     db.commit()
     db.close()
 

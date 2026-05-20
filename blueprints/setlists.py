@@ -20,16 +20,8 @@ def tocar(setlist_id):
         flash('Setlist não encontrada', 'danger')
         return redirect(url_for('dashboard'))
     band = get_band(setlist['band_id'])
-    cifras = get_setlist_cifras(setlist_id)
-    # Paginação
-    page = int(request.args.get('page', 1))
-    per_page = 2  # Duas músicas por página (duas colunas)
-    total = len(cifras)
-    start = (page - 1) * per_page
-    end = start + per_page
-    page_cifras = cifras[start:end]
-    total_pages = (total + per_page - 1) // per_page
-    return render_template('setlists/tocar.html', setlist=setlist, band=band, cifras=page_cifras, page=page, total_pages=total_pages)
+    all_cifras = get_setlist_cifras(setlist_id)
+    return render_template('setlists/tocar.html', setlist=setlist, band=band, all_cifras=all_cifras)
 
 # Ordenar músicas da setlist
 @setlists_bp.route('/<setlist_id>/ordenar', methods=['GET', 'POST'])
@@ -85,7 +77,8 @@ def delete(setlist_id):
 def list_setlists(band_id):
     user_id = session['user_id']
     band = get_band(band_id)
-    if not band or not is_band_admin(band_id, user_id):
+    from db import is_band_member
+    if not band or not is_band_member(band_id, user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('bands.view', band_id=band_id))
     setlists = get_band_setlists(band_id)

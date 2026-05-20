@@ -1,24 +1,80 @@
 {% extends "index.html" %}
 {% block title %}Setlist: {{ setlist.name }}{% endblock %}
 {% block content %}
-<h2>{{ setlist.name }}</h2>
-<p class="text-muted">{{ setlist.description }}</p>
-<a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-secondary mb-3">Voltar para Setlists</a>
 
-<h4>Músicas na Setlist</h4>
-<ul class="list-group mb-3">
-  {% for cifra in cifras %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</a>
-      <form action="{{ url_for('setlists.remove_cifra', setlist_id=setlist.id, cifra_id=cifra.id) }}" method="POST" style="display:inline;">
-        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remover música da setlist?')">Remover</button>
-      </form>
-    </li>
-  {% else %}
-    <li class="list-group-item">Nenhuma música na setlist.</li>
-  {% endfor %}
-</ul>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}">Setlists</a></li>
+        <li class="breadcrumb-item active">{{ setlist.name }}</li>
+    </ol>
+</nav>
 
-<a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary">Adicionar Música</a>
-<a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="btn btn-success ms-2">Modo Tocar</a>
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="mb-1">{{ setlist.name }}</h2>
+        {% if setlist.description %}
+        <p class="text-muted mb-0">{{ setlist.description }}</p>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-play me-1"></i> Tocar
+        </a>
+        <a href="{{ url_for('setlists.ordenar', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-sort me-1"></i> Ordenar
+        </a>
+        <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" onsubmit="return confirm('Excluir esta setlist?')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="fas fa-trash me-1"></i> Excluir
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p class="text-muted mb-0" style="font-size:0.875rem;">{{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }} na setlist</p>
+    <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i> Adicionar Música
+    </a>
+</div>
+
+{% if cifras %}
+<div class="list-group">
+    {% for cifra in cifras %}
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-muted" style="font-size:0.75rem; min-width:1.5rem;">{{ loop.index }}</span>
+            <div>
+                <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="fw-semibold text-decoration-none">
+                    {{ cifra.titulo or cifra.titulo_original or 'Sem título' }}
+                </a>
+                {% if cifra.artista %}
+                <small class="text-muted d-block">{{ cifra.artista }}</small>
+                {% endif %}
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            {% if cifra.tom_original %}
+            <span class="badge bg-light text-muted border">{{ cifra.tom_original }}</span>
+            {% endif %}
+            <form action="{{ url_for('setlists.remove_cifra', setlist_id=setlist.id, cifra_id=cifra.id) }}" method="POST" onsubmit="return confirm('Remover da setlist?')">
+                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">
+                    <i class="fas fa-times" style="font-size:0.7rem;"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-music fa-2x text-muted mb-3"></i>
+    <p class="text-muted mb-3">Nenhuma música na setlist ainda.</p>
+    <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i> Adicionar Primeira Música
+    </a>
+</div>
+{% endif %}
 {% endblock %}
