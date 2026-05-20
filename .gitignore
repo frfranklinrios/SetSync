@@ -1,4 +1,6 @@
-# Ambiente
+#docker
+docker-compose.yml
+#Ambiente
 .env
 .venv
 env/
