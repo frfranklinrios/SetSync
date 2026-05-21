@@ -2,6 +2,156 @@
 {% block title %}Setlist: {{ setlist.name }}{% endblock %}
 {% block content %}
 
+<style>
+.sl-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+[data-theme="dark"] .sl-card { background: #0b1422; }
+
+.sl-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: inherit;
+    transition: background 0.12s;
+}
+.sl-row:last-child { border-bottom: none; }
+.sl-row:hover { background: var(--bg); }
+[data-theme="dark"] .sl-row:hover { background: #0f172a; }
+
+.sl-handle {
+    cursor: grab;
+    color: var(--muted);
+    font-size: 1rem;
+    width: 22px;
+    text-align: center;
+    user-select: none;
+    flex-shrink: 0;
+}
+.sl-handle:active { cursor: grabbing; }
+.sl-handle:hover { color: var(--accent); }
+
+.sl-num {
+    font-size: 0.78rem;
+    color: var(--muted);
+    min-width: 1.6rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.sl-info {
+    flex: 1;
+    min-width: 0;
+}
+.sl-title-link {
+    color: var(--text);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+    display: block;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sl-title-link:hover { color: var(--accent); }
+.sl-artist {
+    font-size: 0.78rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sl-tom {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(42,181,160,0.1);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid rgba(42,181,160,0.25);
+    flex-shrink: 0;
+}
+
+.sl-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+.sl-icon-btn {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.12s;
+}
+.sl-icon-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.sl-icon-btn.danger:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.sl-ghost {
+    opacity: 0.45;
+    background: rgba(42,181,160,0.08) !important;
+}
+.sl-chosen { background: rgba(42,181,160,0.04); }
+.sl-drag    { box-shadow: 0 8px 20px rgba(0,0,0,0.18); }
+
+#order-status {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-left: 0.5rem;
+    transition: opacity 0.3s;
+    opacity: 0;
+}
+#order-status.show { opacity: 1; }
+#order-status.ok    { color: var(--accent); }
+#order-status.err   { color: #ef4444; }
+
+.hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+.hero h2 {
+    margin-bottom: 0.25rem;
+    font-size: 1.6rem;
+}
+.tip {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0.25rem 0 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+@media (max-width: 600px) {
+    .sl-artist { display: none; }
+    .sl-actions .sl-icon-btn.view-btn { display: none; }
+}
+</style>
+
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb" style="font-size:0.82rem;">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
@@ -11,21 +161,28 @@
     </ol>
 </nav>
 
-<div class="d-flex justify-content-between align-items-start mb-4">
+<div class="hero">
     <div>
-        <h2 class="mb-1">{{ setlist.name }}</h2>
+        <h2>{{ setlist.name }}</h2>
         {% if setlist.description %}
-        <p class="text-muted mb-0">{{ setlist.description }}</p>
+        <p class="text-muted mb-0" style="font-size:0.9rem;">{{ setlist.description }}</p>
         {% endif %}
+        <p class="text-muted mb-0" style="font-size:0.8rem; margin-top:0.4rem;">
+            {{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }}
+            <span id="order-status"></span>
+        </p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+        {% if cifras|length > 0 %}
         <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
             <i class="fas fa-play me-1"></i> Tocar
         </a>
-        <a href="{{ url_for('setlists.ordenar', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-sort me-1"></i> Ordenar
+        {% endif %}
+        <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-plus me-1"></i> Adicionar Música
         </a>
-        <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" onsubmit="return confirm('Excluir esta setlist?')">
+        <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
+              onsubmit="return confirm('Excluir esta setlist? Esta ação não pode ser desfeita.')">
             <button type="submit" class="btn btn-outline-danger btn-sm">
                 <i class="fas fa-trash me-1"></i> Excluir
             </button>
@@ -33,41 +190,113 @@
     </div>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <p class="text-muted mb-0" style="font-size:0.875rem;">{{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }} na setlist</p>
-    <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i> Adicionar Música
-    </a>
+{% if cifras %}
+<div class="tip">
+    <i class="fas fa-grip-vertical"></i>
+    <span>Arraste pelo ícone à esquerda para reordenar as músicas. A nova ordem é salva automaticamente.</span>
 </div>
 
-{% if cifras %}
-<div class="list-group">
+<div class="sl-card" id="setlist-card">
+    <div id="sortable-cifras">
     {% for cifra in cifras %}
-    <div class="list-group-item d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
-            <span class="text-muted" style="font-size:0.75rem; min-width:1.5rem;">{{ loop.index }}</span>
-            <div>
-                <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="fw-semibold text-decoration-none">
-                    {{ cifra.titulo or cifra.titulo_original or 'Sem título' }}
-                </a>
-                {% if cifra.artista %}
-                <small class="text-muted d-block">{{ cifra.artista }}</small>
-                {% endif %}
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            {% if cifra.tom_original %}
-            <span class="badge bg-light text-muted border">{{ cifra.tom_original }}</span>
+    <div class="sl-row" data-cifra-id="{{ cifra.id }}">
+        <span class="sl-handle" title="Arraste para reordenar"><i class="fas fa-grip-vertical"></i></span>
+        <span class="sl-num">{{ loop.index }}</span>
+        <div class="sl-info">
+            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="sl-title-link">
+                {{ cifra.titulo or cifra.titulo_original or 'Sem título' }}
+            </a>
+            {% if cifra.artista %}
+            <div class="sl-artist">{{ cifra.artista }}</div>
             {% endif %}
-            <form action="{{ url_for('setlists.remove_cifra', setlist_id=setlist.id, cifra_id=cifra.id) }}" method="POST" onsubmit="return confirm('Remover da setlist?')">
-                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">
-                    <i class="fas fa-times" style="font-size:0.7rem;"></i>
+        </div>
+        {% if cifra.tom_original %}
+        <span class="sl-tom">{{ cifra.tom_original }}</span>
+        {% endif %}
+        <div class="sl-actions">
+            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="sl-icon-btn view-btn" title="Ver cifra">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}?start={{ cifra.id }}"
+               class="sl-icon-btn" title="Tocar a partir desta">
+                <i class="fas fa-play"></i>
+            </a>
+            <form action="{{ url_for('setlists.remove_cifra', setlist_id=setlist.id, cifra_id=cifra.id) }}"
+                  method="POST" class="d-inline"
+                  onsubmit="return confirm('Remover da setlist?')">
+                <button type="submit" class="sl-icon-btn danger" title="Remover da setlist">
+                    <i class="fas fa-times"></i>
                 </button>
             </form>
         </div>
     </div>
     {% endfor %}
+    </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script>
+(function () {
+    var list = document.getElementById('sortable-cifras');
+    var status = document.getElementById('order-status');
+    var REORDER_URL = {{ url_for('setlists.reorder_ajax', setlist_id=setlist.id) | tojson }};
+
+    function showStatus(text, klass) {
+        status.textContent = text;
+        status.className = 'show ' + (klass || '');
+        clearTimeout(showStatus._t);
+        showStatus._t = setTimeout(function () {
+            status.className = '';
+        }, 2200);
+    }
+
+    function renumber() {
+        var rows = list.querySelectorAll('.sl-row');
+        rows.forEach(function (row, i) {
+            var n = row.querySelector('.sl-num');
+            if (n) n.textContent = i + 1;
+        });
+    }
+
+    function persistOrder() {
+        var ids = Array.prototype.map.call(
+            list.querySelectorAll('.sl-row'),
+            function (r) { return r.getAttribute('data-cifra-id'); }
+        );
+        showStatus('Salvando ordem…');
+        fetch(REORDER_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ cifra_ids: ids })
+        }).then(function (r) {
+            if (!r.ok) throw new Error('falha');
+            return r.json();
+        }).then(function () {
+            showStatus('Ordem salva ✓', 'ok');
+        }).catch(function () {
+            showStatus('Erro ao salvar ordem', 'err');
+        });
+    }
+
+    new Sortable(list, {
+        animation: 160,
+        handle: '.sl-handle',
+        ghostClass: 'sl-ghost',
+        chosenClass: 'sl-chosen',
+        dragClass: 'sl-drag',
+        onEnd: function (evt) {
+            if (evt.oldIndex === evt.newIndex) return;
+            renumber();
+            persistOrder();
+        }
+    });
+})();
+</script>
+
 {% else %}
 <div class="text-center py-5">
     <i class="fas fa-music fa-2x text-muted mb-3"></i>
@@ -77,4 +306,5 @@
     </a>
 </div>
 {% endif %}
+
 {% endblock %}

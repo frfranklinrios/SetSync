@@ -3,68 +3,109 @@
 {% block title %}Membros - {{ band.name }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-lg-8">
-        <h2>Membros da Banda</h2>
-        <p class="text-muted">{{ band.name }}</p>
-        
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">👥 Membros Atuais ({{ band.members|length }})</h5>
-            </div>
-            <div class="list-group list-group-flush">
-                {% for member in band.members %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ member.username }}</strong>
-                            <br>
-                            <small class="text-muted">{{ member.email }}</small>
-                            {% if band.owner_id == member.id %}
-                                <br><span class="badge bg-danger">Proprietário</span>
-                            {% endif %}
-                        </div>
-                        {% if band.owner_id != member.id and band.owner_id == current_user.id %}
-                            <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id=member.id) }}" method="POST">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza?')">
-                                    Remover
-                                </button>
-                            </form>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">Adicionar Membro</div>
-            <div class="card-body">
-                <form action="{{ url_for('bands.invite', band_id=band.id) }}" method="POST">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email do Usuário</label>
-                        <input type="email" class="form-control" id="email" name="email" required placeholder="usuario@email.com">
-                        <small class="text-muted">O usuário deve estar registrado no Banda-App</small>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Convidar</button>
-                </form>
-            </div>
-        </div>
-        
-        <div class="card mt-3">
-            <div class="card-header">Dica</div>
-            <div class="card-body small">
-                <p>Convide usuários pelo email. Eles receberão acesso automático à banda.</p>
-            </div>
-        </div>
+<style>
+.row-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; }
+[data-theme="dark"] .row-card { background: #0b1422; }
+.row-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+}
+.row-item:last-child { border-bottom: none; }
+.row-item:hover { background: var(--bg); }
+[data-theme="dark"] .row-item:hover { background: #0f172a; }
+.row-info { flex: 1; min-width: 0; }
+.row-title { font-weight: 600; font-size: 0.95rem; line-height: 1.2; color: var(--text); }
+.row-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.row-badge {
+    font-size: 0.72rem; font-weight: 600;
+    color: var(--muted); background: var(--bg);
+    padding: 0.22rem 0.55rem; border-radius: 999px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+[data-theme="dark"] .row-badge { background: #0f172a; }
+.row-badge.owner { color: var(--accent); border-color: rgba(42,181,160,0.35); background: rgba(42,181,160,0.08); }
+.icon-btn {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+.icon-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
+</style>
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item active">Membros</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-3">
+    <div>
+        <h2 class="mb-0" style="font-size:1.4rem;">Membros</h2>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">
+            {{ band_members|length }} membro{{ '' if band_members|length == 1 else 's' }} em {{ band.name }}
+        </p>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col">
-        <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary">
-            ← Voltar para Banda
-        </a>
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="row-card">
+            {% for member in band_members %}
+            <div class="row-item">
+                <div class="row-info">
+                    <div class="row-title">{{ member.username }}</div>
+                    <div class="row-sub">{{ member.email }}</div>
+                </div>
+                {% if band.owner_id == member.id %}
+                <span class="row-badge owner">Proprietário</span>
+                {% elif member.role == 'admin' %}
+                <span class="row-badge">Admin</span>
+                {% else %}
+                <span class="row-badge">Membro</span>
+                {% endif %}
+                {% if band.owner_id != member.id and band.owner_id == current_user.id %}
+                <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
+                      method="POST" class="d-inline"
+                      onsubmit="return confirm('Remover {{ member.username }} da banda?')">
+                    <button type="submit" class="icon-btn danger" title="Remover">
+                        <i class="fas fa-user-minus"></i>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Adicionar membro</div>
+            <div class="card-body">
+                <form action="{{ url_for('bands.invite', band_id=band.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="usuario@email.com" autocomplete="off">
+                        <small class="text-muted">O usuário deve já estar registrado.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-user-plus me-1"></i> Convidar
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

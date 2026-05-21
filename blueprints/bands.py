@@ -51,13 +51,21 @@ def view(band_id):
         return redirect(url_for('dashboard'))
     
     from db import get_band_cifras
+    from models_setlist import get_band_setlists, get_setlist_cifras
     members = get_band_members(band_id)
     cifras = get_band_cifras(band_id)
+    setlists_raw = get_band_setlists(band_id)
+    setlists = []
+    for s in setlists_raw:
+        s = dict(s)
+        s['cifras_count'] = len(get_setlist_cifras(s['id']))
+        setlists.append(s)
     owner = get_user(band['owner_id'])
     admin = is_band_admin(band_id, user_id)
-    
+
     return render_template('bands/view.html', band=band, members=members,
-                           cifras=cifras, owner=owner, is_admin=admin)
+                           cifras=cifras, setlists=setlists,
+                           owner=owner, is_admin=admin)
 
 @bands_bp.route('/<band_id>/settings', methods=['GET', 'POST'])
 @login_required

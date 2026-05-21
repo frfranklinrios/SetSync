@@ -3,271 +3,795 @@
 
 {% block content %}
 <style>
-/* layout */
-#tocar-app {
-    display: flex; flex-direction: column;
-    height: calc(100vh - 120px); min-height: 500px;
+/* ============================================================
+   PLAY MODE (modo tocar) — unificado para setlist e banda
+   ============================================================ */
+body.play-mode .navbar,
+body.play-mode footer { display: none !important; }
+body.play-mode main.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
 }
-/* top bar */
-#tocar-bar {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.6rem 0; border-bottom: 1px solid var(--border);
-    flex-wrap: wrap; flex-shrink: 0;
+body { overflow-x: hidden; }
+
+/* App container */
+#play-app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
 }
-#tocar-bar .song-info { flex: 1; min-width: 0; }
-#tocar-bar .song-title {
-    font-weight: 700; font-size: 1rem;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+
+/* ── TOP BAR ───────────────────────────── */
+#play-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    background: #0b1422;
+    border-bottom: 1px solid rgba(45,212,191,0.18);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
-#tocar-bar .song-meta { font-size: 0.75rem; color: var(--muted); }
-/* cifra area */
-#cifra-display { flex: 1; overflow-y: auto; padding: 1.25rem 0; }
-.cifra-body {
-    font-family: "Courier New", monospace;
-    line-height: 1.9; white-space: pre-wrap; word-break: break-word;
+[data-theme="light"] #play-bar {
+    background: #f1f5f9;
+    border-bottom-color: #e2e8f0;
 }
-.cifra-body .chord { color: var(--accent); font-weight: 700; }
-.cifra-body .cifra-chords {
-    display: block; background: rgba(42,181,160,0.06);
-    border-left: 2px solid rgba(42,181,160,0.3); padding: 0 8px;
+#play-bar .pb-song {
+    flex: 1 1 200px;
+    min-width: 0;
 }
-.cifra-body .cifra-lyric { display: block; color: var(--muted); padding: 0 8px; }
-/* bottom nav */
-#tocar-nav {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.65rem 0; border-top: 1px solid var(--border); flex-shrink: 0;
+#play-bar .pb-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-#tocar-nav .nav-center {
-    flex: 1; display: flex; align-items: center;
-    justify-content: center; gap: 0.75rem; flex-wrap: wrap;
+[data-theme="light"] #play-bar .pb-title { color: #1e293b; }
+#play-bar .pb-meta {
+    font-size: 0.72rem;
+    color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-.prog-dots { display: flex; gap: 5px; align-items: center; }
-.prog-dot {
-    width: 7px; height: 7px; border-radius: 50%; background: var(--border);
-    cursor: pointer; transition: background 0.15s, transform 0.15s;
+
+/* Bar buttons */
+.pb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(45,212,191,0.08);
+    border: 1px solid rgba(45,212,191,0.25);
+    color: #2dd4bf;
+    border-radius: 6px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background 0.15s;
 }
-.prog-dot.active { background: var(--accent); transform: scale(1.35); }
-.prog-dot:hover { background: var(--muted); }
-/* sidebar */
-#tocar-sidebar {
-    position: fixed; top: 0; left: -300px;
-    width: 280px; height: 100vh; background: #0b1422;
-    border-right: 1px solid var(--border); z-index: 1050;
-    overflow-y: auto; transition: left 0.22s ease; padding: 1rem 0;
+.pb-btn:hover { background: rgba(45,212,191,0.2); color: #2dd4bf; }
+.pb-btn:disabled, .pb-btn[disabled] {
+    opacity: 0.35;
+    pointer-events: none;
 }
-[data-theme="light"] #tocar-sidebar { background: #fff; }
-#tocar-sidebar.open { left: 0; }
-#sidebar-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.4); z-index: 1040;
+.pb-btn.pb-on { background: rgba(45,212,191,0.32) !important; }
+.pb-btn.pb-exit {
+    border-color: rgba(239,68,68,0.4);
+    color: #f87171;
+    background: rgba(239,68,68,0.08);
 }
-#sidebar-overlay.show { display: block; }
-.sl-drawer-hd {
-    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 1px; color: var(--muted);
-    padding: 0 1rem 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem;
+.pb-btn.pb-exit:hover { background: rgba(239,68,68,0.2); }
+[data-theme="light"] .pb-btn {
+    background: rgba(42,181,160,0.1);
+    border-color: rgba(42,181,160,0.35);
+    color: var(--accent-dark);
 }
-.sl-drawer-item {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.6rem 1rem; cursor: pointer; font-size: 0.82rem;
-    border-left: 3px solid transparent; color: var(--muted); transition: all 0.1s;
+[data-theme="light"] .pb-btn:hover {
+    background: rgba(42,181,160,0.22);
+    color: var(--accent-dark);
 }
-.sl-drawer-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
-.sl-drawer-item.active {
-    color: var(--accent); border-left-color: var(--accent);
-    background: rgba(42,181,160,0.08); font-weight: 600;
+[data-theme="light"] .pb-btn.pb-on { background: rgba(42,181,160,0.32) !important; }
+[data-theme="light"] .pb-btn.pb-exit {
+    border-color: rgba(220,38,38,0.4);
+    color: #dc2626;
+    background: rgba(220,38,38,0.08);
 }
-[data-theme="light"] .sl-drawer-item { color: #4b5563; }
-[data-theme="light"] .sl-drawer-item:hover { background: #f9fafb; color: #111; }
-.sl-drawer-num { font-size: 0.68rem; color: var(--muted); min-width: 1.4rem; }
-.sl-drawer-key { font-size: 0.68rem; color: var(--accent); margin-left: auto; }
-/* font control */
-.font-ctrl { display: flex; align-items: center; gap: 4px; }
+[data-theme="light"] .pb-btn.pb-exit:hover { background: rgba(220,38,38,0.18); }
+
+/* Font controls */
+.font-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
 .font-ctrl button {
-    width: 26px; height: 26px; border: 1px solid var(--border);
-    border-radius: 5px; background: none; color: var(--muted);
-    cursor: pointer; font-size: 0.85rem;
-    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: inherit;
+    line-height: 1;
 }
-.font-ctrl button:hover { border-color: var(--muted); color: var(--text); }
-.font-ctrl span { font-size: 0.72rem; color: var(--muted); min-width: 2rem; text-align: center; }
-/* kbd hint */
+.font-ctrl button:hover { background: rgba(255,255,255,0.16); }
+.font-ctrl span {
+    font-size: 0.72rem;
+    color: #64748b;
+    min-width: 2.4rem;
+    text-align: center;
+}
+[data-theme="light"] .font-ctrl button {
+    background: rgba(0,0,0,0.06);
+    border-color: rgba(0,0,0,0.15);
+    color: #475569;
+}
+[data-theme="light"] .font-ctrl button:hover { background: rgba(0,0,0,0.13); }
+[data-theme="light"] .font-ctrl span { color: #475569; }
+
+/* Transpose select */
+.transpose-mini {
+    background: rgba(45,212,191,0.08);
+    color: #2dd4bf;
+    border: 1px solid rgba(45,212,191,0.3);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    padding: 0.32rem 0.5rem;
+    font-family: inherit;
+    cursor: pointer;
+    max-width: 130px;
+}
+.transpose-mini:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(45,212,191,0.15);
+}
+[data-theme="light"] .transpose-mini {
+    background: rgba(42,181,160,0.1);
+    color: var(--accent-dark);
+    border-color: rgba(42,181,160,0.35);
+}
+
+/* ── CIFRA AREA ───────────────────────── */
+#cifra-wrap {
+    flex: 1;
+    overflow-y: auto;
+    background: #0f172a;
+    position: relative;
+}
+[data-theme="light"] #cifra-wrap { background: #f8fafc; }
+
+.cifra-body {
+    font-family: "Courier New", Courier, monospace;
+    line-height: 1.95;
+    color: #e2e8f0;
+    padding: 2rem 4vw;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: var(--play-font, 1.05rem);
+    transition: opacity 0.15s;
+}
+[data-theme="light"] .cifra-body { color: #1e293b; }
+
+.cifra-body.fading { opacity: 0.35; }
+
+.cifra-body .chord { color: #2dd4bf; font-weight: 700; }
+.cifra-body .cifra-chords {
+    display: block;
+    background: rgba(45,212,191,0.07);
+    border-left: 2px solid rgba(45,212,191,0.32);
+    padding: 1px 8px;
+}
+.cifra-body .cifra-lyric {
+    display: block;
+    color: #94a3b8;
+    padding: 1px 8px;
+}
+[data-theme="light"] .cifra-body .chord { color: #0d7e6b; }
+[data-theme="light"] .cifra-body .cifra-chords {
+    background: rgba(13,126,107,0.08);
+    border-left-color: rgba(13,126,107,0.3);
+}
+[data-theme="light"] .cifra-body .cifra-lyric { color: #475569; }
+
+/* Two-col mode */
+.cifra-body.two-col {
+    column-count: 2;
+    column-gap: 2.5rem;
+    column-rule: 1px solid rgba(45,212,191,0.15);
+}
+[data-theme="light"] .cifra-body.two-col {
+    column-rule-color: rgba(42,181,160,0.2);
+}
+.cifra-body.two-col .cifra-chords,
+.cifra-body.two-col .cifra-lyric {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+.cifra-body.two-col .cifra-chords {
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+@media (max-width: 720px) {
+    .cifra-body { padding: 1.25rem 5vw; }
+    .cifra-body.two-col { column-count: 1; }
+}
+
+/* ── BOTTOM PROGRESS ───────────────────── */
+#play-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid rgba(45,212,191,0.15);
+    background: #0b1422;
+    flex-shrink: 0;
+}
+[data-theme="light"] #play-foot {
+    background: #f1f5f9;
+    border-top-color: #e2e8f0;
+}
+.prog-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+}
+.prog-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(148,163,184,0.35);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+.prog-dot.active {
+    background: #2dd4bf;
+    transform: scale(1.45);
+}
+.prog-dot:hover { background: #94a3b8; }
+[data-theme="light"] .prog-dot { background: rgba(100,116,139,0.35); }
+[data-theme="light"] .prog-dot.active { background: var(--accent); }
+.prog-text {
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+/* ── SETLIST DRAWER ─────────────────────── */
+#drawer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 1090;
+}
+#drawer-overlay.open { display: block; }
+#play-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    max-width: 88vw;
+    height: 100vh;
+    background: #080f1e;
+    border-right: 1px solid rgba(45,212,191,0.15);
+    z-index: 1100;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+}
+#play-drawer.open { transform: translateX(0); }
+[data-theme="light"] #play-drawer {
+    background: #fff;
+    border-right-color: #e2e8f0;
+}
+.drawer-hd {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #475569;
+    padding: 1rem 1rem 0.65rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 0.25rem;
+}
+[data-theme="light"] .drawer-hd {
+    color: #6b7280;
+    border-bottom-color: #f3f4f6;
+}
+.dr-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.68rem 1rem;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+.dr-item:hover { color: #e2e8f0; background: rgba(255,255,255,0.04); }
+.dr-item.active {
+    color: #2dd4bf;
+    border-left-color: #2dd4bf;
+    background: rgba(45,212,191,0.08);
+    font-weight: 600;
+}
+[data-theme="light"] .dr-item { color: #4b5563; }
+[data-theme="light"] .dr-item:hover { color: #111827; background: #f9fafb; }
+[data-theme="light"] .dr-item.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(42,181,160,0.08);
+}
+.dr-num {
+    font-size: 0.68rem;
+    color: #64748b;
+    min-width: 1.4rem;
+}
+.dr-title { line-height: 1.2; }
+.dr-artist {
+    display: block;
+    font-size: 0.68rem;
+    color: #64748b;
+    margin-top: 1px;
+}
+.dr-key {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+/* ── SCROLL BADGE ──────────────────────── */
+#scroll-badge {
+    display: none;
+    position: fixed;
+    bottom: 4.2rem;
+    right: 1rem;
+    background: rgba(45,212,191,0.15);
+    border: 1px solid rgba(45,212,191,0.4);
+    color: #2dd4bf;
+    font-size: 0.72rem;
+    padding: 0.32rem 0.8rem;
+    border-radius: 20px;
+    z-index: 1200;
+    cursor: pointer;
+    user-select: none;
+}
+[data-theme="light"] #scroll-badge {
+    background: rgba(42,181,160,0.12);
+    border-color: rgba(42,181,160,0.4);
+    color: var(--accent);
+}
+
+/* ── KBD HINT ──────────────────────────── */
 #kbd-hint {
-    position: fixed; bottom: 4.5rem; right: 1rem;
-    font-size: 0.7rem; color: var(--muted);
-    background: rgba(0,0,0,0.05); border: 1px solid var(--border);
-    border-radius: 6px; padding: 0.3rem 0.6rem;
-    pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 100;
+    position: fixed;
+    bottom: 4.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    color: #94a3b8;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(45,212,191,0.18);
+    border-radius: 8px;
+    padding: 0.42rem 0.85rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 100;
+    white-space: nowrap;
+    max-width: 92vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-[data-theme="dark"] #kbd-hint { background: rgba(255,255,255,0.04); }
 #kbd-hint.show { opacity: 1; }
-[data-theme="dark"] .cifra-body .cifra-lyric { color: #94a3b8; }
+@media (max-width: 720px) {
+    #kbd-hint { display: none; }
+}
+
+/* Hide bar groups on very small screens */
+.bar-group-extra {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+    .bar-group-extra .pb-label-text { display: none; }
+}
 </style>
 
-<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
 
-<div id="tocar-sidebar">
-    <div class="sl-drawer-hd">{{ setlist.name }}</div>
+<!-- Setlist drawer -->
+<div id="play-drawer" aria-hidden="true">
+    <div class="drawer-hd">{{ setlist.name }}</div>
     {% for cifra in all_cifras %}
-    <div class="sl-drawer-item" data-idx="{{ loop.index0 }}" onclick="goTo({{ loop.index0 }}); closeSidebar()">
-        <span class="sl-drawer-num">{{ loop.index }}.</span>
+    <div class="dr-item" data-idx="{{ loop.index0 }}">
+        <span class="dr-num">{{ loop.index }}.</span>
         <span>
-            {{ cifra.titulo }}
-            <small class="d-block" style="font-size:0.68rem; color:var(--muted);">{{ cifra.artista }}</small>
+            <span class="dr-title">{{ cifra.titulo }}</span>
+            <small class="dr-artist">{{ cifra.artista }}</small>
         </span>
-        <span class="sl-drawer-key">{{ cifra.tom_original }}</span>
+        <span class="dr-key">{{ cifra.tom_original }}</span>
     </div>
     {% endfor %}
 </div>
 
-<div id="tocar-app">
-    <div id="tocar-bar">
-        <button class="btn btn-outline-secondary btn-sm" onclick="toggleSidebar()" title="Lista (L)">
+<div id="play-app">
+    <!-- Top bar -->
+    <div id="play-bar">
+        <button class="pb-btn" onclick="toggleDrawer()" title="Lista (L)" aria-label="Abrir lista">
             <i class="fas fa-list"></i>
         </button>
-        <div class="song-info">
-            <div class="song-title" id="bar-title">Carregando&#8230;</div>
-            <div class="song-meta" id="bar-meta"></div>
+        <button class="pb-btn" id="btn-prev" onclick="prevSong()" title="Anterior (←)" aria-label="Música anterior">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="pb-song">
+            <div class="pb-title" id="bar-title">—</div>
+            <div class="pb-meta" id="bar-meta"></div>
         </div>
-        <div class="font-ctrl">
-            <button onclick="changeFontSize(-1)" title="Diminuir (-)">&#8722;</button>
-            <span id="font-val">100%</span>
-            <button onclick="changeFontSize(1)" title="Aumentar (+)">+</button>
+        <button class="pb-btn" id="btn-next" onclick="nextSong()" title="Próxima (→)" aria-label="Próxima música">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+
+        <div class="bar-group-extra">
+            <select id="transpose-sel" class="transpose-mini" onchange="onTransposeChange(this.value)" title="Transpor">
+                {% for semitones, label in transpositions.items() %}
+                <option value="{{ semitones }}">{{ label }}{% if semitones > 0 %} (+{{ semitones }}){% elif semitones < 0 %} ({{ semitones }}){% endif %}</option>
+                {% endfor %}
+            </select>
+
+            <div class="font-ctrl" role="group" aria-label="Tamanho da fonte">
+                <button onclick="changeFontSize(-1)" title="Diminuir (-)" aria-label="Diminuir fonte">−</button>
+                <span id="font-val">100%</span>
+                <button onclick="changeFontSize(1)" title="Aumentar (+)" aria-label="Aumentar fonte">+</button>
+            </div>
+
+            <button class="pb-btn" id="cols-btn" onclick="toggleCols()" title="2 colunas (C)" aria-label="Alternar 2 colunas">
+                <i class="fas fa-columns"></i><span class="pb-label-text">&nbsp;2 col</span>
+            </button>
+            <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
+                <i class="fas fa-angle-double-down"></i><span class="pb-label-text">&nbsp;Scroll</span>
+            </button>
+            <button data-theme-toggle class="pb-btn" onclick="toggleTheme()" title="Tema (T)" aria-label="Alternar tema">
+                <i class="fas fa-sun"></i>
+            </button>
         </div>
-        <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm" title="Sair">
+
+        <a href="{{ exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id)) }}"
+           class="pb-btn pb-exit" title="Sair (Esc)" aria-label="Sair">
             <i class="fas fa-times"></i>
         </a>
     </div>
 
-    <div id="cifra-display">
-        <div class="cifra-body" id="cifra-content" style="font-size: 1rem;"></div>
+    <!-- Cifra display -->
+    <div id="cifra-wrap">
+        <div class="cifra-body" id="cifra-content"></div>
     </div>
 
-    <div id="tocar-nav">
-        <button class="btn btn-outline-secondary btn-sm" id="btn-prev" onclick="prevSong()" title="Anterior (&#8592;)">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <div class="nav-center">
-            <div class="prog-dots" id="prog-dots"></div>
-        </div>
-        <button class="btn btn-primary btn-sm" id="btn-next" onclick="nextSong()" title="Pr&#243;xima (&#8594;)">
-            <i class="fas fa-chevron-right"></i>
-        </button>
+    <!-- Bottom progress -->
+    <div id="play-foot">
+        <span class="prog-text" id="prog-text-l">1/{{ all_cifras|length }}</span>
+        <div class="prog-dots" id="prog-dots"></div>
+        <span class="prog-text" id="prog-text-r">{{ all_cifras|length }} músicas</span>
     </div>
 </div>
 
-<div id="kbd-hint">&#8592; &#8594; navegar &#183; L lista &#183; +/- fonte &#183; Esc sair</div>
+<!-- Auto-scroll badge -->
+<div id="scroll-badge" onclick="toggleScroll()">⏬ rolando — toque para pausar</div>
+
+<!-- Keyboard hint -->
+<div id="kbd-hint">← → navegar · L lista · +/− fonte · C 2col · Espaço scroll · T tema · Esc sair</div>
 
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
 (function () {
+    document.body.classList.add('play-mode');
+
     var CIFRAS = JSON.parse(document.getElementById('cifras-data').textContent);
-    var current = 0;
-    var fontSize = 100;
+    var START_IDX = {{ start_idx|default(0) }};
+    var EXIT_URL = {{ (exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id))) | tojson }};
+
+    var current = Math.max(0, Math.min(CIFRAS.length - 1, START_IDX));
+    var transposeByCifra = {};   // cifra_id -> semitones
+    var htmlCache = {};          // (cifra_id + ':' + semitones) -> html
+
+    // Pre-cache the original (semitones=0) html
+    CIFRAS.forEach(function (c) { htmlCache[c.id + ':0'] = c.html; });
+
+    // ── Settings (persist) ─────────────────
+    var fontStep = parseInt(sessionStorage.getItem('play.fontStep') || '0', 10);
+    var twoColActive = sessionStorage.getItem('play.twoCols') === '1';
+    var isScrolling = false, lastTs = null, scrollAcc = 0;
+    var SCROLL_SPEED = 0.03;
+
+    // ── Render ──────────────────────────────
+    function getCurrent() { return CIFRAS[current]; }
+
+    function getTranspose(id) {
+        return transposeByCifra[id] != null ? transposeByCifra[id] : 0;
+    }
+
+    function renderHtml(html) {
+        var el = document.getElementById('cifra-content');
+        el.innerHTML = html;
+        el.classList.remove('fading');
+    }
+
+    function fetchTransposed(id, semitones, cb) {
+        var key = id + ':' + semitones;
+        if (htmlCache[key]) { cb(htmlCache[key]); return; }
+        var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
+                    .replace('__ID__', encodeURIComponent(id))
+                    + '?semitones=' + semitones + '&html=1';
+        document.getElementById('cifra-content').classList.add('fading');
+        fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && data.html != null) {
+                    htmlCache[key] = data.html;
+                    cb(data.html);
+                } else {
+                    cb(htmlCache[id + ':0'] || '');
+                }
+            })
+            .catch(function () { cb(htmlCache[id + ':0'] || ''); });
+    }
+
+    function render() {
+        var c = getCurrent();
+        if (!c) return;
+
+        stopScroll(); // sempre para auto-scroll ao trocar
+        var wrap = document.getElementById('cifra-wrap');
+        wrap.scrollTop = 0;
+        window.scrollTo(0, 0);
+
+        var t = getTranspose(c.id);
+        document.getElementById('bar-title').textContent = c.titulo;
+        var tomLabel = 'Tom ' + c.tom;
+        if (t > 0) tomLabel += ' (+' + t + 'st)';
+        else if (t < 0) tomLabel += ' (' + t + 'st)';
+        document.getElementById('bar-meta').textContent =
+            c.artista + ' · ' + tomLabel + ' · ' + (current + 1) + '/' + CIFRAS.length;
+
+        document.getElementById('btn-prev').disabled = (current === 0);
+        document.getElementById('btn-next').disabled = (current === CIFRAS.length - 1);
+        document.getElementById('prog-text-l').textContent = (current + 1) + '/' + CIFRAS.length;
+
+        document.querySelectorAll('.prog-dot').forEach(function (dot, i) {
+            dot.classList.toggle('active', i === current);
+        });
+        document.querySelectorAll('.dr-item').forEach(function (item, i) {
+            item.classList.toggle('active', i === current);
+        });
+
+        // transpose select
+        var sel = document.getElementById('transpose-sel');
+        if (sel) sel.value = String(t);
+
+        // load html (cached or fetch)
+        fetchTransposed(c.id, t, renderHtml);
+    }
 
     function goTo(idx) {
         if (idx < 0 || idx >= CIFRAS.length) return;
         current = idx;
         render();
     }
-    window.goTo = goTo;
-    window.prevSong = function () { goTo(current - 1); };
-    window.nextSong = function () { goTo(current + 1); };
 
-    function render() {
-        var c = CIFRAS[current];
+    function prevSong() { goTo(current - 1); }
+    function nextSong() { goTo(current + 1); }
+
+    // ── Transpose ───────────────────────────
+    function onTransposeChange(value) {
+        var c = getCurrent();
         if (!c) return;
-        document.getElementById('cifra-display').scrollTop = 0;
-        document.getElementById('cifra-content').innerHTML = c.html;
-        document.getElementById('bar-title').textContent = c.titulo;
-        document.getElementById('bar-meta').textContent =
-            c.artista + ' \u00b7 Tom: ' + c.tom + ' \u00b7 ' + (current + 1) + '/' + CIFRAS.length;
-        document.getElementById('btn-prev').disabled = (current === 0);
-        document.getElementById('btn-next').disabled = (current === CIFRAS.length - 1);
-        document.querySelectorAll('.prog-dot').forEach(function (dot, i) {
-            dot.classList.toggle('active', i === current);
-        });
-        var progText = document.getElementById('prog-text');
-        if (progText) progText.textContent = (current + 1) + ' / ' + CIFRAS.length;
-        document.querySelectorAll('.sl-drawer-item').forEach(function (item, i) {
-            item.classList.toggle('active', i === current);
-        });
+        var semi = parseInt(value, 10) || 0;
+        transposeByCifra[c.id] = semi;
+        render();
     }
 
+    // ── Font size ───────────────────────────
+    function applyFont() {
+        var rem = (1.05 + fontStep * 0.1).toFixed(2);
+        document.documentElement.style.setProperty('--play-font', rem + 'rem');
+        document.getElementById('font-val').textContent =
+            Math.round((parseFloat(rem) / 1.05) * 100) + '%';
+    }
+    function changeFontSize(d) {
+        fontStep = Math.max(-3, Math.min(8, fontStep + d));
+        sessionStorage.setItem('play.fontStep', fontStep);
+        applyFont();
+    }
+
+    // ── Two-col ─────────────────────────────
+    function applyTwoCols() {
+        var el = document.getElementById('cifra-content');
+        var btn = document.getElementById('cols-btn');
+        if (twoColActive) {
+            el.classList.add('two-col');
+            btn.classList.add('pb-on');
+        } else {
+            el.classList.remove('two-col');
+            btn.classList.remove('pb-on');
+        }
+    }
+    function toggleCols() {
+        twoColActive = !twoColActive;
+        sessionStorage.setItem('play.twoCols', twoColActive ? '1' : '0');
+        applyTwoCols();
+        if (twoColActive && isScrolling) stopScroll();
+    }
+
+    // ── Auto-scroll ─────────────────────────
+    function scrollFrame(ts) {
+        if (!isScrolling) return;
+        if (!lastTs) lastTs = ts;
+        scrollAcc += (ts - lastTs) * SCROLL_SPEED;
+        lastTs = ts;
+        var px = Math.floor(scrollAcc);
+        if (px > 0) {
+            var wrap = document.getElementById('cifra-wrap');
+            wrap.scrollTop += px;
+            if (wrap.scrollTop >= wrap.scrollHeight - wrap.clientHeight - 4) {
+                stopScroll(); return;
+            }
+            scrollAcc -= px;
+        }
+        requestAnimationFrame(scrollFrame);
+    }
+    function startScroll() {
+        if (isScrolling) return;
+        isScrolling = true; lastTs = null; scrollAcc = 0;
+        document.getElementById('scroll-btn').classList.add('pb-on');
+        document.getElementById('scroll-badge').style.display = 'block';
+        requestAnimationFrame(scrollFrame);
+    }
+    function stopScroll() {
+        isScrolling = false; lastTs = null;
+        document.getElementById('scroll-btn').classList.remove('pb-on');
+        document.getElementById('scroll-badge').style.display = 'none';
+    }
+    function toggleScroll() { if (isScrolling) stopScroll(); else startScroll(); }
+
+    // ── Drawer ──────────────────────────────
+    function toggleDrawer() {
+        var open = document.getElementById('play-drawer').classList.toggle('open');
+        document.getElementById('drawer-overlay').classList.toggle('open', open);
+        document.getElementById('play-drawer').setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+    function closeDrawer() {
+        document.getElementById('play-drawer').classList.remove('open');
+        document.getElementById('drawer-overlay').classList.remove('open');
+        document.getElementById('play-drawer').setAttribute('aria-hidden', 'true');
+    }
+
+    // ── Build dots & drawer click handlers ──
     function buildDots() {
         var container = document.getElementById('prog-dots');
         container.innerHTML = '';
-        if (CIFRAS.length <= 15) {
+        if (CIFRAS.length <= 20) {
             CIFRAS.forEach(function (_, i) {
                 var dot = document.createElement('div');
-                dot.className = 'prog-dot' + (i === 0 ? ' active' : '');
+                dot.className = 'prog-dot' + (i === current ? ' active' : '');
                 dot.title = CIFRAS[i].titulo;
-                (function (idx) {
-                    dot.addEventListener('click', function () { goTo(idx); });
-                })(i);
+                dot.addEventListener('click', function () { goTo(i); });
                 container.appendChild(dot);
             });
         } else {
             var span = document.createElement('span');
-            span.id = 'prog-text';
-            span.style.cssText = 'font-size:0.8rem; color:var(--muted);';
-            span.textContent = '1 / ' + CIFRAS.length;
+            span.className = 'prog-text';
+            span.id = 'prog-text-center';
+            span.textContent = (current + 1) + ' de ' + CIFRAS.length;
             container.appendChild(span);
         }
     }
 
-    window.changeFontSize = function (delta) {
-        fontSize = Math.max(60, Math.min(200, fontSize + delta * 10));
-        document.getElementById('cifra-content').style.fontSize = (fontSize / 100) + 'rem';
-        document.getElementById('font-val').textContent = fontSize + '%';
-    };
+    document.querySelectorAll('.dr-item').forEach(function (item, i) {
+        item.addEventListener('click', function () {
+            goTo(i);
+            closeDrawer();
+        });
+    });
 
-    window.toggleSidebar = function () {
-        document.getElementById('tocar-sidebar').classList.toggle('open');
-        document.getElementById('sidebar-overlay').classList.toggle('show');
-    };
-    window.closeSidebar = function () {
-        document.getElementById('tocar-sidebar').classList.remove('open');
-        document.getElementById('sidebar-overlay').classList.remove('show');
-    };
-
+    // ── Keyboard ────────────────────────────
     document.addEventListener('keydown', function (e) {
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        var tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         switch (e.key) {
-            case 'ArrowLeft':  e.preventDefault(); window.prevSong(); break;
-            case 'ArrowRight': e.preventDefault(); window.nextSong(); break;
-            case 'l': case 'L': window.toggleSidebar(); break;
-            case '+': case '=': window.changeFontSize(1); break;
-            case '-': case '_': window.changeFontSize(-1); break;
+            case 'ArrowLeft':  e.preventDefault(); prevSong(); break;
+            case 'ArrowRight': e.preventDefault(); nextSong(); break;
+            case 'l': case 'L': toggleDrawer(); break;
+            case '+': case '=': changeFontSize(1); break;
+            case '-': case '_': changeFontSize(-1); break;
+            case 'c': case 'C': toggleCols(); break;
+            case 't': case 'T': toggleTheme(); break;
+            case ' ': e.preventDefault(); toggleScroll(); break;
             case 'Escape':
-                if (document.getElementById('tocar-sidebar').classList.contains('open')) {
-                    window.closeSidebar();
+                if (document.getElementById('play-drawer').classList.contains('open')) {
+                    closeDrawer();
                 } else {
-                    window.location.href = {{ url_for('setlists.view', setlist_id=setlist.id) | tojson }};
+                    window.location.href = EXIT_URL;
                 }
                 break;
         }
     });
 
-    var touchStartX = 0;
-    var display = document.getElementById('cifra-display');
-    display.addEventListener('touchstart', function (e) {
-        touchStartX = e.touches[0].clientX;
-    }, { passive: true });
-    display.addEventListener('touchend', function (e) {
-        var dx = e.changedTouches[0].clientX - touchStartX;
-        if (Math.abs(dx) > 50) { dx < 0 ? window.nextSong() : window.prevSong(); }
-    }, { passive: true });
+    // ── Touch / swipe ───────────────────────
+    (function () {
+        var SWIPE_THRESHOLD = 60;
+        var SWIPE_MAX_VERT = 80;
+        var tx = 0, ty = 0, moved = false;
+        var wrap = document.getElementById('cifra-wrap');
+
+        wrap.addEventListener('touchstart', function (e) {
+            if (e.touches.length !== 1) return;
+            tx = e.touches[0].clientX;
+            ty = e.touches[0].clientY;
+            moved = false;
+        }, { passive: true });
+
+        wrap.addEventListener('touchmove', function () { moved = true; }, { passive: true });
+
+        wrap.addEventListener('touchend', function (e) {
+            if (!moved) return;
+            var dx = e.changedTouches[0].clientX - tx;
+            var dy = e.changedTouches[0].clientY - ty;
+            if (Math.abs(dy) > SWIPE_MAX_VERT) return;
+            if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+            if (dx < 0) nextSong(); else prevSong();
+        }, { passive: true });
+    })();
+
+    // ── Expose ──────────────────────────────
+    window.prevSong = prevSong;
+    window.nextSong = nextSong;
+    window.goTo = goTo;
+    window.changeFontSize = changeFontSize;
+    window.toggleCols = toggleCols;
+    window.toggleScroll = toggleScroll;
+    window.toggleDrawer = toggleDrawer;
+    window.closeDrawer = closeDrawer;
+    window.onTransposeChange = onTransposeChange;
+
+    // ── Init ────────────────────────────────
+    applyFont();
+    applyTwoCols();
+    buildDots();
+    render();
 
     var hint = document.getElementById('kbd-hint');
     hint.classList.add('show');
-    setTimeout(function () { hint.classList.remove('show'); }, 3500);
+    setTimeout(function () { hint.classList.remove('show'); }, 3800);
 
-    buildDots();
-    render();
+    // Avoid leftover play-mode class if user navigates back via browser button
+    window.addEventListener('pagehide', function () {
+        document.body.classList.remove('play-mode');
+    });
 })();
 </script>
 {% endblock %}

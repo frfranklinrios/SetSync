@@ -3,80 +3,132 @@
 {% block title %}Bandas - SetSync{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+.band-tile {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.15rem;
+    background: #fff;
+    transition: border-color 0.12s, transform 0.12s;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
+}
+.band-tile:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+.band-tile .stretched-link {
+    position: absolute; inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+}
+.band-tile .tile-settings,
+.band-tile h6,
+.band-tile p,
+.band-tile .band-meta { position: relative; z-index: 2; pointer-events: none; }
+.band-tile .tile-settings { pointer-events: auto; }
+.band-tile h6 a { pointer-events: none; }
+[data-theme="dark"] .band-tile { background: #0b1422; }
+
+.band-tile h6 { font-weight: 700; margin: 0 0 0.15rem; font-size: 1.02rem; color: var(--text); }
+.band-desc { font-size: 0.82rem; color: var(--muted); margin: 0 0 0.7rem; min-height: 1.2em; }
+.band-meta { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.tile-badge {
+    font-size: 0.7rem; color: var(--muted);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 999px; padding: 0.18rem 0.55rem;
+    display: inline-flex; align-items: center; gap: 4px;
+}
+[data-theme="dark"] .tile-badge { background: #0f172a; }
+.tile-badge.role-admin { color: var(--accent); border-color: rgba(42,181,160,0.3); background: rgba(42,181,160,0.08); }
+
+.tile-settings {
+    position: absolute; top: 0.7rem; right: 0.7rem;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition: all 0.12s;
+}
+.tile-settings:hover { border-color: var(--accent); color: var(--accent); }
+
+.section-title {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px;
+    font-weight: 700; color: var(--muted); margin: 1.5rem 0 0.6rem;
+}
+.section-title:first-child { margin-top: 0; }
+
+.empty {
+    text-align: center; padding: 3rem 1rem; color: var(--muted);
+    border: 1px dashed var(--border); border-radius: 10px;
+}
+.empty i { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+</style>
+
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
     <div>
-        <h2 class="mb-0">Minhas Bandas</h2>
-        <p class="text-muted mb-0" style="font-size:0.875rem;">Gerencie suas bandas e setlists</p>
+        <h2 class="mb-0" style="font-size:1.4rem;">Bandas</h2>
+        <p class="text-muted mb-0" style="font-size:0.875rem;">Gerencie suas bandas, cifras e setlists</p>
     </div>
-    <a href="{{ url_for('bands.create') }}" class="btn btn-primary">
+    <a href="{{ url_for('bands.create') }}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i> Nova Banda
     </a>
 </div>
 
+{% set extra = member_of|selectattr('owner_id','ne',current_user.id)|list %}
+
 {% if owned %}
-    <p class="text-muted mb-2" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Bandas Administradas</p>
-    <div class="row g-3 mb-4">
-        {% for band in owned %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="fw-bold mb-0">{{ band.name }}</h6>
-                        <span class="badge bg-light text-muted border">Admin</span>
-                    </div>
-                    <p class="text-muted mb-3" style="font-size:0.82rem;">{{ band.description or '—' }}</p>
-                    <div class="d-flex gap-2 mb-3">
-                        <span class="badge bg-light text-muted border"><i class="fas fa-users me-1"></i>{{ band.members|length }}</span>
-                        <span class="badge bg-light text-muted border"><i class="fas fa-music me-1"></i>{{ band.cifras|length }}</span>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-primary btn-sm">Ver</a>
-                        <a href="{{ url_for('cifras.list_by_band', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">Cifras</a>
-                        <a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">Setlists</a>
-                        <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-cog"></i></a>
-                    </div>
-                </div>
+<p class="section-title">Administradas</p>
+<div class="row g-3 mb-3">
+    {% for band in owned %}
+    <div class="col-md-6 col-lg-4">
+        <div class="band-tile">
+            <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
+            <h6>{{ band.name }}</h6>
+            <p class="band-desc">{{ band.description or '—' }}</p>
+            <div class="band-meta">
+                <span class="tile-badge role-admin">Admin</span>
+                <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
+                <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
+            </div>
+            <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="tile-settings"
+               title="Configurações"><i class="fas fa-cog"></i></a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if extra %}
+<p class="section-title">Participo</p>
+<div class="row g-3 mb-3">
+    {% for band in extra %}
+    <div class="col-md-6 col-lg-4">
+        <div class="band-tile">
+            <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
+            <h6>{{ band.name }}</h6>
+            <p class="band-desc">{{ band.description or '—' }}</p>
+            <div class="band-meta">
+                <span class="tile-badge">Membro</span>
+                <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
+                <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
             </div>
         </div>
-        {% endfor %}
     </div>
+    {% endfor %}
+</div>
 {% endif %}
 
-{% if member_of %}
-    <p class="text-muted mb-2" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Bandas que Participo</p>
-    <div class="row g-3">
-        {% for band in member_of %}
-            {% if band.owner_id != current_user.id %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="fw-bold mb-0">{{ band.name }}</h6>
-                            <span class="badge bg-light text-muted border">Membro</span>
-                        </div>
-                        <p class="text-muted mb-3" style="font-size:0.82rem;">{{ band.description or '—' }}</p>
-                        <div class="d-flex gap-2 mb-3">
-                            <span class="badge bg-light text-muted border"><i class="fas fa-users me-1"></i>{{ band.members|length }}</span>
-                            <span class="badge bg-light text-muted border"><i class="fas fa-music me-1"></i>{{ band.cifras|length }}</span>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-primary btn-sm">Ver</a>
-                            <a href="{{ url_for('cifras.list_by_band', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">Cifras</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-{% endif %}
-
-{% if not owned and not member_of %}
-<div class="text-center py-5">
-    <i class="fas fa-guitar fa-3x text-muted mb-3"></i>
-    <h5 class="text-muted">Nenhuma banda ainda</h5>
-    <p class="text-muted mb-4" style="font-size:0.875rem;">Crie sua primeira banda para começar a organizar cifras e setlists.</p>
-    <a href="{{ url_for('bands.create') }}" class="btn btn-primary">
+{% if not owned and not extra %}
+<div class="empty">
+    <i class="fas fa-guitar"></i>
+    <p class="mb-3" style="font-size:0.95rem;">Nenhuma banda ainda.</p>
+    <a href="{{ url_for('bands.create') }}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i> Criar Primeira Banda
     </a>
 </div>
