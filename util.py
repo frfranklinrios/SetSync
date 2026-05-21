@@ -3,23 +3,74 @@ from pychord import Chord
 import re
 import html as html_lib
 
+def _normalize_chord_for_pychord(chord_str):
+    """Converte notação brasileira para algo que o pychord entenda.
+
+    Conversões:
+      - º / °  →  dim
+      - X7+    →  Xmaj7  (notação BR comum: "+" após 7 significa maj7)
+      - 7M / M7 já são aceitos pelo pychord
+      - "+" / "-" remanescentes são removidos (pychord não os entende)
+    """
+    s = re.sub(r'[°º]', 'dim', chord_str)
+    # Captura base (com m opcional) + dígito + '+' → base + 'maj' + dígito
+    # Ex.: "C7+" → "Cmaj7";  "Cm7+" → "Cmmaj7" (pychord não suporta, fallback abaixo)
+    s = re.sub(
+        r'^([A-G][#b]?)(\d{1,2})\+',
+        r'\1maj\2',
+        s
+    )
+    # Remove +/- restantes que o pychord não entende (ex.: "B7-")
+    s = re.sub(r'[+\-](?=[\d]|$|/)', '', s)
+    return s
+
+
 def pychord_transpose_chord(chord_str, semitones):
     """Transpõe um acorde usando pychord (mais robusto para acordes complexos)."""
+    normalized = _normalize_chord_for_pychord(chord_str)
     try:
-        chord = Chord(chord_str)
+        chord = Chord(normalized)
         chord.transpose(semitones)
-        return chord.symbol
+        new_str = str(chord)
+        # Preserva a notação "+" original se existia
+        if chord_str.endswith('+') and not new_str.endswith('+'):
+            # Re-aplica o "+" se a entrada original usava (mantém estilo BR)
+            new_str = re.sub(r'maj(\d+)$', r'\1+', new_str)
+        return new_str
     except Exception:
         return chord_str
 
-def _normalize_chord_for_pychord(chord_str):
-    """Converte notação com º/° para dim, que o pychord entende."""
-    return re.sub(r'[°º]', 'dim', chord_str)
+
+# Componentes que podem aparecer em qualquer ordem após a nota base de um acorde:
+#   - qualidade: maj7, maj, min, m7b5, m7, m, M7, M, dim7, dim, aug, sus2, sus4, sus, add9, add
+#   - número/extensão: 7, 9, 11, 13, 6, 5, 4, 2
+#   - alteração brasileira: + (= maj), - (= menor/dim em algumas notações), ° / º (dim)
+#   - tensões alteradas: b5, #5, b9, #9, #11, b13, etc.
+_CHORD_PART = (
+    r'(?:maj7|maj|min|m7b5|m7|M7|m|M|dim7|dim|aug|sus2|sus4|sus|add9|add'
+    r'|7|9|11|13|6|5|4|2'
+    r'|[+\-°º]'
+    r'|[b#]\d{1,2})'
+)
+_CHORD_HEAD = r'[A-G][#b]?'
+_CHORD_BASS = r'(?:/[A-G][#b]?)?'
+
+# Para uso em match exato (token completo)
+CHORD_TOKEN_RE = re.compile(
+    r'^' + _CHORD_HEAD + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r'$'
+)
+# Para uso em substituição inline dentro de uma linha
+CHORD_INLINE_RE = re.compile(
+    r'(' + _CHORD_HEAD + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')'
+)
+# Versão com word boundary para uso em texto livre
+_CHORD_REGEX_WB = (
+    r'\b(' + _CHORD_HEAD + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')\b'
+)
 
 
 def pychord_highlight_chords(text):
     """Destaca acordes usando pychord para validação. Suporta º/° como diminuto."""
-    chord_regex = r'\b([A-G][#b]?(?:maj7|maj|min|sus2|sus4|sus|dim7|dim|aug|add9|add|m7b5|m7|m|7|9|11|13|6|5|4|2|[°º])*(?:/[A-G][#b]?)?)\b'
     not_recognized = set()
 
     def highlight(match):
@@ -32,21 +83,17 @@ def pychord_highlight_chords(text):
             not_recognized.add(chord_str)
             return chord_str
 
-    result = re.sub(chord_regex, highlight, text)
+    result = re.sub(_CHORD_REGEX_WB, highlight, text)
     if not_recognized:
         print("Acordes não reconhecidos pelo pychord:", not_recognized)
     return result
 
 def pychord_transpose_text(text, semitones):
     """Transpõe todos os acordes de um texto usando pychord. Suporta º/° como diminuto."""
-    chord_regex = r'\b([A-G][#b]?(?:maj7|maj|min|sus2|sus4|sus|dim7|dim|aug|add9|add|m7b5|m7|m|7|9|11|13|6|5|4|2|[°º])*(?:/[A-G][#b]?)?)\b'
-
     def transp(match):
-        chord_str = match.group(1)
-        normalized = _normalize_chord_for_pychord(chord_str)
-        return pychord_transpose_chord(normalized, semitones)
+        return pychord_transpose_chord(match.group(1), semitones)
 
-    return re.sub(chord_regex, transp, text)
+    return re.sub(_CHORD_REGEX_WB, transp, text)
 
 
 # Notas em ordem cromática
@@ -61,17 +108,6 @@ NOTE_ALIASES = {
     'D♭': 'Db', 'E♭': 'Eb', 'F♭': 'E', 'G♭': 'Gb',
     'A♭': 'Ab', 'B♭': 'Bb', 'C♭': 'B',
 }
-
-# Regex de acorde completo (base + modificadores + baixo opcional)
-# Inclui º e ° como símbolos de diminuto
-_CHORD_MOD = r'(?:maj7|maj|min|m7b5|m7|m|dim7|dim|aug|sus2|sus4|sus|add9|add|7|9|11|13|6|5|4|2|[°º])?'
-_CHORD_BASS = r'(?:/[A-G][#b]?)?'
-CHORD_INLINE_RE = re.compile(
-    r'([A-G][#b]?' + _CHORD_MOD + _CHORD_BASS + r')'
-)
-CHORD_TOKEN_RE = re.compile(
-    r'^[A-G][#b]?' + _CHORD_MOD + _CHORD_BASS + r'$'
-)
 
 def normalize_note(note):
     """Normaliza notação de notas (ex: Db, ♭, ♯)"""
