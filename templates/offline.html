@@ -1,0 +1,26 @@
+{% extends "index.html" %}
+{% block title %}Offline — SetSync{% endblock %}
+{% block content %}
+<style>
+.offline-box {
+    max-width: 520px;
+    margin: 4rem auto;
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    color: var(--muted);
+}
+.offline-box i { font-size: 2.4rem; color: var(--accent); margin-bottom: 1rem; }
+.offline-box h2 { color: var(--text); font-size: 1.3rem; margin-bottom: 0.5rem; }
+.offline-box p { font-size: 0.9rem; margin: 0 0 1.25rem; }
+</style>
+<div class="offline-box">
+    <i class="fas fa-wifi" style="opacity:0.4;"></i>
+    <h2>Sem conexão</h2>
+    <p>Você está offline. As páginas e cifras que você já visitou continuam disponíveis &mdash; novas funções precisam de internet.</p>
+    <button class="btn btn-primary btn-sm" onclick="location.reload()">
+        <i class="fas fa-redo me-1"></i> Tentar novamente
+    </button>
+</div>
+{% endblock %}

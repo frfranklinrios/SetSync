@@ -1,5 +1,5 @@
 
-from flask import Flask, render_template, redirect, url_for, session
+from flask import Flask, render_template, redirect, url_for, session, send_from_directory, make_response
 from config import config
 from blueprints.auth import auth_bp, login_required
 from blueprints.bands import bands_bp
@@ -46,6 +46,29 @@ def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
     return redirect(url_for('auth.login'))
+
+
+# ── PWA ─────────────────────────────────────────────────────────
+@app.route('/sw.js')
+def service_worker():
+    """Service worker must be served from root to claim full scope."""
+    resp = make_response(send_from_directory(app.static_folder, 'sw.js'))
+    resp.headers['Content-Type'] = 'application/javascript'
+    resp.headers['Cache-Control'] = 'no-cache'
+    resp.headers['Service-Worker-Allowed'] = '/'
+    return resp
+
+
+@app.route('/manifest.webmanifest')
+def manifest():
+    resp = make_response(send_from_directory(app.static_folder, 'manifest.webmanifest'))
+    resp.headers['Content-Type'] = 'application/manifest+json'
+    return resp
+
+
+@app.route('/offline')
+def offline():
+    return render_template('offline.html')
 
 @app.route('/dashboard')
 @login_required

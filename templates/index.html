@@ -3,8 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <script>(function(){var t=localStorage.getItem('setsync-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}SetSync{% endblock %}</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="{{ url_for('manifest') }}">
+    <meta name="theme-color" content="#2ab5a0">
+    <meta name="application-name" content="SetSync">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SetSync">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -267,6 +279,26 @@
             padding: 0;
         }
         .theme-btn:hover { border-color: var(--muted); color: var(--text); }
+
+        /* PWA install button */
+        #install-btn {
+            display: none;
+            background: rgba(42,181,160,0.1);
+            border: 1px solid rgba(42,181,160,0.4);
+            color: var(--accent);
+            border-radius: 7px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.32rem 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            align-items: center;
+            gap: 5px;
+        }
+        #install-btn.show { display: inline-flex; }
+        #install-btn:hover { background: rgba(42,181,160,0.2); }
+        [data-theme="dark"] #install-btn { background: rgba(45,212,191,0.08); border-color: rgba(45,212,191,0.35); color: #2dd4bf; }
+        [data-theme="dark"] #install-btn:hover { background: rgba(45,212,191,0.18); }
     </style>
 </head>
 <body>
@@ -303,6 +335,11 @@
                             <a class="btn btn-primary btn-sm ms-2" href="{{ url_for('auth.register') }}">Registrar</a>
                         </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <button id="install-btn" onclick="installPWA()" title="Instalar app">
+                            <i class="fas fa-download"></i><span class="d-none d-md-inline">&nbsp;Instalar</span>
+                        </button>
+                    </li>
                     <li class="nav-item">
                         <button id="theme-toggle" data-theme-toggle class="theme-btn" onclick="toggleTheme()" title="Alternar tema (dark/light)"><i class="fas fa-sun"></i></button>
                     </li>
@@ -351,6 +388,42 @@
     document.addEventListener('DOMContentLoaded', function() {
         _syncThemeIcons(document.documentElement.getAttribute('data-theme') === 'dark');
     });
+
+    /* ── PWA: service worker + install prompt ─────── */
+    (function () {
+        // Register the service worker (only over HTTPS or localhost)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function (err) {
+                    console.warn('SW registration failed:', err);
+                });
+            });
+        }
+
+        // Install prompt handling
+        var deferredPrompt = null;
+        var btn = document.getElementById('install-btn');
+
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (btn) btn.classList.add('show');
+        });
+
+        window.installPWA = function () {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function () {
+                deferredPrompt = null;
+                if (btn) btn.classList.remove('show');
+            });
+        };
+
+        window.addEventListener('appinstalled', function () {
+            deferredPrompt = null;
+            if (btn) btn.classList.remove('show');
+        });
+    })();
     </script>
     {% block scripts %}{% endblock %}
 </body>

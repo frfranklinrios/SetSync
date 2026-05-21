@@ -168,6 +168,7 @@ body { overflow-x: hidden; }
 #cifra-wrap {
     flex: 1;
     overflow-y: auto;
+    overflow-x: auto;       /* fallback se a auto-fit não couber */
     background: #0f172a;
     position: relative;
 }
@@ -178,10 +179,10 @@ body { overflow-x: hidden; }
     line-height: 1.95;
     color: #e2e8f0;
     padding: 2rem 4vw;
-    white-space: pre-wrap;
-    word-break: break-word;
+    white-space: pre;        /* preserva alinhamento acorde↔letra */
+    word-break: normal;
     font-size: var(--play-font, 1.05rem);
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, font-size 0.15s;
 }
 [data-theme="light"] .cifra-body { color: #1e293b; }
 
@@ -206,11 +207,13 @@ body { overflow-x: hidden; }
 }
 [data-theme="light"] .cifra-body .cifra-lyric { color: #475569; }
 
-/* Two-col mode */
+/* Two-col mode: precisa permitir wrap pois cada coluna é mais estreita */
 .cifra-body.two-col {
     column-count: 2;
     column-gap: 2.5rem;
     column-rule: 1px solid rgba(45,212,191,0.15);
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 [data-theme="light"] .cifra-body.two-col {
     column-rule-color: rgba(42,181,160,0.2);
@@ -417,6 +420,149 @@ body { overflow-x: hidden; }
 @media (max-width: 640px) {
     .bar-group-extra .pb-label-text { display: none; }
 }
+
+/* ── TABLET / SHOW OPTIMIZATIONS ─────────── */
+@media (min-width: 768px) {
+    .cifra-body {
+        padding: 2.25rem 5vw;
+        line-height: 2.1;
+        font-size: var(--play-font, 1.18rem);
+    }
+    .pb-btn {
+        padding: 0.5rem 0.9rem;
+        font-size: 0.88rem;
+        min-height: 40px;
+    }
+    .font-ctrl button {
+        width: 36px; height: 36px;
+        font-size: 1.15rem;
+    }
+    .transpose-mini {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.7rem;
+        min-height: 40px;
+    }
+    .prog-dot { width: 10px; height: 10px; }
+    #play-bar { padding: 0.7rem 1.25rem; gap: 0.65rem; }
+    #play-foot { padding: 0.65rem 1.25rem; }
+    .dr-item { padding: 0.9rem 1.1rem; font-size: 0.95rem; }
+    .dr-num { font-size: 0.78rem; }
+    .dr-key { font-size: 0.8rem; }
+}
+@media (min-width: 1024px) {
+    .cifra-body { font-size: var(--play-font, 1.28rem); line-height: 2.15; padding: 2.5rem 6vw; }
+}
+
+/* ── AUTO-HIDE CHROME (mais cifra na tela) ── */
+#play-bar, #play-foot {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+body.play-mode.chrome-hidden #play-bar {
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+}
+body.play-mode.chrome-hidden #play-foot {
+    opacity: 0;
+    transform: translateY(100%);
+    pointer-events: none;
+}
+
+/* ── EDGE TAP ZONES (navegação por toque) ── */
+.tap-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 13%;
+    max-width: 110px;
+    min-width: 55px;
+    z-index: 30;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.18s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(45,212,191,0);
+    font-size: 1.6rem;
+    pointer-events: auto;
+    user-select: none;
+}
+.tap-zone.left { left: 0; }
+.tap-zone.right { right: 0; }
+.tap-zone:active,
+.tap-zone.flash {
+    background: rgba(45,212,191,0.08);
+    color: rgba(45,212,191,0.7);
+}
+[data-theme="light"] .tap-zone:active,
+[data-theme="light"] .tap-zone.flash {
+    background: rgba(42,181,160,0.1);
+    color: rgba(42,181,160,0.7);
+}
+@media (min-width: 768px) {
+    .tap-zone { width: 11%; max-width: 130px; }
+}
+.tap-zone[aria-disabled="true"] {
+    pointer-events: none;
+    opacity: 0;
+}
+/* show edge hints briefly on load */
+body.play-mode.edges-hint .tap-zone {
+    color: rgba(45,212,191,0.5);
+    background: rgba(45,212,191,0.04);
+}
+
+/* ── SCROLL SPEED PILL ───────────────────── */
+#speed-pill {
+    display: none;
+    position: fixed;
+    bottom: 4.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(45,212,191,0.35);
+    border-radius: 999px;
+    padding: 0.35rem 0.55rem;
+    z-index: 1100;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    color: #2dd4bf;
+    user-select: none;
+}
+#speed-pill.show { display: inline-flex; }
+#speed-pill button {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(45,212,191,0.18);
+    color: #2dd4bf;
+    font-size: 0.95rem;
+    font-family: inherit;
+    line-height: 1;
+    cursor: pointer;
+}
+#speed-pill button:hover { background: rgba(45,212,191,0.32); }
+#speed-pill .label {
+    min-width: 3.2rem;
+    text-align: center;
+    font-weight: 600;
+}
+[data-theme="light"] #speed-pill {
+    background: rgba(255,255,255,0.95);
+    color: var(--accent-dark);
+    border-color: rgba(42,181,160,0.45);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+[data-theme="light"] #speed-pill button {
+    background: rgba(42,181,160,0.15);
+    color: var(--accent-dark);
+}
+@media (min-width: 768px) {
+    #speed-pill { bottom: 4.6rem; padding: 0.4rem 0.65rem; font-size: 0.85rem; }
+    #speed-pill button { width: 34px; height: 34px; font-size: 1.05rem; }
+}
 </style>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -466,11 +612,17 @@ body { overflow-x: hidden; }
                 <button onclick="changeFontSize(1)" title="Aumentar (+)" aria-label="Aumentar fonte">+</button>
             </div>
 
+            <button class="pb-btn" id="fit-btn" onclick="toggleFit()" title="Caber na tela (A)" aria-label="Auto-ajustar fonte">
+                <i class="fas fa-compress-arrows-alt"></i><span class="pb-label-text">&nbsp;Caber</span>
+            </button>
             <button class="pb-btn" id="cols-btn" onclick="toggleCols()" title="2 colunas (C)" aria-label="Alternar 2 colunas">
                 <i class="fas fa-columns"></i><span class="pb-label-text">&nbsp;2 col</span>
             </button>
             <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
                 <i class="fas fa-angle-double-down"></i><span class="pb-label-text">&nbsp;Scroll</span>
+            </button>
+            <button class="pb-btn" id="fs-btn" onclick="toggleFullscreen()" title="Tela cheia (F)" aria-label="Tela cheia">
+                <i class="fas fa-expand"></i>
             </button>
             <button data-theme-toggle class="pb-btn" onclick="toggleTheme()" title="Tema (T)" aria-label="Alternar tema">
                 <i class="fas fa-sun"></i>
@@ -485,6 +637,12 @@ body { overflow-x: hidden; }
 
     <!-- Cifra display -->
     <div id="cifra-wrap">
+        <div class="tap-zone left" id="tap-prev" onclick="prevSong()" aria-label="Música anterior">
+            <i class="fas fa-chevron-left"></i>
+        </div>
+        <div class="tap-zone right" id="tap-next" onclick="nextSong()" aria-label="Próxima música">
+            <i class="fas fa-chevron-right"></i>
+        </div>
         <div class="cifra-body" id="cifra-content"></div>
     </div>
 
@@ -496,11 +654,18 @@ body { overflow-x: hidden; }
     </div>
 </div>
 
+<!-- Auto-scroll speed pill (visible only while scrolling) -->
+<div id="speed-pill" aria-label="Velocidade do auto-scroll">
+    <button type="button" onclick="adjustSpeed(-1)" title="Mais lento" aria-label="Diminuir velocidade">−</button>
+    <span class="label" id="speed-label">Médio</span>
+    <button type="button" onclick="adjustSpeed(1)" title="Mais rápido" aria-label="Aumentar velocidade">+</button>
+</div>
+
 <!-- Auto-scroll badge -->
 <div id="scroll-badge" onclick="toggleScroll()">⏬ rolando — toque para pausar</div>
 
 <!-- Keyboard hint -->
-<div id="kbd-hint">← → navegar · L lista · +/− fonte · C 2col · Espaço scroll · T tema · Esc sair</div>
+<div id="kbd-hint">← → ou bordas: navegar · L lista · +/− fonte · A caber · C 2col · Espaço scroll · F tela cheia · Esc sair</div>
 
 <script id="cifras-data" type="application/json">
 [{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
@@ -525,7 +690,16 @@ body { overflow-x: hidden; }
     var fontStep = parseInt(sessionStorage.getItem('play.fontStep') || '0', 10);
     var twoColActive = sessionStorage.getItem('play.twoCols') === '1';
     var isScrolling = false, lastTs = null, scrollAcc = 0;
-    var SCROLL_SPEED = 0.03;
+
+    // Auto-scroll speed presets (px/ms)
+    var SPEED_PRESETS = [
+        { label: 'Lento',  v: 0.018 },
+        { label: 'Médio',  v: 0.030 },
+        { label: 'Rápido', v: 0.050 },
+        { label: 'Turbo',  v: 0.075 }
+    ];
+    var speedIdx = parseInt(sessionStorage.getItem('play.speedIdx') || '1', 10);
+    if (speedIdx < 0 || speedIdx >= SPEED_PRESETS.length) speedIdx = 1;
 
     // ── Render ──────────────────────────────
     function getCurrent() { return CIFRAS[current]; }
@@ -538,6 +712,8 @@ body { overflow-x: hidden; }
         var el = document.getElementById('cifra-content');
         el.innerHTML = html;
         el.classList.remove('fading');
+        // Run auto-fit after layout
+        if (fitMode && !twoColActive) requestAnimationFrame(autoFit);
     }
 
     function fetchTransposed(id, semitones, cb) {
@@ -579,6 +755,8 @@ body { overflow-x: hidden; }
 
         document.getElementById('btn-prev').disabled = (current === 0);
         document.getElementById('btn-next').disabled = (current === CIFRAS.length - 1);
+        document.getElementById('tap-prev').setAttribute('aria-disabled', current === 0 ? 'true' : 'false');
+        document.getElementById('tap-next').setAttribute('aria-disabled', current === CIFRAS.length - 1 ? 'true' : 'false');
         document.getElementById('prog-text-l').textContent = (current + 1) + '/' + CIFRAS.length;
 
         document.querySelectorAll('.prog-dot').forEach(function (dot, i) {
@@ -615,15 +793,55 @@ body { overflow-x: hidden; }
     }
 
     // ── Font size ───────────────────────────
+    var fitMode = sessionStorage.getItem('play.fit') !== '0';  // default: on
+    var baseRem = 1.05;
+
+    function userBaseRem() {
+        return baseRem + fontStep * 0.1;
+    }
     function applyFont() {
-        var rem = (1.05 + fontStep * 0.1).toFixed(2);
-        document.documentElement.style.setProperty('--play-font', rem + 'rem');
+        var rem = userBaseRem();
+        var el = document.getElementById('cifra-content');
+        // reset to user-chosen size
+        el.style.fontSize = rem.toFixed(3) + 'rem';
+        document.documentElement.style.setProperty('--play-font', rem.toFixed(3) + 'rem');
         document.getElementById('font-val').textContent =
-            Math.round((parseFloat(rem) / 1.05) * 100) + '%';
+            Math.round((rem / baseRem) * 100) + '%';
+        // Then try to auto-fit
+        if (fitMode && !twoColActive) {
+            requestAnimationFrame(autoFit);
+        }
+    }
+    function autoFit() {
+        var el = document.getElementById('cifra-content');
+        if (!el) return;
+        var lines = el.querySelectorAll('.cifra-chords, .cifra-lyric');
+        if (!lines.length) return;
+        var widest = 0;
+        lines.forEach(function (s) {
+            if (s.scrollWidth > widest) widest = s.scrollWidth;
+        });
+        var avail = el.clientWidth;
+        // padding já está incluído em clientWidth, mas removemos uma margem
+        avail -= 4;
+        if (widest > avail && widest > 0) {
+            var rem = userBaseRem();
+            var scale = avail / widest;
+            // limite inferior para não ficar ilegível
+            var minRem = 0.55;
+            var newRem = Math.max(minRem, rem * scale);
+            el.style.fontSize = newRem.toFixed(3) + 'rem';
+        }
     }
     function changeFontSize(d) {
         fontStep = Math.max(-3, Math.min(8, fontStep + d));
         sessionStorage.setItem('play.fontStep', fontStep);
+        applyFont();
+    }
+    function toggleFit() {
+        fitMode = !fitMode;
+        sessionStorage.setItem('play.fit', fitMode ? '1' : '0');
+        document.getElementById('fit-btn').classList.toggle('pb-on', fitMode);
         applyFont();
     }
 
@@ -647,10 +865,12 @@ body { overflow-x: hidden; }
     }
 
     // ── Auto-scroll ─────────────────────────
+    function currentSpeed() { return SPEED_PRESETS[speedIdx].v; }
+
     function scrollFrame(ts) {
         if (!isScrolling) return;
         if (!lastTs) lastTs = ts;
-        scrollAcc += (ts - lastTs) * SCROLL_SPEED;
+        scrollAcc += (ts - lastTs) * currentSpeed();
         lastTs = ts;
         var px = Math.floor(scrollAcc);
         if (px > 0) {
@@ -668,14 +888,82 @@ body { overflow-x: hidden; }
         isScrolling = true; lastTs = null; scrollAcc = 0;
         document.getElementById('scroll-btn').classList.add('pb-on');
         document.getElementById('scroll-badge').style.display = 'block';
+        document.getElementById('speed-pill').classList.add('show');
+        updateSpeedLabel();
         requestAnimationFrame(scrollFrame);
     }
     function stopScroll() {
         isScrolling = false; lastTs = null;
         document.getElementById('scroll-btn').classList.remove('pb-on');
         document.getElementById('scroll-badge').style.display = 'none';
+        document.getElementById('speed-pill').classList.remove('show');
     }
     function toggleScroll() { if (isScrolling) stopScroll(); else startScroll(); }
+
+    function adjustSpeed(delta) {
+        speedIdx = Math.max(0, Math.min(SPEED_PRESETS.length - 1, speedIdx + delta));
+        sessionStorage.setItem('play.speedIdx', speedIdx);
+        updateSpeedLabel();
+    }
+    function updateSpeedLabel() {
+        var lbl = document.getElementById('speed-label');
+        if (lbl) lbl.textContent = SPEED_PRESETS[speedIdx].label;
+    }
+
+    // ── Wake Lock (mantém tela acesa durante o show) ──
+    var wakeLock = null;
+    async function requestWakeLock() {
+        if (!('wakeLock' in navigator)) return;
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release', function () { wakeLock = null; });
+        } catch (err) { /* ignore */ }
+    }
+    function releaseWakeLock() {
+        if (wakeLock) { try { wakeLock.release(); } catch (e) {} }
+        wakeLock = null;
+    }
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && !wakeLock) requestWakeLock();
+    });
+
+    // ── Fullscreen API ──────────────────────
+    function toggleFullscreen() {
+        var d = document, el = d.documentElement;
+        var fs = d.fullscreenElement || d.webkitFullscreenElement;
+        if (!fs) {
+            (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
+        } else {
+            (d.exitFullscreen || d.webkitExitFullscreen || function(){}).call(d);
+        }
+    }
+    function syncFsBtn() {
+        var fs = document.fullscreenElement || document.webkitFullscreenElement;
+        var btn = document.getElementById('fs-btn');
+        if (!btn) return;
+        btn.classList.toggle('pb-on', !!fs);
+        btn.innerHTML = fs
+            ? '<i class="fas fa-compress"></i>'
+            : '<i class="fas fa-expand"></i>';
+    }
+    document.addEventListener('fullscreenchange', syncFsBtn);
+    document.addEventListener('webkitfullscreenchange', syncFsBtn);
+
+    // ── Auto-hide chrome após inatividade ──
+    var IDLE_MS = 3500;
+    var idleTimer = null;
+    function showChrome() {
+        document.body.classList.remove('chrome-hidden');
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(function () {
+            // Não esconde se drawer ou speed pill estiverem ativos
+            if (document.getElementById('play-drawer').classList.contains('open')) return;
+            document.body.classList.add('chrome-hidden');
+        }, IDLE_MS);
+    }
+    ['touchstart', 'mousemove', 'keydown', 'click'].forEach(function (ev) {
+        document.addEventListener(ev, showChrome, { passive: true });
+    });
 
     // ── Drawer ──────────────────────────────
     function toggleDrawer() {
@@ -729,8 +1017,12 @@ body { overflow-x: hidden; }
             case '+': case '=': changeFontSize(1); break;
             case '-': case '_': changeFontSize(-1); break;
             case 'c': case 'C': toggleCols(); break;
+            case 'a': case 'A': toggleFit(); break;
             case 't': case 'T': toggleTheme(); break;
+            case 'f': case 'F': toggleFullscreen(); break;
             case ' ': e.preventDefault(); toggleScroll(); break;
+            case 'PageDown': e.preventDefault(); nextSong(); break;
+            case 'PageUp': e.preventDefault(); prevSong(); break;
             case 'Escape':
                 if (document.getElementById('play-drawer').classList.contains('open')) {
                     closeDrawer();
@@ -777,20 +1069,43 @@ body { overflow-x: hidden; }
     window.toggleDrawer = toggleDrawer;
     window.closeDrawer = closeDrawer;
     window.onTransposeChange = onTransposeChange;
+    window.toggleFullscreen = toggleFullscreen;
+    window.adjustSpeed = adjustSpeed;
+    window.toggleFit = toggleFit;
 
     // ── Init ────────────────────────────────
-    applyFont();
     applyTwoCols();
+    document.getElementById('fit-btn').classList.toggle('pb-on', fitMode);
     buildDots();
     render();
+    applyFont();      // depois do render para que autoFit veja o conteúdo
+    updateSpeedLabel();
+    requestWakeLock();
+    syncFsBtn();
+    showChrome();
+
+    // Re-ajustar fonte quando girar o tablet ou redimensionar
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(applyFont, 120);
+    });
+    window.addEventListener('orientationchange', function () {
+        setTimeout(applyFont, 250);
+    });
+
+    // Quick edge-hint flash so the user sees the tap zones exist
+    document.body.classList.add('edges-hint');
+    setTimeout(function () { document.body.classList.remove('edges-hint'); }, 1400);
 
     var hint = document.getElementById('kbd-hint');
     hint.classList.add('show');
-    setTimeout(function () { hint.classList.remove('show'); }, 3800);
+    setTimeout(function () { hint.classList.remove('show'); }, 4200);
 
-    // Avoid leftover play-mode class if user navigates back via browser button
+    // Clean up on navigate-away
     window.addEventListener('pagehide', function () {
-        document.body.classList.remove('play-mode');
+        document.body.classList.remove('play-mode', 'chrome-hidden', 'edges-hint');
+        releaseWakeLock();
     });
 })();
 </script>
