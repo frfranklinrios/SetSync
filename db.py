@@ -51,8 +51,12 @@ def init_db():
             titulo TEXT NOT NULL,
             artista TEXT NOT NULL,
             tom_original TEXT DEFAULT 'C',
-            conteudo TEXT NOT NULL,
+            conteudo TEXT NOT NULL DEFAULT '',
             band_id TEXT NOT NULL,
+            cifra_json TEXT,
+            grade_json TEXT,
+            bpm REAL,
+            duracao_seg INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (band_id) REFERENCES bands(id)
@@ -77,6 +81,20 @@ def init_db():
         );
     ''')
     db.commit()
+
+    # Migration: add colunas novas em BDs já existentes
+    for col, typedef in [
+        ('cifra_json', 'TEXT'),
+        ('grade_json', 'TEXT'),
+        ('bpm', 'REAL'),
+        ('duracao_seg', 'INTEGER'),
+    ]:
+        try:
+            c.execute(f'ALTER TABLE cifras ADD COLUMN {col} {typedef}')
+            db.commit()
+        except Exception:
+            pass  # coluna já existe
+
     db.close()
 
 
@@ -308,13 +326,18 @@ def is_band_admin(band_id, user_id):
 
 # ── Cifras ─────────────────────────────────────────────────────────────────
 
-def create_cifra(titulo, artista, tom_original, conteudo, band_id):
+def create_cifra(titulo, artista, tom_original, conteudo, band_id,
+                 cifra_json=None, grade_json=None, bpm=None, duracao_seg=None):
     db = get_db()
     c = db.cursor()
     cifra_id = str(uuid.uuid4())
     c.execute(
-        'INSERT INTO cifras (id, titulo, artista, tom_original, conteudo, band_id) VALUES (?, ?, ?, ?, ?, ?)',
-        (cifra_id, titulo, artista, tom_original, conteudo, band_id)
+        '''INSERT INTO cifras
+           (id, titulo, artista, tom_original, conteudo, band_id,
+            cifra_json, grade_json, bpm, duracao_seg)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        (cifra_id, titulo, artista, tom_original, conteudo or '', band_id,
+         cifra_json, grade_json, bpm, duracao_seg)
     )
     db.commit()
     db.close()
@@ -339,12 +362,16 @@ def get_band_cifras(band_id):
     return [dict(r) for r in rows]
 
 
-def update_cifra(cifra_id, titulo, artista, tom_original, conteudo):
+def update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
+                 cifra_json=None, grade_json=None, bpm=None, duracao_seg=None):
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE cifras SET titulo = ?, artista = ?, tom_original = ?, conteudo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        (titulo, artista, tom_original, conteudo, cifra_id)
+        '''UPDATE cifras SET titulo=?, artista=?, tom_original=?, conteudo=?,
+           cifra_json=?, grade_json=?, bpm=?, duracao_seg=?,
+           updated_at=CURRENT_TIMESTAMP WHERE id=?''',
+        (titulo, artista, tom_original, conteudo or '',
+         cifra_json, grade_json, bpm, duracao_seg, cifra_id)
     )
     db.commit()
     db.close()

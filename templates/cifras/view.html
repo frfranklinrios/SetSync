@@ -24,6 +24,67 @@
 }
 .cifra-lyric { display: block; color: #94a3b8; padding: 1px 8px; }
 
+.cifra-json {
+    white-space: normal;
+}
+.cj-line {
+    display: block;
+    margin: 0 0 0.45rem;
+    white-space: nowrap;
+}
+.cj-pair {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: top;
+    margin-right: 0.65rem;
+    min-width: 1.1ch;
+}
+.cj-chord {
+    color: #2dd4bf;
+    font-weight: 700;
+    font-size: 0.85rem;
+    line-height: 1.05;
+}
+.cj-lyric {
+    color: #94a3b8;
+    font-size: 0.98rem;
+    line-height: 1.15;
+}
+
+.grade-bars-card {
+    margin-top: 1rem;
+    border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 8px;
+    background: rgba(45,212,191,0.05);
+    padding: 0.8rem 0.95rem;
+}
+.grade-bars-title {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+}
+.grade-bars-view {
+    font-family: "Courier New", monospace;
+    font-size: 1.02rem;
+    line-height: 1.7;
+}
+.grade-line-view {
+    display: block;
+    margin-bottom: 0.2rem;
+}
+.grade-sep-view,
+.grade-repeat-view {
+    color: #94a3b8;
+}
+.grade-chord-view {
+    color: #2dd4bf;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 .transpose-select {
     background: #0f172a; color: #2dd4bf;
     border: 1px solid #2dd4bf; border-radius: 7px;
@@ -59,6 +120,16 @@
     border-left-color: rgba(13,126,107,0.3);
 }
 [data-theme="light"] .cifra-lyric { color: #475569; }
+[data-theme="light"] .cj-chord { color: #0d7e6b; }
+[data-theme="light"] .cj-lyric { color: #475569; }
+[data-theme="light"] .grade-bars-card {
+    border-color: rgba(13,126,107,0.22);
+    background: rgba(13,126,107,0.06);
+}
+[data-theme="light"] .grade-chord-view { color: #0d7e6b; }
+[data-theme="light"] .grade-sep-view,
+[data-theme="light"] .grade-repeat-view,
+[data-theme="light"] .grade-bars-title { color: #64748b; }
 [data-theme="light"] .transpose-select {
     background: #fff; color: #1e293b; border-color: #d1d5db;
 }
@@ -97,12 +168,32 @@
         </div>
 
         <div class="cifra-container" id="cifra-body">
-            {% if (conteudo|default(''))|string|trim %}
+            {% if grouped_cifra and grouped_cifra|length > 0 %}
+                <div class="cifra-json">
+                    {% for group in grouped_cifra %}
+                        <div class="cj-line">
+                            {% for item in group %}
+                                <span class="cj-pair">
+                                    <span class="cj-chord">{% if item.acorde %}{{ item.acorde }}{% else %}&nbsp;{% endif %}</span>
+                                    <span class="cj-lyric">{% if item.texto_letra %}{{ item.texto_letra }}{% else %}&nbsp;{% endif %}</span>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif (conteudo|default(''))|string|trim %}
                 {{ conteudo | default('') | highlight_chords | safe }}
             {% else %}
                 <em style="color: #888;">Cifra sem conteúdo.</em>
             {% endif %}
         </div>
+
+        {% if grade_data and grade_data|length > 0 %}
+        <div class="grade-bars-card">
+            <div class="grade-bars-title">Grade Harmônica</div>
+            <div class="grade-bars-view" id="grade-bars-view"></div>
+        </div>
+        {% endif %}
 
         {% if setlist|length > 1 %}
         <div class="d-flex justify-content-between mt-3">
@@ -169,6 +260,54 @@
 <script>
 const CIFRA_BASE = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
 const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}";
+const GRADE_DATA = {{ grade_data|tojson if grade_data else '[]' }};
+
+function renderGradeBars() {
+    var el = document.getElementById('grade-bars-view');
+    if (!el || !Array.isArray(GRADE_DATA) || !GRADE_DATA.length) return;
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function compassoToken(comp) {
+        var acordes = (comp && Array.isArray(comp.acordes) ? comp.acordes : [])
+            .map(function(a) { return String(a || '').trim(); })
+            .filter(function(a) { return a.length > 0; });
+        if (!acordes.length) return '%';
+        if (acordes.length === 1 && acordes[0] === '%') return '%';
+        return acordes.join(' / ');
+    }
+
+    var bars = GRADE_DATA.map(compassoToken);
+    var perLine = 4;
+    var html = '';
+
+    for (var i = 0; i < bars.length; i += perLine) {
+        var lineBars = bars.slice(i, i + perLine);
+        var isFirst = i === 0;
+        var isLast = (i + perLine) >= bars.length;
+
+        html += '<div class="grade-line-view">';
+        html += '<span class="grade-sep-view">' + (isFirst ? '||:' : '|') + '</span>';
+
+        lineBars.forEach(function(token) {
+            if (token === '%') {
+                html += ' <span class="grade-repeat-view">%</span> <span class="grade-sep-view">|</span>';
+            } else {
+                html += ' <span class="grade-chord-view">' + escHtml(token) + '</span> <span class="grade-sep-view">|</span>';
+            }
+        });
+
+        if (isLast) {
+            html += ' <span class="grade-sep-view">:||</span>';
+        }
+        html += '</div>';
+    }
+
+    el.innerHTML = html;
+}
+
+renderGradeBars();
 
 document.addEventListener('keydown', function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;

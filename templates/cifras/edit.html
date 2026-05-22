@@ -3,47 +3,387 @@
 {% block title %}Editar - {{ cifra.titulo }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-lg-8">
-        <h2>Editar Cifra</h2>
-        <p class="text-muted">{{ band.name }}</p>
-        
-        <form method="POST" class="mt-4">
-            <div class="mb-3">
-                <label for="titulo" class="form-label">Título da Música</label>
-                <input type="text" class="form-control" id="titulo" name="titulo" value="{{ cifra.titulo }}" required>
-            </div>
-            
-            <div class="mb-3">
-                <label for="artista" class="form-label">Artista</label>
-                <input type="text" class="form-control" id="artista" name="artista" value="{{ cifra.artista }}" required>
-            </div>
-            
-            <div class="mb-3">
-                <label for="tom_original" class="form-label">Tom Original</label>
-                <input type="text" class="form-control" id="tom_original" name="tom_original" value="{{ cifra.tom_original }}">
-            </div>
-            
-            <div class="mb-3">
-                <label for="conteudo" class="form-label">Cifra</label>
-                <textarea class="form-control" id="conteudo" name="conteudo" rows="12" required>{{ cifra.conteudo }}</textarea>
-            </div>
-            
-            <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary btn-lg">Salvar Alterações</button>
-                <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="btn btn-outline-secondary">Cancelar</a>
-            </div>
-        </form>
+<style>
+.editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+@media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+#conteudo { font-family: "Courier New", monospace; font-size: 0.88rem;
+            resize: vertical; min-height: 320px; }
+
+.preview-box {
+    background: #0f172a; color: #e2e8f0;
+    border-radius: 8px; padding: 1rem 1.25rem;
+    font-family: "Courier New", monospace; font-size: 0.88rem;
+    min-height: 320px; overflow-y: auto;
+    border: 1px solid #1e293b;
+}
+[data-theme="light"] .preview-box { background: #f1f5f9; color: #1e293b;
+    border-color: #e2e8f0; }
+
+.pv-line {
+    display: block;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+}
+.pv-pair {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: top;
+    margin-right: 0.35rem;
+}
+.pv-chord { color: #2dd4bf; font-weight: 700; font-size: 0.78rem; line-height: 1.05; }
+.pv-lyric { color: #94a3b8; font-size: 0.9rem; line-height: 1.15; white-space: pre; }
+.pv-empty { color: #475569; font-style: italic; }
+[data-theme="light"] .pv-chord { color: #0d7e6b; }
+[data-theme="light"] .pv-lyric { color: #374151; }
+
+.badge-count { background: var(--accent); color: #fff;
+    font-size: 0.65rem; border-radius: 999px;
+    padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
+</style>
+
+<h2 class="mb-1">Editar Cifra</h2>
+<p class="text-muted mb-4" style="font-size:.875rem;">{{ band.name }}</p>
+
+<form method="POST" id="cifra-form" class="mt-2">
+    <input type="hidden" name="cifra_json" id="cifra_json_hidden">
+    <input type="hidden" name="grade_json" id="grade_json_hidden">
+    <input type="hidden" name="duracao_seg" id="duracao_seg_hidden" value="{{ cifra.duracao_seg or '' }}">
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-5">
+            <label class="form-label">Título</label>
+            <input type="text" class="form-control" name="titulo"
+                   value="{{ cifra.titulo }}" required>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Artista</label>
+            <input type="text" class="form-control" name="artista"
+                   value="{{ cifra.artista }}" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Tom</label>
+            <input type="text" class="form-control" name="tom_original"
+                   value="{{ cifra.tom_original }}">
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">BPM</label>
+            <input type="number" class="form-control" name="bpm" step="0.1"
+                   value="{{ cifra.bpm or '' }}">
+        </div>
     </div>
-    
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">Informações</div>
-            <div class="card-body small">
-                <p><strong>Criada em:</strong> {{ cifra.created_at[:16].replace('T', ' ') }}</p>
-                <p><strong>Última edição:</strong> {{ cifra.updated_at[:16].replace('T', ' ') }}</p>
+
+    <div class="editor-grid mb-3">
+        <div>
+            <label class="form-label">
+                Cifra <small class="text-muted">(colchetes ou duas linhas)</small>
+            </label>
+            <textarea class="form-control" id="conteudo" name="conteudo" rows="16">{{ cifra.conteudo }}</textarea>
+        </div>
+        <div>
+            <label class="form-label">
+                Preview estruturado
+                <span class="badge-count" id="pv-count">0 entradas</span>
+            </label>
+            <div class="preview-box" id="preview-box">
+                <span class="pv-empty">Carregando…</span>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Upload de JSONs -->
+    <details class="mb-3">
+        <summary class="fw-semibold" style="cursor:pointer;font-size:.875rem;">
+            &#128196; Importar arquivos JSON
+            <small class="text-muted ms-1">setsync_cifra / grade</small>
+        </summary>
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Cifra JSON</label>
+                <input type="file" class="form-control form-control-sm" id="upload_cifra" accept=".json">
+                <div class="form-text">setsync_cifra.json &mdash; substitui a cifra atual</div>
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="timeline_keep_original">
+                    <label class="form-check-label" for="timeline_keep_original" style="font-size:.78rem;">
+                        Timeline: manter tempo original (não iniciar em 0s)
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label small fw-semibold">Grade JSON</label>
+                <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
+                <div class="form-text">setsync_grade.json &mdash; grade harm&ocirc;nica por compasso</div>
+            </div>
+        </div>
+    </details>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}"
+           class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
+
+<script>
+const CHORD_TOKEN = /^[A-G][#b]?(?:(?:maj7?|min|m7b5|m7|M7?|m|dim7?|aug|sus[24]?|add9?|\d+|[+\-°º]|[b#]\d))*(?:\/[A-G][#b]?)?$/;
+
+function isChord(token) { return CHORD_TOKEN.test(token.replace(/[()]/g, '')); }
+function isChordLine(line) {
+    const tokens = line.trim().split(/\s+/).filter(t => t.length > 0);
+    return tokens.length > 0 && tokens.every(isChord);
+}
+
+function parseConteudo(text) {
+    const lines = text.split('\n');
+    const result = [];
+    let seq = 0, group = 0, i = 0;
+    while (i < lines.length) {
+        const line = lines[i];
+        if (line.trim() === '') { group++; i++; continue; }
+
+        if (/\[([^\]]+)\]/.test(line)) {
+            const re = /\[([^\]]+)\]\s*([^\[]*)/g;
+            let m;
+            while ((m = re.exec(line)) !== null) {
+                result.push({ segundo: seq++, texto_letra: m[2].trim(), acorde: m[1].trim(), group });
+            }
+            group++; i++; continue;
+        }
+
+        const next = lines[i + 1];
+        if (isChordLine(line) && next !== undefined && !isChordLine(next) && next.trim() !== '') {
+            const chordRe = /\S+/g;
+            let cm;
+            const chords = [];
+            while ((cm = chordRe.exec(line)) !== null) chords.push({ chord: cm[0], pos: cm.index });
+            for (let j = 0; j < chords.length; j++) {
+                const start = chords[j].pos;
+                const end = j + 1 < chords.length ? chords[j + 1].pos : next.length;
+                result.push({ segundo: seq++, texto_letra: next.slice(start, end).trim(), acorde: chords[j].chord, group });
+            }
+            group++; i += 2; continue;
+        }
+
+        result.push({ segundo: seq++, texto_letra: line.trim(), acorde: '', group });
+        group++; i++;
+    }
+    return result;
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildEditableTextFromCifraJson(data) {
+    if (!Array.isArray(data) || !data.length) return '';
+
+    var hasGroup = data.some(function (item) {
+        return item && item.group != null;
+    });
+
+    if (!hasGroup) {
+        return data.map(function (item) {
+            var chord = (item && item.acorde) ? ('[' + item.acorde + '] ') : '';
+            var lyric = (item && item.texto_letra) ? String(item.texto_letra) : '';
+            return chord + lyric;
+        }).join('\n');
+    }
+
+    var groups = {};
+    var order = [];
+    data.forEach(function (item) {
+        var g = (item && item.group != null) ? String(item.group) : '__nogroup__';
+        if (!groups[g]) {
+            groups[g] = [];
+            order.push(g);
+        }
+        groups[g].push(item || {});
+    });
+
+    return order.map(function (g) {
+        return groups[g].map(function (item) {
+            var chord = item.acorde ? ('[' + item.acorde + ']') : '';
+            var lyric = item.texto_letra ? String(item.texto_letra) : '';
+            return chord + lyric;
+        }).join('').replace(/\r/g, '').replace(/\s+$/g, '');
+    }).join('\n\n');
+}
+
+function normalizeImportedCifraJson(data, keepOriginalTimeline) {
+    if (!Array.isArray(data) || !data.length) return null;
+
+    // Formato já nativo do app: [{ segundo, texto_letra, acorde, group? }, ...]
+    if (Object.prototype.hasOwnProperty.call(data[0], 'acorde')) {
+        return data;
+    }
+
+    // Formato timeline: [{ timestamp_ms, event_type: 'chord'|'text', value, duration_ms }, ...]
+    if (!Object.prototype.hasOwnProperty.call(data[0], 'event_type')) {
+        return null;
+    }
+
+    var events = data
+        .filter(function (e) { return e && (e.event_type === 'chord' || e.event_type === 'text'); })
+        .slice()
+        .sort(function (a, b) {
+            var ta = Number(a.timestamp_ms) || 0;
+            var tb = Number(b.timestamp_ms) || 0;
+            return ta - tb;
+        });
+
+    if (!events.length) return null;
+
+    var firstTs = Number(events[0].timestamp_ms) || 0;
+    var out = [];
+    var group = 0;
+    var currentChord = '';
+    var currentText = '';
+    var currentStartTs = null;
+    var lastTextTs = null;
+
+    function pushCurrent() {
+        var lyric = String(currentText || '').replace(/\r/g, '');
+        if (!currentChord && !lyric.trim()) return;
+        var absMs = Number(currentStartTs);
+        if (!Number.isFinite(absMs)) absMs = firstTs;
+        var relMs = keepOriginalTimeline
+            ? Math.max(0, absMs)
+            : Math.max(0, absMs - firstTs);
+        out.push({
+            segundo: Math.floor(relMs / 1000),
+            texto_letra: lyric,
+            acorde: currentChord || '',
+            group: group
+        });
+    }
+
+    events.forEach(function (ev) {
+        var ts = Number(ev.timestamp_ms) || 0;
+
+        if (ev.event_type === 'chord') {
+            if (lastTextTs != null && ts - lastTextTs > 1800 && out.length) {
+                group += 1;
+            }
+            pushCurrent();
+            currentChord = String(ev.value || '').trim();
+            currentText = '';
+            currentStartTs = ts;
+            return;
+        }
+
+        if (currentStartTs == null) {
+            currentStartTs = ts;
+        }
+        currentText += String(ev.value || '');
+        lastTextTs = ts;
+    });
+
+    pushCurrent();
+    return out.length ? out : null;
+}
+
+function renderPreview(data) {
+    const box = document.getElementById('preview-box');
+    const countEl = document.getElementById('pv-count');
+    if (!data.length) {
+        box.innerHTML = '<span class="pv-empty">Nenhuma entrada detectada</span>';
+        countEl.textContent = '0 entradas';
+        return;
+    }
+    countEl.textContent = data.length + ' entr' + (data.length === 1 ? 'ada' : 'adas');
+    const hasGroup = data.some(item => item && item.group != null);
+    const groups = {};
+    const order = [];
+
+    data.forEach((item, idx) => {
+        const key = (hasGroup && item && item.group != null) ? String(item.group) : String(idx);
+        if (!groups[key]) {
+            groups[key] = [];
+            order.push(key);
+        }
+        groups[key].push(item || {});
+    });
+
+    box.innerHTML = order.map(key => {
+        const line = groups[key].map(item => {
+            const chord = item.acorde ? escHtml(item.acorde) : '&nbsp;';
+            const lyric = (item.texto_letra != null && String(item.texto_letra).length)
+                ? escHtml(String(item.texto_letra))
+                : '&nbsp;';
+            return `<span class="pv-pair"><span class="pv-chord">${chord}</span><span class="pv-lyric">${lyric}</span></span>`;
+        }).join('');
+        return `<div class="pv-line">${line}</div>`;
+    }).join('');
+}
+
+const ta = document.getElementById('conteudo');
+
+// ── Upload/edit state ────────────────────────────────────────────────────
+let _uploadedCifraJson = null; // JSON do arquivo carregado (preserva 'segundo' original)
+let _taModified = false;       // usuário editou o textarea manualmente
+
+function readJsonFile(input, callback) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try { callback(JSON.parse(e.target.result), file.name); }
+        catch (err) { alert('Arquivo inválido \u2014 JSON malformado: ' + file.name); }
+    };
+    reader.readAsText(file);
+}
+
+// ── Upload: Cifra JSON ───────────────────────────────────────────────────
+document.getElementById('upload_cifra').addEventListener('change', function () {
+    readJsonFile(this, function (data, fname) {
+        var keepOriginal = !!(document.getElementById('timeline_keep_original') && document.getElementById('timeline_keep_original').checked);
+        var normalized = normalizeImportedCifraJson(data, keepOriginal);
+        if (!normalized) {
+            alert('Formato inválido.\nEsperado: JSON de cifra do SetSync ou timeline com event_type/timestamp_ms/value.');
+            return;
+        }
+        _uploadedCifraJson = normalized;
+        _taModified = false;
+        ta.value = buildEditableTextFromCifraJson(normalized);
+        renderPreview(normalized);
+    });
+});
+
+// ── Upload: Grade JSON ───────────────────────────────────────────────────
+document.getElementById('upload_grade').addEventListener('change', function () {
+    readJsonFile(this, function (data, fname) {
+        if (!Array.isArray(data) || !data.length || !('acordes' in data[0])) {
+            alert('Formato inválido.\nEsperado: [{compasso, acordes}, \u2026]');
+            return;
+        }
+        document.getElementById('grade_json_hidden').value = JSON.stringify(data);
+    });
+});
+
+// ── Live update ao digitar ───────────────────────────────────────────────
+ta.addEventListener('input', () => {
+    _taModified = true;
+    _uploadedCifraJson = null;
+    renderPreview(parseConteudo(ta.value));
+});
+
+// Renderiza preview ao carregar a página com o conteúdo existente
+renderPreview(parseConteudo(ta.value));
+
+// ── Antes de submeter ────────────────────────────────────────────────────
+document.getElementById('cifra-form').addEventListener('submit', function () {
+    if (_uploadedCifraJson) {
+        // Arquivo importado → preserva o campo 'segundo' original
+        document.getElementById('cifra_json_hidden').value = JSON.stringify(_uploadedCifraJson);
+    } else if (_taModified) {
+        // Usuário editou o texto → regera a partir do textarea
+        const parsed = parseConteudo(ta.value);
+        if (parsed.length > 0) {
+            document.getElementById('cifra_json_hidden').value = JSON.stringify(parsed);
+        }
+    }
+    // else: cifra_json_hidden fica vazio → backend preserva o valor existente no DB
+
+});
+</script>
 {% endblock %}

@@ -1,14 +1,76 @@
 import sys
 import os
+import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from blueprints.auth import login_required
 from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra,
                 delete_cifra, is_band_member, is_band_admin)
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
-                  pychord_highlight_chords, highlight_chords_html)
+                  pychord_highlight_chords, highlight_chords_html,
+                  split_chord_progression, chord_components_info,
+                  to_brazilian_chord_notation, format_text_chords_br)
 
 cifras_bp = Blueprint('cifras', __name__, url_prefix='/cifras')
+
+
+def _parse_extra_fields(form):
+    """Extrai e valida cifra_json, grade_json, bpm e duracao_seg do FormData.
+    Retorna (cifra_json, grade_json, bpm, duracao_seg).
+    Em caso de JSON inválido, faz flash de erro e retorna False no campo inválido.
+    """
+    cifra_json_raw = form.get('cifra_json', '').strip()
+    grade_json_raw = form.get('grade_json', '').strip()
+    bpm_raw = form.get('bpm', '').strip()
+    duracao_seg_raw = form.get('duracao_seg', '').strip()
+
+    cifra_json = None
+    if cifra_json_raw:
+        try:
+            json.loads(cifra_json_raw)
+            cifra_json = cifra_json_raw
+        except ValueError:
+            flash('JSON da cifra inválido — verifique o formato', 'danger')
+            return False, None, None, None
+
+    grade_json = None
+    if grade_json_raw:
+        try:
+            json.loads(grade_json_raw)
+            grade_json = grade_json_raw
+        except ValueError:
+            flash('JSON da grade inválido — verifique o formato', 'danger')
+            return None, False, None, None
+
+    bpm = float(bpm_raw) if bpm_raw else None
+    duracao_seg = int(float(duracao_seg_raw)) if duracao_seg_raw else None
+
+    return cifra_json, grade_json, bpm, duracao_seg
+
+
+def _group_cifra_data(data):
+    """Agrupa entradas do cifra_json pelo campo 'group' para exibir acorde acima da sílaba.
+    Entradas sem campo 'group' (formato setsync_cifra.json) ficam em um único grupo."""
+    if not data:
+        return []
+    if 'group' not in data[0]:
+        return [data]
+    groups = []
+    current_g = None
+    current_items = []
+    for item in data:
+        g = item.get('group', 0)
+        if g != current_g:
+            if current_items:
+                groups.append(current_items)
+            current_g = g
+            current_items = [item]
+        else:
+            current_items.append(item)
+    if current_items:
+        groups.append(current_items)
+    return groups
+
 
 @cifras_bp.route('/band/<band_id>')
 @login_required
@@ -46,7 +108,40 @@ def view(cifra_id):
     # Transpor usando pychord se possível
     if current_transpose != 0:
         conteudo = pychord_transpose_text(conteudo, current_transpose)
-    # Destacar acordes válidos
+    conteudo = format_text_chords_br(conteudo)
+
+    # Parsear cifra_json e grade_json
+    cifra_data = None
+    if cifra.get('cifra_json'):
+        try:
+            raw = json.loads(cifra['cifra_json'])
+            if current_transpose != 0:
+                for item in raw:
+                    if item.get('acorde'):
+                        item['acorde'] = pychord_transpose_text(item['acorde'], current_transpose)
+            for item in raw:
+                if item.get('acorde'):
+                    item['acorde'] = to_brazilian_chord_notation(item['acorde'])
+            cifra_data = raw
+        except (ValueError, TypeError):
+            pass
+
+    grade_data = None
+    if cifra.get('grade_json'):
+        try:
+            raw_g = json.loads(cifra['grade_json'])
+            if current_transpose != 0:
+                for comp in raw_g:
+                    comp['acordes'] = [pychord_transpose_text(a, current_transpose)
+                                       for a in comp.get('acordes', [])]
+            for comp in raw_g:
+                comp['acordes'] = [to_brazilian_chord_notation(a)
+                                   for a in comp.get('acordes', [])]
+            grade_data = raw_g
+        except (ValueError, TypeError):
+            pass
+
+    grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
     setlist = get_band_cifras(cifra['band_id'])
     cifra_index = next((i for i, c in enumerate(setlist) if c['id'] == cifra_id), 0)
     prev_cifra = setlist[cifra_index - 1] if cifra_index > 0 else None
@@ -56,6 +151,9 @@ def view(cifra_id):
                            cifra=cifra,
                            band=band,
                            conteudo=conteudo,
+                           cifra_data=cifra_data,
+                           grade_data=grade_data,
+                           grouped_cifra=grouped_cifra,
                            transpositions=transpositions,
                            current_transpose=current_transpose,
                            setlist=setlist,
@@ -120,15 +218,19 @@ def add(band_id):
         artista = request.form.get('artista', '').strip()
         tom_original = request.form.get('tom_original', 'C').strip()
         conteudo = request.form.get('conteudo', '').strip()
-        if not titulo or not artista or not conteudo:
-            flash('Preencha todos os campos', 'danger')
+        if not titulo or not artista:
+            flash('Preencha título e artista', 'danger')
             return render_template('cifras/add.html', band=band)
-        if conteudo is None or conteudo == '':
-            conteudo = '[Cifra sem conteúdo]'
-        cifra_id = create_cifra(titulo, artista, tom_original, conteudo, band_id)
+
+        cifra_json, grade_json, bpm, duracao_seg = _parse_extra_fields(request.form)
+        if cifra_json is False or grade_json is False:
+            return render_template('cifras/add.html', band=band)
+
+        cifra_id = create_cifra(titulo, artista, tom_original, conteudo or '',
+                                band_id, cifra_json, grade_json, bpm, duracao_seg)
         flash(f'Cifra "{titulo}" adicionada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
-    
+
     return render_template('cifras/add.html', band=band)
 
 @cifras_bp.route('/<cifra_id>/edit', methods=['GET', 'POST'])
@@ -152,15 +254,27 @@ def edit(cifra_id):
         artista = request.form.get('artista', '').strip() or cifra['artista']
         tom_original = request.form.get('tom_original', cifra['tom_original']).strip()
         conteudo = request.form.get('conteudo', '').strip() or cifra['conteudo']
-        if not titulo or not artista or not conteudo:
-            flash('Preencha todos os campos', 'danger')
+        if not titulo or not artista:
+            flash('Preencha título e artista', 'danger')
             return render_template('cifras/edit.html', cifra=cifra, band=band)
-        if conteudo is None or conteudo == '':
-            conteudo = '[Cifra sem conteúdo]'
-        update_cifra(cifra_id, titulo, artista, tom_original, conteudo)
+
+        cifra_json_new, grade_json_new, bpm, duracao_seg = _parse_extra_fields(request.form)
+        if cifra_json_new is False or grade_json_new is False:
+            return render_template('cifras/edit.html', cifra=cifra, band=band)
+
+        # Mantém valores existentes se nada novo foi enviado
+        cifra_json = cifra_json_new if cifra_json_new is not None else cifra.get('cifra_json')
+        grade_json = grade_json_new if grade_json_new is not None else cifra.get('grade_json')
+        if bpm is None:
+            bpm = cifra.get('bpm')
+        if duracao_seg is None:
+            duracao_seg = cifra.get('duracao_seg')
+
+        update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
+                     cifra_json, grade_json, bpm, duracao_seg)
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
-    
+
     return render_template('cifras/edit.html', cifra=cifra, band=band)
 
 @cifras_bp.route('/<cifra_id>/delete', methods=['POST'])
@@ -186,7 +300,12 @@ def delete(cifra_id):
 @cifras_bp.route('/<cifra_id>/transpose', methods=['GET'])
 @login_required
 def get_transposed(cifra_id):
-    """API para obter cifra transposta via AJAX. Suporta ?html=1 para HTML destacado."""
+    """API para obter cifra transposta via AJAX.
+
+    Suporta:
+    - ?html=1 para HTML destacado (conteudo)
+    - ?structured=1 para retornar cifra_json transposta
+    """
     user_id = session['user_id']
     cifra = get_cifra(cifra_id)
 
@@ -195,9 +314,11 @@ def get_transposed(cifra_id):
 
     semitones = request.args.get('semitones', 0, type=int)
     want_html = request.args.get('html', '0') == '1'
+    want_structured = request.args.get('structured', '0') == '1'
 
     raw = cifra['conteudo'] or ''
     transposed = pychord_transpose_text(raw, semitones) if semitones else raw
+    transposed = format_text_chords_br(transposed)
 
     payload = {
         'tom_original': cifra['tom_original'],
@@ -207,4 +328,45 @@ def get_transposed(cifra_id):
         payload['html'] = highlight_chords_html(transposed)
     else:
         payload['conteudo'] = transposed
+
+    if want_structured:
+        structured_data = []
+        raw_structured = cifra.get('cifra_json')
+        if raw_structured:
+            try:
+                parsed = json.loads(raw_structured)
+                if semitones:
+                    for item in parsed:
+                        if item.get('acorde'):
+                            item['acorde'] = pychord_transpose_text(item['acorde'], semitones)
+                for item in parsed:
+                    if item.get('acorde'):
+                        item['acorde'] = to_brazilian_chord_notation(item['acorde'])
+                structured_data = parsed
+            except (ValueError, TypeError):
+                structured_data = []
+        payload['cifra_data'] = structured_data
+
     return jsonify(payload)
+
+
+@cifras_bp.route('/chord-info', methods=['GET'])
+@login_required
+def chord_info():
+    """Retorna notas/componentes de um acorde (ou progressão) para diagramas."""
+    symbol = request.args.get('symbol', '').strip()
+    if not symbol:
+        return jsonify({'error': 'Acorde não informado'}), 400
+
+    chunks = split_chord_progression(symbol)
+    if not chunks:
+        chunks = [symbol]
+
+    result = []
+    for chunk in chunks:
+        info = chord_components_info(chunk)
+        if info:
+            info['display'] = to_brazilian_chord_notation(info.get('display', chunk))
+            result.append(info)
+
+    return jsonify({'chords': result})

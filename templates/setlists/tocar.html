@@ -200,12 +200,42 @@ body { overflow-x: hidden; }
     color: #94a3b8;
     padding: 1px 8px;
 }
+.cifra-body.structured-mode {
+    white-space: normal;
+}
+.cifra-body .sp-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 0.2rem;
+    margin-bottom: 0.45rem;
+}
+.cifra-body .sp-item {
+    display: inline-flex;
+    flex-direction: column;
+    padding-right: 0.55rem;
+}
+.cifra-body .sp-chord {
+    color: #2dd4bf;
+    font-weight: 700;
+    font-size: 0.82em;
+    min-height: 1.25em;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+.cifra-body .sp-word {
+    color: #e2e8f0;
+    line-height: 1.45;
+    white-space: nowrap;
+}
 [data-theme="light"] .cifra-body .chord { color: #0d7e6b; }
 [data-theme="light"] .cifra-body .cifra-chords {
     background: rgba(13,126,107,0.08);
     border-left-color: rgba(13,126,107,0.3);
 }
 [data-theme="light"] .cifra-body .cifra-lyric { color: #475569; }
+[data-theme="light"] .cifra-body .sp-chord { color: #0d7e6b; }
+[data-theme="light"] .cifra-body .sp-word { color: #1e293b; }
 
 /* Two-col mode: precisa permitir wrap pois cada coluna é mais estreita */
 .cifra-body.two-col {
@@ -563,6 +593,39 @@ body.play-mode.edges-hint .tap-zone {
     #speed-pill { bottom: 4.6rem; padding: 0.4rem 0.65rem; font-size: 0.85rem; }
     #speed-pill button { width: 34px; height: 34px; font-size: 1.05rem; }
 }
+/* ── Grade Harmônica (play mode) ─────────────────────────────────────── */
+.cifra-body.grade-mode {
+    white-space: normal;
+    padding: 1.5rem 4vw;
+}
+.grade-bars-play {
+    font-family: "Courier New", monospace;
+    font-size: 1.05em;
+    line-height: 1.75;
+    white-space: normal;
+}
+.grade-line-play {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+.grade-sep-play {
+    color: #94a3b8;
+    padding: 0 0.15rem;
+}
+.grade-chord-play {
+    font-family: "Courier New", monospace;
+    font-size: 1em;
+    font-weight: 700;
+    color: #2dd4bf;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+.grade-repeat-play {
+    color: #94a3b8;
+}
+[data-theme="light"] .grade-chord-play { color: #0d7e6b; }
+[data-theme="light"] .grade-repeat-play,
+[data-theme="light"] .grade-sep-play { color: #64748b; }
 </style>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -618,6 +681,9 @@ body.play-mode.edges-hint .tap-zone {
             <button class="pb-btn" id="cols-btn" onclick="toggleCols()" title="2 colunas (C)" aria-label="Alternar 2 colunas">
                 <i class="fas fa-columns"></i><span class="pb-label-text">&nbsp;2 col</span>
             </button>
+            <button class="pb-btn" id="grade-btn" onclick="toggleGrade()" title="Grade Harmônica (G)" aria-label="Grade Harmônica">
+                <i class="fas fa-th"></i><span class="pb-label-text">&nbsp;Grade</span>
+            </button>
             <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
                 <i class="fas fa-angle-double-down"></i><span class="pb-label-text">&nbsp;Scroll</span>
             </button>
@@ -665,10 +731,10 @@ body.play-mode.edges-hint .tap-zone {
 <div id="scroll-badge" onclick="toggleScroll()">⏬ rolando — toque para pausar</div>
 
 <!-- Keyboard hint -->
-<div id="kbd-hint">← → ou bordas: navegar · L lista · +/− fonte · A caber · C 2col · Espaço scroll · F tela cheia · Esc sair</div>
+<div id="kbd-hint">← → ou bordas: navegar · L lista · +/− fonte · A caber · C 2col · G grade · Espaço scroll · F tela cheia · Esc sair</div>
 
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }},"cifra_s":{{ cifra.cifra_json | tojson }},"grade_s":{{ cifra.grade_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -682,9 +748,18 @@ body.play-mode.edges-hint .tap-zone {
     var current = Math.max(0, Math.min(CIFRAS.length - 1, START_IDX));
     var transposeByCifra = {};   // cifra_id -> semitones
     var htmlCache = {};          // (cifra_id + ':' + semitones) -> html
+    var structuredCache = {};    // (cifra_id + ':' + semitones) -> cifra_data[]
 
     // Pre-cache the original (semitones=0) html
-    CIFRAS.forEach(function (c) { htmlCache[c.id + ':0'] = c.html; });
+    CIFRAS.forEach(function (c) {
+        htmlCache[c.id + ':0'] = c.html;
+        if (c.cifra_s) {
+            try {
+                var parsed = JSON.parse(c.cifra_s);
+                if (Array.isArray(parsed)) structuredCache[c.id + ':0'] = parsed;
+            } catch (e) {}
+        }
+    });
 
     // ── Settings (persist) ─────────────────
     var fontStep = parseInt(sessionStorage.getItem('play.fontStep') || '0', 10);
@@ -700,6 +775,7 @@ body.play-mode.edges-hint .tap-zone {
     ];
     var speedIdx = parseInt(sessionStorage.getItem('play.speedIdx') || '1', 10);
     if (speedIdx < 0 || speedIdx >= SPEED_PRESETS.length) speedIdx = 1;
+    var gradeMode = false;
 
     // ── Render ──────────────────────────────
     function getCurrent() { return CIFRAS[current]; }
@@ -714,6 +790,92 @@ body.play-mode.edges-hint .tap-zone {
         el.classList.remove('fading');
         // Run auto-fit after layout
         if (fitMode && !twoColActive) requestAnimationFrame(autoFit);
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function buildGradeHtml(gradeData) {
+        if (!gradeData || !gradeData.length) {
+            return '<div style="padding:2rem 4vw;color:#475569;font-family:monospace;font-size:0.9rem;">Grade harmônica não disponível para esta música.</div>';
+        }
+        function compassoToken(comp) {
+            var acordes = (comp && Array.isArray(comp.acordes) ? comp.acordes : [])
+                .map(function(a) { return String(a || '').trim(); })
+                .filter(function(a) { return a.length > 0; });
+            if (!acordes.length) return '%';
+            if (acordes.length === 1 && acordes[0] === '%') return '%';
+            return acordes.join(' / ');
+        }
+
+        var bars = gradeData.map(compassoToken);
+        var perLine = 4;
+        var html = '<div class="grade-bars-play">';
+
+        for (var i = 0; i < bars.length; i += perLine) {
+            var lineBars = bars.slice(i, i + perLine);
+            var isFirst = i === 0;
+            var isLast = (i + perLine) >= bars.length;
+
+            html += '<div class="grade-line-play">';
+            html += '<span class="grade-sep-play">' + (isFirst ? '||:' : '|') + '</span>';
+
+            lineBars.forEach(function(token) {
+                if (token === '%') {
+                    html += ' <span class="grade-repeat-play">%</span> <span class="grade-sep-play">|</span>';
+                } else {
+                    html += ' <span class="grade-chord-play">' + escHtml(token) + '</span> <span class="grade-sep-play">|</span>';
+                }
+            });
+
+            if (isLast) {
+                html += ' <span class="grade-sep-play">:||</span>';
+            }
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    function buildStructuredHtml(cifraData) {
+        if (!cifraData || !cifraData.length) return '';
+        var groups = [];
+        if (Object.prototype.hasOwnProperty.call(cifraData[0], 'group')) {
+            var currentGroup = null;
+            var row = [];
+            cifraData.forEach(function(item) {
+                var g = item.group || 0;
+                if (currentGroup === null || g !== currentGroup) {
+                    if (row.length) groups.push(row);
+                    currentGroup = g;
+                    row = [item];
+                } else {
+                    row.push(item);
+                }
+            });
+            if (row.length) groups.push(row);
+        } else {
+            // Novo formato com tokens por palavra/sílaba sem campo group:
+            // renderiza em fluxo contínuo para manter acordes no lugar da palavra.
+            groups = [cifraData];
+        }
+
+        var html = '';
+        groups.forEach(function(group) {
+            html += '<div class="sp-line">';
+            group.forEach(function(item) {
+                var chord = item.acorde || '';
+                var lyric = item.texto_letra || '';
+                html += '<span class="sp-item">';
+                html += '<span class="sp-chord">' + escHtml(chord) + '</span>';
+                html += '<span class="sp-word">' + escHtml(lyric) + '</span>';
+                html += '</span>';
+            });
+            html += '</div>';
+        });
+        return html;
     }
 
     function fetchTransposed(id, semitones, cb) {
@@ -734,6 +896,26 @@ body.play-mode.edges-hint .tap-zone {
                 }
             })
             .catch(function () { cb(htmlCache[id + ':0'] || ''); });
+    }
+
+    function fetchStructured(id, semitones, cb) {
+        var key = id + ':' + semitones;
+        if (structuredCache[key]) { cb(structuredCache[key]); return; }
+        var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
+                    .replace('__ID__', encodeURIComponent(id))
+                    + '?semitones=' + semitones + '&structured=1';
+        document.getElementById('cifra-content').classList.add('fading');
+        fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && Array.isArray(data.cifra_data)) {
+                    structuredCache[key] = data.cifra_data;
+                    cb(data.cifra_data);
+                } else {
+                    cb(structuredCache[id + ':0'] || null);
+                }
+            })
+            .catch(function () { cb(structuredCache[id + ':0'] || null); });
     }
 
     function render() {
@@ -771,7 +953,32 @@ body.play-mode.edges-hint .tap-zone {
         if (sel) sel.value = String(t);
 
         // load html (cached or fetch)
-        fetchTransposed(c.id, t, renderHtml);
+        if (gradeMode) {
+            var el = document.getElementById('cifra-content');
+            el.classList.add('grade-mode');
+            el.classList.remove('structured-mode');
+            var gd = null;
+            if (c.grade_s) { try { gd = JSON.parse(c.grade_s); } catch(e) {} }
+            renderHtml(buildGradeHtml(gd));
+        } else {
+            document.getElementById('cifra-content').classList.remove('grade-mode');
+            var sd0 = structuredCache[c.id + ':0'] || null;
+            if (sd0 && sd0.length) {
+                var el2 = document.getElementById('cifra-content');
+                el2.classList.add('structured-mode');
+                fetchStructured(c.id, t, function (sd) {
+                    if (sd && sd.length) {
+                        renderHtml(buildStructuredHtml(sd));
+                    } else {
+                        document.getElementById('cifra-content').classList.remove('structured-mode');
+                        fetchTransposed(c.id, t, renderHtml);
+                    }
+                });
+            } else {
+                document.getElementById('cifra-content').classList.remove('structured-mode');
+                fetchTransposed(c.id, t, renderHtml);
+            }
+        }
     }
 
     function goTo(idx) {
@@ -862,6 +1069,12 @@ body.play-mode.edges-hint .tap-zone {
         sessionStorage.setItem('play.twoCols', twoColActive ? '1' : '0');
         applyTwoCols();
         if (twoColActive && isScrolling) stopScroll();
+    }
+
+    function toggleGrade() {
+        gradeMode = !gradeMode;
+        document.getElementById('grade-btn').classList.toggle('pb-on', gradeMode);
+        render();
     }
 
     // ── Auto-scroll ─────────────────────────
@@ -1020,6 +1233,7 @@ body.play-mode.edges-hint .tap-zone {
             case 'a': case 'A': toggleFit(); break;
             case 't': case 'T': toggleTheme(); break;
             case 'f': case 'F': toggleFullscreen(); break;
+            case 'g': case 'G': toggleGrade(); break;
             case ' ': e.preventDefault(); toggleScroll(); break;
             case 'PageDown': e.preventDefault(); nextSong(); break;
             case 'PageUp': e.preventDefault(); prevSong(); break;
@@ -1072,6 +1286,7 @@ body.play-mode.edges-hint .tap-zone {
     window.toggleFullscreen = toggleFullscreen;
     window.adjustSpeed = adjustSpeed;
     window.toggleFit = toggleFit;
+    window.toggleGrade = toggleGrade;
 
     // ── Init ────────────────────────────────
     applyTwoCols();

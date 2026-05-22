@@ -3,6 +3,68 @@ from pychord import Chord
 import re
 import html as html_lib
 
+
+_NOTE_BR_MAP = {
+    'C#': 'Db',
+    'D#': 'Eb',
+    'F#': 'Gb',
+    'G#': 'Ab',
+    'A#': 'Bb',
+}
+
+
+def _to_br_note(note):
+    if not note:
+        return note
+    n = str(note).replace('♯', '#').replace('♭', 'b')
+    return _NOTE_BR_MAP.get(n, n)
+
+
+def to_brazilian_chord_notation(chord_str):
+    """Padroniza um acorde para notação brasileira.
+
+    Regras aplicadas:
+    - sustenidos enarmônicos comuns -> bemóis (C# -> Db, etc.)
+    - majX / MX -> X+ (ex.: Cmaj7 -> C7+)
+    - dim / dim7 -> ° / °7
+    - min -> m
+    """
+    if not chord_str:
+        return chord_str
+
+    s = str(chord_str).strip()
+    m = re.match(r'^([A-G](?:#|b)?)(.*?)(?:/([A-G](?:#|b)?))?$', s)
+    if not m:
+        return s
+
+    root, quality, bass = m.group(1), (m.group(2) or ''), m.group(3)
+    root = _to_br_note(root)
+    if bass:
+        bass = _to_br_note(bass)
+
+    q = quality
+    q = re.sub(r'(?i)maj(\d+)', r'\1+', q)
+    q = re.sub(r'(?i)M(\d+)', r'\1+', q)
+    q = re.sub(r'(?i)dim7', '°7', q)
+    q = re.sub(r'(?i)dim', '°', q)
+    q = re.sub(r'(?i)min', 'm', q)
+
+    out = root + q
+    if bass:
+        out += '/' + bass
+    return out
+
+
+def format_text_chords_br(text):
+    """Padroniza todos os acordes encontrados em um texto."""
+    if text is None:
+        return ''
+
+    def _fmt(match):
+        return to_brazilian_chord_notation(match.group(1))
+
+    return re.sub(_CHORD_REGEX_WB, _fmt, str(text))
+
 def _normalize_chord_for_pychord(chord_str):
     """Converte notação brasileira para algo que o pychord entenda.
 
@@ -25,6 +87,47 @@ def _normalize_chord_for_pychord(chord_str):
     return s
 
 
+def split_chord_progression(symbol):
+    """Divide uma sequência de acordes em partes (ex.: 'Bmaj7 -> F#7')."""
+    if not symbol:
+        return []
+    parts = re.split(r'\s*(?:→|->|⇒|~|,)\s*', symbol.strip())
+    return [p for p in parts if p]
+
+
+def clean_chord_symbol(symbol):
+    """Remove wrappers visuais para tentar parsear o acorde corretamente."""
+    if not symbol:
+        return ''
+    s = symbol.strip()
+    if s.startswith('[') and s.endswith(']') and len(s) >= 2:
+        s = s[1:-1].strip()
+    s = s.strip('()[]{} ')
+    return s
+
+
+def chord_components_info(symbol):
+    """Retorna informações de componentes de um acorde para renderização de diagrama."""
+    s = clean_chord_symbol(symbol)
+    if not s:
+        return None
+
+    normalized = _normalize_chord_for_pychord(s)
+    try:
+        chord = Chord(normalized)
+        notes = chord.components()
+        if not isinstance(notes, list) or not notes:
+            return None
+        return {
+            'input': symbol,
+            'display': s,
+            'normalized': normalized,
+            'notes': notes,
+        }
+    except Exception:
+        return None
+
+
 def pychord_transpose_chord(chord_str, semitones):
     """Transpõe um acorde usando pychord (mais robusto para acordes complexos)."""
     normalized = _normalize_chord_for_pychord(chord_str)
@@ -36,9 +139,9 @@ def pychord_transpose_chord(chord_str, semitones):
         if chord_str.endswith('+') and not new_str.endswith('+'):
             # Re-aplica o "+" se a entrada original usava (mantém estilo BR)
             new_str = re.sub(r'maj(\d+)$', r'\1+', new_str)
-        return new_str
+        return to_brazilian_chord_notation(new_str)
     except Exception:
-        return chord_str
+        return to_brazilian_chord_notation(chord_str)
 
 
 # Componentes que podem aparecer em qualquer ordem após a nota base de um acorde:
