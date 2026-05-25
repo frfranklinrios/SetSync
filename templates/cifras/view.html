@@ -71,9 +71,25 @@
     font-size: 1.02rem;
     line-height: 1.7;
 }
+.grade-inline-view {
+    display: inline-block;
+    white-space: pre-wrap;
+}
 .grade-line-view {
     display: block;
     margin-bottom: 0.2rem;
+}
+.grade-part-view {
+    margin-bottom: 0.6rem;
+}
+.grade-part-title-view {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin-bottom: 0.12rem;
+    text-transform: uppercase;
 }
 .grade-sep-view,
 .grade-repeat-view {
@@ -130,6 +146,7 @@
 [data-theme="light"] .grade-sep-view,
 [data-theme="light"] .grade-repeat-view,
 [data-theme="light"] .grade-bars-title { color: #64748b; }
+[data-theme="light"] .grade-part-title-view { color: #64748b; }
 [data-theme="light"] .transpose-select {
     background: #fff; color: #1e293b; border-color: #d1d5db;
 }
@@ -267,42 +284,97 @@ function renderGradeBars() {
     if (!el || !Array.isArray(GRADE_DATA) || !GRADE_DATA.length) return;
 
     function escHtml(s) {
-        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
-    function compassoToken(comp) {
-        var acordes = (comp && Array.isArray(comp.acordes) ? comp.acordes : [])
+
+    function normalizeAcordes(comp) {
+        return (comp && Array.isArray(comp.acordes) ? comp.acordes : [])
             .map(function(a) { return String(a || '').trim(); })
             .filter(function(a) { return a.length > 0; });
-        if (!acordes.length) return '%';
-        if (acordes.length === 1 && acordes[0] === '%') return '%';
-        return acordes.join(' / ');
     }
 
-    var bars = GRADE_DATA.map(compassoToken);
-    var perLine = 4;
-    var html = '';
+    function slotSpan(token) {
+        if (token === '%') {
+            return '<span class="grade-repeat-view">%</span>';
+        }
+        return '<span class="grade-chord-view">' + escHtml(token) + '</span>';
+    }
 
-    for (var i = 0; i < bars.length; i += perLine) {
-        var lineBars = bars.slice(i, i + perLine);
-        var isFirst = i === 0;
-        var isLast = (i + perLine) >= bars.length;
+    function compassoToSlots(comp) {
+        var acordes = normalizeAcordes(comp);
+        if (!acordes.length) return ['%', '%', '%', '%'];
 
-        html += '<div class="grade-line-view">';
-        html += '<span class="grade-sep-view">' + (isFirst ? '||:' : '|') + '</span>';
+        if (acordes.length === 1) {
+            if (acordes[0] === '%') return ['%', '%', '%', '%'];
+            return [acordes[0], '%', '%', '%'];
+        }
+        if (acordes.length === 2) return [acordes[0], '%', acordes[1], '%'];
+        if (acordes.length === 3) return [acordes[0], acordes[1], acordes[2], '%'];
+        return acordes.slice(0, 4);
+    }
 
-        lineBars.forEach(function(token) {
-            if (token === '%') {
-                html += ' <span class="grade-repeat-view">%</span> <span class="grade-sep-view">|</span>';
+    function groupByParte(data) {
+        var hasParte = data.some(function(comp) {
+            return comp && comp.parte != null && String(comp.parte).trim() !== '';
+        });
+
+        if (!hasParte) {
+            return [{ label: '', items: data }];
+        }
+
+        var groups = [];
+        var currentLabel = null;
+        var currentItems = [];
+
+        data.forEach(function(comp) {
+            var label = (comp && comp.parte != null) ? String(comp.parte).trim().toUpperCase() : '';
+            if (currentLabel === null || label !== currentLabel) {
+                if (currentItems.length) {
+                    groups.push({ label: currentLabel, items: currentItems });
+                }
+                currentLabel = label;
+                currentItems = [comp];
             } else {
-                html += ' <span class="grade-chord-view">' + escHtml(token) + '</span> <span class="grade-sep-view">|</span>';
+                currentItems.push(comp);
             }
         });
 
-        if (isLast) {
-            html += ' <span class="grade-sep-view">:||</span>';
+        if (currentItems.length) {
+            groups.push({ label: currentLabel, items: currentItems });
         }
-        html += '</div>';
+
+        return groups;
     }
+
+    var parts = groupByParte(GRADE_DATA);
+    var html = '';
+
+    parts.forEach(function(part) {
+        var bars = (part.items || []).map(compassoToSlots);
+        if (!bars.length) return;
+
+        html += '<div class="grade-part-view">';
+        if (part.label) {
+            html += '<span class="grade-part-title-view">Parte ' + escHtml(part.label) + '</span>';
+        }
+
+        html += '<div class="grade-inline-view">';
+        html += '<span class="grade-sep-view">||:</span> ';
+
+        bars.forEach(function(slots, idx) {
+            html += slotSpan(slots[0]) + ' ';
+            html += slotSpan(slots[1]) + ' ';
+            html += slotSpan(slots[2]) + ' ';
+            html += slotSpan(slots[3]);
+
+            if (idx < bars.length - 1) {
+                html += ' <span class="grade-sep-view">|</span> ';
+            }
+        });
+
+        html += ' <span class="grade-sep-view">:||</span>';
+        html += '</div></div>';
+    });
 
     el.innerHTML = html;
 }

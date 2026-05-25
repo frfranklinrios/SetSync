@@ -305,6 +305,7 @@ def get_transposed(cifra_id):
     Suporta:
     - ?html=1 para HTML destacado (conteudo)
     - ?structured=1 para retornar cifra_json transposta
+    - ?grade=1 para retornar grade_json transposta
     """
     user_id = session['user_id']
     cifra = get_cifra(cifra_id)
@@ -315,6 +316,7 @@ def get_transposed(cifra_id):
     semitones = request.args.get('semitones', 0, type=int)
     want_html = request.args.get('html', '0') == '1'
     want_structured = request.args.get('structured', '0') == '1'
+    want_grade = request.args.get('grade', '0') == '1'
 
     raw = cifra['conteudo'] or ''
     transposed = pychord_transpose_text(raw, semitones) if semitones else raw
@@ -346,6 +348,28 @@ def get_transposed(cifra_id):
             except (ValueError, TypeError):
                 structured_data = []
         payload['cifra_data'] = structured_data
+
+    if want_grade:
+        grade_data = []
+        raw_grade = cifra.get('grade_json')
+        if raw_grade:
+            try:
+                parsed_grade = json.loads(raw_grade)
+                if semitones:
+                    for comp in parsed_grade:
+                        comp['acordes'] = [
+                            pychord_transpose_text(a, semitones)
+                            for a in comp.get('acordes', [])
+                        ]
+                for comp in parsed_grade:
+                    comp['acordes'] = [
+                        to_brazilian_chord_notation(a)
+                        for a in comp.get('acordes', [])
+                    ]
+                grade_data = parsed_grade
+            except (ValueError, TypeError):
+                grade_data = []
+        payload['grade_data'] = grade_data
 
     return jsonify(payload)
 

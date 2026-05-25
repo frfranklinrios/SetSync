@@ -40,6 +40,13 @@
 .badge-count { background: var(--accent); color: #fff;
     font-size: 0.65rem; border-radius: 999px;
     padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
+
+#grade_text {
+    font-family: "Courier New", monospace;
+    font-size: 0.84rem;
+    resize: vertical;
+    min-height: 220px;
+}
 </style>
 
 <h2 class="mb-1">Editar Cifra</h2>
@@ -89,6 +96,13 @@
                 <span class="pv-empty">Carregando…</span>
             </div>
         </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label fw-semibold">Grade Harmônica (texto)</label>
+        <textarea class="form-control" id="grade_text" rows="10"
+            placeholder="Parte A&#10;| F# % % % | F# C#m % % | D#m % % % | D#m D# % E |"></textarea>
+        <div class="form-text">Cole a grade por partes. No salvar, esse campo é convertido automaticamente para grade JSON.</div>
     </div>
 
     <!-- Upload de JSONs -->
@@ -282,6 +296,80 @@ function normalizeImportedCifraJson(data, keepOriginalTimeline) {
     return out.length ? out : null;
 }
 
+function parseGradeTextToJson(text) {
+    var lines = String(text || '').split('\n');
+    var out = [];
+    var compasso = 1;
+    var currentParte = '';
+
+    lines.forEach(function(raw) {
+        var line = String(raw || '').trim();
+        if (!line) return;
+
+        if (/^Partes\s+detectadas/i.test(line)) return;
+
+        var parteMatch = line.match(/^Parte\s+([A-Za-z0-9_-]+)/i);
+        if (parteMatch) {
+            currentParte = String(parteMatch[1] || '').toUpperCase();
+            return;
+        }
+
+        if (line.indexOf('|') === -1) return;
+
+        var bars = line
+            .split('|')
+            .map(function(s) { return String(s || '').trim(); })
+            .filter(function(s) { return s.length > 0; });
+
+        bars.forEach(function(bar) {
+            var acordes = bar
+                .split(/\s+/)
+                .map(function(t) { return String(t || '').trim(); })
+                .filter(function(t) { return t.length > 0; });
+            if (!acordes.length) return;
+
+            var item = { compasso: compasso++, acordes: acordes };
+            if (currentParte) item.parte = currentParte;
+            out.push(item);
+        });
+    });
+
+    return out.length ? out : null;
+}
+
+function fillGradeTextFromJson(data) {
+    var ta = document.getElementById('grade_text');
+    if (!ta || !Array.isArray(data) || !data.length) return;
+
+    var groups = {};
+    var order = [];
+
+    data.forEach(function(item) {
+        var parte = (item && item.parte) ? String(item.parte).toUpperCase() : '';
+        var key = parte || '__SEM_PARTE__';
+        if (!groups[key]) {
+            groups[key] = [];
+            order.push(key);
+        }
+        groups[key].push(item);
+    });
+
+    var lines = [];
+    order.forEach(function(key) {
+        if (key !== '__SEM_PARTE__') {
+            lines.push('Parte ' + key);
+        }
+        var bars = groups[key].map(function(item) {
+            var acordes = (item && Array.isArray(item.acordes)) ? item.acordes : [];
+            var safe = acordes.length ? acordes : ['%'];
+            return '| ' + safe.join(' ') + ' |';
+        });
+        if (bars.length) lines.push(bars.join(' '));
+    });
+
+    ta.value = lines.join('\n');
+}
+
 function renderPreview(data) {
     const box = document.getElementById('preview-box');
     const countEl = document.getElementById('pv-count');
@@ -357,6 +445,7 @@ document.getElementById('upload_grade').addEventListener('change', function () {
             return;
         }
         document.getElementById('grade_json_hidden').value = JSON.stringify(data);
+        fillGradeTextFromJson(data);
     });
 });
 
@@ -370,8 +459,19 @@ ta.addEventListener('input', () => {
 // Renderiza preview ao carregar a página com o conteúdo existente
 renderPreview(parseConteudo(ta.value));
 
+// Preenche o campo textual da grade com a grade existente, se houver.
+try {
+    var _existingGradeRaw = {{ cifra.grade_json|tojson if cifra.grade_json else 'null' }};
+    if (_existingGradeRaw) {
+        var _existingGrade = (typeof _existingGradeRaw === 'string')
+            ? JSON.parse(_existingGradeRaw)
+            : _existingGradeRaw;
+        fillGradeTextFromJson(_existingGrade);
+    }
+} catch (e) {}
+
 // ── Antes de submeter ────────────────────────────────────────────────────
-document.getElementById('cifra-form').addEventListener('submit', function () {
+document.getElementById('cifra-form').addEventListener('submit', function (event) {
     if (_uploadedCifraJson) {
         // Arquivo importado → preserva o campo 'segundo' original
         document.getElementById('cifra_json_hidden').value = JSON.stringify(_uploadedCifraJson);
@@ -383,6 +483,18 @@ document.getElementById('cifra-form').addEventListener('submit', function () {
         }
     }
     // else: cifra_json_hidden fica vazio → backend preserva o valor existente no DB
+
+    var gradeTa = document.getElementById('grade_text');
+    var gradeText = gradeTa ? String(gradeTa.value || '').trim() : '';
+    if (gradeText) {
+        var parsedGrade = parseGradeTextToJson(gradeText);
+        if (!parsedGrade) {
+            alert('Não foi possível interpretar a grade. Verifique se os compassos estão no formato com barras: | ... |');
+            event.preventDefault();
+            return;
+        }
+        document.getElementById('grade_json_hidden').value = JSON.stringify(parsedGrade);
+    }
 
 });
 </script>

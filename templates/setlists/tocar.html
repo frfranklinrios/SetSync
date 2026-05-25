@@ -604,6 +604,22 @@ body.play-mode.edges-hint .tap-zone {
     line-height: 1.75;
     white-space: normal;
 }
+.grade-part-play {
+    margin-bottom: 0.65rem;
+}
+.grade-part-title-play {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin-bottom: 0.12rem;
+    text-transform: uppercase;
+}
+.grade-inline-play {
+    display: inline-block;
+    white-space: pre-wrap;
+}
 .grade-line-play {
     display: block;
     margin-bottom: 0.25rem;
@@ -626,6 +642,7 @@ body.play-mode.edges-hint .tap-zone {
 [data-theme="light"] .grade-chord-play { color: #0d7e6b; }
 [data-theme="light"] .grade-repeat-play,
 [data-theme="light"] .grade-sep-play { color: #64748b; }
+[data-theme="light"] .grade-part-title-play { color: #64748b; }
 </style>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -746,9 +763,11 @@ body.play-mode.edges-hint .tap-zone {
     var EXIT_URL = {{ (exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id))) | tojson }};
 
     var current = Math.max(0, Math.min(CIFRAS.length - 1, START_IDX));
-    var transposeByCifra = {};   // cifra_id -> semitones
+    var globalTranspose = parseInt(sessionStorage.getItem('play.transposeSemi') || '0', 10);
+    if (!Number.isFinite(globalTranspose)) globalTranspose = 0;
     var htmlCache = {};          // (cifra_id + ':' + semitones) -> html
     var structuredCache = {};    // (cifra_id + ':' + semitones) -> cifra_data[]
+    var gradeCache = {};         // (cifra_id + ':' + semitones) -> grade_data[]
 
     // Pre-cache the original (semitones=0) html
     CIFRAS.forEach(function (c) {
@@ -757,6 +776,12 @@ body.play-mode.edges-hint .tap-zone {
             try {
                 var parsed = JSON.parse(c.cifra_s);
                 if (Array.isArray(parsed)) structuredCache[c.id + ':0'] = parsed;
+            } catch (e) {}
+        }
+        if (c.grade_s) {
+            try {
+                var parsedGrade = JSON.parse(c.grade_s);
+                if (Array.isArray(parsedGrade)) gradeCache[c.id + ':0'] = parsedGrade;
             } catch (e) {}
         }
     });
@@ -781,7 +806,7 @@ body.play-mode.edges-hint .tap-zone {
     function getCurrent() { return CIFRAS[current]; }
 
     function getTranspose(id) {
-        return transposeByCifra[id] != null ? transposeByCifra[id] : 0;
+        return globalTranspose;
     }
 
     function renderHtml(html) {
@@ -800,42 +825,106 @@ body.play-mode.edges-hint .tap-zone {
         if (!gradeData || !gradeData.length) {
             return '<div style="padding:2rem 4vw;color:#475569;font-family:monospace;font-size:0.9rem;">Grade harmônica não disponível para esta música.</div>';
         }
-        function compassoToken(comp) {
+
+        function normalizeAcordes(comp) {
             var acordes = (comp && Array.isArray(comp.acordes) ? comp.acordes : [])
                 .map(function(a) { return String(a || '').trim(); })
                 .filter(function(a) { return a.length > 0; });
-            if (!acordes.length) return '%';
-            if (acordes.length === 1 && acordes[0] === '%') return '%';
-            return acordes.join(' / ');
+            return acordes;
         }
 
-        var bars = gradeData.map(compassoToken);
-        var perLine = 4;
-        var html = '<div class="grade-bars-play">';
+        function slotSpan(token) {
+            if (token === '%') {
+                return '<span class="grade-repeat-play">%</span>';
+            }
+            return '<span class="grade-chord-play">' + escHtml(token) + '</span>';
+        }
 
-        for (var i = 0; i < bars.length; i += perLine) {
-            var lineBars = bars.slice(i, i + perLine);
-            var isFirst = i === 0;
-            var isLast = (i + perLine) >= bars.length;
+        function compassoToSlots(comp) {
+            var acordes = normalizeAcordes(comp);
+            if (!acordes.length) return ['%', '%', '%', '%'];
 
-            html += '<div class="grade-line-play">';
-            html += '<span class="grade-sep-play">' + (isFirst ? '||:' : '|') + '</span>';
+            if (acordes.length === 1) {
+                if (acordes[0] === '%') return ['%', '%', '%', '%'];
+                return [acordes[0], '%', '%', '%'];
+            }
 
-            lineBars.forEach(function(token) {
-                if (token === '%') {
-                    html += ' <span class="grade-repeat-play">%</span> <span class="grade-sep-play">|</span>';
+            if (acordes.length === 2) {
+                return [acordes[0], '%', acordes[1], '%'];
+            }
+
+            if (acordes.length === 3) {
+                return [acordes[0], acordes[1], acordes[2], '%'];
+            }
+
+            return acordes.slice(0, 4);
+        }
+
+        function groupByParte(data) {
+            var hasParte = data.some(function(comp) {
+                return comp && comp.parte != null && String(comp.parte).trim() !== '';
+            });
+
+            if (!hasParte) {
+                return [{ label: '', items: data }];
+            }
+
+            var groups = [];
+            var currentLabel = null;
+            var currentItems = [];
+
+            data.forEach(function(comp) {
+                var label = (comp && comp.parte != null) ? String(comp.parte).trim().toUpperCase() : '';
+                if (currentLabel === null || label !== currentLabel) {
+                    if (currentItems.length) {
+                        groups.push({ label: currentLabel, items: currentItems });
+                    }
+                    currentLabel = label;
+                    currentItems = [comp];
                 } else {
-                    html += ' <span class="grade-chord-play">' + escHtml(token) + '</span> <span class="grade-sep-play">|</span>';
+                    currentItems.push(comp);
                 }
             });
 
-            if (isLast) {
-                html += ' <span class="grade-sep-play">:||</span>';
+            if (currentItems.length) {
+                groups.push({ label: currentLabel, items: currentItems });
             }
-            html += '</div>';
+
+            return groups;
         }
 
+        var parts = groupByParte(gradeData);
+        var html = '<div class="grade-bars-play">';
+
+        parts.forEach(function(part) {
+            var bars = (part.items || []).map(compassoToSlots);
+            if (!bars.length) return;
+
+            html += '<div class="grade-part-play">';
+            if (part.label) {
+                html += '<span class="grade-part-title-play">Parte ' + escHtml(part.label) + '</span>';
+            }
+
+            html += '<div class="grade-inline-play">';
+            html += '<span class="grade-sep-play">||:</span> ';
+
+            bars.forEach(function(slots, idx) {
+                html += slotSpan(slots[0]) + ' ';
+                html += slotSpan(slots[1]) + ' ';
+                html += slotSpan(slots[2]) + ' ';
+                html += slotSpan(slots[3]);
+
+                if (idx < bars.length - 1) {
+                    html += ' <span class="grade-sep-play">|</span> ';
+                }
+            });
+
+            html += ' <span class="grade-sep-play">:||</span>';
+            html += '</div></div>';
+        });
+
         html += '</div>';
+
         return html;
     }
 
@@ -918,6 +1007,27 @@ body.play-mode.edges-hint .tap-zone {
             .catch(function () { cb(structuredCache[id + ':0'] || null); });
     }
 
+    function fetchGrade(id, semitones, cb) {
+        var key = id + ':' + semitones;
+        if (gradeCache[key]) { cb(gradeCache[key]); return; }
+
+        var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
+                    .replace('__ID__', encodeURIComponent(id))
+                    + '?semitones=' + semitones + '&grade=1';
+
+        fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && Array.isArray(data.grade_data)) {
+                    gradeCache[key] = data.grade_data;
+                    cb(data.grade_data);
+                } else {
+                    cb(gradeCache[id + ':0'] || null);
+                }
+            })
+            .catch(function () { cb(gradeCache[id + ':0'] || null); });
+    }
+
     function render() {
         var c = getCurrent();
         if (!c) return;
@@ -957,9 +1067,9 @@ body.play-mode.edges-hint .tap-zone {
             var el = document.getElementById('cifra-content');
             el.classList.add('grade-mode');
             el.classList.remove('structured-mode');
-            var gd = null;
-            if (c.grade_s) { try { gd = JSON.parse(c.grade_s); } catch(e) {} }
-            renderHtml(buildGradeHtml(gd));
+            fetchGrade(c.id, t, function (gd) {
+                renderHtml(buildGradeHtml(gd));
+            });
         } else {
             document.getElementById('cifra-content').classList.remove('grade-mode');
             var sd0 = structuredCache[c.id + ':0'] || null;
@@ -995,7 +1105,8 @@ body.play-mode.edges-hint .tap-zone {
         var c = getCurrent();
         if (!c) return;
         var semi = parseInt(value, 10) || 0;
-        transposeByCifra[c.id] = semi;
+        globalTranspose = semi;
+        sessionStorage.setItem('play.transposeSemi', String(semi));
         render();
     }
 

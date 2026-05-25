@@ -4,27 +4,18 @@ import re
 import html as html_lib
 
 
-_NOTE_BR_MAP = {
-    'C#': 'Db',
-    'D#': 'Eb',
-    'F#': 'Gb',
-    'G#': 'Ab',
-    'A#': 'Bb',
-}
-
-
 def _to_br_note(note):
     if not note:
         return note
-    n = str(note).replace('♯', '#').replace('♭', 'b')
-    return _NOTE_BR_MAP.get(n, n)
+    # Mantem a alteracao original (# ou b) e apenas normaliza glifos unicode.
+    return str(note).replace('♯', '#').replace('♭', 'b')
 
 
 def to_brazilian_chord_notation(chord_str):
     """Padroniza um acorde para notação brasileira.
 
     Regras aplicadas:
-    - sustenidos enarmônicos comuns -> bemóis (C# -> Db, etc.)
+    - mantem a alteracao original da nota (#/b), sem forcar enarmonizacao
     - majX / MX -> X+ (ex.: Cmaj7 -> C7+)
     - dim / dim7 -> ° / °7
     - min -> m
