@@ -215,6 +215,9 @@ body { overflow-x: hidden; }
     flex-direction: column;
     padding-right: 0.55rem;
 }
+.cifra-body .sp-item.sp-no-gap {
+    padding-right: 0;
+}
 .cifra-body .sp-chord {
     color: #2dd4bf;
     font-weight: 700;
@@ -954,14 +957,28 @@ body.play-mode.edges-hint .tap-zone {
         var html = '';
         groups.forEach(function(group) {
             html += '<div class="sp-line">';
-            group.forEach(function(item) {
+            for (var i = 0; i < group.length; i++) {
+                var item = group[i] || {};
+                var next = (i + 1 < group.length) ? (group[i + 1] || {}) : null;
                 var chord = item.acorde || '';
-                var lyric = item.texto_letra || '';
-                html += '<span class="sp-item">';
+                var lyric = (item.texto_letra != null) ? String(item.texto_letra) : '';
+
+                var noGap = false;
+                if (next) {
+                    var nextLyric = (next.texto_letra != null) ? String(next.texto_letra) : '';
+                    var thisEndsWithSpace = /\s$/.test(lyric);
+                    var nextStartsWithSpace = /^\s/.test(nextLyric);
+                    // Se nao ha espaco entre os fragmentos, eles fazem parte da mesma palavra.
+                    if (lyric && nextLyric && !thisEndsWithSpace && !nextStartsWithSpace) {
+                        noGap = true;
+                    }
+                }
+
+                html += '<span class="sp-item' + (noGap ? ' sp-no-gap' : '') + '">';
                 html += '<span class="sp-chord">' + escHtml(chord) + '</span>';
                 html += '<span class="sp-word">' + escHtml(lyric) + '</span>';
                 html += '</span>';
-            });
+            }
             html += '</div>';
         });
         return html;

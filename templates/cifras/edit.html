@@ -163,14 +163,14 @@ function parseConteudo(text) {
             while ((m = re.exec(line)) !== null) {
                 if (m.index > lastIndex) {
                     const prefixo = line.slice(lastIndex, m.index);
-                    if (prefixo.trim().length) {
-                        result.push({ segundo: seq++, texto_letra: prefixo.trim(), acorde: '', group });
+                    if (prefixo.length) {
+                        result.push({ segundo: seq++, texto_letra: prefixo, acorde: '', group });
                     }
                 }
 
                 result.push({
                     segundo: seq++,
-                    texto_letra: String(m[2] || '').replace(/\s+$/g, ''),
+                    texto_letra: String(m[2] || ''),
                     acorde: m[1].trim(),
                     group
                 });
@@ -179,8 +179,8 @@ function parseConteudo(text) {
 
             if (lastIndex < line.length) {
                 const sufixo = line.slice(lastIndex);
-                if (sufixo.trim().length) {
-                    result.push({ segundo: seq++, texto_letra: sufixo.trim(), acorde: '', group });
+                if (sufixo.length) {
+                    result.push({ segundo: seq++, texto_letra: sufixo, acorde: '', group });
                 }
             }
 
