@@ -158,9 +158,32 @@ function parseConteudo(text) {
         if (/\[([^\]]+)\]/.test(line)) {
             const re = /\[([^\]]+)\]\s*([^\[]*)/g;
             let m;
+            let lastIndex = 0;
+
             while ((m = re.exec(line)) !== null) {
-                result.push({ segundo: seq++, texto_letra: m[2].trim(), acorde: m[1].trim(), group });
+                if (m.index > lastIndex) {
+                    const prefixo = line.slice(lastIndex, m.index);
+                    if (prefixo.trim().length) {
+                        result.push({ segundo: seq++, texto_letra: prefixo.trim(), acorde: '', group });
+                    }
+                }
+
+                result.push({
+                    segundo: seq++,
+                    texto_letra: String(m[2] || '').replace(/\s+$/g, ''),
+                    acorde: m[1].trim(),
+                    group
+                });
+                lastIndex = re.lastIndex;
             }
+
+            if (lastIndex < line.length) {
+                const sufixo = line.slice(lastIndex);
+                if (sufixo.trim().length) {
+                    result.push({ segundo: seq++, texto_letra: sufixo.trim(), acorde: '', group });
+                }
+            }
+
             group++; i++; continue;
         }
 

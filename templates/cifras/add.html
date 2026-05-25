@@ -171,11 +171,31 @@ function parseConteudo(text) {
         if (/\[([^\]]+)\]/.test(line)) {
             const re = /\[([^\]]+)\]\s*([^\[]*)/g;
             let m;
+            let lastIndex = 0;
+
             while ((m = re.exec(line)) !== null) {
+                // Preserva texto livre que venha antes do acorde.
+                if (m.index > lastIndex) {
+                    const prefixo = line.slice(lastIndex, m.index);
+                    if (prefixo.trim().length) {
+                        result.push({ segundo: seq++, texto_letra: prefixo.trim(), acorde: '', group });
+                    }
+                }
+
                 const acorde = m[1].trim();
-                const texto = m[2].trim();
+                const texto = String(m[2] || '').replace(/\s+$/g, '');
                 result.push({ segundo: seq++, texto_letra: texto, acorde, group });
+                lastIndex = re.lastIndex;
             }
+
+            // Se sobrou texto apos o ultimo acorde, preserva como letra sem acorde.
+            if (lastIndex < line.length) {
+                const sufixo = line.slice(lastIndex);
+                if (sufixo.trim().length) {
+                    result.push({ segundo: seq++, texto_letra: sufixo.trim(), acorde: '', group });
+                }
+            }
+
             group++; i++; continue;
         }
 
