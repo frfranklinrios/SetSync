@@ -16,9 +16,10 @@ def to_brazilian_chord_notation(chord_str):
 
     Regras aplicadas:
     - mantem a alteracao original da nota (#/b), sem forcar enarmonizacao
-    - majX / MX -> X+ (ex.: Cmaj7 -> C7+)
+    - majX / MX / XM -> X+ (ex.: Cmaj7, CM7, C7M -> C7+)
     - dim / dim7 -> ° / °7
     - min -> m
+    - m7 permanece m7 (nao confundir M maiúsculo com m de menor)
     """
     if not chord_str:
         return chord_str
@@ -34,10 +35,12 @@ def to_brazilian_chord_notation(chord_str):
         bass = _to_br_note(bass)
 
     q = quality
-    q = re.sub(r'(?i)maj(\d+)', r'\1+', q)
-    q = re.sub(r'(?i)M(\d+)', r'\1+', q)
+    # Ordem importa: dim7 antes de qualquer regra que possa casar "m7" dentro de "dim7"
     q = re.sub(r'(?i)dim7', '°7', q)
     q = re.sub(r'(?i)dim', '°', q)
+    q = re.sub(r'(?i)maj(\d+)', r'\1+', q)
+    q = re.sub(r'(\d+)M(?!\w)', r'\1+', q)       # 7M, 9M (BR)
+    q = re.sub(r'(?<![a-zA-Z])M(\d+)', r'\1+', q)  # M7 maiúsculo — NÃO casa m7 de menor
     q = re.sub(r'(?i)min', 'm', q)
 
     out = root + q
@@ -119,6 +122,61 @@ def chord_components_info(symbol):
         return None
 
 
+_CHROMATIC_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+_CHROMATIC_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+
+
+def _split_chord_root_quality(chord_str):
+    m = re.match(r'^([A-G](?:#|b)?)(.*?)(?:/([A-G](?:#|b)?))?$', (chord_str or '').strip())
+    if not m:
+        return None
+    return m.group(1), (m.group(2) or ''), m.group(3)
+
+
+def _note_semitone_index(note):
+    n = _to_br_note(note or '')
+    if n in _CHROMATIC_SHARP:
+        return _CHROMATIC_SHARP.index(n)
+    if n in _CHROMATIC_FLAT:
+        return _CHROMATIC_FLAT.index(n)
+    return None
+
+
+def _spell_semitone(semitone, prefer_flats=False):
+    return _CHROMATIC_FLAT[semitone % 12] if prefer_flats else _CHROMATIC_SHARP[semitone % 12]
+
+
+def _respell_chord_roots(transposed, original):
+    """Mantém o estilo de bemóis/sustenidos do acorde original após transpor."""
+    orig = _split_chord_root_quality(original)
+    new = _split_chord_root_quality(transposed)
+    if not orig or not new:
+        return transposed
+
+    orig_root, _, orig_bass = orig
+    new_root, quality, new_bass = new
+
+    prefer_flats = ('b' in orig_root and '#' not in orig_root)
+    prefer_sharps = ('#' in orig_root and 'b' not in orig_root)
+    if prefer_flats or prefer_sharps:
+        idx = _note_semitone_index(new_root)
+        if idx is not None:
+            new_root = _spell_semitone(idx, prefer_flats=prefer_flats)
+
+    if new_bass and orig_bass:
+        prefer_flats_b = ('b' in orig_bass and '#' not in orig_bass)
+        prefer_sharps_b = ('#' in orig_bass and 'b' not in orig_bass)
+        if prefer_flats_b or prefer_sharps_b:
+            idx_b = _note_semitone_index(new_bass)
+            if idx_b is not None:
+                new_bass = _spell_semitone(idx_b, prefer_flats=prefer_flats_b)
+
+    out = new_root + quality
+    if new_bass:
+        out += '/' + new_bass
+    return out
+
+
 def pychord_transpose_chord(chord_str, semitones):
     """Transpõe um acorde usando pychord (mais robusto para acordes complexos)."""
     normalized = _normalize_chord_for_pychord(chord_str)
@@ -130,6 +188,7 @@ def pychord_transpose_chord(chord_str, semitones):
         if chord_str.endswith('+') and not new_str.endswith('+'):
             # Re-aplica o "+" se a entrada original usava (mantém estilo BR)
             new_str = re.sub(r'maj(\d+)$', r'\1+', new_str)
+        new_str = _respell_chord_roots(new_str, chord_str)
         return to_brazilian_chord_notation(new_str)
     except Exception:
         return to_brazilian_chord_notation(chord_str)
@@ -146,20 +205,23 @@ _CHORD_PART = (
     r'|[+\-°º]'
     r'|[b#]\d{1,2})'
 )
-_CHORD_HEAD = r'[A-G][#b]?'
-_CHORD_BASS = r'(?:/[A-G][#b]?)?'
+# Nota raiz: quando há # ou b logo após a letra, consome junto (evita casar só "F" em "F#")
+_CHORD_ROOT = r'(?:[A-G]#|[A-G]b|[A-G](?![#b]))'
+_CHORD_BASS = r'(?:/(?:[A-G]#|[A-G]b|[A-G](?![#b])))?'
+# Compat: alias usado em outros pontos
+_CHORD_HEAD = _CHORD_ROOT
 
 # Para uso em match exato (token completo)
 CHORD_TOKEN_RE = re.compile(
-    r'^' + _CHORD_HEAD + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r'$'
+    r'^' + _CHORD_ROOT + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r'$'
 )
 # Para uso em substituição inline dentro de uma linha
 CHORD_INLINE_RE = re.compile(
-    r'(' + _CHORD_HEAD + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')'
+    r'(' + _CHORD_ROOT + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')'
 )
-# Versão com word boundary para uso em texto livre
+# Texto livre: \b falha após "#" (ex.: "F#" vira "F" + "#" solto)
 _CHORD_REGEX_WB = (
-    r'\b(' + _CHORD_HEAD + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')\b'
+    r'(?<![A-Za-z])(' + _CHORD_ROOT + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')(?![A-Za-z0-9])'
 )
 
 
@@ -184,6 +246,17 @@ def pychord_highlight_chords(text):
 
 def pychord_transpose_text(text, semitones):
     """Transpõe todos os acordes de um texto usando pychord. Suporta º/° como diminuto."""
+    if semitones == 0:
+        return text or ''
+    if text is None:
+        return ''
+    stripped = text.strip()
+    # Token isolado (grade harmônica: "F#", "G#m", "%", etc.)
+    if stripped == '%':
+        return '%'
+    if CHORD_TOKEN_RE.match(stripped):
+        return pychord_transpose_chord(stripped, semitones)
+
     def transp(match):
         return pychord_transpose_chord(match.group(1), semitones)
 
@@ -272,7 +345,7 @@ def transpose_text(text, semitones):
     return ''.join(result)
 
 def get_available_tones():
-    """Retorna os tons disponíveis para transposição"""
+    """Retorna os tons disponíveis para transposição (legado — preferir get_transposition_options)."""
     return {
         -12: 'Oitava Baixa',
         -11: 'A',
@@ -300,6 +373,68 @@ def get_available_tones():
         11: 'F#/Gb',
         12: 'G (Oitava Alta)',
     }
+
+
+def parse_tom_root(tom_original):
+    """Extrai a nota raiz do tom cadastrado (ex.: Bmaj7 -> B, F#m -> F#)."""
+    s = (tom_original or 'C').strip()
+    if not s:
+        return 'C'
+    m = re.match(r'^([A-G])(#|b)?', s, re.I)
+    if not m:
+        return 'C'
+    return _to_br_note(m.group(1).upper() + (m.group(2) or ''))
+
+
+def semitones_between_keys(from_tom, to_key):
+    """Semitons para ir do tom original até a tonalidade alvo."""
+    a = _note_semitone_index(parse_tom_root(from_tom))
+    b = _note_semitone_index(parse_tom_root(to_key))
+    if a is None or b is None:
+        return 0
+    diff = b - a
+    if diff > 6:
+        diff -= 12
+    elif diff < -6:
+        diff += 12
+    return diff
+
+
+def key_at_transpose(tom_original, semitones):
+    """Nome da tonalidade resultante após transpor a partir do tom original."""
+    root = parse_tom_root(tom_original)
+    idx = _note_semitone_index(root)
+    if idx is None:
+        return root
+    prefer_flats = 'b' in root and '#' not in root
+    return _spell_semitone(idx + semitones, prefer_flats=prefer_flats)
+
+
+def get_absolute_key_list():
+    """Lista das 12 tonalidades para seleção absoluta (setlists)."""
+    return list(_CHROMATIC_FLAT)
+
+
+def get_transposition_options(tom_original):
+    """Opções de transposição {semitones: label} relativas ao tom_original da música."""
+    root = parse_tom_root(tom_original)
+    prefer_flats = 'b' in root and '#' not in root
+    chromatic = _CHROMATIC_FLAT if prefer_flats else _CHROMATIC_SHARP
+
+    options = {}
+    for key in chromatic:
+        semi = semitones_between_keys(root, key)
+        if semi == 0:
+            options[semi] = f'{key} (Original)'
+        else:
+            options[semi] = key
+    return dict(sorted(options.items(), key=lambda x: x[0]))
+
+
+def build_transpose_map(tom_original):
+    """Mapa { tonalidade: semitons } para uso no modo tocar (por música)."""
+    root = parse_tom_root(tom_original)
+    return {key: semitones_between_keys(root, key) for key in get_absolute_key_list()}
 
 
 def _is_chord_token(token):

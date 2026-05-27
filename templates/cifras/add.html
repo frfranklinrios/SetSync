@@ -71,7 +71,8 @@
         <div class="col-md-2">
             <label class="form-label">Tom</label>
             <input type="text" class="form-control" name="tom_original" value="C"
-                   placeholder="C, Am…">
+                   placeholder="Ex.: B, F#m">
+            <div class="form-text">Referência para transposição</div>
         </div>
         <div class="col-md-1">
             <label class="form-label">BPM</label>
@@ -169,7 +170,7 @@ function parseConteudo(text) {
 
         // ── Formato colchetes: [Acorde] letra [Acorde2] letra ──
         if (/\[([^\]]+)\]/.test(line)) {
-            const re = /\[([^\]]+)\]\s*([^\[]*)/g;
+            const re = /\[([^\]]+)\]([^\[]*)/g;
             let m;
             let lastIndex = 0;
 

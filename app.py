@@ -38,9 +38,6 @@ app.register_blueprint(bands_bp)
 app.register_blueprint(cifras_bp)
 app.register_blueprint(setlists_bp)
 
-print('MAPEAMENTO DE ROTAS:')
-print(app.url_map)
-
 @app.route('/')
 def index():
     if 'user_id' in session:

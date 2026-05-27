@@ -684,8 +684,9 @@ body.play-mode.edges-hint .tap-zone {
 
         <div class="bar-group-extra">
             <select id="transpose-sel" class="transpose-mini" onchange="onTransposeChange(this.value)" title="Transpor">
-                {% for semitones, label in transpositions.items() %}
-                <option value="{{ semitones }}">{{ label }}{% if semitones > 0 %} (+{{ semitones }}){% elif semitones < 0 %} ({{ semitones }}){% endif %}</option>
+                <option value="">Original (cadastro)</option>
+                {% for key in key_options %}
+                <option value="{{ key }}">{{ key }}</option>
                 {% endfor %}
             </select>
 
@@ -754,7 +755,7 @@ body.play-mode.edges-hint .tap-zone {
 <div id="kbd-hint">← → ou bordas: navegar · L lista · +/− fonte · A caber · C 2col · G grade · Espaço scroll · F tela cheia · Esc sair</div>
 
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }},"cifra_s":{{ cifra.cifra_json | tojson }},"grade_s":{{ cifra.grade_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -766,8 +767,12 @@ body.play-mode.edges-hint .tap-zone {
     var EXIT_URL = {{ (exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id))) | tojson }};
 
     var current = Math.max(0, Math.min(CIFRAS.length - 1, START_IDX));
-    var globalTranspose = parseInt(sessionStorage.getItem('play.transposeSemi') || '0', 10);
-    if (!Number.isFinite(globalTranspose)) globalTranspose = 0;
+    var targetKey = sessionStorage.getItem('play.targetKey') || '';
+    // Migração: valor antigo em semitons absolutos
+    var legacySemi = sessionStorage.getItem('play.transposeSemi');
+    if (!targetKey && legacySemi && legacySemi !== '0') {
+        sessionStorage.removeItem('play.transposeSemi');
+    }
     var htmlCache = {};          // (cifra_id + ':' + semitones) -> html
     var structuredCache = {};    // (cifra_id + ':' + semitones) -> cifra_data[]
     var gradeCache = {};         // (cifra_id + ':' + semitones) -> grade_data[]
@@ -775,11 +780,8 @@ body.play-mode.edges-hint .tap-zone {
     // Pre-cache the original (semitones=0) html
     CIFRAS.forEach(function (c) {
         htmlCache[c.id + ':0'] = c.html;
-        if (c.cifra_s) {
-            try {
-                var parsed = JSON.parse(c.cifra_s);
-                if (Array.isArray(parsed)) structuredCache[c.id + ':0'] = parsed;
-            } catch (e) {}
+        if (Array.isArray(c.cifra_structured) && c.cifra_structured.length) {
+            structuredCache[c.id + ':0'] = c.cifra_structured;
         }
         if (c.grade_s) {
             try {
@@ -808,8 +810,15 @@ body.play-mode.edges-hint .tap-zone {
     // ── Render ──────────────────────────────
     function getCurrent() { return CIFRAS[current]; }
 
-    function getTranspose(id) {
-        return globalTranspose;
+    function getTranspose(c) {
+        if (!targetKey || !c || !c.transpose_map) return 0;
+        var semi = c.transpose_map[targetKey];
+        return (semi === undefined || semi === null) ? 0 : semi;
+    }
+
+    function getDisplayKey(c) {
+        if (!targetKey) return c.tom || c.tom_root || '—';
+        return targetKey;
     }
 
     function renderHtml(html) {
@@ -1054,11 +1063,12 @@ body.play-mode.edges-hint .tap-zone {
         wrap.scrollTop = 0;
         window.scrollTo(0, 0);
 
-        var t = getTranspose(c.id);
+        var t = getTranspose(c);
         document.getElementById('bar-title').textContent = c.titulo;
-        var tomLabel = 'Tom ' + c.tom;
-        if (t > 0) tomLabel += ' (+' + t + 'st)';
-        else if (t < 0) tomLabel += ' (' + t + 'st)';
+        var tomLabel = 'Tom ' + getDisplayKey(c);
+        if (targetKey && targetKey !== c.tom_root) {
+            tomLabel += ' (cadastro: ' + (c.tom || c.tom_root) + ')';
+        }
         document.getElementById('bar-meta').textContent =
             c.artista + ' · ' + tomLabel + ' · ' + (current + 1) + '/' + CIFRAS.length;
 
@@ -1077,7 +1087,7 @@ body.play-mode.edges-hint .tap-zone {
 
         // transpose select
         var sel = document.getElementById('transpose-sel');
-        if (sel) sel.value = String(t);
+        if (sel) sel.value = targetKey;
 
         // load html (cached or fetch)
         if (gradeMode) {
@@ -1119,11 +1129,12 @@ body.play-mode.edges-hint .tap-zone {
 
     // ── Transpose ───────────────────────────
     function onTransposeChange(value) {
-        var c = getCurrent();
-        if (!c) return;
-        var semi = parseInt(value, 10) || 0;
-        globalTranspose = semi;
-        sessionStorage.setItem('play.transposeSemi', String(semi));
+        targetKey = value || '';
+        if (targetKey) {
+            sessionStorage.setItem('play.targetKey', targetKey);
+        } else {
+            sessionStorage.removeItem('play.targetKey');
+        }
         render();
     }
 

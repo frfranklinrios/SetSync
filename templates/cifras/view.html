@@ -165,8 +165,8 @@
             <div>
                 <h2 class="fw-bold mb-0" style="font-size:1.4rem;">{{ cifra.titulo }}</h2>
                 <p class="text-muted mb-0" style="font-size:0.875rem;">
-                    {{ cifra.artista }} · Tom: <strong>{{ cifra.tom_original }}</strong>
-                    {% if current_transpose != 0 %}&nbsp;<span style="color:var(--accent);font-weight:600;">(+{{ current_transpose }}st)</span>{% endif %}
+                    {{ cifra.artista }} · Tom: <strong>{{ display_key }}</strong>
+                    {% if current_transpose != 0 %}&nbsp;<span style="color:var(--muted);font-size:0.78rem;">(cadastro: {{ cifra.tom_original }})</span>{% endif %}
                     <span class="text-muted ms-2" style="font-size:0.78rem;">{{ cifra_index + 1 }}/{{ setlist|length }}</span>
                 </p>
             </div>
@@ -231,11 +231,13 @@
         <div class="card mb-3">
             <div class="card-header">Transpor</div>
             <div class="card-body">
-                <p class="text-muted mb-2" style="font-size:0.8rem;">Escolha o tom</p>
+                <p class="text-muted mb-2" style="font-size:0.8rem;">
+                    Tom cadastrado: <strong>{{ cifra.tom_original }}</strong>
+                </p>
                 <select class="transpose-select" onchange="location.href=CIFRA_BASE+'?transpose='+this.value">
                     {% for semitones, label in transpositions.items() %}
                     <option value="{{ semitones }}" {% if current_transpose == semitones %}selected{% endif %}>
-                        {{ label }}{% if semitones == 0 %} (Original){% elif semitones > 0 %} (+{{ semitones }}){% else %} ({{ semitones }}){% endif %}
+                        {{ label }}
                     </option>
                     {% endfor %}
                 </select>

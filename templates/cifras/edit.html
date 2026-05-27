@@ -71,7 +71,8 @@
         <div class="col-md-2">
             <label class="form-label">Tom</label>
             <input type="text" class="form-control" name="tom_original"
-                   value="{{ cifra.tom_original }}">
+                   value="{{ cifra.tom_original }}" placeholder="Ex.: B, F#m, Bmaj7">
+            <div class="form-text">Referência para transposição (ex.: B, F#m)</div>
         </div>
         <div class="col-md-1">
             <label class="form-label">BPM</label>
@@ -156,7 +157,7 @@ function parseConteudo(text) {
         if (line.trim() === '') { group++; i++; continue; }
 
         if (/\[([^\]]+)\]/.test(line)) {
-            const re = /\[([^\]]+)\]\s*([^\[]*)/g;
+            const re = /\[([^\]]+)\]([^\[]*)/g;
             let m;
             let lastIndex = 0;
 

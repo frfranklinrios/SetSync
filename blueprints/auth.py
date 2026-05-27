@@ -7,14 +7,20 @@ from db import (create_user, get_user_by_username, get_user, verify_password,
 from google_oauth import handle_google_callback, get_authorization_url
 import functools
 from itsdangerous import URLSafeTimedSerializer
-import os
-
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+
+def _is_safe_redirect(target):
+    """Evita open redirect: aceita apenas paths relativos do mesmo host."""
+    if not target or not target.startswith('/'):
+        return False
+    return not target.startswith('//')
+
 
 def send_reset_email(email, token):
     from flask_mail import Message
     mail = current_app.extensions['mail']
-    link = f"http://localhost:5000/auth/reset/{token}"
+    link = url_for('auth.reset_senha', token=token, _external=True)
     msg = Message('Recuperação de senha - Banda App', recipients=[email])
     msg.body = f'Para redefinir sua senha, clique no link: {link}\nSe você não solicitou, ignore este e-mail.'
     mail.send(msg)
@@ -126,7 +132,9 @@ def login():
             session.permanent = request.form.get('remember') is not None
             
             next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('dashboard'))
+            if next_page and _is_safe_redirect(next_page):
+                return redirect(next_page)
+            return redirect(url_for('dashboard'))
         
         flash('Usuário ou senha incorretos', 'danger')
     

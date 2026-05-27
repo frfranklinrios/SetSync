@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import re
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from blueprints.auth import login_required
@@ -9,7 +10,9 @@ from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   pychord_highlight_chords, highlight_chords_html,
                   split_chord_progression, chord_components_info,
-                  to_brazilian_chord_notation, format_text_chords_br)
+                  to_brazilian_chord_notation, format_text_chords_br,
+                  get_transposition_options, key_at_transpose, get_absolute_key_list,
+                  build_transpose_map, parse_tom_root)
 
 cifras_bp = Blueprint('cifras', __name__, url_prefix='/cifras')
 
@@ -72,6 +75,150 @@ def _group_cifra_data(data):
     return groups
 
 
+def _parse_conteudo_to_cifra_data(conteudo):
+    """Parse simples do conteudo textual para estrutura cifra_json-like.
+
+    Focado em preservar espacos no formato com colchetes, incluindo texto
+    antes do primeiro acorde na linha.
+    """
+    text = (conteudo or '').replace('\r\n', '\n').replace('\r', '\n')
+    lines = text.split('\n')
+    result = []
+    seq = 0
+    group = 0
+
+    for line in lines:
+        if not line.strip():
+            group += 1
+            continue
+
+        if '[' in line and ']' in line:
+            re_br = re.compile(r'\[([^\]]+)\]([^\[]*)')
+            last = 0
+            matched = False
+            for m in re_br.finditer(line):
+                matched = True
+                if m.start() > last:
+                    prefixo = line[last:m.start()]
+                    if prefixo:
+                        result.append({
+                            'segundo': seq,
+                            'texto_letra': prefixo,
+                            'acorde': '',
+                            'group': group,
+                        })
+                        seq += 1
+
+                result.append({
+                    'segundo': seq,
+                    'texto_letra': (m.group(2) or ''),
+                    'acorde': (m.group(1) or '').strip(),
+                    'group': group,
+                })
+                seq += 1
+                last = m.end()
+
+            if matched and last < len(line):
+                sufixo = line[last:]
+                if sufixo:
+                    result.append({
+                        'segundo': seq,
+                        'texto_letra': sufixo,
+                        'acorde': '',
+                        'group': group,
+                    })
+                    seq += 1
+
+            if matched:
+                group += 1
+                continue
+
+        # Fallback para linha sem colchetes: conserva como letra pura
+        result.append({
+            'segundo': seq,
+            'texto_letra': line,
+            'acorde': '',
+            'group': group,
+        })
+        seq += 1
+        group += 1
+
+    return result
+
+
+def _space_count(cifra_data):
+    if not cifra_data:
+        return 0
+    total = 0
+    for item in cifra_data:
+        total += str(item.get('texto_letra') or '').count(' ')
+    return total
+
+
+def _load_best_structured_cifra(cifra, semitones=0):
+    """Carrega cifra estruturada preferindo conteudo quando detecta JSON legado colado."""
+    parsed = None
+    raw_structured = cifra.get('cifra_json')
+    if raw_structured:
+        try:
+            parsed = json.loads(raw_structured)
+        except (ValueError, TypeError):
+            parsed = None
+
+    fallback = _parse_conteudo_to_cifra_data(cifra.get('conteudo') or '')
+
+    use_fallback = parsed is None
+    if parsed is not None and fallback:
+        parsed_spaces = _space_count(parsed)
+        fallback_spaces = _space_count(fallback)
+        # Heuristica para detectar legado onde espacos foram "colados".
+        if fallback_spaces >= parsed_spaces + 3:
+            use_fallback = True
+
+    data = fallback if use_fallback else parsed
+    if not data:
+        return []
+
+    if semitones:
+        for item in data:
+            if item.get('acorde'):
+                item['acorde'] = pychord_transpose_text(item['acorde'], semitones)
+
+    for item in data:
+        if item.get('acorde'):
+            item['acorde'] = to_brazilian_chord_notation(item['acorde'])
+
+    return data
+
+
+def _transpose_grade_data(grade_list, semitones=0):
+    """Transpõe acordes da grade harmônica, preservando '%' (repeat)."""
+    result = []
+    for comp in grade_list:
+        comp = dict(comp)
+        acordes = []
+        for token in comp.get('acordes', []):
+            if token == '%':
+                acordes.append('%')
+            elif semitones:
+                acordes.append(pychord_transpose_text(token, semitones))
+            else:
+                acordes.append(to_brazilian_chord_notation(token))
+        comp['acordes'] = acordes
+        result.append(comp)
+    return result
+
+
+def enrich_cifra_for_tocar(cifra):
+    """Prepara cifra para o modo tocar com dados estruturados corretos."""
+    c = dict(cifra)
+    structured = _load_best_structured_cifra(c, 0)
+    c['cifra_structured'] = structured if structured else None
+    c['tom_root'] = parse_tom_root(c.get('tom_original'))
+    c['transpose_map'] = build_transpose_map(c.get('tom_original'))
+    return c
+
+
 @cifras_bp.route('/band/<band_id>')
 @login_required
 def list_by_band(band_id):
@@ -101,8 +248,9 @@ def view(cifra_id):
         flash('Sem acesso', 'danger')
         return redirect(url_for('dashboard'))
 
-    transpositions = get_available_tones()
+    transpositions = get_transposition_options(cifra['tom_original'])
     current_transpose = request.args.get('transpose', 0, type=int)
+    display_key = key_at_transpose(cifra['tom_original'], current_transpose)
 
     conteudo = cifra['conteudo'] or ''
     # Transpor usando pychord se possível
@@ -111,33 +259,13 @@ def view(cifra_id):
     conteudo = format_text_chords_br(conteudo)
 
     # Parsear cifra_json e grade_json
-    cifra_data = None
-    if cifra.get('cifra_json'):
-        try:
-            raw = json.loads(cifra['cifra_json'])
-            if current_transpose != 0:
-                for item in raw:
-                    if item.get('acorde'):
-                        item['acorde'] = pychord_transpose_text(item['acorde'], current_transpose)
-            for item in raw:
-                if item.get('acorde'):
-                    item['acorde'] = to_brazilian_chord_notation(item['acorde'])
-            cifra_data = raw
-        except (ValueError, TypeError):
-            pass
+    cifra_data = _load_best_structured_cifra(cifra, current_transpose)
 
     grade_data = None
     if cifra.get('grade_json'):
         try:
             raw_g = json.loads(cifra['grade_json'])
-            if current_transpose != 0:
-                for comp in raw_g:
-                    comp['acordes'] = [pychord_transpose_text(a, current_transpose)
-                                       for a in comp.get('acordes', [])]
-            for comp in raw_g:
-                comp['acordes'] = [to_brazilian_chord_notation(a)
-                                   for a in comp.get('acordes', [])]
-            grade_data = raw_g
+            grade_data = _transpose_grade_data(raw_g, current_transpose)
         except (ValueError, TypeError):
             pass
 
@@ -156,6 +284,7 @@ def view(cifra_id):
                            grouped_cifra=grouped_cifra,
                            transpositions=transpositions,
                            current_transpose=current_transpose,
+                           display_key=display_key,
                            setlist=setlist,
                            cifra_index=cifra_index,
                            prev_cifra=prev_cifra,
@@ -174,7 +303,7 @@ def tocar_band(band_id):
         flash('Sem acesso a essa banda', 'danger')
         return redirect(url_for('dashboard'))
 
-    all_cifras = get_band_cifras(band_id)
+    all_cifras = [enrich_cifra_for_tocar(c) for c in get_band_cifras(band_id)]
     if not all_cifras:
         flash('Esta banda ainda não tem cifras.', 'warning')
         return redirect(url_for('bands.view', band_id=band_id))
@@ -197,7 +326,7 @@ def tocar_band(band_id):
         setlist=virtual_setlist,
         band=band,
         all_cifras=all_cifras,
-        transpositions=get_available_tones(),
+        key_options=get_absolute_key_list(),
         start_idx=start_idx,
         is_virtual=True,
     )
@@ -325,6 +454,7 @@ def get_transposed(cifra_id):
     payload = {
         'tom_original': cifra['tom_original'],
         'semitones': semitones,
+        'display_key': key_at_transpose(cifra['tom_original'], semitones),
     }
     if want_html:
         payload['html'] = highlight_chords_html(transposed)
@@ -332,21 +462,7 @@ def get_transposed(cifra_id):
         payload['conteudo'] = transposed
 
     if want_structured:
-        structured_data = []
-        raw_structured = cifra.get('cifra_json')
-        if raw_structured:
-            try:
-                parsed = json.loads(raw_structured)
-                if semitones:
-                    for item in parsed:
-                        if item.get('acorde'):
-                            item['acorde'] = pychord_transpose_text(item['acorde'], semitones)
-                for item in parsed:
-                    if item.get('acorde'):
-                        item['acorde'] = to_brazilian_chord_notation(item['acorde'])
-                structured_data = parsed
-            except (ValueError, TypeError):
-                structured_data = []
+        structured_data = _load_best_structured_cifra(cifra, semitones)
         payload['cifra_data'] = structured_data
 
     if want_grade:
@@ -355,18 +471,7 @@ def get_transposed(cifra_id):
         if raw_grade:
             try:
                 parsed_grade = json.loads(raw_grade)
-                if semitones:
-                    for comp in parsed_grade:
-                        comp['acordes'] = [
-                            pychord_transpose_text(a, semitones)
-                            for a in comp.get('acordes', [])
-                        ]
-                for comp in parsed_grade:
-                    comp['acordes'] = [
-                        to_brazilian_chord_notation(a)
-                        for a in comp.get('acordes', [])
-                    ]
-                grade_data = parsed_grade
+                grade_data = _transpose_grade_data(parsed_grade, semitones)
             except (ValueError, TypeError):
                 grade_data = []
         payload['grade_data'] = grade_data
