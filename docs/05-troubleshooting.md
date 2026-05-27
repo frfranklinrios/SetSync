@@ -34,7 +34,20 @@ uv run playwright install chromium
 
 Configure cookies para o `yt-dlp`:
 
-- `CIFRAS_YOUTUBE_COOKIES_FILE=/caminho/cookies.txt`
+- `CIFRAS_YOUTUBE_COOKIES_FILE=/app/data/youtube_cookies.txt` (no Docker)
+- O arquivo deve estar em formato **Netscape** e conter cookies de login (`SAPISID`, `__Secure-1PSID`, `LOGIN_INFO`).
+
+## YouTube: “Signature solving failed” / “No supported JavaScript runtime”
+
+O `yt-dlp` recente precisa de **Deno** (ou Node) + pacote `yt-dlp[default]` para resolver desafios do YouTube.
+
+No Docker, faça rebuild:
+
+```bash
+docker compose up -d --build
+docker compose exec web deno --version
+docker compose exec web yt-dlp --cookies /app/data/youtube_cookies.txt --skip-download "https://www.youtube.com/watch?v=VIDEO_ID"
+```
 
 ## Banco SQLite
 

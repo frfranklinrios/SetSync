@@ -4,10 +4,12 @@ import re
 
 import yt_dlp
 
+from cifras_tool.ydl_common import build_ydl_opts
+
 
 def _duracao_video(video_id: str) -> int | None:
     try:
-        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True}) as ydl:
+        with yt_dlp.YoutubeDL(build_ydl_opts()) as ydl:
             info = ydl.extract_info(
                 f"https://www.youtube.com/watch?v={video_id}",
                 download=False,
@@ -29,9 +31,7 @@ def buscar_no_youtube(
         return []
 
     try:
-        with yt_dlp.YoutubeDL(
-            {"quiet": True, "no_warnings": True, "extract_flat": True}
-        ) as ydl:
+        with yt_dlp.YoutubeDL(build_ydl_opts(extract_flat=True)) as ydl:
             info = ydl.extract_info(
                 f"ytsearch{max_resultados}:{consulta}",
                 download=False,

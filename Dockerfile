@@ -2,10 +2,16 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Instalar dependências de sistema
+# ffmpeg: áudio do importador | Deno: desafios JS do YouTube (yt-dlp EJS)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    unzip \
+    ffmpeg \
+    && curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh \
+    && rm -rf /var/lib/apt/lists/* \
+    && deno --version \
+    && ffmpeg -version | head -1
 
 # Copiar requirements
 COPY requirements.txt .

@@ -6,7 +6,7 @@ from pathlib import Path
 from yt_dlp import DownloadError, YoutubeDL
 from yt_dlp.utils import ExtractorError
 
-from cifras_tool.config import settings
+from cifras_tool.ydl_common import build_ydl_opts
 
 
 class DownloaderError(Exception):
@@ -35,36 +35,20 @@ class AudioDownloader:
         output_template = str(self.output_dir / f"{file_id}.%(ext)s")
         target_wav = self.output_dir / f"{file_id}.wav"
 
-        ydl_opts: dict = {
-            "format": "bestaudio/best",
-            "outtmpl": output_template,
-            "noplaylist": True,
-            "quiet": True,
-            "no_warnings": True,
-            "socket_timeout": 20,
-            "http_headers": {
-                "User-Agent": settings.youtube_user_agent
-                or (
-                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-                )
-            },
-            "postprocessors": [
+        ydl_opts = build_ydl_opts(
+            format="bestaudio/best",
+            outtmpl=output_template,
+            noplaylist=True,
+            socket_timeout=20,
+            postprocessors=[
                 {
                     "key": "FFmpegExtractAudio",
                     "preferredcodec": "wav",
                     "preferredquality": "0",
                 }
             ],
-            "postprocessor_args": [
-                "-ac",
-                "1",
-                "-ar",
-                "22050",
-            ],
-        }
-        if settings.youtube_cookies_file:
-            ydl_opts["cookiefile"] = settings.youtube_cookies_file
+            postprocessor_args=["-ac", "1", "-ar", "22050"],
+        )
 
         try:
             with YoutubeDL(ydl_opts) as ydl:
