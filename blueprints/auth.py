@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from db import (create_user, get_user_by_username, get_user, verify_password,
-                get_user_by_google_id, create_google_user, get_user_by_email)
+                get_user_by_google_id, create_google_user, get_user_by_email, update_user_display_name)
 from google_oauth import handle_google_callback, get_authorization_url
 import functools
 from itsdangerous import URLSafeTimedSerializer
@@ -84,12 +84,20 @@ def register():
     
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
+        display_name = request.form.get('display_name', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         confirm = request.form.get('confirm', '')
         
-        if not username or not email or not password:
+        if not username or not display_name or not email or not password:
             flash('Preencha todos os campos', 'danger')
+            return render_template('register.html')
+
+        if len(display_name) < 2:
+            flash('Nome deve ter no mínimo 2 caracteres', 'danger')
+            return render_template('register.html')
+        if len(display_name) > 60:
+            flash('Nome deve ter no máximo 60 caracteres', 'danger')
             return render_template('register.html')
         
         if password != confirm:
@@ -104,7 +112,7 @@ def register():
             flash('Usuário já existe', 'danger')
             return render_template('register.html')
         
-        user_id = create_user(username, email, password)
+        user_id = create_user(username, email, password, display_name=display_name)
         
         if not user_id:
             flash('Email já cadastrado', 'danger')
@@ -129,11 +137,14 @@ def login():
         if user and verify_password(user['id'], password):
             session['user_id'] = user['id']
             session['username'] = user['username']
+            session['display_name'] = (user.get('display_name') or '').strip()
             session.permanent = request.form.get('remember') is not None
             
             next_page = request.args.get('next')
             if next_page and _is_safe_redirect(next_page):
                 return redirect(next_page)
+            if not session['display_name']:
+                return redirect(url_for('auth.definir_nome', next=next_page or url_for('dashboard')))
             return redirect(url_for('dashboard'))
         
         flash('Usuário ou senha incorretos', 'danger')
@@ -182,7 +193,12 @@ def google_callback():
             user = existing_user
         else:
             # Criar novo usuário
-            user_id = create_google_user(userinfo['id'], userinfo['email'], userinfo['username'])
+            user_id = create_google_user(
+                userinfo['id'],
+                userinfo['email'],
+                userinfo['username'],
+                display_name=(userinfo.get('name') or '').strip() or None,
+            )
             if not user_id:
                 flash('Erro ao criar conta', 'danger')
                 return redirect(url_for('auth.login'))
@@ -191,8 +207,39 @@ def google_callback():
     # Login do usuário
     session['user_id'] = user['id']
     session['username'] = user['username']
+    session['display_name'] = (user.get('display_name') or '').strip()
     session.permanent = True
     
-    flash(f'Bem-vindo, {user["username"]}!', 'success')
+    if not session['display_name']:
+        return redirect(url_for('auth.definir_nome', next=url_for('dashboard')))
+
+    flash(f'Bem-vindo, {session.get("display_name") or user["username"]}!', 'success')
     return redirect(url_for('dashboard'))
+
+
+@auth_bp.route('/nome', methods=['GET', 'POST'])
+@login_required
+def definir_nome():
+    """Pede o nome de exibição para contas antigas sem display_name."""
+    next_page = request.args.get('next') or url_for('dashboard')
+    if not _is_safe_redirect(next_page):
+        next_page = url_for('dashboard')
+
+    if request.method == 'POST':
+        nome = (request.form.get('display_name') or '').strip()
+        if len(nome) < 2:
+            flash('Digite um nome com pelo menos 2 caracteres.', 'warning')
+            return render_template('definir_nome.html', next=next_page, suggested=session.get('username') or '')
+        if len(nome) > 60:
+            flash('Digite um nome com no máximo 60 caracteres.', 'warning')
+            return render_template('definir_nome.html', next=next_page, suggested=session.get('username') or '')
+
+        update_user_display_name(session['user_id'], nome)
+        session['display_name'] = nome
+        flash(f'Perfeito, {nome}!', 'success')
+        return redirect(next_page)
+
+    if session.get('display_name'):
+        return redirect(next_page)
+    return render_template('definir_nome.html', next=next_page, suggested=session.get('username') or '')
 

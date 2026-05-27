@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cifra → SetSync</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='cifras-tool/embed.css') }}">
+</head>
+<body class="embed-body"
+      data-processar-url="{{ url_for('cifras_import.api_processar') }}">
+  <div class="wrap">
+    <h1>Importar cifra</h1>
+    <p class="sub">Links da cifra e do YouTube — os dados preenchem o formulário do SetSync.</p>
+
+    <div class="card">
+      <form id="form">
+        <div class="row">
+          <div>
+            <label for="url_cifra">Link da cifra</label>
+            <input type="url" id="url_cifra" required placeholder="Cifra Club ou Cifras.com.br">
+          </div>
+          <div>
+            <label for="url_youtube">Link do YouTube</label>
+            <input type="url" id="url_youtube" required placeholder="youtube.com/watch?v=...">
+          </div>
+          <div>
+            <button type="submit" id="btn-gerar">Gerar</button>
+          </div>
+        </div>
+        <p id="status"></p>
+      </form>
+    </div>
+
+    <div id="resultado" class="hidden">
+      <div class="card">
+        <div class="meta" id="meta"></div>
+        <div class="actions">
+          <button type="button" class="btn-primary" id="btn-aplicar">Usar no formulário SetSync</button>
+          <a class="btn-link" id="dl-cifra" href="#" download>setsync_cifra.json</a>
+          <a class="btn-link" id="dl-grade" href="#" download>setsync_grade.json</a>
+        </div>
+      </div>
+      <div class="grid-result">
+        <div class="card">
+          <div class="head"><h2>Cifra</h2><button type="button" class="btn-sm" data-copy="cifra">Copiar</button></div>
+          <textarea id="out-cifra" readonly></textarea>
+        </div>
+        <div class="card grade-full">
+          <div class="head"><h2>Grade</h2><button type="button" class="btn-sm" data-copy="grade">Copiar texto</button></div>
+          <div id="grade-view" class="grade-panel"></div>
+          <textarea id="out-grade" readonly class="sr-only"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='cifras-tool/grade-render.js') }}"></script>
+  <script src="{{ url_for('static', filename='cifras-tool/embed.js') }}"></script>
+</body>
+</html>

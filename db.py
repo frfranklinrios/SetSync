@@ -21,6 +21,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
+            display_name TEXT,
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT,
             google_id TEXT,
@@ -82,32 +83,43 @@ def init_db():
     ''')
     db.commit()
 
-    # Migration: add colunas novas em BDs já existentes
+    # Migration: colunas novas em BDs já existentes
+    def _add_column(table: str, col: str, typedef: str) -> None:
+        cols = {row[1] for row in c.execute(f'PRAGMA table_info({table})')}
+        if col not in cols:
+            c.execute(f'ALTER TABLE {table} ADD COLUMN {col} {typedef}')
+            db.commit()
+
+    _add_column('users', 'display_name', 'TEXT')
     for col, typedef in [
         ('cifra_json', 'TEXT'),
         ('grade_json', 'TEXT'),
         ('bpm', 'REAL'),
         ('duracao_seg', 'INTEGER'),
     ]:
-        try:
-            c.execute(f'ALTER TABLE cifras ADD COLUMN {col} {typedef}')
-            db.commit()
-        except Exception:
-            pass  # coluna já existe
+        _add_column('cifras', col, typedef)
 
+    db.close()
+
+
+def update_user_display_name(user_id: str, display_name: str | None):
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE users SET display_name = ? WHERE id = ?', (display_name, user_id))
+    db.commit()
     db.close()
 
 
 # ── Users ──────────────────────────────────────────────────────────────────
 
-def create_user(username, email, password):
+def create_user(username, email, password, display_name: str | None = None):
     db = get_db()
     c = db.cursor()
     try:
         user_id = str(uuid.uuid4())
         c.execute(
-            'INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)',
-            (user_id, username, email, generate_password_hash(password))
+            'INSERT INTO users (id, username, display_name, email, password_hash) VALUES (?, ?, ?, ?, ?)',
+            (user_id, username, (display_name or None), email, generate_password_hash(password))
         )
         db.commit()
         return user_id
@@ -117,7 +129,7 @@ def create_user(username, email, password):
         db.close()
 
 
-def create_google_user(google_id, email, username):
+def create_google_user(google_id, email, username, display_name: str | None = None):
     db = get_db()
     c = db.cursor()
     try:
@@ -133,8 +145,8 @@ def create_google_user(google_id, email, username):
             i += 1
         user_id = str(uuid.uuid4())
         c.execute(
-            'INSERT INTO users (id, username, email, google_id) VALUES (?, ?, ?, ?)',
-            (user_id, attempt, email, google_id)
+            'INSERT INTO users (id, username, display_name, email, google_id) VALUES (?, ?, ?, ?, ?)',
+            (user_id, attempt, (display_name or None), email, google_id)
         )
         db.commit()
         return user_id

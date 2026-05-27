@@ -2,6 +2,15 @@
 
 Gerenciador de cifras e setlists para bandas. Organize suas músicas, transpose acordes e execute o setlist ao vivo com o **Modo Tocar**.
 
+## Documentação
+
+- `docs/00-visao-geral.md`
+- `docs/01-instalacao.md`
+- `docs/02-uso.md`
+- `docs/03-importador-cifras.md`
+- `docs/04-pwa.md`
+- `docs/05-troubleshooting.md`
+
 ## Funcionalidades
 
 - **Bandas e membros** — crie bandas, convide músicos por e-mail, gerencie permissões
@@ -58,6 +67,16 @@ cp .env.example .env
 flask run
 ```
 
+Requisitos extras do módulo de importação de cifras: `ffmpeg` no PATH e, para resolver vídeos do player do Cifra Club, `playwright install chromium`.
+
+### Importar cifra (módulo integrado `cifras_tool/`)
+
+O código do projeto `cifras` (pasta irmã `../cifras`) está embutido em `cifras_tool/` e exposto pelo Flask em `/cifras/import/tool`. **Um único servidor** (`uv run app.py` ou `flask run`) — não é necessário rodar FastAPI/uvicorn em outra porta.
+
+Em **Adicionar** ou **Editar** cifra, use o botão **Cifra → SetSync**: informe os links da cifra e do YouTube, gere e clique em **Usar no formulário SetSync**.
+
+Arquivos temporários: `data/cifras_tmp`, `data/cifras_exports`.
+
 ## Variáveis de ambiente
 
 | Variável | Descrição |
@@ -67,6 +86,8 @@ flask run
 | `FLASK_ENV` | `development` ou `production` |
 | `GOOGLE_CLIENT_ID` | ID do app no Google Cloud Console (opcional) |
 | `GOOGLE_CLIENT_SECRET` | Secret do app no Google Cloud Console (opcional) |
+| `CIFRAS_TMP_DIR` | Pasta temporária do pipeline de importação |
+| `CIFRAS_YOUTUBE_COOKIES_FILE` | Cookies do YouTube para download de áudio (opcional) |
 
 ## Atalhos — Modo Tocar
 
@@ -108,4 +129,4 @@ flask run
 ## Licença
 
 MIT
-# SetSync
+

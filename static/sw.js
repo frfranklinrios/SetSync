@@ -1,12 +1,10 @@
 // SetSync service worker — app-shell + offline fallback
 // Bump CACHE_VERSION whenever the app shell changes so old caches are evicted.
-const CACHE_VERSION = 'setsync-v2';
+const CACHE_VERSION = 'setsync-v5';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 
-// App shell: small set of always-cached resources
 const APP_SHELL = [
-    '/static/style.css',
     '/static/logoSetSync.png',
     '/static/icons/icon-192.png',
     '/static/icons/icon-512.png',
@@ -15,11 +13,32 @@ const APP_SHELL = [
     '/manifest.webmanifest'
 ];
 
-// ── INSTALL ──────────────────────────────────────────────
+const NO_CACHE_PATHS = ['/auth/', '/sw.js'];
+
+function shouldSkip(request, url) {
+    if (request.method !== 'GET') return true;
+    if (url.origin !== self.location.origin) return true;
+    for (const p of NO_CACHE_PATHS) {
+        if (url.pathname.startsWith(p)) return true;
+    }
+    return false;
+}
+
+function isNavigation(request) {
+    return request.mode === 'navigate'
+        || (request.headers.get('accept') || '').includes('text/html');
+}
+
+function isCacheableResponse(response) {
+    if (!response || !response.ok) return false;
+    if (response.type === 'opaqueredirect') return false;
+    if (response.redirected) return false;
+    return true;
+}
+
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(STATIC_CACHE).then((cache) =>
-            // addAll fails atomically if any resource fails; use individual add to be resilient
             Promise.all(APP_SHELL.map((url) =>
                 cache.add(new Request(url, { cache: 'reload' })).catch(() => null)
             ))
@@ -27,7 +46,6 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// ── ACTIVATE ─────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) =>
@@ -39,38 +57,28 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// ── FETCH ────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
     const request = event.request;
     const url = new URL(request.url);
+    if (shouldSkip(request, url)) return;
 
-    // Skip non-GET, cross-origin, auth flows, and anything that mutates state
-    if (request.method !== 'GET') return;
-    if (url.origin !== self.location.origin) return;
-    if (url.pathname.startsWith('/auth/')) return;
-
-    // Navigation (HTML page) → network-first, fallback to cache, then offline page
-    if (request.mode === 'navigate' ||
-        (request.headers.get('accept') || '').includes('text/html')) {
+    if (isNavigation(request)) {
         event.respondWith(networkFirstHTML(request));
         return;
     }
 
-    // Static assets → cache-first, populate runtime cache
-    if (url.pathname.startsWith('/static/') ||
-        url.pathname === '/manifest.webmanifest') {
+    if (url.pathname.startsWith('/static/') || url.pathname === '/manifest.webmanifest') {
         event.respondWith(cacheFirst(request));
         return;
     }
 
-    // Everything else (API/JSON) → network, fall back to cache if available
     event.respondWith(networkFirstJSON(request));
 });
 
 async function networkFirstHTML(request) {
     try {
         const networkResp = await fetch(request);
-        if (networkResp && networkResp.ok) {
+        if (isCacheableResponse(networkResp)) {
             const cache = await caches.open(RUNTIME_CACHE);
             cache.put(request, networkResp.clone());
         }
@@ -79,7 +87,11 @@ async function networkFirstHTML(request) {
         const cached = await caches.match(request);
         if (cached) return cached;
         const offline = await caches.match('/offline');
-        return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
+        return offline || new Response('Offline', {
+            status: 503,
+            statusText: 'Offline',
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
     }
 }
 
@@ -88,7 +100,7 @@ async function cacheFirst(request) {
     if (cached) return cached;
     try {
         const resp = await fetch(request);
-        if (resp && resp.ok) {
+        if (isCacheableResponse(resp)) {
             const cache = await caches.open(RUNTIME_CACHE);
             cache.put(request, resp.clone());
         }
@@ -101,7 +113,7 @@ async function cacheFirst(request) {
 async function networkFirstJSON(request) {
     try {
         const resp = await fetch(request);
-        if (resp && resp.ok) {
+        if (isCacheableResponse(resp)) {
             const cache = await caches.open(RUNTIME_CACHE);
             cache.put(request, resp.clone());
         }
@@ -116,7 +128,6 @@ async function networkFirstJSON(request) {
     }
 }
 
-// Allow page to ask SW to update immediately
 self.addEventListener('message', (event) => {
     if (event.data === 'skipWaiting') self.skipWaiting();
 });

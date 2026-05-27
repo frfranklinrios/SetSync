@@ -49,7 +49,12 @@
 }
 </style>
 
-<h2 class="mb-1">Adicionar Nova Cifra</h2>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-1">
+    <h2 class="mb-0">Adicionar Nova Cifra</h2>
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="openCifrasToolModal()">
+        Cifra → SetSync
+    </button>
+</div>
 <p class="text-muted mb-4" style="font-size:.875rem;">{{ band.name }}</p>
 
 <form method="POST" id="cifra-form" class="mt-2">
@@ -141,6 +146,11 @@
            class="btn btn-outline-secondary">Cancelar</a>
     </div>
 </form>
+
+{% include 'cifras/_cifras_tool_modal.html' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
+<script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cifras-tool-bridge.js') }}"></script>
 
 <script>
 // ── Regex para detectar token de acorde ─────────────────────────────────
@@ -510,12 +520,22 @@ document.getElementById('cifra-form').addEventListener('submit', function (event
     if (gradeText) {
         var parsedGrade = parseGradeTextToJson(gradeText);
         if (!parsedGrade) {
-            alert('Não foi possível interpretar a grade. Verifique se os compassos estão no formato com barras: | ... |');
+            alert('Não foi possível interpretar a grade. Use Parte A, ▸ Seção e acordes por compasso.');
             event.preventDefault();
             return;
         }
         document.getElementById('grade_json_hidden').value = JSON.stringify(parsedGrade);
     }
 });
+
+if (window.SetSyncGradeVisual) {
+    parseGradeTextToJson = function (text) {
+        return SetSyncGradeVisual.parseGradeTextToJson(text);
+    };
+    fillGradeTextFromJson = function (data) {
+        var gradeTa = document.getElementById('grade_text');
+        if (gradeTa && data) gradeTa.value = SetSyncGradeVisual.jsonToText(data);
+    };
+}
 </script>
 {% endblock %}

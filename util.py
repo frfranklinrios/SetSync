@@ -446,11 +446,125 @@ def _is_chord_token(token):
 
 def _is_chord_line(line):
     """Retorna True se a linha for predominantemente acordes"""
+    if _is_tab_line(line) or _is_tab_header(line) or _is_tab_meta_line(line):
+        return False
     tokens = [t for t in line.split() if t.strip('()[]{} ')]
     if not tokens:
         return False
     chord_count = sum(1 for t in tokens if _is_chord_token(t))
     return chord_count >= max(1, len(tokens) * 0.7)
+
+
+_TAB_LINE_RE = re.compile(
+    r'^[EBGDAe]\s*\|',
+    re.IGNORECASE,
+)
+_TAB_HEADER_RE = re.compile(
+    r'^(?:\[(?:Tab|TAB)[^\]]*\]|(?:Tab|TABlatura)\b)',
+    re.IGNORECASE,
+)
+_TAB_META_RE = re.compile(
+    r'^(?:Parte\s+\d+\s+de\s+\d+|Riff\b)',
+    re.IGNORECASE,
+)
+_TAB_ARTIFACT_RE = re.compile(
+    r'span\s+class\s*=|</?span|spa\[|/span>',
+    re.IGNORECASE,
+)
+
+
+def _is_tab_line(line: str) -> bool:
+    return bool(_TAB_LINE_RE.match((line or '').strip()))
+
+
+def _is_tab_header(line: str) -> bool:
+    s = (line or '').strip()
+    if _TAB_HEADER_RE.match(s):
+        return True
+    if s.startswith('[Tab') or s.startswith('[TAB'):
+        return True
+    return False
+
+
+def _is_tab_meta_line(line: str) -> bool:
+    s = (line or '').strip()
+    if not s:
+        return False
+    if _TAB_META_RE.match(s):
+        return True
+    if _TAB_ARTIFACT_RE.search(s) and 'Parte' in s:
+        return True
+    return False
+
+
+def sanitize_tab_html_artifacts(text: str) -> str:
+    """Remove resíduos HTML de tablaturas importadas (ex.: Cifra Club)."""
+    if not text:
+        return ''
+    cleaned = []
+    for raw in text.replace('\r\n', '\n').replace('\r', '\n').split('\n'):
+        line = raw
+        line = re.sub(r'^span class="tablatura">?\s*', '', line, flags=re.I)
+        line = re.sub(r'^span class="cnt">?\s*', '', line, flags=re.I)
+        line = re.sub(r'spa\[([^\]]+)\]n class="cnt">', '', line, flags=re.I)
+        line = re.sub(r'/span>\s*/span>\s*$', '', line, flags=re.I)
+        line = re.sub(r'</?span[^>]*>', '', line, flags=re.I)
+        line = re.sub(r'^spa\s*$', '', line, flags=re.I)
+        cleaned.append(line.rstrip())
+    return '\n'.join(cleaned)
+
+
+def content_has_tablatura(text: str) -> bool:
+    """Indica se o texto contém tablatura (linhas E| B|… ou seções Tab)."""
+    text = sanitize_tab_html_artifacts(text or '')
+    for line in text.split('\n'):
+        s = line.strip()
+        if not s:
+            continue
+        if _is_tab_line(s) or _is_tab_header(s):
+            return True
+    return False
+
+
+def _highlight_tab_line_html(line: str) -> str:
+    """Destaca cordas e números/técnicas em uma linha de tablatura."""
+    s = line.rstrip()
+    m = re.match(r'^([EBGDAe])(\s*\|)(.*)$', s, re.I)
+    if not m:
+        return f'<span class="cifra-tab-line">{html_lib.escape(s)}</span>'
+
+    string_name = m.group(1).upper()
+    pipe = m.group(2)
+    rest = html_lib.escape(m.group(3))
+    rest = re.sub(
+        r'(\d+|x|X|/|\\|~|h|p|b)',
+        r'<span class="tab-tech">\1</span>',
+        rest,
+    )
+    return (
+        f'<span class="cifra-tab-line">'
+        f'<span class="tab-string">{string_name}{html_lib.escape(pipe)}</span>'
+        f'{rest}'
+        f'</span>'
+    )
+
+
+def _render_tab_block(lines: list[str]) -> str:
+    parts = ['<div class="cifra-tab-block">']
+    for line in lines:
+        if not line.strip():
+            continue
+        s = line.strip()
+        if _is_tab_header(s):
+            parts.append(f'<span class="cifra-tab-title">{html_lib.escape(s)}</span>')
+        elif _is_tab_meta_line(s):
+            parts.append(f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>')
+        elif _is_tab_line(s):
+            parts.append(_highlight_tab_line_html(s))
+        else:
+            parts.append(f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>')
+    parts.append('</div>')
+    return ''.join(parts)
 
 
 def highlight_chords_html(text):
@@ -463,12 +577,37 @@ def highlight_chords_html(text):
     """
     if text is None:
         text = ''
+    text = sanitize_tab_html_artifacts(text)
     lines = text.split('\n')
     result = []
+    i = 0
 
-    for line in lines:
+    while i < len(lines):
+        line = lines[i]
         if not line.strip():
             result.append('')
+            i += 1
+            continue
+
+        if _is_tab_header(line) or _is_tab_line(line) or (
+            _is_tab_meta_line(line) and i + 1 < len(lines) and _is_tab_line(lines[i + 1])
+        ):
+            block = []
+            while i < len(lines):
+                cur = lines[i]
+                if not cur.strip():
+                    if block:
+                        i += 1
+                        break
+                    i += 1
+                    continue
+                if block and not (
+                    _is_tab_header(cur) or _is_tab_line(cur) or _is_tab_meta_line(cur)
+                ):
+                    break
+                block.append(cur)
+                i += 1
+            result.append(_render_tab_block(block))
             continue
 
         # Formato inline [Am] palavra [G] palavra
@@ -480,18 +619,119 @@ def highlight_chords_html(text):
                 escaped
             )
             result.append(f'<span class="cifra-lyric">{highlighted}</span>')
+            i += 1
+            continue
 
         # Linha só de acordes
-        elif _is_chord_line(line):
+        if _is_chord_line(line):
             escaped = html_lib.escape(line)
             highlighted = CHORD_INLINE_RE.sub(
                 r'<span class="chord">\1</span>',
                 escaped
             )
             result.append(f'<span class="cifra-chords">{highlighted}</span>')
+            i += 1
+            continue
 
         # Linha de letra
-        else:
-            result.append(f'<span class="cifra-lyric">{html_lib.escape(line)}</span>')
+        result.append(f'<span class="cifra-lyric">{html_lib.escape(line)}</span>')
+        i += 1
+
+    return '\n'.join(result)
+
+
+def highlight_chords_play_html(text):
+    """HTML para modo tocar: TAB formatada + acordes acima da letra (sp-line)."""
+    if text is None:
+        text = ''
+    text = sanitize_tab_html_artifacts(text)
+    lines = text.split('\n')
+    result = []
+    i = 0
+    re_br = re.compile(r'\[([^\]]+)\]([^\[]*)')
+
+    while i < len(lines):
+        line = lines[i]
+        if not line.strip():
+            result.append('')
+            i += 1
+            continue
+
+        if _is_tab_header(line) or _is_tab_line(line) or (
+            _is_tab_meta_line(line) and i + 1 < len(lines) and _is_tab_line(lines[i + 1])
+        ):
+            block = []
+            while i < len(lines):
+                cur = lines[i]
+                if not cur.strip():
+                    if block:
+                        i += 1
+                        break
+                    i += 1
+                    continue
+                if block and not (
+                    _is_tab_header(cur) or _is_tab_line(cur) or _is_tab_meta_line(cur)
+                ):
+                    break
+                block.append(cur)
+                i += 1
+            result.append(_render_tab_block(block))
+            continue
+
+        if re.search(r'\[[A-G][^\]]{0,10}\]', line):
+            parts = ['<div class="sp-line">']
+            last = 0
+            found = False
+            for m in re_br.finditer(line):
+                found = True
+                # Preserva texto antes do primeiro acorde (ou entre matches)
+                if m.start() > last:
+                    prefix = line[last:m.start()]
+                    if prefix:
+                        parts.append(
+                            '<span class="sp-item">'
+                            '<span class="sp-chord"></span>'
+                            f'<span class="sp-word">{html_lib.escape(prefix)}</span>'
+                            '</span>'
+                        )
+
+                chord = html_lib.escape(m.group(1).strip())
+                lyric = html_lib.escape(m.group(2) or '')
+                parts.append(
+                    '<span class="sp-item">'
+                    f'<span class="sp-chord">{chord}</span>'
+                    f'<span class="sp-word">{lyric}</span>'
+                    '</span>'
+                )
+                last = m.end()
+
+            # Sufixo sem acorde no fim da linha
+            if found and last < len(line):
+                suffix = line[last:]
+                if suffix:
+                    parts.append(
+                        '<span class="sp-item">'
+                        '<span class="sp-chord"></span>'
+                        f'<span class="sp-word">{html_lib.escape(suffix)}</span>'
+                        '</span>'
+                    )
+
+            parts.append('</div>')
+            result.append(''.join(parts))
+            i += 1
+            continue
+
+        if _is_chord_line(line):
+            escaped = html_lib.escape(line)
+            highlighted = CHORD_INLINE_RE.sub(
+                r'<span class="chord">\1</span>',
+                escaped,
+            )
+            result.append(f'<span class="cifra-chords">{highlighted}</span>')
+            i += 1
+            continue
+
+        result.append(f'<span class="cifra-lyric">{html_lib.escape(line)}</span>')
+        i += 1
 
     return '\n'.join(result)

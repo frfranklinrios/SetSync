@@ -197,9 +197,46 @@ body { overflow-x: hidden; }
 }
 .cifra-body .cifra-lyric {
     display: block;
-    color: #94a3b8;
+    color: #cbd5e1;
     padding: 1px 8px;
 }
+.cifra-body .cifra-tab-block {
+    display: block;
+    margin: 0.85rem 0;
+    padding: 0.75rem 1rem;
+    background: rgba(251, 191, 36, 0.07);
+    border: 1px solid rgba(251, 191, 36, 0.22);
+    border-left: 3px solid rgba(251, 191, 36, 0.55);
+    border-radius: 8px;
+    overflow-x: auto;
+    white-space: normal;
+}
+.cifra-body .cifra-tab-title {
+    display: block;
+    color: #fbbf24;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0.35rem 0 0.45rem;
+}
+.cifra-body .cifra-tab-line {
+    display: block;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.82rem;
+    line-height: 1.32;
+    white-space: pre;
+    color: #e2e8f0;
+}
+.cifra-body .tab-string { color: #f59e0b; font-weight: 700; }
+.cifra-body .tab-tech { color: #fde68a; font-weight: 600; }
+[data-theme="light"] .cifra-body .cifra-tab-block {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(217, 119, 6, 0.25);
+}
+[data-theme="light"] .cifra-body .cifra-tab-title { color: #b45309; }
+[data-theme="light"] .cifra-body .cifra-tab-line { color: #334155; }
+[data-theme="light"] .cifra-body .tab-string { color: #d97706; }
 .cifra-body.structured-mode {
     white-space: normal;
 }
@@ -236,7 +273,7 @@ body { overflow-x: hidden; }
     background: rgba(13,126,107,0.08);
     border-left-color: rgba(13,126,107,0.3);
 }
-[data-theme="light"] .cifra-body .cifra-lyric { color: #475569; }
+[data-theme="light"] .cifra-body .cifra-lyric { color: #334155; }
 [data-theme="light"] .cifra-body .sp-chord { color: #0d7e6b; }
 [data-theme="light"] .cifra-body .sp-word { color: #1e293b; }
 
@@ -646,7 +683,11 @@ body.play-mode.edges-hint .tap-zone {
 [data-theme="light"] .grade-repeat-play,
 [data-theme="light"] .grade-sep-play { color: #64748b; }
 [data-theme="light"] .grade-part-title-play { color: #64748b; }
+/* Layout unificado com app Cifras */
+.grade-bars-play .grade-visual-root { font-size: 1.05em; line-height: 1.75; }
+.grade-bars-play .grade-visual-chord { font-size: 1em; color: #2dd4bf; }
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 
@@ -711,9 +752,6 @@ body.play-mode.edges-hint .tap-zone {
             <button class="pb-btn" id="fs-btn" onclick="toggleFullscreen()" title="Tela cheia (F)" aria-label="Tela cheia">
                 <i class="fas fa-expand"></i>
             </button>
-            <button data-theme-toggle class="pb-btn" onclick="toggleTheme()" title="Tema (T)" aria-label="Alternar tema">
-                <i class="fas fa-sun"></i>
-            </button>
         </div>
 
         <a href="{{ exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id)) }}"
@@ -754,8 +792,9 @@ body.play-mode.edges-hint .tap-zone {
 <!-- Keyboard hint -->
 <div id="kbd-hint">← → ou bordas: navegar · L lista · +/− fonte · A caber · C 2col · G grade · Espaço scroll · F tela cheia · Esc sair</div>
 
+<script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"html":{{ cifra.conteudo | highlight_chords | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -834,119 +873,119 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     function buildGradeHtml(gradeData) {
+        // Visualização "anterior" (mais simples e compacta), usada no modo tocar:
+        // - não depende do renderer grade-visual
+        // - usa as classes .grade-*-play já presentes no template
         if (!gradeData || !gradeData.length) {
             return '<div style="padding:2rem 4vw;color:#475569;font-family:monospace;font-size:0.9rem;">Grade harmônica não disponível para esta música.</div>';
         }
 
-        function normalizeAcordes(comp) {
-            var acordes = (comp && Array.isArray(comp.acordes) ? comp.acordes : [])
-                .map(function(a) { return String(a || '').trim(); })
-                .filter(function(a) { return a.length > 0; });
-            return acordes;
+        // gradeData: lista "flat" de compassos {parte?, secao?, acordes:[...]}
+        var hasParte = gradeData.some(function (it) { return it && it.parte != null && String(it.parte).trim() !== ''; });
+        var parts = [];
+        var partMap = {};
+        function partKey(it) {
+            if (!hasParte) return '__UNICO__';
+            return it && it.parte ? String(it.parte).toUpperCase() : '__UNICO__';
         }
-
-        function slotSpan(token) {
-            if (token === '%') {
-                return '<span class="grade-repeat-play">%</span>';
+        gradeData.forEach(function (it) {
+            var k = partKey(it);
+            if (!partMap[k]) {
+                partMap[k] = { key: k, title: (k === '__UNICO__' ? 'Progressão' : ('Parte ' + k)), items: [] };
+                parts.push(partMap[k]);
             }
-            return '<span class="grade-chord-play">' + escHtml(token) + '</span>';
-        }
-
-        function compassoToSlots(comp) {
-            var acordes = normalizeAcordes(comp);
-            if (!acordes.length) return ['%', '%', '%', '%'];
-
-            if (acordes.length === 1) {
-                if (acordes[0] === '%') return ['%', '%', '%', '%'];
-                return [acordes[0], '%', '%', '%'];
-            }
-
-            if (acordes.length === 2) {
-                return [acordes[0], '%', acordes[1], '%'];
-            }
-
-            if (acordes.length === 3) {
-                return [acordes[0], acordes[1], acordes[2], '%'];
-            }
-
-            return acordes.slice(0, 4);
-        }
-
-        function groupByParte(data) {
-            var hasParte = data.some(function(comp) {
-                return comp && comp.parte != null && String(comp.parte).trim() !== '';
-            });
-
-            if (!hasParte) {
-                return [{ label: '', items: data }];
-            }
-
-            var groups = [];
-            var currentLabel = null;
-            var currentItems = [];
-
-            data.forEach(function(comp) {
-                var label = (comp && comp.parte != null) ? String(comp.parte).trim().toUpperCase() : '';
-                if (currentLabel === null || label !== currentLabel) {
-                    if (currentItems.length) {
-                        groups.push({ label: currentLabel, items: currentItems });
-                    }
-                    currentLabel = label;
-                    currentItems = [comp];
-                } else {
-                    currentItems.push(comp);
-                }
-            });
-
-            if (currentItems.length) {
-                groups.push({ label: currentLabel, items: currentItems });
-            }
-
-            return groups;
-        }
-
-        var parts = groupByParte(gradeData);
-        var html = '<div class="grade-bars-play">';
-
-        parts.forEach(function(part) {
-            var bars = (part.items || []).map(compassoToSlots);
-            if (!bars.length) return;
-
-            html += '<div class="grade-part-play">';
-            if (part.label) {
-                html += '<span class="grade-part-title-play">Parte ' + escHtml(part.label) + '</span>';
-            }
-
-            html += '<div class="grade-inline-play">';
-            html += '<span class="grade-sep-play">||:</span> ';
-
-            bars.forEach(function(slots, idx) {
-                html += slotSpan(slots[0]) + ' ';
-                html += slotSpan(slots[1]) + ' ';
-                html += slotSpan(slots[2]) + ' ';
-                html += slotSpan(slots[3]);
-
-                if (idx < bars.length - 1) {
-                    html += ' <span class="grade-sep-play">|</span> ';
-                }
-            });
-
-            html += ' <span class="grade-sep-play">:||</span>';
-            html += '</div></div>';
+            partMap[k].items.push(it || {});
         });
 
-        html += '</div>';
+        function esc(s) { return escHtml(s == null ? '' : String(s)); }
 
+        function renderBar(acordes) {
+            var a = Array.isArray(acordes) ? acordes : [];
+            if (!a.length) a = ['%'];
+            var out = '';
+            for (var i = 0; i < a.length; i++) {
+                var chord = String(a[i] || '').trim();
+                if (i) out += '<span class="grade-sep-play">·</span>';
+                if (chord === '%') out += '<span class="grade-repeat-play">%</span>';
+                else out += '<span class="grade-chord-play">' + esc(chord) + '</span>';
+            }
+            return out;
+        }
+
+        var html = '<div class="grade-bars-play">';
+        parts.forEach(function (p) {
+            html += '<div class="grade-part-play">';
+            if (p.title) html += '<span class="grade-part-title-play">' + esc(p.title) + '</span>';
+
+            var barsInLine = 0;
+            html += '<span class="grade-inline-play"><span class="grade-line-play">';
+
+            (p.items || []).forEach(function (it) {
+                if (it.secao) {
+                    // quebra a linha ao trocar seção
+                    html += '</span><span class="grade-line-play"><span class="grade-part-title-play" style="margin:0 0 .2rem 0; font-size:.75em;">▸ ' + esc(it.secao) + '</span></span>';
+                    html += '<span class="grade-line-play">';
+                    barsInLine = 0;
+                }
+
+                if (barsInLine > 0) html += '<span class="grade-sep-play">|</span>';
+                html += renderBar(it.acordes);
+                barsInLine++;
+                if (barsInLine >= 4) {
+                    html += '</span><span class="grade-line-play">';
+                    barsInLine = 0;
+                }
+            });
+
+            html += '</span></span>'; // grade-line-play + grade-inline-play
+            html += '</div>'; // grade-part-play
+        });
+        html += '</div>'; // grade-bars-play
         return html;
     }
 
     function buildStructuredHtml(cifraData) {
         if (!cifraData || !cifraData.length) return '';
+        function isHtmlArtifact(text) {
+            if (!text) return false;
+            var t = String(text);
+            return /<\/?span\b/i.test(t) ||
+                   /class\s*=\s*["']cnt["']/i.test(t) ||
+                   /class\s*=\s*["']tablatura["']/i.test(t) ||
+                   /&lt;\/?span/i.test(t);
+        }
+        function isTabLine(text) {
+            if (!text) return false;
+            var t = String(text).trim();
+            return /^[EADGBe]\|/.test(t) || /^e\|/.test(t) || /^B\|/.test(t);
+        }
+        function isSectionLabel(text) {
+            var t = String(text || '').trim();
+            if (!t) return true;
+            if (/^spa$/i.test(t)) return true;
+            if (/^(intro|riff|outro|verso|refrão|refrao|ponte|solo|tab)\b/i.test(t)) return true;
+            if (/^\[?\s*tab\b/i.test(t)) return true;
+            if (/^parte\s+\d+\s+de\s+\d+$/i.test(t)) return true;
+            return false;
+        }
+        function keepToken(item) {
+            if (!item) return false;
+            var lyric = (item.texto_letra != null) ? String(item.texto_letra) : '';
+            if (!item.acorde && isSectionLabel(lyric)) return false;
+            if (isHtmlArtifact(lyric)) return false;
+            if (isTabLine(lyric)) return false;
+            if (/^\|\/?span>/i.test(lyric.trim())) return false;
+            return true;
+        }
+
+        var cleaned = cifraData.filter(keepToken);
+        if (!cleaned.length) return '';
+
         var groups = [];
-        if (Object.prototype.hasOwnProperty.call(cifraData[0], 'group')) {
+        if (Object.prototype.hasOwnProperty.call(cleaned[0], 'group')) {
             var currentGroup = null;
             var row = [];
-            cifraData.forEach(function(item) {
+            cleaned.forEach(function(item) {
                 var g = item.group || 0;
                 if (currentGroup === null || g !== currentGroup) {
                     if (row.length) groups.push(row);
@@ -960,7 +999,7 @@ body.play-mode.edges-hint .tap-zone {
         } else {
             // Novo formato com tokens por palavra/sílaba sem campo group:
             // renderiza em fluxo contínuo para manter acordes no lugar da palavra.
-            groups = [cifraData];
+            groups = [cleaned];
         }
 
         var html = '';
@@ -993,12 +1032,13 @@ body.play-mode.edges-hint .tap-zone {
         return html;
     }
 
-    function fetchTransposed(id, semitones, cb) {
+    function fetchTransposed(id, semitones, cb, hasTab) {
         var key = id + ':' + semitones;
         if (htmlCache[key]) { cb(htmlCache[key]); return; }
         var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
                     .replace('__ID__', encodeURIComponent(id))
-                    + '?semitones=' + semitones + '&html=1';
+                    + '?semitones=' + semitones + '&html=1'
+                    + (hasTab ? '&play=1' : '');
         document.getElementById('cifra-content').classList.add('fading');
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
@@ -1100,7 +1140,7 @@ body.play-mode.edges-hint .tap-zone {
         } else {
             document.getElementById('cifra-content').classList.remove('grade-mode');
             var sd0 = structuredCache[c.id + ':0'] || null;
-            if (sd0 && sd0.length) {
+            if (sd0 && sd0.length && !c.has_tablatura) {
                 var el2 = document.getElementById('cifra-content');
                 el2.classList.add('structured-mode');
                 fetchStructured(c.id, t, function (sd) {
@@ -1108,12 +1148,14 @@ body.play-mode.edges-hint .tap-zone {
                         renderHtml(buildStructuredHtml(sd));
                     } else {
                         document.getElementById('cifra-content').classList.remove('structured-mode');
-                        fetchTransposed(c.id, t, renderHtml);
+                        fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
                     }
                 });
             } else {
-                document.getElementById('cifra-content').classList.remove('structured-mode');
-                fetchTransposed(c.id, t, renderHtml);
+                var elPlain = document.getElementById('cifra-content');
+                elPlain.classList.remove('structured-mode');
+                if (c.has_tablatura) elPlain.classList.add('structured-mode');
+                fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
             }
         }
     }
@@ -1370,7 +1412,6 @@ body.play-mode.edges-hint .tap-zone {
             case '-': case '_': changeFontSize(-1); break;
             case 'c': case 'C': toggleCols(); break;
             case 'a': case 'A': toggleFit(); break;
-            case 't': case 'T': toggleTheme(); break;
             case 'f': case 'F': toggleFullscreen(); break;
             case 'g': case 'G': toggleGrade(); break;
             case ' ': e.preventDefault(); toggleScroll(); break;

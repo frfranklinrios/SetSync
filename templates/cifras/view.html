@@ -22,7 +22,78 @@
     border-left: 2px solid rgba(45,212,191,0.35);
     padding: 1px 8px;
 }
-.cifra-lyric { display: block; color: #94a3b8; padding: 1px 8px; }
+.cifra-lyric { display: block; color: #cbd5e1; padding: 1px 8px; }
+
+.cifra-container.play-layout {
+    white-space: normal;
+}
+.cifra-container .sp-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 0.2rem;
+    margin-bottom: 0.45rem;
+}
+.cifra-container .sp-item {
+    display: inline-flex;
+    flex-direction: column;
+    padding-right: 0.55rem;
+}
+.cifra-container .sp-item.sp-no-gap { padding-right: 0; }
+.cifra-container .sp-chord {
+    color: #2dd4bf;
+    font-weight: 700;
+    font-size: 0.82em;
+    min-height: 1.25em;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+.cifra-container .sp-word {
+    color: #cbd5e1;
+    line-height: 1.45;
+    white-space: nowrap;
+}
+
+.cifra-tab-block {
+    display: block;
+    margin: 0.85rem 0;
+    padding: 0.7rem 0.9rem;
+    background: rgba(251, 191, 36, 0.07);
+    border: 1px solid rgba(251, 191, 36, 0.22);
+    border-left: 3px solid rgba(251, 191, 36, 0.55);
+    border-radius: 8px;
+    overflow-x: auto;
+    white-space: normal;
+}
+.cifra-tab-title {
+    display: block;
+    color: #fbbf24;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0.35rem 0 0.45rem;
+}
+.cifra-tab-title:first-child { margin-top: 0; }
+.cifra-tab-meta {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-style: italic;
+    margin-bottom: 0.25rem;
+}
+.cifra-tab-line {
+    display: block;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.8rem;
+    line-height: 1.32;
+    white-space: pre;
+    color: #cbd5e1;
+    margin: 0;
+    padding: 0;
+}
+.tab-string { color: #f59e0b; font-weight: 700; }
+.tab-tech { color: #fde68a; font-weight: 600; }
 
 .cifra-json {
     white-space: normal;
@@ -137,6 +208,15 @@
     border-left-color: rgba(13,126,107,0.3);
 }
 [data-theme="light"] .cifra-lyric { color: #475569; }
+[data-theme="light"] .cifra-tab-block {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(217, 119, 6, 0.25);
+    border-left-color: rgba(217, 119, 6, 0.5);
+}
+[data-theme="light"] .cifra-tab-title { color: #b45309; }
+[data-theme="light"] .cifra-tab-line { color: #334155; }
+[data-theme="light"] .tab-string { color: #d97706; }
+[data-theme="light"] .tab-tech { color: #92400e; }
 [data-theme="light"] .cj-chord { color: #0d7e6b; }
 [data-theme="light"] .cj-lyric { color: #475569; }
 [data-theme="light"] .grade-bars-card {
@@ -185,7 +265,7 @@
             </div>
         </div>
 
-        <div class="cifra-container" id="cifra-body">
+        <div class="cifra-container{% if conteudo_html %} play-layout{% endif %}" id="cifra-body">
             {% if grouped_cifra and grouped_cifra|length > 0 %}
                 <div class="cifra-json">
                     {% for group in grouped_cifra %}
@@ -199,6 +279,8 @@
                         </div>
                     {% endfor %}
                 </div>
+            {% elif conteudo_html %}
+                {{ conteudo_html | safe }}
             {% elif (conteudo|default(''))|string|trim %}
                 {{ conteudo | default('') | highlight_chords | safe }}
             {% else %}
@@ -208,7 +290,6 @@
 
         {% if grade_data and grade_data|length > 0 %}
         <div class="grade-bars-card">
-            <div class="grade-bars-title">Grade Harmônica</div>
             <div class="grade-bars-view" id="grade-bars-view"></div>
         </div>
         {% endif %}
@@ -277,112 +358,19 @@
     </div>
 </div>
 
+<link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
+<script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
 <script>
 const CIFRA_BASE = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
 const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}";
 const GRADE_DATA = {{ grade_data|tojson if grade_data else '[]' }};
 
-function renderGradeBars() {
+(function () {
     var el = document.getElementById('grade-bars-view');
-    if (!el || !Array.isArray(GRADE_DATA) || !GRADE_DATA.length) return;
-
-    function escHtml(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    if (el && window.SetSyncGradeVisual && GRADE_DATA.length) {
+        SetSyncGradeVisual.render(el, GRADE_DATA);
     }
-
-    function normalizeAcordes(comp) {
-        return (comp && Array.isArray(comp.acordes) ? comp.acordes : [])
-            .map(function(a) { return String(a || '').trim(); })
-            .filter(function(a) { return a.length > 0; });
-    }
-
-    function slotSpan(token) {
-        if (token === '%') {
-            return '<span class="grade-repeat-view">%</span>';
-        }
-        return '<span class="grade-chord-view">' + escHtml(token) + '</span>';
-    }
-
-    function compassoToSlots(comp) {
-        var acordes = normalizeAcordes(comp);
-        if (!acordes.length) return ['%', '%', '%', '%'];
-
-        if (acordes.length === 1) {
-            if (acordes[0] === '%') return ['%', '%', '%', '%'];
-            return [acordes[0], '%', '%', '%'];
-        }
-        if (acordes.length === 2) return [acordes[0], '%', acordes[1], '%'];
-        if (acordes.length === 3) return [acordes[0], acordes[1], acordes[2], '%'];
-        return acordes.slice(0, 4);
-    }
-
-    function groupByParte(data) {
-        var hasParte = data.some(function(comp) {
-            return comp && comp.parte != null && String(comp.parte).trim() !== '';
-        });
-
-        if (!hasParte) {
-            return [{ label: '', items: data }];
-        }
-
-        var groups = [];
-        var currentLabel = null;
-        var currentItems = [];
-
-        data.forEach(function(comp) {
-            var label = (comp && comp.parte != null) ? String(comp.parte).trim().toUpperCase() : '';
-            if (currentLabel === null || label !== currentLabel) {
-                if (currentItems.length) {
-                    groups.push({ label: currentLabel, items: currentItems });
-                }
-                currentLabel = label;
-                currentItems = [comp];
-            } else {
-                currentItems.push(comp);
-            }
-        });
-
-        if (currentItems.length) {
-            groups.push({ label: currentLabel, items: currentItems });
-        }
-
-        return groups;
-    }
-
-    var parts = groupByParte(GRADE_DATA);
-    var html = '';
-
-    parts.forEach(function(part) {
-        var bars = (part.items || []).map(compassoToSlots);
-        if (!bars.length) return;
-
-        html += '<div class="grade-part-view">';
-        if (part.label) {
-            html += '<span class="grade-part-title-view">Parte ' + escHtml(part.label) + '</span>';
-        }
-
-        html += '<div class="grade-inline-view">';
-        html += '<span class="grade-sep-view">||:</span> ';
-
-        bars.forEach(function(slots, idx) {
-            html += slotSpan(slots[0]) + ' ';
-            html += slotSpan(slots[1]) + ' ';
-            html += slotSpan(slots[2]) + ' ';
-            html += slotSpan(slots[3]);
-
-            if (idx < bars.length - 1) {
-                html += ' <span class="grade-sep-view">|</span> ';
-            }
-        });
-
-        html += ' <span class="grade-sep-view">:||</span>';
-        html += '</div></div>';
-    });
-
-    el.innerHTML = html;
-}
-
-renderGradeBars();
+})();
 
 document.addEventListener('keydown', function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;

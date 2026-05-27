@@ -1,0 +1,245 @@
+{% extends "index.html" %}
+
+{% block title %}Ajuda · SetSync{% endblock %}
+
+{% block content %}
+<style>
+  .help-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .help-hero h2 { margin: 0; font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; }
+  .help-muted { color: var(--muted); font-size: .95rem; margin-top: .3rem; }
+
+  .help-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+  @media (min-width: 992px) { .help-grid { grid-template-columns: 340px minmax(0, 1fr); } }
+
+  .help-nav {
+    position: sticky;
+    top: 84px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .help-nav a { text-decoration: none; }
+  .help-nav .card-header {
+    font-size: .78rem;
+    letter-spacing: .08em;
+    color: var(--muted);
+    background: rgba(15, 25, 35, .65);
+  }
+  .help-nav .list-group-item {
+    padding: .8rem 1rem;
+    background: rgba(40, 75, 99, .55);
+    transition: background .15s ease, transform .15s ease;
+  }
+  .help-nav .list-group-item:hover {
+    background: rgba(59, 124, 124, .45);
+    transform: translateX(2px);
+  }
+
+  .help-card .card {
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(40, 75, 99, .7);
+  }
+  .help-card .card-header {
+    font-size: .88rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    color: var(--text);
+    background: rgba(15, 25, 35, .6);
+  }
+  .help-card .card-body { padding: 1rem 1.15rem; }
+  .help-card h3 { font-size: 1rem; margin: 0 0 .75rem 0; color: var(--text); }
+  .help-card h4 { font-size: .95rem; margin: 1rem 0 .5rem 0; color: var(--text); }
+  .help-card p, .help-card li { font-size: .95rem; line-height: 1.55; }
+
+  .kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: .85em;
+    padding: .15rem .45rem;
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: .45rem;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: .9em;
+    padding: .1rem .4rem;
+    border-radius: .4rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .help-callout {
+    background: rgba(0, 229, 204, .08);
+    border: 1px solid rgba(0, 229, 204, .35);
+    color: #dbeafe;
+    border-radius: 10px;
+    padding: .85rem 1rem;
+    font-size: .92rem;
+  }
+</style>
+
+<div class="help-hero mb-3">
+  <div>
+    <h2>Ajuda</h2>
+    <div class="help-muted">Guias rápidos, atalhos e solução de problemas do SetSync.</div>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('auth.login') }}">
+      Voltar
+    </a>
+  </div>
+</div>
+
+<div class="help-grid">
+  <div class="card help-nav">
+    <div class="card-header">Tópicos</div>
+    <div class="list-group list-group-flush">
+      <a class="list-group-item" href="#primeiros-passos"><strong>Primeiros passos</strong><div class="text-muted" style="font-size:.82rem">Entrar, criar banda e cadastrar cifras</div></a>
+      <a class="list-group-item" href="#bandas"><strong>Bandas e membros</strong><div class="text-muted" style="font-size:.82rem">Permissões, convites e organização</div></a>
+      <a class="list-group-item" href="#cifras"><strong>Cifras</strong><div class="text-muted" style="font-size:.82rem">Cadastro, visualização, tablaturas</div></a>
+      <a class="list-group-item" href="#transposicao"><strong>Transposição</strong><div class="text-muted" style="font-size:.82rem">Troca de tom sem editar o texto</div></a>
+      <a class="list-group-item" href="#setlists"><strong>Setlists</strong><div class="text-muted" style="font-size:.82rem">Ordem, navegação e execução ao vivo</div></a>
+      <a class="list-group-item" href="#modo-tocar"><strong>Modo Tocar</strong><div class="text-muted" style="font-size:.82rem">Atalhos, 2 colunas, auto-scroll</div></a>
+      <a class="list-group-item" href="#importador"><strong>Importar cifra (Cifra → SetSync)</strong><div class="text-muted" style="font-size:.82rem">Raspagem + grade harmônica</div></a>
+      <a class="list-group-item" href="#pwa"><strong>PWA / Instalação</strong><div class="text-muted" style="font-size:.82rem">Instalar no celular e offline</div></a>
+      <a class="list-group-item" href="#problemas"><strong>Problemas comuns</strong><div class="text-muted" style="font-size:.82rem">ffmpeg, Playwright, “Not Found”, etc.</div></a>
+    </div>
+  </div>
+
+  <div class="help-card">
+    <div class="card mb-3" id="primeiros-passos">
+      <div class="card-header">Primeiros passos</div>
+      <div class="card-body">
+        <ol class="mb-0">
+          <li><strong>Faça login</strong> (ou registre uma conta).</li>
+          <li><strong>Crie uma banda</strong> em <span class="code">Bandas</span>.</li>
+          <li><strong>Cadastre cifras</strong> dentro da banda (manual ou via <span class="code">Cifra → SetSync</span>).</li>
+          <li><strong>Crie um setlist</strong> e entre no <strong>Modo Tocar</strong> para executar ao vivo.</li>
+        </ol>
+        <div class="help-callout mt-3">
+          Dica: no palco, use o <strong>Modo Tocar</strong> em tela cheia e ative <strong>2 colunas</strong> para evitar rolagem em cifras longas.
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3" id="bandas">
+      <div class="card-header">Bandas e membros</div>
+      <div class="card-body">
+        <h3>Organização</h3>
+        <ul class="mb-0">
+          <li>Use <strong>uma banda por projeto</strong> (ex.: “Trio Acústico”, “Banda de baile”).</li>
+          <li>Centralize as cifras no SetSync para evitar versões diferentes em grupos/WhatsApp.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-3" id="cifras">
+      <div class="card-header">Cifras</div>
+      <div class="card-body">
+        <h3>Cadastro</h3>
+        <ul>
+          <li><strong>Título/Artista</strong>: usados em buscas e no Modo Tocar.</li>
+          <li><strong>Tom</strong>: referência para transposição (ex.: <span class="code">F#m</span>, <span class="code">Bb</span>).</li>
+          <li><strong>Conteúdo</strong>: pode conter acordes no formato <span class="code">[Am]</span> misturados com letra.</li>
+        </ul>
+        <h3>Tablaturas</h3>
+        <ul class="mb-0">
+          <li>Quando a cifra contém blocos de tablatura (linhas com <span class="code">e|</span>, <span class="code">B|</span>, etc.), o SetSync prioriza a renderização em texto para preservar o desenho.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-3" id="transposicao">
+      <div class="card-header">Transposição</div>
+      <div class="card-body">
+        <ul class="mb-0">
+          <li>Você escolhe o <strong>tom alvo</strong> e o SetSync recalcula os acordes na hora (sem alterar o texto original salvo).</li>
+          <li>Use a transposição para adaptar a música à voz do vocalista sem reescrever a cifra.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-3" id="setlists">
+      <div class="card-header">Setlists</div>
+      <div class="card-body">
+        <ul class="mb-0">
+          <li>O setlist define a <strong>ordem de execução</strong>.</li>
+          <li>No Modo Tocar, você navega com <span class="kbd">←</span> <span class="kbd">→</span> ou por gesto (swipe).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-3" id="modo-tocar">
+      <div class="card-header">Modo Tocar</div>
+      <div class="card-body">
+        <h3>Atalhos</h3>
+        <ul class="mb-0">
+          <li><span class="kbd">P</span>: entrar no modo tocar</li>
+          <li><span class="kbd">Esc</span>: sair</li>
+          <li><span class="kbd">←</span> / <span class="kbd">→</span>: música anterior / próxima</li>
+          <li><span class="kbd">Espaço</span>: auto-scroll play/pause</li>
+          <li><span class="kbd">+</span> / <span class="kbd">-</span>: tamanho da fonte</li>
+          <li><span class="kbd">C</span>: alternar 2 colunas</li>
+          <li><span class="kbd">S</span>: abrir/fechar setlist</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-3" id="importador">
+      <div class="card-header">Importar cifra (Cifra → SetSync)</div>
+      <div class="card-body">
+        <p>
+          Em <strong>Adicionar</strong> ou <strong>Editar</strong> cifra, clique em <strong>Cifra → SetSync</strong>.
+          O SetSync abre um iframe com a ferramenta integrada (<span class="code">/cifras/import/tool</span>) e preenche o formulário ao final.
+        </p>
+        <h4>Requisitos</h4>
+        <ul class="mb-0">
+          <li><strong>ffmpeg</strong> disponível no PATH (para manipular áudio).</li>
+          <li><strong>Playwright</strong> instalado e com Chromium (quando necessário para extrair links do player do Cifra Club).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-3" id="pwa">
+      <div class="card-header">PWA / Instalação</div>
+      <div class="card-body">
+        <ul class="mb-0">
+          <li><strong>Android / desktop:</strong> use o botão <strong>Instalar</strong> no topo quando o navegador oferecer.</li>
+          <li><strong>iPhone / iPad:</strong> abra no <strong>Safari</strong>, toque <strong>Instalar</strong> e siga o guia (Compartilhar → Adicionar à Tela de Início). No iOS o Chrome não instala como app completo.</li>
+          <li>O app usa service worker para ícones, página de <strong>offline</strong> e cache das páginas que você já visitou.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" id="problemas">
+      <div class="card-header">Problemas comuns</div>
+      <div class="card-body">
+        <h3>“Not Found” ao abrir o modal</h3>
+        <ul>
+          <li>Faça um <strong>hard refresh</strong> (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>) para atualizar o cache do PWA.</li>
+          <li>Verifique se a rota <span class="code">/cifras/import/tool</span> está respondendo.</li>
+        </ul>
+
+        <h3>Importador falha com erro de ffmpeg</h3>
+        <ul>
+          <li>Instale o ffmpeg no sistema e garanta que o comando <span class="code">ffmpeg</span> funciona no terminal.</li>
+        </ul>
+
+        <h3>Playwright/Chromium não encontrado</h3>
+        <ul class="mb-0">
+          <li>Execute <span class="code">playwright install chromium</span> no ambiente do projeto.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

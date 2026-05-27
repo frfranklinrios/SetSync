@@ -12,7 +12,10 @@ from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   split_chord_progression, chord_components_info,
                   to_brazilian_chord_notation, format_text_chords_br,
                   get_transposition_options, key_at_transpose, get_absolute_key_list,
-                  build_transpose_map, parse_tom_root)
+                  build_transpose_map, parse_tom_root,
+                  sanitize_tab_html_artifacts, content_has_tablatura,
+                  highlight_chords_play_html,
+                  _is_tab_line, _is_tab_header, _is_tab_meta_line, _TAB_ARTIFACT_RE)
 
 cifras_bp = Blueprint('cifras', __name__, url_prefix='/cifras')
 
@@ -89,6 +92,17 @@ def _parse_conteudo_to_cifra_data(conteudo):
 
     for line in lines:
         if not line.strip():
+            group += 1
+            continue
+
+        s = line.strip()
+        if _is_tab_line(s) or _is_tab_header(s) or _is_tab_meta_line(s):
+            group += 1
+            continue
+        if re.fullmatch(r'spa', s, flags=re.I):
+            group += 1
+            continue
+        if _TAB_ARTIFACT_RE.search(s) and '[' not in s:
             group += 1
             continue
 
@@ -212,10 +226,19 @@ def _transpose_grade_data(grade_list, semitones=0):
 def enrich_cifra_for_tocar(cifra):
     """Prepara cifra para o modo tocar com dados estruturados corretos."""
     c = dict(cifra)
-    structured = _load_best_structured_cifra(c, 0)
-    c['cifra_structured'] = structured if structured else None
+    raw = sanitize_tab_html_artifacts(c.get('conteudo') or '')
+    has_tab = content_has_tablatura(raw)
+    # Com tablatura: HTML dedicado ao palco (TAB + acorde acima da letra).
+    if has_tab:
+        c['cifra_structured'] = None
+        c['html'] = highlight_chords_play_html(raw)
+    else:
+        structured = _load_best_structured_cifra(c, 0)
+        c['cifra_structured'] = structured if structured else None
+        c['html'] = highlight_chords_html(raw)
     c['tom_root'] = parse_tom_root(c.get('tom_original'))
     c['transpose_map'] = build_transpose_map(c.get('tom_original'))
+    c['has_tablatura'] = has_tab
     return c
 
 
@@ -252,7 +275,7 @@ def view(cifra_id):
     current_transpose = request.args.get('transpose', 0, type=int)
     display_key = key_at_transpose(cifra['tom_original'], current_transpose)
 
-    conteudo = cifra['conteudo'] or ''
+    conteudo = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
     # Transpor usando pychord se possível
     if current_transpose != 0:
         conteudo = pychord_transpose_text(conteudo, current_transpose)
@@ -270,6 +293,12 @@ def view(cifra_id):
             pass
 
     grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
+    has_tab = content_has_tablatura(conteudo)
+    conteudo_html = None
+    if has_tab:
+        # Mesmo layout do modo tocar: TAB formatada + acorde acima da letra
+        grouped_cifra = None
+        conteudo_html = highlight_chords_play_html(conteudo)
     setlist = get_band_cifras(cifra['band_id'])
     cifra_index = next((i for i, c in enumerate(setlist) if c['id'] == cifra_id), 0)
     prev_cifra = setlist[cifra_index - 1] if cifra_index > 0 else None
@@ -279,6 +308,7 @@ def view(cifra_id):
                            cifra=cifra,
                            band=band,
                            conteudo=conteudo,
+                           conteudo_html=conteudo_html,
                            cifra_data=cifra_data,
                            grade_data=grade_data,
                            grouped_cifra=grouped_cifra,
@@ -444,10 +474,11 @@ def get_transposed(cifra_id):
 
     semitones = request.args.get('semitones', 0, type=int)
     want_html = request.args.get('html', '0') == '1'
+    want_play = request.args.get('play', '0') == '1'
     want_structured = request.args.get('structured', '0') == '1'
     want_grade = request.args.get('grade', '0') == '1'
 
-    raw = cifra['conteudo'] or ''
+    raw = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
     transposed = pychord_transpose_text(raw, semitones) if semitones else raw
     transposed = format_text_chords_br(transposed)
 
@@ -457,7 +488,10 @@ def get_transposed(cifra_id):
         'display_key': key_at_transpose(cifra['tom_original'], semitones),
     }
     if want_html:
-        payload['html'] = highlight_chords_html(transposed)
+        if want_play or content_has_tablatura(transposed):
+            payload['html'] = highlight_chords_play_html(transposed)
+        else:
+            payload['html'] = highlight_chords_html(transposed)
     else:
         payload['conteudo'] = transposed
 

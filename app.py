@@ -1,10 +1,12 @@
 
-from flask import Flask, render_template, redirect, url_for, session, send_from_directory, make_response
+from flask import Flask, render_template, redirect, url_for, session, send_from_directory, make_response, request
 from config import config
 from blueprints.auth import auth_bp, login_required
 from blueprints.bands import bands_bp
 from blueprints.cifras import cifras_bp
 from blueprints.setlists import setlists_bp
+from blueprints.cifras_import import cifras_import_bp
+from blueprints.ajuda import ajuda_bp
 from db import init_db
 from util import highlight_chords_html
 import os
@@ -25,18 +27,34 @@ app.jinja_env.filters['highlight_chords'] = highlight_chords_html
 with app.app_context():
     init_db()
 
+_PWA_ASSET_PATHS = frozenset(('/sw.js', '/manifest.webmanifest'))
+
+
 @app.before_request
 def before_request():
-    # Manter sessão permanente se necessário
+    # Não tocar na sessão em assets PWA — evita Vary: Cookie no service worker (Safari/iOS).
+    if request.path in _PWA_ASSET_PATHS:
+        return
     if 'user_id' in session:
         session.permanent = True
+
+
+@app.after_request
+def pwa_asset_headers(response):
+    if request.path not in _PWA_ASSET_PATHS:
+        return response
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers.pop('Set-Cookie', None)
+    return response
 
 # Registrar blueprints
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(bands_bp)
+app.register_blueprint(cifras_import_bp)
 app.register_blueprint(cifras_bp)
 app.register_blueprint(setlists_bp)
+app.register_blueprint(ajuda_bp)
 
 @app.route('/')
 def index():
@@ -59,7 +77,7 @@ def service_worker():
 @app.route('/manifest.webmanifest')
 def manifest():
     resp = make_response(send_from_directory(app.static_folder, 'manifest.webmanifest'))
-    resp.headers['Content-Type'] = 'application/manifest+json'
+    resp.headers['Content-Type'] = 'application/manifest+json; charset=utf-8'
     return resp
 
 
@@ -90,10 +108,28 @@ def dashboard():
 
 @app.context_processor
 def inject_user():
-    """Disponibiliza informações do usuário nos templates"""
+    """Disponibiliza informações do usuário e URL da ferramenta de cifras nos templates."""
+    from flask import url_for
+
     user_id = session.get('user_id')
     username = session.get('username')
-    return dict(current_user={'id': user_id, 'username': username, 'is_authenticated': user_id is not None})
+    display_name = (session.get('display_name') or '').strip()
+
+    try:
+        cifras_import_tool_url = url_for('cifras_import.embed_tool')
+    except RuntimeError:
+        cifras_import_tool_url = '/cifras/import/tool'
+
+    return dict(
+        current_user={
+            'id': user_id,
+            'username': username,
+            'display_name': display_name,
+            'name': display_name or username,
+            'is_authenticated': user_id is not None,
+        },
+        cifras_import_tool_url=cifras_import_tool_url,
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

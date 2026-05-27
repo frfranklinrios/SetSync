@@ -1,0 +1,39 @@
+{% extends "index.html" %}
+
+{% block title %}Como você gostaria de ser chamado? · SetSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-sm-10 col-md-7 col-lg-5">
+    <div class="card">
+      <div class="card-header">Seu nome no app</div>
+      <div class="card-body">
+        <p class="text-muted mb-3" style="font-size:0.92rem;">
+          Seu usuário está cadastrado, mas ainda falta definir o nome que aparece no SetSync.
+        </p>
+        <form method="POST" action="{{ url_for('auth.definir_nome', next=next) }}">
+          <div class="mb-3">
+            <label class="form-label" for="display_name">Como gostaria de ser chamado?</label>
+            <input
+              type="text"
+              class="form-control"
+              id="display_name"
+              name="display_name"
+              value="{{ suggested }}"
+              placeholder="Ex.: Franklin Rios"
+              required
+              autofocus
+            >
+            <div class="form-text">Esse nome aparece no menu e no dashboard.</div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <a class="btn btn-outline-secondary" href="{{ next }}">Agora não</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
