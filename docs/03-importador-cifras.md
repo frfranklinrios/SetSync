@@ -22,5 +22,6 @@ O SetSync possui uma ferramenta integrada em `/cifras/import/tool` que:
 
 - O processamento pode demorar alguns minutos (baixa/análise de áudio).
 - Para alguns links do Cifra Club, o vídeo aparece em um player; nesses casos, o Playwright pode ser necessário.
-- Se o YouTube bloquear downloads, configure `CIFRAS_YOUTUBE_COOKIES_FILE` apontando para um arquivo de cookies.
+- Em produção (VPS), use `CIFRAS_YOUTUBE_NO_SERVER=1` e o modo **Enviar áudio** no importador — o SetSync não faz login no YouTube nem guarda credenciais de usuários.
+- O link do YouTube, quando informado, serve só como **referência** nos metadados.
 

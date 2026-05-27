@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 import unicodedata
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
@@ -15,7 +16,7 @@ from cifras_tool.calibracao import (
     resolver_tonalidade,
     resumo_processamento,
 )
-from cifras_tool.compasso import CompassoInfo, parsear_compasso
+from cifras_tool.compasso import CompassoInfo, compasso_padrao, parsear_compasso
 from cifras_tool.config import settings
 from cifras_tool.downloader import AudioDownloader
 from cifras_tool.formatter import HarmonicPart
@@ -162,12 +163,11 @@ def salvar_arquivos(pasta: Path, dados: dict, resultado: ResultadoPipeline) -> N
     )
 
 
-def executar(
+def _preparar_dados_cifra(
     url_cifras: str,
-    pasta_saida: Path | None = None,
     youtube_url: str | None = None,
-    compasso_manual: str | None = None,
-) -> ResultadoPipeline:
+    youtube_obrigatorio: bool = True,
+) -> dict:
     url_cifras = validar_url_cifra(url_cifras)
     dados = raspar_cifra(url_cifras)
 
@@ -191,19 +191,288 @@ def executar(
                 if v.get("url") != dados["youtube"]
             ],
         ]
-    elif not dados["youtube"]:
+    elif youtube_obrigatorio and not dados.get("youtube"):
         raise ValueError(
-            "Não foi possível encontrar link do YouTube para esta música. "
-            "Use --youtube URL para informar o vídeo manualmente."
+            "Informe o link do YouTube (referência) ou envie um arquivo de áudio."
         )
 
     acordes_referencia = extrair_acordes_referencia(dados["cifra"])
     if not acordes_referencia:
         raise ValueError(
             "Não foi possível extrair acordes da cifra. "
-            "Execute o pipeline após gerar cifra no formato [Acorde]."
+            "A cifra precisa estar no formato [Acorde]texto."
         )
 
+    return dados
+
+
+def _audio_para_wav_mono(audio_path: Path, tmp_dir: Path) -> Path:
+    """Converte upload (mp3/m4a/wav/…) para WAV mono 22050 Hz."""
+    audio_path = audio_path.resolve()
+    if audio_path.suffix.lower() == ".wav":
+        destino = tmp_dir / f"upload_{uuid.uuid4().hex}.wav"
+        resultado = subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(audio_path),
+                "-ac",
+                "1",
+                "-ar",
+                "22050",
+                str(destino),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if resultado.returncode != 0:
+            raise RuntimeError(f"Falha ao converter áudio: {resultado.stderr}")
+        return destino
+
+    destino = tmp_dir / f"upload_{uuid.uuid4().hex}.wav"
+    resultado = subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(audio_path),
+            "-ac",
+            "1",
+            "-ar",
+            "22050",
+            str(destino),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if resultado.returncode != 0:
+        raise RuntimeError(f"Falha ao converter áudio: {resultado.stderr}")
+    return destino
+
+
+def _processar_wav(
+    *,
+    url_cifras: str,
+    dados: dict,
+    wav_path: Path,
+    pasta: Path,
+    compasso_manual: str | None = None,
+    mp3_origem: Path | None = None,
+) -> ResultadoPipeline:
+    acordes_referencia = extrair_acordes_referencia(dados["cifra"])
+    nome_pasta = pasta.name or slugify(f"{dados['artista']}-{dados['titulo']}")
+    mp3_path = mp3_origem or (pasta / f"{nome_pasta}.mp3")
+    if not mp3_path.exists() and wav_path.exists():
+        wav_para_mp3(wav_path, mp3_path)
+
+    analise = AudioPipeline().run(wav_path)
+    compasso_info: CompassoInfo = analise.compasso
+    if compasso_manual:
+        compasso_info = parsear_compasso(compasso_manual)
+
+    grade_harmonica, _, acordes_no_tempo, partes_grade = montar_grade_da_cifra(
+        dados["cifra"],
+        acordes_referencia,
+        len(analise.chords_by_beat),
+        compasso=compasso_info,
+    )
+    grade_progressao = grade_compacta_da_cifra(
+        acordes_referencia, compasso=compasso_info
+    )
+    tonalidade, tonalidade_estimada = resolver_tonalidade(
+        dados.get("tom", ""), acordes_referencia
+    )
+
+    duracao_seg = None
+    bpm = None
+    try:
+        import librosa
+
+        y, sr = librosa.load(str(wav_path), sr=22050, mono=True)
+        duracao_seg = int(len(y) / sr) if sr else None
+        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+        if tempo:
+            bpm = round(float(tempo), 1)
+    except Exception:
+        pass
+
+    setsync = montar_pacote_setsync(
+        titulo=dados["titulo"],
+        artista=dados["artista"],
+        tom_original=tonalidade,
+        conteudo=dados["cifra"],
+        partes_grade=partes_grade,
+        bpm=bpm,
+        duracao_seg=duracao_seg,
+        url_cifra=url_cifras,
+        url_youtube=dados.get("youtube") or "",
+    )
+
+    resultado = ResultadoPipeline(
+        pasta=pasta,
+        titulo=dados["titulo"],
+        artista=dados["artista"],
+        youtube=dados.get("youtube") or "",
+        mp3=mp3_path,
+        cifra=dados["cifra"],
+        acordes_cifra=acordes_referencia,
+        grade_harmonica=grade_harmonica,
+        grade_progressao_cifra=grade_progressao,
+        tonalidade=tonalidade,
+        tonalidade_estimada=tonalidade_estimada,
+        compasso=compasso_info.formula,
+        partes_grade=partes_grade,
+        setsync=setsync,
+        bpm=bpm,
+        duracao_seg=duracao_seg,
+    )
+
+    salvar_arquivos(pasta, dados, resultado)
+    (pasta / "resumo.json").write_text(
+        json.dumps(
+            resumo_processamento(
+                acordes_referencia,
+                acordes_no_tempo,
+                len(analise.chords_by_beat),
+                compasso=compasso_info,
+            ),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return resultado
+
+
+def executar_com_audio(
+    url_cifras: str,
+    audio_path: Path,
+    pasta_saida: Path | None = None,
+    youtube_url: str | None = None,
+    compasso_manual: str | None = None,
+) -> ResultadoPipeline:
+    """Processa cifra + arquivo de áudio enviado (sem baixar do YouTube)."""
+    dados = _preparar_dados_cifra(
+        url_cifras, youtube_url=youtube_url, youtube_obrigatorio=False
+    )
+    nome_pasta = slugify(f"{dados['artista']}-{dados['titulo']}")
+    pasta = pasta_saida or Path(settings.output_dir) / nome_pasta
+    pasta.mkdir(parents=True, exist_ok=True)
+
+    tmp_dir = Path(settings.tmp_dir)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    wav_path: Path | None = None
+    try:
+        wav_path = _audio_para_wav_mono(audio_path, tmp_dir)
+        return _processar_wav(
+            url_cifras=url_cifras,
+            dados=dados,
+            wav_path=wav_path,
+            pasta=pasta,
+            compasso_manual=compasso_manual,
+        )
+    finally:
+        if wav_path and wav_path.exists():
+            wav_path.unlink(missing_ok=True)
+
+
+def executar_apenas_cifra(
+    url_cifras: str,
+    pasta_saida: Path | None = None,
+    youtube_url: str | None = None,
+    compasso_manual: str | None = None,
+) -> ResultadoPipeline:
+    """Importa cifra e grade a partir dos acordes (sem áudio / sem YouTube)."""
+    dados = _preparar_dados_cifra(
+        url_cifras, youtube_url=youtube_url, youtube_obrigatorio=False
+    )
+    acordes_referencia = extrair_acordes_referencia(dados["cifra"])
+    compasso_info = (
+        parsear_compasso(compasso_manual) if compasso_manual else compasso_padrao()
+    )
+
+    grade_harmonica, _, acordes_no_tempo, partes_grade = montar_grade_da_cifra(
+        dados["cifra"],
+        acordes_referencia,
+        len(acordes_referencia) * max(compasso_info.beats_per_bar, 1),
+        compasso=compasso_info,
+    )
+    grade_progressao = grade_compacta_da_cifra(
+        acordes_referencia, compasso=compasso_info
+    )
+    tonalidade, tonalidade_estimada = resolver_tonalidade(
+        dados.get("tom", ""), acordes_referencia
+    )
+
+    nome_pasta = slugify(f"{dados['artista']}-{dados['titulo']}")
+    pasta = pasta_saida or Path(settings.output_dir) / nome_pasta
+    pasta.mkdir(parents=True, exist_ok=True)
+    mp3_path = pasta / f"{nome_pasta}.mp3"
+
+    setsync = montar_pacote_setsync(
+        titulo=dados["titulo"],
+        artista=dados["artista"],
+        tom_original=tonalidade,
+        conteudo=dados["cifra"],
+        partes_grade=partes_grade,
+        bpm=None,
+        duracao_seg=None,
+        url_cifra=url_cifras,
+        url_youtube=dados.get("youtube") or "",
+    )
+
+    resultado = ResultadoPipeline(
+        pasta=pasta,
+        titulo=dados["titulo"],
+        artista=dados["artista"],
+        youtube=dados.get("youtube") or "",
+        mp3=mp3_path,
+        cifra=dados["cifra"],
+        acordes_cifra=acordes_referencia,
+        grade_harmonica=grade_harmonica,
+        grade_progressao_cifra=grade_progressao,
+        tonalidade=tonalidade,
+        tonalidade_estimada=tonalidade_estimada,
+        compasso=compasso_info.formula,
+        partes_grade=partes_grade,
+        setsync=setsync,
+        bpm=None,
+        duracao_seg=None,
+    )
+
+    salvar_arquivos(pasta, dados, resultado)
+    (pasta / "resumo.json").write_text(
+        json.dumps(
+            resumo_processamento(
+                acordes_referencia,
+                acordes_no_tempo,
+                0,
+                compasso=compasso_info,
+            ),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return resultado
+
+
+def executar(
+    url_cifras: str,
+    pasta_saida: Path | None = None,
+    youtube_url: str | None = None,
+    compasso_manual: str | None = None,
+) -> ResultadoPipeline:
+    if settings.youtube_no_server:
+        raise ValueError(
+            "Download do YouTube desativado neste servidor. "
+            "Envie um arquivo de áudio (MP3/WAV) ou use «Somente cifra»."
+        )
+
+    dados = _preparar_dados_cifra(url_cifras, youtube_url=youtube_url)
     nome_pasta = slugify(f"{dados['artista']}-{dados['titulo']}")
     pasta = pasta_saida or Path(settings.output_dir) / nome_pasta
     pasta.mkdir(parents=True, exist_ok=True)
@@ -217,84 +486,14 @@ def executar(
         wav_path = downloader.download_as_wav_mono_22050(dados["youtube"])
         mp3_path = pasta / f"{nome_pasta}.mp3"
         wav_para_mp3(wav_path, mp3_path)
-
-        analise = AudioPipeline().run(wav_path)
-        compasso_info: CompassoInfo = analise.compasso
-        if compasso_manual:
-            compasso_info = parsear_compasso(compasso_manual)
-
-        grade_harmonica, _, acordes_no_tempo, partes_grade = montar_grade_da_cifra(
-            dados["cifra"],
-            acordes_referencia,
-            len(analise.chords_by_beat),
-            compasso=compasso_info,
-        )
-        grade_progressao = grade_compacta_da_cifra(
-            acordes_referencia, compasso=compasso_info
-        )
-        tonalidade, tonalidade_estimada = resolver_tonalidade(
-            dados.get("tom", ""), acordes_referencia
-        )
-
-        duracao_seg = None
-        bpm = None
-        try:
-            import librosa
-
-            y, sr = librosa.load(str(wav_path), sr=22050, mono=True)
-            duracao_seg = int(len(y) / sr) if sr else None
-            tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
-            if tempo:
-                bpm = round(float(tempo), 1)
-        except Exception:
-            pass
-
-        setsync = montar_pacote_setsync(
-            titulo=dados["titulo"],
-            artista=dados["artista"],
-            tom_original=tonalidade,
-            conteudo=dados["cifra"],
-            partes_grade=partes_grade,
-            bpm=bpm,
-            duracao_seg=duracao_seg,
-            url_cifra=url_cifras,
-            url_youtube=dados["youtube"],
-        )
-
-        resultado = ResultadoPipeline(
+        return _processar_wav(
+            url_cifras=url_cifras,
+            dados=dados,
+            wav_path=wav_path,
             pasta=pasta,
-            titulo=dados["titulo"],
-            artista=dados["artista"],
-            youtube=dados["youtube"],
-            mp3=mp3_path,
-            cifra=dados["cifra"],
-            acordes_cifra=acordes_referencia,
-            grade_harmonica=grade_harmonica,
-            grade_progressao_cifra=grade_progressao,
-            tonalidade=tonalidade,
-            tonalidade_estimada=tonalidade_estimada,
-            compasso=compasso_info.formula,
-            partes_grade=partes_grade,
-            setsync=setsync,
-            bpm=bpm,
-            duracao_seg=duracao_seg,
+            compasso_manual=compasso_manual,
+            mp3_origem=mp3_path,
         )
-
-        salvar_arquivos(pasta, dados, resultado)
-        (pasta / "resumo.json").write_text(
-            json.dumps(
-                resumo_processamento(
-                    acordes_referencia,
-                    acordes_no_tempo,
-                    len(analise.chords_by_beat),
-                    compasso=compasso_info,
-                ),
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-        return resultado
     finally:
         if wav_path and wav_path.exists():
             wav_path.unlink(missing_ok=True)
