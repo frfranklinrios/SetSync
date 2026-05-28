@@ -267,11 +267,12 @@ def _load_display_leadsheet(cifra, semitones=0):
     return doc
 
 
-def _persist_leadsheet(cifra_id, payload: dict) -> None:
-    """Salva LeadSheet e mantém grade_json legada sincronizada para o modo tocar."""
+def _persist_leadsheet(cifra_id, payload: dict, meta: dict | None = None) -> None:
+    """Salva LeadSheet, metadados da cifra e mantém grade_json legada sincronizada."""
     cifra = get_cifra(cifra_id)
     if not cifra:
         return
+    meta = meta or {}
     flat = leadsheet_to_grade_flat(payload)
     leadsheet_json = json.dumps(payload, ensure_ascii=False)
     grade_json = json.dumps(flat, ensure_ascii=False) if flat else None
@@ -282,9 +283,9 @@ def _persist_leadsheet(cifra_id, payload: dict) -> None:
     duracao_seg = int(dur) if dur else cifra.get("duracao_seg")
     update_cifra(
         cifra_id,
-        cifra["titulo"],
-        cifra["artista"],
-        cifra["tom_original"],
+        meta.get("titulo") or cifra["titulo"],
+        meta.get("artista") or cifra["artista"],
+        meta.get("tom_original") or cifra["tom_original"],
         cifra["conteudo"],
         cifra.get("cifra_json"),
         grade_json,
@@ -680,10 +681,14 @@ def leadsheet_api_salvar(cifra_id):
         if not data.get('song_key'):
             data['song_key'] = cifra.get('tom_original') or ''
         payload = build_payload(data)
-        _persist_leadsheet(cifra_id, payload)
+        meta = {
+            'titulo': (data.get('song_title') or '').strip() or cifra.get('titulo'),
+            'artista': (data.get('artist') or '').strip() or cifra.get('artista'),
+            'tom_original': (data.get('song_key') or '').strip() or cifra.get('tom_original'),
+        }
+        _persist_leadsheet(cifra_id, payload, meta)
         return jsonify({
             'ok': True,
-            'payload': payload,
             'redirect': url_for('cifras.view', cifra_id=cifra_id),
         })
     except Exception as exc:

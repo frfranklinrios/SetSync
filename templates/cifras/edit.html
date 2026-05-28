@@ -4,54 +4,8 @@
 
 {% block content %}
 <style>
-.editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-@media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
-
 #conteudo { font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace); font-size: 0.88rem;
             resize: vertical; min-height: 320px; }
-
-.preview-box {
-    background: #0f172a; color: #e2e8f0;
-    border-radius: 8px; padding: 1rem 1.25rem;
-    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace); font-size: 0.88rem;
-    min-height: 320px; overflow-y: auto;
-    border: 1px solid #1e293b;
-}
-[data-theme="light"] .preview-box { background: #f1f5f9; color: #1e293b;
-    border-color: #e2e8f0; }
-
-.preview-box .sp-line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    row-gap: 0.2rem;
-    margin-bottom: 0.45rem;
-}
-.preview-box .sp-item {
-    display: inline-flex;
-    flex-direction: column;
-    padding-right: 0.55rem;
-}
-.preview-box .sp-item.sp-no-gap { padding-right: 0; }
-.preview-box .sp-chord {
-    color: var(--chord-highlight);
-    font-weight: 700;
-    font-size: 0.82em;
-    min-height: 1.25em;
-    line-height: 1.25;
-    white-space: nowrap;
-}
-.preview-box .sp-word {
-    color: #cbd5e1;
-    line-height: 1.45;
-    white-space: nowrap;
-}
-.pv-empty { color: #475569; font-style: italic; }
-[data-theme="light"] .preview-box .sp-word { color: #1e293b; }
-
-.badge-count { background: var(--accent); color: #fff;
-    font-size: 0.65rem; border-radius: 999px;
-    padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 
 #grade_text {
     font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
@@ -98,22 +52,11 @@
         </div>
     </div>
 
-    <div class="editor-grid mb-3">
-        <div>
-            <label class="form-label">
-                Cifra <small class="text-muted">(colchetes ou duas linhas)</small>
-            </label>
-            <textarea class="form-control" id="conteudo" name="conteudo" rows="16">{{ cifra.conteudo }}</textarea>
-        </div>
-        <div>
-            <label class="form-label">
-                Preview estruturado
-                <span class="badge-count" id="pv-count">0 entradas</span>
-            </label>
-            <div class="preview-box" id="preview-box">
-                <span class="pv-empty">Carregando…</span>
-            </div>
-        </div>
+    <div class="mb-3">
+        <label class="form-label">
+            Cifra <small class="text-muted">(colchetes ou duas linhas)</small>
+        </label>
+        <textarea class="form-control" id="conteudo" name="conteudo" rows="16">{{ cifra.conteudo }}</textarea>
     </div>
 
     <div class="mb-3">
@@ -237,10 +180,6 @@ function parseConteudo(text) {
         group++; i++;
     }
     return result;
-}
-
-function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function buildEditableTextFromCifraJson(data) {
@@ -425,50 +364,6 @@ function fillGradeTextFromJson(data) {
     ta.value = lines.join('\n');
 }
 
-function renderPreview(data) {
-    const box = document.getElementById('preview-box');
-    const countEl = document.getElementById('pv-count');
-    if (!data.length) {
-        box.innerHTML = '<span class="pv-empty">Nenhuma entrada detectada</span>';
-        countEl.textContent = '0 entradas';
-        return;
-    }
-    countEl.textContent = data.length + ' entr' + (data.length === 1 ? 'ada' : 'adas');
-    const hasGroup = data.some(item => item && item.group != null);
-    const groups = {};
-    const order = [];
-
-    data.forEach((item, idx) => {
-        const key = (hasGroup && item && item.group != null) ? String(item.group) : String(idx);
-        if (!groups[key]) {
-            groups[key] = [];
-            order.push(key);
-        }
-        groups[key].push(item || {});
-    });
-
-    box.innerHTML = order.map(key => {
-        const items = groups[key];
-        const line = items.map((item, idx) => {
-            const next = idx + 1 < items.length ? items[idx + 1] : null;
-            const chord = item.acorde ? escHtml(item.acorde) : '';
-            const lyric = (item.texto_letra != null && String(item.texto_letra).length)
-                ? escHtml(String(item.texto_letra))
-                : '&nbsp;';
-            let noGap = false;
-            if (next) {
-                const thisLyric = String(item.texto_letra || '');
-                const nextLyric = String(next.texto_letra || '');
-                const thisEndsWithSpace = /\s$/.test(thisLyric);
-                const nextStartsWithSpace = /^\s/.test(nextLyric);
-                if (thisLyric && nextLyric && !thisEndsWithSpace && !nextStartsWithSpace) noGap = true;
-            }
-            return `<span class="sp-item${noGap ? ' sp-no-gap' : ''}"><span class="sp-chord">${chord || '&nbsp;'}</span><span class="sp-word">${lyric}</span></span>`;
-        }).join('');
-        return `<div class="sp-line">${line}</div>`;
-    }).join('');
-}
-
 const ta = document.getElementById('conteudo');
 
 // ── Upload/edit state ────────────────────────────────────────────────────
@@ -498,7 +393,6 @@ document.getElementById('upload_cifra').addEventListener('change', function () {
         _uploadedCifraJson = normalized;
         _taModified = false;
         ta.value = buildEditableTextFromCifraJson(normalized);
-        renderPreview(normalized);
     });
 });
 
@@ -514,15 +408,10 @@ document.getElementById('upload_grade').addEventListener('change', function () {
     });
 });
 
-// ── Live update ao digitar ───────────────────────────────────────────────
 ta.addEventListener('input', () => {
     _taModified = true;
     _uploadedCifraJson = null;
-    renderPreview(parseConteudo(ta.value));
 });
-
-// Renderiza preview ao carregar a página com o conteúdo existente
-renderPreview(parseConteudo(ta.value));
 
 // Preenche o campo textual da grade com a grade existente, se houver.
 try {

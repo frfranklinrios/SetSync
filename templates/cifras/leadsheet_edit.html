@@ -52,17 +52,6 @@
             background: #0f172a; color: #e2e8f0; border-color: var(--chord-highlight, #2dd4bf); box-shadow: none;
         }
         .form-text, .text-muted { color: #94a3b8 !important; }
-        .json-preview {
-            font-family: var(--cifra-mono-font);
-            font-size: 0.84rem;
-            min-height: 260px;
-            white-space: pre-wrap;
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 8px;
-            padding: 0.8rem;
-            color: #cbd5e1;
-        }
         .leadsheet-preview-wrap {
             background: #0f172a;
             border: 1px solid #1f2937;
@@ -262,7 +251,6 @@
         [data-theme="light"] .form-select:focus {
             background: #fff; color: #1e293b; border-color: #2ab5a0;
         }
-        [data-theme="light"] .json-preview,
         [data-theme="light"] .leadsheet-preview-wrap {
             background: #f1f5f9; border-color: #e2e8f0; color: #334155;
         }
@@ -321,9 +309,10 @@
             <h2 class="mb-0">Lead Sheet</h2>
             <p class="text-muted mb-0" style="font-size:.9rem;">{{ cifra.titulo }} · {{ cifra.artista }} · {{ band.name }}</p>
         </div>
-        <div class="d-flex gap-2 align-items-center">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
             {% include 'partials/theme_toggle.html' %}
-            <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-secondary">← Editar cifra</a>
+            <button type="button" class="btn btn-sm btn-success" id="btn-salvar">Salvar</button>
+            <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-secondary">Editar cifra</a>
             <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-info">Ver cifra</a>
         </div>
     </div>
@@ -457,40 +446,18 @@
             </div>
         </div>
 
-        <div class="card card-ss mt-3 mb-3">
-            <div class="card-body">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label class="form-label">Nome do arquivo JSON</label>
-                        <input class="form-control" name="output_name" value="leadsheet.json">
-                    </div>
-                    <div class="col-md-8 d-flex gap-2">
-                        <button type="button" class="btn btn-primary" id="btn-gerar">Gerar JSON</button>
-                        <button type="button" class="btn btn-success" id="btn-salvar">Salvar JSON</button>
-                    </div>
-                </div>
-                <div id="status" class="mt-3 text-muted">Preencha os dados e gere o JSON.</div>
-            </div>
-        </div>
+        <div id="status" class="mt-2 mb-3 text-muted" style="font-size:0.9rem;"></div>
     </form>
-
-    <div class="card card-ss">
-        <div class="card-body">
-            <label class="form-label fw-semibold">Preview JSON</label>
-            <pre id="json-preview" class="json-preview">{}</pre>
-        </div>
-    </div>
 </div>
 
 <script>
-    const API_GERAR = {{ url_for('cifras.leadsheet_api_gerar', cifra_id=cifra.id)|tojson }};
     const API_SALVAR = {{ url_for('cifras.leadsheet_api_salvar', cifra_id=cifra.id)|tojson }};
     const API_ANALISAR = {{ url_for('cifras.leadsheet_api_analisar', cifra_id=cifra.id)|tojson }};
     const INITIAL_LEADSHEET = {{ initial_leadsheet|tojson if initial_leadsheet else 'null' }};
 
     const form = document.getElementById("leadsheet-form");
     const statusEl = document.getElementById("status");
-    const previewEl = document.getElementById("json-preview");
+    const btnSalvar = document.getElementById("btn-salvar");
     const sectionsHidden = document.getElementById("sections-hidden");
     const eventsHidden = document.getElementById("events-hidden");
     const staffEl = document.getElementById("leadsheet-staff");
@@ -1168,36 +1135,27 @@
         return data.analysis;
     }
 
-    document.getElementById("btn-gerar").addEventListener("click", async () => {
+    async function salvarLeadsheet() {
         try {
-            if (useManualEditor && manualBars.length) syncManualToFormFields();
-            const data = await postForm(API_GERAR);
-            previewEl.textContent = JSON.stringify(data.payload, null, 2);
-            renderLeadSheetStaff();
-            statusEl.textContent = "JSON gerado com sucesso.";
-            statusEl.className = "mt-3 text-success";
-        } catch (err) {
-            statusEl.textContent = "Erro ao gerar JSON: " + err.message;
-            statusEl.className = "mt-3 text-danger";
-        }
-    });
-
-    document.getElementById("btn-salvar").addEventListener("click", async () => {
-        try {
+            btnSalvar.disabled = true;
+            btnSalvar.textContent = "Salvando…";
             if (useManualEditor && manualBars.length) syncManualToFormFields();
             const data = await postForm(API_SALVAR);
-            previewEl.textContent = JSON.stringify(data.payload, null, 2);
-            renderLeadSheetStaff();
-            statusEl.textContent = "Lead Sheet salvo na cifra.";
-            statusEl.className = "mt-3 text-success";
+            statusEl.textContent = "Música e Lead Sheet salvos.";
+            statusEl.className = "mt-2 mb-3 text-success";
             if (data.redirect) {
-                setTimeout(() => { window.location.href = data.redirect; }, 600);
+                setTimeout(() => { window.location.href = data.redirect; }, 500);
             }
         } catch (err) {
-            statusEl.textContent = "Erro ao salvar JSON: " + err.message;
-            statusEl.className = "mt-3 text-danger";
+            statusEl.textContent = "Erro ao salvar: " + err.message;
+            statusEl.className = "mt-2 mb-3 text-danger";
+        } finally {
+            btnSalvar.disabled = false;
+            btnSalvar.textContent = "Salvar";
         }
-    });
+    }
+
+    btnSalvar.addEventListener("click", salvarLeadsheet);
 
     audioFileInput.addEventListener("change", () => {
         const file = audioFileInput.files && audioFileInput.files[0];
