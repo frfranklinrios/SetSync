@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <script>
+    (function () {
+        var K = 'setsync-theme';
+        var root = document.documentElement;
+        function norm(v) { return v === 'light' ? 'light' : 'dark'; }
+        function apply(t) {
+            t = norm(t);
+            root.setAttribute('data-theme', t);
+            try { localStorage.setItem(K, t); } catch (e) {}
+        }
+        apply(localStorage.getItem(K) || 'dark');
+        window.setSetSyncTheme = apply;
+        window.toggleTheme = function () {
+            apply(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+            document.dispatchEvent(new CustomEvent('setsync-themechange'));
+        };
+    })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=PT+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Lead Sheet — {{ cifra.titulo }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --cifra-mono-font: "PT Mono", ui-monospace, "Courier New", Courier, monospace;
+            --chord-highlight: #c2410c;
+            --chord-highlight-soft: #ea580c;
+            --chord-highlight-bg: rgba(234, 88, 12, 0.1);
+            --chord-highlight-border: rgba(234, 88, 12, 0.4);
+        }
+        [data-theme="dark"] {
+            --chord-highlight: #2dd4bf;
+            --chord-highlight-soft: #5eead4;
+            --chord-highlight-bg: rgba(45, 212, 191, 0.1);
+            --chord-highlight-border: rgba(45, 212, 191, 0.4);
+        }
+        body { background: #0b1220; color: #e2e8f0; }
+        .page-wrap { max-width: 1160px; margin: 1.2rem auto; padding: 0 0.8rem; }
+        .card-ss { background: #111827; border: 1px solid #1f2937; border-radius: 10px; }
+        .card-ss .card-body { padding: 1rem 1rem 0.8rem; }
+        .form-control, .form-select {
+            background: #0f172a; color: #e2e8f0; border-color: #334155;
+        }
+        .form-control:focus, .form-select:focus {
+            background: #0f172a; color: #e2e8f0; border-color: var(--chord-highlight, #2dd4bf); box-shadow: none;
+        }
+        .form-text, .text-muted { color: #94a3b8 !important; }
+        .json-preview {
+            font-family: var(--cifra-mono-font);
+            font-size: 0.84rem;
+            min-height: 260px;
+            white-space: pre-wrap;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 0.8rem;
+            color: #cbd5e1;
+        }
+        .leadsheet-preview-wrap {
+            background: #0f172a;
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            padding: 1rem 0.75rem 1.1rem;
+            overflow-x: hidden;
+        }
+        .leadsheet-preview-empty {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.25rem;
+            font-family: system-ui, sans-serif;
+        }
+        .staff-panel-bg {
+            background: rgba(30, 41, 59, 0.55);
+        }
+        .leadsheet-systems {
+            width: 100%;
+            font-family: var(--cifra-mono-font);
+            color: #e2e8f0;
+        }
+        .staff-system {
+            display: flex;
+            width: 100%;
+            box-sizing: border-box;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .staff-system + .staff-system {
+            margin-top: 0.5rem;
+        }
+        .staff-system.is-line-selected .staff-bars.staff-panel-bg {
+            box-shadow: inset 0 0 0 2px var(--chord-highlight, #2dd4bf);
+        }
+        .staff-line {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+        }
+        .staff-bars {
+            display: flex;
+            align-items: stretch;
+            flex: 1;
+            min-height: 88px;
+            min-width: 0;
+        }
+        .staff-bars.staff-panel-bg {
+            padding: 10px 0 10px 1.25rem;
+            box-sizing: border-box;
+        }
+        .staff-bar-col {
+            flex: 0 0 auto;
+            width: var(--bar-width, 232px);
+            min-width: var(--bar-width, 232px);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            box-sizing: border-box;
+        }
+        .staff-part-label {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: #e2e8f0;
+            text-align: center;
+            padding: 0 4px 3px;
+            line-height: 1.15;
+            min-height: 1.1em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .staff-part-label.is-empty {
+            visibility: hidden;
+        }
+        .staff-part-label.has-lyric {
+            text-transform: none;
+            font-size: 0.55rem;
+            font-weight: 600;
+            letter-spacing: 0;
+            line-height: 1.12;
+            white-space: normal;
+            max-height: 2.4em;
+            overflow: hidden;
+        }
+        .staff-bar {
+            flex: 1 1 auto;
+            width: 100%;
+            border-left: 2px solid #94a3b8;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 0 2px;
+        }
+        .staff-bar-col:first-child .staff-bar {
+            border-left-width: 3px;
+            border-left-color: #e2e8f0;
+        }
+        .staff-bar-col.staff-bar-last .staff-bar {
+            border-right: 3px solid #e2e8f0;
+            padding-right: 4px;
+        }
+        .pulse-grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            align-items: center;
+        }
+        .pulse-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            flex: 1 1 0;
+            height: 100%;
+            padding: 2px 5px;
+            box-sizing: border-box;
+            border-right: 1px solid rgba(148, 163, 184, 0.28);
+        }
+        .pulse-cell:last-child {
+            border-right: none;
+            padding-right: 8px;
+        }
+        .pulse-cell .chord-text {
+            display: inline-block;
+            line-height: 1.1;
+            text-align: center;
+            white-space: nowrap;
+            font-family: var(--cifra-mono-font);
+            color: var(--chord-highlight, #c2410c);
+        }
+        .pulse-cell .chord-text.chord-sm { font-size: 0.72rem; }
+        .pulse-cell .chord-text.chord-md { font-size: 0.82rem; }
+        .pulse-cell .chord-text.chord-lg { font-size: 0.92rem; }
+        .pulse-empty {
+            font-size: 1rem;
+            color: rgba(148, 163, 184, 0.55);
+            line-height: 1;
+        }
+        .pulse-editable {
+            cursor: pointer;
+            border-radius: 2px;
+            transition: background 0.15s;
+        }
+        .pulse-editable:hover {
+            background: rgba(45, 212, 191, 0.12);
+        }
+        .pulse-editable.is-selected {
+            outline: 2px solid var(--chord-highlight);
+            outline-offset: -2px;
+        }
+        .manual-editor-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        /* Preview modo tocar — tema escuro (SetSync / layout do app) */
+        .play-mode-preview-wrap {
+            background: #0f172a;
+            padding: 0;
+            border-radius: 8px;
+            border: 1px solid #1f2937;
+            overflow: hidden;
+        }
+        .play-sheet-paper {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 0;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        .theme-btn {
+            background: none;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            border-radius: 7px;
+            width: 32px; height: 32px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .theme-btn:hover { border-color: #64748b; color: #e2e8f0; }
+        [data-theme="light"] body { background: #f8fafc; color: #1e293b; }
+        [data-theme="light"] .card-ss { background: #fff; border-color: #e2e8f0; }
+        [data-theme="light"] .form-control,
+        [data-theme="light"] .form-select {
+            background: #fff; color: #1e293b; border-color: #cbd5e1;
+        }
+        [data-theme="light"] .form-control:focus,
+        [data-theme="light"] .form-select:focus {
+            background: #fff; color: #1e293b; border-color: #2ab5a0;
+        }
+        [data-theme="light"] .json-preview,
+        [data-theme="light"] .leadsheet-preview-wrap {
+            background: #f1f5f9; border-color: #e2e8f0; color: #334155;
+        }
+        [data-theme="light"] .leadsheet-systems { color: #1e293b; }
+        [data-theme="light"] .staff-panel-bg { background: rgba(226, 232, 240, 0.6); }
+        [data-theme="light"] .theme-btn { border-color: #cbd5e1; color: #64748b; }
+        [data-theme="light"] .theme-btn:hover { color: #1e293b; }
+        .play-sheet-header {
+            font-family: system-ui, -apple-system, sans-serif;
+            border-bottom: 1px solid rgba(45, 212, 191, 0.18);
+            margin-bottom: 0;
+            padding: 0.65rem 1rem;
+            background: #0b1422;
+        }
+        .play-sheet-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.25;
+            color: #f1f5f9;
+        }
+        .play-sheet-meta {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 0.2rem;
+        }
+        .play-sheet-body {
+            min-height: 3.5rem;
+            padding: 1rem 0.75rem 1.1rem;
+        }
+        .play-sheet-body.is-empty {
+            font-family: system-ui, sans-serif;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            padding: 1.25rem 1rem;
+        }
+        .play-sheet-body .pulse-cell {
+            cursor: default;
+        }
+        .accidental {
+            font-size: 0.8em;
+            vertical-align: 0.1em;
+            margin-left: -0.05em;
+            margin-right: 0.01em;
+        }
+        .chord-quality {
+            font-size: 0.72em;
+            vertical-align: 0.35em;
+            margin-left: 0.02em;
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <div>
+            <h2 class="mb-0">Lead Sheet</h2>
+            <p class="text-muted mb-0" style="font-size:.9rem;">{{ cifra.titulo }} · {{ cifra.artista }} · {{ band.name }}</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            {% include 'partials/theme_toggle.html' %}
+            <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-secondary">← Editar cifra</a>
+            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-info">Ver cifra</a>
+        </div>
+    </div>
+
+    <form id="leadsheet-form">
+        <input type="hidden" name="file_name" id="file-name-hidden" value="">
+        <input type="hidden" name="duration" id="duration-hidden" value="">
+        <input type="hidden" name="sample_rate" id="sample-rate-hidden" value="">
+
+        <div class="card card-ss mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Título da música</label>
+                        <input class="form-control" name="song_title" value="{{ cifra.titulo }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Artista</label>
+                        <input class="form-control" name="artist" value="{{ cifra.artista }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">BPM</label>
+                        <input class="form-control" name="tempo_bpm" placeholder="120"
+                            value="{{ cifra.bpm or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Compasso</label>
+                        <input class="form-control" name="time_signature" value="4/4">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Tom</label>
+                        <input class="form-control" name="song_key" value="{{ cifra.tom_original }}" placeholder="C">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="sections" id="sections-hidden" value="">
+        <input type="hidden" name="events" id="events-hidden" value="">
+
+        <div class="card card-ss mt-3">
+            <div class="card-body">
+                <label class="form-label fw-semibold">Detecção automática (upload MP3)</label>
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-8">
+                        <input type="file" class="form-control" id="audio-file" accept=".mp3,.wav,.m4a,.flac,.ogg">
+                        <div class="form-text">Detecta BPM e acordes por batida (estimativa inicial).</div>
+                    </div>
+                    <div class="col-md-4 d-grid">
+                        <button type="button" class="btn btn-outline-info" id="btn-analisar-audio">Analisar MP3</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-ss mt-3">
+            <div class="card-body">
+                <label class="form-label fw-semibold">Editor manual do LeadSheet</label>
+                <div class="form-text mb-3">
+                    Defina o compasso, insira compassos, partes e quebras de linha. Clique numa linha do preview para editá-la ou num pulso para o acorde.
+                </div>
+                <div class="manual-editor-bar mb-3">
+                    <div>
+                        <label class="form-label">Fórmula de compasso</label>
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="text" class="form-control" id="manual-time-signature" value="4/4" style="width: 100px;">
+                            <button type="button" class="btn btn-primary" id="btn-inserir-compasso">Inserir compasso</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Acorde para o pulso</label>
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="text" class="form-control" id="manual-chord-input" placeholder="Ex: BbMaj7" style="width: 140px;">
+                            <button type="button" class="btn btn-outline-primary" id="btn-inserir-acorde">Inserir acorde</button>
+                        </div>
+                    </div>
+                    <div style="min-width: 280px;">
+                        <label class="form-label">Parte da música</label>
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <select class="form-select" id="manual-part-select" style="width: 168px;">
+                                <option value="Introdução">Introdução</option>
+                                <option value="Verso 1">Verso 1</option>
+                                <option value="Verso 2">Verso 2</option>
+                                <option value="Pré-refrão">Pré-refrão</option>
+                                <option value="Refrão">Refrão</option>
+                                <option value="Refrão final">Refrão final</option>
+                                <option value="Ponte">Ponte</option>
+                                <option value="Solo">Solo</option>
+                                <option value="Outro">Outro</option>
+                                <option value="__custom__">Outro nome…</option>
+                            </select>
+                            <input type="text" class="form-control d-none" id="manual-part-custom" placeholder="Nome da parte" style="width: 140px;">
+                            <button type="button" class="btn btn-outline-info" id="btn-inserir-parte">Inserir parte</button>
+                        </div>
+                        <input type="text" class="form-control form-control-sm mt-2" id="manual-part-lyric" placeholder="Trecho da letra (opcional), ex: Quando você chegar...">
+                    </div>
+                    <div>
+                        <label class="form-label">Layout</label>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-quebra-linha">Quebra de linha</button>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-limpar-manual">Limpar</button>
+                </div>
+                <div id="manual-editor-status" class="form-text">Nenhum compasso inserido. Use &quot;Inserir compasso&quot; para começar.</div>
+            </div>
+        </div>
+
+        <div class="card card-ss mt-3 mb-3">
+            <div class="card-body">
+                <label class="form-label fw-semibold">Preview visual (editor)</label>
+                <div class="leadsheet-preview-wrap">
+                    <div class="leadsheet-staff" id="leadsheet-staff"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-ss mt-3 mb-3">
+            <div class="card-body">
+                <label class="form-label fw-semibold">Preview modo tocar</label>
+                <p class="form-text mb-2">Mesmo tema escuro do editor — como ao tocar no SetSync.</p>
+                <div class="play-mode-preview-wrap">
+                    <div class="play-sheet-paper">
+                        <header class="play-sheet-header">
+                            <div class="play-sheet-title" id="play-preview-title">—</div>
+                            <div class="play-sheet-meta" id="play-preview-meta"></div>
+                        </header>
+                        <div class="play-sheet-body is-empty" id="play-mode-preview">
+                            Insira compassos no editor para ver o preview.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-ss mt-3 mb-3">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Nome do arquivo JSON</label>
+                        <input class="form-control" name="output_name" value="leadsheet.json">
+                    </div>
+                    <div class="col-md-8 d-flex gap-2">
+                        <button type="button" class="btn btn-primary" id="btn-gerar">Gerar JSON</button>
+                        <button type="button" class="btn btn-success" id="btn-salvar">Salvar JSON</button>
+                    </div>
+                </div>
+                <div id="status" class="mt-3 text-muted">Preencha os dados e gere o JSON.</div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card card-ss">
+        <div class="card-body">
+            <label class="form-label fw-semibold">Preview JSON</label>
+            <pre id="json-preview" class="json-preview">{}</pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_GERAR = {{ url_for('cifras.leadsheet_api_gerar', cifra_id=cifra.id)|tojson }};
+    const API_SALVAR = {{ url_for('cifras.leadsheet_api_salvar', cifra_id=cifra.id)|tojson }};
+    const API_ANALISAR = {{ url_for('cifras.leadsheet_api_analisar', cifra_id=cifra.id)|tojson }};
+    const INITIAL_LEADSHEET = {{ initial_leadsheet|tojson if initial_leadsheet else 'null' }};
+
+    const form = document.getElementById("leadsheet-form");
+    const statusEl = document.getElementById("status");
+    const previewEl = document.getElementById("json-preview");
+    const sectionsHidden = document.getElementById("sections-hidden");
+    const eventsHidden = document.getElementById("events-hidden");
+    const staffEl = document.getElementById("leadsheet-staff");
+    const playModePreviewEl = document.getElementById("play-mode-preview");
+    const playPreviewTitleEl = document.getElementById("play-preview-title");
+    const playPreviewMetaEl = document.getElementById("play-preview-meta");
+    const audioFileInput = document.getElementById("audio-file");
+    const btnAnalisarAudio = document.getElementById("btn-analisar-audio");
+    const tempoInput = form.querySelector('input[name="tempo_bpm"]');
+    const timeSignatureInput = form.querySelector('input[name="time_signature"]');
+    const fileNameHidden = document.getElementById("file-name-hidden");
+    const durationHidden = document.getElementById("duration-hidden");
+    const sampleRateHidden = document.getElementById("sample-rate-hidden");
+    const manualTimeSignatureInput = document.getElementById("manual-time-signature");
+    const manualChordInput = document.getElementById("manual-chord-input");
+    const manualEditorStatus = document.getElementById("manual-editor-status");
+    const btnInserirCompasso = document.getElementById("btn-inserir-compasso");
+    const btnInserirAcorde = document.getElementById("btn-inserir-acorde");
+    const btnInserirParte = document.getElementById("btn-inserir-parte");
+    const btnQuebraLinha = document.getElementById("btn-quebra-linha");
+    const btnLimparManual = document.getElementById("btn-limpar-manual");
+    const manualPartSelect = document.getElementById("manual-part-select");
+    const manualPartCustom = document.getElementById("manual-part-custom");
+    const manualPartLyric = document.getElementById("manual-part-lyric");
+
+    let manualBars = [];
+    let manualParts = [];
+    let manualLineBreaks = new Set();
+    let useManualEditor = false;
+    let selectedPulse = null;
+    let selectedLineIndex = null;
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function styleChord(chord) {
+        const safe = escapeHtml(chord.trim());
+        const withAccidentals = safe
+            .replace(/([A-G])b/g, '$1<span class="accidental">♭</span>')
+            .replace(/([A-G])#/g, '$1<span class="accidental">♯</span>');
+        return withAccidentals
+            .replace(/(maj7|maj9|m7|m6|m|sus4|sus2|add9|dim|aug|7|6|9|11|13)/gi, '<span class="chord-quality">$1</span>');
+    }
+
+    const STAFF_BAR_WIDTH = 232;
+
+    function parseBeatsPerMeasure(fromManual = true) {
+        const sig = String(
+            (fromManual ? manualTimeSignatureInput.value : timeSignatureInput.value) || "4/4"
+        ).trim();
+        const beats = parseInt(sig.split("/")[0], 10);
+        return Number.isFinite(beats) && beats > 0 ? beats : 4;
+    }
+
+    function barStartTime(barIndex) {
+        const bpm = Number(String(tempoInput.value || "").replace(",", ".")) || 120;
+        const beatDuration = 60 / bpm;
+        const beatsPerBar = parseBeatsPerMeasure();
+        return barIndex * beatsPerBar * beatDuration;
+    }
+
+    function getPartNameFromUI() {
+        if (manualPartSelect.value === "__custom__") {
+            return String(manualPartCustom.value || "").trim();
+        }
+        return manualPartSelect.value.trim();
+    }
+
+    function getPartLyricFromUI() {
+        return String(manualPartLyric.value || "").trim();
+    }
+
+    function formatPartLabelText(part) {
+        if (!part) return "";
+        const lyric = (part.lyric || "").trim();
+        if (!lyric) return part.name;
+        return `${part.name} - ${lyric}`;
+    }
+
+    function partAtBar(barIndex) {
+        return manualParts.find((p) => p.barIndex === barIndex);
+    }
+
+    function loadPartFieldsForBar(barIndex) {
+        const part = partAtBar(barIndex);
+        if (!part) {
+            manualPartLyric.value = "";
+            return;
+        }
+        manualPartLyric.value = part.lyric || "";
+        const options = [...manualPartSelect.options].map((o) => o.value);
+        if (options.includes(part.name)) {
+            manualPartSelect.value = part.name;
+            manualPartCustom.classList.add("d-none");
+        } else {
+            manualPartSelect.value = "__custom__";
+            manualPartCustom.classList.remove("d-none");
+            manualPartCustom.value = part.name;
+        }
+    }
+
+    function getLineBarRanges() {
+        const bars = getBarsForPreview();
+        if (!bars.length) return [];
+        const lines = splitBarsIntoLines(bars, staffEl.closest(".leadsheet-preview-wrap"));
+        let start = 0;
+        return lines.map((lineBars) => {
+            const range = {
+                startBar: start,
+                endBar: start + lineBars.length - 1,
+            };
+            start += lineBars.length;
+            return range;
+        });
+    }
+
+    function lineIndexForBar(barIndex) {
+        const ranges = getLineBarRanges();
+        return ranges.findIndex((r) => barIndex >= r.startBar && barIndex <= r.endBar);
+    }
+
+    function getTargetBarIndex() {
+        if (selectedPulse) return selectedPulse.bar;
+        if (selectedLineIndex !== null) {
+            const ranges = getLineBarRanges();
+            const range = ranges[selectedLineIndex];
+            if (range) return range.startBar;
+        }
+        return manualBars.length - 1;
+    }
+
+    function getLineBreakBarIndex() {
+        if (selectedPulse) return selectedPulse.bar;
+        if (selectedLineIndex !== null) {
+            const ranges = getLineBarRanges();
+            const range = ranges[selectedLineIndex];
+            if (!range) return null;
+            if (range.startBar > 0) return range.startBar;
+            if (range.endBar + 1 < manualBars.length) return range.endBar + 1;
+            return null;
+        }
+        const last = manualBars.length - 1;
+        return last > 0 ? last : null;
+    }
+
+    function shiftBarIndicesFrom(fromIndex, delta) {
+        manualParts = manualParts.map((p) => ({
+            ...p,
+            barIndex: p.barIndex >= fromIndex ? p.barIndex + delta : p.barIndex,
+        }));
+        manualLineBreaks = new Set(
+            [...manualLineBreaks].map((b) => (b >= fromIndex ? b + delta : b))
+        );
+    }
+
+    function selectLine(lineIndex) {
+        const ranges = getLineBarRanges();
+        if (!ranges.length || lineIndex < 0 || lineIndex >= ranges.length) return;
+        selectedLineIndex = lineIndex;
+        selectedPulse = null;
+        manualChordInput.value = "";
+        loadPartFieldsForBar(ranges[lineIndex].startBar);
+        const range = ranges[lineIndex];
+        manualEditorStatus.textContent =
+            `Linha ${lineIndex + 1} selecionada (compassos ${range.startBar + 1}–${range.endBar + 1}). Clique em um pulso para o acorde ou use os botões do editor.`;
+        renderLeadSheetStaff();
+        updateManualEditorStatus();
+    }
+
+    function updateManualEditorStatus() {
+        if (!manualBars.length) {
+            manualEditorStatus.textContent = 'Nenhum compasso inserido. Use "Inserir compasso" para começar.';
+            return;
+        }
+        const partsHint =
+            manualParts.length > 0
+                ? ` · ${manualParts.length} parte(s)`
+                : ' · use "Inserir parte" para marcar Intro, Verso, Refrão…';
+        const breaksHint =
+            manualLineBreaks.size > 0
+                ? ` · ${manualLineBreaks.size} quebra(s) de linha`
+                : "";
+        const lineHint =
+            selectedLineIndex !== null
+                ? ` · linha ${selectedLineIndex + 1} ativa`
+                : " · clique numa linha do preview para selecioná-la";
+        const msg = manualEditorStatus.textContent;
+        const keepMessage =
+            msg.includes("selecionad") ||
+            msg.includes("Quebra") ||
+            msg.includes("linha a partir") ||
+            msg.includes("Parte \"");
+        if (!keepMessage) {
+            manualEditorStatus.textContent =
+                `${manualBars.length} compasso(s) · ${parseBeatsPerMeasure()} pulsos cada${partsHint}${breaksHint}${lineHint}`;
+        }
+    }
+
+    function estimateDurationFromBars() {
+        const bpm = Number(String(tempoInput.value || "").replace(",", ".")) || 120;
+        const beatDuration = 60 / bpm;
+        const beatsPerBar = parseBeatsPerMeasure();
+        return Math.max(manualBars.length * beatsPerBar * beatDuration, 1);
+    }
+
+    function buildPartsPayload(duration) {
+        const sorted = [...manualParts].sort((a, b) => a.barIndex - b.barIndex);
+        if (!sorted.length) {
+            return {
+                sectionsText: `Música|0|${duration.toFixed(2)}`,
+                markerLines: [],
+            };
+        }
+        const sectionLines = [];
+        const markerLines = [];
+        sorted.forEach((part, idx) => {
+            const start = barStartTime(part.barIndex);
+            const end =
+                idx + 1 < sorted.length
+                    ? barStartTime(sorted[idx + 1].barIndex)
+                    : duration;
+            sectionLines.push(`${part.name}|${start.toFixed(2)}|${end.toFixed(2)}`);
+            markerLines.push(`${start.toFixed(2)}|marker|${part.name}`);
+            const lyric = (part.lyric || "").trim();
+            if (lyric) {
+                markerLines.push(`${start.toFixed(2)}|lyric|${lyric}`);
+            }
+        });
+        return { sectionsText: sectionLines.join("\n"), markerLines };
+    }
+
+    function syncManualToFormFields() {
+        timeSignatureInput.value = manualTimeSignatureInput.value.trim() || "4/4";
+        const bpm = Number(String(tempoInput.value || "").replace(",", ".")) || 120;
+        const beatDuration = 60 / bpm;
+        const beatsPerBar = parseBeatsPerMeasure();
+        const chordLines = [];
+        manualBars.forEach((bar, barIdx) => {
+            bar.forEach((pulse, beatIdx) => {
+                if (pulse !== "%") {
+                    const t = (barIdx * beatsPerBar + beatIdx) * beatDuration;
+                    chordLines.push(`${t.toFixed(2)}|chord|${pulse}`);
+                }
+            });
+        });
+        const duration = Number(durationHidden.value) || estimateDurationFromBars();
+        durationHidden.value = duration.toFixed(2);
+        const { sectionsText, markerLines } = buildPartsPayload(duration);
+        const allLines = [...markerLines, ...chordLines];
+        allLines.sort((a, b) => Number(a.split("|")[0]) - Number(b.split("|")[0]));
+        eventsHidden.value = allLines.join("\n");
+        sectionsHidden.value = sectionsText;
+    }
+
+    function barsFromAnalysisEvents(events, bpm, beatsPerBar) {
+        const beatDuration = 60 / bpm;
+        const bars = [];
+        (events || [])
+            .filter((e) => e && e.type === "chord")
+            .forEach((evt) => {
+                const t = Number(evt.time_seconds) || 0;
+                const absoluteBeat = Math.round(t / beatDuration);
+                const bar = Math.floor(absoluteBeat / beatsPerBar);
+                const beat = absoluteBeat % beatsPerBar;
+                while (bars.length <= bar) bars.push(Array(beatsPerBar).fill("%"));
+                bars[bar][beat] = evt.value;
+            });
+        return bars;
+    }
+
+    function addManualMeasure() {
+        useManualEditor = true;
+        const beats = parseBeatsPerMeasure();
+        const newBar = Array(beats).fill("%");
+        let insertAt = manualBars.length;
+        if (selectedLineIndex !== null) {
+            const ranges = getLineBarRanges();
+            const range = ranges[selectedLineIndex];
+            if (range) insertAt = range.endBar + 1;
+        }
+        if (insertAt < manualBars.length) {
+            shiftBarIndicesFrom(insertAt, 1);
+        }
+        manualBars.splice(insertAt, 0, newBar);
+        manualTimeSignatureInput.value = manualTimeSignatureInput.value.trim() || "4/4";
+        timeSignatureInput.value = manualTimeSignatureInput.value;
+        selectedPulse = null;
+        const lineIdx = lineIndexForBar(insertAt);
+        if (lineIdx >= 0) selectedLineIndex = lineIdx;
+        updateManualEditorStatus();
+        syncManualToFormFields();
+        renderLeadSheetStaff();
+    }
+
+    function insertManualPart() {
+        if (!manualBars.length) {
+            manualEditorStatus.textContent = "Insira ao menos um compasso antes de marcar uma parte.";
+            return;
+        }
+        const name = getPartNameFromUI();
+        if (!name) {
+            manualEditorStatus.textContent = "Escolha ou digite o nome da parte.";
+            if (manualPartSelect.value === "__custom__") manualPartCustom.focus();
+            return;
+        }
+        const barIndex = getTargetBarIndex();
+        const lyric = getPartLyricFromUI();
+        manualParts = manualParts.filter((p) => p.barIndex !== barIndex);
+        const entry = { name, barIndex };
+        if (lyric) entry.lyric = lyric;
+        manualParts.push(entry);
+        manualParts.sort((a, b) => a.barIndex - b.barIndex);
+        useManualEditor = true;
+        syncManualToFormFields();
+        updateManualEditorStatus();
+        renderLeadSheetStaff();
+        const lyricHint = lyric ? ` — "${lyric}"` : "";
+        manualEditorStatus.textContent =
+            `Parte "${name}"${lyricHint} no compasso ${barIndex + 1}.`;
+    }
+
+    function insertManualLineBreak() {
+        if (!manualBars.length) {
+            manualEditorStatus.textContent = "Insira ao menos um compasso antes de definir quebra de linha.";
+            return;
+        }
+        const barIndex = getLineBreakBarIndex();
+        if (barIndex === null || barIndex <= 0) {
+            manualEditorStatus.textContent =
+                "Selecione um pulso após o primeiro compasso, ou uma linha que possa ser dividida (linha 2+ ou fim da linha 1).";
+            return;
+        }
+        useManualEditor = true;
+        if (manualLineBreaks.has(barIndex)) {
+            manualLineBreaks.delete(barIndex);
+            manualEditorStatus.textContent =
+                `Quebra removida no compasso ${barIndex + 1}.`;
+        } else {
+            manualLineBreaks.add(barIndex);
+            manualEditorStatus.textContent =
+                `Nova linha a partir do compasso ${barIndex + 1}. Clique de novo no botão para remover.`;
+        }
+        renderLeadSheetStaff();
+    }
+
+    function clearManualEditor() {
+        manualBars = [];
+        manualParts = [];
+        manualLineBreaks = new Set();
+        useManualEditor = false;
+        selectedPulse = null;
+        selectedLineIndex = null;
+        manualPartLyric.value = "";
+        updateManualEditorStatus();
+        renderLeadSheetStaff();
+    }
+
+    function setPulseChord(barIndex, beatIndex, chordValue) {
+        if (!manualBars[barIndex]) return;
+        const value = String(chordValue || "").trim();
+        manualBars[barIndex][beatIndex] = !value || value === "%" ? "%" : value;
+        useManualEditor = true;
+        syncManualToFormFields();
+        updateManualEditorStatus();
+        renderLeadSheetStaff();
+    }
+
+    function chordSizeClass(chord) {
+        const len = String(chord || "").length;
+        if (len > 6) return "chord-sm";
+        if (len > 4) return "chord-md";
+        return "chord-lg";
+    }
+
+    function renderBarHtml(pulseRow, barIndex, isLastInLine, editable = true) {
+        const cells = pulseRow
+            .map((pulse, beatIndex) => {
+                const isPercent = pulse === "%";
+                const isSelected =
+                    editable &&
+                    selectedPulse &&
+                    selectedPulse.bar === barIndex &&
+                    selectedPulse.beat === beatIndex;
+                const content = isPercent
+                    ? '<span class="pulse-empty">%</span>'
+                    : `<span class="chord-text ${chordSizeClass(pulse)}" title="${escapeHtml(pulse)}">${styleChord(pulse)}</span>`;
+                const cellClass = editable
+                    ? `pulse-cell pulse-editable${isSelected ? " is-selected" : ""}`
+                    : "pulse-cell";
+                const cellAttrs = editable
+                    ? ` data-bar="${barIndex}" data-beat="${beatIndex}" role="button" tabindex="0"`
+                    : "";
+                return `<div class="${cellClass}"${cellAttrs}>${content}</div>`;
+            })
+            .join("");
+        const lastClass = isLastInLine ? " staff-bar-last" : "";
+        const colCount = pulseRow.length;
+        const part = partAtBar(barIndex);
+        const labelClass = part
+            ? `staff-part-label${part.lyric ? " has-lyric" : ""}`
+            : "staff-part-label is-empty";
+        const labelText = formatPartLabelText(part);
+        const labelHtml = part
+            ? `<span title="${escapeHtml(labelText)}">${escapeHtml(labelText)}</span>`
+            : "&nbsp;";
+        return `<div class="staff-bar-col${lastClass}">
+            <div class="${labelClass}">${labelHtml}</div>
+            <div class="staff-bar"><div class="pulse-grid" style="grid-template-columns:repeat(${colCount}, minmax(0, 1fr))">${cells}</div></div>
+        </div>`;
+    }
+
+    function getBarsPerLine(wrapEl) {
+        const wrap =
+            wrapEl ||
+            staffEl.closest(".leadsheet-preview-wrap") ||
+            playModePreviewEl.closest(".play-sheet-paper");
+        const available = (wrap ? wrap.clientWidth : 900) - 24;
+        return Math.max(1, Math.floor(available / STAFF_BAR_WIDTH));
+    }
+
+    function splitBarsIntoLines(allBars, wrapEl) {
+        if (manualLineBreaks.size > 0) {
+            const breaks = [...manualLineBreaks]
+                .filter((b) => b > 0 && b < allBars.length)
+                .sort((a, b) => a - b);
+            const lines = [];
+            let start = 0;
+            for (const br of breaks) {
+                if (br > start) {
+                    lines.push(allBars.slice(start, br));
+                    start = br;
+                }
+            }
+            if (start < allBars.length) {
+                lines.push(allBars.slice(start));
+            }
+            return lines.length ? lines : [allBars];
+        }
+        const perLine = getBarsPerLine(wrapEl);
+        const lines = [];
+        for (let i = 0; i < allBars.length; i += perLine) {
+            lines.push(allBars.slice(i, i + perLine));
+        }
+        return lines;
+    }
+
+    function buildStaffSystemsHtml(bars, options = {}) {
+        const {
+            editable = true,
+            showLineSelection = true,
+            wrapEl = staffEl.closest(".leadsheet-preview-wrap"),
+            maxBars = 64,
+        } = options;
+        const slice = bars.slice(0, maxBars);
+        const lines = splitBarsIntoLines(slice, wrapEl);
+        let globalBarIndex = 0;
+
+        return lines
+            .map((lineBars, lineIndex) => {
+                const lineSelected =
+                    showLineSelection && selectedLineIndex === lineIndex;
+                const barsHtml = lineBars
+                    .map((pulseRow, i) => {
+                        const html = renderBarHtml(
+                            pulseRow,
+                            globalBarIndex,
+                            i === lineBars.length - 1,
+                            editable
+                        );
+                        globalBarIndex += 1;
+                        return html;
+                    })
+                    .join("");
+                return `
+                    <div class="staff-system${lineSelected ? " is-line-selected" : ""}"${editable ? ` data-line-index="${lineIndex}"` : ""}>
+                        <div class="staff-line">
+                            <div class="staff-bars staff-panel-bg">${barsHtml}</div>
+                        </div>
+                    </div>`;
+            })
+            .join("");
+    }
+
+    function getBarsForPreview() {
+        if (useManualEditor && manualBars.length) {
+            return manualBars.map((bar) => bar.slice());
+        }
+        return [];
+    }
+
+    function updatePlayPreviewHeader() {
+        const title = (form.querySelector('input[name="song_title"]')?.value || "").trim();
+        const artist = (form.querySelector('input[name="artist"]')?.value || "").trim();
+        const bpm = (tempoInput?.value || "").trim();
+        const key = (form.querySelector('input[name="song_key"]')?.value || "").trim();
+        const sig =
+            (manualTimeSignatureInput?.value || timeSignatureInput?.value || "4/4").trim();
+
+        playPreviewTitleEl.textContent = title || "Sem título";
+        const meta = [];
+        if (artist) meta.push(artist);
+        if (bpm) meta.push(`${bpm} BPM`);
+        if (sig) meta.push(`Compasso ${sig}`);
+        if (key) meta.push(`Tom ${key}`);
+        playPreviewMetaEl.textContent = meta.length ? meta.join(" · ") : "Metadados da música";
+    }
+
+    function renderPlayModePreview() {
+        updatePlayPreviewHeader();
+        if (!manualBars.length) {
+            playModePreviewEl.className = "play-sheet-body is-empty";
+            playModePreviewEl.textContent =
+                "Insira compassos no editor para ver o preview do modo tocar.";
+            return;
+        }
+        const paper = playModePreviewEl.closest(".play-sheet-paper");
+        const systemsHtml = buildStaffSystemsHtml(getBarsForPreview(), {
+            editable: false,
+            showLineSelection: false,
+            wrapEl: paper,
+        });
+        playModePreviewEl.className = "play-sheet-body";
+        playModePreviewEl.innerHTML = `<div class="leadsheet-systems" style="--bar-width:${STAFF_BAR_WIDTH}px">${systemsHtml}</div>`;
+    }
+
+    function renderLeadSheetStaff() {
+        let bars = getBarsForPreview();
+        if (!bars.length) {
+            staffEl.innerHTML =
+                '<div class="leadsheet-preview-empty">Insira compassos no editor manual para visualizar.</div>';
+            renderPlayModePreview();
+            return;
+        }
+
+        const wrap = staffEl.closest(".leadsheet-preview-wrap");
+        const lines = splitBarsIntoLines(bars.slice(0, 64), wrap);
+        if (selectedLineIndex !== null && selectedLineIndex >= lines.length) {
+            selectedLineIndex = lines.length ? lines.length - 1 : null;
+        }
+        const systemsHtml = buildStaffSystemsHtml(bars, {
+            editable: true,
+            showLineSelection: true,
+            wrapEl: wrap,
+        });
+        staffEl.innerHTML = `<div class="leadsheet-systems" style="--bar-width:${STAFF_BAR_WIDTH}px">${systemsHtml}</div>`;
+        renderPlayModePreview();
+    }
+
+    staffEl.addEventListener("click", (event) => {
+        if (!useManualEditor) return;
+        const system = event.target.closest(".staff-system");
+        if (!system) return;
+        const lineIndex = Number(system.dataset.lineIndex);
+        const cell = event.target.closest(".pulse-editable");
+
+        if (cell) {
+            const bar = Number(cell.dataset.bar);
+            const beat = Number(cell.dataset.beat);
+            if (!Number.isFinite(bar) || !Number.isFinite(beat)) return;
+            selectedPulse = { bar, beat };
+            if (Number.isFinite(lineIndex)) selectedLineIndex = lineIndex;
+            loadPartFieldsForBar(bar);
+            const current = manualBars[bar][beat];
+            manualChordInput.value = current !== "%" ? current : "";
+            renderLeadSheetStaff();
+            manualChordInput.focus();
+            manualEditorStatus.textContent =
+                `Linha ${lineIndex + 1} · compasso ${bar + 1}, pulso ${beat + 1}. Digite o acorde e Enter (vazio = %).`;
+            return;
+        }
+
+        if (Number.isFinite(lineIndex)) {
+            selectLine(lineIndex);
+        }
+    });
+
+    function applyManualChordFromInput() {
+        if (!selectedPulse) {
+            manualEditorStatus.textContent = "Selecione um pulso no preview antes de inserir o acorde.";
+            return;
+        }
+        setPulseChord(selectedPulse.bar, selectedPulse.beat, manualChordInput.value);
+        manualChordInput.value = "";
+        selectedPulse = null;
+        updateManualEditorStatus();
+    }
+
+    manualChordInput.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        applyManualChordFromInput();
+    });
+
+    btnInserirAcorde.addEventListener("click", applyManualChordFromInput);
+    btnInserirCompasso.addEventListener("click", addManualMeasure);
+    btnInserirParte.addEventListener("click", insertManualPart);
+    btnQuebraLinha.addEventListener("click", insertManualLineBreak);
+    btnLimparManual.addEventListener("click", clearManualEditor);
+
+    manualPartSelect.addEventListener("change", () => {
+        const custom = manualPartSelect.value === "__custom__";
+        manualPartCustom.classList.toggle("d-none", !custom);
+        if (custom) manualPartCustom.focus();
+    });
+
+    manualPartCustom.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        insertManualPart();
+    });
+
+    manualPartLyric.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        insertManualPart();
+    });
+
+    manualTimeSignatureInput.addEventListener("change", () => {
+        timeSignatureInput.value = manualTimeSignatureInput.value.trim() || "4/4";
+        if (useManualEditor && manualBars.length) {
+            const beats = parseBeatsPerMeasure();
+            manualBars = manualBars.map((bar) => {
+                const next = Array(beats).fill("%");
+                bar.forEach((pulse, idx) => {
+                    if (idx < beats) next[idx] = pulse;
+                });
+                return next;
+            });
+            manualParts = manualParts.filter((p) => p.barIndex < manualBars.length);
+            manualLineBreaks = new Set(
+                [...manualLineBreaks].filter((b) => b > 0 && b < manualBars.length)
+            );
+            syncManualToFormFields();
+            renderLeadSheetStaff();
+        }
+        updateManualEditorStatus();
+    });
+
+    let staffResizeTimer = null;
+    window.addEventListener("resize", () => {
+        clearTimeout(staffResizeTimer);
+        staffResizeTimer = setTimeout(renderLeadSheetStaff, 120);
+    });
+
+    function getFormData() {
+        return new FormData(form);
+    }
+
+    async function postForm(url) {
+        const resp = await fetch(url, { method: "POST", body: getFormData() });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) {
+            throw new Error(data.error || "Erro desconhecido.");
+        }
+        return data;
+    }
+
+    async function analyzeAudio() {
+        const file = audioFileInput.files && audioFileInput.files[0];
+        if (!file) {
+            throw new Error("Selecione um arquivo de áudio antes de analisar.");
+        }
+        const fd = new FormData();
+        fd.append("audio_file", file);
+        const resp = await fetch(API_ANALISAR, { method: "POST", body: fd });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) {
+            throw new Error(data.error || "Erro ao analisar áudio.");
+        }
+        return data.analysis;
+    }
+
+    document.getElementById("btn-gerar").addEventListener("click", async () => {
+        try {
+            if (useManualEditor && manualBars.length) syncManualToFormFields();
+            const data = await postForm(API_GERAR);
+            previewEl.textContent = JSON.stringify(data.payload, null, 2);
+            renderLeadSheetStaff();
+            statusEl.textContent = "JSON gerado com sucesso.";
+            statusEl.className = "mt-3 text-success";
+        } catch (err) {
+            statusEl.textContent = "Erro ao gerar JSON: " + err.message;
+            statusEl.className = "mt-3 text-danger";
+        }
+    });
+
+    document.getElementById("btn-salvar").addEventListener("click", async () => {
+        try {
+            if (useManualEditor && manualBars.length) syncManualToFormFields();
+            const data = await postForm(API_SALVAR);
+            previewEl.textContent = JSON.stringify(data.payload, null, 2);
+            renderLeadSheetStaff();
+            statusEl.textContent = "Lead Sheet salvo na cifra.";
+            statusEl.className = "mt-3 text-success";
+            if (data.redirect) {
+                setTimeout(() => { window.location.href = data.redirect; }, 600);
+            }
+        } catch (err) {
+            statusEl.textContent = "Erro ao salvar JSON: " + err.message;
+            statusEl.className = "mt-3 text-danger";
+        }
+    });
+
+    audioFileInput.addEventListener("change", () => {
+        const file = audioFileInput.files && audioFileInput.files[0];
+        if (file) fileNameHidden.value = file.name;
+    });
+
+    btnAnalisarAudio.addEventListener("click", async () => {
+        try {
+            btnAnalisarAudio.disabled = true;
+            btnAnalisarAudio.textContent = "Analisando...";
+            const analysis = await analyzeAudio();
+            tempoInput.value = analysis.tempo_bpm ?? "";
+            durationHidden.value = analysis.duration_seconds ?? "";
+            sampleRateHidden.value = analysis.sample_rate ?? "";
+            const bpm = Number(analysis.tempo_bpm) || 120;
+            manualBars = barsFromAnalysisEvents(
+                analysis.events,
+                bpm,
+                parseBeatsPerMeasure()
+            );
+            useManualEditor = manualBars.length > 0;
+            selectedPulse = null;
+            syncManualToFormFields();
+            updateManualEditorStatus();
+            renderLeadSheetStaff();
+            statusEl.textContent = "Análise concluída. Campos atualizados com BPM e acordes estimados.";
+            statusEl.className = "mt-3 text-success";
+        } catch (err) {
+            statusEl.textContent = "Erro na análise de áudio: " + err.message;
+            statusEl.className = "mt-3 text-danger";
+        } finally {
+            btnAnalisarAudio.disabled = false;
+            btnAnalisarAudio.textContent = "Analisar MP3";
+        }
+    });
+
+    tempoInput.addEventListener("input", () => {
+        if (useManualEditor && manualBars.length) syncManualToFormFields();
+        renderLeadSheetStaff();
+    });
+    timeSignatureInput.addEventListener("input", () => {
+        manualTimeSignatureInput.value = timeSignatureInput.value;
+        renderLeadSheetStaff();
+    });
+    form.querySelector('input[name="song_title"]')?.addEventListener("input", renderPlayModePreview);
+    form.querySelector('input[name="artist"]')?.addEventListener("input", renderPlayModePreview);
+    form.querySelector('input[name="song_key"]')?.addEventListener("input", renderPlayModePreview);
+
+    function applyLeadsheetToEditor(ls) {
+        if (!ls || !ls.events) return;
+        const song = ls.song || {};
+        const audio = ls.audio || {};
+        if (song.tempo_bpm) tempoInput.value = song.tempo_bpm;
+        if (song.time_signature) {
+            timeSignatureInput.value = song.time_signature;
+            manualTimeSignatureInput.value = song.time_signature;
+        }
+        if (song.key) form.querySelector('input[name="song_key"]').value = song.key;
+        if (audio.duration_seconds) durationHidden.value = audio.duration_seconds;
+        if (audio.sample_rate) sampleRateHidden.value = audio.sample_rate;
+        if (audio.file_name) fileNameHidden.value = audio.file_name;
+        const bpm = Number(song.tempo_bpm) || 120;
+        const beatDur = 60 / bpm;
+        const beats = parseBeatsPerMeasure();
+        manualBars = barsFromAnalysisEvents(
+            (ls.events || []).filter((e) => e.type === "chord"),
+            bpm,
+            beats
+        );
+        manualParts = [];
+        (ls.events || []).forEach((evt) => {
+            if (evt.type !== "marker" && evt.type !== "lyric") return;
+            const bar = Math.min(
+                manualBars.length ? manualBars.length - 1 : 0,
+                Math.max(0, Math.round(Number(evt.time_seconds) / beatDur / beats))
+            );
+            if (evt.type === "marker") {
+                manualParts = manualParts.filter((p) => p.barIndex !== bar);
+                manualParts.push({ name: evt.value, barIndex: bar });
+            } else if (evt.type === "lyric") {
+                let part = manualParts.find((p) => p.barIndex === bar);
+                if (part) part.lyric = evt.value;
+                else manualParts.push({ name: "Parte", barIndex: bar, lyric: evt.value });
+            }
+        });
+        manualParts.sort((a, b) => a.barIndex - b.barIndex);
+        useManualEditor = manualBars.length > 0;
+        selectedPulse = null;
+        syncManualToFormFields();
+        updateManualEditorStatus();
+        renderLeadSheetStaff();
+    }
+
+    if (INITIAL_LEADSHEET) {
+        applyLeadsheetToEditor(INITIAL_LEADSHEET);
+    } else {
+        updateManualEditorStatus();
+        renderLeadSheetStaff();
+    }
+</script>
+<script src="{{ url_for('static', filename='js/theme.js') }}?v=6"></script>
+</body>
+</html>

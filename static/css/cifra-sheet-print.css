@@ -1,0 +1,432 @@
+/**
+ * Layout folha (cifra + Lead Sheet) — respeita tema claro/escuro do app.
+ */
+
+:root {
+  --ss-canvas: #e7e5e4;
+  --ss-bg: #ffffff;
+  --ss-fg: #1c1917;
+  --ss-chord: var(--chord-highlight, #c2410c);
+  --ss-lyric: #292524;
+  --ss-muted: #57534e;
+  --ss-border: #d6d3d1;
+  --ss-rule: #e7e5e4;
+  --ss-tab-bg: #fafaf9;
+  --ss-tab-border: #78716c;
+  --ss-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] {
+  --ss-canvas: #f5f5f4;
+  --ss-bg: #ffffff;
+  --ss-fg: #1c1917;
+  --ss-chord: var(--chord-highlight, #c2410c);
+  --ss-lyric: #292524;
+  --ss-muted: #57534e;
+  --ss-border: #d6d3d1;
+  --ss-rule: #e7e5e4;
+  --ss-tab-bg: #fafaf9;
+  --ss-tab-border: #ea580c;
+}
+
+[data-theme="dark"] {
+  --ss-canvas: #0b1220;
+  --ss-bg: #111827;
+  --ss-fg: #e7e5e4;
+  --ss-chord: var(--chord-highlight, #2dd4bf);
+  --ss-lyric: #f1f5f9;
+  --ss-muted: #94a3b8;
+  --ss-border: #334155;
+  --ss-rule: #1e293b;
+  --ss-tab-bg: #0f172a;
+  --ss-tab-border: #f59e0b;
+  --ss-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+/* Área ao redor da folha */
+#play-app #cifra-wrap:has(.cifra-sheet-paper) {
+  background: var(--ss-canvas) !important;
+}
+
+#cifra-col:has(.cifra-sheet-paper) {
+  background: transparent;
+}
+
+/* Mesma tipografia na cifra e no Lead Sheet (ver cifra) */
+#cifra-col .cifra-container.cifra-sheet-paper,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-wrap {
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace) !important;
+  font-size: 1.05rem;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+
+/* ── Folha: cifra (ver cifra) ─────────────────────────────────────── */
+#cifra-col .cifra-container.cifra-sheet-paper {
+  background: var(--ss-bg) !important;
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+  padding: 1.35rem 1.6rem 1.5rem;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow);
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper.cifra-two-cols {
+  column-gap: 2.25rem;
+  column-rule: 1px solid var(--ss-rule);
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .chord,
+#cifra-col .cifra-container.cifra-sheet-paper .sp-chord,
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-chords {
+  color: var(--ss-chord) !important;
+  font-weight: 700;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1em;
+  line-height: 1.25;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-lyric,
+#cifra-col .cifra-container.cifra-sheet-paper .sp-word {
+  color: var(--ss-lyric) !important;
+  font-weight: 400;
+  font-family: var(--cifra-mono-font) !important;
+  line-height: 1.4;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .sp-line {
+  margin-bottom: 0.35rem;
+  row-gap: 0.15rem;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .sp-item {
+  padding-right: 0.45rem;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-tab-block {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-left: 3px solid var(--ss-tab-border) !important;
+  border-radius: 2px;
+  margin: 0.75rem 0;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-tab-title {
+  color: var(--ss-muted) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 0.72rem;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-tab-line {
+  color: var(--ss-lyric) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .tab-string {
+  color: var(--ss-tab-border) !important;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .tab-tech {
+  color: var(--ss-muted) !important;
+}
+
+/* ── Folha: Lead Sheet (ver cifra) ──────────────────────────────── */
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper {
+  background: var(--ss-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow);
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-wrap {
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1.05rem !important;
+  padding: 1.1rem 1.35rem 1.25rem;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-header {
+  border-bottom: 1px solid var(--ss-rule) !important;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.55rem;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-title {
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ss-chord) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-meta {
+  color: var(--ss-muted) !important;
+  font-family: inherit !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-systems {
+  color: var(--ss-fg) !important;
+  font-family: inherit !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-bars {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-part-label {
+  color: var(--ss-muted) !important;
+  font-family: inherit !important;
+  font-weight: 600;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-bar {
+  border-left-color: var(--ss-muted) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-bar-col:first-child .staff-bar {
+  border-left-color: var(--ss-chord) !important;
+  border-left-width: 2px;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-bar-col.staff-bar-last .staff-bar {
+  border-right: 2px solid var(--ss-chord) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-cell {
+  border-right-color: var(--ss-border) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-cell .chord-text {
+  color: var(--ss-chord) !important;
+  font-family: inherit !important;
+  font-weight: 700;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-empty {
+  color: var(--ss-muted) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .accidental,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-quality {
+  color: inherit;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-empty {
+  color: var(--ss-muted) !important;
+}
+
+/* ── Folha: modo tocar ───────────────────────────────────────────── */
+#play-app .cifra-body.cifra-sheet-paper {
+  background: var(--ss-bg) !important;
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font) !important;
+  line-height: 1.45 !important;
+  white-space: pre-wrap;
+  max-width: min(1100px, 100%);
+  margin: clamp(0.5rem, 2vw, 1.25rem) auto;
+  padding: clamp(1rem, 3vw, 1.75rem) clamp(1rem, 4vw, 2.25rem) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow);
+  box-sizing: border-box;
+  min-height: calc(100% - 2rem);
+}
+
+#play-app .cifra-body.cifra-sheet-paper .chord,
+#play-app .cifra-body.cifra-sheet-paper .sp-chord {
+  color: var(--ss-chord) !important;
+  font-weight: 700;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 0.95em;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-chords {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--ss-chord) !important;
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace) !important;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-lyric,
+#play-app .cifra-body.cifra-sheet-paper .sp-word {
+  color: var(--ss-lyric) !important;
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace) !important;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .sp-line {
+  margin-bottom: 0.35rem;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-tab-block {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-left: 3px solid var(--ss-tab-border) !important;
+  border-radius: 2px;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-tab-title {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-tab-line {
+  color: var(--ss-lyric) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .tab-string {
+  color: var(--ss-tab-border) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .tab-tech {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.two-col {
+  column-rule: 1px solid var(--ss-rule) !important;
+  column-gap: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+/* Lead Sheet no modo tocar (tecla G) */
+#play-app .cifra-body.cifra-sheet-paper.grade-mode {
+  background: var(--ss-bg) !important;
+  padding: clamp(0.5rem, 2vw, 1rem) !important;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap {
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1.05rem !important;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-body,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-systems,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-system,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-line,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bars {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bars {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-part-label {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bar {
+  border-left-color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bar-col:first-child .staff-bar {
+  border-left-color: var(--ss-chord) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bar-col.staff-bar-last .staff-bar {
+  border-right: 2px solid var(--ss-chord) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-cell {
+  border-right-color: var(--ss-border) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-cell .chord-text {
+  color: var(--ss-chord) !important;
+  font-family: inherit !important;
+  font-weight: 700;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-empty {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-chord-play {
+  color: var(--ss-chord) !important;
+  font-family: var(--cifra-mono-font) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-sep-play,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-repeat-play,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-part-title-play {
+  color: var(--ss-muted) !important;
+}
+
+@media print {
+  html[data-theme="dark"],
+  html[data-theme="light"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: var(--ss-canvas) !important;
+  }
+
+  #cifra-col .cifra-container.cifra-sheet-paper,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper,
+  #play-app .cifra-body.cifra-sheet-paper {
+    box-shadow: none !important;
+    break-inside: avoid;
+    background: var(--ss-bg) !important;
+    color: var(--ss-fg) !important;
+    border: 1px solid var(--ss-border) !important;
+  }
+
+  #normal-sidebar,
+  #normal-header,
+  .d-flex.gap-2.flex-wrap,
+  #play-app #play-bar,
+  #play-app #play-foot,
+  #play-app .tap-zone,
+  #speed-pill,
+  #scroll-badge,
+  #kbd-hint,
+  #play-drawer,
+  #drawer-overlay,
+  .navbar,
+  footer {
+    display: none !important;
+  }
+
+  #cifra-col {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #play-app #cifra-wrap:has(.cifra-sheet-paper) {
+    background: var(--ss-canvas) !important;
+    overflow: visible;
+  }
+
+  main.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}

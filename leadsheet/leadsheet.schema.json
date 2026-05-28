@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LeadSheet",
+  "type": "object",
+  "required": ["source", "audio", "song", "sections", "events"],
+  "properties": {
+    "source": {
+      "type": "object",
+      "required": ["platform", "url"],
+      "properties": {
+        "platform": { "type": "string", "const": "youtube" },
+        "url": { "type": "string", "format": "uri" },
+        "video_id": { "type": "string" }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "required": ["file_name"],
+      "properties": {
+        "file_name": { "type": "string" },
+        "duration_seconds": { "type": "number" },
+        "sample_rate": { "type": "integer" }
+      }
+    },
+    "song": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "tempo_bpm": { "type": "number" },
+        "time_signature": { "type": "string" },
+        "key": { "type": "string" }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "start_seconds", "end_seconds"],
+        "properties": {
+          "name": { "type": "string" },
+          "start_seconds": { "type": "number" },
+          "end_seconds": { "type": "number" }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "description": "Eventos musicais no tempo (acordes, marcações, letra, etc.)",
+      "items": {
+        "type": "object",
+        "required": ["time_seconds", "type", "value"],
+        "properties": {
+          "time_seconds": { "type": "number" },
+          "type": { "type": "string", "enum": ["chord", "lyric", "marker"] },
+          "value": { "type": "string" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "generated_by": { "type": "string" },
+        "generated_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

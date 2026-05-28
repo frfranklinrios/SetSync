@@ -53,13 +53,43 @@
 <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
     <div>
         <h1 class="mb-1" style="font-size:1.5rem; font-weight:700;">Olá, {{ current_user.name }}</h1>
-        <p class="text-muted mb-0" style="font-size:0.9rem;">Suas bandas, cifras e setlists</p>
+        <p class="text-muted mb-0" style="font-size:0.9rem;">
+            {% if is_superadmin %}Administrador do sistema — todas as bandas{% else %}Suas bandas, cifras e setlists{% endif %}
+        </p>
     </div>
-    <a href="{{ url_for('bands.create') }}" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i> Nova Banda
-    </a>
+    <div class="d-flex gap-2 flex-wrap">
+        {% if is_superadmin %}
+        <a href="{{ url_for('admin.index') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-shield-halved me-1"></i> Painel Admin
+        </a>
+        {% endif %}
+        <a href="{{ url_for('bands.create') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i> Nova Banda
+        </a>
+    </div>
 </div>
 
+{% if is_superadmin %}
+<div class="alert alert-info py-2 mb-3" style="font-size:0.88rem;">
+    Você tem acesso de <strong>administrador</strong> a todas as bandas e cifras. Pode editar, excluir e gerenciar como admin de cada banda.
+</div>
+<p class="section-title">Todas as bandas ({{ bands|length }})</p>
+<div class="row g-3 mb-3">
+    {% for band in bands %}
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile">
+            <h6>{{ band.name }}</h6>
+            <p class="band-desc">Dono: {{ band.owner.username or '—' }}</p>
+            <div class="band-meta">
+                <span class="tile-badge role-admin">Admin global</span>
+                <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
+                <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
 {% set member_only = bands|selectattr('owner_id','ne',current_user.id)|list %}
 
 {% if owned_bands %}
@@ -107,5 +137,6 @@
         <i class="fas fa-plus me-1"></i> Criar Primeira Banda
     </a>
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

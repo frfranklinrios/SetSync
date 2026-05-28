@@ -7,6 +7,7 @@ from blueprints.cifras import cifras_bp
 from blueprints.setlists import setlists_bp
 from blueprints.cifras_import import cifras_import_bp
 from blueprints.ajuda import ajuda_bp
+from blueprints.admin import admin_bp
 from db import init_db
 from util import highlight_chords_html, normalize_tom_label
 import os
@@ -19,6 +20,23 @@ env = os.getenv('FLASK_ENV', 'development')
 app.config.from_object(config.get(env, config['default']))
 app.config.from_object('email_config')
 mail = Mail(app)
+
+if env == 'production':
+    from werkzeug.middleware.proxy_fix import ProxyFix
+
+    if os.getenv('TRUST_PROXY', '1').lower() not in ('0', 'false', 'no'):
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+    _sk = (os.getenv('SECRET_KEY') or '').strip()
+    _weak = {
+        '',
+        'dev-key-change-in-production',
+        'sua-chave-secreta-aqui-mude-em-producao',
+    }
+    if _sk in _weak:
+        app.logger.warning(
+            'SECRET_KEY ausente ou padrão — defina uma chave forte no .env antes do deploy.'
+        )
 
 # Filtro Jinja2 para destaque de acordes
 app.jinja_env.filters['highlight_chords'] = highlight_chords_html
@@ -56,6 +74,7 @@ app.register_blueprint(cifras_import_bp)
 app.register_blueprint(cifras_bp)
 app.register_blueprint(setlists_bp)
 app.register_blueprint(ajuda_bp)
+app.register_blueprint(admin_bp)
 
 @app.route('/')
 def index():
@@ -89,8 +108,12 @@ def offline():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    from db import get_user_bands, get_owned_bands, get_band_members, get_band_cifras, get_user
+    from db import (
+        get_user_bands, get_owned_bands, get_all_bands,
+        get_band_members, get_band_cifras, get_user, is_superadmin,
+    )
     user_id = session['user_id']
+    sa = is_superadmin(user_id)
 
     def enrich(bands):
         result = []
@@ -103,9 +126,19 @@ def dashboard():
             result.append(band)
         return result
 
+    if sa:
+        all_bands = enrich(get_all_bands())
+        owned_bands = enrich(get_owned_bands(user_id))
+        return render_template(
+            'dashboard.html',
+            bands=all_bands,
+            owned_bands=owned_bands,
+            is_superadmin=True,
+        )
+
     bands = enrich(get_user_bands(user_id))
     owned_bands = enrich(get_owned_bands(user_id))
-    return render_template('dashboard.html', bands=bands, owned_bands=owned_bands)
+    return render_template('dashboard.html', bands=bands, owned_bands=owned_bands, is_superadmin=False)
 
 @app.context_processor
 def inject_user():
@@ -121,6 +154,8 @@ def inject_user():
     except RuntimeError:
         cifras_import_tool_url = '/cifras/import/tool'
 
+    from db import is_superadmin as _is_superadmin
+
     return dict(
         current_user={
             'id': user_id,
@@ -128,6 +163,7 @@ def inject_user():
             'display_name': display_name,
             'name': display_name or username,
             'is_authenticated': user_id is not None,
+            'is_superadmin': bool(user_id and _is_superadmin(user_id)),
         },
         cifras_import_tool_url=cifras_import_tool_url,
     )

@@ -1,3 +1,4 @@
+# Desenvolvimento local — monta o código (.:/app). Em produção use docker-compose.prod.yml
 services:
   web:
     build: .

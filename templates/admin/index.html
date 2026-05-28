@@ -1,0 +1,179 @@
+{% extends "index.html" %}
+{% block title %}Administração — SetSync{% endblock %}
+
+{% block content %}
+<style>
+.admin-stat {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    background: var(--bg);
+    height: 100%;
+}
+.admin-stat .num { font-size: 1.75rem; font-weight: 700; color: var(--chord-highlight, var(--accent)); }
+.admin-stat .lbl { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.admin-table { font-size: 0.88rem; }
+.admin-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.admin-badge-sa {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--chord-highlight, var(--accent));
+    border: 1px solid var(--chord-highlight-border, rgba(42,181,160,0.35));
+    background: var(--chord-highlight-bg, rgba(42,181,160,0.08));
+    border-radius: 999px;
+    padding: 0.12rem 0.45rem;
+}
+</style>
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h1 class="mb-1" style="font-size:1.45rem; font-weight:700;">
+            <i class="fas fa-shield-halved me-2" style="color:var(--chord-highlight,var(--accent));"></i>
+            Administração
+        </h1>
+        <p class="text-muted mb-0" style="font-size:0.9rem;">
+            Todas as bandas, cifras e usuários do sistema
+        </p>
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="admin-stat">
+            <div class="num">{{ stats.bands }}</div>
+            <div class="lbl">Bandas</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-stat">
+            <div class="num">{{ stats.cifras }}</div>
+            <div class="lbl">Cifras</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-stat">
+            <div class="num">{{ stats.users }}</div>
+            <div class="lbl">Usuários</div>
+        </div>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-bands" type="button">Bandas</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cifras" type="button">Cifras</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">Usuários</button></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="tab-bands">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Banda</th>
+                            <th>Dono</th>
+                            <th>Membros</th>
+                            <th>Cifras</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for band in bands %}
+                        <tr>
+                            <td><strong>{{ band.name }}</strong></td>
+                            <td>{{ band.owner.username or band.owner.email or '—' }}</td>
+                            <td>{{ band.members_count }}</td>
+                            <td>{{ band.cifras_count }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-sm btn-outline-primary">Abrir</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-cifras">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Música</th>
+                            <th>Artista</th>
+                            <th>Banda</th>
+                            <th>Tom</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in cifras %}
+                        <tr>
+                            <td><strong>{{ c.titulo }}</strong></td>
+                            <td>{{ c.artista }}</td>
+                            <td>{{ c.band_name }}</td>
+                            <td>{{ c.tom_original|normalize_tom }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('cifras.view', cifra_id=c.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                <a href="{{ url_for('cifras.edit', cifra_id=c.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-muted text-center py-4">Nenhuma cifra.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-users">
+        <div class="alert alert-secondary py-2 mb-3" style="font-size:0.85rem;">
+            Administradores são definidos só no <strong>.env</strong> do servidor (sem mudança no banco):
+            <code class="d-block mt-1">SETSYNC_SUPERADMIN_USERNAMES={{ env_users or 'usuario1,usuario2' }}</code>
+            {% if env_emails %}
+            <code class="d-block">SETSYNC_SUPERADMIN_EMAILS={{ env_emails }}</code>
+            {% endif %}
+            Reinicie o app após editar o .env na Contabo.
+        </div>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>E-mail</th>
+                            <th>Cadastro</th>
+                            <th>Admin</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td><strong>{{ u.username }}</strong></td>
+                            <td>{{ u.email }}</td>
+                            <td>{{ (u.created_at or '')[:10] }}</td>
+                            <td>
+                                {% if u.is_env_admin %}
+                                <span class="admin-badge-sa">Sim (.env)</span>
+                                {% else %}
+                                <span class="text-muted">Não</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-muted small">—</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

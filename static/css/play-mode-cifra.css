@@ -1,0 +1,69 @@
+/**
+ * Modo tocar — tipografia PT Mono (carregar por último, após estilos inline do template).
+ */
+
+#play-app #cifra-content,
+#play-app #cifra-content .chord,
+#play-app #cifra-content .cj-chord,
+#play-app #cifra-content .sp-chord,
+#play-app #cifra-content .sp-word,
+#play-app #cifra-content .cifra-chords,
+#play-app #cifra-content .cifra-lyric,
+#play-app #cifra-content .cifra-tab-line,
+#play-app #cifra-content .cifra-tab-title,
+#play-app #cifra-content .cifra-tab-meta,
+#play-app #cifra-content .grade-bars-play,
+#play-app #cifra-content .grade-inline-play,
+#play-app #cifra-content .grade-line-play,
+#play-app #cifra-content .grade-chord-play,
+#play-app #cifra-content .grade-part-title-play,
+#play-app #cifra-content .grade-repeat-play,
+#play-app #cifra-content .grade-sep-play,
+#play-app #cifra-content .grade-visual-root,
+#play-app #cifra-content .grade-visual-chord,
+#play-app #cifra-content .leadsheet-play-wrap,
+#play-app #cifra-content .leadsheet-play-title,
+#play-app #cifra-content .leadsheet-play-meta,
+#play-app #cifra-content .leadsheet-systems,
+#play-app #cifra-content .staff-part-label,
+#play-app #cifra-content .pulse-cell,
+#play-app #cifra-content .pulse-cell .chord-text,
+#play-app #cifra-content .pulse-empty,
+#play-app #cifra-content .accidental,
+#play-app #cifra-content .chord-quality,
+#play-app #cifra-content .grade-empty-play {
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, "Courier New", Courier, monospace) !important;
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0 !important;
+}
+
+/* Cor dos acordes — último CSS do modo tocar; respeita tema claro (laranja) / escuro (ciano) */
+#play-app #cifra-content .chord,
+#play-app #cifra-content .cj-chord,
+#play-app #cifra-content .sp-chord,
+#play-app #cifra-content .cifra-chords,
+#play-app #cifra-content .grade-chord-play,
+#play-app #cifra-content .grade-visual-chord,
+#play-app #cifra-content .pulse-cell .chord-text {
+  color: var(--chord-highlight, #c2410c) !important;
+}
+#play-app #cifra-content .grade-visual-chord.repeat {
+  color: var(--muted, #94a3b8) !important;
+  font-weight: 400 !important;
+}
+
+#play-app #cifra-content.grade-mode .leadsheet-play-wrap {
+  font-size: 1.05rem !important;
+}
+
+#play-app #cifra-content .pulse-cell .chord-text.chord-sm {
+  font-size: 0.78em !important;
+}
+
+#play-app #cifra-content .pulse-cell .chord-text.chord-md {
+  font-size: 0.85em !important;
+}
+
+#play-app #cifra-content .pulse-cell .chord-text.chord-lg {
+  font-size: 0.92em !important;
+}

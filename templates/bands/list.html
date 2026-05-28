@@ -124,7 +124,25 @@
 </div>
 {% endif %}
 
-{% if not owned and not extra %}
+{% if is_superadmin and all_bands %}
+<p class="section-title">Todas as bandas (admin)</p>
+<div class="row g-3 mb-3">
+    {% for band in all_bands %}
+    <div class="col-md-6 col-lg-4">
+        <div class="band-tile">
+            <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
+            <h6>{{ band.name }}</h6>
+            <p class="band-desc">{{ band.description or '—' }}</p>
+            <div class="band-meta">
+                <span class="tile-badge role-admin">Admin global</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not owned and not extra and not (is_superadmin and all_bands) %}
 <div class="empty">
     <i class="fas fa-guitar"></i>
     <p class="mb-3" style="font-size:0.95rem;">Nenhuma banda ainda.</p>

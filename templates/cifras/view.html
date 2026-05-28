@@ -4,28 +4,41 @@
 {% block content %}
 <style>
 .cifra-container {
-    font-family: "Courier New", Courier, monospace;
-    font-size: 1.05rem;
-    line-height: 1;
-    background: #0f172a;
-    color: #e2e8f0;
-    padding: 1.75rem 2rem;
-    border-radius: 10px;
     overflow-x: auto;
-    white-space: pre;        /* mantém alinhamento acorde↔letra */
     word-break: normal;
 }
-.chord { color: #2dd4bf; font-weight: 700; }
-.cifra-chords {
-    display: block;
-    background: rgba(45,212,191,0.07);
-    border-left: 2px solid rgba(45,212,191,0.35);
-    padding: 1px 8px;
+/* Visualização: cifra sempre em duas colunas */
+.cifra-container.cifra-two-cols {
+    column-count: 2;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
-.cifra-lyric { display: block; color: #cbd5e1; padding: 1px 8px; }
+.cifra-container.cifra-two-cols:not(.play-layout) {
+    white-space: pre-wrap;
+}
+.cifra-chords { display: block; }
+.cifra-lyric { display: block; }
 
 .cifra-container.play-layout {
     white-space: normal;
+}
+.cifra-container.cifra-two-cols .sp-line {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+}
+.cifra-container.cifra-two-cols .cifra-chords,
+.cifra-container.cifra-two-cols .cifra-lyric {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+.cifra-container.cifra-two-cols .cifra-chords {
+    break-after: avoid;
+    page-break-after: avoid;
+}
+.cifra-container.cifra-two-cols .cifra-tab-block {
+    break-inside: avoid;
+    column-span: all;
 }
 .cifra-container .sp-line {
     display: flex;
@@ -41,16 +54,15 @@
 }
 .cifra-container .sp-item.sp-no-gap { padding-right: 0; }
 .cifra-container .sp-chord {
-    color: #2dd4bf;
+    color: var(--chord-highlight);
     font-weight: 700;
-    font-size: 0.82em;
+    font-size: 0.95em;
     min-height: 1.25em;
-    line-height: 1.25;
+    line-height: 1.2;
     white-space: nowrap;
 }
 .cifra-container .sp-word {
-    color: #cbd5e1;
-    line-height: 1.25;
+    line-height: 1.35;
     white-space: nowrap;
 }
 
@@ -84,7 +96,7 @@
 }
 .cifra-tab-line {
     display: block;
-    font-family: "Courier New", Courier, monospace;
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
     font-size: 0.8rem;
     line-height: 1.32;
     white-space: pre;
@@ -96,63 +108,29 @@
 .tab-tech { color: #fde68a; font-weight: 600; }
 
 
-.grade-bars-card {
+.leadsheet-view-panel {
     margin-top: 1rem;
-    border: 1px solid rgba(45,212,191,0.2);
-    border-radius: 8px;
-    background: rgba(45,212,191,0.05);
-    padding: 0.8rem 0.95rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
-.grade-bars-title {
-    color: #94a3b8;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-    margin-bottom: 0.45rem;
-}
-.grade-bars-view {
-    font-family: "Courier New", monospace;
-    font-size: 1.02rem;
-    line-height: 1.7;
-}
-.grade-inline-view {
-    display: inline-block;
-    white-space: pre-wrap;
-}
-.grade-line-view {
-    display: block;
-    margin-bottom: 0.2rem;
-}
-.grade-part-view {
-    margin-bottom: 0.6rem;
-}
-.grade-part-title-view {
-    display: block;
-    color: #94a3b8;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    margin-bottom: 0.12rem;
-    text-transform: uppercase;
-}
-.grade-sep-view,
-.grade-repeat-view {
-    color: #94a3b8;
-}
-.grade-chord-view {
-    color: #2dd4bf;
-    font-weight: 700;
-    white-space: nowrap;
+.leadsheet-view-panel #leadsheet-view-mount {
+    width: 100%;
+    max-width: 100%;
 }
 
 .transpose-select {
-    background: #0f172a; color: #2dd4bf;
-    border: 1px solid #2dd4bf; border-radius: 7px;
-    font-size: 0.875rem; padding: 0.45rem 0.75rem;
-    width: 100%; cursor: pointer;
+    background: #0f172a;
+    color: var(--chord-highlight);
+    border: 1px solid var(--chord-highlight);
+    border-radius: 7px;
+    font-size: 0.875rem;
+    padding: 0.45rem 0.75rem;
+    width: 100%;
+    cursor: pointer;
 }
-.transpose-select:focus { outline: none; box-shadow: 0 0 0 3px rgba(45,212,191,0.15); }
+.transpose-select:focus { outline: none; box-shadow: 0 0 0 3px var(--chord-highlight-ring); }
 
 .sl-item {
     display: flex; align-items: center; gap: 0.5rem;
@@ -165,22 +143,14 @@
 .sl-item:last-child { border-bottom: none; }
 .sl-item:hover { background: #f9fafb; }
 .sl-item.active {
-    border-left-color: var(--accent); color: var(--accent);
-    background: rgba(42,181,160,0.06); font-weight: 600;
+    border-left-color: var(--chord-highlight);
+    color: var(--chord-highlight);
+    background: var(--chord-highlight-bg);
+    font-weight: 600;
 }
 .sl-num { font-size: 0.7rem; color: #9ca3af; min-width: 1.4rem; }
 .sl-key { font-size: 0.7rem; color: #9ca3af; margin-left: auto; }
 
-[data-theme="light"] .cifra-container {
-    background: #f1f5f9;
-    color: #1e293b;
-}
-[data-theme="light"] .chord { color: #0d7e6b; }
-[data-theme="light"] .cifra-chords {
-    background: rgba(13,126,107,0.07);
-    border-left-color: rgba(13,126,107,0.3);
-}
-[data-theme="light"] .cifra-lyric { color: #475569; }
 [data-theme="light"] .cifra-tab-block {
     background: rgba(245, 158, 11, 0.08);
     border-color: rgba(217, 119, 6, 0.25);
@@ -190,17 +160,10 @@
 [data-theme="light"] .cifra-tab-line { color: #334155; }
 [data-theme="light"] .tab-string { color: #d97706; }
 [data-theme="light"] .tab-tech { color: #92400e; }
-[data-theme="light"] .grade-bars-card {
-    border-color: rgba(13,126,107,0.22);
-    background: rgba(13,126,107,0.06);
-}
-[data-theme="light"] .grade-chord-view { color: #0d7e6b; }
-[data-theme="light"] .grade-sep-view,
-[data-theme="light"] .grade-repeat-view,
-[data-theme="light"] .grade-bars-title { color: #64748b; }
-[data-theme="light"] .grade-part-title-view { color: #64748b; }
 [data-theme="light"] .transpose-select {
-    background: #fff; color: #1e293b; border-color: #d1d5db;
+    background: #fff;
+    color: var(--chord-highlight);
+    border-color: var(--chord-highlight-border);
 }
 [data-theme="light"] .sl-item { color: #374151; }
 [data-theme="light"] .sl-item:hover { background: #f9fafb; }
@@ -236,7 +199,7 @@
             </div>
         </div>
 
-        <div class="cifra-container{% if conteudo_html %} play-layout{% endif %}" id="cifra-body">
+        <div class="cifra-container cifra-sheet-paper cifra-two-cols{% if conteudo_html or grouped_cifra %} play-layout{% endif %}" id="cifra-body">
             {% if grouped_cifra and grouped_cifra|length > 0 %}
                 {% for group in grouped_cifra %}
                     <div class="sp-line">
@@ -257,9 +220,15 @@
             {% endif %}
         </div>
 
-        {% if grade_data and grade_data|length > 0 %}
-        <div class="grade-bars-card">
-            <div class="grade-bars-view" id="grade-bars-view"></div>
+        {% if leadsheet_document %}
+        <div class="leadsheet-view-panel cifra-sheet-paper">
+            <div id="leadsheet-view-mount"></div>
+        </div>
+        {% elif is_member %}
+        <div class="mt-3">
+            <a href="{{ url_for('cifras.leadsheet_editor', cifra_id=cifra.id) }}" class="btn btn-outline-info btn-sm">
+                Configurar Lead Sheet
+            </a>
         </div>
         {% endif %}
 
@@ -327,17 +296,44 @@
     </div>
 </div>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
-<script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=7">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=7">
+<script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}"></script>
 <script>
 const CIFRA_BASE = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
 const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}";
-const GRADE_DATA = {{ grade_data|tojson if grade_data else '[]' }};
+const LEADSHEET_DOC = {{ leadsheet_document|tojson if leadsheet_document else 'null' }};
+const CIFRA_TITULO = {{ cifra.titulo|tojson }};
+const CIFRA_ARTISTA = {{ cifra.artista|tojson }};
 
 (function () {
-    var el = document.getElementById('grade-bars-view');
-    if (el && window.SetSyncGradeVisual && GRADE_DATA.length) {
-        SetSyncGradeVisual.render(el, GRADE_DATA);
+    var mount = document.getElementById('leadsheet-view-mount');
+    if (!mount || !window.LeadsheetPlayRender || !LEADSHEET_DOC) return;
+
+    var resizeTimer = null;
+    function renderLeadSheetView() {
+        var panel = mount.closest('.leadsheet-view-panel');
+        var w = (panel && panel.clientWidth) || mount.clientWidth || window.innerWidth;
+        mount.innerHTML = LeadsheetPlayRender.renderHtml(LEADSHEET_DOC, {
+            wrapWidth: w,
+            title: CIFRA_TITULO,
+            artist: CIFRA_ARTISTA
+        });
+    }
+
+    renderLeadSheetView();
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(renderLeadSheetView, 100);
+    });
+    if (typeof ResizeObserver !== 'undefined') {
+        var panel = mount.closest('.leadsheet-view-panel');
+        if (panel) {
+            new ResizeObserver(function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(renderLeadSheetView, 100);
+            }).observe(panel);
+        }
     }
 })();
 

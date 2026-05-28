@@ -10,6 +10,7 @@ Gerenciador de cifras e setlists para bandas. Organize suas músicas, transpose 
 - `docs/03-importador-cifras.md`
 - `docs/04-pwa.md`
 - `docs/05-troubleshooting.md`
+- `docs/06-deploy-contabo.md` — VPS Contabo / produção
 
 ## Funcionalidades
 
@@ -37,43 +38,53 @@ Gerenciador de cifras e setlists para bandas. Organize suas músicas, transpose 
 | Servidor | Gunicorn |
 | Container | Docker / Podman |
 
-## Rodando com Docker / Podman
+## Deploy produção (Contabo / VPS)
+
+Veja **`docs/06-deploy-contabo.md`**. Resumo:
 
 ```bash
-# 1. Clone o repositório
-git clone https://github.com/seu-usuario/setsync.git
-cd setsync
+cp .env.example .env   # FLASK_ENV=production, SECRET_KEY, SETSYNC_SUPERADMIN_*
+docker compose -f docker-compose.prod.yml up -d --build
+# Nginx + HTTPS na porta 443 → proxy para 127.0.0.1:5001
+```
 
-# 2. Configure as variáveis de ambiente
+## Rodando com Docker (desenvolvimento)
+
+```bash
 cp .env.example .env
-# Edite .env com sua SECRET_KEY e credenciais do Google OAuth
-
-# 3. Suba o container
-docker compose up -d          # Docker
-# ou
-podman-compose up -d          # Podman rootless
-
-# 4. Acesse em http://localhost:5000
+docker compose up -d
+# http://localhost:5001 (mapeamento no compose de dev)
 ```
 
 ## Rodando localmente (sem container)
 
+Use **apenas o ambiente desta pasta** (não ative o `.venv` de outro projeto no shell).
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+cd SetSync
+uv sync
 cp .env.example .env
 # edite .env
-flask run
+uv run app.py
+# ou: uv run python main.py
 ```
 
-Requisitos extras do módulo de importação de cifras: `ffmpeg` no PATH e, para resolver vídeos do player do Cifra Club, `playwright install chromium`.
+Alternativa com pip:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # deve apontar para SetSync/.venv
+pip install -r requirements.txt
+python app.py
+```
+
+Requisitos extras do módulo de importação de cifras: `ffmpeg` no PATH e, para o player do Cifra Club, `uv run playwright install chromium`.
 
 ### Importar cifra (módulo integrado `cifras_tool/`)
 
-O código do projeto `cifras` (pasta irmã `../cifras`) está embutido em `cifras_tool/` e exposto pelo Flask em `/cifras/import/tool`. **Um único servidor** (`uv run app.py` ou `flask run`) — não é necessário rodar FastAPI/uvicorn em outra porta.
+Todo o importador vive **dentro deste repositório** (`cifras_tool/`, `blueprints/cifras_import.py`) e é exposto em `/cifras/import/tool`. **Um único servidor** — não é necessário clonar nem rodar outro projeto ao lado.
 
-Em **Adicionar** ou **Editar** cifra, use o botão **Cifra → SetSync**: informe os links da cifra e do YouTube, gere e clique em **Usar no formulário SetSync**.
+Em **Adicionar** ou **Editar** cifra, use **Cifra → SetSync**: cole o link da cifra (Cifra Club / Cifras.com.br) e clique em **Usar no formulário SetSync**.
 
 Arquivos temporários: `data/cifras_tmp`, `data/cifras_exports`.
 
@@ -84,6 +95,9 @@ Arquivos temporários: `data/cifras_tmp`, `data/cifras_exports`.
 | `SECRET_KEY` | Chave secreta do Flask (obrigatório) |
 | `DATABASE_URL` | Caminho do SQLite (padrão: `sqlite:///data/banda.db`) |
 | `FLASK_ENV` | `development` ou `production` |
+| `SETSYNC_SUPERADMIN_USERNAMES` | Admin global (só `.env`, sem coluna no banco) |
+| `CIFRAS_YOUTUBE_NO_SERVER` | `1` na VPS (sem yt-dlp no servidor) |
+| `GUNICORN_WORKERS` | `1` com SQLite (padrão no `gunicorn.conf.py`) |
 | `GOOGLE_CLIENT_ID` | ID do app no Google Cloud Console (opcional) |
 | `GOOGLE_CLIENT_SECRET` | Secret do app no Google Cloud Console (opcional) |
 | `CIFRAS_TMP_DIR` | Pasta temporária do pipeline de importação |

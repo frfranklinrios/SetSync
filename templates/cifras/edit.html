@@ -7,13 +7,13 @@
 .editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
 @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
 
-#conteudo { font-family: "Courier New", monospace; font-size: 0.88rem;
+#conteudo { font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace); font-size: 0.88rem;
             resize: vertical; min-height: 320px; }
 
 .preview-box {
     background: #0f172a; color: #e2e8f0;
     border-radius: 8px; padding: 1rem 1.25rem;
-    font-family: "Courier New", monospace; font-size: 0.88rem;
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace); font-size: 0.88rem;
     min-height: 320px; overflow-y: auto;
     border: 1px solid #1e293b;
 }
@@ -34,7 +34,7 @@
 }
 .preview-box .sp-item.sp-no-gap { padding-right: 0; }
 .preview-box .sp-chord {
-    color: #2dd4bf;
+    color: var(--chord-highlight);
     font-weight: 700;
     font-size: 0.82em;
     min-height: 1.25em;
@@ -47,7 +47,6 @@
     white-space: nowrap;
 }
 .pv-empty { color: #475569; font-style: italic; }
-[data-theme="light"] .preview-box .sp-chord { color: #0d7e6b; }
 [data-theme="light"] .preview-box .sp-word { color: #1e293b; }
 
 .badge-count { background: var(--accent); color: #fff;
@@ -55,7 +54,7 @@
     padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 
 #grade_text {
-    font-family: "Courier New", monospace;
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
     font-size: 0.84rem;
     resize: vertical;
     min-height: 220px;
@@ -118,17 +117,26 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label fw-semibold">Grade Harmônica (texto)</label>
-        <textarea class="form-control" id="grade_text" rows="10"
-            placeholder="Parte A&#10;| F# % % % | F# C#m % % | D#m % % % | D#m D# % E |"></textarea>
-        <div class="form-text">Cole a grade por partes. No salvar, esse campo é convertido automaticamente para grade JSON.</div>
+        <label class="form-label fw-semibold">Lead Sheet</label>
+        <p class="form-text mb-2">
+            Substitui a antiga grade harmônica. Edite compassos, partes, letra e acordes no editor visual.
+        </p>
+        <a href="{{ url_for('cifras.leadsheet_editor', cifra_id=cifra.id) }}"
+           class="btn btn-outline-info">
+            <i class="fas fa-table-cells me-1"></i> Abrir editor Lead Sheet
+        </a>
+        {% if cifra.leadsheet_json or cifra.grade_json %}
+        <span class="badge text-bg-success ms-2">Dados cadastrados</span>
+        {% else %}
+        <span class="badge text-bg-secondary ms-2">Não configurado</span>
+        {% endif %}
     </div>
 
     <!-- Upload de JSONs -->
     <details class="mb-3">
         <summary class="fw-semibold" style="cursor:pointer;font-size:.875rem;">
             &#128196; Importar arquivos JSON
-            <small class="text-muted ms-1">setsync_cifra / grade</small>
+            <small class="text-muted ms-1">setsync_cifra / leadsheet (legado: grade)</small>
         </summary>
         <div class="row g-3 mt-1">
             <div class="col-md-4">
@@ -143,9 +151,9 @@
                 </div>
             </div>
             <div class="col-md-8">
-                <label class="form-label small fw-semibold">Grade JSON</label>
+                <label class="form-label small fw-semibold">Lead Sheet JSON</label>
                 <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
-                <div class="form-text">setsync_grade.json &mdash; grade harm&ocirc;nica por compasso</div>
+                <div class="form-text">LeadSheet (schema sections + events) ou grade legada</div>
             </div>
         </div>
     </details>

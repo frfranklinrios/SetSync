@@ -1,22 +1,22 @@
 import multiprocessing
+import os
 
-# Workers: (2 * CPUs) + 1 is the standard recommendation
-workers = multiprocessing.cpu_count() * 2 + 1
+# SQLite: um único processo evita "database is locked" (Contabo / Docker).
+# Concorrência via threads (worker_class gthread).
+workers = int(os.getenv('GUNICORN_WORKERS', '1'))
+threads = int(os.getenv('GUNICORN_THREADS', '4'))
+worker_class = 'gthread' if threads > 1 else 'sync'
 
-# Bind
-bind = "0.0.0.0:5000"
+bind = os.getenv('GUNICORN_BIND', '0.0.0.0:5000')
 
-# Timeouts — generous to survive slow Google OAuth / email calls
-timeout = 120
+timeout = int(os.getenv('GUNICORN_TIMEOUT', '120'))
 graceful_timeout = 30
 keepalive = 5
 
-# Logging — send to stdout/stderr so docker logs picks them up
-accesslog = "-"
-errorlog = "-"
-loglevel = "info"
+accesslog = '-'
+errorlog = '-'
+loglevel = os.getenv('GUNICORN_LOG_LEVEL', 'info')
 access_log_format = '%(h)s "%(r)s" %(s)s %(b)s %(D)sµs'
 
-# Restart workers after N requests to prevent memory leaks
 max_requests = 1000
 max_requests_jitter = 100

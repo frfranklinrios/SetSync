@@ -1,7 +1,7 @@
 [project]
-name = "banda-app"
+name = "setsync"
 version = "0.1.0"
-description = "Add your description here"
+description = "Gerenciador de cifras e setlists para bandas (SetSync)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

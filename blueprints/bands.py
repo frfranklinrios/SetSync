@@ -3,9 +3,10 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from blueprints.auth import login_required
-from db import (create_band, get_band, get_user_bands, get_owned_bands, update_band, delete_band,
-                get_band_members, add_band_member, remove_band_member, is_band_member,
-                is_band_admin, get_user)
+from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_bands,
+                update_band, delete_band, get_band_members, add_band_member, remove_band_member,
+                is_band_member, is_band_admin, is_superadmin, can_delete_band,
+                can_edit_band_settings, get_user)
 
 bands_bp = Blueprint('bands', __name__, url_prefix='/bands')
 
@@ -15,7 +16,14 @@ def list_bands():
     user_id = session['user_id']
     owned = get_owned_bands(user_id)
     member_of = get_user_bands(user_id)
-    return render_template('bands/list.html', owned=owned, member_of=member_of)
+    all_bands = get_all_bands() if is_superadmin(user_id) else None
+    return render_template(
+        'bands/list.html',
+        owned=owned,
+        member_of=member_of,
+        all_bands=all_bands,
+        is_superadmin=is_superadmin(user_id),
+    )
 
 @bands_bp.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -65,7 +73,8 @@ def view(band_id):
 
     return render_template('bands/view.html', band=band, members=members,
                            cifras=cifras, setlists=setlists,
-                           owner=owner, is_admin=admin)
+                           owner=owner, is_admin=admin,
+                           is_superadmin=is_superadmin(user_id))
 
 @bands_bp.route('/<band_id>/settings', methods=['GET', 'POST'])
 @login_required
@@ -73,8 +82,8 @@ def settings(band_id):
     user_id = session['user_id']
     band = get_band(band_id)
     
-    if not band or band['owner_id'] != user_id:
-        flash('Apenas o dono pode acessar configurações', 'danger')
+    if not band or not can_edit_band_settings(band_id, user_id):
+        flash('Sem permissão para editar configurações desta banda', 'danger')
         return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
     
     if request.method == 'POST':
@@ -157,8 +166,8 @@ def delete(band_id):
     user_id = session['user_id']
     band = get_band(band_id)
 
-    if not band or band['owner_id'] != user_id:
-        flash('Apenas o dono pode excluir a banda', 'danger')
+    if not band or not can_delete_band(band_id, user_id):
+        flash('Sem permissão para excluir esta banda', 'danger')
         return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
 
     name = band['name']

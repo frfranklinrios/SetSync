@@ -22,7 +22,10 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SESSION_COOKIE_SECURE = True
+    # HTTPS atrás do Nginx: mantenha 1. Só HTTP (teste): SESSION_COOKIE_SECURE=0 no .env
+    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', '1').lower() in (
+        '1', 'true', 'yes',
+    )
 
 config = {
     'development': DevelopmentConfig,

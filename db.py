@@ -3,7 +3,33 @@ import os
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'banda.db')
+def _resolve_db_path() -> str:
+    """Caminho do SQLite: DATABASE_URL (sqlite:///...) ou data/banda.db."""
+    url = (os.getenv('DATABASE_URL') or '').strip()
+    if url.startswith('sqlite:///'):
+        rel = url[len('sqlite:///'):]
+        if os.path.isabs(rel):
+            return rel
+        return os.path.normpath(os.path.join(os.path.dirname(__file__), rel))
+    return os.path.join(os.path.dirname(__file__), 'data', 'banda.db')
+
+
+DB_PATH = _resolve_db_path()
+
+
+def _env_superadmin_identifiers():
+    """Usernames ou e-mails com privilégio de admin global (variáveis de ambiente)."""
+    usernames = {
+        s.strip().lower()
+        for s in os.getenv('SETSYNC_SUPERADMIN_USERNAMES', '').split(',')
+        if s.strip()
+    }
+    emails = {
+        s.strip().lower()
+        for s in os.getenv('SETSYNC_SUPERADMIN_EMAILS', '').split(',')
+        if s.strip()
+    }
+    return usernames, emails
 
 
 def get_db():
@@ -98,6 +124,7 @@ def init_db():
         ('duracao_seg', 'INTEGER'),
     ]:
         _add_column('cifras', col, typedef)
+    _add_column('cifras', 'leadsheet_json', 'TEXT')
 
     db.close()
 
@@ -199,6 +226,55 @@ def verify_password(user_id, password):
     return check_password_hash(user['password_hash'], password)
 
 
+def is_superadmin(user_id):
+    """Administrador global via .env — sem coluna no banco (ideal para deploy Contabo)."""
+    if not user_id:
+        return False
+    env_users, env_emails = _env_superadmin_identifiers()
+    if not env_users and not env_emails:
+        return False
+    user = get_user(user_id)
+    if not user:
+        return False
+    if user.get('username', '').lower() in env_users:
+        return True
+    if user.get('email', '').lower() in env_emails:
+        return True
+    return False
+
+
+def get_all_users():
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM users ORDER BY username')
+    rows = c.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
+def get_all_bands():
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM bands ORDER BY name')
+    rows = c.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
+def get_all_cifras():
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT cifras.*, bands.name AS band_name
+           FROM cifras
+           JOIN bands ON bands.id = cifras.band_id
+           ORDER BY bands.name, cifras.titulo'''
+    )
+    rows = c.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
 # ── Bands ──────────────────────────────────────────────────────────────────
 
 def create_band(name, description, owner_id):
@@ -226,6 +302,19 @@ def get_band(band_id):
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
+
+
+def can_delete_band(band_id, user_id):
+    band = get_band(band_id)
+    if not band:
+        return False
+    if is_superadmin(user_id):
+        return True
+    return band['owner_id'] == user_id
+
+
+def can_edit_band_settings(band_id, user_id):
+    return can_delete_band(band_id, user_id)
 
 
 def update_band(band_id, name, description):
@@ -311,6 +400,8 @@ def remove_band_member(band_id, user_id):
 
 
 def is_band_member(band_id, user_id):
+    if is_superadmin(user_id):
+        return True
     db = get_db()
     c = db.cursor()
     c.execute('SELECT 1 FROM band_members WHERE band_id = ? AND user_id = ?', (band_id, user_id))
@@ -320,6 +411,8 @@ def is_band_member(band_id, user_id):
 
 
 def is_band_admin(band_id, user_id):
+    if is_superadmin(user_id):
+        return True
     db = get_db()
     c = db.cursor()
     c.execute('SELECT * FROM bands WHERE id = ?', (band_id,))
@@ -339,17 +432,18 @@ def is_band_admin(band_id, user_id):
 # ── Cifras ─────────────────────────────────────────────────────────────────
 
 def create_cifra(titulo, artista, tom_original, conteudo, band_id,
-                 cifra_json=None, grade_json=None, bpm=None, duracao_seg=None):
+                 cifra_json=None, grade_json=None, leadsheet_json=None,
+                 bpm=None, duracao_seg=None):
     db = get_db()
     c = db.cursor()
     cifra_id = str(uuid.uuid4())
     c.execute(
         '''INSERT INTO cifras
            (id, titulo, artista, tom_original, conteudo, band_id,
-            cifra_json, grade_json, bpm, duracao_seg)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (cifra_id, titulo, artista, tom_original, conteudo or '', band_id,
-         cifra_json, grade_json, bpm, duracao_seg)
+         cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
     )
     db.commit()
     db.close()
@@ -375,15 +469,16 @@ def get_band_cifras(band_id):
 
 
 def update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
-                 cifra_json=None, grade_json=None, bpm=None, duracao_seg=None):
+                 cifra_json=None, grade_json=None, leadsheet_json=None,
+                 bpm=None, duracao_seg=None):
     db = get_db()
     c = db.cursor()
     c.execute(
         '''UPDATE cifras SET titulo=?, artista=?, tom_original=?, conteudo=?,
-           cifra_json=?, grade_json=?, bpm=?, duracao_seg=?,
+           cifra_json=?, grade_json=?, leadsheet_json=?, bpm=?, duracao_seg=?,
            updated_at=CURRENT_TIMESTAMP WHERE id=?''',
         (titulo, artista, tom_original, conteudo or '',
-         cifra_json, grade_json, bpm, duracao_seg, cifra_id)
+         cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, cifra_id)
     )
     db.commit()
     db.close()

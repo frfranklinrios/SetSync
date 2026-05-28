@@ -1,9 +1,21 @@
 import sys
 import os
+import copy
 import json
 import re
+import tempfile
+from pathlib import Path
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from leadsheet.audio import ALLOWED_AUDIO_EXTENSIONS, analyze_audio_for_leadsheet
+from leadsheet.build import build_payload
+from leadsheet.converter import (
+    is_leadsheet_document,
+    leadsheet_to_grade_flat,
+    resolve_leadsheet_document,
+    resolve_to_grade_flat,
+)
 from blueprints.auth import login_required
 from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra,
                 delete_cifra, is_band_member, is_band_admin)
@@ -223,6 +235,65 @@ def _transpose_grade_data(grade_list, semitones=0):
     return result
 
 
+def _load_display_grade_data(cifra, semitones=0):
+    """LeadSheet (ou grade legada) convertida para exibição no modo tocar/visualização."""
+    flat = resolve_to_grade_flat(cifra)
+    if not flat:
+        return None
+    return _transpose_grade_data(flat, semitones)
+
+
+def _transpose_leadsheet(doc: dict, semitones: int) -> dict:
+    """Transpõe acordes do documento LeadSheet."""
+    if not semitones:
+        return doc
+    out = copy.deepcopy(doc)
+    for evt in out.get('events') or []:
+        if isinstance(evt, dict) and evt.get('type') == 'chord' and evt.get('value'):
+            evt['value'] = pychord_transpose_text(str(evt['value']), semitones)
+    song = out.setdefault('song', {})
+    if song.get('key'):
+        song['key'] = key_at_transpose(song['key'], semitones)
+    return out
+
+
+def _load_display_leadsheet(cifra, semitones=0):
+    """Documento LeadSheet para o modo tocar (com transposição opcional)."""
+    doc = resolve_leadsheet_document(cifra)
+    if not doc:
+        return None
+    if semitones:
+        return _transpose_leadsheet(doc, semitones)
+    return doc
+
+
+def _persist_leadsheet(cifra_id, payload: dict) -> None:
+    """Salva LeadSheet e mantém grade_json legada sincronizada para o modo tocar."""
+    cifra = get_cifra(cifra_id)
+    if not cifra:
+        return
+    flat = leadsheet_to_grade_flat(payload)
+    leadsheet_json = json.dumps(payload, ensure_ascii=False)
+    grade_json = json.dumps(flat, ensure_ascii=False) if flat else None
+    song = payload.get("song") or {}
+    audio = payload.get("audio") or {}
+    bpm = song.get("tempo_bpm")
+    dur = audio.get("duration_seconds")
+    duracao_seg = int(dur) if dur else cifra.get("duracao_seg")
+    update_cifra(
+        cifra_id,
+        cifra["titulo"],
+        cifra["artista"],
+        cifra["tom_original"],
+        cifra["conteudo"],
+        cifra.get("cifra_json"),
+        grade_json,
+        leadsheet_json,
+        bpm if bpm is not None else cifra.get("bpm"),
+        duracao_seg,
+    )
+
+
 def enrich_cifra_for_tocar(cifra):
     """Prepara cifra para o modo tocar com dados estruturados corretos."""
     c = dict(cifra)
@@ -240,6 +311,12 @@ def enrich_cifra_for_tocar(cifra):
     c['tom_root'] = parse_tom_root(c.get('tom_original'))
     c['transpose_map'] = build_transpose_map(c.get('tom_original'))
     c['has_tablatura'] = has_tab
+    doc = resolve_leadsheet_document(c)
+    if doc:
+        c['leadsheet_json'] = json.dumps(doc, ensure_ascii=False)
+    flat = resolve_to_grade_flat(c)
+    if flat:
+        c['grade_json'] = json.dumps(flat, ensure_ascii=False)
     return c
 
 
@@ -285,13 +362,8 @@ def view(cifra_id):
     # Parsear cifra_json e grade_json
     cifra_data = _load_best_structured_cifra(cifra, current_transpose)
 
-    grade_data = None
-    if cifra.get('grade_json'):
-        try:
-            raw_g = json.loads(cifra['grade_json'])
-            grade_data = _transpose_grade_data(raw_g, current_transpose)
-        except (ValueError, TypeError):
-            pass
+    grade_data = _load_display_grade_data(cifra, current_transpose)
+    leadsheet_document = _load_display_leadsheet(cifra, current_transpose)
 
     grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
     has_tab = content_has_tablatura(conteudo)
@@ -312,6 +384,7 @@ def view(cifra_id):
                            conteudo_html=conteudo_html,
                            cifra_data=cifra_data,
                            grade_data=grade_data,
+                           leadsheet_document=leadsheet_document,
                            grouped_cifra=grouped_cifra,
                            transpositions=transpositions,
                            current_transpose=current_transpose,
@@ -425,13 +498,29 @@ def edit(cifra_id):
         # Mantém valores existentes se nada novo foi enviado
         cifra_json = cifra_json_new if cifra_json_new is not None else cifra.get('cifra_json')
         grade_json = grade_json_new if grade_json_new is not None else cifra.get('grade_json')
+        leadsheet_json = cifra.get('leadsheet_json')
+        if grade_json_new:
+            try:
+                parsed_g = json.loads(grade_json_new)
+                if is_leadsheet_document(parsed_g):
+                    leadsheet_json = grade_json_new
+                    flat = leadsheet_to_grade_flat(parsed_g)
+                    grade_json = json.dumps(flat, ensure_ascii=False) if flat else grade_json_new
+                    song = parsed_g.get('song') or {}
+                    audio = parsed_g.get('audio') or {}
+                    if song.get('tempo_bpm') is not None:
+                        bpm = song['tempo_bpm']
+                    if audio.get('duration_seconds') is not None:
+                        duracao_seg = int(audio['duration_seconds'])
+            except (TypeError, ValueError, json.JSONDecodeError):
+                pass
         if bpm is None:
             bpm = cifra.get('bpm')
         if duracao_seg is None:
             duracao_seg = cifra.get('duracao_seg')
 
         update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
-                     cifra_json, grade_json, bpm, duracao_seg)
+                     cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
@@ -501,15 +590,10 @@ def get_transposed(cifra_id):
         payload['cifra_data'] = structured_data
 
     if want_grade:
-        grade_data = []
-        raw_grade = cifra.get('grade_json')
-        if raw_grade:
-            try:
-                parsed_grade = json.loads(raw_grade)
-                grade_data = _transpose_grade_data(parsed_grade, semitones)
-            except (ValueError, TypeError):
-                grade_data = []
-        payload['grade_data'] = grade_data
+        payload['grade_data'] = _load_display_grade_data(cifra, semitones) or []
+        leadsheet = _load_display_leadsheet(cifra, semitones)
+        if leadsheet:
+            payload['leadsheet'] = leadsheet
 
     return jsonify(payload)
 
@@ -534,3 +618,100 @@ def chord_info():
             result.append(info)
 
     return jsonify({'chords': result})
+
+
+# ── LeadSheet (substitui grade harmônica) ───────────────────────────────────
+
+
+@cifras_bp.route('/<cifra_id>/leadsheet')
+@login_required
+def leadsheet_editor(cifra_id):
+    user_id = session['user_id']
+    cifra = get_cifra(cifra_id)
+    if not cifra:
+        flash('Cifra não encontrada', 'danger')
+        return redirect(url_for('dashboard'))
+    if not is_band_member(cifra['band_id'], user_id):
+        flash('Sem permissão', 'danger')
+        return redirect(url_for('dashboard'))
+
+    band = get_band(cifra['band_id'])
+    initial = resolve_leadsheet_document(cifra)
+    return render_template(
+        'cifras/leadsheet_edit.html',
+        cifra=cifra,
+        band=band,
+        initial_leadsheet=initial,
+    )
+
+
+@cifras_bp.route('/<cifra_id>/leadsheet/api/gerar', methods=['POST'])
+@login_required
+def leadsheet_api_gerar(cifra_id):
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    try:
+        data = request.form.to_dict()
+        if not data.get('song_title'):
+            data['song_title'] = cifra.get('titulo') or ''
+        if not data.get('artist'):
+            data['artist'] = cifra.get('artista') or ''
+        if not data.get('song_key'):
+            data['song_key'] = cifra.get('tom_original') or ''
+        payload = build_payload(data)
+        return jsonify({'ok': True, 'payload': payload})
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 400
+
+
+@cifras_bp.route('/<cifra_id>/leadsheet/api/salvar', methods=['POST'])
+@login_required
+def leadsheet_api_salvar(cifra_id):
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    try:
+        data = request.form.to_dict()
+        if not data.get('song_title'):
+            data['song_title'] = cifra.get('titulo') or ''
+        if not data.get('artist'):
+            data['artist'] = cifra.get('artista') or ''
+        if not data.get('song_key'):
+            data['song_key'] = cifra.get('tom_original') or ''
+        payload = build_payload(data)
+        _persist_leadsheet(cifra_id, payload)
+        return jsonify({
+            'ok': True,
+            'payload': payload,
+            'redirect': url_for('cifras.view', cifra_id=cifra_id),
+        })
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 400
+
+
+@cifras_bp.route('/<cifra_id>/leadsheet/api/analisar-audio', methods=['POST'])
+@login_required
+def leadsheet_api_analisar(cifra_id):
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    try:
+        if 'audio_file' not in request.files:
+            raise ValueError("Envie um arquivo de áudio.")
+        file = request.files['audio_file']
+        if not file or not file.filename:
+            raise ValueError("Nenhum arquivo foi enviado.")
+        ext = Path(file.filename).suffix.lower()
+        if ext not in ALLOWED_AUDIO_EXTENSIONS:
+            raise ValueError("Formato não suportado. Use: mp3, wav, m4a, flac ou ogg.")
+        with tempfile.NamedTemporaryFile(prefix='ls_', suffix=ext, delete=False) as tmp:
+            file.save(tmp.name)
+            temp_path = Path(tmp.name)
+        try:
+            result = analyze_audio_for_leadsheet(temp_path)
+        finally:
+            temp_path.unlink(missing_ok=True)
+        return jsonify({'ok': True, 'analysis': result})
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 400

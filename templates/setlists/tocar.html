@@ -31,7 +31,7 @@ body { overflow-x: hidden; }
     gap: 0.5rem;
     padding: 0.55rem 1rem;
     background: #0b1422;
-    border-bottom: 1px solid rgba(45,212,191,0.18);
+    border-bottom: 1px solid var(--chord-highlight-border);
     flex-shrink: 0;
     flex-wrap: wrap;
     position: sticky;
@@ -69,9 +69,9 @@ body { overflow-x: hidden; }
     align-items: center;
     justify-content: center;
     gap: 4px;
-    background: rgba(45,212,191,0.08);
-    border: 1px solid rgba(45,212,191,0.25);
-    color: #2dd4bf;
+    background: var(--chord-highlight-bg);
+    border: 1px solid var(--chord-highlight-border);
+    color: var(--chord-highlight);
     border-radius: 6px;
     padding: 0.35rem 0.7rem;
     font-size: 0.8rem;
@@ -81,12 +81,12 @@ body { overflow-x: hidden; }
     text-decoration: none;
     transition: background 0.15s;
 }
-.pb-btn:hover { background: rgba(45,212,191,0.2); color: #2dd4bf; }
+.pb-btn:hover { background: var(--chord-highlight-bg); color: var(--chord-highlight); }
 .pb-btn:disabled, .pb-btn[disabled] {
     opacity: 0.35;
     pointer-events: none;
 }
-.pb-btn.pb-on { background: rgba(45,212,191,0.32) !important; }
+.pb-btn.pb-on { background: var(--chord-highlight-border) !important; }
 .pb-btn.pb-exit {
     border-color: rgba(239,68,68,0.4);
     color: #f87171;
@@ -94,15 +94,15 @@ body { overflow-x: hidden; }
 }
 .pb-btn.pb-exit:hover { background: rgba(239,68,68,0.2); }
 [data-theme="light"] .pb-btn {
-    background: rgba(42,181,160,0.1);
-    border-color: rgba(42,181,160,0.35);
-    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+    border-color: var(--chord-highlight-border);
+    color: var(--chord-highlight);
 }
 [data-theme="light"] .pb-btn:hover {
-    background: rgba(42,181,160,0.22);
-    color: var(--accent-dark);
+    background: var(--chord-highlight-ring);
+    color: var(--chord-highlight-soft);
 }
-[data-theme="light"] .pb-btn.pb-on { background: rgba(42,181,160,0.32) !important; }
+[data-theme="light"] .pb-btn.pb-on { background: var(--chord-highlight-border) !important; }
 [data-theme="light"] .pb-btn.pb-exit {
     border-color: rgba(220,38,38,0.4);
     color: #dc2626;
@@ -144,9 +144,9 @@ body { overflow-x: hidden; }
 
 /* Transpose select */
 .transpose-mini {
-    background: rgba(45,212,191,0.08);
-    color: #2dd4bf;
-    border: 1px solid rgba(45,212,191,0.3);
+    background: var(--chord-highlight-bg);
+    color: var(--chord-highlight);
+    border: 1px solid var(--chord-highlight-border);
     border-radius: 6px;
     font-size: 0.78rem;
     padding: 0.32rem 0.5rem;
@@ -156,26 +156,26 @@ body { overflow-x: hidden; }
 }
 .transpose-mini:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(45,212,191,0.15);
+    box-shadow: 0 0 0 3px var(--chord-highlight-ring);
 }
 [data-theme="light"] .transpose-mini {
-    background: rgba(42,181,160,0.1);
-    color: var(--accent-dark);
-    border-color: rgba(42,181,160,0.35);
+    background: var(--chord-highlight-bg);
+    color: var(--chord-highlight);
+    border-color: var(--chord-highlight-border);
 }
 
 /* ── CIFRA AREA ───────────────────────── */
 #cifra-wrap {
     flex: 1;
     overflow-y: auto;
-    overflow-x: auto;       /* fallback se a auto-fit não couber */
+    overflow-x: hidden;
     background: #0f172a;
     position: relative;
 }
 [data-theme="light"] #cifra-wrap { background: #f8fafc; }
 
 .cifra-body {
-    font-family: "Courier New", Courier, monospace;
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
     line-height: 1.95;
     color: #e2e8f0;
     padding: 2rem 4vw;
@@ -188,11 +188,11 @@ body { overflow-x: hidden; }
 
 .cifra-body.fading { opacity: 0.35; }
 
-.cifra-body .chord { color: #2dd4bf; font-weight: 700; }
+.cifra-body .chord { color: var(--chord-highlight); font-weight: 700; }
 .cifra-body .cifra-chords {
     display: block;
-    background: rgba(45,212,191,0.07);
-    border-left: 2px solid rgba(45,212,191,0.32);
+    background: var(--chord-highlight-bg);
+    border-left: 2px solid var(--chord-highlight-border);
     padding: 1px 8px;
 }
 .cifra-body .cifra-lyric {
@@ -222,7 +222,7 @@ body { overflow-x: hidden; }
 }
 .cifra-body .cifra-tab-line {
     display: block;
-    font-family: "Courier New", Courier, monospace;
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
     font-size: 0.82rem;
     line-height: 1.32;
     white-space: pre;
@@ -256,7 +256,7 @@ body { overflow-x: hidden; }
     padding-right: 0;
 }
 .cifra-body .sp-chord {
-    color: #2dd4bf;
+    color: var(--chord-highlight) !important;
     font-weight: 700;
     font-size: 0.82em;
     min-height: 1.25em;
@@ -268,25 +268,23 @@ body { overflow-x: hidden; }
     line-height: 1.45;
     white-space: nowrap;
 }
-[data-theme="light"] .cifra-body .chord { color: #0d7e6b; }
 [data-theme="light"] .cifra-body .cifra-chords {
-    background: rgba(13,126,107,0.08);
-    border-left-color: rgba(13,126,107,0.3);
+    background: var(--chord-highlight-bg);
+    border-left-color: var(--chord-highlight-border);
 }
 [data-theme="light"] .cifra-body .cifra-lyric { color: #334155; }
-[data-theme="light"] .cifra-body .sp-chord { color: #0d7e6b; }
 [data-theme="light"] .cifra-body .sp-word { color: #1e293b; }
 
 /* Two-col mode: precisa permitir wrap pois cada coluna é mais estreita */
 .cifra-body.two-col {
     column-count: 2;
     column-gap: 2.5rem;
-    column-rule: 1px solid rgba(45,212,191,0.15);
+    column-rule: 1px solid var(--chord-highlight-border);
     white-space: pre-wrap;
     word-break: break-word;
 }
 [data-theme="light"] .cifra-body.two-col {
-    column-rule-color: rgba(42,181,160,0.2);
+    column-rule-color: var(--chord-highlight-border);
 }
 .cifra-body.two-col .cifra-chords,
 .cifra-body.two-col .cifra-lyric {
@@ -310,7 +308,7 @@ body { overflow-x: hidden; }
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    border-top: 1px solid rgba(45,212,191,0.15);
+    border-top: 1px solid var(--chord-highlight-border);
     background: #0b1422;
     flex-shrink: 0;
 }
@@ -335,7 +333,7 @@ body { overflow-x: hidden; }
     transition: background 0.15s, transform 0.15s;
 }
 .prog-dot.active {
-    background: #2dd4bf;
+    background: var(--chord-highlight);
     transform: scale(1.45);
 }
 .prog-dot:hover { background: #94a3b8; }
@@ -363,7 +361,7 @@ body { overflow-x: hidden; }
     max-width: 88vw;
     height: 100vh;
     background: #080f1e;
-    border-right: 1px solid rgba(45,212,191,0.15);
+    border-right: 1px solid var(--chord-highlight-border);
     z-index: 1100;
     overflow-y: auto;
     transform: translateX(-100%);
@@ -401,17 +399,17 @@ body { overflow-x: hidden; }
 }
 .dr-item:hover { color: #e2e8f0; background: rgba(255,255,255,0.04); }
 .dr-item.active {
-    color: #2dd4bf;
-    border-left-color: #2dd4bf;
-    background: rgba(45,212,191,0.08);
+    color: var(--chord-highlight);
+    border-left-color: var(--chord-highlight);
+    background: var(--chord-highlight-ghost);
     font-weight: 600;
 }
 [data-theme="light"] .dr-item { color: #4b5563; }
 [data-theme="light"] .dr-item:hover { color: #111827; background: #f9fafb; }
 [data-theme="light"] .dr-item.active {
-    color: var(--accent);
-    border-left-color: var(--accent);
-    background: rgba(42,181,160,0.08);
+    color: var(--chord-highlight);
+    border-left-color: var(--chord-highlight);
+    background: var(--chord-highlight-ghost);
 }
 .dr-num {
     font-size: 0.68rem;
@@ -438,9 +436,9 @@ body { overflow-x: hidden; }
     position: fixed;
     bottom: 4.2rem;
     right: 1rem;
-    background: rgba(45,212,191,0.15);
-    border: 1px solid rgba(45,212,191,0.4);
-    color: #2dd4bf;
+    background: var(--chord-highlight-bg);
+    border: 1px solid var(--chord-highlight-border);
+    color: var(--chord-highlight);
     font-size: 0.72rem;
     padding: 0.32rem 0.8rem;
     border-radius: 20px;
@@ -449,9 +447,9 @@ body { overflow-x: hidden; }
     user-select: none;
 }
 [data-theme="light"] #scroll-badge {
-    background: rgba(42,181,160,0.12);
-    border-color: rgba(42,181,160,0.4);
-    color: var(--accent);
+    background: var(--chord-highlight-bg);
+    border-color: var(--chord-highlight-border);
+    color: var(--chord-highlight);
 }
 
 /* ── KBD HINT ──────────────────────────── */
@@ -463,7 +461,7 @@ body { overflow-x: hidden; }
     font-size: 0.72rem;
     color: #94a3b8;
     background: rgba(0,0,0,0.55);
-    border: 1px solid rgba(45,212,191,0.18);
+    border: 1px solid var(--chord-highlight-border);
     border-radius: 8px;
     padding: 0.42rem 0.85rem;
     pointer-events: none;
@@ -553,7 +551,7 @@ body.play-mode.chrome-hidden #play-foot {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(45,212,191,0);
+    color: transparent;
     font-size: 1.6rem;
     pointer-events: auto;
     user-select: none;
@@ -562,13 +560,8 @@ body.play-mode.chrome-hidden #play-foot {
 .tap-zone.right { right: 0; }
 .tap-zone:active,
 .tap-zone.flash {
-    background: rgba(45,212,191,0.08);
-    color: rgba(45,212,191,0.7);
-}
-[data-theme="light"] .tap-zone:active,
-[data-theme="light"] .tap-zone.flash {
-    background: rgba(42,181,160,0.1);
-    color: rgba(42,181,160,0.7);
+    background: var(--chord-highlight-ghost);
+    color: var(--chord-highlight-fade);
 }
 @media (min-width: 768px) {
     .tap-zone { width: 11%; max-width: 130px; }
@@ -579,8 +572,8 @@ body.play-mode.chrome-hidden #play-foot {
 }
 /* show edge hints briefly on load */
 body.play-mode.edges-hint .tap-zone {
-    color: rgba(45,212,191,0.5);
-    background: rgba(45,212,191,0.04);
+    color: var(--chord-highlight-fade);
+    background: var(--chord-highlight-ghost);
 }
 
 /* ── SCROLL SPEED PILL ───────────────────── */
@@ -591,14 +584,14 @@ body.play-mode.edges-hint .tap-zone {
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0,0,0,0.7);
-    border: 1px solid rgba(45,212,191,0.35);
+    border: 1px solid var(--chord-highlight-border);
     border-radius: 999px;
     padding: 0.35rem 0.55rem;
     z-index: 1100;
     align-items: center;
     gap: 0.35rem;
     font-size: 0.78rem;
-    color: #2dd4bf;
+    color: var(--chord-highlight);
     user-select: none;
 }
 #speed-pill.show { display: inline-flex; }
@@ -606,14 +599,14 @@ body.play-mode.edges-hint .tap-zone {
     width: 28px; height: 28px;
     border-radius: 50%;
     border: none;
-    background: rgba(45,212,191,0.18);
-    color: #2dd4bf;
+    background: var(--chord-highlight-bg);
+    color: var(--chord-highlight);
     font-size: 0.95rem;
     font-family: inherit;
     line-height: 1;
     cursor: pointer;
 }
-#speed-pill button:hover { background: rgba(45,212,191,0.32); }
+#speed-pill button:hover { background: var(--chord-highlight-ghost-strong); }
 #speed-pill .label {
     min-width: 3.2rem;
     text-align: center;
@@ -621,25 +614,21 @@ body.play-mode.edges-hint .tap-zone {
 }
 [data-theme="light"] #speed-pill {
     background: rgba(255,255,255,0.95);
-    color: var(--accent-dark);
-    border-color: rgba(42,181,160,0.45);
+    color: var(--chord-highlight);
+    border-color: var(--chord-highlight-border);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 [data-theme="light"] #speed-pill button {
-    background: rgba(42,181,160,0.15);
-    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+    color: var(--chord-highlight);
 }
 @media (min-width: 768px) {
     #speed-pill { bottom: 4.6rem; padding: 0.4rem 0.65rem; font-size: 0.85rem; }
     #speed-pill button { width: 34px; height: 34px; font-size: 1.05rem; }
 }
-/* ── Grade Harmônica (play mode) ─────────────────────────────────────── */
-.cifra-body.grade-mode {
-    white-space: normal;
-    padding: 1.5rem 4vw;
-}
+/* ── Lead Sheet (play mode) — detalhes em leadsheet-play.css ─────────── */
 .grade-bars-play {
-    font-family: "Courier New", monospace;
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
     font-size: 1.05em;
     line-height: 1.75;
     white-space: normal;
@@ -669,25 +658,34 @@ body.play-mode.edges-hint .tap-zone {
     padding: 0 0.15rem;
 }
 .grade-chord-play {
-    font-family: "Courier New", monospace;
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
     font-size: 1em;
     font-weight: 700;
-    color: #2dd4bf;
+    color: var(--chord-highlight);
     line-height: 1.3;
     white-space: nowrap;
 }
 .grade-repeat-play {
     color: #94a3b8;
 }
-[data-theme="light"] .grade-chord-play { color: #0d7e6b; }
 [data-theme="light"] .grade-repeat-play,
 [data-theme="light"] .grade-sep-play { color: #64748b; }
 [data-theme="light"] .grade-part-title-play { color: #64748b; }
 /* Layout unificado com app Cifras */
-.grade-bars-play .grade-visual-root { font-size: 1.05em; line-height: 1.75; }
-.grade-bars-play .grade-visual-chord { font-size: 1em; color: #2dd4bf; }
+.grade-bars-play .grade-visual-root {
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-size: 1.05em;
+    line-height: 1.75;
+}
+.grade-bars-play .grade-visual-chord {
+    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-size: 1em;
+    color: var(--chord-highlight);
+}
 </style>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=7">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=7">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=7">
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 
@@ -743,7 +741,7 @@ body.play-mode.edges-hint .tap-zone {
             <button class="pb-btn" id="cols-btn" onclick="toggleCols()" title="2 colunas (C)" aria-label="Alternar 2 colunas">
                 <i class="fas fa-columns"></i><span class="pb-label-text">&nbsp;2 col</span>
             </button>
-            <button class="pb-btn" id="grade-btn" onclick="toggleGrade()" title="Grade Harmônica (G)" aria-label="Grade Harmônica">
+            <button class="pb-btn" id="grade-btn" onclick="toggleGrade()" title="Lead Sheet (G)" aria-label="Lead Sheet">
                 <i class="fas fa-th"></i><span class="pb-label-text">&nbsp;Grade</span>
             </button>
             <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
@@ -751,6 +749,10 @@ body.play-mode.edges-hint .tap-zone {
             </button>
             <button class="pb-btn" id="fs-btn" onclick="toggleFullscreen()" title="Tela cheia (F)" aria-label="Tela cheia">
                 <i class="fas fa-expand"></i>
+            </button>
+            <button type="button" class="pb-btn" data-theme-toggle=""
+                    title="Tema claro/escuro (T)" aria-label="Alternar tema">
+                <i class="fas fa-moon" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -768,7 +770,7 @@ body.play-mode.edges-hint .tap-zone {
         <div class="tap-zone right" id="tap-next" onclick="nextSong()" aria-label="Próxima música">
             <i class="fas fa-chevron-right"></i>
         </div>
-        <div class="cifra-body" id="cifra-content"></div>
+        <div class="cifra-body cifra-sheet-paper" id="cifra-content"></div>
     </div>
 
     <!-- Bottom progress -->
@@ -790,11 +792,11 @@ body.play-mode.edges-hint .tap-zone {
 <div id="scroll-badge" onclick="toggleScroll()">⏬ rolando — toque para pausar</div>
 
 <!-- Keyboard hint -->
-<div id="kbd-hint">← → ou bordas: navegar · L lista · +/− fonte · A caber · C 2col · G grade · Espaço scroll · F tela cheia · Esc sair</div>
+<div id="kbd-hint">← → ou bordas: navegar · L lista · +/− fonte · A caber · C 2col · G Lead Sheet · Espaço scroll · F tela cheia · Esc sair</div>
 
-<script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
+<script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}"></script>
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -814,7 +816,8 @@ body.play-mode.edges-hint .tap-zone {
     }
     var htmlCache = {};          // (cifra_id + ':' + semitones) -> html
     var structuredCache = {};    // (cifra_id + ':' + semitones) -> cifra_data[]
-    var gradeCache = {};         // (cifra_id + ':' + semitones) -> grade_data[]
+    var gradeCache = {};         // (cifra_id + ':' + semitones) -> grade_data[] (legado)
+    var leadsheetCache = {};     // (cifra_id + ':' + semitones) -> LeadSheet JSON
 
     // Pre-cache the original (semitones=0) html
     CIFRAS.forEach(function (c) {
@@ -826,6 +829,12 @@ body.play-mode.edges-hint .tap-zone {
             try {
                 var parsedGrade = JSON.parse(c.grade_s);
                 if (Array.isArray(parsedGrade)) gradeCache[c.id + ':0'] = parsedGrade;
+            } catch (e) {}
+        }
+        if (c.leadsheet_s) {
+            try {
+                var ls0 = typeof c.leadsheet_s === 'string' ? JSON.parse(c.leadsheet_s) : c.leadsheet_s;
+                if (LeadsheetPlayRender.isLeadsheet(ls0)) leadsheetCache[c.id + ':0'] = ls0;
             } catch (e) {}
         }
     });
@@ -860,16 +869,53 @@ body.play-mode.edges-hint .tap-zone {
         return targetKey;
     }
 
+    function getLeadSheetWidth() {
+        if (LeadsheetPlayRender && LeadsheetPlayRender.getPlayAreaWidth) {
+            return LeadsheetPlayRender.getPlayAreaWidth();
+        }
+        var wrap = document.getElementById('cifra-wrap');
+        return (wrap && wrap.clientWidth) || window.innerWidth || 360;
+    }
+
     function renderHtml(html) {
         var el = document.getElementById('cifra-content');
         el.innerHTML = html;
         el.classList.remove('fading');
-        // Run auto-fit after layout
-        if (fitMode && !twoColActive) requestAnimationFrame(autoFit);
+        var lsWrap = el.querySelector('.leadsheet-play-wrap');
+        if (lsWrap && gradeMode) {
+            requestAnimationFrame(function () {
+                var measured = getLeadSheetWidth();
+                var laid = parseInt(lsWrap.getAttribute('data-layout-width') || '0', 10);
+                if (Math.abs(measured - laid) > 12) {
+                    var c = getCurrent();
+                    if (!c) return;
+                    var key = c.id + ':' + getTranspose(c);
+                    var doc = leadsheetCache[key];
+                    if (doc && LeadsheetPlayRender.isLeadsheet(doc)) {
+                        renderHtml(LeadsheetPlayRender.renderHtml(doc, {
+                            wrapWidth: measured,
+                            hideHeader: true
+                        }));
+                    }
+                }
+            });
+            return;
+        }
+        if (fitMode && !twoColActive && !gradeMode) requestAnimationFrame(autoFit);
     }
 
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function buildLeadSheetHtml(doc, cifraMeta) {
+        if (!LeadsheetPlayRender || !LeadsheetPlayRender.isLeadsheet(doc)) {
+            return buildGradeHtml(Array.isArray(doc) ? doc : null);
+        }
+        return LeadsheetPlayRender.renderHtml(doc, {
+            wrapWidth: getLeadSheetWidth(),
+            hideHeader: true
+        });
     }
 
     function buildGradeHtml(gradeData) {
@@ -877,7 +923,7 @@ body.play-mode.edges-hint .tap-zone {
         // - não depende do renderer grade-visual
         // - usa as classes .grade-*-play já presentes no template
         if (!gradeData || !gradeData.length) {
-            return '<div style="padding:2rem 4vw;color:#475569;font-family:monospace;font-size:0.9rem;">Grade harmônica não disponível para esta música.</div>';
+            return '<div class="grade-empty-play" style="padding:2rem 4vw;color:#475569;font-size:0.9rem;">Grade harmônica não disponível para esta música.</div>';
         }
 
         // gradeData: lista "flat" de compassos {parte?, secao?, acordes:[...]}
@@ -1075,6 +1121,7 @@ body.play-mode.edges-hint .tap-zone {
 
     function fetchGrade(id, semitones, cb) {
         var key = id + ':' + semitones;
+        if (leadsheetCache[key]) { cb(leadsheetCache[key]); return; }
         if (gradeCache[key]) { cb(gradeCache[key]); return; }
 
         var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
@@ -1084,14 +1131,19 @@ body.play-mode.edges-hint .tap-zone {
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                if (data && Array.isArray(data.grade_data)) {
+                if (data && data.leadsheet && LeadsheetPlayRender.isLeadsheet(data.leadsheet)) {
+                    leadsheetCache[key] = data.leadsheet;
+                    cb(data.leadsheet);
+                } else if (data && Array.isArray(data.grade_data)) {
                     gradeCache[key] = data.grade_data;
                     cb(data.grade_data);
                 } else {
-                    cb(gradeCache[id + ':0'] || null);
+                    cb(leadsheetCache[id + ':0'] || gradeCache[id + ':0'] || null);
                 }
             })
-            .catch(function () { cb(gradeCache[id + ':0'] || null); });
+            .catch(function () {
+                cb(leadsheetCache[id + ':0'] || gradeCache[id + ':0'] || null);
+            });
     }
 
     function render() {
@@ -1135,7 +1187,7 @@ body.play-mode.edges-hint .tap-zone {
             el.classList.add('grade-mode');
             el.classList.remove('structured-mode');
             fetchGrade(c.id, t, function (gd) {
-                renderHtml(buildGradeHtml(gd));
+                renderHtml(buildLeadSheetHtml(gd, c));
             });
         } else {
             document.getElementById('cifra-content').classList.remove('grade-mode');
@@ -1413,6 +1465,7 @@ body.play-mode.edges-hint .tap-zone {
             case 'c': case 'C': toggleCols(); break;
             case 'a': case 'A': toggleFit(); break;
             case 'f': case 'F': toggleFullscreen(); break;
+            case 't': case 'T': if (typeof toggleTheme === 'function') toggleTheme(); break;
             case 'g': case 'G': toggleGrade(); break;
             case ' ': e.preventDefault(); toggleScroll(); break;
             case 'PageDown': e.preventDefault(); nextSong(); break;
@@ -1481,13 +1534,25 @@ body.play-mode.edges-hint .tap-zone {
 
     // Re-ajustar fonte quando girar o tablet ou redimensionar
     var resizeTimer = null;
-    window.addEventListener('resize', function () {
+    var cifraWrapRo = null;
+    function scheduleLeadSheetReflow() {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(applyFont, 120);
-    });
+        resizeTimer = setTimeout(function () {
+            if (gradeMode) render();
+            else applyFont();
+        }, 100);
+    }
+    window.addEventListener('resize', scheduleLeadSheetReflow);
     window.addEventListener('orientationchange', function () {
-        setTimeout(applyFont, 250);
+        setTimeout(scheduleLeadSheetReflow, 200);
     });
+    var cifraWrapEl = document.getElementById('cifra-wrap');
+    if (cifraWrapEl && typeof ResizeObserver !== 'undefined') {
+        cifraWrapRo = new ResizeObserver(function () {
+            if (gradeMode) scheduleLeadSheetReflow();
+        });
+        cifraWrapRo.observe(cifraWrapEl);
+    }
 
     // Quick edge-hint flash so the user sees the tap zones exist
     document.body.classList.add('edges-hint');

@@ -1,11 +1,12 @@
 /* Grade harmônica — layout alinhado ao app Cifras */
-.grade-visual-root { font-family: "Courier New", monospace; font-size: 0.82rem; }
+.grade-visual-root { font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace); font-size: 0.82rem; }
 .grade-visual-header { color: var(--muted, #94a3b8); font-size: 0.75rem; margin-bottom: 0.65rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--border, #334155); }
 .grade-visual-parte { margin-bottom: 1.1rem; }
 .grade-visual-parte-nome {
   display: inline-block; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--accent, #2dd4bf);
-  background: rgba(45, 212, 191, 0.12); border: 1px solid rgba(45, 212, 191, 0.35);
+  text-transform: uppercase; color: var(--chord-highlight, var(--accent, #c2410c));
+  background: var(--chord-highlight-bg, rgba(234, 88, 12, 0.1));
+  border: 1px solid var(--chord-highlight-border, rgba(234, 88, 12, 0.35));
   border-radius: 6px; padding: 0.18rem 0.5rem; margin-bottom: 0.45rem;
 }
 .grade-visual-secao {
@@ -25,11 +26,11 @@
 }
 .grade-visual-chord {
   min-width: 1.9rem; text-align: center; padding: 0.12rem 0.3rem;
-  font-weight: 700; color: #5eead4;
+  font-family: inherit;
+  font-weight: 700; color: var(--chord-highlight-soft, var(--chord-highlight, #ea580c));
 }
 .grade-visual-chord.repeat { color: var(--muted, #94a3b8); font-weight: 400; min-width: 0.9rem; }
 .grade-visual-sep { color: var(--muted, #64748b); align-self: center; font-size: 0.7rem; }
-[data-theme="light"] .grade-visual-chord { color: #0d7e6b; }
 [data-theme="light"] .grade-visual-secao { color: #b45309; }
 [data-theme="light"] .grade-visual-bloco { background: rgba(241, 245, 249, 0.8); }
 

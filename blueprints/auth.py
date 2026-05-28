@@ -3,7 +3,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from db import (create_user, get_user_by_username, get_user, verify_password,
-                get_user_by_google_id, create_google_user, get_user_by_email, update_user_display_name)
+                get_user_by_google_id, create_google_user, get_user_by_email,
+                update_user_display_name, is_superadmin)
 from google_oauth import handle_google_callback, get_authorization_url
 import functools
 from itsdangerous import URLSafeTimedSerializer
@@ -21,7 +22,7 @@ def send_reset_email(email, token):
     from flask_mail import Message
     mail = current_app.extensions['mail']
     link = url_for('auth.reset_senha', token=token, _external=True)
-    msg = Message('Recuperação de senha - Banda App', recipients=[email])
+    msg = Message('Recuperação de senha - SetSync', recipients=[email])
     msg.body = f'Para redefinir sua senha, clique no link: {link}\nSe você não solicitou, ignore este e-mail.'
     mail.send(msg)
 
@@ -138,6 +139,7 @@ def login():
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['display_name'] = (user.get('display_name') or '').strip()
+            session['is_superadmin'] = is_superadmin(user['id'])
             session.permanent = request.form.get('remember') is not None
             
             next_page = request.args.get('next')
@@ -208,6 +210,7 @@ def google_callback():
     session['user_id'] = user['id']
     session['username'] = user['username']
     session['display_name'] = (user.get('display_name') or '').strip()
+    session['is_superadmin'] = is_superadmin(user['id'])
     session.permanent = True
     
     if not session['display_name']:

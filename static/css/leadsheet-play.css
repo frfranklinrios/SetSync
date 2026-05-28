@@ -1,0 +1,271 @@
+/* Lead Sheet — modo tocar e visualização da cifra (responsivo) */
+.leadsheet-view-panel .leadsheet-play-wrap {
+  padding: clamp(0.75rem, 2.5vw, 1.25rem);
+}
+
+.cifra-body.grade-mode {
+  overflow-x: hidden;
+  white-space: normal;
+  padding: clamp(0.65rem, 2.5vw, 1.5rem) clamp(0.5rem, 3vw, 4vw);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+
+.cifra-body.grade-mode #cifra-wrap,
+#cifra-wrap:has(.cifra-body.grade-mode) {
+  overflow-x: hidden;
+}
+
+.leadsheet-play-wrap {
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+  font-size: 1.05rem;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+  color: var(--ss-lyric, #e2e8f0);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.leadsheet-play-wrap .leadsheet-play-title,
+.leadsheet-play-wrap .leadsheet-play-meta,
+.leadsheet-play-wrap .leadsheet-play-empty,
+.leadsheet-play-wrap .staff-part-label,
+.leadsheet-play-wrap .pulse-cell,
+.leadsheet-play-wrap .pulse-cell .chord-text,
+.leadsheet-play-wrap .pulse-empty,
+.leadsheet-play-wrap .accidental,
+.leadsheet-play-wrap .chord-quality {
+  font-family: inherit;
+}
+
+.leadsheet-play-header {
+  border-bottom: 1px solid var(--chord-highlight-border, rgba(234, 88, 12, 0.25));
+  padding: 0 0 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.leadsheet-play-title {
+  font-size: clamp(0.85rem, 3.2vw, 0.95rem);
+  font-weight: 700;
+  color: var(--chord-highlight-soft, var(--chord-highlight, #f1f5f9));
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.leadsheet-play-meta {
+  font-size: clamp(0.65rem, 2.2vw, 0.72rem);
+  color: #64748b;
+  margin-top: 0.2rem;
+  line-height: 1.35;
+}
+
+.leadsheet-play-body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.leadsheet-play-empty {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  padding: 1rem 0;
+}
+
+.leadsheet-play-wrap .leadsheet-systems {
+  width: 100%;
+  max-width: 100%;
+  font-family: inherit;
+  color: #e2e8f0;
+  box-sizing: border-box;
+}
+
+.leadsheet-play-wrap .staff-system {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.leadsheet-play-wrap .staff-system + .staff-system {
+  margin-top: clamp(0.35rem, 1.5vw, 0.5rem);
+}
+
+.leadsheet-play-wrap .staff-line {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.leadsheet-play-wrap .staff-bars {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: clamp(72px, 18vw, 88px);
+  padding: clamp(6px, 1.5vw, 10px) clamp(4px, 1vw, 8px);
+  box-sizing: border-box;
+  background: rgba(30, 41, 59, 0.55);
+  border-radius: 4px;
+}
+
+/* Compassos dividem a linha igualmente (fluid) */
+.leadsheet-play-wrap .leadsheet-systems[data-fluid="1"] .staff-bar-col {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  max-width: none;
+}
+
+.leadsheet-play-wrap .staff-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.leadsheet-play-wrap .staff-part-label {
+  font-size: 0.62em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #e2e8f0;
+  text-align: center;
+  padding: 0 2px 3px;
+  line-height: 1.15;
+  min-height: 1.1em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leadsheet-play-wrap .staff-part-label.is-empty {
+  visibility: hidden;
+}
+
+.leadsheet-play-wrap .staff-part-label.has-lyric {
+  text-transform: none;
+  font-size: clamp(0.48rem, 1.6vw, 0.55rem);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.12;
+  white-space: normal;
+  max-height: 2.4em;
+}
+
+.leadsheet-play-wrap .staff-bar {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  border-left: 2px solid #94a3b8;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 1px;
+}
+
+.leadsheet-play-wrap .staff-bar-col:first-child .staff-bar {
+  border-left-width: 3px;
+  border-left-color: #e2e8f0;
+}
+
+.leadsheet-play-wrap .staff-bar-col.staff-bar-last .staff-bar {
+  border-right: 3px solid #e2e8f0;
+  padding-right: 2px;
+}
+
+.leadsheet-play-wrap .pulse-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.leadsheet-play-wrap .pulse-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+  padding: 2px clamp(2px, 0.8vw, 5px);
+  box-sizing: border-box;
+  border-right: 1px solid rgba(148, 163, 184, 0.28);
+  overflow: hidden;
+}
+
+.leadsheet-play-wrap .pulse-cell:last-child {
+  border-right: none;
+}
+
+.leadsheet-play-wrap .pulse-cell .chord-text {
+  display: inline-block;
+  line-height: 1.1;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--chord-highlight, #c2410c);
+  font-size: 0.92em;
+}
+
+.leadsheet-play-wrap .pulse-cell .chord-text.chord-sm {
+  font-size: 0.78em;
+}
+
+.leadsheet-play-wrap .pulse-cell .chord-text.chord-md {
+  font-size: 0.85em;
+}
+
+.leadsheet-play-wrap .pulse-cell .chord-text.chord-lg {
+  font-size: 0.92em;
+}
+
+.leadsheet-play-wrap .pulse-empty {
+  font-size: clamp(0.75rem, 2.5vw, 1rem);
+  color: rgba(148, 163, 184, 0.55);
+}
+
+.leadsheet-play-wrap .accidental {
+  font-size: 0.8em;
+  vertical-align: 0.1em;
+}
+
+.leadsheet-play-wrap .chord-quality {
+  font-size: 0.72em;
+  vertical-align: 0.35em;
+}
+
+@media (max-width: 480px) {
+  .cifra-body.grade-mode {
+    padding-left: max(0.35rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.35rem, env(safe-area-inset-right, 0px));
+  }
+
+  .leadsheet-play-wrap .staff-bars {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+}
+
+/* Sem max-width fixo por compasso — evita overflow horizontal no modo tocar */
+.leadsheet-play-wrap .leadsheet-systems[data-fluid="1"] .staff-bar-col {
+  max-width: none !important;
+}
+
+.leadsheet-play-header--meta-only {
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.leadsheet-play-header--meta-only .leadsheet-play-meta {
+  font-size: clamp(0.68rem, 2vw, 0.75rem);
+}
