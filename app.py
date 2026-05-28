@@ -155,8 +155,10 @@ def inject_user():
         cifras_import_tool_url = '/cifras/import/tool'
 
     from db import is_superadmin as _is_superadmin
+    from blueprints.cifras import cifra_display_key
 
     return dict(
+        cifra_display_key=cifra_display_key,
         current_user={
             'id': user_id,
             'username': username,

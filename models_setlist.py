@@ -67,6 +67,6 @@ def get_setlist_cifras(setlist_id):
                  JOIN setlist_cifras ON cifras.id = setlist_cifras.cifra_id 
                  WHERE setlist_cifras.setlist_id = ? 
                  ORDER BY setlist_cifras.position''', (setlist_id,))
-    cifras = c.fetchall()
+    rows = c.fetchall()
     db.close()
-    return cifras
+    return [dict(r) for r in rows]

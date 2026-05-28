@@ -18,7 +18,8 @@ from leadsheet.converter import (
 )
 from blueprints.auth import login_required
 from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra,
-                delete_cifra, is_band_member, is_band_admin)
+                delete_cifra, is_band_member, is_band_admin,
+                set_cifra_transpose_semitones)
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   pychord_highlight_chords, highlight_chords_html,
                   split_chord_progression, chord_components_info,
@@ -30,6 +31,51 @@ from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   _is_tab_line, _is_tab_header, _is_tab_meta_line, _TAB_ARTIFACT_RE)
 
 cifras_bp = Blueprint('cifras', __name__, url_prefix='/cifras')
+
+PLAY_TARGET_KEY_SESSION = 'play_target_key'
+
+
+def cifra_transpose_semitones(cifra) -> int:
+    """Semitons de transposição da banda (coluna no banco)."""
+    if not cifra:
+        return 0
+    try:
+        return int(cifra.get('transpose_semitones') or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def get_stored_transpose_semitones(cifra_id):
+    """Transposição compartilhada da banda para esta cifra."""
+    cifra = get_cifra(cifra_id)
+    return cifra_transpose_semitones(cifra) if cifra else 0
+
+
+def cifra_display_key(cifra):
+    """Tom para exibir em listas: transposição da banda ou cadastro."""
+    if not cifra:
+        return ''
+    tom = (cifra.get('tom_original') or '').strip()
+    semi = cifra_transpose_semitones(cifra)
+    if semi:
+        return key_at_transpose(tom, semi)
+    return normalize_tom_label(tom)
+
+
+def resolve_cifra_transpose(cifra_id, tom_original):
+    """Transposição: ?transpose= grava no banco (toda a banda); senão lê do banco."""
+    if 'transpose' in request.args:
+        semitones = request.args.get('transpose', 0, type=int)
+        set_cifra_transpose_semitones(cifra_id, semitones)
+    else:
+        semitones = get_stored_transpose_semitones(cifra_id)
+
+    if semitones:
+        session[PLAY_TARGET_KEY_SESSION] = key_at_transpose(tom_original, semitones)
+    elif 'transpose' in request.args:
+        session.pop(PLAY_TARGET_KEY_SESSION, None)
+    session.modified = True
+    return semitones
 
 
 def _parse_extra_fields(form):
@@ -311,6 +357,7 @@ def enrich_cifra_for_tocar(cifra):
         c['html'] = highlight_chords_html(raw)
     c['tom_root'] = parse_tom_root(c.get('tom_original'))
     c['transpose_map'] = build_transpose_map(c.get('tom_original'))
+    c['transpose_semitones'] = cifra_transpose_semitones(c)
     c['has_tablatura'] = has_tab
     doc = resolve_leadsheet_document(c)
     if doc:
@@ -351,7 +398,7 @@ def view(cifra_id):
         return redirect(url_for('dashboard'))
 
     transpositions = get_transposition_options(cifra['tom_original'])
-    current_transpose = request.args.get('transpose', 0, type=int)
+    current_transpose = resolve_cifra_transpose(cifra_id, cifra['tom_original'])
     display_key = key_at_transpose(cifra['tom_original'], current_transpose)
 
     conteudo = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
@@ -434,6 +481,7 @@ def tocar_band(band_id):
         key_options=get_absolute_key_list(),
         start_idx=start_idx,
         is_virtual=True,
+        play_target_key=session.get(PLAY_TARGET_KEY_SESSION) or '',
     )
 
 
@@ -546,6 +594,29 @@ def delete(cifra_id):
     delete_cifra(cifra_id)
     flash('Cifra deletada', 'success')
     return redirect(url_for('cifras.list_by_band', band_id=cifra['band_id']))
+
+@cifras_bp.route('/<cifra_id>/transpose', methods=['POST'])
+@login_required
+def save_transpose(cifra_id):
+    """Salva transposição da banda (compartilhada entre membros)."""
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    data = request.get_json(silent=True) or {}
+    semitones = int(data.get('semitones', 0))
+    set_cifra_transpose_semitones(cifra_id, semitones)
+    tom = cifra.get('tom_original') or ''
+    if semitones:
+        session[PLAY_TARGET_KEY_SESSION] = key_at_transpose(tom, semitones)
+    else:
+        session.pop(PLAY_TARGET_KEY_SESSION, None)
+    session.modified = True
+    return jsonify({
+        'ok': True,
+        'semitones': semitones,
+        'display_key': key_at_transpose(tom, semitones),
+    })
+
 
 @cifras_bp.route('/<cifra_id>/transpose', methods=['GET'])
 @login_required

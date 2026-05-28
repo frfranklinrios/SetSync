@@ -49,6 +49,7 @@ def tocar(setlist_id):
         all_cifras=all_cifras,
         key_options=get_absolute_key_list(),
         start_idx=start_idx,
+        play_target_key=session.get('play_target_key') or '',
     )
 
 # Ordenar músicas da setlist via AJAX (drag-and-drop inline)

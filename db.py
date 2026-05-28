@@ -125,6 +125,7 @@ def init_db():
     ]:
         _add_column('cifras', col, typedef)
     _add_column('cifras', 'leadsheet_json', 'TEXT')
+    _add_column('cifras', 'transpose_semitones', 'INTEGER DEFAULT 0')
 
     db.close()
 
@@ -489,5 +490,18 @@ def delete_cifra(cifra_id):
     c = db.cursor()
     c.execute('DELETE FROM setlist_cifras WHERE cifra_id = ?', (cifra_id,))
     c.execute('DELETE FROM cifras WHERE id = ?', (cifra_id,))
+    db.commit()
+    db.close()
+
+
+def set_cifra_transpose_semitones(cifra_id, semitones: int) -> None:
+    """Tom de performance da banda (compartilhado entre todos os membros)."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE cifras SET transpose_semitones=?, updated_at=CURRENT_TIMESTAMP
+           WHERE id=?''',
+        (int(semitones), cifra_id),
+    )
     db.commit()
     db.close()

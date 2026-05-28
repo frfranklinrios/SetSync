@@ -699,7 +699,7 @@ body.play-mode.edges-hint .tap-zone {
             <span class="dr-title">{{ cifra.titulo }}</span>
             <small class="dr-artist">{{ cifra.artista }}</small>
         </span>
-        <span class="dr-key">{{ cifra.tom_original }}</span>
+        <span class="dr-key">{{ cifra_display_key(cifra) }}</span>
     </div>
     {% endfor %}
 </div>
@@ -796,7 +796,7 @@ body.play-mode.edges-hint .tap-zone {
 
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}"></script>
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -808,7 +808,14 @@ body.play-mode.edges-hint .tap-zone {
     var EXIT_URL = {{ (exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id))) | tojson }};
 
     var current = Math.max(0, Math.min(CIFRAS.length - 1, START_IDX));
-    var targetKey = sessionStorage.getItem('play.targetKey') || '';
+    var targetKey = {{ (play_target_key or '')|tojson }};
+    if (!targetKey) {
+        targetKey = localStorage.getItem('play.targetKey') || sessionStorage.getItem('play.targetKey') || '';
+    }
+    if (targetKey) {
+        localStorage.setItem('play.targetKey', targetKey);
+        sessionStorage.setItem('play.targetKey', targetKey);
+    }
     // Migração: valor antigo em semitons absolutos
     var legacySemi = sessionStorage.getItem('play.transposeSemi');
     if (!targetKey && legacySemi && legacySemi !== '0') {
@@ -858,15 +865,31 @@ body.play-mode.edges-hint .tap-zone {
     // ── Render ──────────────────────────────
     function getCurrent() { return CIFRAS[current]; }
 
+    const SAVE_TRANSPOSE_URL = {{ url_for('cifras.save_transpose', cifra_id='__ID__')|tojson }};
+
     function getTranspose(c) {
-        if (!targetKey || !c || !c.transpose_map) return 0;
+        if (!c) return 0;
+        if (c.transpose_semitones !== undefined && c.transpose_semitones !== null) {
+            return Number(c.transpose_semitones) || 0;
+        }
+        if (!targetKey || !c.transpose_map) return 0;
         var semi = c.transpose_map[targetKey];
         return (semi === undefined || semi === null) ? 0 : semi;
     }
 
     function getDisplayKey(c) {
-        if (!targetKey) return c.tom || c.tom_root || '—';
-        return targetKey;
+        if (!c) return '—';
+        return c.tom || c.tom_root || '—';
+    }
+
+    function targetKeyForSemitones(c, semi) {
+        if (!c || !c.transpose_map || !semi) return '';
+        var keys = Object.keys(c.transpose_map);
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (Number(c.transpose_map[k]) === Number(semi)) return k;
+        }
+        return '';
     }
 
     function getLeadSheetWidth() {
@@ -1158,8 +1181,8 @@ body.play-mode.edges-hint .tap-zone {
         var t = getTranspose(c);
         document.getElementById('bar-title').textContent = c.titulo;
         var tomLabel = 'Tom ' + getDisplayKey(c);
-        if (targetKey && targetKey !== c.tom_root) {
-            tomLabel += ' (cadastro: ' + (c.tom || c.tom_root) + ')';
+        if (t !== 0) {
+            tomLabel += ' (cadastro: ' + (c.tom_original || c.tom_root || c.tom) + ')';
         }
         document.getElementById('bar-meta').textContent =
             c.artista + ' · ' + tomLabel + ' · ' + (current + 1) + '/' + CIFRAS.length;
@@ -1177,9 +1200,9 @@ body.play-mode.edges-hint .tap-zone {
             item.classList.toggle('active', i === current);
         });
 
-        // transpose select
+        // transpose select (tom salvo da banda por música)
         var sel = document.getElementById('transpose-sel');
-        if (sel) sel.value = targetKey;
+        if (sel) sel.value = targetKeyForSemitones(c, t);
 
         // load html (cached or fetch)
         if (gradeMode) {
@@ -1222,12 +1245,35 @@ body.play-mode.edges-hint .tap-zone {
     function nextSong() { goTo(current + 1); }
 
     // ── Transpose ───────────────────────────
+    function persistTransposeForCifra(c, semitones) {
+        if (!c || !c.id) return;
+        c.transpose_semitones = semitones;
+        var url = SAVE_TRANSPOSE_URL.replace('__ID__', encodeURIComponent(c.id));
+        fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ semitones: semitones })
+        }).catch(function () {});
+    }
+
     function onTransposeChange(value) {
         targetKey = value || '';
         if (targetKey) {
+            localStorage.setItem('play.targetKey', targetKey);
             sessionStorage.setItem('play.targetKey', targetKey);
         } else {
+            localStorage.removeItem('play.targetKey');
             sessionStorage.removeItem('play.targetKey');
+        }
+        var c = getCurrent();
+        if (c) {
+            var semi = 0;
+            if (targetKey && c.transpose_map) {
+                semi = c.transpose_map[targetKey];
+                if (semi === undefined || semi === null) semi = 0;
+            }
+            persistTransposeForCifra(c, semi);
         }
         render();
     }

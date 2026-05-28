@@ -208,7 +208,7 @@
                     <div class="row-title">{{ cifra.titulo }}</div>
                     <div class="row-sub">{{ cifra.artista }}</div>
                 </a>
-                <span class="row-badge">{{ cifra.tom_original|normalize_tom }}</span>
+                <span class="row-badge">{{ cifra_display_key(cifra) }}</span>
                 <div class="row-actions">
                     <a href="{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}"
                        class="icon-btn" title="Tocar a partir desta">

@@ -13,9 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && deno --version \
     && ffmpeg -version | head -1
 
-# Copiar requirements
+# Copiar requirements e instalar Chromium do Playwright (importador Cifra Club)
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && playwright install --with-deps chromium
 
 # Copiar aplicação
 COPY . .
