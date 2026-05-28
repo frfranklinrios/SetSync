@@ -382,13 +382,13 @@ def executar_com_audio(
 def executar_apenas_cifra(
     url_cifras: str,
     pasta_saida: Path | None = None,
-    youtube_url: str | None = None,
     compasso_manual: str | None = None,
 ) -> ResultadoPipeline:
-    """Importa cifra e grade a partir dos acordes (sem áudio / sem YouTube)."""
-    dados = _preparar_dados_cifra(
-        url_cifras, youtube_url=youtube_url, youtube_obrigatorio=False
-    )
+    """Importa cifra e grade a partir dos acordes (sem áudio e sem YouTube)."""
+    dados = _preparar_dados_cifra(url_cifras, youtube_obrigatorio=False)
+    dados["youtube"] = ""
+    dados["youtube_manual"] = False
+    dados["videos_youtube"] = []
     acordes_referencia = extrair_acordes_referencia(dados["cifra"])
     compasso_info = (
         parsear_compasso(compasso_manual) if compasso_manual else compasso_padrao()

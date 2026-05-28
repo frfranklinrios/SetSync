@@ -95,33 +95,6 @@
 .tab-string { color: #f59e0b; font-weight: 700; }
 .tab-tech { color: #fde68a; font-weight: 600; }
 
-.cifra-json {
-    white-space: normal;
-}
-.cj-line {
-    display: block;
-    margin: 0 0 0.45rem;
-    white-space: nowrap;
-}
-.cj-pair {
-    display: inline-flex;
-    flex-direction: column;
-    vertical-align: top;
-    margin-right: 0;
-    min-width: 0;
-}
-.cj-chord {
-    color: #2dd4bf;
-    font-weight: 700;
-    font-size: 0.85rem;
-    line-height: 1.05;
-}
-.cj-lyric {
-    color: #94a3b8;
-    font-size: 0.98rem;
-    line-height: 1.15;
-    white-space: pre;
-}
 
 .grade-bars-card {
     margin-top: 1rem;
@@ -217,8 +190,6 @@
 [data-theme="light"] .cifra-tab-line { color: #334155; }
 [data-theme="light"] .tab-string { color: #d97706; }
 [data-theme="light"] .tab-tech { color: #92400e; }
-[data-theme="light"] .cj-chord { color: #0d7e6b; }
-[data-theme="light"] .cj-lyric { color: #475569; }
 [data-theme="light"] .grade-bars-card {
     border-color: rgba(13,126,107,0.22);
     background: rgba(13,126,107,0.06);
@@ -246,7 +217,7 @@
                 <h2 class="fw-bold mb-0" style="font-size:1.4rem;">{{ cifra.titulo }}</h2>
                 <p class="text-muted mb-0" style="font-size:0.875rem;">
                     {{ cifra.artista }} · Tom: <strong>{{ display_key }}</strong>
-                    {% if current_transpose != 0 %}&nbsp;<span style="color:var(--muted);font-size:0.78rem;">(cadastro: {{ cifra.tom_original }})</span>{% endif %}
+                    {% if current_transpose != 0 %}&nbsp;<span style="color:var(--muted);font-size:0.78rem;">(cadastro: {{ cifra.tom_original|normalize_tom }})</span>{% endif %}
                     <span class="text-muted ms-2" style="font-size:0.78rem;">{{ cifra_index + 1 }}/{{ setlist|length }}</span>
                 </p>
             </div>
@@ -267,18 +238,16 @@
 
         <div class="cifra-container{% if conteudo_html %} play-layout{% endif %}" id="cifra-body">
             {% if grouped_cifra and grouped_cifra|length > 0 %}
-                <div class="cifra-json">
-                    {% for group in grouped_cifra %}
-                        <div class="cj-line">
-                            {% for item in group %}
-                                <span class="cj-pair">
-                                    <span class="cj-chord">{% if item.acorde %}{{ item.acorde }}{% else %}&nbsp;{% endif %}</span>
-                                    <span class="cj-lyric">{% if item.texto_letra %}{{ item.texto_letra }}{% else %}&nbsp;{% endif %}</span>
-                                </span>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                </div>
+                {% for group in grouped_cifra %}
+                    <div class="sp-line">
+                        {% for item in group %}
+                            <span class="sp-item">
+                                <span class="sp-chord">{% if item.acorde %}{{ item.acorde }}{% else %}&nbsp;{% endif %}</span>
+                                <span class="sp-word">{% if item.texto_letra %}{{ item.texto_letra }}{% else %}&nbsp;{% endif %}</span>
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
             {% elif conteudo_html %}
                 {{ conteudo_html | safe }}
             {% elif (conteudo|default(''))|string|trim %}
@@ -313,7 +282,7 @@
             <div class="card-header">Transpor</div>
             <div class="card-body">
                 <p class="text-muted mb-2" style="font-size:0.8rem;">
-                    Tom cadastrado: <strong>{{ cifra.tom_original }}</strong>
+                    Tom cadastrado: <strong>{{ cifra.tom_original|normalize_tom }}</strong>
                 </p>
                 <select class="transpose-select" onchange="location.href=CIFRA_BASE+'?transpose='+this.value">
                     {% for semitones, label in transpositions.items() %}
@@ -337,7 +306,7 @@
                    class="sl-item {% if s.id == cifra.id %}active{% endif %}">
                     <span class="sl-num">{{ loop.index }}.</span>
                     <span>{{ s.titulo }}</span>
-                    <span class="sl-key">{{ s.tom_original }}</span>
+                    <span class="sl-key">{{ s.tom_original|normalize_tom }}</span>
                 </a>
                 {% endfor %}
             </div>
@@ -348,7 +317,7 @@
             <div class="card-header">Informações</div>
             <div class="card-body" style="font-size:0.825rem;">
                 <p class="mb-1 text-muted">Tom</p>
-                <p class="fw-bold mb-3" style="color:var(--accent);">{{ cifra.tom_original }}</p>
+                <p class="fw-bold mb-3" style="color:var(--accent);">{{ cifra.tom_original|normalize_tom }}</p>
                 <p class="mb-1 text-muted">Banda</p>
                 <p class="fw-semibold mb-3">{{ band.name }}</p>
                 <p class="mb-1 text-muted">Adicionada</p>

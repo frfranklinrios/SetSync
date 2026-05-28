@@ -147,8 +147,17 @@ def montar_grade_da_cifra(
 def tonalidade_da_referencia(referencia: list[str]) -> str:
     if not referencia:
         return "Desconhecida"
-    tom = detect_tonality(referencia)
-    return tom.replace(" (estimada)", " (cifra)")
+    tom = (detect_tonality(referencia) or "").strip()
+    tom = tom.replace(" (estimada)", "").strip()
+
+    # Exibe em notação de cifra (ex.: C, F#, Am), sem rótulos "maior/menor".
+    m = re.match(r"^([A-G](?:#|b)?)\s+(maior|menor)$", tom, re.IGNORECASE)
+    if m:
+        nota = m.group(1)
+        modo = m.group(2).lower()
+        return f"{nota}m" if modo == "menor" else nota
+
+    return tom or "Desconhecida"
 
 
 def resolver_tonalidade(tom_site: str, referencia: list[str]) -> tuple[str, str]:

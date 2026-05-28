@@ -1,11 +1,7 @@
 (function () {
   const body = document.body;
-  const youtubeNoServer = body.dataset.youtubeNoServer === "1";
-  const urls = {
-    youtube: body.dataset.processarUrl || "/cifras/import/api/processar",
-    audio: body.dataset.processarAudioUrl || "/cifras/import/api/processar-audio",
-    cifra: body.dataset.processarCifraUrl || "/cifras/import/api/processar-cifra",
-  };
+  const processarCifraUrl =
+    body.dataset.processarCifraUrl || "/cifras/import/api/processar-cifra";
 
   const resultado = document.getElementById("resultado");
   let ultimoPayload = null;
@@ -66,61 +62,6 @@
     return "Erro ao processar";
   }
 
-  document.querySelectorAll(".tabs .tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      const name = tab.dataset.tab;
-      document.querySelectorAll(".tabs .tab").forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-      document.querySelectorAll(".panel").forEach((p) => p.classList.add("hidden"));
-      const panel = document.querySelector(".panel-" + name);
-      if (panel) panel.classList.remove("hidden");
-    });
-  });
-
-  if (youtubeNoServer) {
-    document.querySelector('.tab[data-tab="audio"]')?.click();
-  }
-
-  const formAudio = document.getElementById("form-audio");
-  if (formAudio) {
-    formAudio.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById("btn-audio");
-      const status = document.getElementById("status-audio");
-      const file = document.getElementById("audio_file").files[0];
-      if (!file) {
-        setStatus(status, "Selecione um arquivo de áudio.", true);
-        return;
-      }
-
-      btn.disabled = true;
-      resultado.classList.add("hidden");
-      setStatus(status, '<span class="loader"></span>Processando áudio…');
-
-      const fd = new FormData();
-      fd.append("url_cifra", document.getElementById("url_cifra_audio").value.trim());
-      fd.append("audio", file);
-      const ytRef = document.getElementById("url_youtube_ref").value.trim();
-      if (ytRef) fd.append("url_youtube", ytRef);
-      fd.append("embed", "true");
-
-      try {
-        const res = await fetch(urls.audio, {
-          method: "POST",
-          credentials: "same-origin",
-          body: fd,
-        });
-        if (!res.ok) throw new Error(await parseError(res));
-        showResult(await res.json());
-        setStatus(status, "Pronto. Clique em «Usar no formulário SetSync».");
-      } catch (err) {
-        setStatus(status, err.message || String(err), true);
-      } finally {
-        btn.disabled = false;
-      }
-    });
-  }
-
   const formCifra = document.getElementById("form-cifra");
   if (formCifra) {
     formCifra.addEventListener("submit", async (e) => {
@@ -132,45 +73,12 @@
       setStatus(status, '<span class="loader"></span>Importando cifra…');
 
       try {
-        const res = await fetch(urls.cifra, {
+        const res = await fetch(processarCifraUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
           body: JSON.stringify({
             url_cifra: document.getElementById("url_cifra_only").value.trim(),
-            url_youtube: document.getElementById("url_youtube_cifra").value.trim(),
-            embed: true,
-          }),
-        });
-        if (!res.ok) throw new Error(await parseError(res));
-        showResult(await res.json());
-        setStatus(status, "Pronto. Clique em «Usar no formulário SetSync».");
-      } catch (err) {
-        setStatus(status, err.message || String(err), true);
-      } finally {
-        btn.disabled = false;
-      }
-    });
-  }
-
-  const formYoutube = document.getElementById("form-youtube");
-  if (formYoutube) {
-    formYoutube.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById("btn-youtube");
-      const status = document.getElementById("status-youtube");
-      btn.disabled = true;
-      resultado.classList.add("hidden");
-      setStatus(status, '<span class="loader"></span>Processando… (pode levar alguns minutos)');
-
-      try {
-        const res = await fetch(urls.youtube, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "same-origin",
-          body: JSON.stringify({
-            url_cifra: document.getElementById("url_cifra_yt").value.trim(),
-            url_youtube: document.getElementById("url_youtube_yt").value.trim(),
             embed: true,
           }),
         });

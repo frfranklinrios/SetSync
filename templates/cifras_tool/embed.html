@@ -7,53 +7,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='cifras-tool/embed.css') }}">
 </head>
 <body class="embed-body"
-      data-processar-url="{{ url_for('cifras_import.api_processar') }}"
-      data-processar-audio-url="{{ url_for('cifras_import.api_processar_audio') }}"
-      data-processar-cifra-url="{{ url_for('cifras_import.api_processar_cifra') }}"
-      data-youtube-no-server="{{ '1' if youtube_no_server else '0' }}">
+      data-processar-cifra-url="{{ url_for('cifras_import.api_processar_cifra') }}">
   <div class="wrap">
     <h1>Importar cifra</h1>
-    <p class="sub">
-      O SetSync <strong>não faz login no YouTube</strong> nem usa credenciais de usuário.
-      {% if youtube_no_server %}
-      Neste servidor, envie o áudio da faixa ou importe só a cifra.
-      {% else %}
-      Você pode enviar um arquivo de áudio ou usar o processamento completo (se disponível).
-      {% endif %}
-    </p>
+    <p class="sub">Importa somente o conteúdo da cifra e monta a grade harmônica pelos acordes.</p>
 
-    <div class="tabs" role="tablist">
-      <button type="button" class="tab active" data-tab="audio" role="tab">Enviar áudio</button>
-      <button type="button" class="tab" data-tab="cifra" role="tab">Somente cifra</button>
-      {% if not youtube_no_server %}
-      <button type="button" class="tab" data-tab="youtube" role="tab">YouTube no servidor</button>
-      {% endif %}
-    </div>
-
-    <div class="card panel panel-audio">
-      <form id="form-audio">
-        <div class="row row-audio">
-          <div>
-            <label for="url_cifra_audio">Link da cifra</label>
-            <input type="url" id="url_cifra_audio" required placeholder="Cifra Club ou Cifras.com.br">
-          </div>
-          <div>
-            <label for="audio_file">Arquivo de áudio</label>
-            <input type="file" id="audio_file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac" required>
-          </div>
-          <div>
-            <label for="url_youtube_ref">Link YouTube <span class="hint">(opcional, só referência)</span></label>
-            <input type="url" id="url_youtube_ref" placeholder="youtube.com/watch?v=...">
-          </div>
-          <div>
-            <button type="submit" id="btn-audio">Gerar com áudio</button>
-          </div>
-        </div>
-        <p id="status-audio" class="status-line"></p>
-      </form>
-    </div>
-
-    <div class="card panel panel-cifra hidden">
+    <div class="card panel panel-cifra">
       <form id="form-cifra">
         <div class="row">
           <div>
@@ -61,38 +20,13 @@
             <input type="url" id="url_cifra_only" required placeholder="Cifra Club ou Cifras.com.br">
           </div>
           <div>
-            <label for="url_youtube_cifra">YouTube <span class="hint">(opcional)</span></label>
-            <input type="url" id="url_youtube_cifra" placeholder="só para guardar referência">
-          </div>
-          <div>
             <button type="submit" id="btn-cifra">Importar cifra</button>
           </div>
         </div>
-        <p class="hint block">Sem BPM automático — grade montada pelos acordes da cifra.</p>
+        <p class="hint block">Abra a música no Cifra Club/Cifras, copie a URL da página e cole no campo acima.</p>
         <p id="status-cifra" class="status-line"></p>
       </form>
     </div>
-
-    {% if not youtube_no_server %}
-    <div class="card panel panel-youtube hidden">
-      <form id="form-youtube">
-        <div class="row">
-          <div>
-            <label for="url_cifra_yt">Link da cifra</label>
-            <input type="url" id="url_cifra_yt" required placeholder="Cifra Club ou Cifras.com.br">
-          </div>
-          <div>
-            <label for="url_youtube_yt">Link do YouTube</label>
-            <input type="url" id="url_youtube_yt" required placeholder="youtube.com/watch?v=...">
-          </div>
-          <div>
-            <button type="submit" id="btn-youtube">Gerar</button>
-          </div>
-        </div>
-        <p id="status-youtube" class="status-line"></p>
-      </form>
-    </div>
-    {% endif %}
 
     <div id="resultado" class="hidden">
       <div class="card">
