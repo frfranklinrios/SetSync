@@ -20,22 +20,35 @@
 [data-theme="light"] .preview-box { background: #f1f5f9; color: #1e293b;
     border-color: #e2e8f0; }
 
-.pv-line {
-    display: block;
-    margin-bottom: 0.5rem;
-    white-space: nowrap;
+.preview-box .sp-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 0.2rem;
+    margin-bottom: 0.45rem;
 }
-.pv-pair {
+.preview-box .sp-item {
     display: inline-flex;
     flex-direction: column;
-    vertical-align: top;
-    margin-right: 0.35rem;
+    padding-right: 0.55rem;
 }
-.pv-chord { color: #2dd4bf; font-weight: 700; font-size: 0.78rem; line-height: 1.05; }
-.pv-lyric { color: #94a3b8; font-size: 0.9rem; line-height: 1.15; white-space: pre; }
+.preview-box .sp-item.sp-no-gap { padding-right: 0; }
+.preview-box .sp-chord {
+    color: #2dd4bf;
+    font-weight: 700;
+    font-size: 0.82em;
+    min-height: 1.25em;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+.preview-box .sp-word {
+    color: #cbd5e1;
+    line-height: 1.45;
+    white-space: nowrap;
+}
 .pv-empty { color: #475569; font-style: italic; }
-[data-theme="light"] .pv-chord { color: #0d7e6b; }
-[data-theme="light"] .pv-lyric { color: #374151; }
+[data-theme="light"] .preview-box .sp-chord { color: #0d7e6b; }
+[data-theme="light"] .preview-box .sp-word { color: #1e293b; }
 
 .badge-count { background: var(--accent); color: #fff;
     font-size: 0.65rem; border-radius: 999px;
@@ -427,14 +440,24 @@ function renderPreview(data) {
     });
 
     box.innerHTML = order.map(key => {
-        const line = groups[key].map(item => {
-            const chord = item.acorde ? escHtml(item.acorde) : '&nbsp;';
+        const items = groups[key];
+        const line = items.map((item, idx) => {
+            const next = idx + 1 < items.length ? items[idx + 1] : null;
+            const chord = item.acorde ? escHtml(item.acorde) : '';
             const lyric = (item.texto_letra != null && String(item.texto_letra).length)
                 ? escHtml(String(item.texto_letra))
                 : '&nbsp;';
-            return `<span class="pv-pair"><span class="pv-chord">${chord}</span><span class="pv-lyric">${lyric}</span></span>`;
+            let noGap = false;
+            if (next) {
+                const thisLyric = String(item.texto_letra || '');
+                const nextLyric = String(next.texto_letra || '');
+                const thisEndsWithSpace = /\s$/.test(thisLyric);
+                const nextStartsWithSpace = /^\s/.test(nextLyric);
+                if (thisLyric && nextLyric && !thisEndsWithSpace && !nextStartsWithSpace) noGap = true;
+            }
+            return `<span class="sp-item${noGap ? ' sp-no-gap' : ''}"><span class="sp-chord">${chord || '&nbsp;'}</span><span class="sp-word">${lyric}</span></span>`;
         }).join('');
-        return `<div class="pv-line">${line}</div>`;
+        return `<div class="sp-line">${line}</div>`;
     }).join('');
 }
 

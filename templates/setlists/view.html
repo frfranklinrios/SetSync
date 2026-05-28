@@ -211,7 +211,7 @@
             {% endif %}
         </div>
         {% if cifra.tom_original %}
-        <span class="sl-tom">{{ cifra.tom_original }}</span>
+        <span class="sl-tom">{{ cifra.tom_original|normalize_tom }}</span>
         {% endif %}
         <div class="sl-actions">
             <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="sl-icon-btn view-btn" title="Ver cifra">

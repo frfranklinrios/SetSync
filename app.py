@@ -8,7 +8,7 @@ from blueprints.setlists import setlists_bp
 from blueprints.cifras_import import cifras_import_bp
 from blueprints.ajuda import ajuda_bp
 from db import init_db
-from util import highlight_chords_html
+from util import highlight_chords_html, normalize_tom_label
 import os
 from flask_mail import Mail
 import email_config
@@ -22,6 +22,7 @@ mail = Mail(app)
 
 # Filtro Jinja2 para destaque de acordes
 app.jinja_env.filters['highlight_chords'] = highlight_chords_html
+app.jinja_env.filters['normalize_tom'] = normalize_tom_label
 
 # Inicializar banco de dados na criação da app
 with app.app_context():

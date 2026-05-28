@@ -12,7 +12,7 @@ from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   split_chord_progression, chord_components_info,
                   to_brazilian_chord_notation, format_text_chords_br,
                   get_transposition_options, key_at_transpose, get_absolute_key_list,
-                  build_transpose_map, parse_tom_root,
+                  build_transpose_map, parse_tom_root, normalize_tom_label,
                   sanitize_tab_html_artifacts, content_has_tablatura,
                   highlight_chords_play_html,
                   _is_tab_line, _is_tab_header, _is_tab_meta_line, _TAB_ARTIFACT_RE)
@@ -226,6 +226,7 @@ def _transpose_grade_data(grade_list, semitones=0):
 def enrich_cifra_for_tocar(cifra):
     """Prepara cifra para o modo tocar com dados estruturados corretos."""
     c = dict(cifra)
+    c['tom_original'] = normalize_tom_label(c.get('tom_original') or '')
     raw = sanitize_tab_html_artifacts(c.get('conteudo') or '')
     has_tab = content_has_tablatura(raw)
     # Com tablatura: HTML dedicado ao palco (TAB + acorde acima da letra).

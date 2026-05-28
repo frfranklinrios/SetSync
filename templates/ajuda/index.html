@@ -200,10 +200,16 @@
           Em <strong>Adicionar</strong> ou <strong>Editar</strong> cifra, clique em <strong>Cifra → SetSync</strong>.
           O SetSync abre um iframe com a ferramenta integrada (<span class="code">/cifras/import/tool</span>) e preenche o formulário ao final.
         </p>
+        <h4>Modos (sem login no YouTube)</h4>
+        <ul>
+          <li><strong>Enviar áudio</strong> — você envia MP3/WAV da faixa; o servidor analisa o áudio e monta a grade (recomendado no Contabo).</li>
+          <li><strong>Somente cifra</strong> — importa texto e acordes da página; grade pelos acordes (sem BPM automático).</li>
+          <li><strong>YouTube no servidor</strong> — só aparece se <span class="code">CIFRAS_YOUTUBE_NO_SERVER=0</span>; exige cookies no servidor e costuma falhar em VPS.</li>
+        </ul>
         <h4>Requisitos</h4>
         <ul class="mb-0">
-          <li><strong>ffmpeg</strong> disponível no PATH (para manipular áudio).</li>
-          <li><strong>Playwright</strong> instalado e com Chromium (quando necessário para extrair links do player do Cifra Club).</li>
+          <li><strong>ffmpeg</strong> no servidor (para converter áudio enviado).</li>
+          <li><strong>Playwright</strong> + Chromium (opcional, para vídeo do player do Cifra Club).</li>
         </ul>
       </div>
     </div>

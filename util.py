@@ -386,6 +386,23 @@ def parse_tom_root(tom_original):
     return _to_br_note(m.group(1).upper() + (m.group(2) or ''))
 
 
+def normalize_tom_label(tom_original):
+    """Normaliza rótulos de tom para notação de cifra (C, F#, Am...)."""
+    s = (tom_original or '').strip()
+    if not s:
+        return 'C'
+
+    m = re.match(r'^([A-G](?:#|b)?)\s+(maior|menor)(?:\s*\(.*\))?$', s, re.IGNORECASE)
+    if m:
+        nota = _to_br_note(m.group(1))
+        modo = m.group(2).lower()
+        return f'{nota}m' if modo == 'menor' else nota
+
+    # Remove sufixos de origem como "(cifra)" ou "(estimada)" mantendo a notação do acorde.
+    s = re.sub(r'\s*\((?:cifra|estimada)\)\s*$', '', s, flags=re.IGNORECASE).strip()
+    return s or 'C'
+
+
 def semitones_between_keys(from_tom, to_key):
     """Semitons para ir do tom original até a tonalidade alvo."""
     a = _note_semitone_index(parse_tom_root(from_tom))

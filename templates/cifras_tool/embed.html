@@ -7,27 +7,24 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='cifras-tool/embed.css') }}">
 </head>
 <body class="embed-body"
-      data-processar-url="{{ url_for('cifras_import.api_processar') }}">
+      data-processar-cifra-url="{{ url_for('cifras_import.api_processar_cifra') }}">
   <div class="wrap">
     <h1>Importar cifra</h1>
-    <p class="sub">Links da cifra e do YouTube — os dados preenchem o formulário do SetSync.</p>
+    <p class="sub">Importa somente o conteúdo da cifra e monta a grade harmônica pelos acordes.</p>
 
-    <div class="card">
-      <form id="form">
+    <div class="card panel panel-cifra">
+      <form id="form-cifra">
         <div class="row">
           <div>
-            <label for="url_cifra">Link da cifra</label>
-            <input type="url" id="url_cifra" required placeholder="Cifra Club ou Cifras.com.br">
+            <label for="url_cifra_only">Link da cifra</label>
+            <input type="url" id="url_cifra_only" required placeholder="Cifra Club ou Cifras.com.br">
           </div>
           <div>
-            <label for="url_youtube">Link do YouTube</label>
-            <input type="url" id="url_youtube" required placeholder="youtube.com/watch?v=...">
-          </div>
-          <div>
-            <button type="submit" id="btn-gerar">Gerar</button>
+            <button type="submit" id="btn-cifra">Importar cifra</button>
           </div>
         </div>
-        <p id="status"></p>
+        <p class="hint block">Abra a música no Cifra Club/Cifras, copie a URL da página e cole no campo acima.</p>
+        <p id="status-cifra" class="status-line"></p>
       </form>
     </div>
 
