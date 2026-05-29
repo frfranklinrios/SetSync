@@ -140,7 +140,7 @@ def login():
             session['username'] = user['username']
             session['display_name'] = (user.get('display_name') or '').strip()
             session['is_superadmin'] = is_superadmin(user['id'])
-            session.permanent = request.form.get('remember') is not None
+            session.permanent = True
             
             next_page = request.args.get('next')
             if next_page and _is_safe_redirect(next_page):

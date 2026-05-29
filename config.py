@@ -1,7 +1,18 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _session_lifetime() -> timedelta:
+    """Duração do cookie de sessão (padrão ~10 anos)."""
+    try:
+        days = int(os.getenv('SESSION_LIFETIME_DAYS', '3650'))
+    except ValueError:
+        days = 3650
+    return timedelta(days=max(1, days))
+
 
 class Config:
     """Configurações base"""
@@ -10,7 +21,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_COOKIE_SECURE = False  # True em produção HTTPS
     SESSION_COOKIE_HTTPONLY = True
-    PERMANENT_SESSION_LIFETIME = 86400 * 7  # 7 dias
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    PERMANENT_SESSION_LIFETIME = _session_lifetime()
+    SESSION_REFRESH_EACH_REQUEST = True
     
     # Google OAuth
     GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
