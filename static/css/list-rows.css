@@ -14,15 +14,53 @@
 }
 
 /* ── Linha ── */
+.row-prefix {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
 .row-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   padding: 0.9rem 1rem;
   border-bottom: 1px solid var(--border);
   background: inherit;
   transition: background 0.12s;
   color: inherit;
+}
+
+/* Lista lateral do modo tocar (mesmo visual, sem arrastar) */
+#play-drawer.row-card {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+#play-drawer .row-item {
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+#play-drawer .row-item:hover {
+  background: var(--bg);
+}
+[data-theme="dark"] #play-drawer .row-item:hover {
+  background: #0f172a;
+}
+#play-drawer .row-item.active {
+  border-left-color: var(--accent);
+  background: rgba(42, 181, 160, 0.08);
+}
+#play-drawer .row-item.active .row-title {
+  color: var(--accent);
+}
+[data-theme="light"] #play-drawer .row-item.active .row-title {
+  color: var(--accent-dark, var(--accent));
+}
+
+.row-item--pick {
+  cursor: pointer;
 }
 .row-item:last-child {
   border-bottom: none;
@@ -298,21 +336,17 @@
   /* Setlist ordenável: título na 1ª linha; cantor/tom na 2ª */
   .row-item--sortable {
     display: grid;
-    grid-template-columns: 26px 1.35rem minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
-      "handle num info actions"
-      "meta meta meta meta";
+      "prefix info actions"
+      "meta meta meta";
     column-gap: 0.5rem;
     row-gap: 0.45rem;
     align-items: center;
   }
 
-  .row-item--sortable > .row-handle {
-    grid-area: handle;
-  }
-  .row-item--sortable > .row-num {
-    grid-area: num;
-    min-width: 0;
+  .row-item--sortable > .row-prefix {
+    grid-area: prefix;
   }
   .row-item--sortable > .row-info {
     grid-area: info;
@@ -332,7 +366,17 @@
     align-items: center;
     gap: 0.4rem 0.5rem;
     width: 100%;
-    padding-left: calc(26px + 1.35rem + 0.5rem);
+    padding-left: 0;
+    margin-left: 0;
+  }
+  .row-item--sortable > .row-meta,
+  .row-item--sortable > .row-badge.row-tom-only {
+    padding-left: calc(22px + 0.45rem + 1.35rem + 0.5rem);
+  }
+
+  .row-item--numbered:not(.row-item--sortable) > .row-prefix {
+    align-self: start;
+    padding-top: 0.1rem;
   }
 
   .row-item--sortable .row-vocalist-sel {

@@ -386,50 +386,6 @@ body { overflow-x: hidden; }
     color: #6b7280;
     border-bottom-color: #f3f4f6;
 }
-.dr-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.68rem 1rem;
-    color: #94a3b8;
-    font-size: 0.82rem;
-    border-left: 3px solid transparent;
-    cursor: pointer;
-    transition: all 0.12s;
-}
-.dr-item:hover { color: #e2e8f0; background: rgba(255,255,255,0.04); }
-.dr-item.active {
-    color: var(--chord-highlight);
-    border-left-color: var(--chord-highlight);
-    background: var(--chord-highlight-ghost);
-    font-weight: 600;
-}
-[data-theme="light"] .dr-item { color: #4b5563; }
-[data-theme="light"] .dr-item:hover { color: #111827; background: #f9fafb; }
-[data-theme="light"] .dr-item.active {
-    color: var(--chord-highlight);
-    border-left-color: var(--chord-highlight);
-    background: var(--chord-highlight-ghost);
-}
-.dr-num {
-    font-size: 0.68rem;
-    color: #64748b;
-    min-width: 1.4rem;
-}
-.dr-title { line-height: 1.2; }
-.dr-artist {
-    display: block;
-    font-size: 0.68rem;
-    color: #64748b;
-    margin-top: 1px;
-}
-.dr-key {
-    font-size: 0.7rem;
-    color: #64748b;
-    margin-left: auto;
-    white-space: nowrap;
-}
-
 /* ── SCROLL BADGE ──────────────────────── */
 #scroll-badge {
     display: none;
@@ -513,9 +469,6 @@ body { overflow-x: hidden; }
     .prog-dot { width: 10px; height: 10px; }
     #play-bar { padding: 0.7rem 1.25rem; gap: 0.65rem; }
     #play-foot { padding: 0.65rem 1.25rem; }
-    .dr-item { padding: 0.9rem 1.1rem; font-size: 0.95rem; }
-    .dr-num { font-size: 0.78rem; }
-    .dr-key { font-size: 0.8rem; }
 }
 @media (min-width: 1024px) {
     .cifra-body { font-size: var(--play-font, 1.28rem); line-height: 2.15; padding: 2.5rem 6vw; }
@@ -689,17 +642,23 @@ body.play-mode.edges-hint .tap-zone {
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 
-<!-- Setlist drawer -->
-<div id="play-drawer" aria-hidden="true">
+<!-- Setlist drawer (mesmo padrão row-item das outras listas) -->
+<div id="play-drawer" class="row-card" aria-hidden="true">
     <div class="drawer-hd">{{ setlist.name }}</div>
     {% for cifra in all_cifras %}
-    <div class="dr-item" data-idx="{{ loop.index0 }}">
-        <span class="dr-num">{{ loop.index }}.</span>
-        <span>
-            <span class="dr-title">{{ cifra.titulo }}</span>
-            <small class="dr-artist">{{ cifra.artista }}</small>
-        </span>
-        <span class="dr-key">{{ cifra_display_key(cifra) }}</span>
+    <div class="row-item row-item--numbered row-item--pick" data-idx="{{ loop.index0 }}">
+        <div class="row-prefix">
+            <span class="row-num">{{ loop.index }}</span>
+        </div>
+        <div class="row-info">
+            <div class="row-title">{{ cifra.titulo }}</div>
+            {% if cifra.artista %}
+            <div class="row-sub">{{ cifra.artista }}</div>
+            {% endif %}
+        </div>
+        {% if cifra.tom_original or cifra.tom_root or cifra.tom %}
+        <span class="row-badge">{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none) }}</span>
+        {% endif %}
     </div>
     {% endfor %}
 </div>
@@ -1171,7 +1130,7 @@ body.play-mode.edges-hint .tap-zone {
         document.querySelectorAll('.prog-dot').forEach(function (dot, i) {
             dot.classList.toggle('active', i === current);
         });
-        document.querySelectorAll('.dr-item').forEach(function (item, i) {
+        document.querySelectorAll('#play-drawer .row-item[data-idx]').forEach(function (item, i) {
             item.classList.toggle('active', i === current);
         });
 
@@ -1554,10 +1513,13 @@ body.play-mode.edges-hint .tap-zone {
         }
     }
 
-    document.querySelectorAll('.dr-item').forEach(function (item, i) {
+    document.querySelectorAll('#play-drawer .row-item[data-idx]').forEach(function (item) {
         item.addEventListener('click', function () {
-            goTo(i);
-            closeDrawer();
+            var idx = parseInt(item.getAttribute('data-idx'), 10);
+            if (!isNaN(idx)) {
+                goTo(idx);
+                closeDrawer();
+            }
         });
     });
 

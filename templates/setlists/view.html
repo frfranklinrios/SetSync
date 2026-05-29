@@ -49,9 +49,11 @@
 <div class="row-card" id="setlist-card">
     <div id="sortable-cifras">
     {% for cifra in cifras %}
-    <div class="row-item row-item--sortable" data-cifra-id="{{ cifra.id }}">
-        <span class="row-handle" title="Arraste para reordenar"><i class="fas fa-grip-vertical"></i></span>
-        <span class="row-num">{{ loop.index }}</span>
+    <div class="row-item row-item--sortable row-item--numbered" data-cifra-id="{{ cifra.id }}">
+        <div class="row-prefix">
+            <span class="row-handle" title="Arraste para reordenar"><i class="fas fa-grip-vertical"></i></span>
+            <span class="row-num">{{ loop.index }}</span>
+        </div>
         <div class="row-info">
             <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">
                 <div class="row-title">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</div>
