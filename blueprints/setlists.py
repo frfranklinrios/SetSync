@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from models_setlist import (
     create_setlist, get_band_setlists, get_setlist, delete_setlist,
     add_cifra_to_setlist, remove_cifra_from_setlist, reorder_setlist, get_setlist_cifras,
-    set_setlist_vocalist,
+    set_setlist_vocalist, set_setlist_cifra_vocalist,
 )
 from db import get_band, is_band_admin, is_band_member, get_band_cifras
 from blueprints.auth import login_required
@@ -148,6 +148,28 @@ def create(band_id):
         return redirect(url_for('setlists.view', setlist_id=setlist_id))
     return render_template('setlists/create.html', band=band)
 
+@setlists_bp.route('/<setlist_id>/cifra/<cifra_id>/vocalist', methods=['POST'])
+@login_required
+def set_cifra_vocalist(setlist_id, cifra_id):
+    """Cantor(a) desta música na setlist."""
+    from db import band_vocalist_belongs_to_band, get_band_vocalist, get_cifra
+    from blueprints.cifras import cifra_display_key, vocalist_entry_display_name
+    setlist = get_setlist(setlist_id)
+    ok, band = _require_setlist_access(setlist, session['user_id'])
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    data = request.get_json(silent=True) or {}
+    vid = (data.get('vocalist_id') or '').strip()
+    if vid and not band_vocalist_belongs_to_band(vid, band['id']):
+        return jsonify({'ok': False, 'error': 'Cantor inválido'}), 400
+    set_setlist_cifra_vocalist(setlist_id, cifra_id, vid or None)
+    cifra = get_cifra(cifra_id)
+    v = get_band_vocalist(vid) if vid else None
+    vname = vocalist_entry_display_name(v) if v else ''
+    display_key = cifra_display_key(cifra, vocalist_id=vid) if cifra else ''
+    return jsonify({'ok': True, 'vocalist_id': vid, 'vocalist_name': vname, 'display_key': display_key})
+
+
 @setlists_bp.route('/<setlist_id>/vocalist', methods=['POST'])
 @login_required
 def set_vocalist(setlist_id):
@@ -180,21 +202,21 @@ def view(setlist_id):
         flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
 
-    from db import get_band_vocalists, band_vocalist_belongs_to_band
-    from blueprints.cifras import get_active_vocalist_id, active_vocalist_label
+    from db import get_band_vocalists, get_band_vocalist
+    from blueprints.cifras import cifra_display_key, vocalist_entry_display_name
 
-    if 'vocalist' in request.args:
-        vid = request.args.get('vocalist', '').strip()
-        if vid and not band_vocalist_belongs_to_band(vid, band['id']):
-            flash('Cantor não encontrado nesta banda.', 'danger')
-        else:
-            set_setlist_vocalist(setlist_id, vid or None)
-        return redirect(url_for('setlists.view', setlist_id=setlist_id))
-
-    cifras = get_setlist_cifras(setlist_id)
+    cifras_raw = get_setlist_cifras(setlist_id)
     vocalists = get_band_vocalists(band['id'])
-    active_vocalist_id = get_active_vocalist_id(band['id'], setlist_id=setlist_id)
-    vocalist_name = active_vocalist_label(band['id'], setlist_id=setlist_id)
+    default_vid = vocalists[0]['id'] if vocalists else None
+    cifras = []
+    for c in cifras_raw:
+        row = dict(c)
+        vid = row.get('setlist_vocalist_id') or default_vid
+        row['row_vocalist_id'] = vid
+        v = get_band_vocalist(vid) if vid else None
+        row['row_vocalist_name'] = vocalist_entry_display_name(v) if v else ''
+        row['row_display_key'] = cifra_display_key(c, vocalist_id=vid) if c.get('tom_original') else ''
+        cifras.append(row)
 
     return render_template(
         'setlists/view.html',
@@ -202,6 +224,4 @@ def view(setlist_id):
         band=band,
         cifras=cifras,
         vocalists=vocalists,
-        active_vocalist_id=active_vocalist_id,
-        vocalist_name=vocalist_name,
     )

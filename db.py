@@ -129,6 +129,7 @@ def init_db():
     _add_column('bands', 'vocalist_user_id', 'TEXT')
     _add_column('bands', 'vocalist_name', 'TEXT')
     _add_column('setlists', 'vocalist_id', 'TEXT')
+    _add_column('setlist_cifras', 'vocalist_id', 'TEXT')
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS band_vocalists (
