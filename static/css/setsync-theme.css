@@ -1,0 +1,285 @@
+/**
+ * SetSync — contraste legível em todo o app (tema claro e escuro).
+ * Complementa Bootstrap; use variáveis --text, --muted, --hint do index.html.
+ */
+
+:root {
+  --hint: #5b6570;
+  --placeholder: #9ca3af;
+  --link: var(--accent-dark);
+}
+
+[data-theme="light"] {
+  --hint: #5b6570;
+  --placeholder: #9ca3af;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --muted: #a8b8cc;
+  --hint: #c8d4e4;
+  --placeholder: #8b9cb3;
+
+  /* Bootstrap 5.3 — evita cinza ilegível do tema padrão */
+  --bs-body-color: #e2e8f0;
+  --bs-body-bg: #0f172a;
+  --bs-secondary-color: #b8c5d6;
+  --bs-tertiary-color: #94a3b8;
+  --bs-secondary-bg: #1e293b;
+  --bs-tertiary-bg: #0f172a;
+  --bs-border-color: #334155;
+  --bs-link-color: #5eead4;
+  --bs-link-hover-color: #99f6e4;
+  --bs-heading-color: #f1f5f9;
+  --bs-emphasis-color: #f8fafc;
+  --bs-form-valid-color: #86efac;
+  --bs-form-invalid-color: #fca5a5;
+}
+
+/* ── Texto secundário (Bootstrap + utilitários) ── */
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .text-body-secondary,
+[data-theme="dark"] .text-secondary {
+  color: var(--muted) !important;
+}
+
+[data-theme="dark"] small,
+[data-theme="dark"] .small,
+[data-theme="dark"] .form-text,
+[data-theme="dark"] .form-check-label,
+[data-theme="dark"] .form-label,
+[data-theme="dark"] legend,
+[data-theme="dark"] .blockquote-footer,
+[data-theme="dark"] .figure-caption,
+[data-theme="dark"] .modal-option-title,
+[data-theme="dark"] .chord-notes {
+  color: var(--hint) !important;
+}
+
+[data-theme="dark"] .card-header {
+  color: var(--hint) !important;
+}
+
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] .form-select::placeholder {
+  color: var(--placeholder) !important;
+  opacity: 1;
+}
+
+/* ── Links ── */
+[data-theme="dark"] a:not(.btn):not(.nav-link):not(.dropdown-item):not(.stretched-link):not(.band-tile) {
+  color: var(--chord-highlight-soft);
+}
+[data-theme="dark"] a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
+  color: #99f6e4;
+}
+
+[data-theme="dark"] .btn-link {
+  color: var(--chord-highlight-soft) !important;
+}
+[data-theme="dark"] .btn-link:hover {
+  color: #99f6e4 !important;
+}
+
+/* ── Breadcrumb, tabs, paginação ── */
+[data-theme="dark"] .breadcrumb-item,
+[data-theme="dark"] .breadcrumb-item a {
+  color: var(--muted) !important;
+}
+[data-theme="dark"] .breadcrumb-item.active {
+  color: var(--hint) !important;
+}
+[data-theme="dark"] .breadcrumb-item + .breadcrumb-item::before {
+  color: var(--placeholder) !important;
+}
+
+[data-theme="dark"] .nav-tabs .nav-link {
+  color: var(--muted) !important;
+}
+[data-theme="dark"] .nav-tabs .nav-link.active {
+  color: var(--text) !important;
+  background: #0b1422 !important;
+  border-color: var(--border) var(--border) #0b1422 !important;
+}
+
+[data-theme="dark"] .page-link {
+  background: #0c1520;
+  border-color: var(--border);
+  color: var(--hint);
+}
+[data-theme="dark"] .page-link:hover {
+  background: #1e293b;
+  color: var(--text);
+}
+[data-theme="dark"] .page-item.active .page-link {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #042f2e;
+}
+
+/* ── Tabelas e modais ── */
+[data-theme="dark"] .table {
+  --bs-table-color: var(--text);
+  --bs-table-border-color: var(--border);
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.03);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
+}
+[data-theme="dark"] .table thead th {
+  color: var(--hint) !important;
+}
+
+[data-theme="dark"] .modal-content {
+  background: #0b1422;
+  border-color: var(--border);
+  color: var(--text);
+}
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+  border-color: var(--border);
+}
+[data-theme="dark"] .modal-title {
+  color: var(--text);
+}
+
+[data-theme="dark"] .input-group-text {
+  background: #080f1e;
+  border-color: var(--border);
+  color: var(--hint);
+}
+
+[data-theme="dark"] .list-group-item-action {
+  color: var(--text);
+}
+[data-theme="dark"] .list-group-item-action .text-muted {
+  color: var(--muted) !important;
+}
+
+/* ── Badges e pills ── */
+[data-theme="dark"] .badge.bg-secondary,
+[data-theme="dark"] .badge.bg-light {
+  background: #1e293b !important;
+  color: var(--hint) !important;
+  border: 1px solid var(--border);
+}
+
+[data-theme="dark"] .tile-badge {
+  color: var(--hint);
+}
+[data-theme="dark"] .tile-badge.role-admin {
+  color: #5eead4 !important;
+  border-color: rgba(94, 234, 212, 0.45) !important;
+  background: rgba(45, 212, 191, 0.14) !important;
+}
+
+[data-theme="dark"] .row-badge {
+  color: var(--hint);
+}
+[data-theme="dark"] .row-badge.owner,
+[data-theme="dark"] .row-badge[style*="accent"] {
+  color: #5eead4 !important;
+}
+
+/* ── Botões outline ── */
+[data-theme="dark"] .btn-outline-secondary {
+  color: var(--hint) !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .btn-outline-secondary:hover {
+  color: var(--text) !important;
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] .btn-outline-primary {
+  color: var(--chord-highlight-soft) !important;
+  border-color: var(--chord-highlight-border) !important;
+}
+[data-theme="dark"] .btn-outline-primary:hover {
+  background: var(--chord-highlight-bg) !important;
+  color: #99f6e4 !important;
+}
+
+/* ── Accordions, alerts já no index — reforço ── */
+[data-theme="dark"] .accordion-button {
+  background: #0b1422;
+  color: var(--text);
+}
+[data-theme="dark"] .accordion-button:not(.collapsed) {
+  background: #0f172a;
+  color: var(--text);
+}
+[data-theme="dark"] .accordion-body {
+  background: #0b1422;
+  color: var(--hint);
+}
+
+/* ── Cifras / listas (templates com cores fixas claras) ── */
+[data-theme="dark"] .sl-item {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .sl-item.active {
+  color: var(--chord-highlight-soft) !important;
+}
+[data-theme="dark"] .sl-num,
+[data-theme="dark"] .sl-key {
+  color: var(--muted) !important;
+}
+
+[data-theme="dark"] .cifra-tab-line,
+[data-theme="dark"] .cifra-body .cifra-lyric,
+[data-theme="dark"] .cifra-body .sp-word {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .empty,
+[data-theme="dark"] .tab-count {
+  color: var(--muted);
+}
+
+[data-theme="dark"] .section-title {
+  color: var(--muted) !important;
+}
+
+[data-theme="dark"] .band-desc,
+[data-theme="dark"] .row-sub,
+[data-theme="dark"] .tab-count {
+  color: var(--muted) !important;
+}
+
+[data-theme="dark"] em[style*="color: #888"],
+[data-theme="dark"] em[style*="color:#888"] {
+  color: var(--muted) !important;
+}
+
+/* ── Chord modal chips / botões inativos ── */
+[data-theme="dark"] .chord-inst-btn,
+[data-theme="dark"] .bass-opt-btn {
+  color: var(--hint) !important;
+}
+[data-theme="dark"] .chord-chip {
+  color: var(--chord-highlight-soft) !important;
+}
+
+[data-theme="dark"] .chord-modal .btn-close {
+  filter: invert(1) brightness(1.5);
+}
+
+/* ── Ajuda: list-group links ── */
+[data-theme="dark"] .list-group-item-action strong {
+  color: var(--text);
+}
+
+/* ── Modo tocar ── */
+[data-theme="dark"] body.play-mode #play-bar .pb-meta,
+[data-theme="dark"] body.play-mode .font-ctrl span,
+[data-theme="dark"] body.play-mode .transpose-mini {
+  color: var(--muted) !important;
+}
+[data-theme="dark"] body.play-mode #play-bar .pb-title {
+  color: var(--text) !important;
+}
+
+/* ── Editor Lead Sheet (página própria) ── */
+[data-theme="dark"] .card-ss .form-text,
+[data-theme="dark"] .card-ss .text-muted {
+  color: var(--hint) !important;
+}
