@@ -2,56 +2,6 @@
 {% block title %}Setlists - {{ band.name }}{% endblock %}
 {% block content %}
 
-<style>
-.row-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; }
-[data-theme="dark"] .row-card { background: #0b1422; }
-.row-item {
-    display: flex; align-items: center; gap: 0.75rem;
-    padding: 0.9rem 1rem;
-    border-bottom: 1px solid var(--border);
-    background: inherit;
-    transition: background 0.12s;
-}
-.row-item:last-child { border-bottom: none; }
-.row-item:hover { background: var(--bg); }
-[data-theme="dark"] .row-item:hover { background: #0f172a; }
-.row-info { flex: 1; min-width: 0; }
-.row-info a { color: var(--text); text-decoration: none; }
-.row-info a:hover { color: var(--accent); }
-.row-title { font-weight: 600; font-size: 0.95rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row-badge {
-    font-size: 0.72rem; font-weight: 600;
-    color: var(--muted); background: var(--bg);
-    padding: 0.22rem 0.55rem; border-radius: 999px;
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-}
-[data-theme="dark"] .row-badge { background: #0f172a; }
-.icon-btn {
-    width: 30px; height: 30px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    border-radius: 6px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.78rem;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.12s;
-}
-.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
-.icon-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
-.row-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
-.empty { text-align: center; padding: 3rem 1rem; color: var(--muted); border: 1px dashed var(--border); border-radius: 10px; }
-.empty i { font-size: 1.8rem; margin-bottom: 0.75rem; display: block; }
-@media (max-width: 600px) {
-    .row-sub { display: none; }
-}
-</style>
-
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb" style="font-size:0.82rem;">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
@@ -60,7 +10,7 @@
     </ol>
 </nav>
 
-<div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+<div class="page-head">
     <div>
         <h2 class="mb-0" style="font-size:1.4rem;">Setlists</h2>
         <p class="text-muted mb-0" style="font-size:0.85rem;">
@@ -79,7 +29,7 @@
         <div class="row-info">
             <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}">
                 <div class="row-title">{{ setlist.name }}</div>
-                <div class="row-sub">
+                <div class="row-sub row-sub--optional">
                     {% if setlist.description %}{{ setlist.description }}{% else %}—{% endif %}
                 </div>
             </a>

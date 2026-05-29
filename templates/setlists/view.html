@@ -2,185 +2,6 @@
 {% block title %}Setlist: {{ setlist.name }}{% endblock %}
 {% block content %}
 
-<style>
-.sl-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-}
-[data-theme="dark"] .sl-card { background: #0b1422; }
-
-.sl-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1rem;
-    border-bottom: 1px solid var(--border);
-    background: inherit;
-    transition: background 0.12s;
-}
-.sl-row:last-child { border-bottom: none; }
-.sl-row:hover { background: var(--bg); }
-[data-theme="dark"] .sl-row:hover { background: #0f172a; }
-
-.sl-handle {
-    cursor: grab;
-    color: var(--muted);
-    font-size: 1rem;
-    width: 22px;
-    text-align: center;
-    user-select: none;
-    flex-shrink: 0;
-}
-.sl-handle:active { cursor: grabbing; }
-.sl-handle:hover { color: var(--accent); }
-
-.sl-num {
-    font-size: 0.78rem;
-    color: var(--muted);
-    min-width: 1.6rem;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
-.sl-info {
-    flex: 1;
-    min-width: 0;
-}
-.sl-title-link {
-    color: var(--text);
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 0.95rem;
-    display: block;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.sl-title-link:hover { color: var(--accent); }
-.sl-artist {
-    font-size: 0.78rem;
-    color: var(--muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.sl-perf {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex-shrink: 0;
-}
-.sl-vocalist {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--hint);
-    max-width: 5.5rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.sl-vocalist-sel {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text);
-    background: #0c1520;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 0.18rem 0.45rem;
-    max-width: 7rem;
-    cursor: pointer;
-}
-[data-theme="light"] .sl-vocalist-sel {
-    background: #fff;
-}
-.sl-tom {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--accent);
-    background: rgba(42,181,160,0.1);
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    border: 1px solid rgba(42,181,160,0.25);
-    flex-shrink: 0;
-}
-
-.sl-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex-shrink: 0;
-}
-.sl-icon-btn {
-    width: 30px; height: 30px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    border-radius: 6px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.78rem;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.12s;
-}
-.sl-icon-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-}
-.sl-icon-btn.danger:hover {
-    border-color: #ef4444;
-    color: #ef4444;
-}
-
-.sl-ghost {
-    opacity: 0.45;
-    background: rgba(42,181,160,0.08) !important;
-}
-.sl-chosen { background: rgba(42,181,160,0.04); }
-.sl-drag    { box-shadow: 0 8px 20px rgba(0,0,0,0.18); }
-
-#order-status {
-    font-size: 0.78rem;
-    color: var(--muted);
-    margin-left: 0.5rem;
-    transition: opacity 0.3s;
-    opacity: 0;
-}
-#order-status.show { opacity: 1; }
-#order-status.ok    { color: var(--accent); }
-#order-status.err   { color: #ef4444; }
-
-.hero {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.5rem;
-}
-.hero h2 {
-    margin-bottom: 0.25rem;
-    font-size: 1.6rem;
-}
-.tip {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin: 0.25rem 0 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-@media (max-width: 600px) {
-    .sl-artist { display: none; }
-    .sl-actions .sl-icon-btn.view-btn { display: none; }
-}
-</style>
-
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb" style="font-size:0.82rem;">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
@@ -192,7 +13,7 @@
 
 <div class="hero">
     <div>
-        <h2>{{ setlist.name }}</h2>
+        <h2 style="margin-bottom:0.25rem;font-size:1.6rem;">{{ setlist.name }}</h2>
         {% if setlist.description %}
         <p class="text-muted mb-0" style="font-size:0.9rem;">{{ setlist.description }}</p>
         {% endif %}
@@ -222,7 +43,7 @@
 {% if cifras %}
 <div class="tip">
     <i class="fas fa-grip-vertical"></i>
-    <span>Arraste pelo ícone à esquerda para reordenar as músicas. A nova ordem é salva automaticamente.</span>
+    <span>Arraste pelo ícone à esquerda para reordenar. A ordem é salva automaticamente.</span>
 </div>
 
 <div class="sl-card" id="setlist-card">
@@ -359,9 +180,9 @@
 </script>
 
 {% else %}
-<div class="text-center py-5">
-    <i class="fas fa-music fa-2x text-muted mb-3"></i>
-    <p class="text-muted mb-3">Nenhuma música na setlist ainda.</p>
+<div class="empty">
+    <i class="fas fa-music"></i>
+    <p class="mb-3" style="font-size:0.9rem;">Nenhuma música na setlist ainda.</p>
     <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i> Adicionar Primeira Música
     </a>

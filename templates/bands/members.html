@@ -3,44 +3,6 @@
 {% block title %}Membros - {{ band.name }}{% endblock %}
 
 {% block content %}
-<style>
-.row-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; }
-[data-theme="dark"] .row-card { background: #0b1422; }
-.row-item {
-    display: flex; align-items: center; gap: 0.75rem;
-    padding: 0.9rem 1rem;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.12s;
-}
-.row-item:last-child { border-bottom: none; }
-.row-item:hover { background: var(--bg); }
-[data-theme="dark"] .row-item:hover { background: #0f172a; }
-.row-info { flex: 1; min-width: 0; }
-.row-title { font-weight: 600; font-size: 0.95rem; line-height: 1.2; color: var(--text); }
-.row-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
-.row-badge {
-    font-size: 0.72rem; font-weight: 600;
-    color: var(--muted); background: var(--bg);
-    padding: 0.22rem 0.55rem; border-radius: 999px;
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-}
-[data-theme="dark"] .row-badge { background: #0f172a; }
-.row-badge.owner { color: var(--accent); border-color: rgba(42,181,160,0.35); background: rgba(42,181,160,0.08); }
-.icon-btn {
-    width: 30px; height: 30px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    border-radius: 6px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 0.78rem;
-    cursor: pointer;
-    transition: all 0.12s;
-}
-.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
-.icon-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
-</style>
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb" style="font-size:0.82rem;">
@@ -71,11 +33,11 @@
                 {% if band.owner_id == member.id %}
                 <span class="row-badge owner">Proprietário</span>
                 {% elif member.id in vocalist_user_ids %}
-                <span class="row-badge" style="color:var(--accent);border-color:var(--chord-highlight-border);">Cantor(a)</span>
+                <span class="row-badge owner">Cantor(a)</span>
                 {% elif member.role == 'admin' %}
-                <span class="row-badge">Admin</span>
+                <span class="row-badge neutral">Admin</span>
                 {% else %}
-                <span class="row-badge">Membro</span>
+                <span class="row-badge neutral">Membro</span>
                 {% endif %}
                 {% if band.owner_id != member.id and band.owner_id == current_user.id %}
                 <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
