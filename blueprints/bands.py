@@ -70,10 +70,13 @@ def view(band_id):
         setlists.append(s)
     owner = get_user(band['owner_id'])
     admin = is_band_admin(band_id, user_id)
+    from blueprints.cifras import vocalist_label_for_band
+    vocalist_name = vocalist_label_for_band(band_id)
 
     return render_template('bands/view.html', band=band, members=members,
                            cifras=cifras, setlists=setlists,
-                           owner=owner, is_admin=admin,
+                           owner=owner, vocalist_name=vocalist_name,
+                           is_admin=admin,
                            is_superadmin=is_superadmin(user_id))
 
 @bands_bp.route('/<band_id>/settings', methods=['GET', 'POST'])
@@ -87,13 +90,55 @@ def settings(band_id):
         return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
     
     if request.method == 'POST':
+        from db import get_user_by_username
         name = request.form.get('name', '').strip() or band['name']
         description = request.form.get('description', '').strip()
-        update_band(band_id, name, description)
+        vocalist_name = request.form.get('vocalist_name', '').strip()
+        link_account = request.form.get('vocalist_link_account') == '1'
+        vocalist_user_id = request.form.get('vocalist_user_id', '').strip()
+        vocalist_username = request.form.get('vocalist_username', '').strip()
+
+        if link_account:
+            if vocalist_username and not vocalist_user_id:
+                u = get_user_by_username(vocalist_username)
+                if not u:
+                    flash(f'Usuário "{vocalist_username}" não encontrado no SetSync.', 'danger')
+                    return redirect(url_for('bands.settings', band_id=band_id))
+                vocalist_user_id = u['id']
+            if vocalist_user_id:
+                u = get_user(vocalist_user_id)
+                if not u:
+                    flash('Conta selecionada não existe.', 'danger')
+                    return redirect(url_for('bands.settings', band_id=band_id))
+                if not vocalist_name:
+                    vocalist_name = (u.get('display_name') or '').strip() or u.get('username') or ''
+        else:
+            vocalist_user_id = ''
+
+        if not vocalist_name and not vocalist_user_id:
+            vocalist_name = ''
+            vocalist_user_id = ''
+
+        update_band(
+            band_id, name, description,
+            vocalist_user_id=vocalist_user_id,
+            vocalist_name=vocalist_name,
+        )
         flash('Configurações atualizadas', 'success')
         return redirect(url_for('bands.view', band_id=band_id))
-    
-    return render_template('bands/settings.html', band=band)
+
+    band_members = get_band_members(band_id)
+    linked_vocalist_username = None
+    if band.get('vocalist_user_id'):
+        u = get_user(band['vocalist_user_id'])
+        if u:
+            linked_vocalist_username = u.get('username')
+    return render_template(
+        'bands/settings.html',
+        band=band,
+        band_members=band_members,
+        linked_vocalist_username=linked_vocalist_username,
+    )
 
 @bands_bp.route('/<band_id>/members')
 @login_required

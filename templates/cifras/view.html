@@ -213,8 +213,6 @@
                 {% endfor %}
             {% elif conteudo_html %}
                 {{ conteudo_html | safe }}
-            {% elif (conteudo|default(''))|string|trim %}
-                {{ conteudo | default('') | highlight_chords | safe }}
             {% else %}
                 <em style="color: #888;">Cifra sem conteúdo.</em>
             {% endif %}
@@ -254,7 +252,12 @@
                     Tom cadastrado: <strong>{{ cifra.tom_original|normalize_tom }}</strong>
                 </p>
                 <p class="text-muted mb-2" style="font-size:0.75rem;">
-                    A transposição é salva para <strong>toda a banda</strong> (todos os membros veem o mesmo tom).
+                    {% if vocalist_name %}
+                    Tom de performance para <strong>{{ vocalist_name }}</strong> (cantor(a) da banda){% if vocalist_linked %} — conta vinculada{% endif %}.
+                    {% else %}
+                    Defina o cantor(a) em <a href="{{ url_for('bands.settings', band_id=band.id) }}">Configurações da banda</a>
+                    (nome livre ou conta depois). Enquanto isso, o tom vale para toda a banda.
+                    {% endif %}
                 </p>
                 <select class="transpose-select" onchange="location.href=CIFRA_BASE+'?transpose='+this.value">
                     {% for semitones, label in transpositions.items() %}

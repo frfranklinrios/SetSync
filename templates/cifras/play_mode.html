@@ -722,7 +722,8 @@ body.play-mode.edges-hint .tap-zone {
         </button>
 
         <div class="bar-group-extra">
-            <select id="transpose-sel" class="transpose-mini" onchange="onTransposeChange(this.value)" title="Transpor">
+            <select id="transpose-sel" class="transpose-mini" onchange="onTransposeChange(this.value)"
+                    title="{% if vocalist_name %}Tom para {{ vocalist_name }}{% else %}Transpor{% endif %}">
                 <option value="">Original (cadastro)</option>
                 {% for key in key_options %}
                 <option value="{{ key }}">{{ key }}</option>
@@ -931,86 +932,20 @@ body.play-mode.edges-hint .tap-zone {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    function playModeEmptyLeadSheetMessage() {
+        return '<div class="grade-empty-play" style="padding:2rem 4vw;color:#475569;font-size:0.9rem;">' +
+            'Lead Sheet não disponível para esta música. Configure no editor Lead Sheet da cifra.' +
+            '</div>';
+    }
+
     function buildLeadSheetHtml(doc, cifraMeta) {
         if (!LeadsheetPlayRender || !LeadsheetPlayRender.isLeadsheet(doc)) {
-            return buildGradeHtml(Array.isArray(doc) ? doc : null);
+            return playModeEmptyLeadSheetMessage();
         }
         return LeadsheetPlayRender.renderHtml(doc, {
             wrapWidth: getLeadSheetWidth(),
             hideHeader: true
         });
-    }
-
-    function buildGradeHtml(gradeData) {
-        // Visualização "anterior" (mais simples e compacta), usada no modo tocar:
-        // - não depende do renderer grade-visual
-        // - usa as classes .grade-*-play já presentes no template
-        if (!gradeData || !gradeData.length) {
-            return '<div class="grade-empty-play" style="padding:2rem 4vw;color:#475569;font-size:0.9rem;">Grade harmônica não disponível para esta música.</div>';
-        }
-
-        // gradeData: lista "flat" de compassos {parte?, secao?, acordes:[...]}
-        var hasParte = gradeData.some(function (it) { return it && it.parte != null && String(it.parte).trim() !== ''; });
-        var parts = [];
-        var partMap = {};
-        function partKey(it) {
-            if (!hasParte) return '__UNICO__';
-            return it && it.parte ? String(it.parte).toUpperCase() : '__UNICO__';
-        }
-        gradeData.forEach(function (it) {
-            var k = partKey(it);
-            if (!partMap[k]) {
-                partMap[k] = { key: k, title: (k === '__UNICO__' ? 'Progressão' : ('Parte ' + k)), items: [] };
-                parts.push(partMap[k]);
-            }
-            partMap[k].items.push(it || {});
-        });
-
-        function esc(s) { return escHtml(s == null ? '' : String(s)); }
-
-        function renderBar(acordes) {
-            var a = Array.isArray(acordes) ? acordes : [];
-            if (!a.length) a = ['%'];
-            var out = '';
-            for (var i = 0; i < a.length; i++) {
-                var chord = String(a[i] || '').trim();
-                if (i) out += '<span class="grade-sep-play">·</span>';
-                if (chord === '%') out += '<span class="grade-repeat-play">%</span>';
-                else out += '<span class="grade-chord-play">' + esc(chord) + '</span>';
-            }
-            return out;
-        }
-
-        var html = '<div class="grade-bars-play">';
-        parts.forEach(function (p) {
-            html += '<div class="grade-part-play">';
-            if (p.title) html += '<span class="grade-part-title-play">' + esc(p.title) + '</span>';
-
-            var barsInLine = 0;
-            html += '<span class="grade-inline-play"><span class="grade-line-play">';
-
-            (p.items || []).forEach(function (it) {
-                if (it.secao) {
-                    // quebra a linha ao trocar seção
-                    html += '</span><span class="grade-line-play"><span class="grade-part-title-play" style="margin:0 0 .2rem 0; font-size:.75em;">▸ ' + esc(it.secao) + '</span></span>';
-                    html += '<span class="grade-line-play">';
-                    barsInLine = 0;
-                }
-
-                if (barsInLine > 0) html += '<span class="grade-sep-play">|</span>';
-                html += renderBar(it.acordes);
-                barsInLine++;
-                if (barsInLine >= 4) {
-                    html += '</span><span class="grade-line-play">';
-                    barsInLine = 0;
-                }
-            });
-
-            html += '</span></span>'; // grade-line-play + grade-inline-play
-            html += '</div>'; // grade-part-play
-        });
-        html += '</div>'; // grade-bars-play
-        return html;
     }
 
     function buildStructuredHtml(cifraData) {
@@ -1106,8 +1041,7 @@ body.play-mode.edges-hint .tap-zone {
         if (htmlCache[key]) { cb(htmlCache[key]); return; }
         var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
                     .replace('__ID__', encodeURIComponent(id))
-                    + '?semitones=' + semitones + '&html=1'
-                    + (hasTab ? '&play=1' : '');
+                    + '?semitones=' + semitones + '&html=1&play=1';
         document.getElementById('cifra-content').classList.add('fading');
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
@@ -1181,6 +1115,9 @@ body.play-mode.edges-hint .tap-zone {
         var t = getTranspose(c);
         document.getElementById('bar-title').textContent = c.titulo;
         var tomLabel = 'Tom ' + getDisplayKey(c);
+        {% if vocalist_name %}
+        tomLabel += ' · {{ vocalist_name|e }}';
+        {% endif %}
         if (t !== 0) {
             tomLabel += ' (cadastro: ' + (c.tom_original || c.tom_root || c.tom) + ')';
         }

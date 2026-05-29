@@ -19,7 +19,7 @@
         <div class="card mb-4">
             <div class="card-header">Informações da Banda</div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" id="band-settings-form">
                     <div class="mb-3">
                         <label for="name" class="form-label">Nome da Banda</label>
                         <input type="text" class="form-control" id="name" name="name" value="{{ band.name }}" required>
@@ -28,6 +28,54 @@
                         <label for="description" class="form-label">Descrição</label>
                         <textarea class="form-control" id="description" name="description" rows="3">{{ band.description or '' }}</textarea>
                     </div>
+
+                    <hr class="my-4">
+                    <h6 class="mb-3"><i class="fas fa-microphone me-1"></i> Cantor(a) da banda</h6>
+
+                    <div class="mb-3">
+                        <label for="vocalist_name" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="vocalist_name" name="vocalist_name"
+                               value="{{ band.vocalist_name or '' }}"
+                               placeholder="Ex.: Ana, João…">
+                        <div class="form-text">
+                            Pode ser alguém que ainda não usa o SetSync. O tom transposto fica associado a essa pessoa.
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="vocalist_link_account"
+                               name="vocalist_link_account" value="1"
+                               {% if band.vocalist_user_id %}checked{% endif %}>
+                        <label class="form-check-label" for="vocalist_link_account">
+                            Vincular a uma conta no SetSync
+                        </label>
+                        <div class="form-text">
+                            Opcional. Quando a pessoa se cadastrar, informe o usuário (login) para associar os tons salvos.
+                            Não precisa ser membro da banda.
+                        </div>
+                    </div>
+
+                    <div id="vocalist-account-fields" class="{% if not band.vocalist_user_id %}d-none{% endif %}">
+                        <div class="mb-3">
+                            <label for="vocalist_user_id" class="form-label">Conta (membro da banda)</label>
+                            <select class="form-select" id="vocalist_user_id" name="vocalist_user_id">
+                                <option value="">— Escolher depois ou usar login abaixo —</option>
+                                {% for m in band_members %}
+                                <option value="{{ m.id }}" {% if band.vocalist_user_id == m.id %}selected{% endif %}>
+                                    {{ m.display_name or m.username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="vocalist_username" class="form-label">Ou usuário (login)</label>
+                            <input type="text" class="form-control" id="vocalist_username" name="vocalist_username"
+                                   placeholder="login no SetSync"
+                                   value="{% if band.vocalist_user_id and linked_vocalist_username %}{{ linked_vocalist_username }}{% endif %}">
+                            <div class="form-text">Use se a pessoa já tem conta mas ainda não entrou na banda.</div>
+                        </div>
+                    </div>
+
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">Salvar Alterações</button>
                         <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary">Cancelar</a>
@@ -51,6 +99,19 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var cb = document.getElementById('vocalist_link_account');
+    var panel = document.getElementById('vocalist-account-fields');
+    if (!cb || !panel) return;
+    function sync() {
+        panel.classList.toggle('d-none', !cb.checked);
+    }
+    cb.addEventListener('change', sync);
+    sync();
+})();
+</script>
 
 <!-- Modal de confirmação -->
 <div class="modal fade" id="deleteModal" tabindex="-1">

@@ -19,7 +19,8 @@ from leadsheet.converter import (
 from blueprints.auth import login_required
 from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra,
                 delete_cifra, is_band_member, is_band_admin,
-                set_cifra_transpose_semitones)
+                set_cifra_transpose_semitones, get_band_vocalist_user_id,
+                get_vocalist_user, get_cifra_vocalist_transpose, vocalist_display_name)
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   pychord_highlight_chords, highlight_chords_html,
                   split_chord_progression, chord_components_info,
@@ -36,9 +37,15 @@ PLAY_TARGET_KEY_SESSION = 'play_target_key'
 
 
 def cifra_transpose_semitones(cifra) -> int:
-    """Semitons de transposição da banda (coluna no banco)."""
+    """Semitons de transposição (cantor da banda ou legado na cifra)."""
     if not cifra:
         return 0
+    band_id = cifra.get('band_id')
+    cid = cifra.get('id')
+    if band_id and cid:
+        vid = get_band_vocalist_user_id(band_id)
+        if vid:
+            return get_cifra_vocalist_transpose(cid, vid)
     try:
         return int(cifra.get('transpose_semitones') or 0)
     except (TypeError, ValueError):
@@ -46,13 +53,18 @@ def cifra_transpose_semitones(cifra) -> int:
 
 
 def get_stored_transpose_semitones(cifra_id):
-    """Transposição compartilhada da banda para esta cifra."""
+    """Transposição efetiva para exibição (tom do cantor, se houver)."""
     cifra = get_cifra(cifra_id)
     return cifra_transpose_semitones(cifra) if cifra else 0
 
 
+def vocalist_label_for_band(band_id: str) -> str | None:
+    """Nome exibível do cantor(a) da banda."""
+    return vocalist_display_name(band_id)
+
+
 def cifra_display_key(cifra):
-    """Tom para exibir em listas: transposição da banda ou cadastro."""
+    """Tom para exibir em listas: transposição do cantor ou cadastro."""
     if not cifra:
         return ''
     tom = (cifra.get('tom_original') or '').strip()
@@ -63,7 +75,7 @@ def cifra_display_key(cifra):
 
 
 def resolve_cifra_transpose(cifra_id, tom_original):
-    """Transposição: ?transpose= grava no banco (toda a banda); senão lê do banco."""
+    """Transposição: ?transpose= grava para o cantor da banda; senão lê do banco."""
     if 'transpose' in request.args:
         semitones = request.args.get('transpose', 0, type=int)
         set_cifra_transpose_semitones(cifra_id, semitones)
@@ -347,14 +359,13 @@ def enrich_cifra_for_tocar(cifra):
     c['tom_original'] = normalize_tom_label(c.get('tom_original') or '')
     raw = sanitize_tab_html_artifacts(c.get('conteudo') or '')
     has_tab = content_has_tablatura(raw)
-    # Com tablatura: HTML dedicado ao palco (TAB + acorde acima da letra).
+    # Layout de palco unificado (sp-line / TAB); structured é preferido no JS quando existir.
     if has_tab:
         c['cifra_structured'] = None
-        c['html'] = highlight_chords_play_html(raw)
     else:
         structured = _load_best_structured_cifra(c, 0)
         c['cifra_structured'] = structured if structured else None
-        c['html'] = highlight_chords_html(raw)
+    c['html'] = highlight_chords_play_html(raw)
     c['tom_root'] = parse_tom_root(c.get('tom_original'))
     c['transpose_map'] = build_transpose_map(c.get('tom_original'))
     c['transpose_semitones'] = cifra_transpose_semitones(c)
@@ -417,13 +428,19 @@ def view(cifra_id):
     has_tab = content_has_tablatura(conteudo)
     conteudo_html = None
     if has_tab:
-        # Mesmo layout do modo tocar: TAB formatada + acorde acima da letra
         grouped_cifra = None
+        conteudo_html = highlight_chords_play_html(conteudo)
+    elif not grouped_cifra and (conteudo or '').strip():
+        # Mesmo layout do modo tocar (sp-line), não o highlight_chords legado
         conteudo_html = highlight_chords_play_html(conteudo)
     setlist = get_band_cifras(cifra['band_id'])
     cifra_index = next((i for i, c in enumerate(setlist) if c['id'] == cifra_id), 0)
     prev_cifra = setlist[cifra_index - 1] if cifra_index > 0 else None
     next_cifra = setlist[cifra_index + 1] if cifra_index < len(setlist) - 1 else None
+
+    vocalist = get_vocalist_user(band['id'])
+    vocalist_name = vocalist_label_for_band(band['id'])
+    vocalist_linked = bool(vocalist)
 
     return render_template('cifras/view.html',
                            cifra=cifra,
@@ -441,8 +458,28 @@ def view(cifra_id):
                            cifra_index=cifra_index,
                            prev_cifra=prev_cifra,
                            next_cifra=next_cifra,
+                           vocalist=vocalist,
+                           vocalist_name=vocalist_name,
+                           vocalist_linked=vocalist_linked,
                            is_admin=is_band_admin(cifra['band_id'], user_id),
                            is_member=is_band_member(cifra['band_id'], user_id))
+
+def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None):
+    """Renderiza o modo tocar (mesmo layout para banda e setlist)."""
+    vocalist_name = vocalist_label_for_band(band['id']) if band else None
+    return render_template(
+        'cifras/play_mode.html',
+        setlist=setlist,
+        band=band,
+        all_cifras=all_cifras,
+        key_options=get_absolute_key_list(),
+        start_idx=start_idx,
+        is_virtual=is_virtual,
+        exit_url=exit_url,
+        vocalist_name=vocalist_name,
+        play_target_key=session.get(PLAY_TARGET_KEY_SESSION) or '',
+    )
+
 
 @cifras_bp.route('/band/<band_id>/tocar')
 @login_required
@@ -473,15 +510,8 @@ def tocar_band(band_id):
         'band_id': band_id,
         'name': f'Cifras de {band["name"]}',
     }
-    return render_template(
-        'setlists/tocar.html',
-        setlist=virtual_setlist,
-        band=band,
-        all_cifras=all_cifras,
-        key_options=get_absolute_key_list(),
-        start_idx=start_idx,
-        is_virtual=True,
-        play_target_key=session.get(PLAY_TARGET_KEY_SESSION) or '',
+    return render_play_mode(
+        virtual_setlist, band, all_cifras, start_idx=start_idx, is_virtual=True
     )
 
 
@@ -598,7 +628,7 @@ def delete(cifra_id):
 @cifras_bp.route('/<cifra_id>/transpose', methods=['POST'])
 @login_required
 def save_transpose(cifra_id):
-    """Salva transposição da banda (compartilhada entre membros)."""
+    """Salva transposição para o cantor(a) da banda (ou tom único se não houver cantor)."""
     cifra = get_cifra(cifra_id)
     if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
         return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
@@ -611,10 +641,12 @@ def save_transpose(cifra_id):
     else:
         session.pop(PLAY_TARGET_KEY_SESSION, None)
     session.modified = True
+    vname = vocalist_label_for_band(cifra['band_id'])
     return jsonify({
         'ok': True,
         'semitones': semitones,
         'display_key': key_at_transpose(tom, semitones),
+        'vocalist_name': vname,
     })
 
 
@@ -650,10 +682,8 @@ def get_transposed(cifra_id):
         'display_key': key_at_transpose(cifra['tom_original'], semitones),
     }
     if want_html:
-        if want_play or content_has_tablatura(transposed):
-            payload['html'] = highlight_chords_play_html(transposed)
-        else:
-            payload['html'] = highlight_chords_html(transposed)
+        # Modo tocar sempre usa layout de palco (sp-line / TAB).
+        payload['html'] = highlight_chords_play_html(transposed)
     else:
         payload['conteudo'] = transposed
 

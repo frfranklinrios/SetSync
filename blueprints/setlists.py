@@ -26,15 +26,14 @@ def _require_setlist_access(setlist, user_id):
 @setlists_bp.route('/<setlist_id>/tocar')
 @login_required
 def tocar(setlist_id):
-    from util import get_absolute_key_list
-    from blueprints.cifras import enrich_cifra_for_tocar
+    from blueprints.cifras import enrich_cifra_for_tocar, render_play_mode
     user_id = session['user_id']
     setlist = get_setlist(setlist_id)
     ok, band = _require_setlist_access(setlist, user_id)
     if not ok:
         flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
-    all_cifras = [enrich_cifra_for_tocar(c) for c in get_setlist_cifras(setlist_id)]
+    all_cifras = [enrich_cifra_for_tocar(dict(c)) for c in get_setlist_cifras(setlist_id)]
     start_id = request.args.get('start')
     start_idx = 0
     if start_id:
@@ -42,15 +41,7 @@ def tocar(setlist_id):
             if str(c['id']) == str(start_id):
                 start_idx = i
                 break
-    return render_template(
-        'setlists/tocar.html',
-        setlist=setlist,
-        band=band,
-        all_cifras=all_cifras,
-        key_options=get_absolute_key_list(),
-        start_idx=start_idx,
-        play_target_key=session.get('play_target_key') or '',
-    )
+    return render_play_mode(setlist, band, all_cifras, start_idx=start_idx, is_virtual=False)
 
 # Ordenar músicas da setlist via AJAX (drag-and-drop inline)
 @setlists_bp.route('/<setlist_id>/reorder', methods=['POST'])
