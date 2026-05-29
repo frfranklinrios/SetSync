@@ -722,9 +722,9 @@ body.play-mode.edges-hint .tap-zone {
         </button>
 
         <div class="bar-group-extra">
-            {% if vocalists|length > 1 %}
+            {% if vocalists|length > 0 %}
             <select id="vocalist-sel" class="transpose-mini me-1" onchange="onVocalistChange(this.value)"
-                    title="Cantor(a)">
+                    title="Cantor(a) desta setlist">
                 {% for v in vocalists %}
                 <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
                 {% endfor %}
@@ -805,7 +805,7 @@ body.play-mode.edges-hint .tap-zone {
 
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}"></script>
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -815,6 +815,8 @@ body.play-mode.edges-hint .tap-zone {
     var CIFRAS = JSON.parse(document.getElementById('cifras-data').textContent);
     var START_IDX = {{ start_idx|default(0) }};
     var EXIT_URL = {{ (exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id))) | tojson }};
+    var SETLIST_ID = {{ (setlist.id if setlist and not is_virtual|default(false) else none)|tojson }};
+    var SETLIST_VOCALIST_URL = {{ (url_for('setlists.set_vocalist', setlist_id=setlist.id) if setlist and not is_virtual|default(false) else none)|tojson }};
 
     var current = Math.max(0, Math.min(CIFRAS.length - 1, START_IDX));
     var VALID_VOCALISTS = [{% for v in vocalists %}{{ v.id|tojson }}{% if not loop.last %}, {% endif %}{% endfor %}];
@@ -1232,6 +1234,14 @@ body.play-mode.edges-hint .tap-zone {
         } else {
             localStorage.removeItem('play.vocalistId');
             sessionStorage.removeItem('play.vocalistId');
+        }
+        if (SETLIST_VOCALIST_URL) {
+            fetch(SETLIST_VOCALIST_URL, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ vocalist_id: activeVocalistId || null })
+            }).catch(function () {});
         }
         render();
     }

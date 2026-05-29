@@ -43,8 +43,12 @@ def _vocalist_session_key(band_id: str) -> str:
     return f'{VOCALIST_SESSION_PREFIX}{band_id}'
 
 
-def get_active_vocalist_id(band_id: str, vocalist_id: str | None = None) -> str | None:
-    """Cantor ativo na sessão (query ?vocalist= ou primeiro da lista)."""
+def get_active_vocalist_id(
+    band_id: str,
+    vocalist_id: str | None = None,
+    setlist_id=None,
+) -> str | None:
+    """Cantor ativo: parâmetro, setlist, sessão ou primeiro da lista."""
     if not band_id:
         return None
     vocalists = get_band_vocalists(band_id)
@@ -62,14 +66,25 @@ def get_active_vocalist_id(band_id: str, vocalist_id: str | None = None) -> str 
     q = request.args.get('vocalist', '').strip() if request else ''
     if q and q in ids:
         return _store(q)
+    if setlist_id:
+        from models_setlist import get_setlist
+        sl = get_setlist(setlist_id)
+        if sl:
+            sv = sl.get('vocalist_id')
+            if sv and sv in ids:
+                return sv
     stored = session.get(_vocalist_session_key(band_id))
     if stored and stored in ids:
         return stored
     return vocalists[0]['id']
 
 
-def active_vocalist_label(band_id: str, vocalist_id: str | None = None) -> str | None:
-    vid = get_active_vocalist_id(band_id, vocalist_id)
+def active_vocalist_label(
+    band_id: str,
+    vocalist_id: str | None = None,
+    setlist_id=None,
+) -> str | None:
+    vid = get_active_vocalist_id(band_id, vocalist_id, setlist_id=setlist_id)
     if not vid:
         return None
     v = get_band_vocalist(vid)
@@ -102,11 +117,13 @@ def get_stored_transpose_semitones(cifra_id, vocalist_id: str | None = None):
     return cifra_transpose_semitones(cifra, vocalist_id) if cifra else 0
 
 
-def cifra_display_key(cifra, vocalist_id: str | None = None):
+def cifra_display_key(cifra, vocalist_id: str | None = None, setlist_id=None):
     """Tom para exibir em listas: transposição do cantor ou cadastro."""
     if not cifra:
         return ''
     tom = (cifra.get('tom_original') or '').strip()
+    if vocalist_id is None and setlist_id:
+        vocalist_id = get_active_vocalist_id(cifra.get('band_id'), setlist_id=setlist_id)
     semi = cifra_transpose_semitones(cifra, vocalist_id)
     if semi:
         return key_at_transpose(tom, semi)
@@ -395,9 +412,11 @@ def _persist_leadsheet(cifra_id, payload: dict, meta: dict | None = None) -> Non
     )
 
 
-def enrich_cifra_for_tocar(cifra):
+def enrich_cifra_for_tocar(cifra, setlist_id=None):
     """Prepara cifra para o modo tocar com dados estruturados corretos."""
     c = dict(cifra)
+    band_id = c.get('band_id')
+    active_vid = get_active_vocalist_id(band_id, setlist_id=setlist_id) if band_id else None
     c['tom_original'] = normalize_tom_label(c.get('tom_original') or '')
     raw = sanitize_tab_html_artifacts(c.get('conteudo') or '')
     has_tab = content_has_tablatura(raw)
@@ -410,12 +429,11 @@ def enrich_cifra_for_tocar(cifra):
     c['html'] = highlight_chords_play_html(raw)
     c['tom_root'] = parse_tom_root(c.get('tom_original'))
     c['transpose_map'] = build_transpose_map(c.get('tom_original'))
-    band_id = c.get('band_id')
     if band_id:
         c['transpose_by_vocalist'] = get_cifra_transpose_by_vocalists(c['id'], band_id)
     else:
         c['transpose_by_vocalist'] = {}
-    c['transpose_semitones'] = cifra_transpose_semitones(c)
+    c['transpose_semitones'] = cifra_transpose_semitones(c, active_vid)
     c['has_tablatura'] = has_tab
     doc = resolve_leadsheet_document(c)
     if doc:
@@ -517,8 +535,9 @@ def view(cifra_id):
 def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None):
     """Renderiza o modo tocar (mesmo layout para banda e setlist)."""
     vocalists = get_band_vocalists(band['id']) if band else []
-    active_vocalist_id = get_active_vocalist_id(band['id']) if band else None
-    vocalist_name = active_vocalist_label(band['id']) if band else None
+    sl_id = None if is_virtual or not setlist else setlist.get('id')
+    active_vocalist_id = get_active_vocalist_id(band['id'], setlist_id=sl_id) if band else None
+    vocalist_name = active_vocalist_label(band['id'], setlist_id=sl_id) if band else None
     return render_template(
         'cifras/play_mode.html',
         setlist=setlist,

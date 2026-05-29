@@ -4,7 +4,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from models_setlist import (
     create_setlist, get_band_setlists, get_setlist, delete_setlist,
-    add_cifra_to_setlist, remove_cifra_from_setlist, reorder_setlist, get_setlist_cifras
+    add_cifra_to_setlist, remove_cifra_from_setlist, reorder_setlist, get_setlist_cifras,
+    set_setlist_vocalist,
 )
 from db import get_band, is_band_admin, is_band_member, get_band_cifras
 from blueprints.auth import login_required
@@ -33,7 +34,10 @@ def tocar(setlist_id):
     if not ok:
         flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
-    all_cifras = [enrich_cifra_for_tocar(dict(c)) for c in get_setlist_cifras(setlist_id)]
+    all_cifras = [
+        enrich_cifra_for_tocar(dict(c), setlist_id=setlist_id)
+        for c in get_setlist_cifras(setlist_id)
+    ]
     start_id = request.args.get('start')
     start_idx = 0
     if start_id:
@@ -144,6 +148,28 @@ def create(band_id):
         return redirect(url_for('setlists.view', setlist_id=setlist_id))
     return render_template('setlists/create.html', band=band)
 
+@setlists_bp.route('/<setlist_id>/vocalist', methods=['POST'])
+@login_required
+def set_vocalist(setlist_id):
+    """Define cantor(a) padrão desta setlist."""
+    from db import band_vocalist_belongs_to_band
+    setlist = get_setlist(setlist_id)
+    ok, band = _require_setlist_access(setlist, session['user_id'])
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    data = request.get_json(silent=True) or {}
+    vid = (data.get('vocalist_id') or request.form.get('vocalist_id') or '').strip()
+    if vid and not band_vocalist_belongs_to_band(vid, band['id']):
+        return jsonify({'ok': False, 'error': 'Cantor inválido'}), 400
+    set_setlist_vocalist(setlist_id, vid or None)
+    from blueprints.cifras import active_vocalist_label
+    return jsonify({
+        'ok': True,
+        'vocalist_id': vid or None,
+        'vocalist_name': active_vocalist_label(band['id'], setlist_id=setlist_id),
+    })
+
+
 @setlists_bp.route('/<setlist_id>')
 @login_required
 def view(setlist_id):
@@ -153,5 +179,29 @@ def view(setlist_id):
     if not ok:
         flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
+
+    from db import get_band_vocalists, band_vocalist_belongs_to_band
+    from blueprints.cifras import get_active_vocalist_id, active_vocalist_label
+
+    if 'vocalist' in request.args:
+        vid = request.args.get('vocalist', '').strip()
+        if vid and not band_vocalist_belongs_to_band(vid, band['id']):
+            flash('Cantor não encontrado nesta banda.', 'danger')
+        else:
+            set_setlist_vocalist(setlist_id, vid or None)
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+
     cifras = get_setlist_cifras(setlist_id)
-    return render_template('setlists/view.html', setlist=setlist, band=band, cifras=cifras)
+    vocalists = get_band_vocalists(band['id'])
+    active_vocalist_id = get_active_vocalist_id(band['id'], setlist_id=setlist_id)
+    vocalist_name = active_vocalist_label(band['id'], setlist_id=setlist_id)
+
+    return render_template(
+        'setlists/view.html',
+        setlist=setlist,
+        band=band,
+        cifras=cifras,
+        vocalists=vocalists,
+        active_vocalist_id=active_vocalist_id,
+        vocalist_name=vocalist_name,
+    )

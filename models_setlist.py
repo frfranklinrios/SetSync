@@ -23,9 +23,20 @@ def get_setlist(setlist_id):
     db = get_db()
     c = db.cursor()
     c.execute('SELECT * FROM setlists WHERE id = ?', (setlist_id,))
-    setlist = c.fetchone()
+    row = c.fetchone()
     db.close()
-    return setlist
+    return dict(row) if row else None
+
+
+def set_setlist_vocalist(setlist_id, vocalist_id: str | None) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE setlists SET vocalist_id = ? WHERE id = ?',
+        (vocalist_id or None, setlist_id),
+    )
+    db.commit()
+    db.close()
 
 def delete_setlist(setlist_id):
     db = get_db()
