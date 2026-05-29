@@ -710,14 +710,14 @@ body.play-mode.edges-hint .tap-zone {
         <button class="pb-btn" onclick="toggleDrawer()" title="Lista (L)" aria-label="Abrir lista">
             <i class="fas fa-list"></i>
         </button>
-        <button class="pb-btn" id="btn-prev" onclick="prevSong()" title="Anterior (←)" aria-label="Música anterior">
+        <button class="pb-btn" id="btn-prev" onclick="prevSong()" title="Música anterior" aria-label="Música anterior">
             <i class="fas fa-chevron-left"></i>
         </button>
         <div class="pb-song">
             <div class="pb-title" id="bar-title">—</div>
             <div class="pb-meta" id="bar-meta"></div>
         </div>
-        <button class="pb-btn" id="btn-next" onclick="nextSong()" title="Próxima (→)" aria-label="Próxima música">
+        <button class="pb-btn" id="btn-next" onclick="nextSong()" title="Próxima música" aria-label="Próxima música">
             <i class="fas fa-chevron-right"></i>
         </button>
 
@@ -773,11 +773,11 @@ body.play-mode.edges-hint .tap-zone {
 
     <!-- Cifra display -->
     <div id="cifra-wrap">
-        <div class="tap-zone left" id="tap-prev" onclick="prevSong()" aria-label="Música anterior">
-            <i class="fas fa-chevron-left"></i>
+        <div class="tap-zone left" id="tap-prev" onclick="tapScrollUp()" aria-label="Subir na cifra">
+            <i class="fas fa-chevron-up"></i>
         </div>
-        <div class="tap-zone right" id="tap-next" onclick="nextSong()" aria-label="Próxima música">
-            <i class="fas fa-chevron-right"></i>
+        <div class="tap-zone right" id="tap-next" onclick="tapScrollDown()" aria-label="Descer na cifra">
+            <i class="fas fa-chevron-down"></i>
         </div>
         <div class="cifra-body cifra-sheet-paper" id="cifra-content"></div>
     </div>
@@ -801,7 +801,7 @@ body.play-mode.edges-hint .tap-zone {
 <div id="scroll-badge" onclick="toggleScroll()">⏬ rolando — toque para pausar</div>
 
 <!-- Keyboard hint -->
-<div id="kbd-hint">← → ou bordas: navegar · L lista · +/− fonte · A caber · C 2col · G Lead Sheet · Espaço scroll · F tela cheia · Esc sair</div>
+<div id="kbd-hint">Bordas ou ← →: rolar cifra (próxima música só no fim) · L lista · Espaço auto-scroll · F tela cheia · Esc sair</div>
 
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}"></script>
 <script id="cifras-data" type="application/json">
@@ -876,6 +876,7 @@ body.play-mode.edges-hint .tap-zone {
     var fontStep = parseInt(sessionStorage.getItem('play.fontStep') || '0', 10);
     var twoColActive = sessionStorage.getItem('play.twoCols') === '1';
     var isScrolling = false, lastTs = null, scrollAcc = 0;
+    var resumeScrollAfterLoad = false;
 
     // Auto-scroll speed presets (px/ms)
     var SPEED_PRESETS = [
@@ -929,6 +930,12 @@ body.play-mode.edges-hint .tap-zone {
         return (wrap && wrap.clientWidth) || window.innerWidth || 360;
     }
 
+    function tryResumeAutoScroll() {
+        if (!resumeScrollAfterLoad) return;
+        resumeScrollAfterLoad = false;
+        requestAnimationFrame(function () { startScroll(); });
+    }
+
     function renderHtml(html) {
         var el = document.getElementById('cifra-content');
         el.innerHTML = html;
@@ -948,12 +955,15 @@ body.play-mode.edges-hint .tap-zone {
                             wrapWidth: measured,
                             hideHeader: true
                         }));
+                        return;
                     }
                 }
+                tryResumeAutoScroll();
             });
             return;
         }
         if (fitMode && !twoColActive && !gradeMode) requestAnimationFrame(autoFit);
+        tryResumeAutoScroll();
     }
 
     function escHtml(s) {
@@ -1135,7 +1145,7 @@ body.play-mode.edges-hint .tap-zone {
         var c = getCurrent();
         if (!c) return;
 
-        stopScroll(); // sempre para auto-scroll ao trocar
+        if (!resumeScrollAfterLoad) stopScroll();
         var wrap = document.getElementById('cifra-wrap');
         wrap.scrollTop = 0;
         window.scrollTo(0, 0);
@@ -1208,6 +1218,65 @@ body.play-mode.edges-hint .tap-zone {
 
     function prevSong() { goTo(current - 1); }
     function nextSong() { goTo(current + 1); }
+
+    // ── Rolagem por toque/borda (só troca música no topo/fim) ──
+    var SCROLL_EDGE = 10;
+    var SCROLL_STEP_RATIO = 0.82;
+
+    function scrollWrap() { return document.getElementById('cifra-wrap'); }
+
+    function isScrollAtTop(wrap) {
+        wrap = wrap || scrollWrap();
+        return wrap.scrollTop <= SCROLL_EDGE;
+    }
+
+    function isScrollAtBottom(wrap) {
+        wrap = wrap || scrollWrap();
+        return wrap.scrollTop >= wrap.scrollHeight - wrap.clientHeight - SCROLL_EDGE;
+    }
+
+    function canScrollMore(wrap) {
+        wrap = wrap || scrollWrap();
+        return wrap.scrollHeight > wrap.clientHeight + SCROLL_EDGE;
+    }
+
+    function scrollCifraBy(delta) {
+        var wrap = scrollWrap();
+        var maxTop = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+        var next = Math.max(0, Math.min(maxTop, wrap.scrollTop + delta));
+        if (wrap.scrollTo) {
+            wrap.scrollTo({ top: next, behavior: 'smooth' });
+        } else {
+            wrap.scrollTop = next;
+        }
+    }
+
+    function flashTapZone(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('flash');
+        setTimeout(function () { el.classList.remove('flash'); }, 220);
+    }
+
+    function tapScrollDown() {
+        var wrap = scrollWrap();
+        if (!canScrollMore(wrap) || isScrollAtBottom(wrap)) {
+            if (current < CIFRAS.length - 1) nextSong();
+            return;
+        }
+        scrollCifraBy(wrap.clientHeight * SCROLL_STEP_RATIO);
+        flashTapZone('tap-next');
+    }
+
+    function tapScrollUp() {
+        var wrap = scrollWrap();
+        if (!canScrollMore(wrap) || isScrollAtTop(wrap)) {
+            if (current > 0) prevSong();
+            return;
+        }
+        scrollCifraBy(-wrap.clientHeight * SCROLL_STEP_RATIO);
+        flashTapZone('tap-prev');
+    }
 
     // ── Transpose ───────────────────────────
     function persistTransposeForCifra(c, semitones) {
@@ -1358,7 +1427,13 @@ body.play-mode.edges-hint .tap-zone {
             var wrap = document.getElementById('cifra-wrap');
             wrap.scrollTop += px;
             if (wrap.scrollTop >= wrap.scrollHeight - wrap.clientHeight - 4) {
-                stopScroll(); return;
+                var wasScrolling = isScrolling;
+                stopScroll();
+                if (wasScrolling && current < CIFRAS.length - 1) {
+                    resumeScrollAfterLoad = true;
+                    nextSong();
+                }
+                return;
             }
             scrollAcc -= px;
         }
@@ -1492,8 +1567,8 @@ body.play-mode.edges-hint .tap-zone {
         var tag = e.target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         switch (e.key) {
-            case 'ArrowLeft':  e.preventDefault(); prevSong(); break;
-            case 'ArrowRight': e.preventDefault(); nextSong(); break;
+            case 'ArrowLeft':  e.preventDefault(); tapScrollUp(); break;
+            case 'ArrowRight': e.preventDefault(); tapScrollDown(); break;
             case 'l': case 'L': toggleDrawer(); break;
             case '+': case '=': changeFontSize(1); break;
             case '-': case '_': changeFontSize(-1); break;
@@ -1503,8 +1578,8 @@ body.play-mode.edges-hint .tap-zone {
             case 't': case 'T': if (typeof toggleTheme === 'function') toggleTheme(); break;
             case 'g': case 'G': toggleGrade(); break;
             case ' ': e.preventDefault(); toggleScroll(); break;
-            case 'PageDown': e.preventDefault(); nextSong(); break;
-            case 'PageUp': e.preventDefault(); prevSong(); break;
+            case 'PageDown': e.preventDefault(); tapScrollDown(); break;
+            case 'PageUp': e.preventDefault(); tapScrollUp(); break;
             case 'Escape':
                 if (document.getElementById('play-drawer').classList.contains('open')) {
                     closeDrawer();
@@ -1515,10 +1590,9 @@ body.play-mode.edges-hint .tap-zone {
         }
     });
 
-    // ── Touch / swipe ───────────────────────
+    // ── Touch / swipe (rolar; troca música só no topo/fim) ──
     (function () {
-        var SWIPE_THRESHOLD = 60;
-        var SWIPE_MAX_VERT = 80;
+        var SWIPE_THRESHOLD = 50;
         var tx = 0, ty = 0, moved = false;
         var wrap = document.getElementById('cifra-wrap');
 
@@ -1535,15 +1609,23 @@ body.play-mode.edges-hint .tap-zone {
             if (!moved) return;
             var dx = e.changedTouches[0].clientX - tx;
             var dy = e.changedTouches[0].clientY - ty;
-            if (Math.abs(dy) > SWIPE_MAX_VERT) return;
-            if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-            if (dx < 0) nextSong(); else prevSong();
+            if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return;
+            if (Math.abs(dy) >= Math.abs(dx)) {
+                if (dy < 0) tapScrollDown();
+                else tapScrollUp();
+            } else if (dx < 0) {
+                tapScrollDown();
+            } else {
+                tapScrollUp();
+            }
         }, { passive: true });
     })();
 
     // ── Expose ──────────────────────────────
     window.prevSong = prevSong;
     window.nextSong = nextSong;
+    window.tapScrollUp = tapScrollUp;
+    window.tapScrollDown = tapScrollDown;
     window.goTo = goTo;
     window.changeFontSize = changeFontSize;
     window.toggleCols = toggleCols;
