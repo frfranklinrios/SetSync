@@ -1,6 +1,6 @@
 {% extends "index.html" %}
-{% from 'partials/list_row_cifra.html' import cifra_row %}
-{% from 'partials/list_row_setlist.html' import setlist_row %}
+{% from 'partials/list_row_cifra.html' import cifra_row with context %}
+{% from 'partials/list_row_setlist.html' import setlist_row with context %}
 
 {% block title %}{{ band.name }} - SetSync{% endblock %}
 
