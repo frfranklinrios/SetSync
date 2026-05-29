@@ -500,6 +500,9 @@ body.play-mode.chrome-hidden #play-foot {
     z-index: 30;
     cursor: pointer;
     background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
     transition: background 0.18s;
     display: flex;
     align-items: center;
@@ -508,7 +511,10 @@ body.play-mode.chrome-hidden #play-foot {
     font-size: 1.6rem;
     pointer-events: auto;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
+.tap-zone i { pointer-events: none; }
 .tap-zone.left { left: 0; }
 .tap-zone.right { right: 0; }
 .tap-zone:active,
@@ -732,12 +738,12 @@ body.play-mode.edges-hint .tap-zone {
 
     <!-- Cifra display -->
     <div id="cifra-wrap">
-        <div class="tap-zone left" id="tap-prev" onclick="tapScrollUp()" aria-label="Subir na cifra">
-            <i class="fas fa-chevron-up"></i>
-        </div>
-        <div class="tap-zone right" id="tap-next" onclick="tapScrollDown()" aria-label="Descer na cifra">
-            <i class="fas fa-chevron-down"></i>
-        </div>
+        <button type="button" class="tap-zone left" id="tap-prev" aria-label="Página anterior da cifra">
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="tap-zone right" id="tap-next" aria-label="Próxima página da cifra">
+            <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </button>
         <div class="cifra-body cifra-sheet-paper" id="cifra-content"></div>
     </div>
 
@@ -760,7 +766,7 @@ body.play-mode.edges-hint .tap-zone {
 <div id="scroll-badge" onclick="toggleScroll()">⏬ rolando — toque para pausar</div>
 
 <!-- Keyboard hint -->
-<div id="kbd-hint">Bordas ou ← →: rolar cifra (próxima música só no fim) · L lista · Espaço auto-scroll · F tela cheia · Esc sair</div>
+<div id="kbd-hint">Bordas ou ← →: paginar cifra (próxima música só na última página) · L lista · Espaço auto-scroll · Esc sair</div>
 
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}"></script>
 <script id="cifras-data" type="application/json">
@@ -1178,11 +1184,18 @@ body.play-mode.edges-hint .tap-zone {
     function prevSong() { goTo(current - 1); }
     function nextSong() { goTo(current + 1); }
 
-    // ── Rolagem por toque/borda (só troca música no topo/fim) ──
-    var SCROLL_EDGE = 10;
-    var SCROLL_STEP_RATIO = 0.82;
+    // ── Paginação por toque/borda (1 tela por toque; música só na última página) ──
+    var SCROLL_EDGE = 8;
+    var _tapZoneLock = 0;
 
     function scrollWrap() { return document.getElementById('cifra-wrap'); }
+
+    function scrollMetrics(wrap) {
+        wrap = wrap || scrollWrap();
+        var maxTop = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+        var page = Math.max(1, wrap.clientHeight);
+        return { wrap: wrap, maxTop: maxTop, page: page, needsScroll: maxTop > SCROLL_EDGE };
+    }
 
     function isScrollAtTop(wrap) {
         wrap = wrap || scrollWrap();
@@ -1190,24 +1203,8 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     function isScrollAtBottom(wrap) {
-        wrap = wrap || scrollWrap();
-        return wrap.scrollTop >= wrap.scrollHeight - wrap.clientHeight - SCROLL_EDGE;
-    }
-
-    function canScrollMore(wrap) {
-        wrap = wrap || scrollWrap();
-        return wrap.scrollHeight > wrap.clientHeight + SCROLL_EDGE;
-    }
-
-    function scrollCifraBy(delta) {
-        var wrap = scrollWrap();
-        var maxTop = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
-        var next = Math.max(0, Math.min(maxTop, wrap.scrollTop + delta));
-        if (wrap.scrollTo) {
-            wrap.scrollTo({ top: next, behavior: 'smooth' });
-        } else {
-            wrap.scrollTop = next;
-        }
+        var m = scrollMetrics(wrap);
+        return m.wrap.scrollTop >= m.maxTop - SCROLL_EDGE;
     }
 
     function flashTapZone(id) {
@@ -1217,24 +1214,68 @@ body.play-mode.edges-hint .tap-zone {
         setTimeout(function () { el.classList.remove('flash'); }, 220);
     }
 
+    /** Uma página = altura visível; na última página vai ao fim; no fim troca de música. */
     function tapScrollDown() {
-        var wrap = scrollWrap();
-        if (!canScrollMore(wrap) || isScrollAtBottom(wrap)) {
+        if (Date.now() - _tapZoneLock < 280) return;
+        _tapZoneLock = Date.now();
+
+        var m = scrollMetrics();
+        if (!m.needsScroll) {
             if (current < CIFRAS.length - 1) nextSong();
+            flashTapZone('tap-next');
             return;
         }
-        scrollCifraBy(wrap.clientHeight * SCROLL_STEP_RATIO);
+        var st = m.wrap.scrollTop;
+        if (st >= m.maxTop - SCROLL_EDGE) {
+            if (current < CIFRAS.length - 1) nextSong();
+            flashTapZone('tap-next');
+            return;
+        }
+        var target = st + m.page;
+        if (target >= m.maxTop - SCROLL_EDGE) {
+            m.wrap.scrollTop = m.maxTop;
+        } else {
+            m.wrap.scrollTop = target;
+        }
         flashTapZone('tap-next');
     }
 
     function tapScrollUp() {
-        var wrap = scrollWrap();
-        if (!canScrollMore(wrap) || isScrollAtTop(wrap)) {
+        if (Date.now() - _tapZoneLock < 280) return;
+        _tapZoneLock = Date.now();
+
+        var m = scrollMetrics();
+        if (!m.needsScroll) {
             if (current > 0) prevSong();
+            flashTapZone('tap-prev');
             return;
         }
-        scrollCifraBy(-wrap.clientHeight * SCROLL_STEP_RATIO);
+        var st = m.wrap.scrollTop;
+        if (st <= SCROLL_EDGE) {
+            if (current > 0) prevSong();
+            flashTapZone('tap-prev');
+            return;
+        }
+        var target = st - m.page;
+        if (target <= SCROLL_EDGE) {
+            m.wrap.scrollTop = 0;
+        } else {
+            m.wrap.scrollTop = target;
+        }
         flashTapZone('tap-prev');
+    }
+
+    function bindTapZone(el, action) {
+        if (!el) return;
+        function run(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            action();
+        }
+        el.addEventListener('click', run);
+        el.addEventListener('touchend', run, { passive: false });
     }
 
     // ── Transpose ───────────────────────────
@@ -1552,22 +1593,30 @@ body.play-mode.edges-hint .tap-zone {
         }
     });
 
-    // ── Touch / swipe (rolar; troca música só no topo/fim) ──
+    bindTapZone(document.getElementById('tap-prev'), tapScrollUp);
+    bindTapZone(document.getElementById('tap-next'), tapScrollDown);
+
+    // ── Swipe no miolo (mesma paginação; bordas usam os botões acima) ──
     (function () {
-        var SWIPE_THRESHOLD = 50;
+        var SWIPE_THRESHOLD = 48;
         var tx = 0, ty = 0, moved = false;
         var wrap = document.getElementById('cifra-wrap');
 
         wrap.addEventListener('touchstart', function (e) {
             if (e.touches.length !== 1) return;
+            if (e.target.closest('.tap-zone')) return;
             tx = e.touches[0].clientX;
             ty = e.touches[0].clientY;
             moved = false;
         }, { passive: true });
 
-        wrap.addEventListener('touchmove', function () { moved = true; }, { passive: true });
+        wrap.addEventListener('touchmove', function (e) {
+            if (e.target.closest('.tap-zone')) return;
+            moved = true;
+        }, { passive: true });
 
         wrap.addEventListener('touchend', function (e) {
+            if (e.target.closest('.tap-zone')) return;
             if (!moved) return;
             var dx = e.changedTouches[0].clientX - tx;
             var dy = e.changedTouches[0].clientY - ty;
