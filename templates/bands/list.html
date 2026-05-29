@@ -135,6 +135,8 @@
             <p class="band-desc">{{ band.description or '—' }}</p>
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin global</span>
+                <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
+                <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
             </div>
         </div>
     </div>

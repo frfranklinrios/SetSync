@@ -110,25 +110,14 @@ def offline():
 def dashboard():
     from db import (
         get_user_bands, get_owned_bands, get_all_bands,
-        get_band_members, get_band_cifras, get_user, is_superadmin,
+        enrich_bands_for_display, is_superadmin,
     )
     user_id = session['user_id']
     sa = is_superadmin(user_id)
 
-    def enrich(bands):
-        result = []
-        for band in bands:
-            band = dict(band)
-            band['members'] = get_band_members(band['id'])
-            band['cifras'] = get_band_cifras(band['id'])
-            owner = get_user(band['owner_id'])
-            band['owner'] = owner or {}
-            result.append(band)
-        return result
-
     if sa:
-        all_bands = enrich(get_all_bands())
-        owned_bands = enrich(get_owned_bands(user_id))
+        all_bands = enrich_bands_for_display(get_all_bands())
+        owned_bands = enrich_bands_for_display(get_owned_bands(user_id))
         return render_template(
             'dashboard.html',
             bands=all_bands,
@@ -136,8 +125,8 @@ def dashboard():
             is_superadmin=True,
         )
 
-    bands = enrich(get_user_bands(user_id))
-    owned_bands = enrich(get_owned_bands(user_id))
+    bands = enrich_bands_for_display(get_user_bands(user_id))
+    owned_bands = enrich_bands_for_display(get_owned_bands(user_id))
     return render_template('dashboard.html', bands=bands, owned_bands=owned_bands, is_superadmin=False)
 
 @app.context_processor

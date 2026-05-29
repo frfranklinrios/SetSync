@@ -634,6 +634,19 @@ def get_owned_bands(user_id):
     return [dict(r) for r in rows]
 
 
+def enrich_bands_for_display(bands) -> list[dict]:
+    """Anexa members, cifras e owner para cards de listagem/dashboard."""
+    result = []
+    for band in bands:
+        b = dict(band)
+        b['members'] = get_band_members(b['id'])
+        b['cifras'] = get_band_cifras(b['id'])
+        owner = get_user(b.get('owner_id'))
+        b['owner'] = owner or {}
+        result.append(b)
+    return result
+
+
 def get_band_members(band_id):
     db = get_db()
     c = db.cursor()

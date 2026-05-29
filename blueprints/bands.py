@@ -6,7 +6,7 @@ from blueprints.auth import login_required
 from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_bands,
                 update_band, delete_band, get_band_members, add_band_member, remove_band_member,
                 is_band_member, is_band_admin, is_superadmin, can_delete_band,
-                can_edit_band_settings, get_user)
+                can_edit_band_settings, get_user, enrich_bands_for_display)
 
 bands_bp = Blueprint('bands', __name__, url_prefix='/bands')
 
@@ -14,9 +14,12 @@ bands_bp = Blueprint('bands', __name__, url_prefix='/bands')
 @login_required
 def list_bands():
     user_id = session['user_id']
-    owned = get_owned_bands(user_id)
-    member_of = get_user_bands(user_id)
-    all_bands = get_all_bands() if is_superadmin(user_id) else None
+    owned = enrich_bands_for_display(get_owned_bands(user_id))
+    member_of = enrich_bands_for_display(get_user_bands(user_id))
+    all_bands = (
+        enrich_bands_for_display(get_all_bands())
+        if is_superadmin(user_id) else None
+    )
     return render_template(
         'bands/list.html',
         owned=owned,
