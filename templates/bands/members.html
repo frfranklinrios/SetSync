@@ -91,23 +91,61 @@
         </div>
     </div>
 
-    <div class="col-lg-4">
+    <div class="col-lg-4 d-flex flex-column gap-3">
         <div class="card">
-            <div class="card-header">Adicionar membro</div>
+            <div class="card-header">Link de convite</div>
+            <div class="card-body">
+                <p class="text-muted mb-3" style="font-size:0.85rem;">
+                    Quem se cadastrar por este link entra direto na banda — não precisa já ter conta.
+                </p>
+                <label for="invite-link" class="form-label">Copiar link</label>
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control" id="invite-link" readonly value="{{ invite_url }}">
+                    <button type="button" class="btn btn-outline-secondary" id="copy-invite-btn" title="Copiar">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <small class="text-muted">Válido por 30 dias.</small>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Por e-mail (já cadastrado)</div>
             <div class="card-body">
                 <form action="{{ url_for('bands.invite', band_id=band.id) }}" method="POST">
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
                         <input type="email" class="form-control" id="email" name="email" required
                                placeholder="usuario@email.com" autocomplete="off">
-                        <small class="text-muted">O usuário deve já estar registrado.</small>
+                        <small class="text-muted">Só para quem já tem conta no SetSync.</small>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-user-plus me-1"></i> Convidar
+                        <i class="fas fa-user-plus me-1"></i> Adicionar
                     </button>
                 </form>
             </div>
         </div>
     </div>
+<script>
+(function () {
+    var btn = document.getElementById('copy-invite-btn');
+    var input = document.getElementById('invite-link');
+    if (!btn || !input) return;
+    btn.addEventListener('click', function () {
+        input.select();
+        input.setSelectionRange(0, 99999);
+        var ok = false;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(input.value).then(function () { ok = true; });
+        } else {
+            try { ok = document.execCommand('copy'); } catch (e) {}
+        }
+        var icon = btn.querySelector('i');
+        if (icon) {
+            icon.className = ok ? 'fas fa-check' : 'fas fa-copy';
+            setTimeout(function () { icon.className = 'fas fa-copy'; }, 1500);
+        }
+    });
+})();
+</script>
 </div>
 {% endblock %}

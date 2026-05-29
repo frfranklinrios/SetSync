@@ -10,7 +10,17 @@
             <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync" style="height:64px;">
         </div>
 
+        {% if invite_band %}
+        <div class="alert alert-info mb-4" style="font-size:0.9rem;">
+            Convite para entrar na banda <strong>{{ invite_band.name }}</strong>.
+            Ao criar sua conta, você já entra na banda automaticamente.
+        </div>
+        {% endif %}
+
         <form method="POST">
+            {% if invite_token %}
+            <input type="hidden" name="convite_token" value="{{ invite_token }}">
+            {% endif %}
             <div class="mb-3">
                 <label for="username" class="form-label">Usuário</label>
                 <input type="text" class="form-control" id="username" name="username" required autofocus>
@@ -41,10 +51,11 @@
             <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size:0.75rem;">OU</span><hr class="flex-grow-1">
         </div>
 
-        <a href="{{ url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Registrar com Google</a>
+        <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Registrar com Google</a>
 
         <p class="text-center text-muted mt-4" style="font-size:0.875rem;">
-            Já tem conta? <a href="{{ url_for('auth.login') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Faça login</a>
+            Já tem conta?
+            <a href="{{ url_for('auth.login', convite=invite_token) if invite_token else url_for('auth.login') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Faça login</a>
         </p>
     </div>
 </div>

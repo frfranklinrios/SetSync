@@ -7,6 +7,7 @@ from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_
                 update_band, delete_band, get_band_members, add_band_member, remove_band_member,
                 is_band_member, is_band_admin, is_superadmin, can_delete_band,
                 can_edit_band_settings, get_user, enrich_bands_for_display)
+from band_invites import make_band_invite_token
 
 bands_bp = Blueprint('bands', __name__, url_prefix='/bands')
 
@@ -164,11 +165,14 @@ def members(band_id):
     vocalist_user_ids = {
         v['user_id'] for v in get_band_vocalists(band_id) if v.get('user_id')
     }
+    token = make_band_invite_token(band_id)
+    invite_url = url_for('auth.convite', token=token, _external=True)
     return render_template(
         'bands/members.html',
         band=band,
         band_members=band_members,
         vocalist_user_ids=vocalist_user_ids,
+        invite_url=invite_url,
     )
 
 @bands_bp.route('/<band_id>/invite', methods=['POST'])
