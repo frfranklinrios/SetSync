@@ -1,38 +1,41 @@
 # Uso do app
 
+## Conta
+
+- Login com e-mail/senha ou Google
+- Sessão de cerca de 2 dias no dispositivo (renovada com o uso)
+- Convite por link: cadastro já entra na banda
+
 ## Bandas
 
-1. Abra **Bandas**
-2. Crie uma banda
-3. Dentro da banda, gerencie **membros**, **cifras** e **setlists**
+1. Abra **Bandas** e crie uma banda
+2. **Membros**: link de convite ou e-mail de quem já tem conta
+3. **Configurações**: cantores(as) e dados da banda
+4. Gerencie **cifras** e **setlists** na página da banda
 
 ## Cifras
 
-Em **Adicionar** / **Editar** cifra:
+- Título, artista, tom e conteúdo (`[Am]` na letra)
+- Importar via **Cifra → SetSync**
+- Listas com tom, tocar, editar (admin)
 
-- **Título** e **Artista**
-- **Tom**: referência para transposição
-- **Conteúdo**: texto da cifra (acordes podem estar entre colchetes, ex.: `[Am]`)
+## Transposição
 
-### Importar (Cifra → SetSync)
-
-Use o botão **Cifra → SetSync** para abrir a ferramenta integrada e preencher o formulário automaticamente.
+- Tom alterável sem editar o arquivo salvo
+- Por cantor, por música na banda e por linha na setlist
 
 ## Setlists
 
-- Crie um setlist para definir a ordem das músicas
-- Use o setlist na execução ao vivo via **Modo Tocar**
+- Ordem por arrastar na tela da setlist
+- Cantor e tom por música na lista
+- **Tocar** abre o Modo Tocar
 
-## Modo Tocar (palco)
+## Modo Tocar
 
-Atalhos (principais):
+- Bordas e setas **← →**: rolar a cifra; próxima música só no fim da rolagem
+- Botões **◀ ▶** na barra: trocar música imediatamente
+- **L**: lista lateral · **Espaço**: auto-scroll · **C**: 2 colunas · **A**: caber · **G**: lead sheet · **F**: tela cheia · **T**: tema · **Esc**: sair
 
-- `P`: entrar no modo tocar
-- `Esc`: sair
-- `←` `→`: música anterior/próxima
-- `Espaço`: auto-scroll
-- `+` `-`: fonte
-- `C`: 2 colunas
-- `S`: abrir/fechar setlist
-- `T`: alternar tema
+## Ajuda no app
 
+Menu **Ajuda** no site: `/ajuda`
