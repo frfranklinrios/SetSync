@@ -19,8 +19,10 @@ from leadsheet.converter import (
 from blueprints.auth import login_required
 from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra,
                 delete_cifra, is_band_member, is_band_admin,
-                set_cifra_transpose_semitones, get_band_vocalist_user_id,
-                get_vocalist_user, get_cifra_vocalist_transpose, vocalist_display_name)
+                set_cifra_transpose_semitones, get_band_vocalists, get_band_vocalist,
+                get_cifra_vocalist_transpose, get_cifra_transpose_by_vocalists,
+                band_vocalist_belongs_to_band, vocalists_summary_label,
+                vocalist_entry_display_name)
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   pychord_highlight_chords, highlight_chords_html,
                   split_chord_progression, chord_components_info,
@@ -34,16 +36,59 @@ from util import (transpose_text, get_available_tones, pychord_transpose_text,
 cifras_bp = Blueprint('cifras', __name__, url_prefix='/cifras')
 
 PLAY_TARGET_KEY_SESSION = 'play_target_key'
+VOCALIST_SESSION_PREFIX = 'band_vocalist:'
 
 
-def cifra_transpose_semitones(cifra) -> int:
-    """Semitons de transposição (cantor da banda ou legado na cifra)."""
+def _vocalist_session_key(band_id: str) -> str:
+    return f'{VOCALIST_SESSION_PREFIX}{band_id}'
+
+
+def get_active_vocalist_id(band_id: str, vocalist_id: str | None = None) -> str | None:
+    """Cantor ativo na sessão (query ?vocalist= ou primeiro da lista)."""
+    if not band_id:
+        return None
+    vocalists = get_band_vocalists(band_id)
+    if not vocalists:
+        return None
+    ids = {v['id'] for v in vocalists}
+
+    def _store(vid: str) -> str:
+        session[_vocalist_session_key(band_id)] = vid
+        session.modified = True
+        return vid
+
+    if vocalist_id and vocalist_id in ids:
+        return _store(vocalist_id)
+    q = request.args.get('vocalist', '').strip() if request else ''
+    if q and q in ids:
+        return _store(q)
+    stored = session.get(_vocalist_session_key(band_id))
+    if stored and stored in ids:
+        return stored
+    return vocalists[0]['id']
+
+
+def active_vocalist_label(band_id: str, vocalist_id: str | None = None) -> str | None:
+    vid = get_active_vocalist_id(band_id, vocalist_id)
+    if not vid:
+        return None
+    v = get_band_vocalist(vid)
+    name = vocalist_entry_display_name(v) if v else None
+    return name or None
+
+
+def vocalist_label_for_band(band_id: str) -> str | None:
+    return vocalists_summary_label(band_id)
+
+
+def cifra_transpose_semitones(cifra, vocalist_id: str | None = None) -> int:
+    """Semitons de transposição do cantor ativo ou legado na cifra."""
     if not cifra:
         return 0
     band_id = cifra.get('band_id')
     cid = cifra.get('id')
     if band_id and cid:
-        vid = get_band_vocalist_user_id(band_id)
+        vid = get_active_vocalist_id(band_id, vocalist_id)
         if vid:
             return get_cifra_vocalist_transpose(cid, vid)
     try:
@@ -52,35 +97,32 @@ def cifra_transpose_semitones(cifra) -> int:
         return 0
 
 
-def get_stored_transpose_semitones(cifra_id):
-    """Transposição efetiva para exibição (tom do cantor, se houver)."""
+def get_stored_transpose_semitones(cifra_id, vocalist_id: str | None = None):
     cifra = get_cifra(cifra_id)
-    return cifra_transpose_semitones(cifra) if cifra else 0
+    return cifra_transpose_semitones(cifra, vocalist_id) if cifra else 0
 
 
-def vocalist_label_for_band(band_id: str) -> str | None:
-    """Nome exibível do cantor(a) da banda."""
-    return vocalist_display_name(band_id)
-
-
-def cifra_display_key(cifra):
+def cifra_display_key(cifra, vocalist_id: str | None = None):
     """Tom para exibir em listas: transposição do cantor ou cadastro."""
     if not cifra:
         return ''
     tom = (cifra.get('tom_original') or '').strip()
-    semi = cifra_transpose_semitones(cifra)
+    semi = cifra_transpose_semitones(cifra, vocalist_id)
     if semi:
         return key_at_transpose(tom, semi)
     return normalize_tom_label(tom)
 
 
 def resolve_cifra_transpose(cifra_id, tom_original):
-    """Transposição: ?transpose= grava para o cantor da banda; senão lê do banco."""
+    """Transposição: ?transpose= grava para o cantor ativo; senão lê do banco."""
+    cifra = get_cifra(cifra_id)
+    band_id = cifra.get('band_id') if cifra else None
+    vid = get_active_vocalist_id(band_id) if band_id else None
     if 'transpose' in request.args:
         semitones = request.args.get('transpose', 0, type=int)
-        set_cifra_transpose_semitones(cifra_id, semitones)
+        set_cifra_transpose_semitones(cifra_id, semitones, vocalist_id=vid)
     else:
-        semitones = get_stored_transpose_semitones(cifra_id)
+        semitones = cifra_transpose_semitones(cifra, vid) if cifra else 0
 
     if semitones:
         session[PLAY_TARGET_KEY_SESSION] = key_at_transpose(tom_original, semitones)
@@ -368,6 +410,11 @@ def enrich_cifra_for_tocar(cifra):
     c['html'] = highlight_chords_play_html(raw)
     c['tom_root'] = parse_tom_root(c.get('tom_original'))
     c['transpose_map'] = build_transpose_map(c.get('tom_original'))
+    band_id = c.get('band_id')
+    if band_id:
+        c['transpose_by_vocalist'] = get_cifra_transpose_by_vocalists(c['id'], band_id)
+    else:
+        c['transpose_by_vocalist'] = {}
     c['transpose_semitones'] = cifra_transpose_semitones(c)
     c['has_tablatura'] = has_tab
     doc = resolve_leadsheet_document(c)
@@ -438,9 +485,11 @@ def view(cifra_id):
     prev_cifra = setlist[cifra_index - 1] if cifra_index > 0 else None
     next_cifra = setlist[cifra_index + 1] if cifra_index < len(setlist) - 1 else None
 
-    vocalist = get_vocalist_user(band['id'])
-    vocalist_name = vocalist_label_for_band(band['id'])
-    vocalist_linked = bool(vocalist)
+    vocalists = get_band_vocalists(band['id'])
+    active_vocalist_id = get_active_vocalist_id(band['id'])
+    active_vocalist = get_band_vocalist(active_vocalist_id) if active_vocalist_id else None
+    vocalist_name = vocalist_entry_display_name(active_vocalist) if active_vocalist else None
+    vocalist_linked = bool(active_vocalist and active_vocalist.get('user_id'))
 
     return render_template('cifras/view.html',
                            cifra=cifra,
@@ -458,7 +507,8 @@ def view(cifra_id):
                            cifra_index=cifra_index,
                            prev_cifra=prev_cifra,
                            next_cifra=next_cifra,
-                           vocalist=vocalist,
+                           vocalists=vocalists,
+                           active_vocalist_id=active_vocalist_id,
                            vocalist_name=vocalist_name,
                            vocalist_linked=vocalist_linked,
                            is_admin=is_band_admin(cifra['band_id'], user_id),
@@ -466,7 +516,9 @@ def view(cifra_id):
 
 def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None):
     """Renderiza o modo tocar (mesmo layout para banda e setlist)."""
-    vocalist_name = vocalist_label_for_band(band['id']) if band else None
+    vocalists = get_band_vocalists(band['id']) if band else []
+    active_vocalist_id = get_active_vocalist_id(band['id']) if band else None
+    vocalist_name = active_vocalist_label(band['id']) if band else None
     return render_template(
         'cifras/play_mode.html',
         setlist=setlist,
@@ -476,6 +528,8 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         start_idx=start_idx,
         is_virtual=is_virtual,
         exit_url=exit_url,
+        vocalists=vocalists,
+        active_vocalist_id=active_vocalist_id,
         vocalist_name=vocalist_name,
         play_target_key=session.get(PLAY_TARGET_KEY_SESSION) or '',
     )
@@ -634,18 +688,22 @@ def save_transpose(cifra_id):
         return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
     data = request.get_json(silent=True) or {}
     semitones = int(data.get('semitones', 0))
-    set_cifra_transpose_semitones(cifra_id, semitones)
+    band_id = cifra['band_id']
+    vid = get_active_vocalist_id(band_id, data.get('vocalist_id'))
+    set_cifra_transpose_semitones(cifra_id, semitones, vocalist_id=vid)
     tom = cifra.get('tom_original') or ''
     if semitones:
         session[PLAY_TARGET_KEY_SESSION] = key_at_transpose(tom, semitones)
     else:
         session.pop(PLAY_TARGET_KEY_SESSION, None)
     session.modified = True
-    vname = vocalist_label_for_band(cifra['band_id'])
+    v = get_band_vocalist(vid) if vid else None
+    vname = vocalist_entry_display_name(v) if v else None
     return jsonify({
         'ok': True,
         'semitones': semitones,
         'display_key': key_at_transpose(tom, semitones),
+        'vocalist_id': vid,
         'vocalist_name': vname,
     })
 

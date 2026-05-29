@@ -90,54 +90,60 @@ def settings(band_id):
         return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
     
     if request.method == 'POST':
-        from db import get_user_by_username
-        name = request.form.get('name', '').strip() or band['name']
-        description = request.form.get('description', '').strip()
-        vocalist_name = request.form.get('vocalist_name', '').strip()
-        link_account = request.form.get('vocalist_link_account') == '1'
-        vocalist_user_id = request.form.get('vocalist_user_id', '').strip()
-        vocalist_username = request.form.get('vocalist_username', '').strip()
-
-        if link_account:
-            if vocalist_username and not vocalist_user_id:
-                u = get_user_by_username(vocalist_username)
-                if not u:
-                    flash(f'Usuário "{vocalist_username}" não encontrado no SetSync.', 'danger')
-                    return redirect(url_for('bands.settings', band_id=band_id))
-                vocalist_user_id = u['id']
-            if vocalist_user_id:
-                u = get_user(vocalist_user_id)
-                if not u:
-                    flash('Conta selecionada não existe.', 'danger')
-                    return redirect(url_for('bands.settings', band_id=band_id))
-                if not vocalist_name:
-                    vocalist_name = (u.get('display_name') or '').strip() or u.get('username') or ''
-        else:
-            vocalist_user_id = ''
-
-        if not vocalist_name and not vocalist_user_id:
-            vocalist_name = ''
-            vocalist_user_id = ''
-
-        update_band(
-            band_id, name, description,
-            vocalist_user_id=vocalist_user_id,
-            vocalist_name=vocalist_name,
+        from db import (
+            get_user_by_username, add_band_vocalists_from_text,
+            delete_band_vocalist, get_band_vocalists, band_vocalist_belongs_to_band,
         )
-        flash('Configurações atualizadas', 'success')
-        return redirect(url_for('bands.view', band_id=band_id))
+        action = request.form.get('action', 'save_band')
 
+        if action == 'save_band':
+            name = request.form.get('name', '').strip() or band['name']
+            description = request.form.get('description', '').strip()
+            update_band(band_id, name, description)
+            flash('Configurações atualizadas', 'success')
+
+        elif action == 'add_vocalist':
+            raw = request.form.get('vocalist_names', '').strip()
+            if not raw:
+                flash('Informe o nome do cantor(a).', 'danger')
+            else:
+                user_id = None
+                if request.form.get('vocalist_link_account') == '1':
+                    user_id = request.form.get('vocalist_user_id', '').strip()
+                    username = request.form.get('vocalist_username', '').strip()
+                    if username and not user_id:
+                        u = get_user_by_username(username)
+                        if not u:
+                            flash(f'Usuário "{username}" não encontrado.', 'danger')
+                            return redirect(url_for('bands.settings', band_id=band_id))
+                        user_id = u['id']
+                    if user_id and not get_user(user_id):
+                        flash('Conta não encontrada.', 'danger')
+                        return redirect(url_for('bands.settings', band_id=band_id))
+                try:
+                    add_band_vocalists_from_text(band_id, raw, user_id or None)
+                    flash('Cantor(es) adicionado(s).', 'success')
+                except ValueError as e:
+                    flash(str(e), 'danger')
+
+        elif action == 'delete_vocalist':
+            vid = request.form.get('vocalist_id', '').strip()
+            if vid and band_vocalist_belongs_to_band(vid, band_id):
+                delete_band_vocalist(vid)
+                flash('Cantor removido.', 'success')
+            else:
+                flash('Cantor não encontrado.', 'danger')
+
+        return redirect(url_for('bands.settings', band_id=band_id))
+
+    from db import get_band_vocalists
     band_members = get_band_members(band_id)
-    linked_vocalist_username = None
-    if band.get('vocalist_user_id'):
-        u = get_user(band['vocalist_user_id'])
-        if u:
-            linked_vocalist_username = u.get('username')
+    vocalists = get_band_vocalists(band_id)
     return render_template(
         'bands/settings.html',
         band=band,
         band_members=band_members,
-        linked_vocalist_username=linked_vocalist_username,
+        vocalists=vocalists,
     )
 
 @bands_bp.route('/<band_id>/members')
@@ -150,8 +156,17 @@ def members(band_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
     
+    from db import get_band_vocalists
     band_members = get_band_members(band_id)
-    return render_template('bands/members.html', band=band, band_members=band_members)
+    vocalist_user_ids = {
+        v['user_id'] for v in get_band_vocalists(band_id) if v.get('user_id')
+    }
+    return render_template(
+        'bands/members.html',
+        band=band,
+        band_members=band_members,
+        vocalist_user_ids=vocalist_user_ids,
+    )
 
 @bands_bp.route('/<band_id>/invite', methods=['POST'])
 @login_required

@@ -722,6 +722,14 @@ body.play-mode.edges-hint .tap-zone {
         </button>
 
         <div class="bar-group-extra">
+            {% if vocalists|length > 1 %}
+            <select id="vocalist-sel" class="transpose-mini me-1" onchange="onVocalistChange(this.value)"
+                    title="Cantor(a)">
+                {% for v in vocalists %}
+                <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
             <select id="transpose-sel" class="transpose-mini" onchange="onTransposeChange(this.value)"
                     title="{% if vocalist_name %}Tom para {{ vocalist_name }}{% else %}Transpor{% endif %}">
                 <option value="">Original (cadastro)</option>
@@ -797,7 +805,7 @@ body.play-mode.edges-hint .tap-zone {
 
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}"></script>
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -809,6 +817,21 @@ body.play-mode.edges-hint .tap-zone {
     var EXIT_URL = {{ (exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id))) | tojson }};
 
     var current = Math.max(0, Math.min(CIFRAS.length - 1, START_IDX));
+    var VALID_VOCALISTS = [{% for v in vocalists %}{{ v.id|tojson }}{% if not loop.last %}, {% endif %}{% endfor %}];
+    var activeVocalistId = {{ (active_vocalist_id or '')|tojson }}
+        || localStorage.getItem('play.vocalistId')
+        || sessionStorage.getItem('play.vocalistId')
+        || '';
+    if (activeVocalistId && VALID_VOCALISTS.indexOf(activeVocalistId) === -1) {
+        activeVocalistId = VALID_VOCALISTS[0] || '';
+    }
+    if (!activeVocalistId && VALID_VOCALISTS.length) {
+        activeVocalistId = VALID_VOCALISTS[0];
+    }
+    if (activeVocalistId) {
+        localStorage.setItem('play.vocalistId', activeVocalistId);
+        sessionStorage.setItem('play.vocalistId', activeVocalistId);
+    }
     var targetKey = {{ (play_target_key or '')|tojson }};
     if (!targetKey) {
         targetKey = localStorage.getItem('play.targetKey') || sessionStorage.getItem('play.targetKey') || '';
@@ -870,6 +893,9 @@ body.play-mode.edges-hint .tap-zone {
 
     function getTranspose(c) {
         if (!c) return 0;
+        if (activeVocalistId && c.transpose_by_vocalist && c.transpose_by_vocalist[activeVocalistId] !== undefined) {
+            return Number(c.transpose_by_vocalist[activeVocalistId]) || 0;
+        }
         if (c.transpose_semitones !== undefined && c.transpose_semitones !== null) {
             return Number(c.transpose_semitones) || 0;
         }
@@ -1115,9 +1141,9 @@ body.play-mode.edges-hint .tap-zone {
         var t = getTranspose(c);
         document.getElementById('bar-title').textContent = c.titulo;
         var tomLabel = 'Tom ' + getDisplayKey(c);
-        {% if vocalist_name %}
-        tomLabel += ' · {{ vocalist_name|e }}';
-        {% endif %}
+        var vSel = document.getElementById('vocalist-sel');
+        var vName = vSel ? vSel.options[vSel.selectedIndex].text : {{ vocalist_name|tojson if vocalist_name else '""' }};
+        if (vName) tomLabel += ' · ' + vName;
         if (t !== 0) {
             tomLabel += ' (cadastro: ' + (c.tom_original || c.tom_root || c.tom) + ')';
         }
@@ -1185,13 +1211,29 @@ body.play-mode.edges-hint .tap-zone {
     function persistTransposeForCifra(c, semitones) {
         if (!c || !c.id) return;
         c.transpose_semitones = semitones;
+        if (activeVocalistId) {
+            if (!c.transpose_by_vocalist) c.transpose_by_vocalist = {};
+            c.transpose_by_vocalist[activeVocalistId] = semitones;
+        }
         var url = SAVE_TRANSPOSE_URL.replace('__ID__', encodeURIComponent(c.id));
         fetch(url, {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ semitones: semitones })
+            body: JSON.stringify({ semitones: semitones, vocalist_id: activeVocalistId || null })
         }).catch(function () {});
+    }
+
+    function onVocalistChange(vocalistId) {
+        activeVocalistId = vocalistId || '';
+        if (activeVocalistId) {
+            localStorage.setItem('play.vocalistId', activeVocalistId);
+            sessionStorage.setItem('play.vocalistId', activeVocalistId);
+        } else {
+            localStorage.removeItem('play.vocalistId');
+            sessionStorage.removeItem('play.vocalistId');
+        }
+        render();
     }
 
     function onTransposeChange(value) {
@@ -1499,6 +1541,7 @@ body.play-mode.edges-hint .tap-zone {
     window.toggleDrawer = toggleDrawer;
     window.closeDrawer = closeDrawer;
     window.onTransposeChange = onTransposeChange;
+    window.onVocalistChange = onVocalistChange;
     window.toggleFullscreen = toggleFullscreen;
     window.adjustSpeed = adjustSpeed;
     window.toggleFit = toggleFit;

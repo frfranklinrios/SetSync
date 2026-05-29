@@ -130,18 +130,107 @@ def init_db():
     _add_column('bands', 'vocalist_name', 'TEXT')
 
     c.execute('''
-        CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
-            cifra_id TEXT NOT NULL,
-            user_id TEXT NOT NULL,
-            transpose_semitones INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (cifra_id, user_id),
-            FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
+        CREATE TABLE IF NOT EXISTS band_vocalists (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            user_id TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
+            cifra_id TEXT NOT NULL,
+            vocalist_id TEXT NOT NULL,
+            transpose_semitones INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (cifra_id, vocalist_id),
+            FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
+            FOREIGN KEY (vocalist_id) REFERENCES band_vocalists(id) ON DELETE CASCADE
+        )
+    ''')
+    _migrate_vocalists_schema(c)
     db.commit()
 
     db.close()
+
+
+def _table_columns(cursor, table: str) -> list[str]:
+    cursor.execute(f'PRAGMA table_info({table})')
+    return [row[1] for row in cursor.fetchall()]
+
+
+def _split_vocalist_names(raw: str) -> list[str]:
+    if not raw:
+        return []
+    return [p.strip() for p in raw.replace(';', ',').split(',') if p.strip()]
+
+
+def _migrate_vocalists_schema(c) -> None:
+    """Migra cantor único (bands.*) e transpose por user_id para band_vocalists."""
+    cols = _table_columns(c, 'cifra_vocalist_transpose')
+    if 'user_id' in cols and 'vocalist_id' not in cols:
+        c.execute('ALTER TABLE cifra_vocalist_transpose RENAME TO _legacy_cvt_user')
+
+    c.execute('SELECT COUNT(*) AS n FROM band_vocalists')
+    if (c.fetchone()['n'] or 0) == 0:
+        c.execute(
+            '''SELECT id, vocalist_name, vocalist_user_id FROM bands
+               WHERE COALESCE(vocalist_name, '') != '' OR vocalist_user_id IS NOT NULL'''
+        )
+        for row in c.fetchall():
+            uid = row['vocalist_user_id']
+            raw = (row['vocalist_name'] or '').strip()
+            names = _split_vocalist_names(raw)
+            if not names:
+                if uid:
+                    u = get_user(uid)
+                    names = [((u.get('display_name') or '').strip() or u.get('username')) if u else 'Cantor(a)']
+                else:
+                    continue
+            for i, name in enumerate(names):
+                vid = str(uuid.uuid4())
+                link_uid = uid if i == 0 else None
+                c.execute(
+                    '''INSERT INTO band_vocalists (id, band_id, name, user_id, sort_order)
+                       VALUES (?, ?, ?, ?, ?)''',
+                    (vid, row['id'], name, link_uid, i),
+                )
+
+    cols = _table_columns(c, 'cifra_vocalist_transpose')
+    if 'vocalist_id' not in cols:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
+                cifra_id TEXT NOT NULL,
+                vocalist_id TEXT NOT NULL,
+                transpose_semitones INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (cifra_id, vocalist_id),
+                FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
+                FOREIGN KEY (vocalist_id) REFERENCES band_vocalists(id) ON DELETE CASCADE
+            )
+        ''')
+        c.execute('''
+            INSERT OR IGNORE INTO cifra_vocalist_transpose
+                (cifra_id, vocalist_id, transpose_semitones)
+            SELECT c.id, bv.id, COALESCE(c.transpose_semitones, 0)
+            FROM cifras c
+            JOIN band_vocalists bv ON bv.band_id = c.band_id
+            WHERE bv.sort_order = (
+                SELECT MIN(bv2.sort_order) FROM band_vocalists bv2 WHERE bv2.band_id = c.band_id
+            )
+        ''')
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='_legacy_cvt_user'")
+        if c.fetchone():
+            c.execute('''
+                INSERT OR REPLACE INTO cifra_vocalist_transpose
+                    (cifra_id, vocalist_id, transpose_semitones)
+                SELECT t.cifra_id, bv.id, t.transpose_semitones
+                FROM _legacy_cvt_user t
+                JOIN cifras c ON c.id = t.cifra_id
+                JOIN band_vocalists bv ON bv.band_id = c.band_id AND bv.user_id = t.user_id
+            ''')
+            c.execute('DROP TABLE IF EXISTS _legacy_cvt_user')
 
 
 def update_user_display_name(user_id: str, display_name: str | None):
@@ -332,114 +421,144 @@ def can_edit_band_settings(band_id, user_id):
     return can_delete_band(band_id, user_id)
 
 
-def update_band(band_id, name, description, vocalist_user_id=None, vocalist_name=None):
-    """Atualiza banda. vocalist_*: str para definir, '' para limpar, None para não alterar."""
+def update_band(band_id, name, description, **_ignored):
+    """Atualiza nome e descrição da banda."""
     db = get_db()
     c = db.cursor()
-    old = get_band(band_id)
-    old_vid = (old.get('vocalist_user_id') or None) if old else None
-
-    if vocalist_user_id is not None or vocalist_name is not None:
-        vid = old_vid
-        vname = (old.get('vocalist_name') or '').strip() if old else ''
-        if vocalist_user_id is not None:
-            vid = vocalist_user_id.strip() if vocalist_user_id else None
-        if vocalist_name is not None:
-            vname = vocalist_name.strip() if vocalist_name else ''
-        c.execute(
-            '''UPDATE bands SET name = ?, description = ?, vocalist_user_id = ?, vocalist_name = ?
-               WHERE id = ?''',
-            (name, description, vid, vname or None, band_id),
-        )
-        if vid and vid != old_vid:
-            _migrate_cifra_transpose_to_vocalist(c, band_id, vid)
-        elif old_vid and not vid and vname:
-            _migrate_vocalist_transpose_to_cifra(c, band_id, old_vid)
-    else:
-        c.execute('UPDATE bands SET name = ?, description = ? WHERE id = ?', (name, description, band_id))
+    c.execute('UPDATE bands SET name = ?, description = ? WHERE id = ?', (name, description, band_id))
     db.commit()
     db.close()
 
 
-def _migrate_cifra_transpose_to_vocalist(cursor, band_id: str, vocalist_user_id: str) -> None:
-    """Copia transpose_semitones legado da cifra para o cantor, se ainda não existir."""
-    cursor.execute(
-        '''INSERT OR IGNORE INTO cifra_vocalist_transpose (cifra_id, user_id, transpose_semitones)
-           SELECT id, ?, COALESCE(transpose_semitones, 0)
-           FROM cifras WHERE band_id = ?''',
-        (vocalist_user_id, band_id),
-    )
+def _vocalist_row_dict(row) -> dict:
+    d = dict(row)
+    if d.get('user_id'):
+        u = get_user(d['user_id'])
+        if u:
+            d['username'] = u.get('username')
+            d['user_display'] = (u.get('display_name') or '').strip() or u.get('username')
+    return d
 
 
-def _migrate_vocalist_transpose_to_cifra(cursor, band_id: str, vocalist_user_id: str) -> None:
-    """Ao desvincular conta, mantém tons na cifra (cantor só com nome)."""
-    cursor.execute(
-        '''UPDATE cifras SET transpose_semitones = COALESCE(
-               (SELECT t.transpose_semitones FROM cifra_vocalist_transpose t
-                WHERE t.cifra_id = cifras.id AND t.user_id = ?),
-               transpose_semitones, 0)
-           WHERE band_id = ?''',
-        (vocalist_user_id, band_id),
-    )
-    cursor.execute(
-        '''DELETE FROM cifra_vocalist_transpose WHERE user_id = ? AND cifra_id IN
-           (SELECT id FROM cifras WHERE band_id = ?)''',
-        (vocalist_user_id, band_id),
-    )
-
-
-def get_band_vocalist_user_id(band_id: str) -> str | None:
-    band = get_band(band_id)
-    if not band:
-        return None
-    vid = band.get('vocalist_user_id')
-    return vid if vid else None
-
-
-def get_band_vocalist_name(band_id: str) -> str | None:
-    band = get_band(band_id)
-    if not band:
-        return None
-    name = (band.get('vocalist_name') or '').strip()
-    return name or None
-
-
-def band_has_vocalist(band_id: str) -> bool:
-    """Há cantor(a) definido (nome e/ou conta vinculada)."""
-    return bool(get_band_vocalist_name(band_id) or get_band_vocalist_user_id(band_id))
-
-
-def get_vocalist_user(band_id: str) -> dict | None:
-    """Usuário vinculado como cantor(a), mesmo que não seja membro da banda."""
-    vid = get_band_vocalist_user_id(band_id)
-    if not vid:
-        return None
-    return get_user(vid)
-
-
-def get_vocalist_member(band_id: str) -> dict | None:
-    """Compat: usuário vinculado se for membro da banda."""
-    user = get_vocalist_user(band_id)
-    if not user or not is_band_member(band_id, user['id']):
-        return None
-    return user
-
-
-def vocalist_display_name(band_id: str) -> str | None:
-    """Nome exibível: conta vinculada ou nome livre."""
-    user = get_vocalist_user(band_id)
-    if user:
-        name = (user.get('display_name') or '').strip()
-        return name or user.get('username')
-    return get_band_vocalist_name(band_id)
-
-
-def get_cifra_vocalist_transpose(cifra_id: str, user_id: str) -> int:
+def get_band_vocalists(band_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT transpose_semitones FROM cifra_vocalist_transpose WHERE cifra_id = ? AND user_id = ?',
-        (cifra_id, user_id),
+        '''SELECT * FROM band_vocalists WHERE band_id = ?
+           ORDER BY sort_order, name COLLATE NOCASE''',
+        (band_id,),
+    )
+    rows = [ _vocalist_row_dict(r) for r in c.fetchall() ]
+    db.close()
+    return rows
+
+
+def get_band_vocalist(vocalist_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM band_vocalists WHERE id = ?', (vocalist_id,))
+    row = c.fetchone()
+    db.close()
+    return _vocalist_row_dict(row) if row else None
+
+
+def band_vocalist_belongs_to_band(vocalist_id: str, band_id: str) -> bool:
+    v = get_band_vocalist(vocalist_id)
+    return bool(v and v.get('band_id') == band_id)
+
+
+def band_has_vocalist(band_id: str) -> bool:
+    return len(get_band_vocalists(band_id)) > 0
+
+
+def vocalist_entry_display_name(vocalist: dict) -> str:
+    if not vocalist:
+        return ''
+    if vocalist.get('user_display'):
+        return vocalist['user_display']
+    return (vocalist.get('name') or '').strip()
+
+
+def vocalists_summary_label(band_id: str) -> str | None:
+    vocalists = get_band_vocalists(band_id)
+    if not vocalists:
+        return None
+    return ', '.join(vocalist_entry_display_name(v) for v in vocalists)
+
+
+def add_band_vocalist(band_id: str, name: str, user_id: str | None = None) -> str:
+    name = name.strip()
+    if not name:
+        raise ValueError('Nome do cantor(a) é obrigatório')
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM band_vocalists WHERE band_id = ?', (band_id,))
+    sort_order = c.fetchone()['n']
+    vid = str(uuid.uuid4())
+    c.execute(
+        '''INSERT INTO band_vocalists (id, band_id, name, user_id, sort_order)
+           VALUES (?, ?, ?, ?, ?)''',
+        (vid, band_id, name, user_id or None, sort_order),
+    )
+    c.execute(
+        '''INSERT OR IGNORE INTO cifra_vocalist_transpose (cifra_id, vocalist_id, transpose_semitones)
+           SELECT id, ?, COALESCE(transpose_semitones, 0) FROM cifras WHERE band_id = ?''',
+        (vid, band_id),
+    )
+    db.commit()
+    db.close()
+    return vid
+
+
+def add_band_vocalists_from_text(band_id: str, raw_names: str, user_id: str | None = None) -> list[str]:
+    """Aceita vários nomes separados por vírgula."""
+    ids = []
+    names = _split_vocalist_names(raw_names)
+    if not names:
+        raise ValueError('Informe pelo menos um nome')
+    for i, name in enumerate(names):
+        link = user_id if i == 0 else None
+        ids.append(add_band_vocalist(band_id, name, link))
+    return ids
+
+
+_UNSET = object()
+
+
+def update_band_vocalist(vocalist_id: str, name: str | None = None, user_id=_UNSET):
+    db = get_db()
+    c = db.cursor()
+    parts, vals = [], []
+    if name is not None:
+        parts.append('name = ?')
+        vals.append(name.strip())
+    if user_id is not _UNSET:
+        parts.append('user_id = ?')
+        vals.append(user_id or None)
+    if not parts:
+        db.close()
+        return
+    vals.append(vocalist_id)
+    c.execute(f'UPDATE band_vocalists SET {", ".join(parts)} WHERE id = ?', vals)
+    db.commit()
+    db.close()
+
+
+def delete_band_vocalist(vocalist_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('DELETE FROM cifra_vocalist_transpose WHERE vocalist_id = ?', (vocalist_id,))
+    c.execute('DELETE FROM band_vocalists WHERE id = ?', (vocalist_id,))
+    db.commit()
+    db.close()
+
+
+def get_cifra_vocalist_transpose(cifra_id: str, vocalist_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT transpose_semitones FROM cifra_vocalist_transpose WHERE cifra_id = ? AND vocalist_id = ?',
+        (cifra_id, vocalist_id),
     )
     row = c.fetchone()
     db.close()
@@ -451,15 +570,22 @@ def get_cifra_vocalist_transpose(cifra_id: str, user_id: str) -> int:
         return 0
 
 
-def set_cifra_vocalist_transpose(cifra_id: str, user_id: str, semitones: int) -> None:
+def get_cifra_transpose_by_vocalists(cifra_id: str, band_id: str) -> dict[str, int]:
+    vocalists = get_band_vocalists(band_id)
+    return {v['id']: get_cifra_vocalist_transpose(cifra_id, v['id']) for v in vocalists}
+
+
+def set_cifra_vocalist_transpose(cifra_id: str, vocalist_id: str, semitones: int) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO cifra_vocalist_transpose (cifra_id, user_id, transpose_semitones)
+        '''INSERT INTO cifra_vocalist_transpose (cifra_id, vocalist_id, transpose_semitones)
            VALUES (?, ?, ?)
-           ON CONFLICT(cifra_id, user_id) DO UPDATE SET transpose_semitones = excluded.transpose_semitones''',
-        (cifra_id, user_id, int(semitones)),
+           ON CONFLICT(cifra_id, vocalist_id) DO UPDATE SET
+               transpose_semitones = excluded.transpose_semitones''',
+        (cifra_id, vocalist_id, int(semitones)),
     )
+    c.execute('UPDATE cifras SET updated_at=CURRENT_TIMESTAMP WHERE id=?', (cifra_id,))
     db.commit()
     db.close()
 
@@ -477,6 +603,7 @@ def delete_band(band_id):
         (band_id,),
     )
     c.execute('DELETE FROM cifras WHERE band_id = ?', (band_id,))
+    c.execute('DELETE FROM band_vocalists WHERE band_id = ?', (band_id,))
     c.execute('DELETE FROM band_members WHERE band_id = ?', (band_id,))
     c.execute('DELETE FROM bands WHERE id = ?', (band_id,))
     db.commit()
@@ -638,30 +765,24 @@ def delete_cifra(cifra_id):
     db.close()
 
 
-def set_cifra_transpose_semitones(cifra_id, semitones: int, vocalist_user_id: str | None = None) -> None:
-    """Tom de performance: associado ao cantor da banda quando configurado."""
+def set_cifra_transpose_semitones(cifra_id, semitones: int, vocalist_id: str | None = None) -> None:
+    """Tom de performance por cantor(a); sem cantores, grava na cifra."""
     cifra = get_cifra(cifra_id)
     if not cifra:
         return
     semi = int(semitones)
     band_id = cifra['band_id']
-    vid = vocalist_user_id or get_band_vocalist_user_id(band_id)
+    vocalists = get_band_vocalists(band_id)
+    if vocalists:
+        vid = vocalist_id or vocalists[0]['id']
+        if vid and band_vocalist_belongs_to_band(vid, band_id):
+            set_cifra_vocalist_transpose(cifra_id, vid, semi)
+            return
     db = get_db()
     c = db.cursor()
-    if vid:
-        set_cifra_vocalist_transpose(cifra_id, vid, semi)
-    else:
-        c.execute(
-            '''UPDATE cifras SET transpose_semitones=?, updated_at=CURRENT_TIMESTAMP
-               WHERE id=?''',
-            (semi, cifra_id),
-        )
-        db.commit()
-        db.close()
-        return
     c.execute(
-        'UPDATE cifras SET updated_at=CURRENT_TIMESTAMP WHERE id=?',
-        (cifra_id,),
+        '''UPDATE cifras SET transpose_semitones=?, updated_at=CURRENT_TIMESTAMP WHERE id=?''',
+        (semi, cifra_id),
     )
     db.commit()
     db.close()

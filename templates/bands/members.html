@@ -70,7 +70,7 @@
                 </div>
                 {% if band.owner_id == member.id %}
                 <span class="row-badge owner">Proprietário</span>
-                {% elif band.vocalist_user_id == member.id %}
+                {% elif member.id in vocalist_user_ids %}
                 <span class="row-badge" style="color:var(--accent);border-color:var(--chord-highlight-border);">Cantor(a)</span>
                 {% elif member.role == 'admin' %}
                 <span class="row-badge">Admin</span>

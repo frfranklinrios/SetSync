@@ -251,15 +251,28 @@
                 <p class="text-muted mb-2" style="font-size:0.8rem;">
                     Tom cadastrado: <strong>{{ cifra.tom_original|normalize_tom }}</strong>
                 </p>
+                {% if vocalists|length > 1 %}
+                <label class="form-label mb-1" style="font-size:0.75rem;">Cantor(a)</label>
+                <select class="form-select form-select-sm mb-2"
+                        onchange="location.href=CIFRA_BASE+'?vocalist='+encodeURIComponent(this.value)">
+                    {% for v in vocalists %}
+                    <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>
+                        {{ v.name }}{% if v.user_id %} (@{{ v.username }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% elif vocalists|length == 1 %}
                 <p class="text-muted mb-2" style="font-size:0.75rem;">
-                    {% if vocalist_name %}
-                    Tom de performance para <strong>{{ vocalist_name }}</strong> (cantor(a) da banda){% if vocalist_linked %} — conta vinculada{% endif %}.
-                    {% else %}
-                    Defina o cantor(a) em <a href="{{ url_for('bands.settings', band_id=band.id) }}">Configurações da banda</a>
-                    (nome livre ou conta depois). Enquanto isso, o tom vale para toda a banda.
-                    {% endif %}
+                    Tom para <strong>{{ vocalists[0].name }}</strong>{% if vocalists[0].user_id %} — conta vinculada{% endif %}.
                 </p>
-                <select class="transpose-select" onchange="location.href=CIFRA_BASE+'?transpose='+this.value">
+                {% else %}
+                <p class="text-muted mb-2" style="font-size:0.75rem;">
+                    <a href="{{ url_for('bands.settings', band_id=band.id) }}">Cadastre cantores</a>
+                    para um tom por voz. Enquanto isso, o tom vale para toda a banda.
+                </p>
+                {% endif %}
+                <select class="transpose-select" id="transpose-select"
+                        data-vocalist="{{ active_vocalist_id or '' }}">
                     {% for semitones, label in transpositions.items() %}
                     <option value="{{ semitones }}" {% if current_transpose == semitones %}selected{% endif %}>
                         {{ label }}
@@ -311,6 +324,15 @@
 <script>
 const CIFRA_BASE = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
 const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}";
+(function () {
+    var sel = document.getElementById('transpose-select');
+    if (!sel) return;
+    sel.addEventListener('change', function () {
+        var url = CIFRA_BASE + '?transpose=' + encodeURIComponent(this.value);
+        if (sel.dataset.vocalist) url += '&vocalist=' + encodeURIComponent(sel.dataset.vocalist);
+        location.href = url;
+    });
+})();
 const LEADSHEET_DOC = {{ leadsheet_document|tojson if leadsheet_document else 'null' }};
 const CIFRA_TITULO = {{ cifra.titulo|tojson }};
 const CIFRA_ARTISTA = {{ cifra.artista|tojson }};

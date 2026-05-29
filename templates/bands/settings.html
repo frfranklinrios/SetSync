@@ -12,14 +12,15 @@
 </nav>
 
 <div class="row justify-content-center">
-    <div class="col-lg-6">
+    <div class="col-lg-7">
         <h2 class="mb-1">Configurações</h2>
         <p class="text-muted mb-4" style="font-size:0.875rem;">{{ band.name }}</p>
 
         <div class="card mb-4">
             <div class="card-header">Informações da Banda</div>
             <div class="card-body">
-                <form method="POST" id="band-settings-form">
+                <form method="POST">
+                    <input type="hidden" name="action" value="save_band">
                     <div class="mb-3">
                         <label for="name" class="form-label">Nome da Banda</label>
                         <input type="text" class="form-control" id="name" name="name" value="{{ band.name }}" required>
@@ -28,58 +29,78 @@
                         <label for="description" class="form-label">Descrição</label>
                         <textarea class="form-control" id="description" name="description" rows="3">{{ band.description or '' }}</textarea>
                     </div>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
 
-                    <hr class="my-4">
-                    <h6 class="mb-3"><i class="fas fa-microphone me-1"></i> Cantor(a) da banda</h6>
+        <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-microphone me-1"></i> Cantores(as)</div>
+            <div class="card-body">
+                <p class="form-text mb-3">
+                    Cada cantor(a) pode ter o próprio tom por música. Separe vários nomes por vírgula.
+                    A conta no SetSync é opcional e pode ser vinculada depois.
+                </p>
 
-                    <div class="mb-3">
-                        <label for="vocalist_name" class="form-label">Nome</label>
-                        <input type="text" class="form-control" id="vocalist_name" name="vocalist_name"
-                               value="{{ band.vocalist_name or '' }}"
-                               placeholder="Ex.: Ana, João…">
-                        <div class="form-text">
-                            Pode ser alguém que ainda não usa o SetSync. O tom transposto fica associado a essa pessoa.
+                {% if vocalists %}
+                <ul class="list-group list-group-flush mb-4">
+                    {% for v in vocalists %}
+                    <li class="list-group-item px-0 d-flex flex-wrap align-items-start gap-2 justify-content-between">
+                        <div>
+                            <strong>{{ v.name }}</strong>
+                            {% if v.user_id %}
+                            <span class="text-muted" style="font-size:0.8rem;"> · @{{ v.username or 'conta' }}</span>
+                            {% endif %}
                         </div>
-                    </div>
+                        <form method="POST" class="d-inline"
+                              onsubmit="return confirm('Remover {{ v.name }} da lista de cantores?')">
+                            <input type="hidden" name="action" value="delete_vocalist">
+                            <input type="hidden" name="vocalist_id" value="{{ v.id }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-3" style="font-size:0.85rem;">Nenhum cantor cadastrado. O tom fica único para toda a banda.</p>
+                {% endif %}
 
+                <form method="POST" class="border-top pt-3">
+                    <input type="hidden" name="action" value="add_vocalist">
+                    <div class="mb-3">
+                        <label for="vocalist_names" class="form-label">Adicionar cantor(es)</label>
+                        <input type="text" class="form-control" id="vocalist_names" name="vocalist_names"
+                               placeholder="Ex.: Ana ou Dani, Robson, Alda" required>
+                    </div>
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="vocalist_link_account"
-                               name="vocalist_link_account" value="1"
-                               {% if band.vocalist_user_id %}checked{% endif %}>
+                               name="vocalist_link_account" value="1">
                         <label class="form-check-label" for="vocalist_link_account">
-                            Vincular a uma conta no SetSync
+                            Vincular conta ao primeiro nome (opcional)
                         </label>
-                        <div class="form-text">
-                            Opcional. Quando a pessoa se cadastrar, informe o usuário (login) para associar os tons salvos.
-                            Não precisa ser membro da banda.
-                        </div>
                     </div>
-
-                    <div id="vocalist-account-fields" class="{% if not band.vocalist_user_id %}d-none{% endif %}">
-                        <div class="mb-3">
-                            <label for="vocalist_user_id" class="form-label">Conta (membro da banda)</label>
+                    <div id="vocalist-account-fields" class="d-none mb-3">
+                        <div class="mb-2">
+                            <label for="vocalist_user_id" class="form-label">Membro da banda</label>
                             <select class="form-select" id="vocalist_user_id" name="vocalist_user_id">
-                                <option value="">— Escolher depois ou usar login abaixo —</option>
+                                <option value="">— Escolher —</option>
                                 {% for m in band_members %}
-                                <option value="{{ m.id }}" {% if band.vocalist_user_id == m.id %}selected{% endif %}>
-                                    {{ m.display_name or m.username }}
-                                </option>
+                                <option value="{{ m.id }}">{{ m.display_name or m.username }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="vocalist_username" class="form-label">Ou usuário (login)</label>
+                        <div>
+                            <label for="vocalist_username" class="form-label">Ou login no SetSync</label>
                             <input type="text" class="form-control" id="vocalist_username" name="vocalist_username"
-                                   placeholder="login no SetSync"
-                                   value="{% if band.vocalist_user_id and linked_vocalist_username %}{{ linked_vocalist_username }}{% endif %}">
-                            <div class="form-text">Use se a pessoa já tem conta mas ainda não entrou na banda.</div>
+                                   placeholder="usuário">
                         </div>
                     </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                        <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary">Cancelar</a>
-                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i> Adicionar
+                    </button>
                 </form>
             </div>
         </div>
@@ -105,15 +126,11 @@
     var cb = document.getElementById('vocalist_link_account');
     var panel = document.getElementById('vocalist-account-fields');
     if (!cb || !panel) return;
-    function sync() {
-        panel.classList.toggle('d-none', !cb.checked);
-    }
+    function sync() { panel.classList.toggle('d-none', !cb.checked); }
     cb.addEventListener('change', sync);
-    sync();
 })();
 </script>
 
-<!-- Modal de confirmação -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -123,7 +140,7 @@
             </div>
             <div class="modal-body">
                 <p>Tem certeza que deseja excluir <strong>{{ band.name }}</strong>?</p>
-                <p class="text-muted" style="font-size:0.82rem;">Todas as cifras e setlists serão removidas permanentemente. Esta ação não pode ser desfeita.</p>
+                <p class="text-muted" style="font-size:0.82rem;">Todas as cifras e setlists serão removidas permanentemente.</p>
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
