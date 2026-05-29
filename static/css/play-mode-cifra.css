@@ -53,7 +53,11 @@
 }
 
 #play-app #cifra-content.grade-mode .leadsheet-play-wrap {
-  font-size: 1.05rem !important;
+  font-size: clamp(1rem, 3.2vw, 1.15rem) !important;
+}
+
+#play-app #cifra-content.grade-mode .pulse-cell .chord-text {
+  font-size: clamp(0.85rem, 2.8vw, 1em) !important;
 }
 
 #play-app #cifra-content .pulse-cell .chord-text.chord-sm {

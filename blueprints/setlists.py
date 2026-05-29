@@ -1,7 +1,9 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from io import BytesIO
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from models_setlist import (
     create_setlist, get_band_setlists, get_setlist, delete_setlist,
     add_cifra_to_setlist, remove_cifra_from_setlist, reorder_setlist, get_setlist_cifras,
@@ -21,6 +23,122 @@ def _require_setlist_access(setlist, user_id):
     if not band or not is_band_member(setlist['band_id'], user_id):
         return False, band
     return True, band
+
+
+def _prepare_setlist_print_data(setlist_id, user_id):
+    """Monta setlist, band e sheets para impressão/PDF. Retorna None se sem acesso ou vazia."""
+    from datetime import datetime
+    from db import get_band_vocalists, get_band_vocalist
+    from blueprints.cifras import (
+        prepare_cifra_sheet,
+        cifra_display_key,
+        cifra_transpose_semitones,
+        vocalist_entry_display_name,
+    )
+
+    setlist = get_setlist(setlist_id)
+    ok, band = _require_setlist_access(setlist, user_id)
+    if not ok:
+        return None
+
+    cifras_raw = get_setlist_cifras(setlist_id)
+    if not cifras_raw:
+        return {'empty': True, 'setlist': setlist, 'band': band}
+
+    vocalists = get_band_vocalists(band['id'])
+    default_vid = vocalists[0]['id'] if vocalists else None
+    sheets = []
+    for i, c in enumerate(cifras_raw, start=1):
+        vid = c.get('setlist_vocalist_id') or default_vid
+        semi = cifra_transpose_semitones(c, vocalist_id=vid)
+        sheet = prepare_cifra_sheet(c, semi)
+        v = get_band_vocalist(vid) if vid else None
+        vname = vocalist_entry_display_name(v) if v else ''
+        sheet['index'] = i
+        sheet['cifra_id'] = c['id']
+        sheet['vocalist_name'] = vname
+        sheet['display_key'] = (
+            cifra_display_key(c, vocalist_id=vid) if c.get('tom_original') else sheet['display_key']
+        )
+        sheets.append(sheet)
+
+    two_cols = request.args.get('cols', '1') == '2'
+    palco_compact = len(sheets) > 10 or request.args.get('compact', '') == '1'
+
+    return {
+        'empty': False,
+        'setlist': setlist,
+        'band': band,
+        'sheets': sheets,
+        'printed_at': datetime.now(),
+        'two_cols': two_cols,
+        'palco_compact': palco_compact,
+    }
+
+
+@setlists_bp.route('/<setlist_id>/imprimir')
+@login_required
+def imprimir(setlist_id):
+    """Página para imprimir todas as músicas da setlist (tom por cantor da linha)."""
+    data = _prepare_setlist_print_data(setlist_id, session['user_id'])
+    if data is None:
+        flash('Setlist não encontrada' if not get_setlist(setlist_id) else 'Sem permissão', 'danger')
+        return redirect(url_for('dashboard'))
+    if data.get('empty'):
+        flash('Setlist vazia — adicione músicas antes de imprimir.', 'warning')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+
+    autoprint = request.args.get('print', '').lower() in ('1', 'true', 'yes')
+    pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
+
+    return render_template(
+        'setlists/print.html',
+        autoprint=autoprint,
+        pdfgen=pdfgen,
+        **{k: v for k, v in data.items() if k != 'empty'},
+    )
+
+
+@setlists_bp.route('/<setlist_id>/pdf')
+@login_required
+def download_pdf(setlist_id):
+    """Gera e baixa PDF formatado (Chromium)."""
+    data = _prepare_setlist_print_data(setlist_id, session['user_id'])
+    if data is None:
+        flash('Setlist não encontrada' if not get_setlist(setlist_id) else 'Sem permissão', 'danger')
+        return redirect(url_for('dashboard'))
+    if data.get('empty'):
+        flash('Setlist vazia — adicione músicas antes de gerar o PDF.', 'warning')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+
+    from setlist_pdf import (
+        build_pdf_download_name,
+        playwright_cookies_from_flask_request,
+        render_url_to_pdf,
+    )
+
+    try:
+        cols = request.args.get('cols', '1')
+        pdf_url = url_for(
+            'setlists.imprimir',
+            setlist_id=setlist_id,
+            cols=cols,
+            pdfgen=1,
+            _external=True,
+        )
+        cookies = playwright_cookies_from_flask_request(request)
+        pdf_bytes = render_url_to_pdf(pdf_url, cookies)
+    except Exception as exc:
+        flash(f'Não foi possível gerar o PDF: {exc}', 'danger')
+        return redirect(url_for('setlists.imprimir', setlist_id=setlist_id))
+
+    filename = build_pdf_download_name(data['setlist']['name'], data['band']['name'])
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename,
+    )
 
 
 # Modo tocar: exibe músicas em duas colunas com paginação

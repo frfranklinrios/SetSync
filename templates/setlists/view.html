@@ -27,6 +27,14 @@
         <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
             <i class="fas fa-play me-1"></i> Tocar
         </a>
+        <a href="{{ url_for('setlists.download_pdf', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm"
+           title="PDF com folha de palco e cifras (A4 retrato)">
+            <i class="fas fa-file-pdf me-1"></i> PDF
+        </a>
+        <a href="{{ url_for('setlists.imprimir', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener"
+           title="Visualizar e imprimir no navegador">
+            <i class="fas fa-print me-1"></i> Imprimir
+        </a>
         {% endif %}
         <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-plus me-1"></i> Adicionar Música

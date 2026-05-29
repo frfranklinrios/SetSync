@@ -164,15 +164,26 @@ body { overflow-x: hidden; }
     border-color: var(--chord-highlight-border);
 }
 
-/* ── CIFRA AREA ───────────────────────── */
+/* ── CIFRA AREA (bordas fixas; só o miolo rola) ───────────────── */
 #cifra-wrap {
     flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 0;
+    overflow: hidden;
     background: #0f172a;
     position: relative;
 }
 [data-theme="light"] #cifra-wrap { background: #f8fafc; }
+
+#cifra-scroll {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
 
 .cifra-body {
     font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
@@ -489,15 +500,12 @@ body.play-mode.chrome-hidden #play-foot {
     pointer-events: none;
 }
 
-/* ── EDGE TAP ZONES (navegação por toque) ── */
+/* ── EDGE TAP ZONES (fixas nas laterais; não rolam com a cifra) ── */
 .tap-zone {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 13%;
-    max-width: 110px;
-    min-width: 55px;
-    z-index: 30;
+    flex: 0 0 auto;
+    align-self: stretch;
+    width: clamp(52px, 12vw, 108px);
+    z-index: 2;
     cursor: pointer;
     background: transparent;
     border: none;
@@ -515,8 +523,6 @@ body.play-mode.chrome-hidden #play-foot {
     touch-action: manipulation;
 }
 .tap-zone i { pointer-events: none; }
-.tap-zone.left { left: 0; }
-.tap-zone.right { right: 0; }
 .tap-zone:active,
 .tap-zone.flash {
     background: var(--chord-highlight-ghost);
@@ -526,8 +532,7 @@ body.play-mode.chrome-hidden #play-foot {
     .tap-zone { width: 11%; max-width: 130px; }
 }
 .tap-zone[aria-disabled="true"] {
-    pointer-events: none;
-    opacity: 0;
+    opacity: 0.35;
 }
 /* show edge hints briefly on load */
 body.play-mode.edges-hint .tap-zone {
@@ -642,9 +647,9 @@ body.play-mode.edges-hint .tap-zone {
     color: var(--chord-highlight);
 }
 </style>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=7">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=7">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=7">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=9">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=8">
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 
@@ -736,15 +741,17 @@ body.play-mode.edges-hint .tap-zone {
         </a>
     </div>
 
-    <!-- Cifra display -->
+    <!-- Cifra display: botões fora da área que rola -->
     <div id="cifra-wrap">
         <button type="button" class="tap-zone left" id="tap-prev" aria-label="Página anterior da cifra">
             <i class="fas fa-chevron-left" aria-hidden="true"></i>
         </button>
+        <div id="cifra-scroll" class="cifra-scroll-port">
+            <div class="cifra-body cifra-sheet-paper" id="cifra-content"></div>
+        </div>
         <button type="button" class="tap-zone right" id="tap-next" aria-label="Próxima página da cifra">
             <i class="fas fa-chevron-right" aria-hidden="true"></i>
         </button>
-        <div class="cifra-body cifra-sheet-paper" id="cifra-content"></div>
     </div>
 
     <!-- Bottom progress -->
@@ -768,7 +775,7 @@ body.play-mode.edges-hint .tap-zone {
 <!-- Keyboard hint -->
 <div id="kbd-hint">Bordas ou ← →: paginar cifra (próxima música só na última página) · L lista · Espaço auto-scroll · Esc sair</div>
 
-<script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}"></script>
+<script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=10"></script>
 <script id="cifras-data" type="application/json">
 [{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
@@ -874,11 +881,17 @@ body.play-mode.edges-hint .tap-zone {
 
     function getDisplayKey(c) {
         if (!c) return '—';
+        var semi = getTranspose(c);
+        var tk = targetKeyForSemitones(c, semi);
+        if (tk) return tk;
         return c.tom || c.tom_root || '—';
     }
 
     function targetKeyForSemitones(c, semi) {
-        if (!c || !c.transpose_map || !semi) return '';
+        if (!c || !c.transpose_map) return '';
+        if (semi === 0 || semi === '0') {
+            return c.tom_root || normalizeKeyLabel(c.tom_original) || '';
+        }
         var keys = Object.keys(c.transpose_map);
         for (var i = 0; i < keys.length; i++) {
             var k = keys[i];
@@ -887,11 +900,28 @@ body.play-mode.edges-hint .tap-zone {
         return '';
     }
 
+    function normalizeKeyLabel(k) {
+        if (!k) return '';
+        return String(k).replace(/\s*\(original\)\s*/i, '').trim();
+    }
+
+    function syncTargetKeyFromTranspose(c) {
+        if (!c) return;
+        var semi = getTranspose(c);
+        var canon = targetKeyForSemitones(c, semi);
+        if (!canon) return;
+        if (!targetKey || c.transpose_map[targetKey] === undefined) {
+            targetKey = canon;
+            localStorage.setItem('play.targetKey', targetKey);
+            sessionStorage.setItem('play.targetKey', targetKey);
+        }
+    }
+
     function getLeadSheetWidth() {
         if (LeadsheetPlayRender && LeadsheetPlayRender.getPlayAreaWidth) {
             return LeadsheetPlayRender.getPlayAreaWidth();
         }
-        var wrap = document.getElementById('cifra-wrap');
+        var wrap = scrollWrap();
         return (wrap && wrap.clientWidth) || window.innerWidth || 360;
     }
 
@@ -928,6 +958,7 @@ body.play-mode.edges-hint .tap-zone {
             return;
         }
         if (fitMode && !twoColActive && !gradeMode) requestAnimationFrame(autoFit);
+        requestAnimationFrame(updateTapZoneState);
         tryResumeAutoScroll();
     }
 
@@ -942,13 +973,19 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     function buildLeadSheetHtml(doc, cifraMeta) {
-        if (!LeadsheetPlayRender || !LeadsheetPlayRender.isLeadsheet(doc)) {
+        if (!LeadsheetPlayRender) {
             return playModeEmptyLeadSheetMessage();
         }
-        return LeadsheetPlayRender.renderHtml(doc, {
-            wrapWidth: getLeadSheetWidth(),
-            hideHeader: true
-        });
+        if (LeadsheetPlayRender.isLeadsheet(doc)) {
+            return LeadsheetPlayRender.renderHtml(doc, {
+                wrapWidth: getLeadSheetWidth(),
+                hideHeader: true
+            });
+        }
+        if (Array.isArray(doc) && doc.length && LeadsheetPlayRender.renderLegacyGradeHtml) {
+            return LeadsheetPlayRender.renderLegacyGradeHtml(doc);
+        }
+        return playModeEmptyLeadSheetMessage();
     }
 
     function buildStructuredHtml(cifraData) {
@@ -1111,8 +1148,8 @@ body.play-mode.edges-hint .tap-zone {
         if (!c) return;
 
         if (!resumeScrollAfterLoad) stopScroll();
-        var wrap = document.getElementById('cifra-wrap');
-        wrap.scrollTop = 0;
+        var wrap = scrollWrap();
+        if (wrap) wrap.scrollTop = 0;
         window.scrollTo(0, 0);
 
         var t = getTranspose(c);
@@ -1129,8 +1166,7 @@ body.play-mode.edges-hint .tap-zone {
 
         document.getElementById('btn-prev').disabled = (current === 0);
         document.getElementById('btn-next').disabled = (current === CIFRAS.length - 1);
-        document.getElementById('tap-prev').setAttribute('aria-disabled', current === 0 ? 'true' : 'false');
-        document.getElementById('tap-next').setAttribute('aria-disabled', current === CIFRAS.length - 1 ? 'true' : 'false');
+        updateTapZoneState();
         document.getElementById('prog-text-l').textContent = (current + 1) + '/' + CIFRAS.length;
 
         document.querySelectorAll('.prog-dot').forEach(function (dot, i) {
@@ -1140,9 +1176,13 @@ body.play-mode.edges-hint .tap-zone {
             item.classList.toggle('active', i === current);
         });
 
-        // transpose select (tom salvo da banda por música)
+        syncTargetKeyFromTranspose(c);
         var sel = document.getElementById('transpose-sel');
-        if (sel) sel.value = targetKeyForSemitones(c, t);
+        if (sel) {
+            var tk = targetKeyForSemitones(c, t) || targetKey || '';
+            if (tk) sel.value = tk;
+            else sel.value = '';
+        }
 
         // load html (cached or fetch)
         if (gradeMode) {
@@ -1186,9 +1226,19 @@ body.play-mode.edges-hint .tap-zone {
 
     // ── Paginação por toque/borda (1 tela por toque; música só na última página) ──
     var SCROLL_EDGE = 8;
-    var _tapZoneLock = 0;
 
-    function scrollWrap() { return document.getElementById('cifra-wrap'); }
+    function scrollWrap() { return document.getElementById('cifra-scroll'); }
+
+    /** Bordas só ficam “inativas” quando não há mais o que paginar (fim da cifra + limite da setlist). */
+    function updateTapZoneState() {
+        var prev = document.getElementById('tap-prev');
+        var next = document.getElementById('tap-next');
+        if (!prev || !next) return;
+        var atTop = isScrollAtTop();
+        var atBottom = isScrollAtBottom();
+        prev.setAttribute('aria-disabled', (current === 0 && atTop) ? 'true' : 'false');
+        next.setAttribute('aria-disabled', (current === CIFRAS.length - 1 && atBottom) ? 'true' : 'false');
+    }
 
     function scrollMetrics(wrap) {
         wrap = wrap || scrollWrap();
@@ -1214,68 +1264,80 @@ body.play-mode.edges-hint .tap-zone {
         setTimeout(function () { el.classList.remove('flash'); }, 220);
     }
 
+    function scrollByPage(wrap, delta) {
+        var m = scrollMetrics(wrap);
+        var st = m.wrap.scrollTop;
+        var target = st + delta * m.page;
+        if (target >= m.maxTop - SCROLL_EDGE) {
+            m.wrap.scrollTo({ top: m.maxTop, left: 0, behavior: 'auto' });
+        } else if (target <= SCROLL_EDGE) {
+            m.wrap.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        } else {
+            m.wrap.scrollTo({ top: target, left: 0, behavior: 'auto' });
+        }
+        requestAnimationFrame(updateTapZoneState);
+    }
+
     /** Uma página = altura visível; na última página vai ao fim; no fim troca de música. */
     function tapScrollDown() {
-        if (Date.now() - _tapZoneLock < 280) return;
-        _tapZoneLock = Date.now();
-
         var m = scrollMetrics();
         if (!m.needsScroll) {
             if (current < CIFRAS.length - 1) nextSong();
             flashTapZone('tap-next');
+            updateTapZoneState();
             return;
         }
         var st = m.wrap.scrollTop;
         if (st >= m.maxTop - SCROLL_EDGE) {
             if (current < CIFRAS.length - 1) nextSong();
             flashTapZone('tap-next');
+            updateTapZoneState();
             return;
         }
-        var target = st + m.page;
-        if (target >= m.maxTop - SCROLL_EDGE) {
-            m.wrap.scrollTop = m.maxTop;
-        } else {
-            m.wrap.scrollTop = target;
-        }
+        scrollByPage(m.wrap, 1);
         flashTapZone('tap-next');
     }
 
     function tapScrollUp() {
-        if (Date.now() - _tapZoneLock < 280) return;
-        _tapZoneLock = Date.now();
-
         var m = scrollMetrics();
         if (!m.needsScroll) {
             if (current > 0) prevSong();
             flashTapZone('tap-prev');
+            updateTapZoneState();
             return;
         }
         var st = m.wrap.scrollTop;
         if (st <= SCROLL_EDGE) {
             if (current > 0) prevSong();
             flashTapZone('tap-prev');
+            updateTapZoneState();
             return;
         }
-        var target = st - m.page;
-        if (target <= SCROLL_EDGE) {
-            m.wrap.scrollTop = 0;
-        } else {
-            m.wrap.scrollTop = target;
-        }
+        scrollByPage(m.wrap, -1);
         flashTapZone('tap-prev');
     }
 
     function bindTapZone(el, action) {
         if (!el) return;
-        function run(e) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+        var suppressClickUntil = 0;
+        function runTouch(e) {
+            suppressClickUntil = Date.now() + 500;
+            e.preventDefault();
+            e.stopPropagation();
             action();
         }
-        el.addEventListener('click', run);
-        el.addEventListener('touchend', run, { passive: false });
+        function runClick(e) {
+            if (Date.now() < suppressClickUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            action();
+        }
+        el.addEventListener('touchend', runTouch, { passive: false });
+        el.addEventListener('click', runClick);
     }
 
     // ── Transpose ───────────────────────────
@@ -1424,7 +1486,8 @@ body.play-mode.edges-hint .tap-zone {
         lastTs = ts;
         var px = Math.floor(scrollAcc);
         if (px > 0) {
-            var wrap = document.getElementById('cifra-wrap');
+            var wrap = scrollWrap();
+            if (!wrap) return;
             wrap.scrollTop += px;
             if (wrap.scrollTop >= wrap.scrollHeight - wrap.clientHeight - 4) {
                 var wasScrolling = isScrolling;
@@ -1596,11 +1659,21 @@ body.play-mode.edges-hint .tap-zone {
     bindTapZone(document.getElementById('tap-prev'), tapScrollUp);
     bindTapZone(document.getElementById('tap-next'), tapScrollDown);
 
+    (function () {
+        var wrap = scrollWrap();
+        var scrollStateTimer = null;
+        wrap.addEventListener('scroll', function () {
+            clearTimeout(scrollStateTimer);
+            scrollStateTimer = setTimeout(updateTapZoneState, 80);
+        }, { passive: true });
+    })();
+
     // ── Swipe no miolo (mesma paginação; bordas usam os botões acima) ──
     (function () {
         var SWIPE_THRESHOLD = 48;
         var tx = 0, ty = 0, moved = false;
-        var wrap = document.getElementById('cifra-wrap');
+        var wrap = scrollWrap();
+        if (!wrap) return;
 
         wrap.addEventListener('touchstart', function (e) {
             if (e.touches.length !== 1) return;
@@ -1651,6 +1724,7 @@ body.play-mode.edges-hint .tap-zone {
     window.toggleGrade = toggleGrade;
 
     // ── Init ────────────────────────────────
+    syncTargetKeyFromTranspose(CIFRAS[current] || CIFRAS[0]);
     applyTwoCols();
     document.getElementById('fit-btn').classList.toggle('pb-on', fitMode);
     buildDots();
@@ -1675,12 +1749,12 @@ body.play-mode.edges-hint .tap-zone {
     window.addEventListener('orientationchange', function () {
         setTimeout(scheduleLeadSheetReflow, 200);
     });
-    var cifraWrapEl = document.getElementById('cifra-wrap');
-    if (cifraWrapEl && typeof ResizeObserver !== 'undefined') {
+    var cifraScrollEl = scrollWrap();
+    if (cifraScrollEl && typeof ResizeObserver !== 'undefined') {
         cifraWrapRo = new ResizeObserver(function () {
             if (gradeMode) scheduleLeadSheetReflow();
         });
-        cifraWrapRo.observe(cifraWrapEl);
+        cifraWrapRo.observe(cifraScrollEl);
     }
 
     // Quick edge-hint flash so the user sees the tap zones exist

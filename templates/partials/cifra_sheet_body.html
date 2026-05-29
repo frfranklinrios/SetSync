@@ -1,0 +1,19 @@
+{# Corpo da folha: structured, HTML ou grade — espera dict `sheet` #}
+{% if sheet.grouped_cifra and sheet.grouped_cifra|length > 0 %}
+    {% for group in sheet.grouped_cifra %}
+    <div class="sp-line">
+        {% for item in group %}
+        <span class="sp-item">
+            <span class="sp-chord">{% if item.acorde %}{{ item.acorde }}{% else %}&nbsp;{% endif %}</span>
+            <span class="sp-word">{% if item.texto_letra %}{{ item.texto_letra }}{% else %}&nbsp;{% endif %}</span>
+        </span>
+        {% endfor %}
+    </div>
+    {% endfor %}
+{% elif sheet.conteudo_html %}
+    {{ sheet.conteudo_html | safe }}
+{% elif sheet.grade_html %}
+    <div class="setlist-print-grade">{{ sheet.grade_html | safe }}</div>
+{% else %}
+    <p class="setlist-print-empty text-muted mb-0"><em>Sem conteúdo para impressão.</em></p>
+{% endif %}

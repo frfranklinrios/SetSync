@@ -44,7 +44,8 @@
 }
 
 /* Área ao redor da folha */
-#play-app #cifra-wrap:has(.cifra-sheet-paper) {
+#play-app #cifra-wrap:has(.cifra-sheet-paper),
+#play-app #cifra-scroll:has(.cifra-sheet-paper) {
   background: var(--ss-canvas) !important;
 }
 
@@ -103,13 +104,25 @@
   line-height: 1.4;
 }
 
-#cifra-col .cifra-container.cifra-sheet-paper .sp-line {
+#cifra-col .cifra-container.cifra-sheet-paper .sp-line,
+.setlist-print-sheet.cifra-sheet-paper .sp-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   margin-bottom: 0.35rem;
   row-gap: 0.15rem;
 }
 
-#cifra-col .cifra-container.cifra-sheet-paper .sp-item {
+#cifra-col .cifra-container.cifra-sheet-paper .sp-item,
+.setlist-print-sheet.cifra-sheet-paper .sp-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
   padding-right: 0.45rem;
+}
+
+.setlist-print-sheet.cifra-sheet-paper .sp-item {
+  padding-right: 0.55rem;
 }
 
 #cifra-col .cifra-container.cifra-sheet-paper .cifra-tab-block {
@@ -305,7 +318,7 @@
 /* Lead Sheet no modo tocar (tecla G) */
 #play-app .cifra-body.cifra-sheet-paper.grade-mode {
   background: var(--ss-bg) !important;
-  padding: clamp(0.5rem, 2vw, 1rem) !important;
+  padding: clamp(0.35rem, 1.5vw, 0.85rem) clamp(0.3rem, 1.5vw, 1rem) !important;
   overflow-x: hidden;
   width: 100%;
   max-width: 100%;
@@ -391,7 +404,8 @@
 
   #cifra-col .cifra-container.cifra-sheet-paper,
   #cifra-col .leadsheet-view-panel.cifra-sheet-paper,
-  #play-app .cifra-body.cifra-sheet-paper {
+  #play-app .cifra-body.cifra-sheet-paper,
+  .setlist-print-sheet.cifra-sheet-paper {
     box-shadow: none !important;
     break-inside: avoid;
     background: var(--ss-bg) !important;

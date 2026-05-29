@@ -1,0 +1,751 @@
+/* Setlist para palco: sempre retrato + tema claro (tela e impressão) */
+@page {
+  size: A4 portrait;
+  margin: 9mm 11mm 11mm 11mm;
+}
+
+html.setlist-print-root {
+  --ss-canvas: #f5f5f4;
+  --ss-bg: #ffffff;
+  --ss-fg: #1c1917;
+  --ss-chord: #c2410c;
+  --ss-lyric: #292524;
+  --ss-muted: #57534e;
+  --ss-border: #d6d3d1;
+  --ss-rule: #e7e5e4;
+  --ss-tab-bg: #fafaf9;
+  --ss-tab-border: #ea580c;
+  --ss-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --bg: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --card-bg: #ffffff;
+  --chord-highlight: #c2410c;
+  --chord-highlight-border: rgba(194, 65, 12, 0.35);
+  --chord-highlight-bg: rgba(194, 65, 12, 0.1);
+}
+
+html.setlist-print-root,
+html.setlist-print-root[data-theme="dark"] {
+  color-scheme: light;
+}
+
+html.setlist-print-root body {
+  background: var(--ss-canvas) !important;
+  color: var(--ss-fg) !important;
+}
+
+html.setlist-print-root main.container {
+  background: transparent !important;
+}
+
+html.setlist-print-root .navbar {
+  background: #fff !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+html.setlist-print-root .breadcrumb-item,
+html.setlist-print-root .breadcrumb-item a {
+  color: var(--muted) !important;
+}
+
+html.setlist-print-root .breadcrumb-item.active {
+  color: var(--text) !important;
+}
+
+/* Impressão de setlist: folha de palco + cifras */
+.setlist-print-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1rem;
+  background: var(--card-bg, #0f172a);
+  border: 1px solid var(--border, #334155);
+  border-radius: 8px;
+}
+
+.setlist-print-toolbar {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.setlist-print-doc {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ── Folha de palco ─────────────────────────────────────────── */
+.setlist-print-palco {
+  margin-bottom: 2.5rem;
+  padding: 1.25rem 1.35rem 1.5rem;
+  border: 2px solid var(--chord-highlight-border, rgba(194, 65, 12, 0.45));
+  border-radius: 6px;
+  background: var(--ss-bg, #fff);
+}
+
+.palco-header {
+  margin-bottom: 1.15rem;
+  text-align: center;
+}
+
+.palco-header-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.palco-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  opacity: 0.92;
+}
+
+.setlist-print-toolbar .toolbar-hint {
+  font-size: 0.8rem;
+}
+
+/* Modo geração PDF (Playwright) — sem chrome do app */
+html.setlist-print-root.pdfgen .navbar,
+html.setlist-print-root.pdfgen .no-print,
+html.setlist-print-root.pdfgen footer,
+html.setlist-print-root.pdfgen .breadcrumb {
+  display: none !important;
+}
+
+html.setlist-print-root.pdfgen body {
+  background: #fff !important;
+}
+
+html.setlist-print-root.pdfgen main.container {
+  max-width: 100% !important;
+  padding: 0.5rem 0 !important;
+  margin: 0 auto !important;
+}
+
+html.setlist-print-root.pdfgen .setlist-print-doc {
+  max-width: none;
+}
+
+html.setlist-print-root.pdfgen .setlist-print-palco {
+  break-after: page;
+  page-break-after: always;
+  margin-bottom: 0;
+  border: 1.5px solid #94a3b8;
+  box-shadow: none;
+}
+
+html.setlist-print-root.pdfgen .palco-foot {
+  display: none;
+}
+
+.palco-eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted, #64748b);
+}
+
+.palco-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--ss-fg, #0f172a);
+}
+
+.palco-desc {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted, #64748b);
+}
+
+.palco-meta {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted, #94a3b8);
+}
+
+.palco-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.palco-table thead {
+  display: table-header-group;
+}
+
+.palco-table thead th {
+  padding: 0.55rem 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--muted, #64748b);
+  border-bottom: 2px solid var(--ss-border, #cbd5e1);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.palco-th-num {
+  width: 2.5rem;
+  text-align: center !important;
+}
+
+.palco-th-key {
+  width: 5.5rem;
+  text-align: center !important;
+}
+
+.palco-th-vox {
+  width: 7.5rem;
+}
+
+.palco-row:nth-child(even) {
+  background: rgba(0, 0, 0, 0.025);
+}
+
+.palco-row td {
+  padding: 0.65rem 0.65rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--ss-rule, #e2e8f0);
+}
+
+.palco-num {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+
+.palco-song {
+  line-height: 1.25;
+}
+
+.palco-song-title {
+  display: block;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--ss-fg, #0f172a);
+}
+
+.palco-song-artist {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.8rem;
+  color: var(--muted, #64748b);
+}
+
+.palco-key {
+  text-align: center;
+}
+
+.palco-key-value {
+  display: block;
+  font-size: clamp(1.25rem, 3.5vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--ss-chord, #c2410c);
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+}
+
+.palco-key-orig {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.palco-vox {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ss-fg, #334155);
+}
+
+.palco-foot {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted, #94a3b8);
+  font-style: italic;
+}
+
+/* Palco compacto (setlists longas, ex. São João) */
+html.setlist-print-root.palco-compact .setlist-print-palco {
+  padding: 0.85rem 1rem 1rem;
+}
+
+html.setlist-print-root.palco-compact .palco-title {
+  font-size: 1.35rem;
+}
+
+html.setlist-print-root.palco-compact .palco-table {
+  font-size: 0.82rem;
+}
+
+html.setlist-print-root.palco-compact .palco-row td {
+  padding: 0.38rem 0.45rem;
+}
+
+html.setlist-print-root.palco-compact .palco-key-value {
+  font-size: 1.15rem;
+}
+
+html.setlist-print-root.palco-compact .palco-song-title {
+  font-size: 0.88rem;
+}
+
+html.setlist-print-root.palco-compact .palco-song-artist {
+  font-size: 0.72rem;
+}
+
+/* ── Bloco de cifras ────────────────────────────────────────── */
+.setlist-print-cifras {
+  margin-top: 0;
+}
+
+.setlist-print-cifras-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.5rem 0 0.65rem;
+  border-top: 3px solid var(--chord-highlight, #c2410c);
+  border-bottom: 1px solid var(--ss-border, #cbd5e1);
+}
+
+.setlist-print-cifras-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--chord-highlight, #c2410c);
+}
+
+.setlist-print-cifras-sub {
+  font-size: 0.78rem;
+  color: var(--muted, #64748b);
+}
+
+.setlist-print-song {
+  margin-bottom: 1.35rem;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+}
+
+.setlist-print-song-hd {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--chord-highlight-border, rgba(194, 65, 12, 0.35));
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.setlist-print-song-num {
+  display: none;
+}
+
+.setlist-print-song-titles h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.setlist-print-song-idx {
+  color: var(--chord-highlight, #c2410c);
+  font-weight: 800;
+  margin-right: 0.15rem;
+}
+
+.setlist-print-song-titles .sub {
+  font-size: 0.75rem;
+  color: var(--muted, #64748b);
+  margin: 0.2rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.65rem;
+}
+
+.setlist-print-song-titles .sub-artist::after {
+  content: "·";
+  margin-left: 0.65rem;
+  color: var(--ss-border, #cbd5e1);
+}
+
+.setlist-print-song-titles .sub-vox::before {
+  content: "·";
+  margin-right: 0.65rem;
+  color: var(--ss-border, #cbd5e1);
+}
+
+/* Cifras — mesmo layout e tipografia do modo tocar */
+.setlist-print-sheet.cifra-container,
+.setlist-print-sheet.cifra-sheet-paper {
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, "Courier New", Courier, monospace) !important;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+  padding: 1rem 1.15rem;
+  background: var(--ss-bg, #fff) !important;
+  color: var(--ss-fg, #1c1917) !important;
+  border: 1px solid var(--ss-border, #d6d3d1);
+  border-radius: 2px;
+  white-space: normal;
+  box-sizing: border-box;
+}
+
+.setlist-print-sheet.structured-mode,
+.setlist-print-sheet.play-layout {
+  white-space: normal;
+}
+
+.setlist-print-sheet.cifra-two-cols {
+  column-count: 2;
+  column-gap: 1.35rem;
+  column-rule: 1px solid var(--ss-rule, #e7e5e4);
+  column-fill: balance;
+}
+
+.setlist-print-sheet.cifra-two-cols .sp-line,
+.setlist-print-sheet.cifra-two-cols .cifra-tab-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
+
+.setlist-print-sheet .sp-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  row-gap: 0.2rem;
+  margin-bottom: 0.4rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  orphans: 2;
+  widows: 2;
+}
+
+/* Músicas longas podem continuar na página seguinte */
+.setlist-print-song.is-long {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.setlist-print-song.is-long .setlist-print-sheet {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.setlist-print-sheet .sp-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-right: 0.55rem;
+  vertical-align: top;
+}
+
+.setlist-print-sheet .sp-item.sp-no-gap {
+  padding-right: 0;
+}
+
+.setlist-print-sheet .sp-chord,
+.setlist-print-sheet .chord {
+  display: block;
+  color: var(--ss-chord, #c2410c) !important;
+  font-weight: 700;
+  font-size: 0.82em;
+  min-height: 1.25em;
+  line-height: 1.25;
+  white-space: nowrap;
+  font-family: inherit !important;
+}
+
+.setlist-print-sheet .sp-word {
+  display: block;
+  color: var(--ss-lyric, #292524) !important;
+  font-weight: 400;
+  line-height: 1.45;
+  white-space: nowrap;
+  font-family: inherit !important;
+}
+
+.setlist-print-sheet .cifra-chords {
+  display: block;
+  color: var(--ss-chord, #c2410c) !important;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  font-family: inherit !important;
+}
+
+.setlist-print-sheet .cifra-lyric {
+  display: block;
+  color: var(--ss-lyric, #292524) !important;
+  line-height: 1.45;
+  margin-bottom: 0.35rem;
+  font-family: inherit !important;
+}
+
+.setlist-print-sheet .cifra-tab-block {
+  break-inside: avoid;
+  column-span: all;
+  margin: 0.75rem 0;
+  padding: 0.7rem 0.9rem;
+  background: var(--ss-tab-bg, #fafaf9) !important;
+  border: 1px solid var(--ss-border, #d6d3d1) !important;
+  border-left: 3px solid var(--ss-tab-border, #ea580c) !important;
+  border-radius: 2px;
+}
+
+.setlist-print-sheet .cifra-tab-line,
+.setlist-print-sheet .cifra-tab-title {
+  font-family: inherit !important;
+}
+
+.setlist-print-grade-sec {
+  margin: 0.65rem 0 0.25rem;
+  font-size: 0.85rem;
+}
+
+.setlist-print-grade-line {
+  margin: 0 0 0.35rem;
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+  color: var(--ss-chord, #c2410c);
+  font-weight: 600;
+}
+
+/* Telas estreitas: palco em cards empilhados */
+@media (max-width: 560px) {
+  .palco-table thead {
+    display: none;
+  }
+
+  .palco-table,
+  .palco-table tbody,
+  .palco-table tr,
+  .palco-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .palco-row {
+    margin-bottom: 0.65rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--ss-border, #e2e8f0);
+    border-radius: 8px;
+  }
+
+  .palco-row td {
+    border: none;
+    padding: 0.2rem 0;
+  }
+
+  .palco-num {
+    text-align: left;
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .palco-num::before {
+    content: "# ";
+    font-weight: 600;
+    color: var(--muted, #94a3b8);
+  }
+
+  .palco-key {
+    text-align: left;
+    margin-top: 0.35rem;
+  }
+
+  .palco-key-value {
+    display: inline;
+    font-size: 1.35rem;
+    margin-right: 0.5rem;
+  }
+
+  .palco-vox::before {
+    content: "Canta: ";
+    font-weight: 600;
+    color: var(--muted, #64748b);
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 9mm 11mm 11mm 11mm;
+  }
+
+  html.setlist-print-root {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print,
+  .setlist-print-toolbar,
+  .navbar,
+  footer,
+  .breadcrumb {
+    display: none !important;
+  }
+
+  html.setlist-print-root body {
+    background: #fff !important;
+    color: #1c1917 !important;
+  }
+
+  main.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .setlist-print-doc {
+    max-width: none;
+    width: 100%;
+  }
+
+  .setlist-print-palco,
+  .setlist-print-sheet,
+  .palco-table {
+    background: #fff !important;
+    color: #1c1917 !important;
+  }
+
+  .setlist-print-palco {
+    break-after: page;
+    page-break-after: always;
+    border: 1.5px solid #94a3b8 !important;
+    border-radius: 3px;
+    padding: 0.65rem 0.75rem 0.85rem !important;
+    margin-bottom: 0;
+    box-shadow: none !important;
+  }
+
+  .palco-table {
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .palco-table thead th {
+    border-bottom: 2px solid #94a3b8 !important;
+  }
+
+  .palco-row td {
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  .palco-row:last-child td {
+    border-bottom: none !important;
+  }
+
+  .palco-foot {
+    display: none;
+  }
+
+  .palco-table thead th {
+    background: #f1f5f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .palco-row:nth-child(even) {
+    background: #f8fafc !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .palco-key-value {
+    color: #b45309 !important;
+  }
+
+  .palco-foot {
+    margin-top: 0.75rem;
+  }
+
+  .setlist-print-cifras-intro {
+    break-before: avoid;
+    page-break-before: avoid;
+    margin-bottom: 0.75rem;
+    padding: 0.45rem 0 0.6rem;
+    border-top: 3px solid #c2410c !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+  }
+
+  .setlist-print-song {
+    break-before: auto;
+    page-break-before: auto;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  .setlist-print-song.is-long {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .setlist-print-song-hd {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .setlist-print-sheet,
+  .setlist-print-sheet.cifra-container,
+  .setlist-print-sheet.cifra-sheet-paper {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 2px;
+    padding: 0.6rem 0.85rem 0.75rem !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .setlist-print-sheet.cifra-two-cols {
+    column-count: 2;
+    column-gap: 0.85rem;
+  }
+
+  .setlist-print-song + .setlist-print-song {
+    padding-top: 0.35rem;
+    border-top: 1px solid #e7e5e4;
+  }
+
+  .setlist-print-sheet.cifra-container,
+  .setlist-print-sheet.cifra-sheet-paper {
+    font-size: 1.05rem !important;
+  }
+
+  .setlist-print-sheet .sp-chord,
+  .setlist-print-sheet .chord,
+  .setlist-print-sheet .cifra-chords,
+  .palco-key-value,
+  .setlist-print-cifras-label {
+    color: #c2410c !important;
+  }
+
+  .setlist-print-sheet .sp-word,
+  .setlist-print-sheet .cifra-lyric {
+    color: #292524 !important;
+  }
+}

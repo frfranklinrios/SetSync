@@ -418,13 +418,12 @@ def semitones_between_keys(from_tom, to_key):
 
 
 def key_at_transpose(tom_original, semitones):
-    """Nome da tonalidade resultante após transpor a partir do tom original."""
+    """Nome da tonalidade resultante após transpor (bemóis: Bb, Eb… — alinha com acordes na tela)."""
     root = parse_tom_root(tom_original)
     idx = _note_semitone_index(root)
     if idx is None:
         return root
-    prefer_flats = 'b' in root and '#' not in root
-    return _spell_semitone(idx + semitones, prefer_flats=prefer_flats)
+    return _spell_semitone(idx + semitones, prefer_flats=True)
 
 
 def get_absolute_key_list():
@@ -435,8 +434,7 @@ def get_absolute_key_list():
 def get_transposition_options(tom_original):
     """Opções de transposição {semitones: label} relativas ao tom_original da música."""
     root = parse_tom_root(tom_original)
-    prefer_flats = 'b' in root and '#' not in root
-    chromatic = _CHROMATIC_FLAT if prefer_flats else _CHROMATIC_SHARP
+    chromatic = _CHROMATIC_FLAT
 
     options = {}
     for key in chromatic:

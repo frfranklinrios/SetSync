@@ -7,14 +7,18 @@
         var K = 'setsync-theme';
         var root = document.documentElement;
         function norm(v) { return v === 'light' ? 'light' : 'dark'; }
-        function apply(t) {
+        function apply(t, opts) {
+            opts = opts || {};
             t = norm(t);
             root.setAttribute('data-theme', t);
             root.setAttribute('data-bs-theme', t);
-            try { localStorage.setItem(K, t); } catch (e) {}
+            if (opts.persist !== false) {
+                try { localStorage.setItem(K, t); } catch (e) {}
+            }
             var meta = document.querySelector('meta[name="theme-color"]');
             if (meta) meta.setAttribute('content', t === 'dark' ? '#0b1422' : '#fff7ed');
         }
+        /* Padrão do app: escuro (só muda se o usuário escolher claro ou tiver preferência salva) */
         apply(localStorage.getItem(K) || 'dark');
         window.setSetSyncTheme = apply;
         window.toggleTheme = function () {

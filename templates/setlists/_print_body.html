@@ -1,0 +1,77 @@
+{# Corpo compartilhado: folha de palco + cifras. Variáveis: setlist, band, sheets, printed_at, two_cols, palco_compact #}
+<article class="setlist-print-doc">
+    <section class="setlist-print-palco" aria-label="Folha de palco">
+        <header class="palco-header">
+            <div class="palco-header-brand">
+                <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="" class="palco-logo" width="28" height="28">
+                <p class="palco-eyebrow">Setlist · {{ band.name }}</p>
+            </div>
+            <h1 class="palco-title">{{ setlist.name }}</h1>
+            {% if setlist.description %}
+            <p class="palco-desc">{{ setlist.description }}</p>
+            {% endif %}
+            <p class="palco-meta">
+                {{ sheets|length }} música{{ '' if sheets|length == 1 else 's' }}
+                · {{ printed_at.strftime('%d/%m/%Y %H:%M') }}
+            </p>
+        </header>
+
+        <table class="palco-table">
+            <thead>
+                <tr>
+                    <th class="palco-th-num" scope="col">#</th>
+                    <th class="palco-th-song" scope="col">Música</th>
+                    <th class="palco-th-key" scope="col">Tom</th>
+                    <th class="palco-th-vox" scope="col">Canta</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sheet in sheets %}
+                <tr class="palco-row">
+                    <td class="palco-num">{{ sheet.index }}</td>
+                    <td class="palco-song">
+                        <span class="palco-song-title">{{ sheet.titulo }}</span>
+                        {% if sheet.artista %}
+                        <span class="palco-song-artist">{{ sheet.artista }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="palco-key">
+                        <span class="palco-key-value">{{ sheet.display_key or '—' }}</span>
+                        {% if sheet.semitones and sheet.tom_original and sheet.display_key != sheet.tom_original %}
+                        <span class="palco-key-orig">cad. {{ sheet.tom_original }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="palco-vox">{{ sheet.vocalist_name or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p class="palco-foot">Cifras completas na sequência ↓</p>
+    </section>
+
+    <section class="setlist-print-cifras" aria-label="Cifras">
+        <p class="setlist-print-cifras-intro">
+            <span class="setlist-print-cifras-label">Cifras</span>
+            <span class="setlist-print-cifras-sub">{{ setlist.name }}</span>
+        </p>
+
+        {% for sheet in sheets %}
+        <section class="setlist-print-song" id="song-{{ sheet.index }}">
+            <header class="setlist-print-song-hd">
+                <div class="setlist-print-song-titles">
+                    <h2><span class="setlist-print-song-idx">{{ sheet.index }}.</span> {{ sheet.titulo }}</h2>
+                    <p class="sub">
+                        {% if sheet.artista %}<span class="sub-artist">{{ sheet.artista }}</span>{% endif %}
+                        <span class="sub-key">Tom <strong>{{ sheet.display_key or '—' }}</strong></span>
+                        {% if sheet.vocalist_name %}<span class="sub-vox">{{ sheet.vocalist_name }}</span>{% endif %}
+                    </p>
+                </div>
+            </header>
+            <div class="cifra-container cifra-sheet-paper setlist-print-sheet play-layout{% if sheet.grouped_cifra %} structured-mode{% endif %}{% if two_cols %} cifra-two-cols{% endif %}">
+                {% include 'partials/cifra_sheet_body.html' %}
+            </div>
+        </section>
+        {% endfor %}
+    </section>
+</article>

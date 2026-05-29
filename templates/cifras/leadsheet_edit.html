@@ -7,10 +7,13 @@
         var K = 'setsync-theme';
         var root = document.documentElement;
         function norm(v) { return v === 'light' ? 'light' : 'dark'; }
-        function apply(t) {
+        function apply(t, opts) {
+            opts = opts || {};
             t = norm(t);
             root.setAttribute('data-theme', t);
-            try { localStorage.setItem(K, t); } catch (e) {}
+            if (opts.persist !== false) {
+                try { localStorage.setItem(K, t); } catch (e) {}
+            }
         }
         apply(localStorage.getItem(K) || 'dark');
         window.setSetSyncTheme = apply;

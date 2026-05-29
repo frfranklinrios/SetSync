@@ -2,8 +2,8 @@
  * Renderização read-only do Lead Sheet (modo tocar / preview).
  */
 (function (global) {
-  var STAFF_BAR_WIDTH_MAX = 232;
-  var STAFF_BAR_WIDTH_MIN = 68;
+  var STAFF_BAR_WIDTH_MAX = 220;
+  var STAFF_BAR_WIDTH_MIN = 96;
 
   function escapeHtml(text) {
     return String(text)
@@ -35,35 +35,76 @@
   }
 
   /**
-   * Quantos compassos por linha e largura alvo, conforme a área útil.
+   * Largura útil no modo tocar (desconta zonas de toque e padding).
+   */
+  function getPlayAreaWidth() {
+    if (typeof document === "undefined") return 360;
+    var scroll = document.getElementById("cifra-scroll");
+    var wrap = document.getElementById("cifra-wrap");
+    var content = document.getElementById("cifra-content");
+    var base =
+      (scroll && scroll.clientWidth > 0 ? scroll.clientWidth : 0) ||
+      (wrap && wrap.clientWidth > 0 ? wrap.clientWidth : 0) ||
+      (typeof window !== "undefined" ? window.innerWidth : 360);
+
+    var deduct = 0;
+    if (!scroll) {
+      var tapL = document.getElementById("tap-prev");
+      var tapR = document.getElementById("tap-next");
+      if (tapL && tapR) {
+        deduct = (tapL.offsetWidth || 0) + (tapR.offsetWidth || 0);
+      } else {
+        deduct = Math.min(Math.round(base * 0.24), 240);
+      }
+    }
+
+    var pad = 12;
+    if (content && content.classList.contains("grade-mode")) {
+      try {
+        var cs = window.getComputedStyle(content);
+        pad +=
+          (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      } catch (e) {}
+    }
+
+    return Math.max(140, Math.floor(base - deduct - pad));
+  }
+
+  /**
+   * Quantos compassos por linha — prioriza leitura em telas estreitas.
    */
   function computeLayout(wrapWidth) {
-    var w = Math.max(160, Number(wrapWidth) || 360);
-    var padding = 16;
-    var avail = w - padding;
+    var avail = Math.max(140, Number(wrapWidth) || getPlayAreaWidth());
     var barsPerLine;
 
-    /* Sempre cabe na largura real — evita scroll horizontal */
-    if (avail < 300) {
+    if (avail < 200) {
       barsPerLine = 1;
-    } else if (avail < 460) {
+    } else if (avail < 320) {
       barsPerLine = 2;
-    } else if (avail < 640) {
+    } else if (avail < 440) {
+      barsPerLine = 2;
+    } else if (avail < 580) {
       barsPerLine = 3;
-    } else if (avail < 860) {
+    } else if (avail < 760) {
       barsPerLine = 4;
     } else {
       barsPerLine = Math.max(1, Math.floor(avail / STAFF_BAR_WIDTH_MAX));
+      barsPerLine = Math.min(barsPerLine, 6);
     }
 
     var barWidth = Math.floor(avail / barsPerLine);
-    barWidth = Math.max(STAFF_BAR_WIDTH_MIN, Math.min(STAFF_BAR_WIDTH_MAX, barWidth));
+    barWidth = Math.max(
+      STAFF_BAR_WIDTH_MIN,
+      Math.min(STAFF_BAR_WIDTH_MAX, barWidth)
+    );
 
-    /* Se ainda não couber, reduz compassos por linha */
-    while (barsPerLine > 1 && barsPerLine * barWidth > avail + 2) {
+    while (barsPerLine > 1 && barsPerLine * barWidth > avail + 1) {
       barsPerLine -= 1;
       barWidth = Math.floor(avail / barsPerLine);
-      barWidth = Math.max(STAFF_BAR_WIDTH_MIN, Math.min(STAFF_BAR_WIDTH_MAX, barWidth));
+      barWidth = Math.max(
+        STAFF_BAR_WIDTH_MIN,
+        Math.min(STAFF_BAR_WIDTH_MAX, barWidth)
+      );
     }
 
     return { barsPerLine: barsPerLine, barWidth: barWidth, availWidth: avail };
@@ -141,21 +182,22 @@
     return part.name + " - " + lyric;
   }
 
-  function chordSizeClass(chord) {
+  function chordSizeClass(chord, barsPerLine) {
     var len = String(chord || "").length;
-    if (len > 6) return "chord-sm";
-    if (len > 4) return "chord-md";
+    var narrow = (barsPerLine || 1) >= 3;
+    if (len > 7 || (narrow && len > 5)) return "chord-sm";
+    if (len > 4 || narrow) return "chord-md";
     return "chord-lg";
   }
 
-  function renderBarHtml(pulseRow, barIndex, isLastInLine, parts) {
+  function renderBarHtml(pulseRow, barIndex, isLastInLine, parts, barsPerLine) {
     var cells = pulseRow
       .map(function (pulse) {
         var isPercent = pulse === "%";
         var content = isPercent
           ? '<span class="pulse-empty">%</span>'
           : '<span class="chord-text ' +
-            chordSizeClass(pulse) +
+            chordSizeClass(pulse, barsPerLine) +
             '" title="' +
             escapeHtml(pulse) +
             '">' +
@@ -210,7 +252,8 @@
               pulseRow,
               globalBarIndex,
               i === lineBars.length - 1,
-              parts
+              parts,
+              layout.barsPerLine
             );
             globalBarIndex += 1;
             return html;
@@ -271,13 +314,8 @@
       return '<div class="leadsheet-play-empty">Lead Sheet vazio.</div>';
     }
     var wrapWidth = opts.wrapWidth;
-    if (!wrapWidth && typeof document !== "undefined") {
-      var wrap = document.getElementById("cifra-wrap");
-      var content = document.getElementById("cifra-content");
-      wrapWidth =
-        (wrap && wrap.clientWidth) ||
-        (content && content.clientWidth) ||
-        (typeof window !== "undefined" ? window.innerWidth : 360);
+    if (!wrapWidth) {
+      wrapWidth = getPlayAreaWidth();
     }
     var layout = computeLayout(wrapWidth);
     var systemsHtml = buildStaffSystemsHtml(
@@ -290,23 +328,118 @@
     return (
       '<div class="leadsheet-play-wrap" data-layout-width="' +
       Math.round(wrapWidth) +
+      '" data-bars-per-line="' +
+      layout.barsPerLine +
       '">' +
       header +
-      '<div class="leadsheet-play-body"><div class="leadsheet-systems" data-fluid="1" style="--bar-width-max:' +
+      '<div class="leadsheet-play-body"><div class="leadsheet-systems" data-fluid="1" data-bars-per-line="' +
+      layout.barsPerLine +
+      '" style="--bar-width-max:' +
       layout.barWidth +
-      'px">' +
+      "px;--bars-per-line:" +
+      layout.barsPerLine +
+      '">' +
       systemsHtml +
       "</div></div></div>"
     );
   }
 
-  function getPlayAreaWidth() {
-    if (typeof document === "undefined") return 360;
-    var content = document.getElementById("cifra-content");
-    var wrap = document.getElementById("cifra-wrap");
-    if (content && content.clientWidth > 0) return content.clientWidth;
-    if (wrap && wrap.clientWidth > 0) return wrap.clientWidth;
-    return window.innerWidth || 360;
+  function flatGradeToPartes(flat) {
+    if (!Array.isArray(flat) || !flat.length) return [];
+    var hasParte = flat.some(function (c) {
+      return c && c.parte != null && String(c.parte).trim() !== "";
+    });
+    var map = {};
+    var order = [];
+    flat.forEach(function (item) {
+      var key =
+        hasParte && item.parte ? String(item.parte).toUpperCase() : "__UNICO__";
+      if (!map[key]) {
+        map[key] = {
+          nome: key === "__UNICO__" ? "Progressão" : "Parte " + key,
+          compassos: [],
+        };
+        order.push(key);
+      }
+      map[key].compassos.push({
+        secao: item.secao || null,
+        acordes: (item.acordes || []).slice(),
+      });
+    });
+    return order.map(function (k) {
+      return map[k];
+    });
+  }
+
+  function renderLegacyGradeHtml(gradeData) {
+    var partes =
+      Array.isArray(gradeData) && gradeData[0] && gradeData[0].compassos
+        ? gradeData
+        : flatGradeToPartes(gradeData);
+    if (!partes.length) {
+      return '<div class="leadsheet-play-empty">Grade vazia.</div>';
+    }
+    var html =
+      '<div class="leadsheet-play-wrap leadsheet-play-wrap--legacy" data-layout-width="' +
+      Math.round(getPlayAreaWidth()) +
+      '"><div class="leadsheet-play-body"><div class="grade-bars-play">';
+    partes.forEach(function (parte) {
+      html += '<div class="grade-part-play">';
+      if (parte.nome && parte.nome !== "Progressão") {
+        html +=
+          '<span class="grade-part-title-play">' +
+          escapeHtml(parte.nome) +
+          "</span>";
+      }
+      var bloco = [];
+      (parte.compassos || []).forEach(function (c) {
+        if (c.secao) {
+          if (bloco.length) {
+            html += '<div class="grade-line-play">';
+            bloco.forEach(function (bar) {
+              var cells = (bar.acordes || [])
+                .map(function (a) {
+                  var t = String(a || "").trim();
+                  if (t === "%") {
+                    return '<span class="grade-chord-play grade-repeat-play">%</span>';
+                  }
+                  return (
+                    '<span class="grade-chord-play">' + escapeHtml(t) + "</span>"
+                  );
+                })
+                .join('<span class="grade-sep-play">·</span>');
+              html += '<span class="grade-inline-play">' + cells + "</span>";
+            });
+            html += "</div>";
+            bloco = [];
+          }
+          html +=
+            '<div class="grade-secao-play">' + escapeHtml(c.secao) + "</div>";
+        }
+        bloco.push(c);
+      });
+      if (bloco.length) {
+        html += '<div class="grade-line-play">';
+        bloco.forEach(function (bar) {
+          var cells = (bar.acordes || [])
+            .map(function (a) {
+              var t = String(a || "").trim();
+              if (t === "%") {
+                return '<span class="grade-chord-play grade-repeat-play">%</span>';
+              }
+              return (
+                '<span class="grade-chord-play">' + escapeHtml(t) + "</span>"
+              );
+            })
+            .join('<span class="grade-sep-play">·</span>');
+          html += '<span class="grade-inline-play">' + cells + "</span>";
+        });
+        html += "</div>";
+      }
+      html += "</div>";
+    });
+    html += "</div></div></div>";
+    return html;
   }
 
   global.LeadsheetPlayRender = {
@@ -315,6 +448,7 @@
     computeLayout: computeLayout,
     getPlayAreaWidth: getPlayAreaWidth,
     renderHtml: renderHtml,
+    renderLegacyGradeHtml: renderLegacyGradeHtml,
     STAFF_BAR_WIDTH_MAX: STAFF_BAR_WIDTH_MAX,
   };
 })(typeof window !== "undefined" ? window : this);

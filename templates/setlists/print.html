@@ -1,0 +1,92 @@
+{% extends "index.html" %}
+{% block title %}Imprimir — {{ setlist.name }}{% endblock %}
+
+{% block extra_head %}
+<script>
+(function () {
+    if (window.setSetSyncTheme) {
+        window.setSetSyncTheme('light', { persist: false });
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+    document.documentElement.classList.add('setlist-print-root');
+    {% if palco_compact %}document.documentElement.classList.add('palco-compact');{% endif %}
+    {% if pdfgen %}document.documentElement.classList.add('pdfgen');{% endif %}
+})();
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/setlist-print.css') }}?v=9">
+{% endblock %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3 no-print">
+    <ol class="breadcrumb" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}">Setlists</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}">{{ setlist.name }}</a></li>
+        <li class="breadcrumb-item active">Imprimir</li>
+    </ol>
+</nav>
+
+<div class="setlist-print-toolbar no-print">
+    <a href="{{ url_for('setlists.download_pdf', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-file-pdf me-1"></i> Baixar PDF
+    </a>
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+        <i class="fas fa-print me-1"></i> Imprimir
+    </button>
+    <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Voltar
+    </a>
+    <span class="text-muted toolbar-hint">
+        {{ sheets|length }} música{{ '' if sheets|length == 1 else 's' }} · A4 retrato
+        {% if two_cols %}· 2 colunas{% else %}· 1 coluna{% endif %}
+    </span>
+    <div class="ms-auto d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('setlists.imprimir', setlist_id=setlist.id, cols=1) }}"
+           class="btn btn-outline-secondary btn-sm {% if not two_cols %}active{% endif %}">1 coluna</a>
+        <a href="{{ url_for('setlists.imprimir', setlist_id=setlist.id, cols=2) }}"
+           class="btn btn-outline-secondary btn-sm {% if two_cols %}active{% endif %}">2 colunas</a>
+    </div>
+</div>
+
+{% include 'setlists/_print_body.html' %}
+
+<script>
+(function () {
+    function markLongSongs() {
+        document.querySelectorAll('.setlist-print-song').forEach(function (sec) {
+            var sheet = sec.querySelector('.setlist-print-sheet');
+            if (sheet && sheet.offsetHeight > 680) sec.classList.add('is-long');
+        });
+    }
+    function signalPdfReady() {
+        markLongSongs();
+        document.body.setAttribute('data-pdf-ready', '1');
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', markLongSongs);
+    } else {
+        markLongSongs();
+    }
+    window.addEventListener('load', function () {
+        markLongSongs();
+        {% if pdfgen %}
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(signalPdfReady).catch(signalPdfReady);
+        } else {
+            setTimeout(signalPdfReady, 300);
+        }
+        {% endif %}
+    });
+})();
+</script>
+{% if autoprint %}
+<script>
+window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 500); });
+</script>
+{% endif %}
+{% endblock %}

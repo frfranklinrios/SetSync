@@ -384,6 +384,88 @@ def _load_display_leadsheet(cifra, semitones=0):
     return doc
 
 
+def _grade_flat_to_print_html(grade_list):
+    """HTML simples da grade para impressão quando não há cifra linha a linha."""
+    if not grade_list:
+        return ''
+    from markupsafe import escape
+
+    parts = []
+    bloco = []
+
+    def flush_bloco():
+        if not bloco:
+            return
+        bars = []
+        for comp in bloco:
+            cells = []
+            for token in comp.get('acordes') or []:
+                if token == '%':
+                    cells.append('%')
+                elif token:
+                    cells.append(escape(str(token).strip()))
+            if cells:
+                bars.append(' · '.join(cells))
+        if bars:
+            parts.append(
+                '<p class="setlist-print-grade-line">' + ' &nbsp;|&nbsp; '.join(bars) + '</p>'
+            )
+        bloco.clear()
+
+    for comp in grade_list:
+        comp = dict(comp)
+        if comp.get('secao'):
+            flush_bloco()
+            parts.append(
+                '<p class="setlist-print-grade-sec"><strong>'
+                + escape(str(comp['secao']))
+                + '</strong></p>'
+            )
+        bloco.append(comp)
+    flush_bloco()
+    return ''.join(parts)
+
+
+def prepare_cifra_sheet(cifra, semitones=0):
+    """Monta cifra transposta para exibição/impressão (mesma lógica da página ver cifra)."""
+    semi = int(semitones or 0)
+    tom_orig = normalize_tom_label(cifra.get('tom_original') or '')
+    display_key = key_at_transpose(tom_orig, semi) if semi else tom_orig
+
+    conteudo = sanitize_tab_html_artifacts(cifra.get('conteudo') or '')
+    if semi:
+        conteudo = pychord_transpose_text(conteudo, semi)
+    conteudo = format_text_chords_br(conteudo)
+
+    cifra_data = _load_best_structured_cifra(cifra, semi)
+    grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
+    has_tab = content_has_tablatura(conteudo)
+    conteudo_html = None
+    grade_html = None
+
+    if has_tab:
+        grouped_cifra = None
+        conteudo_html = highlight_chords_play_html(conteudo)
+    elif not grouped_cifra and (conteudo or '').strip():
+        conteudo_html = highlight_chords_play_html(conteudo)
+    elif not grouped_cifra and not conteudo_html:
+        grade_data = _load_display_grade_data(cifra, semi)
+        if grade_data:
+            grade_html = _grade_flat_to_print_html(grade_data)
+
+    return {
+        'titulo': cifra.get('titulo') or 'Sem título',
+        'artista': (cifra.get('artista') or '').strip(),
+        'display_key': display_key,
+        'tom_original': tom_orig,
+        'semitones': semi,
+        'grouped_cifra': grouped_cifra,
+        'conteudo_html': conteudo_html,
+        'grade_html': grade_html,
+        'has_content': bool(grouped_cifra or conteudo_html or grade_html),
+    }
+
+
 def _persist_leadsheet(cifra_id, payload: dict, meta: dict | None = None) -> None:
     """Salva LeadSheet, metadados da cifra e mantém grade_json legada sincronizada."""
     cifra = get_cifra(cifra_id)
