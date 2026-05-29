@@ -11,9 +11,9 @@
     </ol>
 </nav>
 
-<div class="hero">
+<div class="page-head">
     <div>
-        <h2 style="margin-bottom:0.25rem;font-size:1.6rem;">{{ setlist.name }}</h2>
+        <h2 class="mb-0" style="font-size:1.6rem;">{{ setlist.name }}</h2>
         {% if setlist.description %}
         <p class="text-muted mb-0" style="font-size:0.9rem;">{{ setlist.description }}</p>
         {% endif %}
@@ -46,49 +46,49 @@
     <span>Arraste pelo ícone à esquerda para reordenar. A ordem é salva automaticamente.</span>
 </div>
 
-<div class="sl-card" id="setlist-card">
+<div class="row-card" id="setlist-card">
     <div id="sortable-cifras">
     {% for cifra in cifras %}
-    <div class="sl-row" data-cifra-id="{{ cifra.id }}">
-        <span class="sl-handle" title="Arraste para reordenar"><i class="fas fa-grip-vertical"></i></span>
-        <span class="sl-num">{{ loop.index }}</span>
-        <div class="sl-info">
-            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="sl-title-link">
-                {{ cifra.titulo or cifra.titulo_original or 'Sem título' }}
+    <div class="row-item row-item--sortable" data-cifra-id="{{ cifra.id }}">
+        <span class="row-handle" title="Arraste para reordenar"><i class="fas fa-grip-vertical"></i></span>
+        <span class="row-num">{{ loop.index }}</span>
+        <div class="row-info">
+            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">
+                <div class="row-title">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</div>
+                {% if cifra.artista %}
+                <div class="row-sub">{{ cifra.artista }}</div>
+                {% endif %}
             </a>
-            {% if cifra.artista %}
-            <div class="sl-artist">{{ cifra.artista }}</div>
-            {% endif %}
         </div>
         {% if cifra.tom_original and vocalists %}
-        <div class="sl-perf">
+        <div class="row-meta">
             {% if vocalists|length > 1 %}
-            <select class="sl-vocalist-sel" data-cifra-id="{{ cifra.id }}" title="Cantor(a)"
+            <select class="row-vocalist-sel" data-cifra-id="{{ cifra.id }}" title="Cantor(a)"
                     aria-label="Cantor de {{ cifra.titulo }}">
                 {% for v in vocalists %}
                 <option value="{{ v.id }}" {% if v.id == cifra.row_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
                 {% endfor %}
             </select>
             {% elif cifra.row_vocalist_name %}
-            <span class="sl-vocalist">{{ cifra.row_vocalist_name }}</span>
+            <span class="row-vocalist">{{ cifra.row_vocalist_name }}</span>
             {% endif %}
-            <span class="sl-tom">{{ cifra.row_display_key }}</span>
+            <span class="row-badge">{{ cifra.row_display_key }}</span>
         </div>
         {% elif cifra.tom_original %}
-        <span class="sl-tom">{{ cifra_display_key(cifra) }}</span>
+        <span class="row-badge row-tom-only">{{ cifra_display_key(cifra) }}</span>
         {% endif %}
-        <div class="sl-actions">
-            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="sl-icon-btn view-btn" title="Ver cifra">
+        <div class="row-actions">
+            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="icon-btn view-btn" title="Ver cifra">
                 <i class="fas fa-eye"></i>
             </a>
             <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}?start={{ cifra.id }}"
-               class="sl-icon-btn" title="Tocar a partir desta">
+               class="icon-btn" title="Tocar a partir desta">
                 <i class="fas fa-play"></i>
             </a>
             <form action="{{ url_for('setlists.remove_cifra', setlist_id=setlist.id, cifra_id=cifra.id) }}"
                   method="POST" class="d-inline"
                   onsubmit="return confirm('Remover da setlist?')">
-                <button type="submit" class="sl-icon-btn danger" title="Remover da setlist">
+                <button type="submit" class="icon-btn danger" title="Remover da setlist">
                     <i class="fas fa-times"></i>
                 </button>
             </form>
@@ -107,12 +107,12 @@
     var VOCALIST_ROW_URL = {{ url_for('setlists.set_cifra_vocalist', setlist_id=setlist.id, cifra_id='__CID__') | tojson }};
 
     document.getElementById('setlist-card').addEventListener('change', function (e) {
-        var sel = e.target.closest('.sl-vocalist-sel');
+        var sel = e.target.closest('.row-vocalist-sel');
         if (!sel) return;
         var cid = sel.getAttribute('data-cifra-id');
         var url = VOCALIST_ROW_URL.replace('__CID__', encodeURIComponent(cid));
-        var row = sel.closest('.sl-row');
-        var tom = row ? row.querySelector('.sl-tom') : null;
+        var row = sel.closest('.row-item');
+        var tom = row ? row.querySelector('.row-meta .row-badge') : null;
         fetch(url, {
             method: 'POST',
             credentials: 'same-origin',
@@ -133,25 +133,21 @@
     }
 
     function renumber() {
-        var rows = list.querySelectorAll('.sl-row');
-        rows.forEach(function (row, i) {
-            var n = row.querySelector('.sl-num');
+        list.querySelectorAll('.row-item').forEach(function (row, i) {
+            var n = row.querySelector('.row-num');
             if (n) n.textContent = i + 1;
         });
     }
 
     function persistOrder() {
         var ids = Array.prototype.map.call(
-            list.querySelectorAll('.sl-row'),
+            list.querySelectorAll('.row-item'),
             function (r) { return r.getAttribute('data-cifra-id'); }
         );
         showStatus('Salvando ordem…');
         fetch(REORDER_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify({ cifra_ids: ids })
         }).then(function (r) {
@@ -166,10 +162,10 @@
 
     new Sortable(list, {
         animation: 160,
-        handle: '.sl-handle',
-        ghostClass: 'sl-ghost',
-        chosenClass: 'sl-chosen',
-        dragClass: 'sl-drag',
+        handle: '.row-handle',
+        ghostClass: 'row-ghost',
+        chosenClass: 'row-chosen',
+        dragClass: 'row-drag',
         onEnd: function (evt) {
             if (evt.oldIndex === evt.newIndex) return;
             renumber();

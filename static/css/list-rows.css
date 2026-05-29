@@ -1,22 +1,19 @@
 /**
- * Listas e linhas de conteúdo (bandas, cifras, setlists, membros).
- * Uma base visual + responsivo mobile consistente.
+ * Listas do app — um único padrão visual (row-card + row-item).
  */
 
-/* ── Card container ── */
-.row-card,
-.sl-card {
+/* ── Container ── */
+.row-card {
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
   background: #fff;
 }
-[data-theme="dark"] .row-card,
-[data-theme="dark"] .sl-card {
+[data-theme="dark"] .row-card {
   background: #0b1422;
 }
 
-/* ── Linha padrão (cifras, setlists, banda) ── */
+/* ── Linha ── */
 .row-item {
   display: flex;
   align-items: center;
@@ -25,7 +22,6 @@
   border-bottom: 1px solid var(--border);
   background: inherit;
   transition: background 0.12s;
-  text-decoration: none;
   color: inherit;
 }
 .row-item:last-child {
@@ -33,23 +29,53 @@
 }
 .row-item:hover {
   background: var(--bg);
-  color: inherit;
 }
 [data-theme="dark"] .row-item:hover {
   background: #0f172a;
+}
+
+.row-handle {
+  cursor: grab;
+  color: var(--muted);
+  font-size: 1rem;
+  width: 22px;
+  text-align: center;
+  user-select: none;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.row-handle:active {
+  cursor: grabbing;
+}
+.row-handle:hover {
+  color: var(--accent);
+}
+
+.row-num {
+  font-size: 0.78rem;
+  color: var(--muted);
+  min-width: 1.35rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
 }
 
 .row-info {
   flex: 1;
   min-width: 0;
 }
-.row-info a {
+.row-info > a {
+  display: block;
   color: var(--text);
   text-decoration: none;
 }
-.row-info a:hover {
+.row-info > a:hover {
   color: var(--accent);
 }
+.row-info > a:hover .row-title {
+  color: var(--accent);
+}
+
 .row-title {
   font-weight: 600;
   color: var(--text);
@@ -77,6 +103,7 @@
   border-radius: 999px;
   border: 1px solid rgba(42, 181, 160, 0.25);
   flex-shrink: 0;
+  white-space: nowrap;
 }
 .row-badge.neutral {
   color: var(--muted);
@@ -92,6 +119,37 @@
   background: rgba(42, 181, 160, 0.08);
 }
 
+.row-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+.row-vocalist {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--hint);
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row-vocalist-sel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.28rem 0.5rem;
+  max-width: 9rem;
+  min-width: 5.5rem;
+  cursor: pointer;
+}
+[data-theme="dark"] .row-vocalist-sel {
+  background: #0f172a;
+}
+
 .row-actions {
   display: flex;
   gap: 0.35rem;
@@ -99,8 +157,7 @@
   align-items: center;
 }
 
-.icon-btn,
-.sl-icon-btn {
+.icon-btn {
   width: 30px;
   height: 30px;
   border: 1px solid var(--border);
@@ -116,13 +173,11 @@
   transition: border-color 0.12s, color 0.12s;
   padding: 0;
 }
-.icon-btn:hover,
-.sl-icon-btn:hover {
+.icon-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
-.icon-btn.danger:hover,
-.sl-icon-btn.danger:hover {
+.icon-btn.danger:hover {
   border-color: #ef4444;
   color: #ef4444;
 }
@@ -141,7 +196,6 @@
   color: var(--muted);
 }
 
-/* Cabeçalhos de página */
 .page-head,
 .head,
 .hero {
@@ -169,135 +223,15 @@
   flex-shrink: 0;
 }
 
-/* ── Setlist: linha com cantor + tom ── */
-.sl-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: inherit;
-  transition: background 0.12s;
-}
-.sl-row:last-child {
-  border-bottom: none;
-}
-.sl-row:hover {
-  background: var(--bg);
-}
-[data-theme="dark"] .sl-row:hover {
-  background: #0f172a;
-}
-
-.sl-handle {
-  cursor: grab;
-  color: var(--muted);
-  font-size: 1rem;
-  width: 22px;
-  text-align: center;
-  user-select: none;
-  flex-shrink: 0;
-}
-.sl-handle:active {
-  cursor: grabbing;
-}
-.sl-handle:hover {
-  color: var(--accent);
-}
-
-.sl-num {
-  font-size: 0.78rem;
-  color: var(--muted);
-  min-width: 1.6rem;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
-.sl-info {
-  flex: 1;
-  min-width: 0;
-}
-.sl-title-link {
-  color: var(--text);
-  font-weight: 600;
-  text-decoration: none;
-  font-size: 0.95rem;
-  display: block;
-  line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sl-title-link:hover {
-  color: var(--accent);
-}
-.sl-artist {
-  font-size: 0.78rem;
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sl-perf {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex-shrink: 0;
-}
-.sl-vocalist {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--hint);
-  max-width: 8rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sl-vocalist-sel {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.28rem 0.5rem;
-  max-width: 9rem;
-  min-width: 5.5rem;
-  cursor: pointer;
-}
-[data-theme="dark"] .sl-vocalist-sel {
-  background: #0f172a;
-}
-
-.sl-tom {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--accent);
-  background: rgba(42, 181, 160, 0.1);
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid rgba(42, 181, 160, 0.25);
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.sl-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex-shrink: 0;
-}
-
-.sl-ghost {
+/* Sortable (setlist) */
+.row-ghost {
   opacity: 0.45;
   background: rgba(42, 181, 160, 0.08) !important;
 }
-.sl-chosen {
+.row-chosen {
   background: rgba(42, 181, 160, 0.04);
 }
-.sl-drag {
+.row-drag {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 
@@ -318,7 +252,7 @@
   color: #ef4444;
 }
 
-/* ── Mobile: linhas padrão ── */
+/* ── Mobile ── */
 @media (max-width: 640px) {
   .row-item {
     flex-wrap: wrap;
@@ -326,34 +260,43 @@
     gap: 0.5rem 0.65rem;
     padding: 0.75rem 0.85rem;
   }
+
   .row-item > .row-info {
     flex: 1 1 100%;
     width: 100%;
     min-width: 0;
   }
-  .row-item > .row-title {
+
+  .row-item .row-title {
     white-space: normal;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    overflow: hidden;
   }
+
   .row-item .row-sub {
     white-space: normal;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
   }
+
   .row-item > .row-badge,
+  .row-item > .row-meta,
   .row-item > .row-actions {
     flex-shrink: 0;
   }
-  .row-item > .row-badge {
+
+  .row-item:not(.row-item--sortable) > .row-badge {
     margin-right: auto;
   }
 
-  /* Setlist: duas linhas — título em cima, cantor/tom embaixo */
-  .sl-row {
+  .row-item:not(.row-item--sortable) > .row-actions {
+    margin-left: auto;
+  }
+
+  /* Setlist ordenável: título na 1ª linha; cantor/tom na 2ª */
+  .row-item--sortable {
     display: grid;
     grid-template-columns: 26px 1.35rem minmax(0, 1fr) auto;
     grid-template-areas:
@@ -362,37 +305,27 @@
     column-gap: 0.5rem;
     row-gap: 0.45rem;
     align-items: center;
-    padding: 0.75rem 0.85rem;
   }
-  .sl-handle {
+
+  .row-item--sortable > .row-handle {
     grid-area: handle;
   }
-  .sl-num {
+  .row-item--sortable > .row-num {
     grid-area: num;
     min-width: 0;
   }
-  .sl-info {
+  .row-item--sortable > .row-info {
     grid-area: info;
-    min-width: 0;
+    flex: none;
+    width: auto;
   }
-  .sl-title-link {
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-  .sl-artist {
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-  }
-  .sl-actions {
+  .row-item--sortable > .row-actions {
     grid-area: actions;
     align-self: start;
+    margin-left: 0;
   }
-  .sl-perf,
-  .sl-row > .sl-tom {
+  .row-item--sortable > .row-meta,
+  .row-item--sortable > .row-badge.row-tom-only {
     grid-area: meta;
     display: flex;
     flex-wrap: wrap;
@@ -401,12 +334,14 @@
     width: 100%;
     padding-left: calc(26px + 1.35rem + 0.5rem);
   }
-  .sl-vocalist-sel {
+
+  .row-item--sortable .row-vocalist-sel {
     flex: 1 1 auto;
     max-width: none;
     min-width: 6rem;
   }
-  .sl-actions .sl-icon-btn.view-btn {
+
+  .row-item--sortable .icon-btn.view-btn {
     display: none;
   }
 
@@ -414,12 +349,5 @@
   .tip {
     font-size: 0.72rem;
     padding: 0 0.1rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .row-sub.sl-hide-mobile,
-  .row-sub--optional {
-    display: none;
   }
 }

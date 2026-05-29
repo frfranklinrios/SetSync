@@ -1,0 +1,44 @@
+{# Linha de setlist — lista e aba da banda. #}
+{% macro setlist_row(setlist, band, is_admin=false) %}
+<div class="row-item">
+    <div class="row-info">
+        <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}">
+            <div class="row-title">{{ setlist.name }}</div>
+            <div class="row-sub">
+                {% set n = setlist.cifras_count if setlist.cifras_count is defined else 0 %}
+                {{ n }} música{{ '' if n == 1 else 's' }}{% if setlist.description %} · {{ setlist.description }}{% endif %}
+            </div>
+        </a>
+    </div>
+    {% if setlist.cifras_count is defined and setlist.cifras_count > 0 %}
+    <span class="row-badge neutral">{{ setlist.cifras_count }}</span>
+    <div class="row-actions">
+        <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="icon-btn" title="Tocar setlist">
+            <i class="fas fa-play"></i>
+        </a>
+        {% if is_admin %}
+        <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
+              onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
+            <button type="submit" class="icon-btn danger" title="Excluir">
+                <i class="fas fa-trash"></i>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="row-actions">
+        <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="icon-btn" title="Adicionar músicas">
+            <i class="fas fa-plus"></i>
+        </a>
+        {% if is_admin %}
+        <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
+              onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
+            <button type="submit" class="icon-btn danger" title="Excluir">
+                <i class="fas fa-trash"></i>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}

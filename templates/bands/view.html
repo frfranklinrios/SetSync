@@ -1,4 +1,6 @@
 {% extends "index.html" %}
+{% from 'partials/list_row_cifra.html' import cifra_row %}
+{% from 'partials/list_row_setlist.html' import setlist_row %}
 
 {% block title %}{{ band.name }} - SetSync{% endblock %}
 
@@ -104,27 +106,7 @@
         {% if cifras %}
         <div class="row-card">
             {% for cifra in cifras %}
-            <div class="row-item">
-                <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="row-info text-decoration-none">
-                    <div class="row-title">{{ cifra.titulo }}</div>
-                    <div class="row-sub">{{ cifra.artista }}</div>
-                </a>
-                <span class="row-badge">{{ cifra_display_key(cifra) }}</span>
-                <div class="row-actions">
-                    <a href="{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}"
-                       class="icon-btn" title="Tocar a partir desta">
-                        <i class="fas fa-play"></i>
-                    </a>
-                    {% if is_admin %}
-                    <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}"
-                       class="icon-btn" title="Editar"><i class="fas fa-pen"></i></a>
-                    <form action="{{ url_for('cifras.delete', cifra_id=cifra.id) }}" method="POST" class="d-inline"
-                          onsubmit="return confirm('Excluir cifra {{ cifra.titulo }}?')">
-                        <button type="submit" class="icon-btn danger" title="Excluir"><i class="fas fa-trash"></i></button>
-                    </form>
-                    {% endif %}
-                </div>
-            </div>
+            {{ cifra_row(cifra, band, show_admin_actions=is_admin) }}
             {% endfor %}
         </div>
         {% else %}
@@ -152,42 +134,7 @@
         {% if setlists %}
         <div class="row-card">
             {% for setlist in setlists %}
-            <div class="row-item">
-                <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="row-info text-decoration-none">
-                    <div class="row-title">{{ setlist.name }}</div>
-                    <div class="row-sub">
-                        {{ setlist.cifras_count }} música{{ '' if setlist.cifras_count == 1 else 's' }}{% if setlist.description %} · {{ setlist.description }}{% endif %}
-                    </div>
-                </a>
-                {% if setlist.cifras_count > 0 %}
-                <span class="row-badge neutral">{{ setlist.cifras_count }}</span>
-                <div class="row-actions">
-                    <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}"
-                       class="icon-btn" title="Tocar setlist">
-                        <i class="fas fa-play"></i>
-                    </a>
-                    {% if is_admin %}
-                    <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
-                          onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
-                        <button type="submit" class="icon-btn danger" title="Excluir"><i class="fas fa-trash"></i></button>
-                    </form>
-                    {% endif %}
-                </div>
-                {% else %}
-                <div class="row-actions">
-                    <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}"
-                       class="icon-btn" title="Adicionar músicas">
-                        <i class="fas fa-plus"></i>
-                    </a>
-                    {% if is_admin %}
-                    <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
-                          onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
-                        <button type="submit" class="icon-btn danger" title="Excluir"><i class="fas fa-trash"></i></button>
-                    </form>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
+            {{ setlist_row(setlist, band, is_admin=is_admin) }}
             {% endfor %}
         </div>
         {% else %}
@@ -221,9 +168,13 @@
                     <div class="row-title">{{ member.username }}</div>
                     <div class="row-sub">{{ member.email }}</div>
                 </div>
-                <span class="row-badge neutral">
-                    {% if member.role == 'owner' %}Dono{% elif member.role == 'admin' %}Admin{% else %}Membro{% endif %}
-                </span>
+                {% if member.role == 'owner' %}
+                <span class="row-badge owner">Dono</span>
+                {% elif member.role == 'admin' %}
+                <span class="row-badge owner">Admin</span>
+                {% else %}
+                <span class="row-badge neutral">Membro</span>
+                {% endif %}
             </div>
             {% endfor %}
         </div>

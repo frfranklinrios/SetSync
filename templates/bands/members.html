@@ -12,7 +12,7 @@
     </ol>
 </nav>
 
-<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-3">
+<div class="page-head">
     <div>
         <h2 class="mb-0" style="font-size:1.4rem;">Membros</h2>
         <p class="text-muted mb-0" style="font-size:0.85rem;">
@@ -35,18 +35,20 @@
                 {% elif member.id in vocalist_user_ids %}
                 <span class="row-badge owner">Cantor(a)</span>
                 {% elif member.role == 'admin' %}
-                <span class="row-badge neutral">Admin</span>
+                <span class="row-badge owner">Admin</span>
                 {% else %}
                 <span class="row-badge neutral">Membro</span>
                 {% endif %}
                 {% if band.owner_id != member.id and band.owner_id == current_user.id %}
-                <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
-                      method="POST" class="d-inline"
-                      onsubmit="return confirm('Remover {{ member.username }} da banda?')">
-                    <button type="submit" class="icon-btn danger" title="Remover">
-                        <i class="fas fa-user-minus"></i>
-                    </button>
-                </form>
+                <div class="row-actions">
+                    <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
+                          method="POST" class="d-inline"
+                          onsubmit="return confirm('Remover {{ member.username }} da banda?')">
+                        <button type="submit" class="icon-btn danger" title="Remover">
+                            <i class="fas fa-user-minus"></i>
+                        </button>
+                    </form>
+                </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -87,6 +89,7 @@
             </div>
         </div>
     </div>
+</div>
 <script>
 (function () {
     var btn = document.getElementById('copy-invite-btn');
@@ -109,5 +112,4 @@
     });
 })();
 </script>
-</div>
 {% endblock %}

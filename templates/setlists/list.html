@@ -1,5 +1,8 @@
 {% extends "index.html" %}
+{% from 'partials/list_row_setlist.html' import setlist_row %}
+
 {% block title %}Setlists - {{ band.name }}{% endblock %}
+
 {% block content %}
 
 <nav aria-label="breadcrumb" class="mb-3">
@@ -25,27 +28,7 @@
 {% if setlists %}
 <div class="row-card">
     {% for setlist in setlists %}
-    <div class="row-item">
-        <div class="row-info">
-            <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}">
-                <div class="row-title">{{ setlist.name }}</div>
-                <div class="row-sub row-sub--optional">
-                    {% if setlist.description %}{{ setlist.description }}{% else %}—{% endif %}
-                </div>
-            </a>
-        </div>
-        <div class="row-actions">
-            <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="icon-btn" title="Tocar setlist">
-                <i class="fas fa-play"></i>
-            </a>
-            <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
-                  onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
-                <button type="submit" class="icon-btn danger" title="Excluir">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </form>
-        </div>
-    </div>
+    {{ setlist_row(setlist, band, is_admin=true) }}
     {% endfor %}
 </div>
 {% else %}

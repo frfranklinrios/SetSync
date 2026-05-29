@@ -126,7 +126,11 @@ def list_setlists(band_id):
     if not band or not is_band_member(band_id, user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('bands.view', band_id=band_id))
-    setlists = get_band_setlists(band_id)
+    setlists = []
+    for s in get_band_setlists(band_id):
+        s = dict(s)
+        s['cifras_count'] = len(get_setlist_cifras(s['id']))
+        setlists.append(s)
     return render_template('setlists/list.html', band=band, setlists=setlists)
 
 @setlists_bp.route('/create/<band_id>', methods=['GET', 'POST'])

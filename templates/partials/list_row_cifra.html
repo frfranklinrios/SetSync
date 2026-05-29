@@ -1,0 +1,33 @@
+{# Linha de cifra — mesma estrutura em /cifras, aba da banda e listas. #}
+{% macro cifra_row(cifra, band, show_admin_actions=false, play_url=None) %}
+<div class="row-item">
+    <div class="row-info">
+        <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">
+            <div class="row-title">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</div>
+            {% if cifra.artista %}
+            <div class="row-sub">{{ cifra.artista }}</div>
+            {% endif %}
+        </a>
+    </div>
+    {% if cifra.tom_original %}
+    <span class="row-badge">{{ cifra_display_key(cifra) }}</span>
+    {% endif %}
+    <div class="row-actions">
+        <a href="{{ play_url or url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}"
+           class="icon-btn" title="Tocar a partir desta">
+            <i class="fas fa-play"></i>
+        </a>
+        {% if show_admin_actions %}
+        <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="icon-btn" title="Editar">
+            <i class="fas fa-pen"></i>
+        </a>
+        <form action="{{ url_for('cifras.delete', cifra_id=cifra.id) }}" method="POST" class="d-inline"
+              onsubmit="return confirm('Excluir {{ cifra.titulo }}?')">
+            <button type="submit" class="icon-btn danger" title="Excluir">
+                <i class="fas fa-trash"></i>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
