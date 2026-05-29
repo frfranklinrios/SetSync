@@ -6,11 +6,11 @@ load_dotenv()
 
 
 def _session_lifetime() -> timedelta:
-    """Duração do cookie de sessão (padrão ~10 anos)."""
+    """Duração do cookie de sessão (padrão 2 dias)."""
     try:
-        days = int(os.getenv('SESSION_LIFETIME_DAYS', '3650'))
+        days = int(os.getenv('SESSION_LIFETIME_DAYS', '2'))
     except ValueError:
-        days = 3650
+        days = 2
     return timedelta(days=max(1, days))
 
 
