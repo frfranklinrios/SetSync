@@ -635,7 +635,7 @@
 <body>
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-4">
-            <a class="navbar-brand" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('auth.login') }}">
+            <a class="navbar-brand" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}">
                 <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync">
             </a>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -692,7 +692,7 @@
         </div>
     </nav>
 
-    <main class="container my-4">
+    <main class="{% block main_class %}container my-4{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}

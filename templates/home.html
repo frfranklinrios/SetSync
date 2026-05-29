@@ -1,0 +1,293 @@
+{% extends "index.html" %}
+
+{% block title %}SetSync — Cifras e setlists para sua banda{% endblock %}
+
+{% block main_class %}home-page{% endblock %}
+
+{% block extra_head %}
+<style>
+.home-page {
+    padding: 0;
+    max-width: none;
+}
+.home-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 3.5rem 1.5rem 4rem;
+    background: linear-gradient(165deg, #fff7ed 0%, #fff 45%, #f0fdfa 100%);
+    border-bottom: 1px solid var(--border);
+}
+[data-theme="dark"] .home-hero {
+    background: linear-gradient(165deg, #0b1422 0%, #0f172a 50%, #134e4a22 100%);
+    border-bottom-color: #334155;
+}
+.home-hero::before {
+    content: "";
+    position: absolute;
+    inset: -40% 30% auto -20%;
+    height: 120%;
+    background: radial-gradient(ellipse at center, rgba(234, 88, 12, 0.12), transparent 70%);
+    pointer-events: none;
+}
+[data-theme="dark"] .home-hero::before {
+    background: radial-gradient(ellipse at center, rgba(42, 181, 160, 0.15), transparent 70%);
+}
+.home-hero-inner {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+.home-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+    border: 1px solid var(--chord-highlight-border);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 1.25rem;
+}
+[data-theme="dark"] .home-badge {
+    color: #5eead4;
+    background: rgba(42, 181, 160, 0.12);
+    border-color: rgba(42, 181, 160, 0.35);
+}
+.home-hero h1 {
+    font-size: clamp(1.85rem, 4.5vw, 2.75rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    max-width: 18ch;
+}
+.home-lead {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 42rem;
+    line-height: 1.6;
+    margin-bottom: 1.75rem;
+}
+.home-cta { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.home-cta .btn-lg { padding: 0.65rem 1.35rem; font-weight: 600; }
+.home-hero-img {
+    max-width: 280px;
+    width: 100%;
+    filter: drop-shadow(0 12px 32px rgba(0,0,0,0.12));
+}
+[data-theme="dark"] .home-hero-img { filter: drop-shadow(0 12px 32px rgba(0,0,0,0.45)); }
+
+.home-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+.home-section h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+.home-section .section-sub {
+    color: var(--muted);
+    font-size: 0.92rem;
+    margin-bottom: 1.75rem;
+}
+.home-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+.home-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.35rem;
+    background: #fff;
+    height: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+[data-theme="dark"] .home-card {
+    background: #0b1422;
+    border-color: #334155;
+}
+.home-card:hover {
+    border-color: var(--chord-highlight-border);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+[data-theme="dark"] .home-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+.home-card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--accent);
+    background: var(--chord-highlight-bg);
+    margin-bottom: 0.85rem;
+}
+[data-theme="dark"] .home-card-icon {
+    color: #5eead4;
+    background: rgba(42, 181, 160, 0.12);
+}
+.home-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+.home-card p {
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.5;
+}
+.home-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    counter-reset: step;
+}
+.home-step {
+    text-align: center;
+    padding: 1rem;
+}
+.home-step-num {
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0 auto 0.75rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+[data-theme="dark"] .home-step-num { background: #2ab5a0; }
+.home-step strong { display: block; margin-bottom: 0.35rem; font-size: 0.95rem; }
+.home-step span { font-size: 0.85rem; color: var(--muted); }
+
+.home-cta-band {
+    text-align: center;
+    padding: 2.5rem 1.5rem 3.5rem;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+}
+[data-theme="dark"] .home-cta-band {
+    background: #0f172a;
+    border-top-color: #334155;
+}
+.home-cta-band h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.home-cta-band p { color: var(--muted); margin-bottom: 1.25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="home-hero">
+    <div class="home-hero-inner">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="home-badge"><i class="fas fa-music"></i> Grátis para bandas</span>
+                <h1>Cifras e setlists sincronizados com sua banda</h1>
+                <p class="home-lead">
+                    O <strong>SetSync</strong> organiza o repertório da banda, transponhe no tom de cada cantor
+                    e leva você ao palco com o <strong>Modo Tocar</strong> — tela cheia, navegação por gestos
+                    e tudo acessível no celular como app.
+                </p>
+                <div class="home-cta">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+                        Criar conta grátis
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg">
+                        Já tenho conta
+                    </a>
+                    <a href="{{ url_for('ajuda.index') }}" class="text-muted ms-1" style="font-size:0.9rem;text-decoration:none;">
+                        Ver ajuda <i class="fas fa-arrow-right fa-xs"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 text-center text-lg-end">
+                <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync" class="home-hero-img">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="home-section">
+    <h2>Tudo que a banda precisa no ensaio e no show</h2>
+    <p class="section-sub">Do cadastro da música à execução ao vivo, em um só lugar.</p>
+    <div class="home-features">
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-users"></i></div>
+            <h3>Bandas e convites</h3>
+            <p>Crie a banda, convide músicos por link ou e-mail e compartilhe o mesmo repertório.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-guitar"></i></div>
+            <h3>Cifras inteligentes</h3>
+            <p>Acordes destacados, transposição na hora e tom por cantor — sem editar o arquivo.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-list-ol"></i></div>
+            <h3>Setlists</h3>
+            <p>Monte o roteiro do show, defina cantor e tom em cada música e navegue com setas ou toque.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-expand"></i></div>
+            <h3>Modo Tocar</h3>
+            <p>Tela cheia para o palco: duas colunas, auto-scroll, fonte ajustável e tema claro ou escuro.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-file-import"></i></div>
+            <h3>Importar cifras</h3>
+            <p>Traga músicas de sites e arquivos com o importador integrado e grade harmônica.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-mobile-screen"></i></div>
+            <h3>App no celular</h3>
+            <p>Instale na tela inicial (PWA) e use offline quando precisar — ideal no culto ou no bar.</p>
+        </article>
+    </div>
+</section>
+
+<section class="home-section pt-0">
+    <h2>Como começar</h2>
+    <p class="section-sub">Em poucos minutos sua banda já está ensaiando com o SetSync.</p>
+    <div class="home-steps">
+        <div class="home-step">
+            <div class="home-step-num">1</div>
+            <strong>Crie sua conta</strong>
+            <span>Email e senha ou login com Google.</span>
+        </div>
+        <div class="home-step">
+            <div class="home-step-num">2</div>
+            <strong>Monte a banda</strong>
+            <span>Adicione músicas e envie o link de convite aos integrantes.</span>
+        </div>
+        <div class="home-step">
+            <div class="home-step-num">3</div>
+            <strong>Monte o setlist</strong>
+            <span>Ordene as músicas e ajuste tom e cantor por faixa.</span>
+        </div>
+        <div class="home-step">
+            <div class="home-step-num">4</div>
+            <strong>Toque ao vivo</strong>
+            <span>Abra o Modo Tocar e siga o show sem perder o fio.</span>
+        </div>
+    </div>
+</section>
+
+<section class="home-cta-band">
+    <h2>Pronto para sincronizar o set?</h2>
+    <p>Junte a banda no SetSync e deixe as cifras sempre no tom certo.</p>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2">Começar agora</a>
+    <button type="button" class="btn btn-outline-secondary btn-lg" onclick="typeof installPWA === 'function' && installPWA()">
+        <i class="fas fa-download me-1"></i> Instalar app
+    </button>
+</section>
+{% endblock %}

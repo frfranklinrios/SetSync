@@ -80,7 +80,7 @@ app.register_blueprint(admin_bp)
 def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
-    return redirect(url_for('auth.login'))
+    return render_template('home.html')
 
 
 # ── PWA ─────────────────────────────────────────────────────────
