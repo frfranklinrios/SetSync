@@ -41,6 +41,12 @@ def create():
         if not name:
             flash('Nome da banda é obrigatório', 'danger')
             return render_template('bands/create.html')
+
+        from monetizacao import check_limite, resposta_limite_plano
+        if not check_limite({'id': '', 'owner_id': user_id}, 'banda'):
+            resp = resposta_limite_plano()
+            if resp:
+                return resp
         
         band_id = create_band(name, description, user_id)
         flash(f'Banda "{name}" criada com sucesso!', 'success')
@@ -202,6 +208,12 @@ def invite(band_id):
     if is_band_member(band_id, invited_user_id):
         flash('Usuário já é membro', 'danger')
         return redirect(url_for('bands.members', band_id=band_id))
+
+    from monetizacao import check_limite, resposta_limite_plano
+    if not check_limite(band, 'integrante'):
+        resp = resposta_limite_plano()
+        if resp:
+            return resp
     
     add_band_member(band_id, invited_user_id)
     user = get_user(invited_user_id)

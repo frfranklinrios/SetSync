@@ -1,0 +1,27 @@
+{% extends "index.html" %}
+{% block title %}Indicar — SetSync{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Indique uma banda</h1>
+<p class="text-muted">Gere um voucher de 15 dias Pro (uso único). Quando alguém usar, você ganha mais 15 dias.</p>
+
+{% if erro %}
+<div class="alert alert-warning">{{ erro }}</div>
+{% endif %}
+
+{% if codigo %}
+<div class="card mb-3">
+    <div class="card-body">
+        <p class="mb-1">Seu código:</p>
+        <p class="fs-4 fw-bold font-monospace">{{ codigo }}</p>
+        <p class="small text-muted mb-0">Compartilhe com outra banda para ela se cadastrar e resgatar em Planos.</p>
+    </div>
+</div>
+{% endif %}
+
+<form method="post" class="mb-3">
+    <button type="submit" class="btn btn-primary">Gerar código de indicação</button>
+</form>
+
+<a href="{{ url_for('assinatura_bp.planos') }}" class="btn btn-link">Voltar aos planos</a>
+{% endblock %}

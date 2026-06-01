@@ -689,6 +689,12 @@ def add(band_id):
             flash('Preencha título e artista', 'danger')
             return render_template('cifras/add.html', band=band)
 
+        from monetizacao import check_limite, resposta_limite_plano
+        if not check_limite(band, 'musica'):
+            resp = resposta_limite_plano()
+            if resp:
+                return resp
+
         cifra_json, grade_json, bpm, duracao_seg = _parse_extra_fields(request.form)
         if cifra_json is False or grade_json is False:
             return render_template('cifras/add.html', band=band)

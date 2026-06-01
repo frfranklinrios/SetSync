@@ -1,0 +1,113 @@
+{% extends "index.html" %}
+{% block title %}Vouchers — Admin{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Vouchers</h1>
+
+<div class="card mb-4">
+    <div class="card-header">Criar voucher</div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('assinatura_bp.admin_vouchers_criar') }}" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Prefixo</label>
+                <input type="text" name="prefixo" class="form-control" placeholder="IGREJA">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Plano</label>
+                <select name="plano" class="form-select">
+                    <option value="pro">Pro</option>
+                    <option value="worship">Worship</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Dias</label>
+                <input type="number" name="dias" class="form-control" value="30" min="1" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Máx. usos</label>
+                <input type="number" name="max_usos" class="form-control" placeholder="Ilimitado" min="1">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Expira em</label>
+                <input type="date" name="data_expiracao" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Criar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Plano</th>
+                <th>Dias</th>
+                <th>Usos</th>
+                <th>Expira em</th>
+                <th>Criado por</th>
+                <th>Ativo</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in vouchers %}
+            <tr>
+                <td><code>{{ v.codigo }}</code></td>
+                <td>{{ v.plano }}</td>
+                <td>{{ v.dias }}</td>
+                <td>{{ v.usos_atual }}{% if v.max_usos %}/{{ v.max_usos }}{% else %}/∞{% endif %}</td>
+                <td>{{ v.data_expiracao or '—' }}</td>
+                <td>{{ v.criador.username if v.criador else '—' }}</td>
+                <td>{% if v.ativo %}Sim{% else %}Não{% endif %}</td>
+                <td class="text-nowrap">
+                    {% if v.ativo %}
+                    <form method="post" action="{{ url_for('assinatura_bp.admin_vouchers_desativar', codigo=v.codigo) }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Desativar</button>
+                    </form>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-ver-usos" data-codigo="{{ v.codigo }}">Ver usos</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="usosModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Usos do voucher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="usosModalBody">Carregando…</div>
+        </div>
+    </div>
+</div>
+
+<a href="{{ url_for('admin.index') }}" class="btn btn-link mt-3">← Admin</a>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.btn-ver-usos').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+        const codigo = btn.dataset.codigo;
+        const res = await fetch('/admin/vouchers/' + encodeURIComponent(codigo) + '/usos');
+        const data = await res.json();
+        const body = document.getElementById('usosModalBody');
+        if (!data.usos || !data.usos.length) {
+            body.innerHTML = '<p class="text-muted mb-0">Nenhum uso registrado.</p>';
+        } else {
+            body.innerHTML = '<ul class="list-unstyled mb-0">' + data.usos.map(function (u) {
+                return '<li><strong>' + (u.banda_nome || u.banda_id) + '</strong> — ' + (u.usado_em || '') + '</li>';
+            }).join('') + '</ul>';
+        }
+        new bootstrap.Modal(document.getElementById('usosModal')).show();
+    });
+});
+</script>
+{% endblock %}

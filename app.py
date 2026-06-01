@@ -8,7 +8,9 @@ from blueprints.setlists import setlists_bp
 from blueprints.cifras_import import cifras_import_bp
 from blueprints.ajuda import ajuda_bp
 from blueprints.admin import admin_bp
+from blueprints.assinatura import assinatura_bp
 from db import init_db
+from extensions import init_scheduler
 from util import highlight_chords_html, normalize_tom_label
 import os
 from flask_mail import Mail
@@ -19,6 +21,9 @@ app = Flask(__name__)
 env = os.getenv('FLASK_ENV', 'development')
 app.config.from_object(config.get(env, config['default']))
 app.config.from_object('email_config')
+# Login em http://127.0.0.1: com .env de produção (SESSION_COOKIE_SECURE=1) não persiste sessão
+if env == 'development' or os.getenv('ALLOW_HTTP_SESSION', '').lower() in ('1', 'true', 'yes'):
+    app.config['SESSION_COOKIE_SECURE'] = False
 mail = Mail(app)
 
 if env == 'production':
@@ -75,6 +80,8 @@ app.register_blueprint(cifras_bp)
 app.register_blueprint(setlists_bp)
 app.register_blueprint(ajuda_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(assinatura_bp)
+init_scheduler(app)
 
 @app.route('/')
 def index():
@@ -105,6 +112,14 @@ def manifest():
 def offline():
     return render_template('offline.html')
 
+
+@app.route('/setlist/<setlist_id>/exportar-pdf')
+@login_required
+def exportar_setlist_pdf(setlist_id):
+    """Alias da rota de exportação PDF (especificação /setlist/...)."""
+    from blueprints.setlists import exportar_pdf
+    return exportar_pdf(setlist_id)
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -112,22 +127,31 @@ def dashboard():
         get_user_bands, get_owned_bands, get_all_bands,
         enrich_bands_for_display, is_superadmin,
     )
+    from monetizacao import enrich_bands_plano, resumo_planos_usuario
+
     user_id = session['user_id']
     sa = is_superadmin(user_id)
 
     if sa:
-        all_bands = enrich_bands_for_display(get_all_bands())
-        owned_bands = enrich_bands_for_display(get_owned_bands(user_id))
+        all_bands = enrich_bands_plano(enrich_bands_for_display(get_all_bands()))
+        owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
         return render_template(
             'dashboard.html',
             bands=all_bands,
             owned_bands=owned_bands,
             is_superadmin=True,
+            planos_resumo=resumo_planos_usuario(owned_bands),
         )
 
-    bands = enrich_bands_for_display(get_user_bands(user_id))
-    owned_bands = enrich_bands_for_display(get_owned_bands(user_id))
-    return render_template('dashboard.html', bands=bands, owned_bands=owned_bands, is_superadmin=False)
+    bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
+    owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
+    return render_template(
+        'dashboard.html',
+        bands=bands,
+        owned_bands=owned_bands,
+        is_superadmin=False,
+        planos_resumo=resumo_planos_usuario(owned_bands),
+    )
 
 @app.context_processor
 def inject_user():

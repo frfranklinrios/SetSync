@@ -36,6 +36,18 @@
 }
 [data-theme="dark"] .tile-badge { background: #0f172a; }
 .tile-badge.role-admin { color: var(--accent); border-color: rgba(42,181,160,0.3); background: rgba(42,181,160,0.08); }
+.tile-badge.plano-pro { color: #1d4ed8; border-color: rgba(37, 99, 235, 0.35); background: rgba(37, 99, 235, 0.08); }
+.tile-badge.plano-worship { color: #0e7490; border-color: rgba(14, 116, 144, 0.35); background: rgba(14, 116, 144, 0.08); }
+.tile-badge.plano-voucher { color: #15803d; border-color: rgba(21, 128, 61, 0.35); background: rgba(21, 128, 61, 0.08); }
+.planos-resumo-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+    background: var(--bg);
+    margin-bottom: 1.25rem;
+}
+[data-theme="dark"] .planos-resumo-card { background: #0f172a; }
+.planos-resumo-card .plano-linha { font-size: 0.88rem; }
 
 .section-title {
     font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px;
@@ -69,6 +81,32 @@
     </div>
 </div>
 
+{% if planos_resumo and planos_resumo.tem_banda and not is_superadmin %}
+<div class="planos-resumo-card d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+        {% if planos_resumo.multiplas %}
+        <div class="fw-semibold mb-1" style="font-size:0.9rem;"><i class="fas fa-layer-group me-1 text-muted"></i> Planos das suas bandas</div>
+        {% for item in planos_resumo.itens %}
+        <div class="plano-linha text-muted">
+            <strong class="text-body">{{ item.band_name }}</strong>
+            <span class="badge bg-{{ item.badge }} ms-1">{{ item.label }}</span>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="fw-semibold" style="font-size:0.9rem;">
+            <i class="fas fa-tag me-1 text-muted"></i>
+            Plano de <strong>{{ planos_resumo.destaque.band_name }}</strong>:
+            <span class="badge bg-{{ planos_resumo.destaque.badge }} ms-1">{{ planos_resumo.destaque.label }}</span>
+        </div>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('assinatura_bp.planos', banda_id=(planos_resumo.itens[0].band_id if planos_resumo.itens else '')) }}"
+       class="btn btn-outline-primary btn-sm">
+        {% if planos_resumo.itens and planos_resumo.itens[0].premium %}Gerenciar plano{% else %}Fazer upgrade{% endif %}
+    </a>
+</div>
+{% endif %}
+
 {% if is_superadmin %}
 <div class="alert alert-info py-2 mb-3" style="font-size:0.88rem;">
     Você tem acesso de <strong>administrador</strong> a todas as bandas e cifras. Pode editar, excluir e gerenciar como admin de cada banda.
@@ -82,6 +120,9 @@
             <p class="band-desc">Dono: {{ band.owner.username or '—' }}</p>
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin global</span>
+                {% if band.plano_ui %}
+                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label }}</span>
+                {% endif %}
                 <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
                 <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
             </div>
@@ -102,6 +143,9 @@
             <p class="band-desc">{{ band.description or '—' }}</p>
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin</span>
+                {% if band.plano_ui %}
+                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label }}</span>
+                {% endif %}
                 <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
                 <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
             </div>
@@ -121,6 +165,9 @@
             <p class="band-desc">Por {{ band.owner.username }}</p>
             <div class="band-meta">
                 <span class="tile-badge">Membro</span>
+                {% if band.plano_ui %}
+                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label }}</span>
+                {% endif %}
                 <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
             </div>
         </a>

@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import uuid
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 def _resolve_db_path() -> str:
@@ -153,6 +154,8 @@ def init_db():
         )
     ''')
     _migrate_vocalists_schema(c)
+    _migrate_assinaturas_schema(c)
+    _migrate_vouchers_schema(c)
     db.commit()
 
     db.close()
@@ -307,6 +310,27 @@ def get_user_by_username(username):
     return dict(row) if row else None
 
 
+def get_user_by_login(identifier: str) -> dict | None:
+    """
+    Busca usuário pelo username ou pelo e-mail (mesmo campo do formulário de login).
+    No VPS e local usam o mesmo SQLite; o identificador deve existir na base em uso.
+    """
+    ident = (identifier or '').strip()
+    if not ident:
+        return None
+    user = get_user_by_username(ident)
+    if user:
+        return user
+    if '@' in ident:
+        return get_user_by_email(ident)
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', (ident,))
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
 def get_user_by_email(email):
     db = get_db()
     c = db.cursor()
@@ -381,6 +405,385 @@ def get_all_cifras():
     return [dict(r) for r in rows]
 
 
+# ── Assinaturas / monetização ───────────────────────────────────────────────
+
+def _migrate_assinaturas_schema(c) -> None:
+    """Cria tabela de assinaturas e preenche bandas existentes com plano grátis."""
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS assinaturas (
+            id TEXT PRIMARY KEY,
+            banda_id TEXT NOT NULL UNIQUE,
+            plano TEXT NOT NULL DEFAULT 'gratis',
+            status TEXT NOT NULL DEFAULT 'ativa',
+            mp_subscription_id TEXT,
+            mp_preapproval_id TEXT,
+            data_inicio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            data_proxima_cobranca TIMESTAMP,
+            data_cancelamento TIMESTAMP,
+            FOREIGN KEY (banda_id) REFERENCES bands(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('SELECT id FROM bands')
+    for row in c.fetchall():
+        c.execute('SELECT 1 FROM assinaturas WHERE banda_id = ?', (row['id'],))
+        if not c.fetchone():
+            create_assinatura_gratis(row['id'], cursor=c, commit=False)
+    c.connection.commit()
+
+
+def create_assinatura_gratis(banda_id: str, *, cursor=None, commit: bool = True) -> dict:
+    """Cria assinatura grátis ativa para uma banda."""
+    assinatura_id = str(uuid.uuid4())
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    row = {
+        'id': assinatura_id,
+        'banda_id': banda_id,
+        'plano': 'gratis',
+        'status': 'ativa',
+        'mp_subscription_id': None,
+        'mp_preapproval_id': None,
+        'data_inicio': now,
+        'data_proxima_cobranca': None,
+        'data_cancelamento': None,
+    }
+    if cursor is not None:
+        c = cursor
+        c.execute(
+            '''INSERT INTO assinaturas
+               (id, banda_id, plano, status, data_inicio)
+               VALUES (?, ?, ?, ?, ?)''',
+            (assinatura_id, banda_id, 'gratis', 'ativa', now),
+        )
+        if commit:
+            c.connection.commit()
+        return row
+
+    db = get_db()
+    c = db.cursor()
+    try:
+        c.execute(
+            '''INSERT INTO assinaturas
+               (id, banda_id, plano, status, data_inicio)
+               VALUES (?, ?, ?, ?, ?)''',
+            (assinatura_id, banda_id, 'gratis', 'ativa', now),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        db.rollback()
+        existing = get_assinatura(banda_id)
+        db.close()
+        return existing if existing else row
+    finally:
+        if cursor is None:
+            db.close()
+    return row
+
+
+def get_assinatura(banda_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM assinaturas WHERE banda_id = ?', (banda_id,))
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def owner_has_worship_ativa(owner_id: str) -> bool:
+    """True se o usuário possui alguma banda com plano Worship ativo."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT 1 FROM assinaturas a
+           JOIN bands b ON b.id = a.banda_id
+           WHERE b.owner_id = ? AND a.plano = 'worship' AND a.status = 'ativa'
+           LIMIT 1''',
+        (owner_id,),
+    )
+    found = c.fetchone() is not None
+    db.close()
+    return found
+
+
+def count_band_cifras(band_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM cifras WHERE band_id = ?', (band_id,))
+    n = c.fetchone()['n']
+    db.close()
+    return int(n or 0)
+
+
+def count_band_members(band_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM band_members WHERE band_id = ?', (band_id,))
+    n = c.fetchone()['n']
+    db.close()
+    return int(n or 0)
+
+
+def count_band_setlists(band_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM setlists WHERE band_id = ?', (band_id,))
+    n = c.fetchone()['n']
+    db.close()
+    return int(n or 0)
+
+
+def count_owned_bands(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM bands WHERE owner_id = ?', (user_id,))
+    n = c.fetchone()['n']
+    db.close()
+    return int(n or 0)
+
+
+def update_assinatura(banda_id: str, **fields) -> dict | None:
+    """Atualiza campos da assinatura da banda."""
+    allowed = {
+        'plano', 'status', 'mp_subscription_id', 'mp_preapproval_id',
+        'data_inicio', 'data_proxima_cobranca', 'data_cancelamento',
+    }
+    parts, vals = [], []
+    for key, value in fields.items():
+        if key in allowed:
+            parts.append(f'{key} = ?')
+            vals.append(value)
+    if not parts:
+        return get_assinatura(banda_id)
+    vals.append(banda_id)
+    db = get_db()
+    c = db.cursor()
+    c.execute(f'UPDATE assinaturas SET {", ".join(parts)} WHERE banda_id = ?', vals)
+    db.commit()
+    db.close()
+    return get_assinatura(banda_id)
+
+
+def get_assinatura_by_mp_id(mp_subscription_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT * FROM assinaturas WHERE mp_subscription_id = ? OR mp_preapproval_id = ?',
+        (mp_subscription_id, mp_subscription_id),
+    )
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def _migrate_vouchers_schema(c) -> None:
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS vouchers (
+            id TEXT PRIMARY KEY,
+            codigo TEXT NOT NULL UNIQUE,
+            plano TEXT NOT NULL,
+            dias INTEGER NOT NULL,
+            criado_por_id TEXT,
+            max_usos INTEGER,
+            usos_atual INTEGER NOT NULL DEFAULT 0,
+            ativo INTEGER NOT NULL DEFAULT 1,
+            eh_indicacao INTEGER NOT NULL DEFAULT 0,
+            data_expiracao TIMESTAMP,
+            criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (criado_por_id) REFERENCES users(id)
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS voucher_usos (
+            id TEXT PRIMARY KEY,
+            voucher_id TEXT NOT NULL,
+            banda_id TEXT NOT NULL,
+            usado_em TIMESTAMP NOT NULL,
+            expira_em TIMESTAMP NOT NULL,
+            aviso_3d_enviado INTEGER NOT NULL DEFAULT 0,
+            UNIQUE (voucher_id, banda_id),
+            FOREIGN KEY (voucher_id) REFERENCES vouchers(id),
+            FOREIGN KEY (banda_id) REFERENCES bands(id)
+        )
+    ''')
+
+
+def create_voucher(
+    codigo: str,
+    plano: str,
+    dias: int,
+    criado_por_id: str | None = None,
+    max_usos: int | None = None,
+    data_expiracao: str | None = None,
+    eh_indicacao: bool = False,
+) -> dict:
+    vid = str(uuid.uuid4())
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO vouchers
+           (id, codigo, plano, dias, criado_por_id, max_usos, eh_indicacao, data_expiracao)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        (vid, codigo.upper(), plano, dias, criado_por_id, max_usos, int(eh_indicacao), data_expiracao),
+    )
+    db.commit()
+    db.close()
+    return get_voucher_by_codigo(codigo) or {'id': vid, 'codigo': codigo}
+
+
+def get_voucher_by_codigo(codigo: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM vouchers WHERE codigo = ?', (codigo.upper(),))
+    row = c.fetchone()
+    db.close()
+    if not row:
+        return None
+    d = dict(row)
+    d['ativo'] = bool(d.get('ativo'))
+    d['eh_indicacao'] = bool(d.get('eh_indicacao'))
+    return d
+
+
+def list_vouchers() -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM vouchers ORDER BY criado_em DESC')
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    for d in rows:
+        d['ativo'] = bool(d.get('ativo'))
+        d['eh_indicacao'] = bool(d.get('eh_indicacao'))
+    return rows
+
+
+def set_voucher_ativo(codigo: str, ativo: bool) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE vouchers SET ativo = ? WHERE codigo = ?', (int(ativo), codigo.upper()))
+    db.commit()
+    ok = c.rowcount > 0
+    db.close()
+    return ok
+
+
+def increment_voucher_usos(voucher_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE vouchers SET usos_atual = usos_atual + 1 WHERE id = ?', (voucher_id,))
+    db.commit()
+    db.close()
+
+
+def get_voucher_uso_banda(voucher_id: str, banda_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT * FROM voucher_usos WHERE voucher_id = ? AND banda_id = ?',
+        (voucher_id, banda_id),
+    )
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def insert_voucher_uso(voucher_id: str, banda_id: str, usado_em, expira_em) -> str:
+    uso_id = str(uuid.uuid4())
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO voucher_usos (id, voucher_id, banda_id, usado_em, expira_em)
+           VALUES (?, ?, ?, ?, ?)''',
+        (
+            uso_id,
+            voucher_id,
+            banda_id,
+            usado_em.strftime('%Y-%m-%d %H:%M:%S'),
+            expira_em.strftime('%Y-%m-%d %H:%M:%S'),
+        ),
+    )
+    db.commit()
+    db.close()
+    return uso_id
+
+
+def list_voucher_usos(voucher_id: str) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT vu.*, b.name AS banda_nome
+           FROM voucher_usos vu
+           JOIN bands b ON b.id = vu.banda_id
+           WHERE vu.voucher_id = ?
+           ORDER BY vu.usado_em DESC''',
+        (voucher_id,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def count_vouchers_indicacao_ativos(criado_por_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT COUNT(*) AS n FROM vouchers
+           WHERE criado_por_id = ? AND eh_indicacao = 1 AND ativo = 1
+           AND (max_usos IS NULL OR usos_atual < max_usos)''',
+        (criado_por_id,),
+    )
+    n = c.fetchone()['n']
+    db.close()
+    return int(n or 0)
+
+
+def list_voucher_usos_vencendo(antes_de: str) -> list[dict]:
+    """Usos com expira_em <= antes_de e assinatura ainda em voucher."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT vu.*, v.plano, a.status AS assinatura_status,
+                  b.name AS banda_nome, b.owner_id,
+                  u.email AS owner_email
+           FROM voucher_usos vu
+           JOIN vouchers v ON v.id = vu.voucher_id
+           JOIN assinaturas a ON a.banda_id = vu.banda_id
+           JOIN bands b ON b.id = vu.banda_id
+           JOIN users u ON u.id = b.owner_id
+           WHERE vu.expira_em <= ? AND a.status = 'voucher' ''',
+        (antes_de,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def list_voucher_usos_aviso(ate: str) -> list[dict]:
+    """Usos que expiram em até 3 dias e ainda não receberam aviso."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT vu.*, v.plano, b.name AS banda_nome, u.email AS owner_email
+           FROM voucher_usos vu
+           JOIN vouchers v ON v.id = vu.voucher_id
+           JOIN assinaturas a ON a.banda_id = vu.banda_id
+           JOIN bands b ON b.id = vu.banda_id
+           JOIN users u ON u.id = b.owner_id
+           WHERE a.status = 'voucher' AND vu.aviso_3d_enviado = 0
+           AND vu.expira_em <= ? AND vu.expira_em > datetime('now')''',
+        (ate,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def marcar_aviso_voucher_enviado(uso_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE voucher_usos SET aviso_3d_enviado = 1 WHERE id = ?', (uso_id,))
+    db.commit()
+    db.close()
+
+
 # ── Bands ──────────────────────────────────────────────────────────────────
 
 def create_band(name, description, owner_id):
@@ -398,6 +801,7 @@ def create_band(name, description, owner_id):
     )
     db.commit()
     db.close()
+    create_assinatura_gratis(band_id)
     return band_id
 
 
@@ -607,6 +1011,8 @@ def delete_band(band_id):
     c.execute('DELETE FROM cifras WHERE band_id = ?', (band_id,))
     c.execute('DELETE FROM band_vocalists WHERE band_id = ?', (band_id,))
     c.execute('DELETE FROM band_members WHERE band_id = ?', (band_id,))
+    c.execute('DELETE FROM voucher_usos WHERE banda_id = ?', (band_id,))
+    c.execute('DELETE FROM assinaturas WHERE banda_id = ?', (band_id,))
     c.execute('DELETE FROM bands WHERE id = ?', (band_id,))
     db.commit()
     db.close()
