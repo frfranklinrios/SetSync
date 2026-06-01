@@ -191,7 +191,7 @@ def _migrate_vocalists_schema(c) -> None:
             if not names:
                 if uid:
                     u = get_user(uid)
-                    names = [((u.get('display_name') or '').strip() or u.get('username')) if u else 'Cantor(a)']
+                    names = [((u.get('display_name') or '').strip() or u.get('username')) if u else 'Cantora/cantor']
                 else:
                     continue
             for i, name in enumerate(names):
@@ -895,7 +895,7 @@ def vocalists_summary_label(band_id: str) -> str | None:
 def add_band_vocalist(band_id: str, name: str, user_id: str | None = None) -> str:
     name = name.strip()
     if not name:
-        raise ValueError('Nome do cantor(a) é obrigatório')
+        raise ValueError('Nome de cantora/cantor é obrigatório')
     db = get_db()
     c = db.cursor()
     c.execute('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM band_vocalists WHERE band_id = ?', (band_id,))

@@ -694,7 +694,7 @@ body.play-mode.edges-hint .tap-zone {
         <div class="bar-group-extra">
             {% if vocalists|length > 0 %}
             <select id="vocalist-sel" class="transpose-mini me-1" onchange="onVocalistChange(this.value)"
-                    title="Cantor(a) desta setlist">
+                    title="Cantora/cantor desta setlist">
                 {% for v in vocalists %}
                 <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
                 {% endfor %}

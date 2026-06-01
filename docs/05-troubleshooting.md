@@ -57,3 +57,42 @@ Se o app não “encontra” dados esperados, confirme o arquivo:
 
 e se a pasta `data/` existe e tem permissão de escrita.
 
+## Usuários não funcionam igual ao VPS
+
+O login usa o arquivo SQLite **desta máquina**. Contas criadas em `https://setsync.dados.tec.br/` **não existem** no seu PC até você copiar o banco ou criar a conta de novo aqui.
+
+### Sintomas comuns
+
+| Sintoma | Causa | Solução |
+|--------|--------|---------|
+| “Usuário ou senha incorretos” com credencial do VPS | Banco local diferente | Copiar `banda.db` do servidor (abaixo) ou registrar de novo |
+| Entra e logo volta para o login | `SESSION_COOKIE_SECURE=1` em HTTP local | `.env`: `FLASK_ENV=development` ou `ALLOW_HTTP_SESSION=1` |
+| Admin não aparece localmente | Falta `SETSYNC_SUPERADMIN_*` no `.env` local | Copiar as mesmas linhas do `.env` do VPS |
+| Google login falha local | Redirect URI só no domínio de produção | Adicionar `http://127.0.0.1:5000/google/callback` no Google Cloud |
+
+### Copiar usuários do VPS (banco inteiro)
+
+No servidor (ajuste usuário e caminho):
+
+```bash
+# Na sua máquina
+scp usuario@seu-vps:/caminho/do/projeto/data/banda.db ./data/banda.db
+```
+
+Pare o app local antes de substituir o arquivo. **Não** sobrescreva o banco de produção a partir do local.
+
+### Conferir usuários no banco local
+
+```bash
+uv run python -c "
+from db import init_db, get_all_users
+init_db()
+for u in get_all_users():
+    print(u['username'], u['email'])
+"
+```
+
+### Login
+
+O formulário aceita **username ou e-mail** (igual costuma ser no VPS se você lembrava do e-mail).
+

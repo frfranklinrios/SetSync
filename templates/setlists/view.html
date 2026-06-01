@@ -73,8 +73,8 @@
         {% if cifra.tom_original and vocalists %}
         <div class="row-meta">
             {% if vocalists|length > 1 %}
-            <select class="row-vocalist-sel" data-cifra-id="{{ cifra.id }}" title="Cantor(a)"
-                    aria-label="Cantor de {{ cifra.titulo }}">
+            <select class="row-vocalist-sel" data-cifra-id="{{ cifra.id }}" title="Cantora/cantor"
+                    aria-label="Cantora/cantor de {{ cifra.titulo }}">
                 {% for v in vocalists %}
                 <option value="{{ v.id }}" {% if v.id == cifra.row_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
                 {% endfor %}

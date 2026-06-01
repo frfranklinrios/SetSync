@@ -68,6 +68,80 @@ PLANOS: dict[str, Plano] = {
 }
 
 
+@dataclass(frozen=True)
+class PlanoSite:
+    """Plano formatado para landings públicas (home, igrejas)."""
+
+    id: str
+    nome: str
+    preco_label: str
+    sufixo: str
+    destaque: bool
+    features: tuple[str, ...]
+    cta: str
+    cta_outline: bool
+
+
+def _preco_label(valor: float | None) -> str:
+    if valor is None or valor <= 0:
+        return 'R$ 0'
+    if valor == int(valor):
+        return f'R$ {int(valor)}'
+    return f'R$ {valor:.2f}'.replace('.', ',')
+
+
+def planos_para_site() -> list[PlanoSite]:
+    """Lista de planos com preços e limites para templates públicos."""
+    lim = LIMITES_GRATIS
+    pro = PLANOS[PLANO_PRO]
+    worship = PLANOS[PLANO_WORSHIP]
+    return [
+        PlanoSite(
+            id=PLANO_GRATIS,
+            nome=PLANOS[PLANO_GRATIS].nome,
+            preco_label=_preco_label(None),
+            sufixo='',
+            destaque=False,
+            features=(
+                f'Até {lim["musica"]} músicas',
+                f'Até {lim["integrante"]} integrantes',
+                f'Até {lim["setlist"]} setlists',
+                f'{lim["banda"]} banda por conta',
+            ),
+            cta='Começar grátis',
+            cta_outline=True,
+        ),
+        PlanoSite(
+            id=PLANO_PRO,
+            nome=pro.nome,
+            preco_label=_preco_label(pro.preco_mensal),
+            sufixo='/banda/mês',
+            destaque=True,
+            features=(
+                'Músicas, setlists e integrantes ilimitados',
+                'Exportar setlist em PDF',
+                'Por banda ou ministério',
+            ),
+            cta='Criar conta',
+            cta_outline=False,
+        ),
+        PlanoSite(
+            id=PLANO_WORSHIP,
+            nome=worship.nome,
+            preco_label=_preco_label(worship.preco_mensal),
+            sufixo='/congregação/mês',
+            destaque=False,
+            features=(
+                'Múltiplas bandas na mesma conta',
+                'Sem limites em todos os ministérios',
+                'Para igrejas e equipes de louvor',
+            ),
+            cta='Criar conta',
+            cta_outline=True,
+        ),
+    ]
+
+
 class Assinatura:
     """Assinatura de uma banda (wrapper sobre registro do banco)."""
 

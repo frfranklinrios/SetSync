@@ -32,8 +32,14 @@ from db import (
     set_voucher_ativo,
     update_assinatura,
 )
-from mercadopago_client import checkout_init_point, get_mp_sdk, mp_config_status, plan_id_for
-from monetizacao import PLANOS, PLANO_PRO, PLANO_WORSHIP
+from mercadopago_client import (
+    build_preapproval_checkout_body,
+    checkout_init_point,
+    get_mp_sdk,
+    mp_config_status,
+    mp_error_message,
+)
+from monetizacao import PLANOS, PLANO_PRO, PLANO_WORSHIP, planos_para_site
 from mp_webhook import (
     ativar_assinatura_mp,
     extrair_topic_id,
@@ -87,7 +93,7 @@ def iniciar(plano):
     banda_id = request.form.get('banda_id', '').strip()
     band = _banda_do_usuario(banda_id, session['user_id'])
     if not band:
-        flash('Selecione uma banda da qual você é dono', 'danger')
+        flash('Selecione uma banda da qual você é dona/dono', 'danger')
         return redirect(url_for('assinatura_bp.planos'))
 
     email = _user_email(session['user_id'])
@@ -102,19 +108,21 @@ def iniciar(plano):
 
     try:
         sdk = get_mp_sdk()
-        plan_mp_id = plan_id_for(plano)
-        preapproval_data = {
-            'preapproval_plan_id': plan_mp_id,
-            'reason': f'SetSync {PLANOS[plano].nome} — Banda: {band["name"]}',
-            'payer_email': email,
-            'back_url': url_for('assinatura_bp.sucesso', _external=True),
-            'status': 'pending',
-            'external_reference': f'{banda_id}:{plano}',
-        }
+        preapproval_data = build_preapproval_checkout_body(
+            plano,
+            payer_email=email,
+            back_url=url_for('assinatura_bp.sucesso', _external=True),
+            external_reference=f'{banda_id}:{plano}',
+            reason=f'SetSync {PLANOS[plano].nome} — Banda: {band["name"]}',
+        )
         result = sdk.preapproval().create(preapproval_data)
         if result.get('status') not in (200, 201):
             current_app.logger.error('MP preapproval: %s', result)
-            flash('Não foi possível iniciar o checkout. Tente novamente.', 'danger')
+            detalhe = mp_error_message(result)
+            flash(
+                f'Não foi possível iniciar o checkout. {detalhe}',
+                'danger',
+            )
             return redirect(url_for('assinatura_bp.planos', banda_id=banda_id))
 
         init_point = checkout_init_point(result)
@@ -313,4 +321,4 @@ def admin_vouchers_usos(codigo):
 def igrejas():
     """Landing page para igrejas."""
     whatsapp = os.getenv('SETSYNC_WHATSAPP', '5511999999999')
-    return render_template('igrejas.html', planos=PLANOS, whatsapp=whatsapp)
+    return render_template('igrejas.html', planos_site=planos_para_site(), whatsapp=whatsapp)

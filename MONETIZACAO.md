@@ -52,6 +52,8 @@ MP_PLAN_WORSHIP_ID=2c938084...
 
 Copie os valores para o `.env`.
 
+> **Checkout:** o SetSync cria a assinatura **sem** `preapproval_plan_id` (valores R$ 29 / R$ 69 em `monetizacao.py`) e redireciona ao `init_point` do MP. Com plano associado na API, o MP exige `card_token_id` (checkout transparente). Os `MP_PLAN_*` servem para validação e referência no painel.
+
 ## 4. Webhook no painel Mercado Pago
 
 1. Em **Suas integrações** → sua aplicação → **Webhooks**.

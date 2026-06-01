@@ -117,7 +117,7 @@
     <div class="col-md-6 col-lg-4">
         <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile">
             <h6>{{ band.name }}</h6>
-            <p class="band-desc">Dono: {{ band.owner.username or '—' }}</p>
+            <p class="band-desc">Titular: {{ band.owner.username or '—' }}</p>
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin global</span>
                 {% if band.plano_ui %}

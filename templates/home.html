@@ -61,7 +61,7 @@
     line-height: 1.15;
     letter-spacing: -0.02em;
     margin-bottom: 1rem;
-    max-width: 18ch;
+    max-width: 20ch;
 }
 .home-lead {
     font-size: 1.05rem;
@@ -145,6 +145,111 @@
     margin: 0;
     line-height: 1.5;
 }
+
+/* Planos */
+.home-planos {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 3rem 0;
+}
+[data-theme="dark"] .home-planos {
+    background: #0f172a;
+    border-color: #334155;
+}
+.home-planos-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+.home-planos-note {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 1.25rem;
+}
+.planos-publicos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+    align-items: stretch;
+}
+.plano-publico-card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem 1.35rem 1.35rem;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+}
+[data-theme="dark"] .plano-publico-card {
+    background: #0b1422;
+    border-color: #334155;
+}
+.plano-publico-card--destaque {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 12px 32px rgba(234, 88, 12, 0.12);
+}
+[data-theme="dark"] .plano-publico-card--destaque {
+    border-color: #2ab5a0;
+    box-shadow: 0 0 0 1px #2ab5a0, 0 12px 32px rgba(42, 181, 160, 0.15);
+}
+.plano-publico-badge {
+    position: absolute;
+    top: -0.65rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+}
+[data-theme="dark"] .plano-publico-badge { background: #2ab5a0; }
+.plano-publico-nome {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0.35rem;
+}
+.plano-publico-preco {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+}
+.plano-publico-preco small {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 0.15rem;
+}
+.plano-publico-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+    flex: 1;
+    font-size: 0.88rem;
+    color: var(--muted);
+}
+.plano-publico-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    line-height: 1.45;
+}
+.plano-publico-features .fa-check {
+    color: var(--accent);
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+}
+[data-theme="dark"] .plano-publico-features .fa-check { color: #2ab5a0; }
+
 .home-steps {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -175,12 +280,6 @@
 .home-cta-band {
     text-align: center;
     padding: 2.5rem 1.5rem 3.5rem;
-    background: var(--bg);
-    border-top: 1px solid var(--border);
-}
-[data-theme="dark"] .home-cta-band {
-    background: #0f172a;
-    border-top-color: #334155;
 }
 .home-cta-band h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
 .home-cta-band p { color: var(--muted); margin-bottom: 1.25rem; }
@@ -192,22 +291,23 @@
     <div class="home-hero-inner">
         <div class="row align-items-center g-4">
             <div class="col-lg-7">
-                <span class="home-badge"><i class="fas fa-music"></i> Grátis para bandas</span>
+                <span class="home-badge"><i class="fas fa-music"></i> Comece grátis · upgrade quando precisar</span>
                 <h1>Cifras e setlists sincronizados com sua banda</h1>
                 <p class="home-lead">
-                    O <strong>SetSync</strong> organiza o repertório da banda, transponhe no tom de cada cantor
-                    e leva você ao palco com o <strong>Modo Tocar</strong> — tela cheia, navegação por gestos
-                    e tudo acessível no celular como app.
+                    O <strong>SetSync</strong> organiza o repertório, transponhe no tom de cada cantora/cantor
+                    e leva você ao palco com o <strong>Modo Tocar</strong>. Use o plano
+                    <strong>Grátis</strong> ou evolua para <strong>Pro</strong> e <strong>Worship</strong>
+                    com recursos ilimitados.
                 </p>
                 <div class="home-cta">
                     <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
                         Criar conta grátis
                     </a>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg">
-                        Já tenho conta
+                    <a href="#planos" class="btn btn-outline-secondary btn-lg">
+                        Ver planos
                     </a>
-                    <a href="{{ url_for('ajuda.index') }}" class="text-muted ms-1" style="font-size:0.9rem;text-decoration:none;">
-                        Ver ajuda <i class="fas fa-arrow-right fa-xs"></i>
+                    <a href="{{ url_for('auth.login') }}" class="text-muted ms-1" style="font-size:0.9rem;text-decoration:none;">
+                        Já tenho conta
                     </a>
                 </div>
             </div>
@@ -218,6 +318,21 @@
     </div>
 </section>
 
+<section class="home-planos" id="planos">
+    <div class="home-planos-inner">
+        <h2 class="text-center mb-1">Planos e preços</h2>
+        <p class="section-sub text-center mx-auto" style="max-width: 36rem;">
+            Todos começam no Grátis. Assine Pro por banda ou Worship para toda a congregação.
+        </p>
+        {% include 'partials/planos_publicos.html' %}
+        <p class="home-planos-note">
+            Ministério de louvor com várias equipes?
+            <a href="{{ url_for('assinatura_bp.igrejas') }}">Conheça o SetSync para igrejas</a>.
+            Após criar a conta, gerencie a assinatura em <strong>Planos</strong> no app.
+        </p>
+    </div>
+</section>
+
 <section class="home-section">
     <h2>Tudo que a banda precisa no ensaio e no show</h2>
     <p class="section-sub">Do cadastro da música à execução ao vivo, em um só lugar.</p>
@@ -225,17 +340,17 @@
         <article class="home-card">
             <div class="home-card-icon"><i class="fas fa-users"></i></div>
             <h3>Bandas e convites</h3>
-            <p>Crie a banda, convide músicos por link ou e-mail e compartilhe o mesmo repertório.</p>
+            <p>Crie a banda, convide musicistas por link ou e-mail e compartilhe o mesmo repertório.</p>
         </article>
         <article class="home-card">
             <div class="home-card-icon"><i class="fas fa-guitar"></i></div>
             <h3>Cifras inteligentes</h3>
-            <p>Acordes destacados, transposição na hora e tom por cantor — sem editar o arquivo.</p>
+            <p>Acordes destacados, transposição na hora e tom por cantora/cantor — sem editar o arquivo.</p>
         </article>
         <article class="home-card">
             <div class="home-card-icon"><i class="fas fa-list-ol"></i></div>
             <h3>Setlists</h3>
-            <p>Monte o roteiro do show, defina cantor e tom em cada música e navegue com setas ou toque.</p>
+            <p>Monte o roteiro do show, defina cantora/cantor e tom em cada música e navegue com setas ou toque.</p>
         </article>
         <article class="home-card">
             <div class="home-card-icon"><i class="fas fa-expand"></i></div>
@@ -243,9 +358,9 @@
             <p>Tela cheia para o palco: duas colunas, auto-scroll, fonte ajustável e tema claro ou escuro.</p>
         </article>
         <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-file-import"></i></div>
-            <h3>Importar cifras</h3>
-            <p>Traga músicas de sites e arquivos com o importador integrado e grade harmônica.</p>
+            <div class="home-card-icon"><i class="fas fa-file-pdf"></i></div>
+            <h3>PDF no plano Pro</h3>
+            <p>Exporte setlists formatadas para ensaio ou arquivo — recurso premium.</p>
         </article>
         <article class="home-card">
             <div class="home-card-icon"><i class="fas fa-mobile-screen"></i></div>
@@ -262,7 +377,7 @@
         <div class="home-step">
             <div class="home-step-num">1</div>
             <strong>Crie sua conta</strong>
-            <span>Email e senha ou login com Google.</span>
+            <span>Plano Grátis, sem cartão. Email ou Google.</span>
         </div>
         <div class="home-step">
             <div class="home-step-num">2</div>
@@ -272,12 +387,12 @@
         <div class="home-step">
             <div class="home-step-num">3</div>
             <strong>Monte o setlist</strong>
-            <span>Ordene as músicas e ajuste tom e cantor por faixa.</span>
+            <span>Ordene as músicas e ajuste tom e cantora/cantor por faixa.</span>
         </div>
         <div class="home-step">
             <div class="home-step-num">4</div>
             <strong>Toque ao vivo</strong>
-            <span>Abra o Modo Tocar e siga o show sem perder o fio.</span>
+            <span>Abra o Modo Tocar e, se precisar, faça upgrade em Planos.</span>
         </div>
     </div>
 </section>
@@ -285,7 +400,8 @@
 <section class="home-cta-band">
     <h2>Pronto para sincronizar o set?</h2>
     <p>Junte a banda no SetSync e deixe as cifras sempre no tom certo.</p>
-    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2">Começar agora</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2">Começar grátis</a>
+    <a href="#planos" class="btn btn-outline-secondary btn-lg me-2">Ver preços</a>
     <button type="button" class="btn btn-outline-secondary btn-lg" onclick="typeof installPWA === 'function' && installPWA()">
         <i class="fas fa-download me-1"></i> Instalar app
     </button>

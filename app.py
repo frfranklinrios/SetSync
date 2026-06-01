@@ -87,7 +87,9 @@ init_scheduler(app)
 def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
-    return render_template('home.html')
+    from monetizacao import planos_para_site
+
+    return render_template('home.html', planos_site=planos_para_site())
 
 
 # ── PWA ─────────────────────────────────────────────────────────

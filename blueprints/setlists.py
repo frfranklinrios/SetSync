@@ -327,7 +327,7 @@ def set_cifra_vocalist(setlist_id, cifra_id):
     data = request.get_json(silent=True) or {}
     vid = (data.get('vocalist_id') or '').strip()
     if vid and not band_vocalist_belongs_to_band(vid, band['id']):
-        return jsonify({'ok': False, 'error': 'Cantor inválido'}), 400
+        return jsonify({'ok': False, 'error': 'Cantora/cantor inválido'}), 400
     set_setlist_cifra_vocalist(setlist_id, cifra_id, vid or None)
     cifra = get_cifra(cifra_id)
     v = get_band_vocalist(vid) if vid else None
@@ -348,7 +348,7 @@ def set_vocalist(setlist_id):
     data = request.get_json(silent=True) or {}
     vid = (data.get('vocalist_id') or request.form.get('vocalist_id') or '').strip()
     if vid and not band_vocalist_belongs_to_band(vid, band['id']):
-        return jsonify({'ok': False, 'error': 'Cantor inválido'}), 400
+        return jsonify({'ok': False, 'error': 'Cantora/cantor inválido'}), 400
     set_setlist_vocalist(setlist_id, vid or None)
     from blueprints.cifras import active_vocalist_label
     return jsonify({

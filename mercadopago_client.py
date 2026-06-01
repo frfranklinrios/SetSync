@@ -81,3 +81,46 @@ def checkout_init_point(response: dict) -> str:
     if mp_environment() == 'sandbox':
         return body.get('sandbox_init_point') or body.get('init_point', '')
     return body.get('init_point') or body.get('sandbox_init_point', '')
+
+
+def build_preapproval_checkout_body(
+    plano: str,
+    *,
+    payer_email: str,
+    back_url: str,
+    external_reference: str,
+    reason: str | None = None,
+) -> dict:
+    """
+  Corpo para POST /preapproval com pagamento pendente (redirect ao checkout MP).
+
+  Com preapproval_plan_id o MP exige card_token_id (checkout transparente).
+  Sem plano + auto_recurring + status pending retorna init_point.
+    """
+    from monetizacao import PLANOS
+
+    definicao = PLANOS.get(plano)
+    if not definicao or definicao.preco_mensal is None:
+        raise ValueError(f'Plano inválido para checkout: {plano!r}')
+
+    return {
+        'reason': reason or f'SetSync {definicao.nome}',
+        'payer_email': payer_email,
+        'back_url': back_url,
+        'external_reference': external_reference,
+        'status': 'pending',
+        'auto_recurring': {
+            'frequency': 1,
+            'frequency_type': 'months',
+            'transaction_amount': float(definicao.preco_mensal),
+            'currency_id': 'BRL',
+        },
+    }
+
+
+def mp_error_message(result: dict) -> str:
+    """Mensagem legível de erro da API MP."""
+    body = result.get('response') or {}
+    if isinstance(body, dict):
+        return body.get('message') or body.get('error') or str(body)
+    return str(result)

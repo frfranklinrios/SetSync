@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 def _ok(msg: str) -> None:
@@ -85,18 +85,16 @@ def cmd_check() -> int:
 
 def cmd_preapproval(email: str, plano: str) -> int:
     """Cria uma preapproval de teste e imprime init_point."""
-    from mercadopago_client import checkout_init_point, get_mp_sdk, plan_id_for
+    from mercadopago_client import build_preapproval_checkout_body, checkout_init_point, get_mp_sdk
 
     sdk = get_mp_sdk()
-    plan_id = plan_id_for(plano)
-    body = {
-        'preapproval_plan_id': plan_id,
-        'reason': f'SetSync teste {plano}',
-        'payer_email': email,
-        'external_reference': f'teste-banda:{plano}',
-        'back_url': os.getenv('MP_TEST_BACK_URL', 'http://127.0.0.1:5000/assinatura/sucesso'),
-        'status': 'pending',
-    }
+    body = build_preapproval_checkout_body(
+        plano,
+        payer_email=email,
+        external_reference=f'teste-banda:{plano}',
+        back_url=os.getenv('MP_TEST_BACK_URL', 'http://127.0.0.1:5000/assinatura/sucesso'),
+        reason=f'SetSync teste {plano}',
+    )
     result = sdk.preapproval().create(body)
     print(json.dumps(result, indent=2, ensure_ascii=False))
     if result.get('status') not in (200, 201):

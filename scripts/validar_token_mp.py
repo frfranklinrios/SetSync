@@ -13,7 +13,7 @@ sys.path.insert(0, ROOT)
 
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(ROOT, '.env'))
+load_dotenv(os.path.join(ROOT, '.env'), override=True)
 
 from mercadopago_client import get_mp_access_token, mp_environment  # noqa: E402
 

@@ -21,9 +21,21 @@
 .home-features { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 .home-card { border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; background: #fff; }
 [data-theme="dark"] .home-card { background: #0b1422; border-color: #334155; }
-.planos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 3rem; }
-.plano-card { border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
-.plano-card.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.home-planos { background: var(--bg); border-top: 1px solid var(--border); padding: 3rem 0; }
+[data-theme="dark"] .home-planos { background: #0f172a; border-color: #334155; }
+.home-planos-inner { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+.planos-publicos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; }
+.plano-publico-card { position: relative; border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem 1.35rem; background: #fff; display: flex; flex-direction: column; }
+[data-theme="dark"] .plano-publico-card { background: #0b1422; border-color: #334155; }
+.plano-publico-card--destaque { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+[data-theme="dark"] .plano-publico-card--destaque { border-color: #2ab5a0; box-shadow: 0 0 0 1px #2ab5a0; }
+.plano-publico-badge { position: absolute; top: -0.65rem; left: 50%; transform: translateX(-50%); font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.65rem; border-radius: 999px; background: var(--accent); color: #fff; }
+.plano-publico-nome { font-size: 1.1rem; font-weight: 700; margin: 0.5rem 0 0.35rem; }
+.plano-publico-preco { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; }
+.plano-publico-preco small { font-size: 0.95rem; font-weight: 500; color: var(--muted); }
+.plano-publico-features { list-style: none; padding: 0; margin: 0 0 1.25rem; flex: 1; font-size: 0.88rem; color: var(--muted); }
+.plano-publico-features li { display: flex; gap: 0.5rem; margin-bottom: 0.45rem; }
+.plano-publico-features .fa-check { color: var(--accent); margin-top: 0.2rem; font-size: 0.75rem; }
 .cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 2rem 1.5rem 3rem; max-width: 1100px; margin: 0 auto; }
 </style>
 {% endblock %}
@@ -34,15 +46,17 @@
         <span class="badge text-bg-light mb-3"><i class="fas fa-church me-1"></i> Para ministérios de louvor</span>
         <h1>Seu ministério de louvor sempre no tom certo</h1>
         <p class="home-lead">
-            Organize várias bandas e ministérios na mesma congregação, com o líder no controle
-            e todos os músicos sincronizados — inclusive offline no culto.
+            Organize várias bandas e ministérios na mesma congregação, com a liderança no controle
+            e todas as pessoas da equipe sincronizadas — inclusive offline no culto.
         </p>
         <div class="cta-row p-0">
             <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
+            {% if whatsapp %}
             <a href="https://wa.me/{{ whatsapp }}?text=Olá!%20Tenho%20interesse%20no%20SetSync%20para%20nossa%20igreja."
                class="btn btn-success btn-lg" target="_blank" rel="noopener">
                 <i class="fab fa-whatsapp me-1"></i> Falar no WhatsApp
             </a>
+            {% endif %}
         </div>
     </div>
 </section>
@@ -53,8 +67,8 @@
         <p>Ministério jovem, casal, gospel — cada equipe com seu repertório no plano Worship.</p>
     </div>
     <div class="home-card">
-        <h3><i class="fas fa-user-shield text-primary me-2"></i>Controle pelo líder</h3>
-        <p>O líder de louvor gerencia cifras, setlists e integrantes de cada ministério.</p>
+        <h3><i class="fas fa-user-shield text-primary me-2"></i>Controle pela liderança</h3>
+        <p>Quem lidera o louvor gerencia cifras, setlists e integrantes de cada ministério.</p>
     </div>
     <div class="home-card">
         <h3><i class="fas fa-wifi text-primary me-2"></i>Offline no culto</h3>
@@ -62,42 +76,15 @@
     </div>
     <div class="home-card">
         <h3><i class="fas fa-sync text-primary me-2"></i>Todos sincronizados</h3>
-        <p>Tom por cantor, setlist compartilhada e Modo Tocar para a equipe inteira.</p>
+        <p>Tom por cantora/cantor, setlist compartilhada e Modo Tocar para a equipe inteira.</p>
     </div>
 </section>
 
-<section class="py-4">
-    <div class="text-center mb-4 px-3">
-        <h2 class="h4">Planos para sua igreja</h2>
-    </div>
-    <div class="planos-grid">
-        <div class="plano-card">
-            <h3 class="h5">Grátis</h3>
-            <p class="display-6 fw-bold">R$ 0</p>
-            <ul class="small text-muted">
-                <li>1 banda · limites básicos</li>
-                <li>Ideal para experimentar</li>
-            </ul>
-            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary w-100">Começar grátis</a>
-        </div>
-        <div class="plano-card featured">
-            <h3 class="h5">Pro</h3>
-            <p class="display-6 fw-bold">R$ 29<small class="fs-6 text-muted">/banda/mês</small></p>
-            <ul class="small text-muted">
-                <li>Sem limites · PDF</li>
-                <li>Por banda/ministério</li>
-            </ul>
-            <a href="{{ url_for('auth.register') }}" class="btn btn-primary w-100">Criar conta</a>
-        </div>
-        <div class="plano-card">
-            <h3 class="h5">Worship</h3>
-            <p class="display-6 fw-bold">R$ 69<small class="fs-6 text-muted">/congregação/mês</small></p>
-            <ul class="small text-muted">
-                <li>Múltiplas bandas</li>
-                <li>Sem limites em toda a igreja</li>
-            </ul>
-            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary w-100">Criar conta</a>
-        </div>
+<section class="home-planos" id="planos">
+    <div class="home-planos-inner">
+        <h2 class="text-center h4 mb-1">Planos para sua igreja</h2>
+        <p class="text-center text-muted small mb-4">Preços mensais · cancele quando quiser</p>
+        {% include 'partials/planos_publicos.html' %}
     </div>
 </section>
 {% endblock %}

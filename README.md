@@ -14,7 +14,7 @@ Gerenciador de cifras e setlists para bandas. Organize suas músicas, transpose 
 
 ## Funcionalidades
 
-- **Bandas e membros** — crie bandas, convide músicos por e-mail, gerencie permissões
+- **Bandas e membros** — crie bandas, convide musicistas por e-mail, gerencie permissões
 - **Cifras com destaque de acordes** — detecção automática de linhas de acorde vs. letra
 - **Transposição automática** — suba ou desça o tom em tempo real, sem editar o arquivo
 - **Setlist ordenado** — navegue entre músicas da banda com ← / →
