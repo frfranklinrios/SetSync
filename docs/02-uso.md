@@ -10,7 +10,7 @@
 
 1. Abra **Bandas** e crie uma banda
 2. **Membros**: link de convite ou e-mail de quem já tem conta
-3. **Configurações**: cantores(as) e dados da banda
+3. **Configurações**: cantoras/cantores e dados da banda
 4. Gerencie **cifras** e **setlists** na página da banda
 
 ## Cifras
@@ -22,12 +22,12 @@
 ## Transposição
 
 - Tom alterável sem editar o arquivo salvo
-- Por cantor, por música na banda e por linha na setlist
+- Por cantora/cantor, por música na banda e por linha na setlist
 
 ## Setlists
 
 - Ordem por arrastar na tela da setlist
-- Cantor e tom por música na lista
+- Cantora/cantor e tom por música na lista
 - **Tocar** abre o Modo Tocar
 
 ## Modo Tocar

@@ -41,6 +41,12 @@ def create():
         if not name:
             flash('Nome da banda é obrigatório', 'danger')
             return render_template('bands/create.html')
+
+        from monetizacao import check_limite, resposta_limite_plano
+        if not check_limite({'id': '', 'owner_id': user_id}, 'banda'):
+            resp = resposta_limite_plano()
+            if resp:
+                return resp
         
         band_id = create_band(name, description, user_id)
         flash(f'Banda "{name}" criada com sucesso!', 'success')
@@ -109,7 +115,7 @@ def settings(band_id):
         elif action == 'add_vocalist':
             raw = request.form.get('vocalist_names', '').strip()
             if not raw:
-                flash('Informe o nome do cantor(a).', 'danger')
+                flash('Informe o nome de cantora/cantor.', 'danger')
             else:
                 user_id = None
                 if request.form.get('vocalist_link_account') == '1':
@@ -126,7 +132,7 @@ def settings(band_id):
                         return redirect(url_for('bands.settings', band_id=band_id))
                 try:
                     add_band_vocalists_from_text(band_id, raw, user_id or None)
-                    flash('Cantor(es) adicionado(s).', 'success')
+                    flash('Cantoras/cantores adicionados.', 'success')
                 except ValueError as e:
                     flash(str(e), 'danger')
 
@@ -134,9 +140,9 @@ def settings(band_id):
             vid = request.form.get('vocalist_id', '').strip()
             if vid and band_vocalist_belongs_to_band(vid, band_id):
                 delete_band_vocalist(vid)
-                flash('Cantor removido.', 'success')
+                flash('Cantora/cantor removido.', 'success')
             else:
-                flash('Cantor não encontrado.', 'danger')
+                flash('Cantora/cantor não encontrado.', 'danger')
 
         return redirect(url_for('bands.settings', band_id=band_id))
 
@@ -202,6 +208,12 @@ def invite(band_id):
     if is_band_member(band_id, invited_user_id):
         flash('Usuário já é membro', 'danger')
         return redirect(url_for('bands.members', band_id=band_id))
+
+    from monetizacao import check_limite, resposta_limite_plano
+    if not check_limite(band, 'integrante'):
+        resp = resposta_limite_plano()
+        if resp:
+            return resp
     
     add_band_member(band_id, invited_user_id)
     user = get_user(invited_user_id)
@@ -218,7 +230,7 @@ def remove_member(band_id, user_id_to_remove):
         return jsonify({'error': 'Sem permissão'}), 403
     
     if band['owner_id'] == user_id_to_remove:
-        flash('Não pode remover o dono', 'danger')
+        flash('Não é possível remover a pessoa titular da banda', 'danger')
         return redirect(url_for('bands.members', band_id=band_id))
     
     remove_band_member(band_id, user_id_to_remove)

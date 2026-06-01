@@ -1,19 +1,324 @@
-from flask import Blueprint, request, jsonify
-from db import resgatar_voucher
-from blueprints.auth import login_required
+"""Assinaturas, Mercado Pago e vouchers."""
 
-assinatura_bp = Blueprint('assinatura', __name__)
+from __future__ import annotations
+
+import os
+import sys
+from datetime import datetime, timedelta
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from blueprints.auth import login_required
+from blueprints.admin import superadmin_required
+from db import (
+    create_voucher,
+    get_assinatura,
+    get_assinatura_by_mp_id,
+    get_band,
+    get_owned_bands,
+    get_user,
+    list_voucher_usos,
+    list_vouchers,
+    set_voucher_ativo,
+    update_assinatura,
+)
+from mercadopago_client import (
+    build_preapproval_checkout_body,
+    checkout_init_point,
+    get_mp_sdk,
+    mp_config_status,
+    mp_error_message,
+)
+from monetizacao import PLANOS, PLANO_PRO, PLANO_WORSHIP, planos_para_site
+from mp_webhook import (
+    ativar_assinatura_mp,
+    extrair_topic_id,
+    processar_notificacao_mp,
+    webhook_autentico,
+)
+from vouchers import criar_voucher_indicacao, gerar_codigo_voucher, resgatar_voucher
+
+assinatura_bp = Blueprint('assinatura_bp', __name__)
+
+
+def _user_email(user_id: str) -> str:
+    user = get_user(user_id)
+    return (user or {}).get('email') or ''
+
+
+def _banda_do_usuario(banda_id: str, user_id: str) -> dict | None:
+    band = get_band(banda_id)
+    if not band or band['owner_id'] != user_id:
+        return None
+    return band
+
+
+@assinatura_bp.route('/assinatura/planos')
+@login_required
+def planos():
+    """Página com planos e resgate de voucher."""
+    user_id = session['user_id']
+    bandas = get_owned_bands(user_id)
+    banda_id = request.args.get('banda_id') or (bandas[0]['id'] if bandas else None)
+    assinatura = get_assinatura(banda_id) if banda_id else None
+    mp_status = mp_config_status()
+    return render_template(
+        'assinatura/planos.html',
+        planos=PLANOS,
+        bandas=bandas,
+        banda_id=banda_id,
+        assinatura=assinatura,
+        mp_status=mp_status,
+    )
+
+
+@assinatura_bp.route('/assinatura/iniciar/<plano>', methods=['POST'])
+@login_required
+def iniciar(plano):
+    """Cria assinatura recorrente no MP e redireciona ao Checkout."""
+    if plano not in (PLANO_PRO, PLANO_WORSHIP):
+        flash('Plano inválido', 'danger')
+        return redirect(url_for('assinatura_bp.planos'))
+
+    banda_id = request.form.get('banda_id', '').strip()
+    band = _banda_do_usuario(banda_id, session['user_id'])
+    if not band:
+        flash('Selecione uma banda da qual você é dona/dono', 'danger')
+        return redirect(url_for('assinatura_bp.planos'))
+
+    email = _user_email(session['user_id'])
+    if not email:
+        flash('Cadastre um e-mail na sua conta para assinar', 'danger')
+        return redirect(url_for('assinatura_bp.planos'))
+
+    mp_status = mp_config_status()
+    if not mp_status['pronto_checkout']:
+        flash('Mercado Pago não configurado: ' + ' · '.join(mp_status['faltando']), 'warning')
+        return redirect(url_for('assinatura_bp.planos', banda_id=banda_id))
+
+    try:
+        sdk = get_mp_sdk()
+        preapproval_data = build_preapproval_checkout_body(
+            plano,
+            payer_email=email,
+            back_url=url_for('assinatura_bp.sucesso', _external=True),
+            external_reference=f'{banda_id}:{plano}',
+            reason=f'SetSync {PLANOS[plano].nome} — Banda: {band["name"]}',
+        )
+        result = sdk.preapproval().create(preapproval_data)
+        if result.get('status') not in (200, 201):
+            current_app.logger.error('MP preapproval: %s', result)
+            detalhe = mp_error_message(result)
+            flash(
+                f'Não foi possível iniciar o checkout. {detalhe}',
+                'danger',
+            )
+            return redirect(url_for('assinatura_bp.planos', banda_id=banda_id))
+
+        init_point = checkout_init_point(result)
+        if not init_point:
+            flash('URL de checkout não retornada pelo Mercado Pago', 'danger')
+            return redirect(url_for('assinatura_bp.planos', banda_id=banda_id))
+
+        session['mp_checkout'] = {'banda_id': banda_id, 'plano': plano}
+        mp_id = (result.get('response') or {}).get('id')
+        if mp_id:
+            update_assinatura(banda_id, mp_preapproval_id=mp_id)
+        return redirect(init_point)
+    except Exception as exc:
+        current_app.logger.exception('Erro ao iniciar assinatura: %s', exc)
+        flash(f'Erro ao conectar ao Mercado Pago: {exc}', 'danger')
+        return redirect(url_for('assinatura_bp.planos', banda_id=banda_id))
+
+
+@assinatura_bp.route('/assinatura/sucesso')
+@login_required
+def sucesso():
+    """Retorno do MP após checkout de assinatura."""
+    status_retorno = (request.args.get('status') or request.args.get('collection_status') or '').lower()
+    if status_retorno == 'pending':
+        return redirect(url_for('assinatura_bp.pendente'))
+    if status_retorno in ('failure', 'rejected', 'null'):
+        return redirect(url_for('assinatura_bp.falha'))
+
+    checkout = session.pop('mp_checkout', None)
+    preapproval_id = (
+        request.args.get('preapproval_id')
+        or request.args.get('collection_id')
+        or request.args.get('payment_id')
+    )
+    banda_id = None
+    plano = PLANO_PRO
+
+    if checkout:
+        banda_id = checkout.get('banda_id')
+        plano = checkout.get('plano', PLANO_PRO)
+    elif preapproval_id:
+        row = get_assinatura_by_mp_id(preapproval_id)
+        if row:
+            banda_id = row['banda_id']
+            plano = row.get('plano', PLANO_PRO)
+
+    if preapproval_id and banda_id:
+        try:
+            sdk = get_mp_sdk()
+            info = sdk.preapproval().get(preapproval_id)
+            body = info.get('response') or {}
+            ref = body.get('external_reference', '')
+            if ':' in ref:
+                banda_id, plano = ref.split(':', 1)
+            status_mp = body.get('status', '')
+            if status_mp in ('authorized', 'active', 'approved'):
+                next_charge = body.get('next_payment_date') or body.get('auto_recurring', {}).get('end_date')
+                ativar_assinatura_mp(banda_id, plano, preapproval_id, next_charge)
+                flash('Assinatura ativada com sucesso!', 'success')
+            else:
+                flash('Pagamento em processamento. Você receberá confirmação em breve.', 'info')
+        except Exception as exc:
+            current_app.logger.exception('Erro ao confirmar sucesso MP: %s', exc)
+            flash('Checkout concluído. Aguarde a confirmação por e-mail.', 'info')
+    else:
+        flash('Assinatura registrada. Aguarde a confirmação.', 'info')
+
+    return redirect(url_for('assinatura_bp.planos', banda_id=banda_id or ''))
+
+
+@assinatura_bp.route('/assinatura/pendente')
+@login_required
+def pendente():
+    flash('Pagamento pendente. Assim que for confirmado, seu plano será ativado.', 'warning')
+    return redirect(url_for('assinatura_bp.planos'))
+
+
+@assinatura_bp.route('/assinatura/falha')
+@login_required
+def falha():
+    flash('Pagamento não aprovado. Tente novamente ou use outro método.', 'danger')
+    return redirect(url_for('assinatura_bp.planos'))
+
+
+@assinatura_bp.route('/assinatura/webhook', methods=['POST', 'GET'])
+def webhook():
+    """Notificações do Mercado Pago (IPN / Webhooks v2)."""
+    secret = os.getenv('MP_WEBHOOK_SECRET', '')
+    if not webhook_autentico(request, secret):
+        current_app.logger.warning('Webhook MP rejeitado (assinatura inválida)')
+        return '', 401
+
+    topic, data_id = extrair_topic_id(request)
+    current_app.logger.info(
+        'Webhook MP recebido topic=%s id=%s args=%s',
+        topic,
+        data_id,
+        dict(request.args),
+    )
+
+    try:
+        processar_notificacao_mp(topic, data_id)
+    except Exception as exc:
+        current_app.logger.exception('Erro no webhook MP: %s', exc)
+        return '', 500
+
+    return '', 200
+
 
 @assinatura_bp.route('/voucher/resgatar', methods=['POST'])
 @login_required
-def resgatar():
-    data = request.json
-    codigo = data.get('codigo')
-    banda_id = data.get('banda_id')
-    
-    if not codigo or not banda_id:
-        return jsonify({"success": False, "msg": "Dados incompletos"}), 400
-    
-    # O resgatar_voucher valida e aplica o voucher no banco [cite: 198, 199]
-    resultado = resgatar_voucher(codigo, banda_id)
-    return jsonify(resultado)
+def voucher_resgatar():
+    """Resgata voucher via AJAX."""
+    data = request.get_json(silent=True) or request.form
+    codigo = (data.get('codigo') or '').strip()
+    banda_id = (data.get('banda_id') or '').strip()
+    band = _banda_do_usuario(banda_id, session['user_id'])
+    if not band:
+        return jsonify({'ok': False, 'erro': 'Selecione uma banda válida'}), 400
+    ok, msg, info = resgatar_voucher(codigo, banda_id, band['name'])
+    if not ok:
+        return jsonify({'ok': False, 'erro': msg}), 400
+    return jsonify({'ok': True, 'mensagem': msg, 'info': info})
+
+
+@assinatura_bp.route('/voucher/indicar', methods=['GET', 'POST'])
+@login_required
+def voucher_indicar():
+    """Página para gerar voucher de indicação."""
+    codigo, erro = None, None
+    if request.method == 'POST':
+        codigo, erro = criar_voucher_indicacao(session['user_id'])
+    return render_template(
+        'assinatura/indicar.html',
+        codigo=codigo,
+        erro=erro,
+    )
+
+
+@assinatura_bp.route('/admin/vouchers')
+@superadmin_required
+def admin_vouchers():
+    vouchers = list_vouchers()
+    for v in vouchers:
+        v['criador'] = get_user(v['criado_por_id']) if v.get('criado_por_id') else None
+    return render_template('admin/vouchers.html', vouchers=vouchers)
+
+
+@assinatura_bp.route('/admin/vouchers/criar', methods=['POST'])
+@superadmin_required
+def admin_vouchers_criar():
+    plano = request.form.get('plano', PLANO_PRO)
+    if plano not in (PLANO_PRO, PLANO_WORSHIP):
+        flash('Plano inválido', 'danger')
+        return redirect(url_for('assinatura_bp.admin_vouchers'))
+    dias = int(request.form.get('dias', 30))
+    max_usos = request.form.get('max_usos', '').strip()
+    max_usos_int = int(max_usos) if max_usos else None
+    prefixo = request.form.get('prefixo', '').strip() or None
+    data_exp = request.form.get('data_expiracao', '').strip() or None
+    codigo = gerar_codigo_voucher(prefixo)
+    create_voucher(
+        codigo=codigo,
+        plano=plano,
+        dias=dias,
+        criado_por_id=session['user_id'],
+        max_usos=max_usos_int,
+        data_expiracao=data_exp,
+    )
+    flash(f'Voucher {codigo} criado!', 'success')
+    return redirect(url_for('assinatura_bp.admin_vouchers'))
+
+
+@assinatura_bp.route('/admin/vouchers/<codigo>/desativar', methods=['POST'])
+@superadmin_required
+def admin_vouchers_desativar(codigo):
+    if set_voucher_ativo(codigo, False):
+        flash(f'Voucher {codigo} desativado.', 'success')
+    else:
+        flash('Voucher não encontrado', 'danger')
+    return redirect(url_for('assinatura_bp.admin_vouchers'))
+
+
+@assinatura_bp.route('/admin/vouchers/<codigo>/usos')
+@superadmin_required
+def admin_vouchers_usos(codigo):
+    from db import get_voucher_by_codigo
+    voucher = get_voucher_by_codigo(codigo)
+    if not voucher:
+        return jsonify({'usos': []}), 404
+    usos = list_voucher_usos(voucher['id'])
+    return jsonify({'usos': usos})
+
+
+@assinatura_bp.route('/igrejas')
+def igrejas():
+    """Landing page para igrejas."""
+    whatsapp = os.getenv('SETSYNC_WHATSAPP', '5511999999999')
+    return render_template('igrejas.html', planos_site=planos_para_site(), whatsapp=whatsapp)

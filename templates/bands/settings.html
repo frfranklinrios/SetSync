@@ -36,10 +36,10 @@
         </div>
 
         <div class="card mb-4">
-            <div class="card-header"><i class="fas fa-microphone me-1"></i> Cantores(as)</div>
+            <div class="card-header"><i class="fas fa-microphone me-1"></i> Cantoras/cantores</div>
             <div class="card-body">
                 <p class="form-text mb-3">
-                    Cada cantor(a) pode ter o próprio tom por música. Separe vários nomes por vírgula.
+                    Cada cantora/cantor pode ter o próprio tom por música. Separe vários nomes por vírgula.
                     A conta no SetSync é opcional e pode ser vinculada depois.
                 </p>
 
@@ -54,7 +54,7 @@
                             {% endif %}
                         </div>
                         <form method="POST" class="d-inline"
-                              onsubmit="return confirm('Remover {{ v.name }} da lista de cantores?')">
+                              onsubmit="return confirm('Remover {{ v.name }} da lista de cantoras/cantores?')">
                             <input type="hidden" name="action" value="delete_vocalist">
                             <input type="hidden" name="vocalist_id" value="{{ v.id }}">
                             <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -65,13 +65,13 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-muted mb-3" style="font-size:0.85rem;">Nenhum cantor cadastrado. O tom fica único para toda a banda.</p>
+                <p class="text-muted mb-3" style="font-size:0.85rem;">Nenhuma cantora/cantor cadastrada. O tom fica único para toda a banda.</p>
                 {% endif %}
 
                 <form method="POST" class="border-top pt-3">
                     <input type="hidden" name="action" value="add_vocalist">
                     <div class="mb-3">
-                        <label for="vocalist_names" class="form-label">Adicionar cantor(es)</label>
+                        <label for="vocalist_names" class="form-label">Adicionar cantoras/cantores</label>
                         <input type="text" class="form-control" id="vocalist_names" name="vocalist_names"
                                placeholder="Ex.: Ana ou Dani, Robson, Alda" required>
                     </div>

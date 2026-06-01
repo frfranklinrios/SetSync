@@ -1,0 +1,159 @@
+{% extends "index.html" %}
+{% block title %}Planos — SetSync{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Planos SetSync</h1>
+        <p class="text-muted mb-0">Escolha o plano ideal para sua banda ou ministério.</p>
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
+</div>
+
+{% if mp_status and not mp_status.pronto_checkout %}
+<div class="alert alert-warning mb-4">
+    <strong><i class="fas fa-cog me-1"></i> Checkout Mercado Pago — configurar</strong>
+    <p class="mb-2 small mt-2">Para testar assinatura Pro/Worship, complete no arquivo <code>.env</code>:</p>
+    <ol class="mb-2 small">
+        {% for item in mp_status.faltando %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ol>
+    <p class="mb-0 small text-muted">
+        Depois rode no terminal: <code>uv run bash scripts/preparar_teste_mp.sh</code>
+        · Guia: <code>TESTE_MP.md</code>
+    </p>
+</div>
+{% elif mp_status and mp_status.pronto_checkout %}
+<div class="alert alert-success py-2 mb-4 small">
+    <i class="fas fa-check-circle me-1"></i>
+    Mercado Pago pronto (ambiente: <strong>{{ mp_status.environment }}</strong>).
+    Você pode assinar Pro ou Worship abaixo.
+</div>
+{% endif %}
+
+{% if bandas %}
+<form class="mb-4" method="get">
+    <label class="form-label">Banda para assinar</label>
+    <select name="banda_id" class="form-select" onchange="this.form.submit()">
+        {% for b in bandas %}
+        <option value="{{ b.id }}" {% if b.id == banda_id %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+    </select>
+</form>
+{% else %}
+<div class="alert alert-warning">Crie uma banda para assinar um plano pago.</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Grátis</h2>
+                <p class="display-6 fw-bold">R$ 0</p>
+                <ul class="small text-muted">
+                    <li>Até 30 músicas</li>
+                    <li>5 integrantes</li>
+                    <li>10 setlists</li>
+                    <li>1 banda</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-primary">
+            <div class="card-body">
+                <h2 class="h5">Pro</h2>
+                <p class="display-6 fw-bold">R$ 29<small class="fs-6 text-muted">/mês</small></p>
+                <p class="small">Por banda · sem limites · exportar PDF</p>
+                {% if banda_id %}
+                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}">
+                    <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    <button type="submit" class="btn btn-primary w-100"
+                            {% if mp_status and not mp_status.pronto_checkout %}disabled title="Configure o .env primeiro"{% endif %}>
+                        Assinar Pro
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Worship</h2>
+                <p class="display-6 fw-bold">R$ 69<small class="fs-6 text-muted">/mês</small></p>
+                <p class="small">Congregação · múltiplas bandas · sem limites</p>
+                {% if banda_id %}
+                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='worship') }}">
+                    <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    <button type="submit" class="btn btn-outline-primary w-100"
+                            {% if mp_status and not mp_status.pronto_checkout %}disabled title="Configure o .env primeiro"{% endif %}>
+                        Assinar Worship
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if assinatura %}
+<p class="small text-muted">
+    Plano atual: <strong>{{ assinatura.plano }}</strong> ({{ assinatura.status }})
+</p>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <h3 class="h6">Tem um voucher?</h3>
+        <div class="input-group">
+            <input type="text" id="voucher-codigo" class="form-control" placeholder="Digite o código aqui" autocomplete="off">
+            <button type="button" class="btn btn-success" id="voucher-resgatar-btn">Resgatar</button>
+        </div>
+        <div id="voucher-toast" class="mt-2 small" role="status"></div>
+    </div>
+</div>
+
+<p class="mt-3 small">
+    <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">Indique uma banda e ganhe 15 dias grátis</a>
+</p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const btn = document.getElementById('voucher-resgatar-btn');
+    const input = document.getElementById('voucher-codigo');
+    const toast = document.getElementById('voucher-toast');
+    const bandaId = {{ banda_id|tojson }};
+    if (!btn || !bandaId) return;
+    btn.addEventListener('click', async function () {
+        toast.textContent = '';
+        toast.className = 'mt-2 small';
+        const codigo = (input.value || '').trim();
+        if (!codigo) return;
+        try {
+            const res = await fetch('{{ url_for("assinatura_bp.voucher_resgatar") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ codigo, banda_id: bandaId }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+                toast.className = 'mt-2 small text-success';
+                toast.textContent = data.mensagem;
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                toast.className = 'mt-2 small text-danger';
+                toast.textContent = data.erro || 'Voucher inválido';
+            }
+        } catch (e) {
+            toast.className = 'mt-2 small text-danger';
+            toast.textContent = 'Erro ao resgatar. Tente novamente.';
+        }
+    });
+})();
+</script>
+{% endblock %}

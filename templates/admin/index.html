@@ -35,7 +35,10 @@
             Todas as bandas, cifras e usuários do sistema
         </p>
     </div>
-    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('assinatura_bp.admin_vouchers') }}" class="btn btn-outline-primary btn-sm">Vouchers</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
+    </div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -73,7 +76,7 @@
                     <thead>
                         <tr>
                             <th>Banda</th>
-                            <th>Dono</th>
+                            <th>Titular</th>
                             <th>Membros</th>
                             <th>Cifras</th>
                             <th></th>

@@ -54,7 +54,7 @@
         {% endif %}
         {% if vocalist_name %}
         <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">
-            <i class="fas fa-microphone me-1"></i> Cantores: <strong>{{ vocalist_name }}</strong>
+            <i class="fas fa-microphone me-1"></i> Cantoras/cantores: <strong>{{ vocalist_name }}</strong>
         </p>
         {% endif %}
     </div>
@@ -169,7 +169,7 @@
                     <div class="row-sub">{{ member.email }}</div>
                 </div>
                 {% if member.role == 'owner' %}
-                <span class="row-badge owner">Dono</span>
+                <span class="row-badge owner">Titular</span>
                 {% elif member.role == 'admin' %}
                 <span class="row-badge owner">Admin</span>
                 {% else %}

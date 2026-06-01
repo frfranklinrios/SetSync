@@ -676,6 +676,9 @@
                             <a class="nav-link" href="{{ url_for('bands.list_bands') }}">Bandas</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('assinatura_bp.planos') }}">Planos</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('ajuda.index') }}">Ajuda</a>
                         </li>
                         <li class="nav-item dropdown">
@@ -687,6 +690,12 @@
                             </ul>
                         </li>
                     {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('index') }}#planos">Planos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
                         </li>
@@ -1518,6 +1527,7 @@
         });
     })();
     </script>
+    <script src="{{ url_for('static', filename='js/plano-limite.js') }}?v=1"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

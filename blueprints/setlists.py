@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from io import BytesIO
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_file, current_app
 from models_setlist import (
     create_setlist, get_band_setlists, get_setlist, delete_setlist,
     add_cifra_to_setlist, remove_cifra_from_setlist, reorder_setlist, get_setlist_cifras,
@@ -99,10 +99,47 @@ def imprimir(setlist_id):
     )
 
 
+@setlists_bp.route('/<setlist_id>/exportar-pdf')
+@login_required
+def exportar_pdf(setlist_id):
+    """PDF via WeasyPrint (feature premium)."""
+    from monetizacao import pode_exportar_pdf, resposta_plano_necessario
+    from setlist_weasyprint import html_to_pdf_bytes, render_setlist_pdf_html
+
+    data = _prepare_setlist_print_data(setlist_id, session['user_id'])
+    if data is None:
+        flash('Setlist não encontrada ou sem permissão', 'danger')
+        return redirect(url_for('dashboard'))
+    if data.get('empty'):
+        flash('Setlist vazia', 'warning')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+    if not pode_exportar_pdf(data['band']['id']):
+        return resposta_plano_necessario()
+
+    try:
+        html = render_setlist_pdf_html(current_app, data)
+        pdf_bytes = html_to_pdf_bytes(html)
+    except Exception as exc:
+        current_app.logger.exception('Erro ao gerar PDF: %s', exc)
+        flash('Não foi possível gerar o PDF. Verifique se o WeasyPrint está instalado.', 'danger')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+
+    from setlist_pdf import build_pdf_download_name
+    filename = build_pdf_download_name(data['setlist']['name'], data['band']['name'])
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
 @setlists_bp.route('/<setlist_id>/pdf')
 @login_required
 def download_pdf(setlist_id):
     """Gera e baixa PDF formatado (Chromium)."""
+    from monetizacao import pode_exportar_pdf, resposta_plano_necessario
+
     data = _prepare_setlist_print_data(setlist_id, session['user_id'])
     if data is None:
         flash('Setlist não encontrada' if not get_setlist(setlist_id) else 'Sem permissão', 'danger')
@@ -110,6 +147,8 @@ def download_pdf(setlist_id):
     if data.get('empty'):
         flash('Setlist vazia — adicione músicas antes de gerar o PDF.', 'warning')
         return redirect(url_for('setlists.view', setlist_id=setlist_id))
+    if not pode_exportar_pdf(data['band']['id']):
+        return resposta_plano_necessario()
 
     from setlist_pdf import (
         build_pdf_download_name,
@@ -265,6 +304,11 @@ def create(band_id):
         if not name:
             flash('Nome obrigatório', 'danger')
             return render_template('setlists/create.html', band=band)
+        from monetizacao import check_limite, resposta_limite_plano
+        if not check_limite(band, 'setlist'):
+            resp = resposta_limite_plano()
+            if resp:
+                return resp
         setlist_id = create_setlist(band_id, name, description)
         flash('Setlist criada!', 'success')
         return redirect(url_for('setlists.view', setlist_id=setlist_id))
@@ -283,7 +327,7 @@ def set_cifra_vocalist(setlist_id, cifra_id):
     data = request.get_json(silent=True) or {}
     vid = (data.get('vocalist_id') or '').strip()
     if vid and not band_vocalist_belongs_to_band(vid, band['id']):
-        return jsonify({'ok': False, 'error': 'Cantor inválido'}), 400
+        return jsonify({'ok': False, 'error': 'Cantora/cantor inválido'}), 400
     set_setlist_cifra_vocalist(setlist_id, cifra_id, vid or None)
     cifra = get_cifra(cifra_id)
     v = get_band_vocalist(vid) if vid else None
@@ -304,7 +348,7 @@ def set_vocalist(setlist_id):
     data = request.get_json(silent=True) or {}
     vid = (data.get('vocalist_id') or request.form.get('vocalist_id') or '').strip()
     if vid and not band_vocalist_belongs_to_band(vid, band['id']):
-        return jsonify({'ok': False, 'error': 'Cantor inválido'}), 400
+        return jsonify({'ok': False, 'error': 'Cantora/cantor inválido'}), 400
     set_setlist_vocalist(setlist_id, vid or None)
     from blueprints.cifras import active_vocalist_label
     return jsonify({

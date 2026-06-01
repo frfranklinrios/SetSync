@@ -1,0 +1,23 @@
+{# planos_site: list[PlanoSite] de monetizacao.planos_para_site() #}
+<div class="planos-publicos-grid">
+    {% for p in planos_site %}
+    <article class="plano-publico-card{% if p.destaque %} plano-publico-card--destaque{% endif %}">
+        {% if p.destaque %}
+        <span class="plano-publico-badge">Mais popular</span>
+        {% endif %}
+        <h3 class="plano-publico-nome">{{ p.nome }}</h3>
+        <p class="plano-publico-preco">
+            {{ p.preco_label }}{% if p.sufixo %}<small>{{ p.sufixo }}</small>{% endif %}
+        </p>
+        <ul class="plano-publico-features">
+            {% for feat in p.features %}
+            <li><i class="fas fa-check" aria-hidden="true"></i>{{ feat }}</li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('auth.register') }}"
+           class="btn w-100 {% if p.cta_outline %}btn-outline-primary{% else %}btn-primary{% endif %}">
+            {{ p.cta }}
+        </a>
+    </article>
+    {% endfor %}
+</div>

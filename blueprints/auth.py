@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
-from db import (create_user, get_user_by_username, get_user, verify_password,
+from db import (create_user, get_user_by_username, get_user_by_login, get_user, verify_password,
                 get_user_by_google_id, create_google_user, get_user_by_email,
                 update_user_display_name, is_superadmin, get_band)
 from band_invites import parse_band_invite_token, apply_band_invite
@@ -214,11 +214,11 @@ def login():
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
+        login_id = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        
-        user = get_user_by_username(username)
-        
+
+        user = get_user_by_login(login_id)
+
         if user and verify_password(user['id'], password):
             _login_user_session(user)
             invite_token = _invite_token_from_request()
