@@ -13,7 +13,7 @@
       data-processar-cifra-url="{{ url_for('cifras_import.api_processar_cifra') }}">
   <div class="wrap">
     <h1>Importar cifra</h1>
-    <p class="sub">Importa somente o conteúdo da cifra e monta a grade harmônica pelos acordes.</p>
+    <p class="sub">Importa somente o conteúdo da cifra e monta o lead sheet pelos acordes.</p>
 
     <div class="card panel panel-cifra">
       <form id="form-cifra">
@@ -46,7 +46,7 @@
           <textarea id="out-cifra" readonly></textarea>
         </div>
         <div class="card grade-full">
-          <div class="head"><h2>Grade</h2><button type="button" class="btn-sm" data-copy="grade">Copiar texto</button></div>
+          <div class="head"><h2>Lead sheet</h2><button type="button" class="btn-sm" data-copy="grade">Copiar texto</button></div>
           <div id="grade-view" class="grade-panel"></div>
           <textarea id="out-grade" readonly class="sr-only"></textarea>
         </div>

@@ -1,4 +1,4 @@
-/** Renderização visual da grade (compartilhado entre index e embed). */
+/** Renderização visual do lead sheet (compartilhado entre index e embed). */
 (function (global) {
   function esc(s) {
     return String(s)
@@ -24,11 +24,11 @@
   function renderGradeView(el, partes, compasso) {
     if (!el) return;
     if (!partes || !partes.length) {
-      el.innerHTML = '<div class="grade-panel-header">Sem grade para exibir.</div>';
+      el.innerHTML = '<div class="grade-panel-header">Sem lead sheet para exibir.</div>';
       return;
     }
 
-    let header = "Grade Harmônica";
+    let header = "Lead sheet";
     if (compasso) header += ` · Compasso ${esc(compasso)}`;
     let html = `<div class="grade-panel-header">${header}</div>`;
 

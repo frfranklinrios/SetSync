@@ -500,12 +500,13 @@ body.play-mode.chrome-hidden #play-foot {
     pointer-events: none;
 }
 
-/* ── EDGE TAP ZONES (fixas nas laterais; não rolam com a cifra) ── */
+/* ── EDGE TAP ZONES (overlay nas bordas — não reduz largura da cifra) ── */
 .tap-zone {
-    flex: 0 0 auto;
-    align-self: stretch;
-    width: clamp(52px, 12vw, 108px);
-    z-index: 2;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: min(56px, 14vw);
+    z-index: 3;
     cursor: pointer;
     background: transparent;
     border: none;
@@ -516,20 +517,19 @@ body.play-mode.chrome-hidden #play-foot {
     align-items: center;
     justify-content: center;
     color: transparent;
-    font-size: 1.6rem;
+    font-size: 1.35rem;
     pointer-events: auto;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
 }
+.tap-zone.left { left: 0; }
+.tap-zone.right { right: 0; }
 .tap-zone i { pointer-events: none; }
 .tap-zone:active,
 .tap-zone.flash {
     background: var(--chord-highlight-ghost);
     color: var(--chord-highlight-fade);
-}
-@media (min-width: 768px) {
-    .tap-zone { width: 11%; max-width: 130px; }
 }
 .tap-zone[aria-disabled="true"] {
     opacity: 0.35;
@@ -720,8 +720,8 @@ body.play-mode.edges-hint .tap-zone {
             <button class="pb-btn" id="cols-btn" onclick="toggleCols()" title="2 colunas (C)" aria-label="Alternar 2 colunas">
                 <i class="fas fa-columns"></i><span class="pb-label-text">&nbsp;2 col</span>
             </button>
-            <button class="pb-btn" id="grade-btn" onclick="toggleGrade()" title="Lead Sheet (G)" aria-label="Lead Sheet">
-                <i class="fas fa-th"></i><span class="pb-label-text">&nbsp;Grade</span>
+            <button class="pb-btn" id="grade-btn" onclick="toggleGrade()" title="Lead sheet (G)" aria-label="Lead sheet">
+                <i class="fas fa-table-columns"></i><span class="pb-label-text">&nbsp;Lead sheet</span>
             </button>
             <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
                 <i class="fas fa-angle-double-down"></i><span class="pb-label-text">&nbsp;Scroll</span>

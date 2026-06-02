@@ -175,7 +175,7 @@ def _parse_extra_fields(form):
             json.loads(grade_json_raw)
             grade_json = grade_json_raw
         except ValueError:
-            flash('JSON da grade inválido — verifique o formato', 'danger')
+            flash('JSON do lead sheet inválido — verifique o formato', 'danger')
             return None, False, None, None
 
     bpm = float(bpm_raw) if bpm_raw else None

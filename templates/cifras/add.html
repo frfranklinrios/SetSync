@@ -120,14 +120,14 @@
     </div>
 
     <div class="mb-3">
-        <p class="form-text mb-2">Após criar a cifra, use o <strong>editor Lead Sheet</strong> no lugar da antiga grade harmônica.</p>
+        <p class="form-text mb-2">Após criar a cifra, use o <strong>editor Lead sheet</strong> para montar a progressão por compasso.</p>
     </div>
 
     <!-- Upload de JSONs -->
     <details class="mb-3">
         <summary class="fw-semibold" style="cursor:pointer;font-size:.875rem;">
             &#128196; Importar arquivos JSON
-            <small class="text-muted ms-1">setsync_cifra / grade</small>
+            <small class="text-muted ms-1">setsync_cifra / leadsheet</small>
         </summary>
         <div class="row g-3 mt-1">
             <div class="col-md-4">
@@ -142,9 +142,9 @@
                 </div>
             </div>
             <div class="col-md-8">
-                <label class="form-label small fw-semibold">Grade JSON</label>
+                <label class="form-label small fw-semibold">Lead sheet JSON</label>
                 <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
-                <div class="form-text">setsync_grade.json &mdash; grade harm&ocirc;nica por compasso</div>
+                <div class="form-text">setsync_grade.json &mdash; lead sheet por compasso</div>
             </div>
         </div>
     </details>
@@ -539,7 +539,7 @@ document.getElementById('cifra-form').addEventListener('submit', function (event
     if (gradeText) {
         var parsedGrade = parseGradeTextToJson(gradeText);
         if (!parsedGrade) {
-            alert('Não foi possível interpretar a grade. Use Parte A, ▸ Seção e acordes por compasso.');
+            alert('Não foi possível interpretar o lead sheet. Use Parte A, ▸ Seção e acordes por compasso.');
             event.preventDefault();
             return;
         }

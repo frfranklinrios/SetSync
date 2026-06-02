@@ -1,5 +1,5 @@
 /**
- * Grade harmônica visual + conversão texto ↔ JSON (formato SetSync).
+ * Lead sheet visual + conversão texto ↔ JSON (formato SetSync).
  */
 (function (global) {
   function escHtml(s) {
@@ -69,11 +69,11 @@
       : flatToPartes(data);
 
     if (!partes.length) {
-      el.innerHTML = '<div class="grade-visual-header">Sem grade.</div>';
+      el.innerHTML = '<div class="grade-visual-header">Sem lead sheet.</div>';
       return;
     }
 
-    var header = opts.title || "Grade Harmônica";
+    var header = opts.title || "Lead sheet";
     if (opts.compasso) header += " · Compasso " + escHtml(opts.compasso);
     var html = '<div class="grade-visual-root">';
     html += '<div class="grade-visual-header">' + header + "</div>";
@@ -131,6 +131,7 @@
       if (!line) return;
       if (/^Partes\s+detectadas/i.test(line)) return;
       if (/^Grade\s+Harmonica/i.test(line)) return;
+      if (/^Lead\s*sheet/i.test(line)) return;
       if (/^Compasso:/i.test(line)) return;
       if (/^Pulsos:/i.test(line)) return;
 

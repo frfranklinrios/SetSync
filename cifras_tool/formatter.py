@@ -43,7 +43,7 @@ def build_grade(
 
     info = compasso or compasso_padrao()
     sections: list[str] = [
-        "Grade Harmonica",
+        "Lead sheet",
         f"Compasso: {info.formula}",
         linha_marcadores_compasso(info.beats_per_bar),
     ]

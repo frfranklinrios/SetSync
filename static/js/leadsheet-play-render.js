@@ -377,7 +377,7 @@
         ? gradeData
         : flatGradeToPartes(gradeData);
     if (!partes.length) {
-      return '<div class="leadsheet-play-empty">Grade vazia.</div>';
+      return '<div class="leadsheet-play-empty">Lead sheet vazio.</div>';
     }
     var html =
       '<div class="leadsheet-play-wrap leadsheet-play-wrap--legacy" data-layout-width="' +
