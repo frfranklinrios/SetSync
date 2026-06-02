@@ -23,6 +23,7 @@ from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra
                 get_cifra_vocalist_transpose, get_cifra_transpose_by_vocalists,
                 band_vocalist_belongs_to_band, vocalists_summary_label,
                 vocalist_entry_display_name)
+import band_notifications as bn
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   pychord_highlight_chords, highlight_chords_html,
                   split_chord_progression, chord_components_info,
@@ -701,6 +702,7 @@ def add(band_id):
 
         cifra_id = create_cifra(titulo, artista, tom_original, conteudo or '',
                                 band_id, cifra_json, grade_json, bpm, duracao_seg)
+        bn.cifra_created(band_id, user_id, cifra_id, titulo)
         flash(f'Cifra "{titulo}" adicionada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
@@ -761,6 +763,7 @@ def edit(cifra_id):
 
         update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
                      cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
+        bn.cifra_updated(cifra['band_id'], user_id, cifra_id, titulo)
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
@@ -782,9 +785,12 @@ def delete(cifra_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
     
+    titulo = cifra['titulo']
+    band_id = cifra['band_id']
     delete_cifra(cifra_id)
+    bn.cifra_deleted(band_id, user_id, titulo)
     flash('Cifra deletada', 'success')
-    return redirect(url_for('cifras.list_by_band', band_id=cifra['band_id']))
+    return redirect(url_for('cifras.list_by_band', band_id=band_id))
 
 @cifras_bp.route('/<cifra_id>/transpose', methods=['POST'])
 @login_required
@@ -953,6 +959,8 @@ def leadsheet_api_salvar(cifra_id):
             'tom_original': (data.get('song_key') or '').strip() or cifra.get('tom_original'),
         }
         _persist_leadsheet(cifra_id, payload, meta)
+        titulo = meta.get('titulo') or cifra.get('titulo') or 'Cifra'
+        bn.cifra_updated(cifra['band_id'], session['user_id'], cifra_id, titulo)
         return jsonify({
             'ok': True,
             'redirect': url_for('cifras.view', cifra_id=cifra_id),

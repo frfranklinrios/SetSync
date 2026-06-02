@@ -14,9 +14,15 @@ def _session_lifetime() -> timedelta:
     return timedelta(days=max(1, days))
 
 
+def _secret_key() -> str:
+    from security import assert_secret_key_usable
+    return assert_secret_key_usable(os.getenv('SECRET_KEY'))
+
+
 class Config:
     """Configurações base"""
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
+    SECRET_KEY = _secret_key()
+    WTF_CSRF_TIME_LIMIT = None
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///data/banda.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_COOKIE_SECURE = False  # True em produção HTTPS

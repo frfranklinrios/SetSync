@@ -165,7 +165,7 @@
             {% for member in members %}
             <div class="row-item">
                 <div class="row-info">
-                    <div class="row-title">{{ member.username }}</div>
+                    <div class="row-title">{{ member.display_name or member.username }}</div>
                     <div class="row-sub">{{ member.email }}</div>
                 </div>
                 {% if member.role == 'owner' %}

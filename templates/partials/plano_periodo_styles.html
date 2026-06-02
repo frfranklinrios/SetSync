@@ -1,0 +1,71 @@
+<style>
+.plano-periodo-item + .plano-periodo-item {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+.plano-periodo-banda {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+.plano-periodo-contador {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text);
+}
+.plano-periodo-dia-atual {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(42, 181, 160, 0.1);
+    border: 1px solid rgba(42, 181, 160, 0.25);
+    border-radius: 999px;
+    padding: 0.12rem 0.55rem;
+}
+.plano-periodo-texto {
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin: 0;
+}
+.plano-periodo-bar-wrap {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 0.35rem;
+}
+.plano-periodo-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #22c55e, #2ab5a0);
+    transition: width 0.3s ease;
+}
+.plano-urgencia-atencao .plano-periodo-bar { background: linear-gradient(90deg, #eab308, #f59e0b); }
+.plano-urgencia-critico .plano-periodo-bar { background: linear-gradient(90deg, #ef4444, #f97316); }
+.plano-urgencia-expirado .plano-periodo-bar { background: #94a3b8; width: 100% !important; }
+.plano-periodo-datas {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+.plano-periodo-alerta {
+    font-size: 0.8rem;
+    color: var(--text);
+    background: rgba(234, 179, 8, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.25);
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
+}
+.plano-urgencia-critico .plano-periodo-alerta,
+.plano-urgencia-expirado .plano-periodo-alerta {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.25);
+}
+.plano-urgencia-atencao .plano-periodo-contador { color: #ca8a04; }
+.plano-urgencia-critico .plano-periodo-contador { color: #dc2626; }
+[data-theme="dark"] .plano-urgencia-atencao .plano-periodo-contador { color: #facc15; }
+[data-theme="dark"] .plano-urgencia-critico .plano-periodo-contador { color: #f87171; }
+</style>

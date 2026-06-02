@@ -156,6 +156,7 @@ def init_db():
     _migrate_vocalists_schema(c)
     _migrate_assinaturas_schema(c)
     _migrate_vouchers_schema(c)
+    _migrate_notifications_schema(c)
     db.commit()
 
     db.close()
@@ -299,6 +300,13 @@ def get_user(user_id):
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
+
+
+def user_display_name(user: dict | None) -> str:
+    """Nome amigável: display_name informado pelo usuário, senão username."""
+    if not user:
+        return 'Alguém'
+    return (user.get('display_name') or '').strip() or (user.get('username') or 'Alguém')
 
 
 def get_user_by_username(username):
@@ -1207,3 +1215,173 @@ def set_cifra_transpose_semitones(cifra_id, semitones: int, vocalist_id: str | N
     )
     db.commit()
     db.close()
+
+
+def _migrate_notifications_schema(c) -> None:
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            band_id TEXT,
+            actor_user_id TEXT,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT,
+            url_path TEXT,
+            payload_json TEXT,
+            read_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+        )
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_notifications_user_created
+        ON notifications(user_id, created_at DESC)
+    ''')
+
+
+def create_notification(
+    user_id: str,
+    *,
+    band_id: str | None,
+    actor_user_id: str | None,
+    type: str,
+    title: str,
+    body: str = '',
+    url_path: str | None = None,
+    payload: dict | None = None,
+) -> str:
+    import json
+    if url_path and (not url_path.startswith('/') or url_path.startswith('//')):
+        url_path = None
+    nid = str(uuid.uuid4())
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO notifications
+           (id, user_id, band_id, actor_user_id, type, title, body, url_path, payload_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        (
+            nid,
+            user_id,
+            band_id,
+            actor_user_id,
+            type,
+            title,
+            body or '',
+            url_path,
+            json.dumps(payload, ensure_ascii=False) if payload else None,
+        ),
+    )
+    db.commit()
+    db.close()
+    return nid
+
+
+def create_notifications_for_users(
+    user_ids,
+    *,
+    band_id: str | None,
+    actor_user_id: str | None,
+    type: str,
+    title: str,
+    body: str = '',
+    url_path: str | None = None,
+    payload: dict | None = None,
+) -> int:
+    seen = set()
+    count = 0
+    for uid in user_ids or []:
+        if not uid or uid in seen:
+            continue
+        seen.add(uid)
+        create_notification(
+            uid,
+            band_id=band_id,
+            actor_user_id=actor_user_id,
+            type=type,
+            title=title,
+            body=body,
+            url_path=url_path,
+            payload=payload,
+        )
+        count += 1
+    return count
+
+
+def list_notifications(user_id: str, *, limit: int = 30, unread_only: bool = False) -> list[dict]:
+    import json
+    db = get_db()
+    c = db.cursor()
+    sql = '''
+        SELECT n.*, b.name AS band_name,
+               u.display_name AS actor_display_name, u.username AS actor_username
+        FROM notifications n
+        LEFT JOIN bands b ON b.id = n.band_id
+        LEFT JOIN users u ON u.id = n.actor_user_id
+        WHERE n.user_id = ?
+    '''
+    params: list = [user_id]
+    if unread_only:
+        sql += ' AND n.read_at IS NULL'
+    sql += ' ORDER BY n.created_at DESC LIMIT ?'
+    params.append(int(limit))
+    c.execute(sql, params)
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    for row in rows:
+        row['actor_name'] = (
+            (row.get('actor_display_name') or '').strip()
+            or row.get('actor_username')
+            or ''
+        )
+        if row.get('payload_json'):
+            try:
+                row['payload'] = json.loads(row['payload_json'])
+            except (TypeError, ValueError):
+                row['payload'] = {}
+        else:
+            row['payload'] = {}
+    return rows
+
+
+def count_unread_notifications(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL',
+        (user_id,),
+    )
+    n = c.fetchone()['n'] or 0
+    db.close()
+    return int(n)
+
+
+def mark_notification_read(notification_id: str, user_id: str) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND user_id = ? AND read_at IS NULL''',
+        (notification_id, user_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
+def mark_all_notifications_read(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+           WHERE user_id = ? AND read_at IS NULL''',
+        (user_id,),
+    )
+    n = c.rowcount
+    db.commit()
+    db.close()
+    return n

@@ -7,11 +7,14 @@ from blueprints.setlists import setlists_bp
 from blueprints.cifras_import import cifras_import_bp
 from blueprints.ajuda import ajuda_bp
 from blueprints.admin import admin_bp
-from blueprints.assinatura import assinatura_bp
+from blueprints.assinatura import assinatura_bp, webhook as mp_webhook_view
+from blueprints.notifications import notifications_bp
 from db import init_db
 from extensions import init_scheduler
 from util import highlight_chords_html, normalize_tom_label
+from flask_wtf.csrf import CSRFProtect
 import os
+from urllib.parse import urlparse
 from flask_mail import Mail
 import email_config
 
@@ -19,19 +22,26 @@ app = Flask(__name__)
 env = os.getenv('FLASK_ENV', 'development')
 app.config.from_object(config.get(env, config['default']))
 app.config.from_object('email_config')
-# Login em http://127.0.0.1: com .env de produção (SESSION_COOKIE_SECURE=1) não persiste sessão
-if env == 'development' or os.getenv('ALLOW_HTTP_SESSION', '').lower() in ('1', 'true', 'yes'):
+
+# Cookie Secure: só HTTP local em development explícito
+if env == 'development':
     app.config['SESSION_COOKIE_SECURE'] = False
+elif os.getenv('ALLOW_HTTP_SESSION', '').lower() in ('1', 'true', 'yes'):
+    app.logger.warning('ALLOW_HTTP_SESSION ignorado em produção — SESSION_COOKIE_SECURE permanece ativo')
+
+canonical = (os.getenv('SETSYNC_CANONICAL_URL') or '').strip()
+if canonical:
+    parsed = urlparse(canonical)
+    if parsed.scheme:
+        app.config['PREFERRED_URL_SCHEME'] = parsed.scheme
+
 mail = Mail(app)
+csrf = CSRFProtect(app)
 
 if env == 'production':
     from werkzeug.middleware.proxy_fix import ProxyFix
     if os.getenv('TRUST_PROXY', '1').lower() not in ('0', 'false', 'no'):
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
-    _sk = (os.getenv('SECRET_KEY') or '').strip()
-    _weak = {'', 'dev-key-change-in-production', 'sua-chave-secreta-aqui-mude-em-producao'}
-    if _sk in _weak:
-        app.logger.warning('SECRET_KEY ausente ou padrão — defina uma chave forte no .env antes do deploy.')
 
 app.jinja_env.filters['highlight_chords'] = highlight_chords_html
 app.jinja_env.filters['normalize_tom'] = normalize_tom_label
@@ -41,16 +51,34 @@ with app.app_context():
 
 _PWA_ASSET_PATHS = frozenset(('/sw.js', '/manifest.webmanifest'))
 
+
 @app.before_request
 def before_request():
-    if request.path in _PWA_ASSET_PATHS: return
-    if 'user_id' in session: session.permanent = True
+    if request.path in _PWA_ASSET_PATHS:
+        return
+    from security import validate_request_host
+    validate_request_host()
+    if 'user_id' in session:
+        session.permanent = True
+        from db import is_superadmin as _is_superadmin
+        session['is_superadmin'] = bool(_is_superadmin(session['user_id']))
+
 
 @app.after_request
-def pwa_asset_headers(response):
-    if request.path not in _PWA_ASSET_PATHS: return response
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers.pop('Set-Cookie', None)
+def security_headers(response):
+    if request.path in _PWA_ASSET_PATHS:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers.pop('Set-Cookie', None)
+        return response
+    response.headers.setdefault('X-Frame-Options', 'DENY')
+    response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    if env == 'production':
+        response.headers.setdefault(
+            'Strict-Transport-Security',
+            'max-age=31536000; includeSubDomains',
+        )
     return response
 
 # Registro de Blueprints
@@ -62,7 +90,17 @@ app.register_blueprint(setlists_bp)
 app.register_blueprint(ajuda_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(assinatura_bp)
+app.register_blueprint(notifications_bp)
 init_scheduler(app)
+
+# Webhook Mercado Pago: POST externo sem CSRF de formulário
+csrf.exempt(mp_webhook_view)
+
+
+@app.route('/health')
+def health():
+    return 'ok', 200
+
 
 @app.route('/')
 def index():
@@ -72,6 +110,7 @@ def index():
 
     return render_template('home.html', planos_site=planos_para_site())
 
+
 @app.route('/sw.js')
 def service_worker():
     resp = make_response(send_from_directory(app.static_folder, 'sw.js'))
@@ -80,11 +119,13 @@ def service_worker():
     resp.headers['Service-Worker-Allowed'] = '/'
     return resp
 
+
 @app.route('/manifest.webmanifest')
 def manifest():
     resp = make_response(send_from_directory(app.static_folder, 'manifest.webmanifest'))
     resp.headers['Content-Type'] = 'application/manifest+json; charset=utf-8'
     return resp
+
 
 @app.route('/offline')
 def offline():
@@ -97,6 +138,7 @@ def exportar_setlist_pdf(setlist_id):
     """Alias da rota de exportação PDF (especificação /setlist/...)."""
     from blueprints.setlists import exportar_pdf
     return exportar_pdf(setlist_id)
+
 
 @app.route('/dashboard')
 @login_required
@@ -130,17 +172,23 @@ def dashboard():
         planos_resumo=resumo_planos_usuario(owned_bands),
     )
 
+
 @app.context_processor
 def inject_user():
     user_id = session.get('user_id')
     username = session.get('username')
     display_name = (session.get('display_name') or '').strip()
-    try: cifras_import_tool_url = url_for('cifras_import.embed_tool')
-    except RuntimeError: cifras_import_tool_url = '/cifras/import/tool'
-    from db import is_superadmin as _is_superadmin
+    try:
+        cifras_import_tool_url = url_for('cifras_import.embed_tool')
+    except RuntimeError:
+        cifras_import_tool_url = '/cifras/import/tool'
+    from db import is_superadmin as _is_superadmin, count_unread_notifications, user_display_name
     from blueprints.cifras import cifra_display_key
+    unread = count_unread_notifications(user_id) if user_id else 0
     return dict(
         cifra_display_key=cifra_display_key,
+        user_display_name=user_display_name,
+        notifications_unread=unread,
         current_user={
             'id': user_id, 'username': username, 'display_name': display_name,
             'name': display_name or username, 'is_authenticated': user_id is not None,
@@ -149,5 +197,6 @@ def inject_user():
         cifras_import_tool_url=cifras_import_tool_url,
     )
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=os.getenv('FLASK_ENV') == 'development')

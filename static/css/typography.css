@@ -1,0 +1,70 @@
+/**
+ * SetSync — tipografia unificada (UI + cifras).
+ * Sans: Inter · Mono: PT Mono (acordes, cifras, código).
+ */
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'PT Mono', ui-monospace, 'Courier New', Courier, monospace;
+  --cifra-mono-font: var(--font-mono);
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body,
+.btn,
+.form-control,
+.form-select,
+.input-group-text,
+.dropdown-menu,
+.modal-content,
+.navbar,
+.nav-link,
+.breadcrumb,
+.pagination,
+.alert,
+.card,
+.list-group-item,
+table,
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+pre,
+code,
+kbd,
+samp,
+.font-mono,
+.cifra-mono {
+  font-family: var(--font-mono);
+}
+
+.cifra-body,
+.cifra-sheet,
+.setlist-print-body,
+.grade-visual-root,
+.leadsheet-systems,
+#conteudo,
+.cifra-editor {
+  font-family: var(--font-mono);
+}
+
+.ui-label,
+.staff-part-label,
+.grade-secao {
+  font-family: var(--font-sans);
+}

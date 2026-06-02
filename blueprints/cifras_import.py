@@ -11,6 +11,7 @@ from flask import (
     render_template,
     request,
     send_file,
+    session,
 )
 
 from blueprints.auth import login_required
@@ -19,14 +20,25 @@ from cifras_tool.pipeline_cifras import (
     validar_url_cifra,
 )
 from cifras_tool.setsync_export import partes_para_grade_ui
+from security import check_rate_limit
 
 cifras_import_bp = Blueprint("cifras_import", __name__, url_prefix="/cifras/import")
+
+OWNER_FILE = ".owner"
+
 
 def _exports_dir() -> Path:
     root = Path(current_app.root_path)
     pasta = root / "data" / "cifras_exports"
     pasta.mkdir(parents=True, exist_ok=True)
     return pasta
+
+
+def _job_owned_by_user(job_id: str, user_id: str) -> bool:
+    owner_path = _exports_dir() / job_id / OWNER_FILE
+    if not owner_path.is_file():
+        return False
+    return owner_path.read_text(encoding="utf-8").strip() == user_id
 
 
 def _resposta_processamento(resultado, job_id: str, *, embed: bool = True):
@@ -80,6 +92,11 @@ def embed_tool_legacy():
 @login_required
 def api_processar_cifra():
     """Somente raspagem da cifra + grade pelos acordes."""
+    user_id = session["user_id"]
+    rate_key = f'import:{user_id}'
+    if not check_rate_limit(rate_key, max_attempts=15, window_sec=3600):
+        return jsonify({"detail": "Limite de importações por hora atingido. Tente mais tarde."}), 429
+
     corpo = request.get_json(silent=True) or {}
     url_cifra = (corpo.get("url_cifra") or "").strip()
     compasso = corpo.get("compasso")
@@ -98,6 +115,7 @@ def api_processar_cifra():
             pasta_saida=pasta_job,
             compasso_manual=compasso,
         )
+        (pasta_job / OWNER_FILE).write_text(user_id, encoding="utf-8")
     except ValueError as erro:
         if pasta_job.exists():
             shutil.rmtree(pasta_job, ignore_errors=True)
@@ -113,6 +131,10 @@ def api_processar_cifra():
 @cifras_import_bp.route("/api/download/<job_id>/<nome_arquivo>")
 @login_required
 def api_download(job_id: str, nome_arquivo: str):
+    user_id = session["user_id"]
+    if not _job_owned_by_user(job_id, user_id):
+        return jsonify({"detail": "Acesso negado."}), 403
+
     pasta = _exports_dir() / job_id
     if not pasta.is_dir():
         return jsonify({"detail": "Sessão expirada ou não encontrada."}), 404

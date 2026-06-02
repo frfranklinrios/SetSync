@@ -2,6 +2,7 @@
 {% block title %}Planos — SetSync{% endblock %}
 
 {% block content %}
+{% include 'partials/plano_periodo_styles.html' %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h3 mb-1">Planos SetSync</h1>
@@ -43,6 +44,15 @@
 </form>
 {% else %}
 <div class="alert alert-warning">Crie uma banda para assinar um plano pago.</div>
+{% endif %}
+
+{% if plano_ui and banda_id %}
+<div class="planos-resumo-card mb-4" style="border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;background:var(--bg);">
+    <div class="fw-semibold mb-2" style="font-size:0.9rem;"><i class="fas fa-tag me-1 text-muted"></i> Plano atual</div>
+    {% with item=plano_ui, hide_action=true %}
+    {% include 'partials/plano_periodo_card.html' %}
+    {% endwith %}
+</div>
 {% endif %}
 
 <div class="row g-3 mb-4">
@@ -97,12 +107,6 @@
         </div>
     </div>
 </div>
-
-{% if assinatura %}
-<p class="small text-muted">
-    Plano atual: <strong>{{ assinatura.plano }}</strong> ({{ assinatura.status }})
-</p>
-{% endif %}
 
 <div class="card">
     <div class="card-body">

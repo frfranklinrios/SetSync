@@ -6,10 +6,21 @@ from db import (create_user, get_user_by_username, get_user_by_login, get_user, 
                 get_user_by_google_id, create_google_user, get_user_by_email,
                 update_user_display_name, is_superadmin, get_band)
 from band_invites import parse_band_invite_token, apply_band_invite
+import band_notifications as bn
 from google_oauth import handle_google_callback, get_authorization_url
 import functools
 from itsdangerous import URLSafeTimedSerializer
+from security import (
+    check_rate_limit, clear_rate_limit, external_url_for, make_oauth_state,
+    safe_redirect_path, verify_oauth_state,
+)
+
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+MIN_PASSWORD_LEN = 10
+
+
+def _password_reset_serializer():
+    return URLSafeTimedSerializer(current_app.config['SECRET_KEY'], salt='recuperar-senha')
 
 
 def _is_safe_redirect(target):
@@ -27,6 +38,7 @@ def _invite_token_from_request():
 
 
 def _login_user_session(user):
+    session.clear()
     session['user_id'] = user['id']
     session['username'] = user['username']
     session['display_name'] = (user.get('display_name') or '').strip()
@@ -43,13 +55,14 @@ def _redirect_after_auth(user, invite_token: str | None = None):
             band = get_band(band_id)
             name = band['name'] if band else 'banda'
             if result == 'added':
+                bn.member_joined_via_invite(band_id, user['id'])
                 flash(f'Você entrou na banda {name}!', 'success')
             if not session.get('display_name'):
                 return redirect(url_for('auth.definir_nome', next=url_for('bands.view', band_id=band_id)))
             return redirect(url_for('bands.view', band_id=band_id))
 
     next_page = request.args.get('next')
-    if next_page and _is_safe_redirect(next_page):
+    if next_page and safe_redirect_path(next_page):
         return redirect(next_page)
     if not session.get('display_name'):
         return redirect(url_for('auth.definir_nome', next=url_for('dashboard')))
@@ -59,7 +72,7 @@ def _redirect_after_auth(user, invite_token: str | None = None):
 def send_reset_email(email, token):
     from flask_mail import Message
     mail = current_app.extensions['mail']
-    link = url_for('auth.reset_senha', token=token, _external=True)
+    link = external_url_for('auth.reset_senha', token=token)
     msg = Message('Recuperação de senha - SetSync', recipients=[email])
     msg.body = f'Para redefinir sua senha, clique no link: {link}\nSe você não solicitou, ignore este e-mail.'
     mail.send(msg)
@@ -71,8 +84,7 @@ def recuperar_senha():
         email = request.form.get('email', '').strip()
         user = get_user_by_email(email)
         if user:
-            s = URLSafeTimedSerializer(os.environ.get('SECRET_KEY', 'dev'))
-            token = s.dumps(email, salt='recuperar-senha')
+            token = _password_reset_serializer().dumps(email)
             send_reset_email(email, token)
         message = 'Se o e-mail estiver cadastrado, um link de recuperação foi enviado.'
         return render_template('recuperar_senha.html', message=message)
@@ -82,9 +94,9 @@ def recuperar_senha():
 def reset_senha(token):
     from werkzeug.security import generate_password_hash
     message = None
-    s = URLSafeTimedSerializer(os.environ.get('SECRET_KEY', 'dev'))
+    s = _password_reset_serializer()
     try:
-        email = s.loads(token, salt='recuperar-senha', max_age=3600)
+        email = s.loads(token, max_age=3600)
     except Exception:
         message = 'Link inválido ou expirado.'
         return render_template('reset_senha.html', message=message)
@@ -95,8 +107,8 @@ def reset_senha(token):
             message = 'Preencha todos os campos.'
         elif password != confirm:
             message = 'As senhas não conferem.'
-        elif len(password) < 6:
-            message = 'A senha deve ter no mínimo 6 caracteres.'
+        elif len(password) < MIN_PASSWORD_LEN:
+            message = f'A senha deve ter no mínimo {MIN_PASSWORD_LEN} caracteres.'
         else:
             db = __import__('db').get_db()
             c = db.cursor()
@@ -112,7 +124,10 @@ def login_required(f):
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            return redirect(url_for('auth.login', next=request.url))
+            nxt = safe_redirect_path(request.path)
+            if nxt:
+                return redirect(url_for('auth.login', next=nxt))
+            return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -128,6 +143,7 @@ def convite(token):
     if 'user_id' in session:
         result = apply_band_invite(session['user_id'], band_id)
         if result == 'added':
+            bn.member_joined_via_invite(band_id, session['user_id'])
             flash(f'Você entrou na banda {band["name"]}!', 'success')
         elif result == 'already':
             flash(f'Você já faz parte da banda {band["name"]}.', 'info')
@@ -172,8 +188,8 @@ def register():
             flash('Senhas não conferem', 'danger')
             return render_template('register.html', **_register_ctx())
         
-        if len(password) < 6:
-            flash('Senha deve ter no mínimo 6 caracteres', 'danger')
+        if len(password) < MIN_PASSWORD_LEN:
+            flash(f'Senha deve ter no mínimo {MIN_PASSWORD_LEN} caracteres', 'danger')
             return render_template('register.html', **_register_ctx())
         
         if get_user_by_username(username):
@@ -216,10 +232,19 @@ def login():
     if request.method == 'POST':
         login_id = request.form.get('username', '').strip()
         password = request.form.get('password', '')
+        rate_key = f'login:{request.remote_addr}:{login_id.lower()}'
+        if not check_rate_limit(rate_key):
+            flash('Muitas tentativas. Aguarde alguns minutos e tente novamente.', 'danger')
+            return render_template(
+                'login.html',
+                invite_token=_invite_token_from_request(),
+                invite_band=get_band(parse_band_invite_token(_invite_token_from_request())) if _invite_token_from_request() else None,
+            )
 
         user = get_user_by_login(login_id)
 
         if user and verify_password(user['id'], password):
+            clear_rate_limit(rate_key)
             _login_user_session(user)
             invite_token = _invite_token_from_request()
             return _redirect_after_auth(user, invite_token)
@@ -234,11 +259,12 @@ def login():
         invite_band=invite_band,
     )
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     flash('Você saiu da conta', 'info')
     return redirect(url_for('auth.login'))
+
 
 @auth_bp.route('/google')
 def google():
@@ -246,10 +272,17 @@ def google():
     if token and parse_band_invite_token(token):
         session['pending_band_invite'] = token
         session.modified = True
-    return redirect(get_authorization_url())
+    state = make_oauth_state()
+    session['oauth_state'] = state
+    session.modified = True
+    return redirect(get_authorization_url(state))
 
 @auth_bp.route('/google/callback')
 def google_callback():
+    if not verify_oauth_state(request.args.get('state')):
+        flash('Sessão OAuth inválida ou expirada. Tente novamente.', 'danger')
+        return redirect(url_for('auth.login'))
+
     code = request.args.get('code')
     
     if not code:
@@ -270,14 +303,11 @@ def google_callback():
         existing_user = get_user_by_email(userinfo['email'])
         
         if existing_user:
-            # Atualizar usuário existente com Google ID
-            db = __import__('db').get_db()
-            c = db.cursor()
-            c.execute('UPDATE users SET google_id = ? WHERE id = ?',
-                      (userinfo['id'], existing_user['id']))
-            db.commit()
-            db.close()
-            user = existing_user
+            flash(
+                'Já existe uma conta com este e-mail. Entre com sua senha para continuar.',
+                'warning',
+            )
+            return redirect(url_for('auth.login'))
         else:
             # Criar novo usuário
             user_id = create_google_user(

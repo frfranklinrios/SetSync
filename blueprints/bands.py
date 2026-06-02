@@ -6,8 +6,10 @@ from blueprints.auth import login_required
 from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_bands,
                 update_band, delete_band, get_band_members, add_band_member, remove_band_member,
                 is_band_member, is_band_admin, is_superadmin, can_delete_band,
-                can_edit_band_settings, get_user, enrich_bands_for_display)
+                can_edit_band_settings, get_user, enrich_bands_for_display, user_display_name)
 from band_invites import make_band_invite_token
+from security import external_url_for
+import band_notifications as bn
 
 bands_bp = Blueprint('bands', __name__, url_prefix='/bands')
 
@@ -110,6 +112,7 @@ def settings(band_id):
             name = request.form.get('name', '').strip() or band['name']
             description = request.form.get('description', '').strip()
             update_band(band_id, name, description)
+            bn.band_updated(band_id, user_id)
             flash('Configurações atualizadas', 'success')
 
         elif action == 'add_vocalist':
@@ -132,6 +135,7 @@ def settings(band_id):
                         return redirect(url_for('bands.settings', band_id=band_id))
                 try:
                     add_band_vocalists_from_text(band_id, raw, user_id or None)
+                    bn.vocalist_added(band_id, session['user_id'], raw)
                     flash('Cantoras/cantores adicionados.', 'success')
                 except ValueError as e:
                     flash(str(e), 'danger')
@@ -139,7 +143,11 @@ def settings(band_id):
         elif action == 'delete_vocalist':
             vid = request.form.get('vocalist_id', '').strip()
             if vid and band_vocalist_belongs_to_band(vid, band_id):
+                from db import get_band_vocalist, vocalist_entry_display_name
+                v = get_band_vocalist(vid)
+                vname = vocalist_entry_display_name(v) if v else 'Cantor(a)'
                 delete_band_vocalist(vid)
+                bn.vocalist_removed(band_id, session['user_id'], vname)
                 flash('Cantora/cantor removido.', 'success')
             else:
                 flash('Cantora/cantor não encontrado.', 'danger')
@@ -172,7 +180,7 @@ def members(band_id):
         v['user_id'] for v in get_band_vocalists(band_id) if v.get('user_id')
     }
     token = make_band_invite_token(band_id)
-    invite_url = url_for('auth.convite', token=token, _external=True)
+    invite_url = external_url_for('auth.convite', token=token)
     return render_template(
         'bands/members.html',
         band=band,
@@ -200,7 +208,7 @@ def invite(band_id):
     db.close()
     
     if not row:
-        flash('Usuário não encontrado', 'danger')
+        flash('Se o e-mail estiver cadastrado, o usuário será adicionado à banda.', 'info')
         return redirect(url_for('bands.members', band_id=band_id))
     
     invited_user_id = row['id']
@@ -217,7 +225,8 @@ def invite(band_id):
     
     add_band_member(band_id, invited_user_id)
     user = get_user(invited_user_id)
-    flash(f'{user["username"]} adicionado à banda', 'success')
+    bn.member_added_by_admin(band_id, user_id, invited_user_id)
+    flash(f'{user_display_name(user)} adicionado à banda', 'success')
     return redirect(url_for('bands.members', band_id=band_id))
 
 @bands_bp.route('/<band_id>/remove-member/<user_id_to_remove>', methods=['POST'])
@@ -235,7 +244,8 @@ def remove_member(band_id, user_id_to_remove):
     
     remove_band_member(band_id, user_id_to_remove)
     user = get_user(user_id_to_remove)
-    flash(f'{user["username"]} removido da banda', 'success')
+    bn.member_removed(band_id, user_id, user_id_to_remove)
+    flash(f'{user_display_name(user)} removido da banda', 'success')
     return redirect(url_for('bands.members', band_id=band_id))
 
 

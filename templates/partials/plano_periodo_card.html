@@ -1,0 +1,75 @@
+{# Card de acompanhamento de plano/período — espera item com plano_ui ou campos de plano_badge_ui #}
+{% set p = item.periodo if item.periodo is defined else (item.plano_ui.periodo if item.plano_ui is defined else none) %}
+{% set badge = item.badge if item.badge is defined else (item.plano_ui.badge if item.plano_ui is defined else 'secondary') %}
+{% set label_curto = item.label_curto if item.label_curto is defined else (item.plano_ui.label_curto if item.plano_ui is defined else item.label) %}
+{% set band_name = item.band_name if item.band_name is defined else none %}
+{% set band_id = item.band_id if item.band_id is defined else none %}
+{% set premium = item.premium if item.premium is defined else (item.plano_ui.premium if item.plano_ui is defined else false) %}
+
+<div class="plano-periodo-item{% if p and p.urgencia %} plano-urgencia-{{ p.urgencia }}{% endif %}">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-1">
+        <div>
+            {% if band_name %}
+            <div class="plano-periodo-banda">{{ band_name }}</div>
+            {% endif %}
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="badge bg-{{ badge }}">{{ label_curto }}</span>
+                {% if p and p.tem_periodo and p.dias_restantes is not none and p.dias_restantes >= 0 %}
+                <span class="plano-periodo-contador">
+                    {% if p.dias_restantes > 0 %}
+                    <i class="fas fa-clock me-1"></i>{{ p.dias_restantes }} dia{{ 's' if p.dias_restantes != 1 else '' }} restante{{ 's' if p.dias_restantes != 1 else '' }}
+                    {% elif p.dias_restantes == 0 %}
+                    <i class="fas fa-exclamation-circle me-1"></i>Último dia
+                    {% endif %}
+                </span>
+                {% endif %}
+                {% if p and p.texto_dia %}
+                <span class="plano-periodo-dia-atual">{{ p.texto_dia }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% if band_id and not hide_action|default(false) %}
+        <a href="{{ url_for('assinatura_bp.planos', banda_id=band_id) }}"
+           class="btn btn-outline-primary btn-sm flex-shrink-0">
+            {% if premium %}Gerenciar{% else %}Assinar{% endif %}
+        </a>
+        {% endif %}
+    </div>
+
+    {% if p and p.tem_periodo %}
+    {% if p.texto_restante %}
+    <p class="plano-periodo-texto mb-2">{{ p.texto_restante }}</p>
+    {% endif %}
+
+    {% if p.tipo == 'voucher' and p.progresso_pct is not none %}
+    <div class="plano-periodo-bar-wrap" role="progressbar"
+         aria-valuenow="{{ p.progresso_pct }}" aria-valuemin="0" aria-valuemax="100"
+         aria-label="Progresso do período promocional">
+        <div class="plano-periodo-bar" style="width: {{ p.progresso_pct }}%;"></div>
+    </div>
+    <div class="plano-periodo-datas">
+        {% if p.inicio %}<span>Início {{ p.inicio }}</span>{% endif %}
+        {% if p.inicio and p.fim %}<span class="mx-1">→</span>{% endif %}
+        {% if p.fim %}<span>Término {{ p.fim }}</span>{% endif %}
+    </div>
+    {% elif p.texto_detalhe %}
+    <p class="plano-periodo-datas mb-0">{{ p.texto_detalhe }}</p>
+    {% endif %}
+
+    {% if p.urgencia in ('atencao', 'critico') and p.dias_restantes is not none and p.dias_restantes >= 0 %}
+    <p class="plano-periodo-alerta mb-0 mt-2">
+        <i class="fas fa-bell me-1"></i>
+        {% if p.urgencia == 'critico' %}
+        Seu acesso Pro termina em breve. Assine para não perder exportação PDF e limites ilimitados.
+        {% else %}
+        O período promocional está acabando. Considere assinar o plano Pro.
+        {% endif %}
+    </p>
+    {% elif p.urgencia == 'expirado' %}
+    <p class="plano-periodo-alerta mb-0 mt-2">
+        <i class="fas fa-info-circle me-1"></i>
+        Sua banda voltou ao plano Grátis. Assine para recuperar os recursos Pro.
+    </p>
+    {% endif %}
+    {% endif %}
+</div>

@@ -3,6 +3,7 @@
 {% block title %}Dashboard - SetSync{% endblock %}
 
 {% block content %}
+{% include 'partials/plano_periodo_styles.html' %}
 <style>
 .band-tile {
     border: 1px solid var(--border);
@@ -42,7 +43,7 @@
 .planos-resumo-card {
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 0.85rem 1.1rem;
+    padding: 1rem 1.15rem;
     background: var(--bg);
     margin-bottom: 1.25rem;
 }
@@ -82,28 +83,14 @@
 </div>
 
 {% if planos_resumo and planos_resumo.tem_banda and not is_superadmin %}
-<div class="planos-resumo-card d-flex flex-wrap align-items-center justify-content-between gap-2">
-    <div>
-        {% if planos_resumo.multiplas %}
-        <div class="fw-semibold mb-1" style="font-size:0.9rem;"><i class="fas fa-layer-group me-1 text-muted"></i> Planos das suas bandas</div>
-        {% for item in planos_resumo.itens %}
-        <div class="plano-linha text-muted">
-            <strong class="text-body">{{ item.band_name }}</strong>
-            <span class="badge bg-{{ item.badge }} ms-1">{{ item.label }}</span>
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="fw-semibold" style="font-size:0.9rem;">
-            <i class="fas fa-tag me-1 text-muted"></i>
-            Plano de <strong>{{ planos_resumo.destaque.band_name }}</strong>:
-            <span class="badge bg-{{ planos_resumo.destaque.badge }} ms-1">{{ planos_resumo.destaque.label }}</span>
-        </div>
-        {% endif %}
+<div class="planos-resumo-card">
+    <div class="fw-semibold mb-3" style="font-size:0.9rem;">
+        <i class="fas fa-chart-line me-1 text-muted"></i>
+        {% if planos_resumo.multiplas %}Acompanhamento dos planos{% else %}Seu plano{% endif %}
     </div>
-    <a href="{{ url_for('assinatura_bp.planos', banda_id=(planos_resumo.itens[0].band_id if planos_resumo.itens else '')) }}"
-       class="btn btn-outline-primary btn-sm">
-        {% if planos_resumo.itens and planos_resumo.itens[0].premium %}Gerenciar plano{% else %}Fazer upgrade{% endif %}
-    </a>
+    {% for item in planos_resumo.itens %}
+    {% include 'partials/plano_periodo_card.html' %}
+    {% endfor %}
 </div>
 {% endif %}
 
@@ -117,11 +104,11 @@
     <div class="col-md-6 col-lg-4">
         <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile">
             <h6>{{ band.name }}</h6>
-            <p class="band-desc">Titular: {{ band.owner.username or '—' }}</p>
+            <p class="band-desc">Titular: {{ user_display_name(band.owner) if band.owner else '—' }}</p>
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin global</span>
                 {% if band.plano_ui %}
-                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label }}</span>
+                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label_curto|default(band.plano_ui.label) }}</span>
                 {% endif %}
                 <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
                 <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
@@ -144,7 +131,7 @@
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin</span>
                 {% if band.plano_ui %}
-                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label }}</span>
+                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label_curto|default(band.plano_ui.label) }}</span>
                 {% endif %}
                 <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
                 <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
@@ -162,11 +149,11 @@
     <div class="col-md-6 col-lg-4">
         <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile">
             <h6>{{ band.name }}</h6>
-            <p class="band-desc">Por {{ band.owner.username }}</p>
+            <p class="band-desc">Por {{ user_display_name(band.owner) if band.owner else '—' }}</p>
             <div class="band-meta">
                 <span class="tile-badge">Membro</span>
                 {% if band.plano_ui %}
-                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label }}</span>
+                <span class="tile-badge plano-{{ band.plano_ui.plano_id }}">{{ band.plano_ui.label_curto|default(band.plano_ui.label) }}</span>
                 {% endif %}
                 <span class="tile-badge"><i class="fas fa-music"></i> {{ band.cifras|length }}</span>
             </div>

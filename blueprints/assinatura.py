@@ -46,6 +46,7 @@ from mp_webhook import (
     processar_notificacao_mp,
     webhook_autentico,
 )
+from security import external_url_for
 from vouchers import criar_voucher_indicacao, gerar_codigo_voucher, resgatar_voucher
 
 assinatura_bp = Blueprint('assinatura_bp', __name__)
@@ -70,14 +71,17 @@ def planos():
     user_id = session['user_id']
     bandas = get_owned_bands(user_id)
     banda_id = request.args.get('banda_id') or (bandas[0]['id'] if bandas else None)
-    assinatura = get_assinatura(banda_id) if banda_id else None
+    from monetizacao import get_assinatura_banda, plano_badge_ui
+    assinatura = get_assinatura_banda(banda_id) if banda_id else None
+    plano_ui = plano_badge_ui(banda_id) if banda_id else None
     mp_status = mp_config_status()
     return render_template(
         'assinatura/planos.html',
         planos=PLANOS,
         bandas=bandas,
         banda_id=banda_id,
-        assinatura=assinatura,
+        assinatura=assinatura.to_dict() if assinatura else None,
+        plano_ui=plano_ui,
         mp_status=mp_status,
     )
 
@@ -111,7 +115,7 @@ def iniciar(plano):
         preapproval_data = build_preapproval_checkout_body(
             plano,
             payer_email=email,
-            back_url=url_for('assinatura_bp.sucesso', _external=True),
+            back_url=external_url_for('assinatura_bp.sucesso'),
             external_reference=f'{banda_id}:{plano}',
             reason=f'SetSync {PLANOS[plano].nome} — Banda: {band["name"]}',
         )
@@ -170,6 +174,10 @@ def sucesso():
             plano = row.get('plano', PLANO_PRO)
 
     if preapproval_id and banda_id:
+        band = get_band(banda_id)
+        if not band or band['owner_id'] != session['user_id']:
+            flash('Sem permissão para ativar plano desta banda.', 'danger')
+            return redirect(url_for('assinatura_bp.planos'))
         try:
             sdk = get_mp_sdk()
             info = sdk.preapproval().get(preapproval_id)

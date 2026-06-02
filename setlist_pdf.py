@@ -11,30 +11,20 @@ def _safe_filename(name: str, max_len: int = 80) -> str:
     return (s[:max_len] if len(s) > max_len else s) or 'setlist'
 
 
-def playwright_cookies_from_flask_request(req):
-    """Repasse cookies da sessão Flask para o Chromium."""
-    host = (req.host or 'localhost').split(':')[0]
-    secure = req.is_secure or req.headers.get('X-Forwarded-Proto', '').lower() == 'https'
-    cookies = []
-    for name, value in req.cookies.items():
-        cookies.append({
-            'name': name,
-            'value': value,
-            'domain': host,
-            'path': '/',
-            'secure': bool(secure),
-        })
-    return cookies
-
-
 def render_url_to_pdf(
     url: str,
     cookies=None,
     *,
     timeout_ms: int = 120_000,
 ) -> bytes:
-    """Abre a URL (com sessão) e devolve bytes do PDF A4 retrato."""
+    """Abre a URL e devolve bytes do PDF A4 retrato (sem cookies de sessão por padrão)."""
     from playwright.sync_api import sync_playwright
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError('URL de PDF inválida')
+    if not parsed.netloc:
+        raise ValueError('URL de PDF sem host')
 
     cookies = cookies or []
     with sync_playwright() as p:
@@ -67,7 +57,7 @@ def render_url_to_pdf(
             )
         page.wait_for_timeout(250)
 
-        host = urlparse(url).netloc.split(':')[0] or 'SetSync'
+        host = parsed.netloc.split(':')[0] or 'SetSync'
         pdf = page.pdf(
             format='A4',
             print_background=True,
@@ -75,12 +65,12 @@ def render_url_to_pdf(
             display_header_footer=True,
             header_template=(
                 '<div style="width:100%;font-size:8px;color:#64748b;padding:0 12mm;'
-                'font-family:system-ui,sans-serif;text-align:center;">'
+                'font-family:Inter,Helvetica,Arial,sans-serif;text-align:center;">'
                 f'SetSync · {host}</div>'
             ),
             footer_template=(
                 '<div style="width:100%;font-size:8px;color:#94a3b8;padding:0 12mm;'
-                'font-family:system-ui,sans-serif;text-align:center;">'
+                'font-family:Inter,Helvetica,Arial,sans-serif;text-align:center;">'
                 'Página <span class="pageNumber"></span> de <span class="totalPages"></span>'
                 '</div>'
             ),

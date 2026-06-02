@@ -1,24 +1,24 @@
 """Tokens de convite para entrada em banda (cadastro ou login)."""
-import os
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 INVITE_SALT = 'band-invite'
-INVITE_MAX_AGE = 60 * 60 * 24 * 30  # 30 dias
+INVITE_MAX_AGE = 60 * 60 * 24 * 14  # 14 dias
 
 
 def _serializer() -> URLSafeTimedSerializer:
-    return URLSafeTimedSerializer(os.environ.get('SECRET_KEY', 'dev'))
+    from flask import current_app
+    return URLSafeTimedSerializer(current_app.config['SECRET_KEY'], salt=INVITE_SALT)
 
 
 def make_band_invite_token(band_id: str) -> str:
-    return _serializer().dumps({'band_id': str(band_id)}, salt=INVITE_SALT)
+    return _serializer().dumps({'band_id': str(band_id)})
 
 
 def parse_band_invite_token(token: str | None, max_age: int = INVITE_MAX_AGE) -> str | None:
     if not token or not str(token).strip():
         return None
     try:
-        data = _serializer().loads(str(token).strip(), salt=INVITE_SALT, max_age=max_age)
+        data = _serializer().loads(str(token).strip(), max_age=max_age)
         band_id = data.get('band_id') if isinstance(data, dict) else None
         return str(band_id) if band_id else None
     except (BadSignature, SignatureExpired, TypeError, KeyError):

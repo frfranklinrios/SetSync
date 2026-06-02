@@ -16,12 +16,16 @@ logger = logging.getLogger(__name__)
 
 def webhook_autentico(req, secret: str) -> bool:
     """Valida notificação via X-Webhook-Secret ou cabeçalho x-signature."""
+    import os
     secret = (secret or '').strip()
     if not secret:
-        logger.warning('MP_WEBHOOK_SECRET não definido — webhook aceito sem validação')
-        return True
+        if os.getenv('FLASK_ENV', 'development').lower() == 'production':
+            logger.error('MP_WEBHOOK_SECRET ausente em produção — webhook rejeitado')
+            return False
+        logger.warning('MP_WEBHOOK_SECRET não definido (dev) — webhook rejeitado')
+        return False
 
-    if req.headers.get('X-Webhook-Secret') == secret or req.args.get('secret') == secret:
+    if req.headers.get('X-Webhook-Secret') == secret:
         return True
 
     x_sig = req.headers.get('x-signature') or req.headers.get('X-Signature') or ''

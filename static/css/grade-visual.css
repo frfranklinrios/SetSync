@@ -11,7 +11,7 @@
 }
 .grade-visual-secao {
   font-size: 0.78rem; font-weight: 600; color: #fbbf24; margin: 0.45rem 0 0.3rem 0.2rem;
-  font-family: system-ui, -apple-system, sans-serif; font-style: italic;
+  font-family: var(--font-sans); font-style: italic;
 }
 .grade-visual-secao::before { content: "▸ "; }
 .grade-visual-bloco {

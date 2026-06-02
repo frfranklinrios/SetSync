@@ -27,7 +27,7 @@
             {% for member in band_members %}
             <div class="row-item">
                 <div class="row-info">
-                    <div class="row-title">{{ member.username }}</div>
+                    <div class="row-title">{{ member.display_name or member.username }}</div>
                     <div class="row-sub">{{ member.email }}</div>
                 </div>
                 {% if band.owner_id == member.id %}
@@ -43,7 +43,7 @@
                 <div class="row-actions">
                     <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
                           method="POST" class="d-inline"
-                          onsubmit="return confirm('Remover {{ member.username }} da banda?')">
+                          onsubmit="return confirm('Remover {{ member.display_name or member.username }} da banda?')">
                         <button type="submit" class="icon-btn danger" title="Remover">
                             <i class="fas fa-user-minus"></i>
                         </button>
@@ -69,7 +69,7 @@
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>
-                <small class="text-muted">Válido por 30 dias.</small>
+                <small class="text-muted">Válido por 14 dias.</small>
             </div>
         </div>
         <div class="card">

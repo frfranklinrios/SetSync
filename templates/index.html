@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>
     (function () {
         var K = 'setsync-theme';
@@ -29,6 +29,7 @@
     </script>
     <script src="{{ url_for('static', filename='js/theme.js') }}?v=6"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}SetSync{% endblock %}</title>
 
     <!-- PWA -->
@@ -46,7 +47,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=PT+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=PT+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -56,7 +57,9 @@
             --muted: #6b7280;
             --border: #e5e7eb;
             --bg: #f8f9fa;
-            --cifra-mono-font: "PT Mono", ui-monospace, "Courier New", Courier, monospace;
+            --card-bg: #ffffff;
+            --surface-elevated: #ffffff;
+            /* tipografia: static/css/typography.css (--font-sans, --font-mono) */
             /* Destaque de acordes / elementos em evidência (tema claro: laranja) */
             --chord-highlight: #c2410c;
             --chord-highlight-soft: #ea580c;
@@ -87,7 +90,9 @@
             flex-direction: column;
             min-height: 100vh;
             background: #fff;
-            font-family: 'Inter', 'Roboto', 'SF Pro Text', system-ui, -apple-system, sans-serif;
+            font-family: var(--font-sans);
+            font-size: 0.9375rem;
+            line-height: 1.5;
             color: var(--text);
         }
 
@@ -240,7 +245,7 @@
 
         /* ── Pre / code ── */
         pre {
-            font-family: "Courier New", monospace;
+            font-family: var(--font-mono);
             background: var(--bg);
             padding: 1.25rem;
             border-radius: 8px;
@@ -281,6 +286,8 @@
             --hint: #c8d4e4;
             --border: #334155;
             --bg: #0f172a;
+            --card-bg: #0c1520;
+            --surface-elevated: #0b1422;
             --chord-highlight: #2dd4bf;
             --chord-highlight-soft: #5eead4;
             --chord-highlight-bg: rgba(45, 212, 191, 0.1);
@@ -645,9 +652,11 @@
             font-weight: 400;
         }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/setsync-theme.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/setsync-theme.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/list-rows.css') }}?v=4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=7">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=2">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -681,12 +690,43 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('ajuda.index') }}">Ajuda</a>
                         </li>
+                        <li class="nav-item ss-notif-wrap" id="ss-notif-wrap"
+                            data-list-url="{{ url_for('notifications.api_list') }}"
+                            data-read-url="{{ url_for('notifications.api_mark_read', notification_id='__ID__') }}"
+                            data-read-all-url="{{ url_for('notifications.api_mark_all_read') }}"
+                            data-unread="{{ notifications_unread or 0 }}">
+                            <button type="button" class="ss-notif-btn" id="ss-notif-btn"
+                                    aria-label="Notificações" aria-expanded="false" aria-haspopup="true">
+                                <i class="fas fa-bell"></i>
+                                <span class="ss-notif-badge" id="ss-notif-badge" {% if not notifications_unread %}hidden{% endif %}>{{ notifications_unread or '' }}</span>
+                            </button>
+                            <div class="ss-notif-panel" id="ss-notif-panel" role="dialog" aria-label="Notificações da banda">
+                                <div class="ss-notif-hd">
+                                    <span>Notificações</span>
+                                    <button type="button" id="ss-notif-mark-all">Marcar todas lidas</button>
+                                </div>
+                                <div class="ss-notif-list" id="ss-notif-list">
+                                    <div class="ss-notif-empty">Carregando…</div>
+                                </div>
+                            </div>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                 {{ current_user.name }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Sair</a></li>
+                                <li class="dropdown-header text-muted" style="font-size:0.78rem;">
+                                    @{{ current_user.username }}
+                                    {% if current_user.is_superadmin %}
+                                    <span class="badge bg-primary ms-1" style="font-size:0.65rem;">sistema</span>
+                                    {% endif %}
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                                        <button type="submit" class="dropdown-item text-danger">Sair</button>
+                                    </form>
+                                </li>
                             </ul>
                         </li>
                     {% else %}
@@ -776,6 +816,10 @@
 
     {% include 'partials/pwa_ios_modal.html' %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/csrf.js') }}?v=1"></script>
+    {% if current_user.is_authenticated %}
+    <script src="{{ url_for('static', filename='js/notifications.js') }}?v=2"></script>
+    {% endif %}
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script>
     /* ── CHORD DIAGRAMS / ARPEGGIOS ───────────────────── */

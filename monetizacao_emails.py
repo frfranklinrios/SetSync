@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from flask import current_app, url_for
+from flask import current_app
 from flask_mail import Message
+from security import external_url_for
 
 
 def _send(recipients: list[str], subject: str, html: str, body: str) -> None:
@@ -18,7 +19,7 @@ def _send(recipients: list[str], subject: str, html: str, body: str) -> None:
 
 
 def send_voucher_expirado_email(email: str, plano_nome: str) -> None:
-    link = url_for('assinatura_bp.planos', _external=True)
+    link = external_url_for('assinatura_bp.planos')
     subject = 'Seu período gratuito no SetSync acabou'
     body = (
         f'Seu acesso ao plano {plano_nome} no SetSync terminou.\n\n'
@@ -34,7 +35,7 @@ def send_voucher_expirado_email(email: str, plano_nome: str) -> None:
 
 
 def send_voucher_aviso_email(email: str, plano_nome: str, dias_restantes: int) -> None:
-    link = url_for('assinatura_bp.planos', _external=True)
+    link = external_url_for('assinatura_bp.planos')
     subject = f'Seu acesso {plano_nome} vence em {dias_restantes} dias'
     body = (
         f'Seu acesso Pro no SetSync vence em {dias_restantes} dias. '

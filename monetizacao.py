@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from db import (
@@ -228,6 +228,149 @@ def _formatar_data_curta(dt: datetime | None) -> str:
     return dt.strftime('%d/%m/%Y')
 
 
+def _agora_utc() -> datetime:
+    return datetime.utcnow()
+
+
+def _dias_calendario(de: datetime, ate: datetime) -> int:
+    """Diferença em dias de calendário (fim − início)."""
+    return (ate.date() - de.date()).days
+
+
+def _texto_dias_restantes(dias: int, fim: datetime | None) -> str:
+    fim_txt = _formatar_data_curta(fim)
+    if dias > 30:
+        return f'Restam {dias} dias (até {fim_txt})'
+    if dias > 1:
+        return f'Restam {dias} dias'
+    if dias == 1:
+        return f'Vence amanhã ({fim_txt})'
+    if dias == 0:
+        return f'Vence hoje ({fim_txt})'
+    if dias == -1:
+        return f'Venceu ontem ({fim_txt})'
+    return f'Venceu há {abs(dias)} dias ({fim_txt})'
+
+
+def _urgencia_periodo(dias_restantes: int, status: str) -> str:
+    if status == 'expirado' or dias_restantes < 0:
+        return 'expirado'
+    if dias_restantes <= 3:
+        return 'critico'
+    if dias_restantes <= 14:
+        return 'atencao'
+    return 'ok'
+
+
+def sincronizar_voucher_vencido(assinatura: Assinatura) -> Assinatura:
+    """Rebaixa voucher expirado na leitura (não depende só do cron diário)."""
+    if assinatura.status != 'voucher':
+        return assinatura
+    expira = assinatura.data_proxima_cobranca
+    if not expira or expira > _agora_utc():
+        return assinatura
+    from db import get_assinatura, update_assinatura
+
+    agora = _agora_utc().strftime('%Y-%m-%d %H:%M:%S')
+    update_assinatura(
+        assinatura.banda_id,
+        plano=PLANO_GRATIS,
+        status='expirado',
+        data_cancelamento=agora,
+    )
+    row = get_assinatura(assinatura.banda_id)
+    return Assinatura(row) if row else assinatura
+
+
+def periodo_assinatura_ui(assinatura: Assinatura) -> dict[str, Any]:
+    """Metadados de período (promo, assinatura paga) para templates."""
+    vazio: dict[str, Any] = {
+        'tem_periodo': False,
+        'tipo': None,
+        'inicio': None,
+        'fim': None,
+        'dias_restantes': None,
+        'dias_totais': None,
+        'progresso_pct': None,
+        'urgencia': 'ok',
+        'texto_restante': '',
+        'texto_detalhe': '',
+    }
+    status = assinatura.status
+    agora = _agora_utc()
+
+    if status == 'voucher':
+        inicio = assinatura.data_inicio
+        fim = assinatura.data_proxima_cobranca
+        if not fim:
+            return vazio
+        if not inicio:
+            inicio = fim - timedelta(days=max(_dias_calendario(agora, fim), 1))
+        dias_totais = max(1, _dias_calendario(inicio, fim))
+        dias_restantes = _dias_calendario(agora, fim)
+        dias_decorridos = min(dias_totais, max(1, _dias_calendario(inicio, agora) + 1))
+        progresso = min(100, max(1 if dias_decorridos > 0 else 0, round(100 * dias_decorridos / dias_totais)))
+        urgencia = _urgencia_periodo(dias_restantes, status)
+        nome = PLANOS.get(assinatura.plano, PLANOS[PLANO_GRATIS]).nome
+        return {
+            'tem_periodo': True,
+            'tipo': 'voucher',
+            'inicio': _formatar_data_curta(inicio),
+            'fim': _formatar_data_curta(fim),
+            'dias_restantes': dias_restantes,
+            'dias_totais': dias_totais,
+            'dias_decorridos': dias_decorridos,
+            'progresso_pct': progresso,
+            'urgencia': urgencia,
+            'texto_restante': _texto_dias_restantes(dias_restantes, fim),
+            'texto_dia': f'Dia {dias_decorridos} de {dias_totais}',
+            'texto_detalhe': (
+                f'Período promocional {nome} · {_formatar_data_curta(inicio)} — {_formatar_data_curta(fim)}'
+            ),
+        }
+
+    if assinatura.plano in PLANOS_PAGOS and status == STATUS_ATIVA:
+        proxima = assinatura.data_proxima_cobranca
+        if not proxima:
+            return vazio
+        dias_restantes = _dias_calendario(agora, proxima)
+        nome = PLANOS.get(assinatura.plano, PLANOS[PLANO_PRO]).nome
+        return {
+            'tem_periodo': True,
+            'tipo': 'assinatura',
+            'inicio': _formatar_data_curta(assinatura.data_inicio),
+            'fim': _formatar_data_curta(proxima),
+            'dias_restantes': dias_restantes,
+            'dias_totais': None,
+            'progresso_pct': None,
+            'urgencia': _urgencia_periodo(dias_restantes, status),
+            'texto_restante': (
+                f'Próxima cobrança em {_formatar_data_curta(proxima)}'
+                if dias_restantes > 7
+                else _texto_dias_restantes(dias_restantes, proxima).replace('Vence', 'Renova')
+            ),
+            'texto_detalhe': f'Assinatura {nome} ativa',
+        }
+
+    if status == 'expirado':
+        fim = assinatura.data_proxima_cobranca or assinatura.data_cancelamento
+        dias_restantes = _dias_calendario(agora, fim) if fim else -1
+        return {
+            'tem_periodo': True,
+            'tipo': 'expirado',
+            'inicio': _formatar_data_curta(assinatura.data_inicio),
+            'fim': _formatar_data_curta(fim),
+            'dias_restantes': dias_restantes,
+            'dias_totais': None,
+            'progresso_pct': 100,
+            'urgencia': 'expirado',
+            'texto_restante': _texto_dias_restantes(dias_restantes, fim),
+            'texto_detalhe': 'Período promocional encerrado — assine para continuar no Pro',
+        }
+
+    return vazio
+
+
 def plano_badge_ui(banda_id: str) -> dict[str, Any]:
     """
     Dados para exibir o plano da banda na UI (badge Bootstrap + texto).
@@ -236,40 +379,56 @@ def plano_badge_ui(banda_id: str) -> dict[str, Any]:
     plano = assinatura.plano
     status = assinatura.status
     nome = PLANOS.get(plano, PLANOS[PLANO_GRATIS]).nome
+    periodo = periodo_assinatura_ui(assinatura)
     badge = 'secondary'
     label = nome
+    label_curto = nome
 
     if status == 'voucher':
-        badge = 'success'
-        label = f'{nome} · período promocional'
-        expira = assinatura.data_proxima_cobranca
-        if expira:
-            label += f' (até {_formatar_data_curta(expira)})'
+        badge = {'ok': 'success', 'atencao': 'warning', 'critico': 'danger'}.get(
+            periodo.get('urgencia'), 'success',
+        )
+        label_curto = f'{nome} · promocional'
+        label = label_curto
+        if periodo.get('texto_restante'):
+            label = f'{label_curto} · {periodo["texto_restante"]}'
     elif plano == PLANO_PRO and status == STATUS_ATIVA:
         badge = 'primary'
+        label_curto = 'Pro'
         label = 'Pro'
+        if periodo.get('texto_restante'):
+            label = f'Pro · {periodo["texto_restante"]}'
     elif plano == PLANO_WORSHIP and status == STATUS_ATIVA:
         badge = 'info'
+        label_curto = 'Worship'
         label = 'Worship'
+        if periodo.get('texto_restante'):
+            label = f'Worship · {periodo["texto_restante"]}'
     elif status == STATUS_INADIMPLENTE:
         badge = 'warning'
         label = f'{nome} · pagamento pendente'
+        label_curto = label
     elif status == STATUS_CANCELADA:
         badge = 'secondary'
         label = 'Grátis · assinatura cancelada'
+        label_curto = 'Grátis'
     elif status == 'expirado':
         badge = 'secondary'
-        label = 'Grátis · promoção encerrada'
+        label_curto = 'Grátis · promo encerrada'
+        label = periodo.get('texto_restante') or label_curto
     elif plano == PLANO_GRATIS:
         badge = 'secondary'
         label = 'Grátis'
+        label_curto = 'Grátis'
 
     return {
         'label': label,
+        'label_curto': label_curto,
         'badge': badge,
         'plano_id': plano,
         'status': status,
         'premium': assinatura.tem_acesso_premium(),
+        'periodo': periodo,
     }
 
 
@@ -303,7 +462,8 @@ def get_assinatura_banda(banda_id: str) -> Assinatura:
     """Retorna a assinatura da banda; cria grátis se não existir."""
     row = get_assinatura(banda_id)
     if row:
-        return Assinatura(row)
+        assinatura = Assinatura(row)
+        return sincronizar_voucher_vencido(assinatura)
     from db import create_assinatura_gratis
 
     row = create_assinatura_gratis(banda_id)
