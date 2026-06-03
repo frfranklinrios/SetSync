@@ -1022,7 +1022,7 @@ def get_band_vocalists(band_id: str) -> list[dict]:
     c = db.cursor()
     c.execute(
         '''SELECT * FROM band_vocalists WHERE band_id = ?
-           ORDER BY sort_order, name COLLATE NOCASE''',
+           ORDER BY sort_order, LOWER(name)''',
         (band_id,),
     )
     rows = [ _vocalist_row_dict(r) for r in c.fetchall() ]
