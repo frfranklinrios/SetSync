@@ -54,7 +54,7 @@
         <span class="setlist-public-link-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
         <span class="setlist-public-link-summary-text">
             <span class="setlist-public-link-title"><i class="fas fa-link me-1"></i> Compartilhamento público</span>
-            <span class="text-muted setlist-public-link-sub">Lista de músicas e impressão (cifras)</span>
+            <span class="text-muted setlist-public-link-sub">Página pública da programação</span>
         </span>
         {% if public_share_enabled %}
         <span class="badge text-bg-success ms-auto">Ativo</span>
@@ -65,17 +65,17 @@
 
     <div class="setlist-public-link-body">
         <p class="text-muted mb-3" style="font-size:0.82rem;">
-            Compartilhe links ou QR Codes. A lista de músicas atualiza em tempo real; a impressão traz cifras e folha de palco.
+            O link principal abre uma <strong>página no celular</strong> com a programação (ordem, tom, vocalista), atualizada em tempo real — sem cifras.
         </p>
 
-        {% if public_share_enabled and public_letras_url %}
-        <p class="fw-semibold mb-2" style="font-size:0.84rem;"><i class="fas fa-list-ol me-1"></i> Lista de músicas (tempo real)</p>
-        <div class="public-letras-share-row mb-4">
+        {% if public_share_enabled and public_lista_url %}
+        <p class="fw-semibold mb-2" style="font-size:0.84rem;"><i class="fas fa-mobile-alt me-1"></i> Página pública (programação)</p>
+        <div class="public-letras-share-row mb-3">
             <div class="public-letras-qr-wrap">
-                <img src="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='letras') }}"
-                     width="140" height="140" alt="QR Code — lista de músicas"
+                <img src="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='lista') }}"
+                     width="140" height="140" alt="QR Code — página pública"
                      class="public-letras-qr">
-                <a href="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='letras', download=1) }}"
+                <a href="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='lista', download=1) }}"
                    class="btn btn-outline-secondary btn-sm mt-2 w-100">
                     <i class="fas fa-download me-1"></i> Baixar QR
                 </a>
@@ -83,42 +83,46 @@
             <div class="public-letras-link-wrap">
                 <div class="input-group input-group-sm mb-2">
                     <input type="text" class="form-control js-public-url" readonly
-                           value="{{ public_letras_url }}" aria-label="Link lista de músicas">
+                           value="{{ public_lista_url }}" aria-label="Link da página pública">
                     <button type="button" class="btn btn-outline-primary js-public-copy">
                         <i class="fas fa-copy me-1"></i> Copiar
                     </button>
                 </div>
-                <a href="{{ public_letras_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
-                    <i class="fas fa-external-link-alt me-1"></i> Abrir lista
+                <a href="{{ public_lista_url }}" class="btn btn-primary btn-sm" target="_blank" rel="noopener">
+                    <i class="fas fa-external-link-alt me-1"></i> Abrir página
                 </a>
             </div>
         </div>
 
         {% if public_imprimir_url %}
-        <p class="fw-semibold mb-2" style="font-size:0.84rem;"><i class="fas fa-print me-1"></i> Impressão (folha de palco + cifras)</p>
-        <div class="public-letras-share-row mb-3">
-            <div class="public-letras-qr-wrap">
-                <img src="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='imprimir') }}"
-                     width="140" height="140" alt="QR Code — impressão"
-                     class="public-letras-qr">
-                <a href="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='imprimir', download=1) }}"
-                   class="btn btn-outline-secondary btn-sm mt-2 w-100">
-                    <i class="fas fa-download me-1"></i> Baixar QR
-                </a>
-            </div>
-            <div class="public-letras-link-wrap">
-                <div class="input-group input-group-sm mb-2">
-                    <input type="text" class="form-control js-public-url" readonly
-                           value="{{ public_imprimir_url }}" aria-label="Link impressão">
-                    <button type="button" class="btn btn-outline-primary js-public-copy">
-                        <i class="fas fa-copy me-1"></i> Copiar
-                    </button>
+        <details class="setlist-public-print-details mb-2">
+            <summary class="text-muted" style="font-size:0.84rem; cursor:pointer;">
+                <i class="fas fa-print me-1"></i> Impressão com cifras (opcional, link separado)
+            </summary>
+            <div class="public-letras-share-row mt-3">
+                <div class="public-letras-qr-wrap">
+                    <img src="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='imprimir') }}"
+                         width="120" height="120" alt="QR Code — impressão"
+                         class="public-letras-qr">
+                    <a href="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='imprimir', download=1) }}"
+                       class="btn btn-outline-secondary btn-sm mt-2 w-100">
+                        <i class="fas fa-download me-1"></i> Baixar QR
+                    </a>
                 </div>
-                <a href="{{ public_imprimir_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
-                    <i class="fas fa-external-link-alt me-1"></i> Abrir impressão
-                </a>
+                <div class="public-letras-link-wrap">
+                    <div class="input-group input-group-sm mb-2">
+                        <input type="text" class="form-control js-public-url" readonly
+                               value="{{ public_imprimir_url }}" aria-label="Link impressão">
+                        <button type="button" class="btn btn-outline-secondary js-public-copy">
+                            <i class="fas fa-copy me-1"></i> Copiar
+                        </button>
+                    </div>
+                    <a href="{{ public_imprimir_url }}" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener">
+                        <i class="fas fa-print me-1"></i> Abrir impressão
+                    </a>
+                </div>
             </div>
-        </div>
+        </details>
         {% endif %}
         {% endif %}
 

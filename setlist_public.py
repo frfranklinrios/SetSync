@@ -241,8 +241,10 @@ def public_share_urls(token: str) -> dict[str, str]:
     from security import external_url_for
 
     t = (token or '').strip()
+    lista = external_url_for('setlists.public_compartilhar', token=t)
     return {
-        'letras': external_url_for('setlists.public_letras', token=t),
+        'lista': lista,
+        'letras': lista,  # compat: links/QR antigos com dest=letras
         'imprimir': external_url_for('setlists.public_imprimir', token=t),
     }
 

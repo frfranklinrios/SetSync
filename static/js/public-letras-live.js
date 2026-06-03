@@ -1,10 +1,10 @@
 /**
- * Atualização em tempo real da página pública (lista de músicas).
+ * Atualização em tempo real da página pública (/compartilhar/).
  */
 (function () {
   "use strict";
 
-  var cfg = window.PUBLIC_LETRAS;
+  var cfg = window.PUBLIC_SETLIST || window.PUBLIC_LETRAS;
   if (!cfg || !cfg.token) return;
 
   var POLL_MS = 4000;
@@ -30,9 +30,18 @@
     return n + " música" + (n === 1 ? "" : "s");
   }
 
+  function pollUrl() {
+    if (cfg.pollUrl) return cfg.pollUrl;
+    return (
+      "/setlists/compartilhar/" +
+      encodeURIComponent(cfg.token) +
+      "/dados.json"
+    );
+  }
+
   function renderSong(song) {
     var art = song.artista
-      ? '<span class="pl-artist">' + esc(song.artista) + "</span>"
+      ? '<p class="pl-artist">' + esc(song.artista) + "</p>"
       : "";
     var meta = "";
     if (song.display_key) {
@@ -44,22 +53,24 @@
     }
 
     return (
-      '<li class="pl-setlist-item" id="musica-' +
+      '<article class="pl-song" id="musica-' +
       song.index +
       '">' +
+      '<header class="pl-song-hd">' +
       '<span class="pl-num">' +
       song.index +
       "</span>" +
       '<div class="pl-song-titles">' +
-      '<span class="pl-song-title">' +
+      "<h2>" +
       esc(song.titulo) +
-      "</span>" +
+      "</h2>" +
       art +
       "</div>" +
       '<div class="pl-song-meta">' +
       meta +
       "</div>" +
-      "</li>"
+      "</header>" +
+      "</article>"
     );
   }
 
@@ -69,7 +80,7 @@
     }
     if (titleEl && data.setlist) {
       titleEl.textContent = data.setlist.name || "";
-      document.title = (data.setlist.name || "Setlist") + " — Setlist";
+      document.title = (data.setlist.name || "Setlist") + " — Programação";
     }
     if (descEl && data.setlist) {
       var d = (data.setlist.description || "").trim();
@@ -99,10 +110,7 @@
       return;
     }
 
-    mainEl.innerHTML =
-      '<ol class="pl-setlist">' +
-      data.songs.map(renderSong).join("") +
-      "</ol>";
+    mainEl.innerHTML = data.songs.map(renderSong).join("");
   }
 
   function flashUpdated() {
@@ -118,9 +126,8 @@
     if (inFlight || document.hidden) return;
     inFlight = true;
     var url =
-      "/setlists/letras/" +
-      encodeURIComponent(cfg.token) +
-      "/dados.json?r=" +
+      pollUrl() +
+      "?r=" +
       encodeURIComponent(revision || "");
 
     fetch(url, { credentials: "omit", cache: "no-store" })

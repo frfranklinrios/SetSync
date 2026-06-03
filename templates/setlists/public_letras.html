@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>{{ setlist.name }} — Setlist</title>
+    <title>{{ setlist.name }} — Programação</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=5">
 </head>
-<body>
+<body class="pl-page-lista">
 <header class="pl-header">
     <div class="pl-brand">
         {% if band_logo_data_uri %}
@@ -32,13 +32,13 @@
 
 <main class="pl-main" id="pl-songs-root">
     {% if songs %}
-    <ol class="pl-setlist">
-        {% for song in songs %}
-        <li class="pl-setlist-item" id="musica-{{ song.index }}">
+    {% for song in songs %}
+    <article class="pl-song" id="musica-{{ song.index }}">
+        <header class="pl-song-hd">
             <span class="pl-num">{{ song.index }}</span>
             <div class="pl-song-titles">
-                <span class="pl-song-title">{{ song.titulo }}</span>
-                {% if song.artista %}<span class="pl-artist">{{ song.artista }}</span>{% endif %}
+                <h2>{{ song.titulo }}</h2>
+                {% if song.artista %}<p class="pl-artist">{{ song.artista }}</p>{% endif %}
             </div>
             <div class="pl-song-meta">
                 {% if song.display_key %}
@@ -48,9 +48,9 @@
                 <span class="pl-vox">{{ song.vocalist_name }}</span>
                 {% endif %}
             </div>
-        </li>
-        {% endfor %}
-    </ol>
+        </header>
+    </article>
+    {% endfor %}
     {% else %}
     <div class="pl-empty">
         <p>Nenhuma música na setlist no momento.</p>
@@ -64,11 +64,12 @@
 </footer>
 
 <script>
-window.PUBLIC_LETRAS = {
+window.PUBLIC_SETLIST = {
     token: {{ public_token|tojson }},
-    revision: {{ public_revision|tojson }}
+    revision: {{ public_revision|tojson }},
+    pollUrl: {{ url_for('setlists.public_compartilhar_data', token=public_token)|tojson }}
 };
 </script>
-<script src="{{ url_for('static', filename='js/public-letras-live.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/public-letras-live.js') }}?v=3"></script>
 </body>
 </html>
