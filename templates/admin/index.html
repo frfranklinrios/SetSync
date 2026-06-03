@@ -138,12 +138,8 @@
 
     <div class="tab-pane fade" id="tab-users">
         <div class="alert alert-secondary py-2 mb-3" style="font-size:0.85rem;">
-            Administradores são definidos só no <strong>.env</strong> do servidor (sem mudança no banco):
-            <code class="d-block mt-1">SETSYNC_SUPERADMIN_USERNAMES={{ env_users or 'usuario1,usuario2' }}</code>
-            {% if env_emails %}
-            <code class="d-block">SETSYNC_SUPERADMIN_EMAILS={{ env_emails }}</code>
-            {% endif %}
-            Reinicie o app após editar o .env na Contabo.
+            Administradores globais são configurados no servidor (<code>SETSYNC_SUPERADMIN_*</code>), sem alteração no banco.
+            Reinicie o aplicativo após mudar essa configuração.
         </div>
         <div class="card">
             <div class="table-responsive">
@@ -165,7 +161,7 @@
                             <td>{{ (u.created_at or '')[:10] }}</td>
                             <td>
                                 {% if u.is_env_admin %}
-                                <span class="admin-badge-sa">Sim (.env)</span>
+                                <span class="admin-badge-sa">Sim</span>
                                 {% else %}
                                 <span class="text-muted">Não</span>
                                 {% endif %}
