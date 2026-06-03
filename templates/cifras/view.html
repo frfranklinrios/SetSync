@@ -205,6 +205,7 @@
                 {% endif %}
                 {% if is_admin %}
                 <form action="{{ url_for('cifras.delete', cifra_id=cifra.id) }}" method="POST" class="d-inline">
+                    {% include 'partials/csrf_input.html' %}
                     <button type="submit" class="btn btn-sm btn-outline-danger"
                             onclick="return confirm('Deletar esta cifra?')">Deletar</button>
                 </form>

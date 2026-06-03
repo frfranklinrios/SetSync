@@ -20,6 +20,7 @@
 {% endif %}
 
 <form method="post" class="mb-3">
+    {% include 'partials/csrf_input.html' %}
     <button type="submit" class="btn btn-primary">Gerar código de indicação</button>
 </form>
 

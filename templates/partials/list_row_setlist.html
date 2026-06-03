@@ -19,6 +19,7 @@
         {% if is_admin %}
         <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
               onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
+            {% include 'partials/csrf_input.html' %}
             <button type="submit" class="icon-btn danger" title="Excluir">
                 <i class="fas fa-trash"></i>
             </button>
@@ -33,6 +34,7 @@
         {% if is_admin %}
         <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
               onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
+            {% include 'partials/csrf_input.html' %}
             <button type="submit" class="icon-btn danger" title="Excluir">
                 <i class="fas fa-trash"></i>
             </button>

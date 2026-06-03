@@ -23,6 +23,7 @@
         </a>
         <form action="{{ url_for('cifras.delete', cifra_id=cifra.id) }}" method="POST" class="d-inline"
               onsubmit="return confirm('Excluir {{ cifra.titulo }}?')">
+            {% include 'partials/csrf_input.html' %}
             <button type="submit" class="icon-btn danger" title="Excluir">
                 <i class="fas fa-trash"></i>
             </button>

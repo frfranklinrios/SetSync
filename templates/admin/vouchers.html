@@ -8,6 +8,7 @@
     <div class="card-header">Criar voucher</div>
     <div class="card-body">
         <form method="post" action="{{ url_for('assinatura_bp.admin_vouchers_criar') }}" id="form-criar-voucher">
+            {% include 'partials/csrf_input.html' %}
             <div class="row g-3 align-items-end mb-3">
                 <div class="col-sm-6 col-md-3">
                     <label class="form-label">Prefixo do código</label>
@@ -87,6 +88,7 @@
                 <td class="text-nowrap">
                     {% if v.ativo %}
                     <form method="post" action="{{ url_for('assinatura_bp.admin_vouchers_desativar', codigo=v.codigo) }}" class="d-inline">
+                        {% include 'partials/csrf_input.html' %}
                         <button type="submit" class="btn btn-sm btn-outline-danger">Desativar</button>
                     </form>
                     {% endif %}

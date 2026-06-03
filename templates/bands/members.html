@@ -44,6 +44,7 @@
                     <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
                           method="POST" class="d-inline"
                           onsubmit="return confirm('Remover {{ member.display_name or member.username }} da banda?')">
+                        {% include 'partials/csrf_input.html' %}
                         <button type="submit" class="icon-btn danger" title="Remover">
                             <i class="fas fa-user-minus"></i>
                         </button>
@@ -76,6 +77,7 @@
             <div class="card-header">Por e-mail (já cadastrado)</div>
             <div class="card-body">
                 <form action="{{ url_for('bands.invite', band_id=band.id) }}" method="POST">
+                    {% include 'partials/csrf_input.html' %}
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
                         <input type="email" class="form-control" id="email" name="email" required

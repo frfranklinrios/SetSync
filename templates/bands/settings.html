@@ -20,6 +20,7 @@
             <div class="card-header">Informações da Banda</div>
             <div class="card-body">
                 <form method="POST">
+                    {% include 'partials/csrf_input.html' %}
                     <input type="hidden" name="action" value="save_band">
                     <div class="mb-3">
                         <label for="name" class="form-label">Nome da Banda</label>
@@ -48,6 +49,7 @@
                          style="max-height:72px; max-width:220px; object-fit:contain; border-radius:6px; background:var(--surface-2, #f3f4f6); padding:6px;">
                     <form method="POST" class="d-inline"
                           onsubmit="return confirm('Remover o logo desta banda?')">
+                        {% include 'partials/csrf_input.html' %}
                         <input type="hidden" name="action" value="remove_logo">
                         <button type="submit" class="btn btn-outline-danger btn-sm">
                             <i class="fas fa-trash me-1"></i> Remover logo
@@ -58,6 +60,7 @@
                 <p class="text-muted mb-3" style="font-size:0.85rem;">Nenhum logo enviado.</p>
                 {% endif %}
                 <form method="POST" enctype="multipart/form-data" class="{% if band_has_logo %}border-top pt-3{% endif %}">
+                    {% include 'partials/csrf_input.html' %}
                     <input type="hidden" name="action" value="upload_logo">
                     <div class="mb-3">
                         <label for="band_logo" class="form-label">
@@ -93,6 +96,7 @@
                         </div>
                         <form method="POST" class="d-inline"
                               onsubmit="return confirm('Remover {{ v.name }} da lista de cantoras/cantores?')">
+                            {% include 'partials/csrf_input.html' %}
                             <input type="hidden" name="action" value="delete_vocalist">
                             <input type="hidden" name="vocalist_id" value="{{ v.id }}">
                             <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -107,6 +111,7 @@
                 {% endif %}
 
                 <form method="POST" class="border-top pt-3">
+                    {% include 'partials/csrf_input.html' %}
                     <input type="hidden" name="action" value="add_vocalist">
                     <div class="mb-3">
                         <label for="vocalist_names" class="form-label">Adicionar cantoras/cantores</label>
@@ -183,6 +188,7 @@
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
                 <form action="{{ url_for('bands.delete', band_id=band.id) }}" method="POST" style="display:inline;">
+                    {% include 'partials/csrf_input.html' %}
                     <button type="submit" class="btn btn-danger btn-sm">
                         <i class="fas fa-trash me-1"></i> Confirmar Exclusão
                     </button>

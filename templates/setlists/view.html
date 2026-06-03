@@ -41,6 +41,7 @@
         </a>
         <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
               onsubmit="return confirm('Excluir esta setlist? Esta ação não pode ser desfeita.')">
+            {% include 'partials/csrf_input.html' %}
             <button type="submit" class="btn btn-outline-danger btn-sm">
                 <i class="fas fa-trash me-1"></i> Excluir
             </button>
@@ -98,6 +99,7 @@
         <div class="d-flex flex-wrap gap-2">
             {% if not public_share_enabled %}
             <form method="POST" action="{{ url_for('setlists.public_link_manage', setlist_id=setlist.id) }}">
+                {% include 'partials/csrf_input.html' %}
                 <input type="hidden" name="action" value="enable">
                 <button type="submit" class="btn btn-primary btn-sm">
                     <i class="fas fa-globe me-1"></i> Ativar link
@@ -106,6 +108,7 @@
             {% else %}
             <form method="POST" action="{{ url_for('setlists.public_link_manage', setlist_id=setlist.id) }}"
                   onsubmit="return confirm('Gerar novo link? O link atual deixará de funcionar.');">
+                {% include 'partials/csrf_input.html' %}
                 <input type="hidden" name="action" value="rotate">
                 <button type="submit" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-sync-alt me-1"></i> Novo link
@@ -113,6 +116,7 @@
             </form>
             <form method="POST" action="{{ url_for('setlists.public_link_manage', setlist_id=setlist.id) }}"
                   onsubmit="return confirm('Desativar o link público?');">
+                {% include 'partials/csrf_input.html' %}
                 <input type="hidden" name="action" value="disable">
                 <button type="submit" class="btn btn-outline-danger btn-sm">
                     <i class="fas fa-ban me-1"></i> Desativar
@@ -275,6 +279,7 @@
             <form action="{{ url_for('setlists.remove_cifra', setlist_id=setlist.id, cifra_id=cifra.id) }}"
                   method="POST" class="d-inline"
                   onsubmit="return confirm('Remover da setlist?')">
+                {% include 'partials/csrf_input.html' %}
                 <button type="submit" class="icon-btn danger" title="Remover da setlist">
                     <i class="fas fa-times"></i>
                 </button>

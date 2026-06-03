@@ -70,6 +70,7 @@
 <p class="text-muted mb-4" style="font-size:.875rem;">{{ band.name }}</p>
 
 <form method="POST" id="cifra-form" class="mt-2">
+    {% include 'partials/csrf_input.html' %}
     <input type="hidden" name="cifra_json" id="cifra_json_hidden">
     <input type="hidden" name="grade_json" id="grade_json_hidden">
     <input type="hidden" name="duracao_seg" id="duracao_seg_hidden">

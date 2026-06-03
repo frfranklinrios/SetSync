@@ -3,13 +3,22 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+# Test client: HTTP local + sem redirect canônico (cookie de sessão usa host localhost).
+os.environ.setdefault('SESSION_COOKIE_SECURE', '0')
+os.environ['SETSYNC_CANONICAL_URL'] = ''
+
 FAILURES: list[str] = []
+
+# Redirecionamento para login ou host canônico (sem 5xx)
+AUTH_REDIRECT = frozenset({301, 302, 303, 307, 308})
 
 
 def ok(msg: str) -> None:
@@ -23,6 +32,40 @@ def fail(msg: str) -> None:
 
 def check(cond: bool, msg: str) -> None:
     (ok if cond else fail)(msg)
+
+
+def canonical_request_headers() -> dict[str, str]:
+    """Headers opcionais quando SETSYNC_CANONICAL_URL está definido (smoke em produção real)."""
+    base = (os.getenv('SETSYNC_CANONICAL_URL') or '').strip()
+    if base:
+        host = urlparse(base).hostname
+        if host:
+            return {'Host': host}
+    return {}
+
+
+def csrf_api_headers(app) -> dict[str, str]:
+    headers = canonical_request_headers()
+    with app.app_context():
+        from flask_wtf.csrf import generate_csrf
+
+        headers['X-CSRFToken'] = generate_csrf()
+    return headers
+
+
+def load_smoke_user() -> dict:
+    from db import get_db, get_user_by_username
+
+    for uname in ('frfranklin.rios', 'franklin', 'tiagofl'):
+        u = get_user_by_username(uname)
+        if u:
+            return u
+    c = get_db().cursor()
+    c.execute('SELECT * FROM users LIMIT 1')
+    row = c.fetchone()
+    if not row:
+        raise RuntimeError('Nenhum usuário no banco para smoke')
+    return dict(row)
 
 
 def main() -> int:
@@ -91,24 +134,72 @@ def main() -> int:
     for rel in static_files:
         check((ROOT / rel).is_file(), rel)
 
-    print("\n=== Test client (rotas protegidas redirecionam sem login) ===")
-    with app.test_client() as client:
-        for path in ("/cifras/import/tool", "/cifras/import/api/processar-cifra"):
-            r = client.get(path) if path.endswith("tool") else client.post(
-                path, json={"url_cifra": "https://example.com"}
+    post_templates = [
+        "templates/login.html",
+        "templates/cifras/add.html",
+        "templates/bands/settings.html",
+        "templates/setlists/view.html",
+    ]
+    for rel in post_templates:
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        if 'method="POST"' in text or "method='POST'" in text:
+            check(
+                'csrf_input.html' in text or 'name="csrf_token"' in text,
+                f"{rel} inclui CSRF nos formulários POST",
             )
-            check(r.status_code in (302, 401, 403), f"{path} sem sessão -> {r.status_code}")
 
+    print("\n=== Test client (rotas protegidas redirecionam sem login) ===")
+    app.config['TESTING'] = True
+    req_headers = canonical_request_headers()
+    host_label = req_headers.get('Host') or 'localhost (sem redirect canônico no smoke)'
+    ok(f"Host de teste: {host_label}")
+
+    with app.test_client() as client:
+        r = client.get(
+            "/cifras/import/tool",
+            headers=req_headers,
+            follow_redirects=False,
+        )
+        check(
+            r.status_code in AUTH_REDIRECT or r.status_code in (401, 403),
+            f"/cifras/import/tool sem sessão -> {r.status_code}",
+        )
+
+        r = client.post(
+            "/cifras/import/api/processar-cifra",
+            json={"url_cifra": "https://example.com"},
+            headers=csrf_api_headers(app),
+            follow_redirects=False,
+        )
+        check(
+            r.status_code in AUTH_REDIRECT or r.status_code in (400, 401, 403),
+            f"/cifras/import/api/processar-cifra sem sessão -> {r.status_code}",
+        )
+
+        user = load_smoke_user()
+        dn = (user.get('display_name') or '').strip() or user['username']
         with client.session_transaction() as sess:
-            sess["user_id"] = 1
-            sess["username"] = "smoke"
+            sess["user_id"] = user["id"]
+            sess["username"] = user["username"]
+            sess["display_name"] = dn
+            sess["is_superadmin"] = False
 
-        r = client.get("/cifras/import/tool")
+        r = client.get(
+            "/cifras/import/tool",
+            headers=req_headers,
+            follow_redirects=False,
+        )
         check(r.status_code == 200, f"embed tool com sessão -> {r.status_code}")
         body = r.get_data(as_text=True)
-        check("processar-cifra" in body or "processarCifraUrl" in body, "embed referencia API processar-cifra")
+        check(
+            "processar-cifra" in body or "processarCifraUrl" in body,
+            "embed referencia API processar-cifra",
+        )
         check("url_cifra_only" in body, "embed tem campo url_cifra_only")
-        check("YouTube" not in body.lower() or "youtube" not in body.lower(), "embed sem YouTube na UI")
+        check(
+            "YouTube" not in body.lower() or "youtube" not in body.lower(),
+            "embed sem YouTube na UI",
+        )
 
     print("\n=== Bridge postMessage (payload mínimo) ===")
     sample = {

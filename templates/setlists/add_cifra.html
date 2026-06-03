@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Adicionar Música à Setlist: {{ setlist.name }}</h2>
 <form method="POST">
+  {% include 'partials/csrf_input.html' %}
   <div class="mb-3">
     <label for="cifra_id" class="form-label">Escolha a música</label>
     <select class="form-select" id="cifra_id" name="cifra_id" required>

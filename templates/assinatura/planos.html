@@ -63,6 +63,7 @@
                 <p class="small">Por banda · sem limites · exportar PDF</p>
                 {% if banda_id %}
                 <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}">
+                    {% include 'partials/csrf_input.html' %}
                     <input type="hidden" name="banda_id" value="{{ banda_id }}">
                     <button type="submit" class="btn btn-primary w-100"
                             {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
@@ -81,6 +82,7 @@
                 <p class="small">Congregação · múltiplas bandas · sem limites</p>
                 {% if banda_id %}
                 <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='worship') }}">
+                    {% include 'partials/csrf_input.html' %}
                     <input type="hidden" name="banda_id" value="{{ banda_id }}">
                     <button type="submit" class="btn btn-outline-primary w-100"
                             {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
