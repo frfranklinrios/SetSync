@@ -190,6 +190,11 @@ def sucesso():
                 next_charge = body.get('next_payment_date') or body.get('auto_recurring', {}).get('end_date')
                 ativar_assinatura_mp(banda_id, plano, preapproval_id, next_charge)
                 flash('Assinatura ativada com sucesso!', 'success')
+                try:
+                    import admin_notifications as an
+                    an.subscription_activated(banda_id, plano, source='checkout')
+                except Exception:
+                    current_app.logger.exception('Notificação admin (sucesso checkout) falhou')
             else:
                 flash('Pagamento em processamento. Você receberá confirmação em breve.', 'info')
         except Exception as exc:
@@ -253,6 +258,14 @@ def voucher_resgatar():
     ok, msg, info = resgatar_voucher(codigo, banda_id, band['name'])
     if not ok:
         return jsonify({'ok': False, 'erro': msg}), 400
+    import admin_notifications as an
+    an.voucher_redeemed(
+        banda_id,
+        session['user_id'],
+        codigo.upper(),
+        (info or {}).get('plano_nome', 'Pro'),
+        int((info or {}).get('dias') or 0),
+    )
     return jsonify({'ok': True, 'mensagem': msg, 'info': info})
 
 

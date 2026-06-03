@@ -37,7 +37,9 @@ def _serialize(items):
 @login_required
 def api_list():
     user_id = session['user_id']
-    items = list_notifications(user_id, limit=40)
+    from db import is_superadmin
+    limit = 50 if is_superadmin(user_id) else 40
+    items = list_notifications(user_id, limit=limit)
     return jsonify({
         'items': _serialize(items),
         'unread': count_unread_notifications(user_id),

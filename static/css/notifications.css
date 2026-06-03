@@ -83,6 +83,41 @@
     background: var(--surface-elevated);
 }
 
+.ss-notif-sub {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-top: 0.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ss-notif-tag {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #1d4ed8;
+    background: rgba(37, 99, 235, 0.12);
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    border-radius: 4px;
+    padding: 0.05rem 0.35rem;
+    vertical-align: middle;
+    margin-right: 0.25rem;
+}
+
+[data-theme="dark"] .ss-notif-tag {
+    color: #93c5fd;
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+.ss-notif-band {
+    color: var(--accent);
+    font-weight: 600;
+}
+
 [data-theme="dark"] .ss-notif-hd {
     background: var(--surface-elevated);
 }

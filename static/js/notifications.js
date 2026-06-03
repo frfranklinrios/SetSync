@@ -50,11 +50,17 @@
         }
         list.innerHTML = items.map(function (n) {
             var cls = 'ss-notif-item' + (n.read ? '' : ' unread');
+            var isAdmin = (n.type || '').indexOf('admin_') === 0;
+            var tag = isAdmin ? '<span class="ss-notif-tag">Admin</span> ' : '';
+            var meta = '';
+            if (n.band_name) {
+                meta = '<span class="ss-notif-band">' + escapeHtml(n.band_name) + '</span> · ';
+            }
             return (
                 '<button type="button" class="' + cls + '" data-id="' + n.id + '" data-url="' + (n.url || '') + '">' +
-                '<div class="ss-notif-item-title">' + escapeHtml(n.title) + '</div>' +
+                '<div class="ss-notif-item-title">' + tag + escapeHtml(n.title) + '</div>' +
                 '<p class="ss-notif-item-body">' + escapeHtml(n.body) + '</p>' +
-                '<div class="ss-notif-item-time">' + escapeHtml(fmtTime(n.created_at)) + '</div>' +
+                '<div class="ss-notif-item-time">' + meta + escapeHtml(fmtTime(n.created_at)) + '</div>' +
                 '</button>'
             );
         }).join('');

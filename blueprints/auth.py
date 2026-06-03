@@ -208,6 +208,8 @@ def register():
 
         user = get_user(user_id)
         _login_user_session(user)
+        import admin_notifications as an
+        an.user_registered(user_id)
         if invite_band:
             flash(f'Conta criada! Você já está na banda {invite_band["name"]}.', 'success')
         else:
@@ -320,6 +322,8 @@ def google_callback():
                 flash('Erro ao criar conta', 'danger')
                 return redirect(url_for('auth.login'))
             user = get_user(user_id)
+            import admin_notifications as an
+            an.user_registered(user_id)
     
     _login_user_session(user)
     flash(f'Bem-vindo, {session.get("display_name") or user["username"]}!', 'success')

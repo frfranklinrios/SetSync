@@ -51,6 +51,8 @@ def create():
                 return resp
         
         band_id = create_band(name, description, user_id)
+        import admin_notifications as an
+        an.band_created(band_id, user_id)
         flash(f'Banda "{name}" criada com sucesso!', 'success')
         return redirect(url_for('bands.view', band_id=band_id))
     
@@ -261,5 +263,7 @@ def delete(band_id):
 
     name = band['name']
     delete_band(band_id)
+    import admin_notifications as an
+    an.band_deleted(band_id, user_id, name)
     flash(f'Banda "{name}" excluída com sucesso.', 'success')
     return redirect(url_for('bands.list_bands'))

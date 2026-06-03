@@ -123,14 +123,29 @@ def processar_notificacao_mp(topic: str, data_id: str) -> None:
             next_charge = body.get('next_payment_date')
             ativar_assinatura_mp(banda_id, plano, data_id, next_charge)
             logger.info('Assinatura ativada banda=%s plano=%s', banda_id, plano)
+            try:
+                import admin_notifications as an
+                an.subscription_activated(banda_id, plano)
+            except Exception:
+                logger.exception('Notificação admin (assinatura ativa) falhou')
         elif status_mp == 'cancelled':
             update_assinatura(
                 banda_id,
                 status=STATUS_CANCELADA,
                 data_cancelamento=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
             )
+            try:
+                import admin_notifications as an
+                an.subscription_cancelled(banda_id)
+            except Exception:
+                logger.exception('Notificação admin (cancelamento) falhou')
         elif status_mp == 'paused':
             update_assinatura(banda_id, status=STATUS_INADIMPLENTE)
+            try:
+                import admin_notifications as an
+                an.subscription_inadimplente(banda_id)
+            except Exception:
+                logger.exception('Notificação admin (inadimplente) falhou')
 
     elif topic_l == 'payment' or 'payment' in topic_l:
         pay = sdk.payment().get(data_id)
