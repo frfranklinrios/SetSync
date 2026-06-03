@@ -14,7 +14,7 @@
             {% endif %}
             <div class="d-flex align-items-center flex-wrap gap-2">
                 <span class="badge bg-{{ badge }}">{{ label_curto }}</span>
-                {% if p and p.tem_periodo and p.dias_restantes is not none and p.dias_restantes >= 0 %}
+                {% if p and p.tem_periodo and p.tipo != 'voucher_vitalicio' and p.dias_restantes is not none and p.dias_restantes >= 0 %}
                 <span class="plano-periodo-contador">
                     {% if p.dias_restantes > 0 %}
                     <i class="fas fa-clock me-1"></i>{{ p.dias_restantes }} dia{{ 's' if p.dias_restantes != 1 else '' }} restante{{ 's' if p.dias_restantes != 1 else '' }}

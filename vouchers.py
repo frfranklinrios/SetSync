@@ -30,6 +30,25 @@ VOUCHER_INDICACAO_DIAS = 15
 VOUCHER_INDICACAO_MAX_ATIVOS = 5
 STATUS_VOUCHER = 'voucher'
 STATUS_EXPIRADO = 'expirado'
+# Data de expiração usada em voucher_usos / assinatura para acesso sem vencimento
+VOUCHER_VITALICIO_EXPIRA = datetime(2099, 12, 31, 23, 59, 59)
+
+
+def voucher_eh_vitalicio(voucher: dict) -> bool:
+    return bool(voucher.get('eh_vitalicio'))
+
+
+def assinatura_voucher_vitalicia(assinatura: dict | None) -> bool:
+    if not assinatura or assinatura.get('status') != STATUS_VOUCHER:
+        return False
+    fim = _parse_dt(assinatura.get('data_proxima_cobranca'))
+    return fim is not None and fim.year >= 2090
+
+
+def expira_em_para_voucher(voucher: dict, agora: datetime) -> datetime:
+    if voucher_eh_vitalicio(voucher):
+        return VOUCHER_VITALICIO_EXPIRA
+    return agora + timedelta(days=int(voucher['dias']))
 
 
 def gerar_codigo_voucher(prefixo: str | None = None) -> str:
@@ -78,7 +97,10 @@ def validar_resgate_voucher(codigo: str, banda_id: str) -> tuple[bool, str]:
         return False, 'Voucher disponível apenas para plano grátis ou assinatura vencida'
     assinatura = get_assinatura(banda_id)
     if assinatura and assinatura.get('status') == STATUS_VOUCHER:
-        return False, 'Esta banda já possui acesso por voucher ativo'
+        if assinatura_voucher_vitalicia(assinatura):
+            return False, 'Esta banda já possui acesso vitalício'
+        if not voucher_eh_vitalicio(voucher):
+            return False, 'Esta banda já possui acesso por voucher ativo'
     return True, ''
 
 
@@ -91,10 +113,11 @@ def resgatar_voucher(codigo: str, banda_id: str, banda_nome: str) -> tuple[bool,
         return False, msg, None
 
     voucher = get_voucher_by_codigo(codigo.strip().upper())
+    vitalicio = voucher_eh_vitalicio(voucher)
     dias = int(voucher['dias'])
     plano = voucher['plano']
     agora = datetime.utcnow()
-    expira = agora + timedelta(days=dias)
+    expira = expira_em_para_voucher(voucher, agora)
 
     insert_voucher_uso(
         voucher_id=voucher['id'],
@@ -114,7 +137,8 @@ def resgatar_voucher(codigo: str, banda_id: str, banda_nome: str) -> tuple[bool,
     )
 
     info = {
-        'dias': dias,
+        'dias': dias if not vitalicio else None,
+        'vitalicio': vitalicio,
         'plano': plano,
         'plano_nome': PLANOS.get(plano).nome if plano in PLANOS else plano,
         'banda_nome': banda_nome,
@@ -123,7 +147,11 @@ def resgatar_voucher(codigo: str, banda_id: str, banda_nome: str) -> tuple[bool,
     if _is_voucher_indicacao(voucher):
         _recompensa_indicacao(voucher)
 
-    return True, f'{dias} dias de {info["plano_nome"]} ativados para {banda_nome}!', info
+    if vitalicio:
+        msg = f'Acesso vitalício ao {info["plano_nome"]} ativado para {banda_nome}!'
+    else:
+        msg = f'{dias} dias de {info["plano_nome"]} ativados para {banda_nome}!'
+    return True, msg, info
 
 
 def _is_voucher_indicacao(voucher: dict) -> bool:

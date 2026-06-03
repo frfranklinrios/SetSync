@@ -267,6 +267,8 @@ def sincronizar_voucher_vencido(assinatura: Assinatura) -> Assinatura:
     if assinatura.status != 'voucher':
         return assinatura
     expira = assinatura.data_proxima_cobranca
+    if expira and expira.year >= 2090:
+        return assinatura
     if not expira or expira > _agora_utc():
         return assinatura
     from db import get_assinatura, update_assinatura
@@ -304,6 +306,21 @@ def periodo_assinatura_ui(assinatura: Assinatura) -> dict[str, Any]:
         fim = assinatura.data_proxima_cobranca
         if not fim:
             return vazio
+        if fim.year >= 2090:
+            nome = PLANOS.get(assinatura.plano, PLANOS[PLANO_GRATIS]).nome
+            return {
+                'tem_periodo': True,
+                'tipo': 'voucher_vitalicio',
+                'inicio': _formatar_data_curta(inicio),
+                'fim': None,
+                'dias_restantes': None,
+                'dias_totais': None,
+                'progresso_pct': None,
+                'urgencia': 'ok',
+                'texto_restante': 'Acesso vitalício',
+                'texto_dia': None,
+                'texto_detalhe': f'Plano {nome} — sem data de vencimento',
+            }
         if not inicio:
             inicio = fim - timedelta(days=max(_dias_calendario(agora, fim), 1))
         dias_totais = max(1, _dias_calendario(inicio, fim))
@@ -388,7 +405,10 @@ def plano_badge_ui(banda_id: str) -> dict[str, Any]:
         badge = {'ok': 'success', 'atencao': 'warning', 'critico': 'danger'}.get(
             periodo.get('urgencia'), 'success',
         )
-        label_curto = f'{nome} · promocional'
+        if periodo.get('tipo') == 'voucher_vitalicio':
+            label_curto = f'{nome} · vitalício'
+        else:
+            label_curto = f'{nome} · promocional'
         label = label_curto
         if periodo.get('texto_restante'):
             label = f'{label_curto} · {periodo["texto_restante"]}'

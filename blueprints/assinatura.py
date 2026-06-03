@@ -264,7 +264,7 @@ def voucher_resgatar():
         session['user_id'],
         codigo.upper(),
         (info or {}).get('plano_nome', 'Pro'),
-        int((info or {}).get('dias') or 0),
+        int((info or {}).get('dias') or 0) if not (info or {}).get('vitalicio') else 0,
     )
     return jsonify({'ok': True, 'mensagem': msg, 'info': info})
 
@@ -299,7 +299,11 @@ def admin_vouchers_criar():
     if plano not in (PLANO_PRO, PLANO_WORSHIP):
         flash('Plano inválido', 'danger')
         return redirect(url_for('assinatura_bp.admin_vouchers'))
-    dias = int(request.form.get('dias', 30))
+    eh_vitalicio = request.form.get('eh_vitalicio') in ('1', 'on', 'true')
+    dias = 0 if eh_vitalicio else int(request.form.get('dias', 30))
+    if not eh_vitalicio and dias < 1:
+        flash('Informe a quantidade de dias ou marque vitalício', 'danger')
+        return redirect(url_for('assinatura_bp.admin_vouchers'))
     max_usos = request.form.get('max_usos', '').strip()
     max_usos_int = int(max_usos) if max_usos else None
     prefixo = request.form.get('prefixo', '').strip() or None
@@ -312,8 +316,10 @@ def admin_vouchers_criar():
         criado_por_id=session['user_id'],
         max_usos=max_usos_int,
         data_expiracao=data_exp,
+        eh_vitalicio=eh_vitalicio,
     )
-    flash(f'Voucher {codigo} criado!', 'success')
+    tipo = 'vitalício' if eh_vitalicio else f'{dias} dias'
+    flash(f'Voucher {codigo} criado ({tipo})!', 'success')
     return redirect(url_for('assinatura_bp.admin_vouchers'))
 
 

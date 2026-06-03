@@ -159,6 +159,7 @@ def init_db():
     _migrate_vocalists_schema(c)
     _migrate_assinaturas_schema(c)
     _migrate_vouchers_schema(c)
+    _add_column('vouchers', 'eh_vitalicio', 'INTEGER NOT NULL DEFAULT 0')
     _migrate_notifications_schema(c)
     db.commit()
 
@@ -597,6 +598,7 @@ def _migrate_vouchers_schema(c) -> None:
             usos_atual INTEGER NOT NULL DEFAULT 0,
             ativo INTEGER NOT NULL DEFAULT 1,
             eh_indicacao INTEGER NOT NULL DEFAULT 0,
+            eh_vitalicio INTEGER NOT NULL DEFAULT 0,
             data_expiracao TIMESTAMP,
             criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (criado_por_id) REFERENCES users(id)
@@ -625,15 +627,19 @@ def create_voucher(
     max_usos: int | None = None,
     data_expiracao: str | None = None,
     eh_indicacao: bool = False,
+    eh_vitalicio: bool = False,
 ) -> dict:
     vid = str(uuid.uuid4())
     db = get_db()
     c = db.cursor()
     c.execute(
         '''INSERT INTO vouchers
-           (id, codigo, plano, dias, criado_por_id, max_usos, eh_indicacao, data_expiracao)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-        (vid, codigo.upper(), plano, dias, criado_por_id, max_usos, int(eh_indicacao), data_expiracao),
+           (id, codigo, plano, dias, criado_por_id, max_usos, eh_indicacao, eh_vitalicio, data_expiracao)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        (
+            vid, codigo.upper(), plano, dias, criado_por_id, max_usos,
+            int(eh_indicacao), int(eh_vitalicio), data_expiracao,
+        ),
     )
     db.commit()
     db.close()
@@ -651,6 +657,7 @@ def get_voucher_by_codigo(codigo: str) -> dict | None:
     d = dict(row)
     d['ativo'] = bool(d.get('ativo'))
     d['eh_indicacao'] = bool(d.get('eh_indicacao'))
+    d['eh_vitalicio'] = bool(d.get('eh_vitalicio'))
     return d
 
 
@@ -663,6 +670,7 @@ def list_vouchers() -> list[dict]:
     for d in rows:
         d['ativo'] = bool(d.get('ativo'))
         d['eh_indicacao'] = bool(d.get('eh_indicacao'))
+        d['eh_vitalicio'] = bool(d.get('eh_vitalicio'))
     return rows
 
 
@@ -759,7 +767,8 @@ def list_voucher_usos_vencendo(antes_de: str) -> list[dict]:
            JOIN assinaturas a ON a.banda_id = vu.banda_id
            JOIN bands b ON b.id = vu.banda_id
            JOIN users u ON u.id = b.owner_id
-           WHERE vu.expira_em <= ? AND a.status = 'voucher' ''',
+           WHERE vu.expira_em <= ? AND a.status = 'voucher'
+           AND COALESCE(v.eh_vitalicio, 0) = 0''',
         (antes_de,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -779,7 +788,8 @@ def list_voucher_usos_aviso(ate: str) -> list[dict]:
            JOIN bands b ON b.id = vu.banda_id
            JOIN users u ON u.id = b.owner_id
            WHERE a.status = 'voucher' AND vu.aviso_3d_enviado = 0
-           AND vu.expira_em <= ? AND vu.expira_em > datetime('now')''',
+           AND vu.expira_em <= ? AND vu.expira_em > datetime('now')
+           AND COALESCE(v.eh_vitalicio, 0) = 0''',
         (ate,),
     )
     rows = [dict(r) for r in c.fetchall()]
