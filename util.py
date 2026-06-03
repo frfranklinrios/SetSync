@@ -49,13 +49,47 @@ def to_brazilian_chord_notation(chord_str):
     return out
 
 
-def format_text_chords_br(text):
+def prefer_flats_for_tom(tom_original):
+    """True apenas para tons que costumam ser escritos com bemóis (F, Bb, Dm…)."""
+    label = normalize_tom_label(tom_original)
+    root = parse_tom_root(label)
+    if not root:
+        return False
+    if re.match(r'^' + re.escape(root) + r'm$', label, re.I):
+        return label in _FLAT_MINOR_LABELS or label.capitalize() in _FLAT_MINOR_LABELS
+    return root in _FLAT_MAJOR_ROOTS
+
+
+def _spell_root_per_preference(note, prefer_flats):
+    n = _to_br_note(note or '')
+    if prefer_flats or '#' in n:
+        return n
+    return _ENHARMONIC_FLAT_TO_SHARP.get(n, n)
+
+
+def _apply_chord_spelling_preference(chord_str, prefer_flats):
+    parts = _split_chord_root_quality(chord_str)
+    if not parts:
+        return chord_str
+    root, quality, bass = parts
+    root = _spell_root_per_preference(root, prefer_flats)
+    if bass:
+        bass = _spell_root_per_preference(bass, prefer_flats)
+    out = root + quality
+    if bass:
+        out += '/' + bass
+    return out
+
+
+def format_text_chords_br(text, tom_original=None):
     """Padroniza todos os acordes encontrados em um texto."""
     if text is None:
         return ''
+    prefer_flats = prefer_flats_for_tom(tom_original) if tom_original else False
 
     def _fmt(match):
-        return to_brazilian_chord_notation(match.group(1))
+        chord = _apply_chord_spelling_preference(match.group(1), prefer_flats)
+        return to_brazilian_chord_notation(chord)
 
     return re.sub(_CHORD_REGEX_WB, _fmt, str(text))
 
@@ -125,6 +159,14 @@ def chord_components_info(symbol):
 _CHROMATIC_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 _CHROMATIC_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
 
+_FLAT_MAJOR_ROOTS = frozenset({'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'})
+_FLAT_MINOR_LABELS = frozenset({'Dm', 'Gm', 'Cm', 'Fm', 'Bbm', 'Ebm', 'Abm', 'Dbm', 'Gbm'})
+
+_ENHARMONIC_FLAT_TO_SHARP = {
+    'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#',
+    'Cb': 'B', 'Fb': 'E',
+}
+
 
 def _split_chord_root_quality(chord_str):
     m = re.match(r'^([A-G](?:#|b)?)(.*?)(?:/([A-G](?:#|b)?))?$', (chord_str or '').strip())
@@ -157,19 +199,17 @@ def _respell_chord_roots(transposed, original):
     new_root, quality, new_bass = new
 
     prefer_flats = ('b' in orig_root and '#' not in orig_root)
-    prefer_sharps = ('#' in orig_root and 'b' not in orig_root)
-    if prefer_flats or prefer_sharps:
-        idx = _note_semitone_index(new_root)
-        if idx is not None:
-            new_root = _spell_semitone(idx, prefer_flats=prefer_flats)
+    idx = _note_semitone_index(new_root)
+    if idx is not None:
+        new_root = _spell_semitone(idx, prefer_flats=prefer_flats)
 
-    if new_bass and orig_bass:
-        prefer_flats_b = ('b' in orig_bass and '#' not in orig_bass)
-        prefer_sharps_b = ('#' in orig_bass and 'b' not in orig_bass)
-        if prefer_flats_b or prefer_sharps_b:
-            idx_b = _note_semitone_index(new_bass)
-            if idx_b is not None:
-                new_bass = _spell_semitone(idx_b, prefer_flats=prefer_flats_b)
+    if new_bass:
+        prefer_flats_b = bool(
+            orig_bass and 'b' in orig_bass and '#' not in orig_bass
+        )
+        idx_b = _note_semitone_index(new_bass)
+        if idx_b is not None:
+            new_bass = _spell_semitone(idx_b, prefer_flats=prefer_flats_b)
 
     out = new_root + quality
     if new_bass:
@@ -418,23 +458,28 @@ def semitones_between_keys(from_tom, to_key):
 
 
 def key_at_transpose(tom_original, semitones):
-    """Nome da tonalidade resultante após transpor (bemóis: Bb, Eb… — alinha com acordes na tela)."""
+    """Nome da tonalidade resultante após transpor (sustenidos por padrão)."""
     root = parse_tom_root(tom_original)
     idx = _note_semitone_index(root)
     if idx is None:
         return root
-    return _spell_semitone(idx + semitones, prefer_flats=True)
+    prefer_flats = prefer_flats_for_tom(tom_original)
+    return _spell_semitone(idx + semitones, prefer_flats=prefer_flats)
 
 
-def get_absolute_key_list():
+def get_absolute_key_list(tom_original=None):
     """Lista das 12 tonalidades para seleção absoluta (setlists)."""
-    return list(_CHROMATIC_FLAT)
+    if prefer_flats_for_tom(tom_original or ''):
+        return list(_CHROMATIC_FLAT)
+    return list(_CHROMATIC_SHARP)
 
 
 def get_transposition_options(tom_original):
     """Opções de transposição {semitones: label} relativas ao tom_original da música."""
     root = parse_tom_root(tom_original)
-    chromatic = _CHROMATIC_FLAT
+    chromatic = (
+        _CHROMATIC_FLAT if prefer_flats_for_tom(tom_original) else _CHROMATIC_SHARP
+    )
 
     options = {}
     for key in chromatic:

@@ -1,4 +1,4 @@
-"""Link público da setlist — letras para cantores/público."""
+"""Link público da setlist — lista de músicas (sem letras/cifras)."""
 from __future__ import annotations
 
 import hashlib
@@ -141,7 +141,7 @@ def lyrics_from_cifra(cifra: dict, vocalist_id: str | None = None) -> str:
     body = cifra.get('conteudo') or ''
     if semi:
         body = pychord_transpose_text(body, semi)
-    body = format_text_chords_br(body)
+    body = format_text_chords_br(body, cifra.get('tom_original'))
     return conteudo_to_lyrics_plain(body)
 
 
@@ -164,7 +164,6 @@ def _build_songs_for_public(setlist_id: str, band_id: str) -> list[dict[str, Any
                 cifra_display_key(c, vocalist_id=vid) if c.get('tom_original') else ''
             ),
             'vocalist_name': vocalist_entry_display_name(v) if v else '',
-            'lyrics': lyrics_from_cifra(c, vocalist_id=vid),
             'cifra_id': str(c.get('id') or ''),
         })
     return songs
@@ -190,7 +189,6 @@ def compute_public_letras_revision(
                 'artista': s.get('artista'),
                 'display_key': s.get('display_key'),
                 'vocalist_name': s.get('vocalist_name'),
-                'lyrics': s.get('lyrics'),
             }
             for s in songs
         ],
@@ -280,7 +278,6 @@ def public_letras_api_payload(token: str) -> dict[str, Any] | None:
                 'artista': s['artista'],
                 'display_key': s['display_key'],
                 'vocalist_name': s['vocalist_name'],
-                'lyrics': s['lyrics'],
             }
             for s in snap['songs']
         ],

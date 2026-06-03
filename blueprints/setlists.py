@@ -461,7 +461,7 @@ def view(setlist_id):
 
 @setlists_bp.route('/letras/<token>')
 def public_letras(token):
-    """Página pública: letras da setlist (sem login)."""
+    """Página pública: lista de músicas da setlist (sem login)."""
     from security import check_rate_limit
     from setlist_public import prepare_public_letras_payload
 
@@ -574,7 +574,7 @@ def public_letras_qr(setlist_id):
 @setlists_bp.route('/<setlist_id>/link-publico', methods=['POST'])
 @login_required
 def public_link_manage(setlist_id):
-    """Ativa, desativa ou renova o link público de letras."""
+    """Ativa, desativa ou renova o link público da setlist."""
     user_id = session['user_id']
     setlist = get_setlist(setlist_id)
     ok, band = _require_setlist_access(setlist, user_id)
@@ -594,7 +594,7 @@ def public_link_manage(setlist_id):
             flash('Adicione músicas à setlist antes de publicar o link.', 'warning')
             return redirect(url_for('setlists.view', setlist_id=setlist_id))
         set_setlist_public_share(setlist_id, True)
-        flash('Links públicos ativados (letras e impressão). Copie e envie para a equipe.', 'success')
+        flash('Links públicos ativados (lista e impressão). Copie e envie para a equipe.', 'success')
     elif action == 'disable':
         set_setlist_public_share(setlist_id, False)
         flash('Link público desativado.', 'success')

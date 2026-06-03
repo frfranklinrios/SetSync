@@ -37,8 +37,8 @@ def test_revision_changes():
     base = {"name": "Show", "description": ""}
     band = {"logo_filename": ""}
     s1 = [{"index": 1, "cifra_id": "a", "titulo": "A", "artista": "", "display_key": "C",
-           "vocalist_name": "", "lyrics": "Oi"}]
-    s2 = [{**s1[0], "lyrics": "Tchau"}]
+           "vocalist_name": ""}]
+    s2 = [{**s1[0], "titulo": "B"}]
     r1 = compute_public_letras_revision(base, band, s1)
     r2 = compute_public_letras_revision(base, band, s2)
     assert r1 != r2, (r1, r2)

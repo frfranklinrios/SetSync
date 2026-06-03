@@ -1,5 +1,5 @@
 /**
- * Atualização em tempo real da página pública de letras (polling).
+ * Atualização em tempo real da página pública (lista de músicas).
  */
 (function () {
   "use strict";
@@ -32,7 +32,7 @@
 
   function renderSong(song) {
     var art = song.artista
-      ? '<p class="pl-artist">' + esc(song.artista) + "</p>"
+      ? '<span class="pl-artist">' + esc(song.artista) + "</span>"
       : "";
     var meta = "";
     if (song.display_key) {
@@ -42,30 +42,24 @@
     if (song.vocalist_name) {
       meta += '<span class="pl-vox">' + esc(song.vocalist_name) + "</span>";
     }
-    var body = song.lyrics
-      ? '<pre class="pl-lyrics">' + esc(song.lyrics) + "</pre>"
-      : '<p class="pl-empty-song text-muted">Letra não disponível para esta música.</p>';
 
     return (
-      '<article class="pl-song" id="musica-' +
+      '<li class="pl-setlist-item" id="musica-' +
       song.index +
       '">' +
-      '<header class="pl-song-hd">' +
       '<span class="pl-num">' +
       song.index +
       "</span>" +
       '<div class="pl-song-titles">' +
-      "<h2>" +
+      '<span class="pl-song-title">' +
       esc(song.titulo) +
-      "</h2>" +
+      "</span>" +
       art +
       "</div>" +
       '<div class="pl-song-meta">' +
       meta +
       "</div>" +
-      "</header>" +
-      body +
-      "</article>"
+      "</li>"
     );
   }
 
@@ -75,7 +69,7 @@
     }
     if (titleEl && data.setlist) {
       titleEl.textContent = data.setlist.name || "";
-      document.title = (data.setlist.name || "Setlist") + " — Letras";
+      document.title = (data.setlist.name || "Setlist") + " — Setlist";
     }
     if (descEl && data.setlist) {
       var d = (data.setlist.description || "").trim();
@@ -90,7 +84,7 @@
     if (hintEl) {
       var n = (data.songs && data.songs.length) || 0;
       hintEl.textContent =
-        "Letras para acompanhar · " +
+        "Programação do show · " +
         songCountLabel(n) +
         " · atualiza automaticamente";
     }
@@ -100,12 +94,15 @@
       mainEl.innerHTML =
         '<div class="pl-empty">' +
         "<p>Nenhuma música na setlist no momento.</p>" +
-        "<p class=\"pl-empty-sub\">A lista aparece aqui quando a banda adicionar músicas.</p>" +
+        '<p class="pl-empty-sub">A lista aparece aqui quando a banda adicionar músicas.</p>' +
         "</div>";
       return;
     }
 
-    mainEl.innerHTML = data.songs.map(renderSong).join("");
+    mainEl.innerHTML =
+      '<ol class="pl-setlist">' +
+      data.songs.map(renderSong).join("") +
+      "</ol>";
   }
 
   function flashUpdated() {

@@ -54,7 +54,7 @@
         <span class="setlist-public-link-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
         <span class="setlist-public-link-summary-text">
             <span class="setlist-public-link-title"><i class="fas fa-link me-1"></i> Compartilhamento público</span>
-            <span class="text-muted setlist-public-link-sub">Letras e impressão (folha de palco + cifras)</span>
+            <span class="text-muted setlist-public-link-sub">Lista de músicas e impressão (cifras)</span>
         </span>
         {% if public_share_enabled %}
         <span class="badge text-bg-success ms-auto">Ativo</span>
@@ -65,15 +65,15 @@
 
     <div class="setlist-public-link-body">
         <p class="text-muted mb-3" style="font-size:0.82rem;">
-            Compartilhe links ou QR Codes. As letras atualizam em tempo real; a impressão abre na folha de palco.
+            Compartilhe links ou QR Codes. A lista de músicas atualiza em tempo real; a impressão traz cifras e folha de palco.
         </p>
 
         {% if public_share_enabled and public_letras_url %}
-        <p class="fw-semibold mb-2" style="font-size:0.84rem;"><i class="fas fa-align-left me-1"></i> Letras (tempo real)</p>
+        <p class="fw-semibold mb-2" style="font-size:0.84rem;"><i class="fas fa-list-ol me-1"></i> Lista de músicas (tempo real)</p>
         <div class="public-letras-share-row mb-4">
             <div class="public-letras-qr-wrap">
                 <img src="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='letras') }}"
-                     width="140" height="140" alt="QR Code — letras"
+                     width="140" height="140" alt="QR Code — lista de músicas"
                      class="public-letras-qr">
                 <a href="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='letras', download=1) }}"
                    class="btn btn-outline-secondary btn-sm mt-2 w-100">
@@ -83,13 +83,13 @@
             <div class="public-letras-link-wrap">
                 <div class="input-group input-group-sm mb-2">
                     <input type="text" class="form-control js-public-url" readonly
-                           value="{{ public_letras_url }}" aria-label="Link letras">
+                           value="{{ public_letras_url }}" aria-label="Link lista de músicas">
                     <button type="button" class="btn btn-outline-primary js-public-copy">
                         <i class="fas fa-copy me-1"></i> Copiar
                     </button>
                 </div>
                 <a href="{{ public_letras_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
-                    <i class="fas fa-external-link-alt me-1"></i> Abrir letras
+                    <i class="fas fa-external-link-alt me-1"></i> Abrir lista
                 </a>
             </div>
         </div>

@@ -375,7 +375,7 @@ def prepare_cifra_sheet(cifra, semitones=0):
     conteudo = sanitize_tab_html_artifacts(cifra.get('conteudo') or '')
     if semi:
         conteudo = pychord_transpose_text(conteudo, semi)
-    conteudo = format_text_chords_br(conteudo)
+    conteudo = format_text_chords_br(conteudo, tom_orig)
 
     cifra_data = _load_best_structured_cifra(cifra, semi)
     grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
@@ -503,7 +503,7 @@ def view(cifra_id):
     # Transpor usando pychord se possível
     if current_transpose != 0:
         conteudo = pychord_transpose_text(conteudo, current_transpose)
-    conteudo = format_text_chords_br(conteudo)
+    conteudo = format_text_chords_br(conteudo, cifra['tom_original'])
 
     # Parsear cifra_json e grade_json
     cifra_data = _load_best_structured_cifra(cifra, current_transpose)
@@ -800,7 +800,7 @@ def get_transposed(cifra_id):
 
     raw = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
     transposed = pychord_transpose_text(raw, semitones) if semitones else raw
-    transposed = format_text_chords_br(transposed)
+    transposed = format_text_chords_br(transposed, cifra['tom_original'])
 
     payload = {
         'tom_original': cifra['tom_original'],
