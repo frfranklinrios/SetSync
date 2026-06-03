@@ -66,9 +66,12 @@ def _is_section_label(text: str) -> bool:
         return False
     if _is_tab_line(s) or _is_tab_header(s):
         return False
-    if len(s) > 72 or s.count(' ') > 10:
+    if len(s) > 48 or s.count(' ') > 6:
         return False
     if re.search(r'\d{3,}', s):
+        return False
+    # Frases de letra (ex.: «Depois que eu ganhar dinheiro») não são rótulo de seção
+    if re.search(r'[a-zà-ú]', s):
         return False
     return True
 
@@ -111,7 +114,10 @@ def parse_conteudo_to_cifra_data(conteudo: str) -> list[dict[str, Any]]:
     """
     Interpreta texto (ChordPro, colchetes ou duas linhas) → lista cifra_json.
     """
+    from cifras_tool.scraper.comum import normalizar_colagem_cifraclub
+
     text = (conteudo or '').replace('\r\n', '\n').replace('\r', '\n')
+    text = normalizar_colagem_cifraclub(text)
     lines = text.split('\n')
     result: list[dict[str, Any]] = []
     seq = 0

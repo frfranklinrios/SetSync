@@ -178,6 +178,9 @@ function isChordLine(line) {
 
 /** Converte conteúdo do textarea para array cifra_json */
 function parseConteudo(text) {
+    if (window.SetSyncCifraClubPaste && SetSyncCifraClubPaste.normalizarColagem) {
+        text = SetSyncCifraClubPaste.normalizarColagem(text);
+    }
     const lines = text.split('\n');
     const result = [];
     let seq = 0, group = 0;

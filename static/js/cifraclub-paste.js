@@ -335,8 +335,25 @@
       if (/span\s+class\s*=\s*["']tablatura/i.test(plain)) return true;
       if (/data-chord\s*=/i.test(plain)) return true;
       if (/<\/?b>/i.test(plain) && /<i>/i.test(plain)) return true;
+      if (looksLikeCifraClubPlain(plain)) return true;
     }
     return false;
+  }
+
+  function looksLikeCifraClubPlain(plain) {
+    var lines = String(plain || "")
+      .split(/\r?\n/)
+      .filter(function (ln) {
+        return ln.trim().length > 0;
+      });
+    if (lines.length < 3) return false;
+    if (/^\{[\w]+:/m.test(plain)) return false;
+    var somenteAcordes = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var info = analisarLinhaHtml(lines[i]);
+      if (info.somente_acordes) somenteAcordes++;
+    }
+    return somenteAcordes >= 2;
   }
 
   function isCifraClubUrl(text) {
@@ -456,5 +473,10 @@
     attach: attach,
     converterHtmlParaInline: converterHtmlParaInline,
     looksLikeCifraClub: looksLikeCifraClub,
+    looksLikeCifraClubPlain: looksLikeCifraClubPlain,
+    normalizarColagem: function (text) {
+      if (!looksLikeCifraClubPlain(text)) return text;
+      return converterHtmlParaInline(text);
+    },
   };
 })(window);

@@ -260,6 +260,30 @@ def extrair_tablaturas_do_html(html: str) -> str:
     return padrao.sub(_substituir, html)
 
 
+def looks_like_cifraclub_colagem(texto: str) -> bool:
+    """Detecta colagem em texto plano (linhas de acordes alinhadas com espaços)."""
+    from chordpro import is_chordpro_document
+
+    if not (texto or "").strip():
+        return False
+    if is_chordpro_document(texto):
+        return False
+    linhas_somente_acorde = 0
+    for ln in texto.splitlines():
+        if not ln.strip():
+            continue
+        if analisar_linha_html(ln)["somente_acordes"]:
+            linhas_somente_acorde += 1
+    return linhas_somente_acorde >= 2
+
+
+def normalizar_colagem_cifraclub(texto: str) -> str:
+    """Converte colagem Cifra Club (HTML ou texto) para acordes inline [X]letra."""
+    if not looks_like_cifraclub_colagem(texto):
+        return texto
+    return converter_html_para_inline(texto)
+
+
 def converter_html_para_inline(html: str) -> str:
     """Converte HTML colado do Cifra Club (ou similar) para texto inline SetSync."""
     html_bruto = extrair_tablaturas_do_html(html or "")
