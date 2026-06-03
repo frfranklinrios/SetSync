@@ -27,7 +27,8 @@
   function isSectionLabel(text) {
     var s = String(text || "").trim();
     if (!s || s.indexOf("[") >= 0) return false;
-    if (s.length > 72 || (s.match(/ /g) || []).length > 10) return false;
+    if (s.length > 48 || (s.match(/ /g) || []).length > 6) return false;
+    if (/[a-zà-ú]/.test(s)) return false;
     return true;
   }
 

@@ -88,6 +88,7 @@
 
   function htmlParaLayout(linhaHtml) {
     var s = String(linhaHtml || "")
+      .replace(/\u00a0/g, " ")
       .replace(/&nbsp;/g, " ")
       .replace(/&#160;/g, " ");
     var partes = [];
@@ -460,7 +461,13 @@
       if (!converted || !converted.trim()) return;
 
       ev.preventDefault();
-      insertAtCursor(textarea, converted);
+      var prev = textarea.value || "";
+      if (!prev.trim() || String(plain || rawHtml).length >= prev.length * 0.4) {
+        textarea.value = converted;
+        textarea.selectionStart = textarea.selectionEnd = converted.length;
+      } else {
+        insertAtCursor(textarea, converted);
+      }
       if (options.onConverted) options.onConverted(converted);
       showPasteHint(
         textarea,
@@ -469,8 +476,21 @@
     });
   }
 
+  function aplicarNormalizacao(textarea, options) {
+    if (!textarea) return false;
+    if (!looksLikeCifraClubPlain(textarea.value)) return false;
+    var converted = converterHtmlParaInline(textarea.value || "");
+    if (!converted.trim()) return false;
+    textarea.value = converted;
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    if (options && options.onConverted) options.onConverted(converted);
+    showPasteHint(textarea, "Colagem convertida para o formato SetSync.");
+    return true;
+  }
+
   global.SetSyncCifraClubPaste = {
     attach: attach,
+    aplicarNormalizacao: aplicarNormalizacao,
     converterHtmlParaInline: converterHtmlParaInline,
     looksLikeCifraClub: looksLikeCifraClub,
     looksLikeCifraClubPlain: looksLikeCifraClubPlain,

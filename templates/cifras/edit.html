@@ -53,11 +53,15 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label">
-            Cifra <small class="text-muted">(colar do Cifra Club ou editar; salva em ChordPro)</small>
+        <label class="form-label d-flex flex-wrap align-items-center gap-2">
+            <span>Cifra <small class="text-muted">(colar do Cifra Club ou editar; salva em ChordPro)</small></span>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="btn-converter-colagem">
+                Converter colagem
+            </button>
         </label>
         <textarea class="form-control" id="conteudo" name="conteudo" rows="16"
                   placeholder="Cole a cifra copiada do Cifra Club (Ctrl+V) para converter automaticamente">{{ cifra.conteudo }}</textarea>
+        <div class="cifraclub-paste-hint form-text" role="status"></div>
     </div>
 
     <div class="mb-3">
@@ -112,7 +116,7 @@
 {% include 'cifras/_cifras_tool_modal.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
-<script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifras-tool-bridge.js') }}"></script>
 
@@ -376,8 +380,22 @@ const ta = document.getElementById('conteudo');
 let _uploadedCifraJson = null; // JSON do arquivo carregado (preserva 'segundo' original)
 let _taModified = false;       // usuário editou o textarea manualmente
 
+const pasteOptsEdit = {
+    onConverted: function () {
+        _taModified = true;
+        _uploadedCifraJson = null;
+    }
+};
 if (window.SetSyncCifraClubPaste) {
-    SetSyncCifraClubPaste.attach(ta);
+    SetSyncCifraClubPaste.attach(ta, pasteOptsEdit);
+    const btnColagem = document.getElementById('btn-converter-colagem');
+    if (btnColagem) {
+        btnColagem.addEventListener('click', function () {
+            if (!SetSyncCifraClubPaste.aplicarNormalizacao(ta, pasteOptsEdit)) {
+                alert('Não reconheci colagem do Cifra Club neste texto. Cole a cifra com linhas de acordes alinhadas por espaços.');
+            }
+        });
+    }
 }
 
 function readJsonFile(input, callback) {
@@ -436,6 +454,9 @@ try {
 
 // ── Antes de submeter ────────────────────────────────────────────────────
 document.getElementById('cifra-form').addEventListener('submit', function (event) {
+    if (window.SetSyncCifraClubPaste && SetSyncCifraClubPaste.normalizarColagem) {
+        ta.value = SetSyncCifraClubPaste.normalizarColagem(ta.value);
+    }
     if (window.SetSyncChordPro && ta.value.trim()) {
         ta.value = SetSyncChordPro.toChordPro(ta.value, {
             titulo: document.querySelector('[name="titulo"]').value,

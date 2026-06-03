@@ -100,11 +100,15 @@
     <div class="editor-grid mb-3">
         <!-- Coluna esquerda: textarea de entrada -->
         <div>
-            <label class="form-label">
-                Cifra  <small class="text-muted">(colar do Cifra Club ou editar; salva em ChordPro)</small>
+            <label class="form-label d-flex flex-wrap align-items-center gap-2">
+                <span>Cifra  <small class="text-muted">(colar do Cifra Club ou editar; salva em ChordPro)</small></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="btn-converter-colagem">
+                    Converter colagem
+                </button>
             </label>
             <textarea class="form-control" id="conteudo" name="conteudo" rows="16"
                 placeholder="Cole a cifra copiada do Cifra Club (Ctrl+V) — converte automaticamente&#10;&#10;Ou: [Am] Verso aqui&#10;Am      Em&#10;Letra da música"></textarea>
+            <div class="cifraclub-paste-hint form-text" role="status"></div>
         </div>
 
         <!-- Coluna direita: preview estruturado -->
@@ -159,7 +163,7 @@
 {% include 'cifras/_cifras_tool_modal.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
-<script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifras-tool-bridge.js') }}"></script>
 
@@ -527,13 +531,22 @@ document.getElementById('upload_grade').addEventListener('change', function () {
 
 // ── Colar do Cifra Club ────────────────────────────────────────────────────────
 const ta = document.getElementById('conteudo');
+const pasteOpts = {
+    onConverted: function () {
+        _uploadedCifraJson = null;
+        renderPreview(parseConteudo(ta.value));
+    }
+};
 if (window.SetSyncCifraClubPaste) {
-    SetSyncCifraClubPaste.attach(ta, {
-        onConverted: function () {
-            _uploadedCifraJson = null;
-            renderPreview(parseConteudo(ta.value));
-        }
-    });
+    SetSyncCifraClubPaste.attach(ta, pasteOpts);
+    const btnColagem = document.getElementById('btn-converter-colagem');
+    if (btnColagem) {
+        btnColagem.addEventListener('click', function () {
+            if (!SetSyncCifraClubPaste.aplicarNormalizacao(ta, pasteOpts)) {
+                alert('Não reconheci colagem do Cifra Club neste texto. Cole a cifra com linhas de acordes alinhadas por espaços.');
+            }
+        });
+    }
 }
 
 // ── Live update ao digitar ─────────────────────────────────────────────────────
@@ -544,6 +557,9 @@ ta.addEventListener('input', () => {
 
 // ── Antes de submeter: popula os hidden inputs ────────────────────────────────
 document.getElementById('cifra-form').addEventListener('submit', function (event) {
+    if (window.SetSyncCifraClubPaste && SetSyncCifraClubPaste.normalizarColagem) {
+        ta.value = SetSyncCifraClubPaste.normalizarColagem(ta.value);
+    }
     if (window.SetSyncChordPro && ta.value.trim()) {
         ta.value = SetSyncChordPro.toChordPro(ta.value, {
             titulo: document.querySelector('[name="titulo"]').value,

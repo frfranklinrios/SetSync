@@ -118,7 +118,7 @@ def detectar_fonte(url: str) -> str:
 
 def html_para_layout(linha_html: str) -> str:
     """Remove tags HTML preservando espaços; acordes ficam no lugar (colunas)."""
-    s = (linha_html or "").replace("&nbsp;", " ").replace("&#160;", " ")
+    s = (linha_html or "").replace("\u00a0", " ").replace("&nbsp;", " ").replace("&#160;", " ")
     partes: list[str] = []
     pos = 0
     while pos < len(s):
