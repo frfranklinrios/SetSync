@@ -1,146 +1,152 @@
 # SetSync
 
-Gerenciador de cifras e setlists para bandas. Organize suas músicas, transpose acordes e execute o setlist ao vivo com o **Modo Tocar**.
+**[setsync.com.br](https://setsync.com.br)** — gerenciador de cifras e setlists para bandas e ministérios de louvor. Organize músicas, transpose acordes, monte setlists e use o **Modo Tocar** no palco.
 
 ## Documentação
 
-- `docs/00-visao-geral.md`
-- `docs/01-instalacao.md`
-- `docs/02-uso.md`
-- `docs/03-importador-cifras.md`
-- `docs/04-pwa.md`
-- `docs/05-troubleshooting.md`
-- `docs/06-deploy-contabo.md` — VPS Contabo / produção
+| Documento | Conteúdo |
+|-----------|----------|
+| [docs/00-visao-geral.md](docs/00-visao-geral.md) | Arquitetura e módulos |
+| [docs/01-instalacao.md](docs/01-instalacao.md) | Instalação local e Docker |
+| [docs/02-uso.md](docs/02-uso.md) | Uso do app (bandas, cifras, setlists) |
+| [docs/03-importador-cifras.md](docs/03-importador-cifras.md) | Importador Cifra Club / Cifras.com.br |
+| [docs/04-pwa.md](docs/04-pwa.md) | Instalar como app (PWA) |
+| [docs/05-troubleshooting.md](docs/05-troubleshooting.md) | Problemas comuns |
+| [docs/06-deploy-contabo.md](docs/06-deploy-contabo.md) | Deploy em VPS (Contabo) |
+| [docs/MIGRACAO_POSTGRES.md](docs/MIGRACAO_POSTGRES.md) | SQLite → PostgreSQL |
+| [MONETIZACAO.md](MONETIZACAO.md) | Planos, Mercado Pago e vouchers |
 
 ## Funcionalidades
 
-- **Bandas e membros** — crie bandas, convide musicistas por e-mail, gerencie permissões
-- **Cifras com destaque de acordes** — detecção automática de linhas de acorde vs. letra
-- **Transposição automática** — suba ou desça o tom em tempo real, sem editar o arquivo
-- **Setlist ordenado** — navegue entre músicas da banda com ← / →
-- **Modo Tocar** — interface fullscreen para o palco
-  - Barra de controle fixa com setlist lateral deslizante
-  - Navegação por toque (swipe esquerda/direita) e teclado
-  - Layout em **2 colunas** para cifras longas (sem precisar de scroll)
-  - Auto-scroll configurável
-  - Ajuste de tamanho de fonte
-- **Dark / Light mode** — persiste entre sessões, acessível pelo navbar ou dentro do Modo Tocar (tecla `T`)
-- **Login com Google OAuth** (opcional)
+- **Bandas e membros** — convites por e-mail, papéis (admin/membro), logo da banda
+- **Cantores** — vários vocalistas por banda, tom de transposição por cantor
+- **Cifras** — ChordPro, colagem de sites, lead sheet, tablatura, tons maiores/menores
+- **Transposição** — em tempo real; tom salvo para toda a banda e por cantor na setlist
+- **Setlists** — ordenação por arrastar, cantor/tom por música, link público de letras
+- **PDF e impressão** — folha de palco (lista simples) + cifras em sequência (A4, 2 colunas)
+- **Modo Tocar** — tela cheia, setlist lateral, auto-scroll, gestos e atalhos de teclado
+- **PWA** — instalar no celular (Android/iOS)
+- **Planos** — Grátis, Pro e Worship (Mercado Pago); vouchers promocionais
+- **Login** — e-mail/senha e Google OAuth (opcional)
+- **Notificações** — convites, assinatura e avisos na banda
 
-## Tech Stack
+## Tech stack
 
 | Camada | Tecnologia |
-|---|---|
-| Backend | Python 3.12 · Flask 3.0 |
-| Banco de dados | SQLite 3 (sem ORM) |
-| Auth | Flask-Login · Authlib (Google OAuth) |
+|--------|------------|
+| Backend | Python 3.12 · Flask 3.0 · Gunicorn |
+| Banco | **PostgreSQL** (produção) ou **SQLite** (`DATABASE_URL`) |
+| Camada DB | `database.py` + `db.py` (SQL direto, sem ORM) |
+| Auth | Sessão Flask · Authlib (Google OAuth) |
+| PDF | Playwright (Chromium) |
+| Pagamentos | Mercado Pago |
 | Frontend | Bootstrap 5.3 · Font Awesome 6.4 |
-| Servidor | Gunicorn |
-| Container | Docker / Podman |
+| Deploy | Docker · Nginx Proxy Manager |
 
-## Deploy produção (Contabo / VPS)
+## Deploy em produção
 
-Veja **`docs/06-deploy-contabo.md`**. Resumo:
-
-```bash
-cp .env.example .env   # FLASK_ENV=production, SECRET_KEY, SETSYNC_SUPERADMIN_*
-docker compose -f docker-compose.prod.yml up -d --build
-# Nginx + HTTPS na porta 443 → proxy para 127.0.0.1:5001
-```
-
-## Rodando com Docker (desenvolvimento)
+Produção usa **PostgreSQL** no mesmo `docker-compose` (volume persistente). Dados em `./data` (logos, backup do SQLite).
 
 ```bash
 cp .env.example .env
-docker compose up -d
-# http://localhost:5001 (mapeamento no compose de dev)
+# Edite: SECRET_KEY, POSTGRES_PASSWORD, DATABASE_URL, SETSYNC_CANONICAL_URL,
+# SETSYNC_SUPERADMIN_*, Mercado Pago, etc.
+
+docker compose -f docker-compose.prod.yml up -d --build
+# App em http://127.0.0.1:5001 — proxy HTTPS (Nginx) → setsync.com.br
 ```
 
-## Rodando localmente (sem container)
+Migrar um `banda.db` existente:
 
-Use **apenas o ambiente desta pasta** (não ative o `.venv` de outro projeto no shell).
+```bash
+docker compose -f docker-compose.prod.yml exec web \
+  python3 scripts/migrate_sqlite_to_postgres.py --sqlite /app/data/banda.db
+```
+
+Detalhes: **[docs/06-deploy-contabo.md](docs/06-deploy-contabo.md)**.
+
+## Desenvolvimento
+
+### Docker (app + SQLite)
+
+```bash
+cp .env.example .env
+# DATABASE_URL=sqlite:///data/banda.db
+docker compose up -d
+# http://127.0.0.1:5001
+```
+
+### Docker (app + PostgreSQL de teste)
+
+```bash
+docker compose -f docker-compose.postgres.yml up -d --build
+# http://127.0.0.1:5002
+```
+
+### Local (uv)
 
 ```bash
 cd SetSync
 uv sync
 cp .env.example .env
-# edite .env
 uv run app.py
-# ou: uv run python main.py
 ```
 
-Alternativa com pip:
+Requisitos do importador: `ffmpeg` no PATH; `playwright install chromium` para colagem/PDF.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate   # deve apontar para SetSync/.venv
-pip install -r requirements.txt
-python app.py
-```
+**Importador integrado** (`cifras_tool/`, rota `/cifras/import/tool`): em Adicionar/Editar cifra, use **Cifra → SetSync** com link ou colagem.
 
-Requisitos extras do módulo de importação de cifras: `ffmpeg` no PATH e, para o player do Cifra Club, `uv run playwright install chromium`.
-
-### Importar cifra (módulo integrado `cifras_tool/`)
-
-Todo o importador vive **dentro deste repositório** (`cifras_tool/`, `blueprints/cifras_import.py`) e é exposto em `/cifras/import/tool`. **Um único servidor** — não é necessário clonar nem rodar outro projeto ao lado.
-
-Em **Adicionar** ou **Editar** cifra, use **Cifra → SetSync**: cole o link da cifra (Cifra Club / Cifras.com.br) e clique em **Usar no formulário SetSync**.
-
-Arquivos temporários: `data/cifras_tmp`, `data/cifras_exports`.
-
-## Variáveis de ambiente
+## Variáveis de ambiente (principais)
 
 | Variável | Descrição |
-|---|---|
-| `SECRET_KEY` | Chave secreta do Flask (obrigatório) |
-| `DATABASE_URL` | Caminho do SQLite (padrão: `sqlite:///data/banda.db`) |
+|----------|-----------|
+| `SECRET_KEY` | Chave longa e aleatória (**obrigatória** em `FLASK_ENV=production`) |
+| `DATABASE_URL` | `postgresql://user:pass@postgres:5432/setsync` ou `sqlite:///data/banda.db` |
+| `POSTGRES_PASSWORD` | Senha do Postgres (compose de produção) |
 | `FLASK_ENV` | `development` ou `production` |
-| `SETSYNC_SUPERADMIN_USERNAMES` | Admin global (só `.env`, sem coluna no banco) |
-| `CIFRAS_YOUTUBE_NO_SERVER` | `1` na VPS (sem yt-dlp no servidor) |
-| `GUNICORN_WORKERS` | `1` com SQLite (padrão no `gunicorn.conf.py`) |
-| `GOOGLE_CLIENT_ID` | ID do app no Google Cloud Console (opcional) |
-| `GOOGLE_CLIENT_SECRET` | Secret do app no Google Cloud Console (opcional) |
-| `CIFRAS_TMP_DIR` | Pasta temporária do pipeline de importação |
-| `CIFRAS_YOUTUBE_COOKIES_FILE` | Cookies do YouTube para download de áudio (opcional) |
+| `SETSYNC_CANONICAL_URL` | URL HTTPS pública (ex.: `https://setsync.com.br`) |
+| `SETSYNC_SUPERADMIN_USERNAMES` | Admin global (vírgula) |
+| `SETSYNC_INTERNAL_URL` | URL interna para PDF (`http://127.0.0.1:5000` no container) |
+| `MP_*` | Mercado Pago (planos Pro/Worship) — ver `MONETIZACAO.md` |
+| `ADSENSE_*` | Google AdSense (plano grátis) — ver `MONETIZACAO.md` |
+| `GOOGLE_CLIENT_ID` / `SECRET` | Login com Google (opcional) |
+
+Lista completa: **`.env.example`**.
 
 ## Atalhos — Modo Tocar
 
-| Tecla | Ação |
-|---|---|
-| `P` | Entrar no Modo Tocar |
+| Tecla / gesto | Ação |
+|---------------|------|
 | `Esc` | Sair do Modo Tocar |
-| `← →` | Música anterior / próxima |
-| `Espaço` | Ativar / pausar auto-scroll |
-| `+ -` | Aumentar / diminuir fonte |
-| `C` | Alternar layout 2 colunas |
-| `S` | Abrir / fechar setlist |
-| `T` | Alternar dark / light mode |
-| Swipe ← → | Navegar músicas (touch) |
+| `←` `→` (bordas) | Rolar uma página; no fim/início troca de música |
+| `←` `→` (barra superior) | Música anterior / próxima |
+| `Espaço` | Auto-scroll |
+| `+` `-` | Fonte maior / menor |
+| `C` | 1 ou 2 colunas |
+| `L` | Abrir / fechar lista (setlist) |
+| `T` | Tema claro / escuro |
+| `A` `G` `F` | Diagrama de acorde, arpejo, fullscreen |
+
+Mais atalhos: **[Ajuda](https://setsync.com.br/ajuda)** no app.
 
 ## Estrutura do projeto
 
 ```
-├── app.py                  # Factory e registro de blueprints
-├── config.py               # Configuração via .env
-├── db.py                   # Acesso ao banco (SQLite puro)
-├── util.py                 # Filtro Jinja2 highlight_chords
-├── models.py               # Modelos Flask-Login
-├── google_oauth.py         # Integração OAuth
-├── blueprints/
-│   ├── auth.py             # Login, registro, OAuth
-│   ├── bands.py            # CRUD de bandas e membros
-│   └── cifras.py           # CRUD de cifras + transposição
-├── templates/
-│   ├── index.html          # Base template (dark/light mode)
-│   ├── cifras/view.html    # Visualização + Modo Tocar
-│   └── ...
-├── static/                 # Imagens e assets estáticos
-├── Dockerfile
-├── docker-compose.yml
-└── .env.example
+├── app.py                      # App Flask e blueprints
+├── config.py                   # Configuração por ambiente
+├── database.py                 # Conexão SQLite ou PostgreSQL
+├── db.py                       # Schema e acesso aos dados
+├── chordpro.py                 # Parse e conversão ChordPro
+├── blueprints/                 # auth, bands, cifras, setlists, assinatura, …
+├── cifras_tool/                # Importador (scraper, lead sheet, áudio)
+├── templates/                  # Jinja2 + Modo Tocar
+├── static/                     # CSS, JS, PWA (sw.js, manifest)
+├── scripts/                    # migração PG, testes, MP
+├── docker-compose.prod.yml     # Produção (web + postgres)
+├── docker-compose.yml          # Dev (SQLite)
+└── data/                       # banda.db (backup), logos, exports
 ```
 
 ## Licença
 
 MIT
-
