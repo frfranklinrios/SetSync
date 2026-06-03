@@ -418,9 +418,17 @@ def get_available_tones():
     }
 
 
+def tom_is_minor(tom_original: str) -> bool:
+    """True se o tom cadastrado for menor (Bm, Am, «A menor», etc.)."""
+    label = normalize_tom_label(tom_original)
+    if re.match(r'^[A-G][#b]?m(?:in)?$', label, re.I):
+        return True
+    return bool(re.search(r'\bmenor\b', (tom_original or ''), re.I))
+
+
 def parse_tom_root(tom_original):
     """Extrai a nota raiz do tom cadastrado (ex.: Bmaj7 -> B, F#m -> F#)."""
-    s = (tom_original or 'C').strip()
+    s = normalize_tom_label(tom_original) or 'C'
     if not s:
         return 'C'
     m = re.match(r'^([A-G])(#|b)?', s, re.I)
@@ -467,22 +475,33 @@ def key_at_transpose(tom_original, semitones):
     if idx is None:
         return root
     prefer_flats = prefer_flats_for_tom(tom_original)
-    return _spell_semitone(idx + semitones, prefer_flats=prefer_flats)
+    key = _spell_semitone(idx + semitones, prefer_flats=prefer_flats)
+    if tom_is_minor(tom_original):
+        key += 'm'
+    return key
 
 
 def get_absolute_key_list(tom_original=None):
-    """Lista das 12 tonalidades para seleção absoluta (setlists)."""
+    """Lista das 12 tonalidades para seleção (maiores ou menores conforme o cadastro)."""
     if prefer_flats_for_tom(tom_original or ''):
-        return list(_CHROMATIC_FLAT)
-    return list(_CHROMATIC_SHARP)
+        chromatic = list(_CHROMATIC_FLAT)
+    else:
+        chromatic = list(_CHROMATIC_SHARP)
+    if tom_is_minor(tom_original or ''):
+        return [f'{k}m' for k in chromatic]
+    return chromatic
+
+
+def get_play_mode_key_options():
+    """Maiores e menores para o modo tocar (setlists com tons mistos)."""
+    majors = list(_CHROMATIC_SHARP)
+    return majors + [f'{k}m' for k in majors]
 
 
 def get_transposition_options(tom_original):
     """Opções de transposição {semitones: label} relativas ao tom_original da música."""
     root = parse_tom_root(tom_original)
-    chromatic = (
-        _CHROMATIC_FLAT if prefer_flats_for_tom(tom_original) else _CHROMATIC_SHARP
-    )
+    chromatic = get_absolute_key_list(tom_original)
 
     options = {}
     for key in chromatic:
@@ -497,7 +516,10 @@ def get_transposition_options(tom_original):
 def build_transpose_map(tom_original):
     """Mapa { tonalidade: semitons } para uso no modo tocar (por música)."""
     root = parse_tom_root(tom_original)
-    return {key: semitones_between_keys(root, key) for key in get_absolute_key_list()}
+    return {
+        key: semitones_between_keys(root, key)
+        for key in get_absolute_key_list(tom_original)
+    }
 
 
 def _is_chord_token(token):

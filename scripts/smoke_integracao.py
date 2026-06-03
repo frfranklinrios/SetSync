@@ -35,7 +35,13 @@ def main() -> int:
         return 1
 
     from app import app
-    from util import normalize_tom_label, highlight_chords_play_html
+    from util import (
+        normalize_tom_label,
+        highlight_chords_play_html,
+        key_at_transpose,
+        get_transposition_options,
+        tom_is_minor,
+    )
     from blueprints.cifras_import import cifras_import_bp
     from cifras_tool.pipeline_cifras import executar_apenas_cifra, validar_url_cifra
     from cifras_tool.setsync_export import partes_para_grade_ui
@@ -53,6 +59,13 @@ def main() -> int:
     for raw, expected in cases:
         got = normalize_tom_label(raw)
         check(got == expected, f"{raw!r} -> {got!r} (esperado {expected!r})")
+
+    check(tom_is_minor("Bm"), "Bm é tom menor")
+    check(not tom_is_minor("G"), "G é tom maior")
+    check(key_at_transpose("Bm", -4) == "Gm", f"Bm-4 -> {key_at_transpose('Bm', -4)!r}")
+    opts = get_transposition_options("Bm")
+    check("Bm (Original)" in opts.values(), "opções de transposição incluem Bm original")
+    check("Gm" in opts.values(), "opções de transposição incluem Gm")
 
     print("\n=== Rotas Flask ===")
     rules = {r.rule: r.endpoint for r in app.url_map.iter_rules()}
