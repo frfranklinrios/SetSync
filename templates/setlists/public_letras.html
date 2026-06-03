@@ -2,13 +2,33 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <script>
+    (function () {
+        var K = 'setsync-theme';
+        var root = document.documentElement;
+        function norm(v) { return v === 'light' ? 'light' : 'dark'; }
+        function apply(t, opts) {
+            opts = opts || {};
+            t = norm(t);
+            root.setAttribute('data-theme', t);
+            try { if (opts.persist !== false) localStorage.setItem(K, t); } catch (e) {}
+        }
+        apply(localStorage.getItem(K) || 'dark', { persist: false });
+        window.setSetSyncTheme = apply;
+        window.toggleTheme = function () {
+            apply(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+            document.dispatchEvent(new CustomEvent('setsync-themechange'));
+        };
+    })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>{{ setlist.name }} — Letras</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=9">
     {% if adsense_show %}
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense.client }}"
          crossorigin="anonymous"></script>
@@ -16,19 +36,24 @@
 </head>
 <body>
 <header class="pl-header">
-    <div class="pl-brand">
-        {% if band_logo_data_uri %}
-        <img src="{{ band_logo_data_uri }}" alt="" class="pl-band-logo" width="120" height="56">
-        {% endif %}
-        <div>
-            <p class="pl-eyebrow">{{ band.name }}</p>
-            <h1 class="pl-title">{{ setlist.name }}</h1>
-            {% if setlist.description %}
-            <p class="pl-desc">{{ setlist.description }}</p>
-            {% else %}
-            <p class="pl-desc" style="display:none;"></p>
+    <div class="pl-header-row">
+        <div class="pl-brand">
+            {% if band_logo_data_uri %}
+            <img src="{{ band_logo_data_uri }}" alt="" class="pl-band-logo" width="120" height="56">
             {% endif %}
+            <div>
+                <p class="pl-eyebrow">{{ band.name }}</p>
+                <h1 class="pl-title">{{ setlist.name }}</h1>
+                {% if setlist.description %}
+                <p class="pl-desc">{{ setlist.description }}</p>
+                {% else %}
+                <p class="pl-desc" style="display:none;"></p>
+                {% endif %}
+            </div>
         </div>
+        {% with btn_class='pl-theme-btn' %}
+        {% include 'partials/theme_toggle.html' %}
+        {% endwith %}
     </div>
     <p class="pl-hint" id="pl-hint">Letras · {{ songs|length }} música{{ '' if songs|length == 1 else 's' }} · atualiza automaticamente</p>
     <p class="pl-live-status" id="pl-live-status" role="status" aria-live="polite">Atualizado</p>
@@ -108,6 +133,7 @@ window.PUBLIC_LETRAS = {
     pollUrl: {{ url_for('setlists.public_letras_data', token=public_token)|tojson }}
 };
 </script>
+<script src="{{ url_for('static', filename='js/theme.js') }}?v=6"></script>
 <script src="{{ url_for('static', filename='js/public-letras-live.js') }}?v=6"></script>
 </body>
 </html>

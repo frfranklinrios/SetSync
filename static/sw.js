@@ -1,6 +1,6 @@
 // SetSync service worker — app-shell + offline fallback
 // Bump CACHE_VERSION whenever the app shell changes so old caches are evicted.
-const CACHE_VERSION = 'setsync-v8';
+const CACHE_VERSION = 'setsync-v9';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 
