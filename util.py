@@ -130,8 +130,10 @@ def clean_chord_symbol(symbol):
     s = symbol.strip()
     if s.startswith('[') and s.endswith(']') and len(s) >= 2:
         s = s[1:-1].strip()
-    s = s.strip('()[]{} ')
-    return s
+    # Parênteses no meio (ex.: C#m7(5-)) não são wrapper — não usar strip('()')
+    if len(s) >= 2 and s[0] == '(' and s[-1] == ')' and '(' not in s[1:-1]:
+        s = s[1:-1].strip()
+    return s.strip()
 
 
 def chord_components_info(symbol):
@@ -243,7 +245,8 @@ _CHORD_PART = (
     r'(?:maj7|maj|min|m7b5|m7|M7|m|M|dim7|dim|aug|sus2|sus4|sus|add9|add'
     r'|7|9|11|13|6|5|4|2'
     r'|[+\-°º]'
-    r'|[b#]\d{1,2})'
+    r'|[b#]\d{1,2}'
+    r'|\([^)]+\))'  # ex.: C#m7(5-) no Cifra Club
 )
 # Nota raiz: quando há # ou b logo após a letra, consome junto (evita casar só "F" em "F#")
 _CHORD_ROOT = r'(?:[A-G]#|[A-G]b|[A-G](?![#b]))'
@@ -499,7 +502,7 @@ def build_transpose_map(tom_original):
 
 def _is_chord_token(token):
     """Verifica se um token isolado é um acorde válido"""
-    t = token.strip('()[]{} ')
+    t = clean_chord_symbol(token)
     t = re.sub(r'[°º]', 'dim', t)
     return bool(CHORD_TOKEN_RE.match(t))
 

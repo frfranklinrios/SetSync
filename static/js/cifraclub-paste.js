@@ -53,47 +53,175 @@
     );
   }
 
-  function parseLinhaHtml(linhaHtml) {
-    var posicoes = [];
-    var texto = "";
-    var temAcordes = false;
-    var re =
-      /<span\s+data-chord="([^"]+)"[^>]*>[\s\S]*?<\/span>|<b>([^<]+)<\/b>|<i>([\s\S]*?)<\/i>|([^<]+)/gi;
-    var m;
-    while ((m = re.exec(linhaHtml)) !== null) {
-      if (m[1]) {
-        temAcordes = true;
-        posicoes.push([texto.length, m[1]]);
-        texto += m[1];
-      } else if (m[2]) {
-        temAcordes = true;
-        var acorde = m[2].trim();
-        posicoes.push([texto.length, acorde]);
-        texto += acorde;
-      } else if (m[3] !== undefined) {
-        texto += m[3];
-      } else if (m[4]) {
-        texto += m[4];
-      }
-    }
-    return { posicoes: posicoes, texto: texto.replace(/\s+$/, ""), temAcordes: temAcordes };
+  var RE_TAG_SPAN_CHORD = /<span\s+data-chord="([^"]+)"[^>]*>[\s\S]*?<\/span>/gi;
+  var RE_TAG_B = /<b>([^<]*)<\/b>/gi;
+  var RE_TAG_I = /<i>([\s\S]*?)<\/i>/gi;
+  var RE_TAG_ANY = /<[^>]+>/gi;
+  var RE_TOKEN = /\S+/g;
+  var RE_CHORD_TOKEN =
+    /^(?:[A-G]#|[A-G]b|[A-G])(?:maj7|maj|min|m7b5|m7|M7|m|M|dim7|dim|aug|sus2|sus4|sus|add9|add|7|9|11|13|6|5|4|2|[+\-°º]|[b#]\d{1,2}|\d{1,2}\+|\([^)]*\))*(?:\/(?:[A-G]#|[A-G]b|[A-G]))?$/i;
+
+  function isChordToken(token, allowBareRoot) {
+    var t = String(token || "").trim();
+    if (!RE_CHORD_TOKEN.test(t)) return false;
+    if (!allowBareRoot && /^[A-G][#b]?$/i.test(t)) return false;
+    return true;
   }
 
-  function mesclarAcordesInline(acordes, letra) {
-    letra = String(letra || "").replace(/\s+$/, "");
-    var resultado = letra;
-    var tamanho = letra.length;
+  function layoutTemLetra(layout) {
+    var m;
+    RE_TOKEN.lastIndex = 0;
+    while ((m = RE_TOKEN.exec(layout || "")) !== null) {
+      var tok = m[0];
+      if (/^\[[^\]]+\]$/.test(tok)) continue;
+      if (!isChordToken(tok, true)) return true;
+    }
+    return false;
+  }
+
+  function snapInicioPalavra(letra, pos) {
+    pos = Math.min(Math.max(0, pos), letra.length);
+    if (pos >= letra.length || /\s/.test(letra.charAt(pos))) return pos;
+    while (pos > 0 && !/\s/.test(letra.charAt(pos - 1))) pos -= 1;
+    return pos;
+  }
+
+  function htmlParaLayout(linhaHtml) {
+    var s = String(linhaHtml || "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&#160;/g, " ");
+    var partes = [];
+    var pos = 0;
+    while (pos < s.length) {
+      RE_TAG_SPAN_CHORD.lastIndex = pos;
+      var mSpan = RE_TAG_SPAN_CHORD.exec(s);
+      if (mSpan && mSpan.index === pos) {
+        partes.push(mSpan[1].trim());
+        pos = RE_TAG_SPAN_CHORD.lastIndex;
+        continue;
+      }
+      RE_TAG_B.lastIndex = pos;
+      var mB = RE_TAG_B.exec(s);
+      if (mB && mB.index === pos) {
+        partes.push(mB[1].trim());
+        pos = RE_TAG_B.lastIndex;
+        continue;
+      }
+      RE_TAG_I.lastIndex = pos;
+      var mI = RE_TAG_I.exec(s);
+      if (mI && mI.index === pos) {
+        partes.push(mI[1]);
+        pos = RE_TAG_I.lastIndex;
+        continue;
+      }
+      RE_TAG_ANY.lastIndex = pos;
+      var mT = RE_TAG_ANY.exec(s);
+      if (mT && mT.index === pos) {
+        pos = RE_TAG_ANY.lastIndex;
+        continue;
+      }
+      partes.push(s.charAt(pos));
+      pos += 1;
+    }
+    return partes.join("");
+  }
+
+  function extrairAcordesLayout(layout) {
+    var temLetra = layoutTemLetra(layout);
+    var posicoes = [];
+    var m;
+    RE_TOKEN.lastIndex = 0;
+    while ((m = RE_TOKEN.exec(layout || "")) !== null) {
+      var tok = m[0];
+      if (tok.charAt(0) === "[" && tok.charAt(tok.length - 1) === "]") continue;
+      if (!isChordToken(tok, true)) continue;
+      if (/^[A-G][#b]?$/i.test(tok) && temLetra) continue;
+      posicoes.push([m.index, tok]);
+    }
+    return posicoes;
+  }
+
+  function analisarLinhaHtml(linhaHtml) {
+    var layout = htmlParaLayout(linhaHtml);
+    var acordes = extrairAcordesLayout(layout);
+    var resto = layout;
     acordes
       .slice()
       .sort(function (a, b) {
         return b[0] - a[0];
       })
       .forEach(function (pair) {
-        var pos = Math.min(pair[0], tamanho);
+        var ac = pair[1];
+        resto =
+          resto.slice(0, pair[0]) +
+          " ".repeat(ac.length) +
+          resto.slice(pair[0] + ac.length);
+      });
+    var lyric = resto.replace(/\s+/g, " ").trim();
+    return {
+      layout: layout,
+      acordes: acordes,
+      lyric_text: lyric,
+      tem_acordes: acordes.length > 0,
+      somente_acordes: acordes.length > 0 && !lyric,
+      somente_letra: acordes.length === 0 && !!lyric,
+    };
+  }
+
+  function mesclarAcordesInline(acordes, letra, larguraLayout, deslocamento) {
+    letra = String(letra || "").replace(/\s+$/, "");
+    var resultado = letra;
+    var tamanho = letra.length;
+    var ref =
+      larguraLayout && larguraLayout > 0 ? larguraLayout : tamanho;
+    var desloc = deslocamento || 0;
+    if (ref < tamanho * 0.6 && acordes.length) {
+      var prefixo = acordes
+        .slice()
+        .sort(function (a, b) {
+          return a[0] - b[0];
+        })
+        .map(function (pair) {
+          return "[" + pair[1] + "]";
+        })
+        .join(" ");
+      return prefixo + " " + letra;
+    }
+    acordes
+      .slice()
+      .sort(function (a, b) {
+        return b[0] - a[0];
+      })
+      .forEach(function (pair) {
+        var p = pair[0];
+        if (ref > tamanho * 1.12 && tamanho > 0) {
+          p = Math.round((p * tamanho) / ref);
+        }
+        if (desloc) p = p - desloc;
+        p = snapInicioPalavra(letra, Math.min(Math.max(0, p), tamanho));
         resultado =
-          resultado.slice(0, pos) + "[" + pair[1] + "]" + resultado.slice(pos);
+          resultado.slice(0, p) + "[" + pair[1] + "]" + resultado.slice(p);
       });
     return resultado;
+  }
+
+  function formatarLinhaAcordesBrackets(layout, acordes) {
+    var linha = layout;
+    acordes
+      .slice()
+      .sort(function (a, b) {
+        return b[0] - a[0];
+      })
+      .forEach(function (pair) {
+        var ac = pair[1];
+        linha =
+          linha.slice(0, pair[0]) +
+          "[" +
+          ac +
+          "]" +
+          linha.slice(pair[0] + ac.length);
+      });
+    return linha.replace(/ +/g, " ").trim();
   }
 
   function converterHtmlParaInline(html) {
@@ -102,52 +230,89 @@
     var linhasHtml = html.split(/\r\n?|\n/);
     var saida = [];
     var indice = 0;
+    var total = linhasHtml.length;
 
-    while (indice < linhasHtml.length) {
+    while (indice < total) {
       if (!linhasHtml[indice].trim()) {
         indice += 1;
         continue;
       }
 
-      var parsed = parseLinhaHtml(linhasHtml[indice]);
-      var acordes = parsed.posicoes;
-      var texto = parsed.texto;
-      var temAcordes = parsed.temAcordes;
+      var atual = analisarLinhaHtml(linhasHtml[indice]);
 
-      if (temAcordes) {
-        if (indice + 1 < linhasHtml.length) {
-          var prox = parseLinhaHtml(linhasHtml[indice + 1]);
-          if (!prox.temAcordes && prox.texto.trim()) {
-            saida.push(mesclarAcordesInline(acordes, prox.texto));
+      if (atual.somente_letra && indice + 2 < total) {
+        var meio = analisarLinhaHtml(linhasHtml[indice + 1]);
+        var prox = analisarLinhaHtml(linhasHtml[indice + 2]);
+        if (meio.somente_acordes && prox.somente_letra) {
+          saida.push(atual.lyric_text);
+          var letra2 =
+            prox.lyric_text || htmlParaLayout(linhasHtml[indice + 2]).trim();
+          var deslocSand = atual.lyric_text.length - letra2.length;
+          saida.push(
+            mesclarAcordesInline(
+              meio.acordes,
+              letra2,
+              meio.layout.length,
+              deslocSand > 0 ? deslocSand : 0
+            )
+          );
+          indice += 3;
+          continue;
+        }
+      }
+
+      if (atual.somente_acordes) {
+        if (indice + 1 < total) {
+          var prox2 = analisarLinhaHtml(linhasHtml[indice + 1]);
+          if (prox2.somente_letra) {
+            var letra =
+              prox2.lyric_text ||
+              htmlParaLayout(linhasHtml[indice + 1]).trim();
+            saida.push(
+              mesclarAcordesInline(
+                atual.acordes,
+                letra,
+                atual.layout.length
+              )
+            );
             indice += 2;
             continue;
           }
         }
-
-        var linha = texto;
-        acordes
-          .slice()
-          .sort(function (a, b) {
-            return b[0] - a[0];
-          })
-          .forEach(function (pair) {
-            var pos = pair[0];
-            var ac = pair[1];
-            linha =
-              linha.slice(0, pos) +
-              "[" +
-              ac +
-              "]" +
-              linha.slice(pos + ac.length);
-          });
-        saida.push(linha.trim());
+        saida.push(formatarLinhaAcordesBrackets(atual.layout, atual.acordes));
         indice += 1;
         continue;
       }
 
-      if (texto.trim()) {
-        saida.push(texto.trim());
+      if (atual.somente_letra) {
+        saida.push(atual.lyric_text);
+        indice += 1;
+        continue;
       }
+
+      if (atual.tem_acordes) {
+        if (
+          atual.lyric_text &&
+          /^\[[^\]]+\]$/.test(atual.lyric_text.trim())
+        ) {
+          saida.push(formatarLinhaAcordesBrackets(atual.layout, atual.acordes));
+        } else if (atual.lyric_text) {
+          saida.push(
+            mesclarAcordesInline(
+              atual.acordes,
+              atual.lyric_text,
+              atual.layout.length
+            )
+          );
+        } else {
+          saida.push(formatarLinhaAcordesBrackets(atual.layout, atual.acordes));
+        }
+        indice += 1;
+        continue;
+      }
+
+      var texto = htmlParaLayout(linhasHtml[indice]).trim();
+      if (texto) saida.push(texto);
       indice += 1;
     }
 
