@@ -1,13 +1,24 @@
 # Modelos e funções para Setlists
-import sqlite3
+from database import IS_POSTGRES
 from db import get_db
 
 def create_setlist(band_id, name, description=None):
     db = get_db()
     c = db.cursor()
-    c.execute('INSERT INTO setlists (band_id, name, description) VALUES (?, ?, ?)', (band_id, name, description))
+    if IS_POSTGRES:
+        c.execute(
+            'INSERT INTO setlists (band_id, name, description) VALUES (?, ?, ?) RETURNING id',
+            (band_id, name, description),
+        )
+        row = c.fetchone()
+        setlist_id = int(row['id']) if row else None
+    else:
+        c.execute(
+            'INSERT INTO setlists (band_id, name, description) VALUES (?, ?, ?)',
+            (band_id, name, description),
+        )
+        setlist_id = c.lastrowid
     db.commit()
-    setlist_id = c.lastrowid
     db.close()
     return setlist_id
 

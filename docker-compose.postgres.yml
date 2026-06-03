@@ -1,0 +1,37 @@
+# Teste da branch migrar: app + PostgreSQL
+# Uso: docker compose -f docker-compose.postgres.yml up -d --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: setsync
+      POSTGRES_PASSWORD: setsync_dev
+      POSTGRES_DB: setsync
+    volumes:
+      - setsync_pg_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U setsync -d setsync"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://setsync:setsync_dev@postgres:5432/setsync
+    ports:
+      - "127.0.0.1:5002:5000"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  setsync_pg_data:

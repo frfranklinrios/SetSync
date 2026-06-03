@@ -161,8 +161,11 @@ def main() -> int:
     from db import get_db
 
     with app.app_context():
+        from database import table_columns
+
         conn = get_db()
-        cols = [row[1] for row in conn.execute("PRAGMA table_info(cifras)").fetchall()]
+        c = conn.cursor()
+        cols = table_columns(c, 'cifras')
         check("leadsheet_json" in cols, "coluna leadsheet_json em cifras")
 
     print("\n=== Resumo ===")

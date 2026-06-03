@@ -1,21 +1,19 @@
-import sqlite3
 import os
 import uuid
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
-def _resolve_db_path() -> str:
-    """Caminho do SQLite: DATABASE_URL (sqlite:///...) ou data/banda.db."""
-    url = (os.getenv('DATABASE_URL') or '').strip()
-    if url.startswith('sqlite:///'):
-        rel = url[len('sqlite:///'):]
-        if os.path.isabs(rel):
-            return rel
-        return os.path.normpath(os.path.join(os.path.dirname(__file__), rel))
-    return os.path.join(os.path.dirname(__file__), 'data', 'banda.db')
+from database import (
+    IS_POSTGRES,
+    IntegrityError,
+    SQLITE_PATH,
+    add_column_if_missing,
+    get_db,
+    table_columns,
+    table_exists,
+)
 
-
-DB_PATH = _resolve_db_path()
+DB_PATH = SQLITE_PATH
 
 
 def _env_superadmin_identifiers():
@@ -33,18 +31,167 @@ def _env_superadmin_identifiers():
     return usernames, emails
 
 
-def get_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+def _init_postgres_schema(c) -> None:
+    """Schema completo para PostgreSQL (instalação nova)."""
+    statements = [
+        '''CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            display_name TEXT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT,
+            google_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''',
+        '''CREATE TABLE IF NOT EXISTS bands (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            owner_id TEXT NOT NULL,
+            vocalist_user_id TEXT,
+            vocalist_name TEXT,
+            logo_filename TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (owner_id) REFERENCES users(id)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS band_members (
+            band_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            role TEXT DEFAULT 'member',
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (band_id, user_id),
+            FOREIGN KEY (band_id) REFERENCES bands(id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS cifras (
+            id TEXT PRIMARY KEY,
+            titulo TEXT NOT NULL,
+            artista TEXT NOT NULL,
+            tom_original TEXT DEFAULT 'C',
+            conteudo TEXT NOT NULL DEFAULT '',
+            band_id TEXT NOT NULL,
+            cifra_json TEXT,
+            grade_json TEXT,
+            leadsheet_json TEXT,
+            bpm REAL,
+            duracao_seg INTEGER,
+            transpose_semitones INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (band_id) REFERENCES bands(id)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS setlists (
+            id SERIAL PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT,
+            vocalist_id TEXT,
+            public_share_token TEXT,
+            public_share_enabled INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (band_id) REFERENCES bands(id)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS setlist_cifras (
+            setlist_id INTEGER NOT NULL,
+            cifra_id TEXT NOT NULL,
+            position INTEGER DEFAULT 0,
+            vocalist_id TEXT,
+            PRIMARY KEY (setlist_id, cifra_id),
+            FOREIGN KEY (setlist_id) REFERENCES setlists(id) ON DELETE CASCADE,
+            FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE
+        )''',
+        '''CREATE TABLE IF NOT EXISTS band_vocalists (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            user_id TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
+            cifra_id TEXT NOT NULL,
+            vocalist_id TEXT NOT NULL,
+            transpose_semitones INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (cifra_id, vocalist_id),
+            FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
+            FOREIGN KEY (vocalist_id) REFERENCES band_vocalists(id) ON DELETE CASCADE
+        )''',
+        '''CREATE TABLE IF NOT EXISTS assinaturas (
+            id TEXT PRIMARY KEY,
+            banda_id TEXT NOT NULL UNIQUE,
+            plano TEXT NOT NULL DEFAULT 'gratis',
+            status TEXT NOT NULL DEFAULT 'ativa',
+            mp_subscription_id TEXT,
+            mp_preapproval_id TEXT,
+            data_inicio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            data_proxima_cobranca TIMESTAMP,
+            data_cancelamento TIMESTAMP,
+            FOREIGN KEY (banda_id) REFERENCES bands(id) ON DELETE CASCADE
+        )''',
+        '''CREATE TABLE IF NOT EXISTS vouchers (
+            id TEXT PRIMARY KEY,
+            codigo TEXT NOT NULL UNIQUE,
+            plano TEXT NOT NULL,
+            dias INTEGER NOT NULL,
+            criado_por_id TEXT,
+            max_usos INTEGER,
+            usos_atual INTEGER NOT NULL DEFAULT 0,
+            ativo INTEGER NOT NULL DEFAULT 1,
+            eh_indicacao INTEGER NOT NULL DEFAULT 0,
+            eh_vitalicio INTEGER NOT NULL DEFAULT 0,
+            data_expiracao TIMESTAMP,
+            criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (criado_por_id) REFERENCES users(id)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS voucher_usos (
+            id TEXT PRIMARY KEY,
+            voucher_id TEXT NOT NULL,
+            banda_id TEXT NOT NULL,
+            usado_em TIMESTAMP NOT NULL,
+            expira_em TIMESTAMP NOT NULL,
+            aviso_3d_enviado INTEGER NOT NULL DEFAULT 0,
+            UNIQUE (voucher_id, banda_id),
+            FOREIGN KEY (voucher_id) REFERENCES vouchers(id),
+            FOREIGN KEY (banda_id) REFERENCES bands(id)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS notifications (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            band_id TEXT,
+            actor_user_id TEXT,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT,
+            url_path TEXT,
+            payload_json TEXT,
+            read_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+        )''',
+        '''CREATE INDEX IF NOT EXISTS idx_notifications_user_created
+           ON notifications(user_id, created_at DESC)''',
+    ]
+    for sql in statements:
+        c.execute(sql)
 
 
 def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    if not IS_POSTGRES:
+        os.makedirs(os.path.dirname(DB_PATH) or '.', exist_ok=True)
     db = get_db()
     c = db.cursor()
-    c.executescript('''
+    if IS_POSTGRES:
+        _init_postgres_schema(c)
+        db.commit()
+        _migrate_assinaturas_schema(c)
+        db.commit()
+        db.close()
+        return
+
+    db.executescript('''
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
@@ -110,30 +257,24 @@ def init_db():
     ''')
     db.commit()
 
-    # Migration: colunas novas em BDs já existentes
-    def _add_column(table: str, col: str, typedef: str) -> None:
-        cols = {row[1] for row in c.execute(f'PRAGMA table_info({table})')}
-        if col not in cols:
-            c.execute(f'ALTER TABLE {table} ADD COLUMN {col} {typedef}')
-            db.commit()
-
-    _add_column('users', 'display_name', 'TEXT')
+    # Migration: colunas novas em BDs SQLite já existentes
+    add_column_if_missing(c, 'users', 'display_name', 'TEXT')
     for col, typedef in [
         ('cifra_json', 'TEXT'),
         ('grade_json', 'TEXT'),
         ('bpm', 'REAL'),
         ('duracao_seg', 'INTEGER'),
     ]:
-        _add_column('cifras', col, typedef)
-    _add_column('cifras', 'leadsheet_json', 'TEXT')
-    _add_column('cifras', 'transpose_semitones', 'INTEGER DEFAULT 0')
-    _add_column('bands', 'vocalist_user_id', 'TEXT')
-    _add_column('bands', 'vocalist_name', 'TEXT')
-    _add_column('bands', 'logo_filename', 'TEXT')
-    _add_column('setlists', 'vocalist_id', 'TEXT')
-    _add_column('setlists', 'public_share_token', 'TEXT')
-    _add_column('setlists', 'public_share_enabled', 'INTEGER DEFAULT 0')
-    _add_column('setlist_cifras', 'vocalist_id', 'TEXT')
+        add_column_if_missing(c, 'cifras', col, typedef)
+    add_column_if_missing(c, 'cifras', 'leadsheet_json', 'TEXT')
+    add_column_if_missing(c, 'cifras', 'transpose_semitones', 'INTEGER DEFAULT 0')
+    add_column_if_missing(c, 'bands', 'vocalist_user_id', 'TEXT')
+    add_column_if_missing(c, 'bands', 'vocalist_name', 'TEXT')
+    add_column_if_missing(c, 'bands', 'logo_filename', 'TEXT')
+    add_column_if_missing(c, 'setlists', 'vocalist_id', 'TEXT')
+    add_column_if_missing(c, 'setlists', 'public_share_token', 'TEXT')
+    add_column_if_missing(c, 'setlists', 'public_share_enabled', 'INTEGER DEFAULT 0')
+    add_column_if_missing(c, 'setlist_cifras', 'vocalist_id', 'TEXT')
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS band_vocalists (
@@ -159,16 +300,11 @@ def init_db():
     _migrate_vocalists_schema(c)
     _migrate_assinaturas_schema(c)
     _migrate_vouchers_schema(c)
-    _add_column('vouchers', 'eh_vitalicio', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'vouchers', 'eh_vitalicio', 'INTEGER NOT NULL DEFAULT 0')
     _migrate_notifications_schema(c)
     db.commit()
 
     db.close()
-
-
-def _table_columns(cursor, table: str) -> list[str]:
-    cursor.execute(f'PRAGMA table_info({table})')
-    return [row[1] for row in cursor.fetchall()]
 
 
 def _split_vocalist_names(raw: str) -> list[str]:
@@ -179,7 +315,7 @@ def _split_vocalist_names(raw: str) -> list[str]:
 
 def _migrate_vocalists_schema(c) -> None:
     """Migra cantor único (bands.*) e transpose por user_id para band_vocalists."""
-    cols = _table_columns(c, 'cifra_vocalist_transpose')
+    cols = table_columns(c, 'cifra_vocalist_transpose')
     if 'user_id' in cols and 'vocalist_id' not in cols:
         c.execute('ALTER TABLE cifra_vocalist_transpose RENAME TO _legacy_cvt_user')
 
@@ -208,7 +344,7 @@ def _migrate_vocalists_schema(c) -> None:
                     (vid, row['id'], name, link_uid, i),
                 )
 
-    cols = _table_columns(c, 'cifra_vocalist_transpose')
+    cols = table_columns(c, 'cifra_vocalist_transpose')
     if 'vocalist_id' not in cols:
         c.execute('''
             CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
@@ -230,8 +366,7 @@ def _migrate_vocalists_schema(c) -> None:
                 SELECT MIN(bv2.sort_order) FROM band_vocalists bv2 WHERE bv2.band_id = c.band_id
             )
         ''')
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='_legacy_cvt_user'")
-        if c.fetchone():
+        if table_exists(c, '_legacy_cvt_user'):
             c.execute('''
                 INSERT OR REPLACE INTO cifra_vocalist_transpose
                     (cifra_id, vocalist_id, transpose_semitones)
@@ -264,7 +399,7 @@ def create_user(username, email, password, display_name: str | None = None):
         )
         db.commit()
         return user_id
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         return None
     finally:
         db.close()
@@ -291,7 +426,7 @@ def create_google_user(google_id, email, username, display_name: str | None = No
         )
         db.commit()
         return user_id
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         return None
     finally:
         db.close()
@@ -485,7 +620,7 @@ def create_assinatura_gratis(banda_id: str, *, cursor=None, commit: bool = True)
             (assinatura_id, banda_id, 'gratis', 'ativa', now),
         )
         db.commit()
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         db.rollback()
         existing = get_assinatura(banda_id)
         db.close()
@@ -1119,7 +1254,7 @@ def add_band_member(band_id, user_id, role='member'):
             (band_id, user_id, role)
         )
         db.commit()
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         pass
     finally:
         db.close()
