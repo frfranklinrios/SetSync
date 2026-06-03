@@ -66,13 +66,57 @@
         </div>
 
         {% if public_share_enabled and public_letras_url %}
-        <div class="input-group input-group-sm mb-3" style="max-width:100%;">
-            <input type="text" class="form-control" id="public-letras-url" readonly
-                   value="{{ public_letras_url }}" aria-label="Link público">
-            <button type="button" class="btn btn-outline-primary" id="btn-copy-public-link">
-                <i class="fas fa-copy me-1"></i> Copiar
-            </button>
+        <div class="public-letras-share-row mb-3">
+            <div class="public-letras-qr-wrap">
+                <img src="{{ url_for('setlists.public_letras_qr', setlist_id=setlist.id) }}"
+                     width="160" height="160" alt="QR Code — letras da setlist"
+                     class="public-letras-qr">
+                <a href="{{ url_for('setlists.public_letras_qr', setlist_id=setlist.id, download=1) }}"
+                   class="btn btn-outline-secondary btn-sm mt-2 w-100">
+                    <i class="fas fa-download me-1"></i> Baixar QR
+                </a>
+                <p class="text-muted mb-0 mt-2" style="font-size:0.75rem;text-align:center;">
+                    Escaneie para abrir as letras
+                </p>
+            </div>
+            <div class="public-letras-link-wrap">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="public-letras-url" readonly
+                           value="{{ public_letras_url }}" aria-label="Link público">
+                    <button type="button" class="btn btn-outline-primary" id="btn-copy-public-link">
+                        <i class="fas fa-copy me-1"></i> Copiar
+                    </button>
+                </div>
+            </div>
         </div>
+        <style>
+        .public-letras-share-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            align-items: flex-start;
+        }
+        .public-letras-qr-wrap {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.65rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+        }
+        [data-theme="dark"] .public-letras-qr-wrap { background: #0f172a; }
+        .public-letras-qr {
+            display: block;
+            border-radius: 6px;
+        }
+        .public-letras-link-wrap {
+            flex: 1 1 220px;
+            min-width: 0;
+            align-self: center;
+        }
+        </style>
         {% endif %}
 
         <div class="d-flex flex-wrap gap-2">

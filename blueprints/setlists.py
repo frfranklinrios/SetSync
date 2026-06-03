@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from io import BytesIO
 
@@ -466,6 +467,45 @@ def public_letras_data(token):
     resp = jsonify(payload)
     resp.headers['Cache-Control'] = 'no-store'
     return resp
+
+
+@setlists_bp.route('/<setlist_id>/letras-qr.png')
+@login_required
+def public_letras_qr(setlist_id):
+    """QR Code PNG do link público de letras (membros da banda)."""
+    user_id = session['user_id']
+    setlist = get_setlist(setlist_id)
+    ok, _band = _require_setlist_access(setlist, user_id)
+    if not ok:
+        abort(404)
+
+    if not setlist.get('public_share_enabled'):
+        abort(404)
+
+    share_token = (setlist.get('public_share_token') or '').strip()
+    if not share_token:
+        abort(404)
+
+    from security import external_url_for
+    from qr_util import qrcode_png_bytes
+
+    public_url = external_url_for('setlists.public_letras', token=share_token)
+    try:
+        png = qrcode_png_bytes(public_url)
+    except Exception:
+        current_app.logger.exception('Falha ao gerar QR da setlist %s', setlist_id)
+        abort(500)
+
+    as_download = request.args.get('download', '').lower() in ('1', 'true', 'yes')
+    safe_name = re.sub(r'[^\w\s-]+', '', (setlist.get('name') or 'setlist'), flags=re.UNICODE)
+    safe_name = re.sub(r'\s+', '-', safe_name.strip())[:60] or 'setlist'
+    return send_file(
+        BytesIO(png),
+        mimetype='image/png',
+        max_age=300,
+        as_attachment=as_download,
+        download_name=f'{safe_name}-letras-qr.png',
+    )
 
 
 @setlists_bp.route('/<setlist_id>/link-publico', methods=['POST'])
