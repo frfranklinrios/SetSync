@@ -49,21 +49,24 @@
 </div>
 
 {% if cifras|length > 0 %}
-<div class="card mb-4" style="border-color:var(--border);">
-    <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-            <div>
-                <h6 class="mb-1"><i class="fas fa-link me-1"></i> Link público — letras</h6>
-                <p class="text-muted mb-0" style="font-size:0.82rem;">
-                    Cantores e público acompanham as letras no celular, sem precisar entrar no SetSync.
-                </p>
-            </div>
-            {% if public_share_enabled %}
-            <span class="badge text-bg-success">Ativo</span>
-            {% else %}
-            <span class="badge text-bg-secondary">Desativado</span>
-            {% endif %}
-        </div>
+<details class="setlist-public-link-details mb-4">
+    <summary class="setlist-public-link-summary">
+        <span class="setlist-public-link-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+        <span class="setlist-public-link-summary-text">
+            <span class="setlist-public-link-title"><i class="fas fa-link me-1"></i> Link público — letras</span>
+            <span class="text-muted setlist-public-link-sub">Cantores e público no celular, sem login</span>
+        </span>
+        {% if public_share_enabled %}
+        <span class="badge text-bg-success ms-auto">Ativo</span>
+        {% else %}
+        <span class="badge text-bg-secondary ms-auto">Desativado</span>
+        {% endif %}
+    </summary>
+
+    <div class="setlist-public-link-body">
+        <p class="text-muted mb-3" style="font-size:0.82rem;">
+            Compartilhe o link ou o QR Code para acompanhar as letras em tempo real.
+        </p>
 
         {% if public_share_enabled and public_letras_url %}
         <div class="public-letras-share-row mb-3">
@@ -89,34 +92,6 @@
                 </div>
             </div>
         </div>
-        <style>
-        .public-letras-share-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.25rem;
-            align-items: flex-start;
-        }
-        .public-letras-qr-wrap {
-            flex: 0 0 auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0.65rem;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: #fff;
-        }
-        [data-theme="dark"] .public-letras-qr-wrap { background: #0f172a; }
-        .public-letras-qr {
-            display: block;
-            border-radius: 6px;
-        }
-        .public-letras-link-wrap {
-            flex: 1 1 220px;
-            min-width: 0;
-            align-self: center;
-        }
-        </style>
         {% endif %}
 
         <div class="d-flex flex-wrap gap-2">
@@ -150,7 +125,81 @@
             {% endif %}
         </div>
     </div>
-</div>
+</details>
+
+<style>
+.setlist-public-link-details {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface, #fff);
+    overflow: hidden;
+}
+[data-theme="dark"] .setlist-public-link-details { background: #0b1422; }
+.setlist-public-link-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.9rem 1.1rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+.setlist-public-link-summary::-webkit-details-marker { display: none; }
+.setlist-public-link-summary-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+    flex: 1;
+}
+.setlist-public-link-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+.setlist-public-link-sub {
+    font-size: 0.78rem;
+}
+.setlist-public-link-chevron {
+    color: var(--muted);
+    font-size: 0.75rem;
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+}
+.setlist-public-link-details[open] .setlist-public-link-chevron {
+    transform: rotate(90deg);
+}
+.setlist-public-link-body {
+    padding: 0 1.1rem 1.1rem;
+    border-top: 1px solid var(--border);
+}
+.public-letras-share-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    align-items: flex-start;
+}
+.public-letras-qr-wrap {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+}
+[data-theme="dark"] .public-letras-qr-wrap { background: #0f172a; }
+.public-letras-qr {
+    display: block;
+    border-radius: 6px;
+}
+.public-letras-link-wrap {
+    flex: 1 1 220px;
+    min-width: 0;
+    align-self: center;
+}
+</style>
 <script>
 (function () {
     var btn = document.getElementById('btn-copy-public-link');
