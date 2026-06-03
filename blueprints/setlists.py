@@ -443,7 +443,29 @@ def public_letras(token):
     data = prepare_public_letras_payload(token)
     if not data:
         abort(404)
-    return render_template('setlists/public_letras.html', **data)
+    return render_template(
+        'setlists/public_letras.html',
+        **data,
+        public_token=token,
+    )
+
+
+@setlists_bp.route('/letras/<token>/dados.json')
+def public_letras_data(token):
+    """API para sincronização em tempo real da página pública."""
+    from security import check_rate_limit
+    from setlist_public import public_letras_api_payload
+
+    if not check_rate_limit(f'public-letras-poll:{token}', max_attempts=300, window_sec=60):
+        return jsonify({'ok': False, 'detail': 'rate_limit'}), 429
+
+    payload = public_letras_api_payload(token)
+    if not payload:
+        return jsonify({'ok': False, 'detail': 'not_found'}), 404
+
+    resp = jsonify(payload)
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
 
 
 @setlists_bp.route('/<setlist_id>/link-publico', methods=['POST'])

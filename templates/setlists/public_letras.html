@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=3">
 </head>
 <body>
 <header class="pl-header">
@@ -21,13 +21,17 @@
             <h1 class="pl-title">{{ setlist.name }}</h1>
             {% if setlist.description %}
             <p class="pl-desc">{{ setlist.description }}</p>
+            {% else %}
+            <p class="pl-desc" style="display:none;"></p>
             {% endif %}
         </div>
     </div>
-    <p class="pl-hint">Letras para acompanhar · {{ songs|length }} música{{ '' if songs|length == 1 else 's' }}</p>
+    <p class="pl-hint" id="pl-hint">Letras para acompanhar · {{ songs|length }} música{{ '' if songs|length == 1 else 's' }} · atualiza automaticamente</p>
+    <p class="pl-live-status" id="pl-live-status" role="status" aria-live="polite">Atualizado</p>
 </header>
 
-<main class="pl-main">
+<main class="pl-main" id="pl-songs-root">
+    {% if songs %}
     {% for song in songs %}
     <article class="pl-song" id="musica-{{ song.index }}">
         <header class="pl-song-hd">
@@ -52,10 +56,24 @@
         {% endif %}
     </article>
     {% endfor %}
+    {% else %}
+    <div class="pl-empty">
+        <p>Nenhuma música na setlist no momento.</p>
+        <p class="pl-empty-sub">A lista aparece aqui quando a banda adicionar músicas.</p>
+    </div>
+    {% endif %}
 </main>
 
 <footer class="pl-footer">
     <a href="https://setsync.dados.tec.br" rel="noopener noreferrer">SetSync</a>
 </footer>
+
+<script>
+window.PUBLIC_LETRAS = {
+    token: {{ public_token|tojson }},
+    revision: {{ public_revision|tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/public-letras-live.js') }}?v=1"></script>
 </body>
 </html>

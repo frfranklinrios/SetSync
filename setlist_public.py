@@ -1,6 +1,8 @@
 """Link público da setlist — letras para cantores/público."""
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import secrets
 from typing import Any
@@ -143,22 +145,11 @@ def lyrics_from_cifra(cifra: dict, vocalist_id: str | None = None) -> str:
     return conteudo_to_lyrics_plain(body)
 
 
-def prepare_public_letras_payload(token: str) -> dict[str, Any] | None:
-    setlist = get_setlist_by_public_token(token)
-    if not setlist:
-        return None
-
-    band = get_band(setlist['band_id'])
-    if not band:
-        return None
-
-    cifras_raw = get_setlist_cifras(setlist['id'])
-    if not cifras_raw:
-        return None
-
+def _build_songs_for_public(setlist_id: str, band_id: str) -> list[dict[str, Any]]:
     from blueprints.cifras import cifra_display_key, vocalist_entry_display_name
 
-    vocalists = get_band_vocalists(band['id'])
+    cifras_raw = get_setlist_cifras(setlist_id)
+    vocalists = get_band_vocalists(band_id)
     default_vid = vocalists[0]['id'] if vocalists else None
     songs: list[dict[str, Any]] = []
 
@@ -174,14 +165,103 @@ def prepare_public_letras_payload(token: str) -> dict[str, Any] | None:
             ),
             'vocalist_name': vocalist_entry_display_name(v) if v else '',
             'lyrics': lyrics_from_cifra(c, vocalist_id=vid),
+            'cifra_id': str(c.get('id') or ''),
         })
+    return songs
+
+
+def compute_public_letras_revision(
+    setlist: dict,
+    band: dict,
+    songs: list[dict[str, Any]],
+) -> str:
+    """Fingerprint do conteúdo exibido — usado pelo cliente para detectar mudanças."""
+    payload = {
+        'setlist': {
+            'name': setlist.get('name'),
+            'description': setlist.get('description'),
+        },
+        'band_logo': (band.get('logo_filename') or '').strip(),
+        'songs': [
+            {
+                'id': s.get('cifra_id'),
+                'index': s.get('index'),
+                'titulo': s.get('titulo'),
+                'artista': s.get('artista'),
+                'display_key': s.get('display_key'),
+                'vocalist_name': s.get('vocalist_name'),
+                'lyrics': s.get('lyrics'),
+            }
+            for s in songs
+        ],
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()[:20]
+
+
+def build_public_letras_snapshot(token: str) -> dict[str, Any] | None:
+    """Estado serializável da página pública (HTML + polling JSON)."""
+    setlist = get_setlist_by_public_token(token)
+    if not setlist:
+        return None
+
+    band = get_band(setlist['band_id'])
+    if not band:
+        return None
+
+    songs = _build_songs_for_public(setlist['id'], band['id'])
+    revision = compute_public_letras_revision(setlist, band, songs)
 
     from band_logos import band_has_logo, band_logo_data_uri
 
     return {
+        'ok': True,
+        'revision': revision,
         'setlist': setlist,
         'band': band,
         'songs': songs,
         'band_has_logo': band_has_logo(band),
         'band_logo_data_uri': band_logo_data_uri(band),
+    }
+
+
+def prepare_public_letras_payload(token: str) -> dict[str, Any] | None:
+    snap = build_public_letras_snapshot(token)
+    if not snap:
+        return None
+    return {
+        'setlist': snap['setlist'],
+        'band': snap['band'],
+        'songs': snap['songs'],
+        'band_has_logo': snap['band_has_logo'],
+        'band_logo_data_uri': snap['band_logo_data_uri'],
+        'public_revision': snap['revision'],
+    }
+
+
+def public_letras_api_payload(token: str) -> dict[str, Any] | None:
+    """JSON leve para atualização em tempo real (polling)."""
+    snap = build_public_letras_snapshot(token)
+    if not snap:
+        return None
+    return {
+        'ok': True,
+        'revision': snap['revision'],
+        'setlist': {
+            'name': snap['setlist'].get('name'),
+            'description': snap['setlist'].get('description') or '',
+        },
+        'band': {'name': snap['band'].get('name')},
+        'band_logo_data_uri': snap['band_logo_data_uri'],
+        'songs': [
+            {
+                'index': s['index'],
+                'titulo': s['titulo'],
+                'artista': s['artista'],
+                'display_key': s['display_key'],
+                'vocalist_name': s['vocalist_name'],
+                'lyrics': s['lyrics'],
+            }
+            for s in snap['songs']
+        ],
     }
