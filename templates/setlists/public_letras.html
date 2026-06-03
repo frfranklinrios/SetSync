@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>{{ setlist.name }} — Programação</title>
+    <title>{{ setlist.name }} — Letras</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=7">
 </head>
-<body class="pl-page-lista">
+<body>
 <header class="pl-header">
     <div class="pl-brand">
         {% if band_logo_data_uri %}
@@ -26,12 +26,30 @@
             {% endif %}
         </div>
     </div>
-    <p class="pl-hint" id="pl-hint">Programação do show · {{ songs|length }} música{{ '' if songs|length == 1 else 's' }} · atualiza automaticamente</p>
+    <p class="pl-hint" id="pl-hint">Letras · {{ songs|length }} música{{ '' if songs|length == 1 else 's' }} · atualiza automaticamente</p>
     <p class="pl-live-status" id="pl-live-status" role="status" aria-live="polite">Atualizado</p>
 </header>
 
 <main class="pl-main" id="pl-songs-root">
     {% if songs %}
+    <nav class="pl-menu" id="menu" aria-label="Músicas da setlist">
+        <h2 class="pl-menu-title">Músicas</h2>
+        <ol class="pl-menu-list">
+            {% for song in songs %}
+            <li class="pl-menu-item">
+                <a href="#musica-{{ song.index }}" class="pl-menu-link">
+                    <span class="pl-menu-num">{{ song.index }}</span>
+                    <span class="pl-menu-text">
+                        <span class="pl-menu-song">{{ song.titulo }}</span>
+                        {% if song.artista %}<span class="pl-menu-artist">{{ song.artista }}</span>{% endif %}
+                    </span>
+                    {% if song.display_key %}<span class="pl-menu-key">{{ song.display_key }}</span>{% endif %}
+                </a>
+            </li>
+            {% endfor %}
+        </ol>
+    </nav>
+
     {% for song in songs %}
     <article class="pl-song" id="musica-{{ song.index }}">
         <header class="pl-song-hd">
@@ -49,6 +67,14 @@
                 {% endif %}
             </div>
         </header>
+        <p class="pl-back">
+            <a href="#menu" class="pl-back-link"><i class="pl-back-icon" aria-hidden="true">↑</i> Voltar ao menu</a>
+        </p>
+        {% if song.lyrics %}
+        <pre class="pl-lyrics">{{ song.lyrics }}</pre>
+        {% else %}
+        <p class="pl-empty-song">Letra não disponível para esta música.</p>
+        {% endif %}
     </article>
     {% endfor %}
     {% else %}
@@ -64,12 +90,12 @@
 </footer>
 
 <script>
-window.PUBLIC_SETLIST = {
+window.PUBLIC_LETRAS = {
     token: {{ public_token|tojson }},
     revision: {{ public_revision|tojson }},
-    pollUrl: {{ url_for('setlists.public_compartilhar_data', token=public_token)|tojson }}
+    pollUrl: {{ url_for('setlists.public_letras_data', token=public_token)|tojson }}
 };
 </script>
-<script src="{{ url_for('static', filename='js/public-letras-live.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/public-letras-live.js') }}?v=5"></script>
 </body>
 </html>

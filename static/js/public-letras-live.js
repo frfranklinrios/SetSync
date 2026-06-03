@@ -1,10 +1,10 @@
 /**
- * Atualização em tempo real da página pública (/compartilhar/).
+ * Página pública de letras: menu + músicas, atualização em tempo real.
  */
 (function () {
   "use strict";
 
-  var cfg = window.PUBLIC_SETLIST || window.PUBLIC_LETRAS;
+  var cfg = window.PUBLIC_LETRAS;
   if (!cfg || !cfg.token) return;
 
   var POLL_MS = 4000;
@@ -33,9 +33,47 @@
   function pollUrl() {
     if (cfg.pollUrl) return cfg.pollUrl;
     return (
-      "/setlists/compartilhar/" +
+      "/setlists/letras/" +
       encodeURIComponent(cfg.token) +
       "/dados.json"
+    );
+  }
+
+  function renderMenu(songs) {
+    var items = songs
+      .map(function (song) {
+        var artist = song.artista
+          ? '<span class="pl-menu-artist">' + esc(song.artista) + "</span>"
+          : "";
+        var key = song.display_key
+          ? '<span class="pl-menu-key">' + esc(song.display_key) + "</span>"
+          : "";
+        return (
+          '<li class="pl-menu-item">' +
+          '<a href="#musica-' +
+          song.index +
+          '" class="pl-menu-link">' +
+          '<span class="pl-menu-num">' +
+          song.index +
+          "</span>" +
+          '<span class="pl-menu-text">' +
+          '<span class="pl-menu-song">' +
+          esc(song.titulo) +
+          "</span>" +
+          artist +
+          "</span>" +
+          key +
+          "</a></li>"
+        );
+      })
+      .join("");
+
+    return (
+      '<nav class="pl-menu" id="menu" aria-label="Músicas da setlist">' +
+      '<h2 class="pl-menu-title">Músicas</h2>' +
+      '<ol class="pl-menu-list">' +
+      items +
+      "</ol></nav>"
     );
   }
 
@@ -51,6 +89,9 @@
     if (song.vocalist_name) {
       meta += '<span class="pl-vox">' + esc(song.vocalist_name) + "</span>";
     }
+    var body = song.lyrics
+      ? '<pre class="pl-lyrics">' + esc(song.lyrics) + "</pre>"
+      : '<p class="pl-empty-song">Letra não disponível para esta música.</p>';
 
     return (
       '<article class="pl-song" id="musica-' +
@@ -70,8 +111,16 @@
       meta +
       "</div>" +
       "</header>" +
+      '<p class="pl-back">' +
+      '<a href="#menu" class="pl-back-link">' +
+      '<i class="pl-back-icon" aria-hidden="true">↑</i> Voltar ao menu</a></p>' +
+      body +
       "</article>"
     );
+  }
+
+  function renderMain(songs) {
+    return renderMenu(songs) + songs.map(renderSong).join("");
   }
 
   function applyPayload(data) {
@@ -80,7 +129,7 @@
     }
     if (titleEl && data.setlist) {
       titleEl.textContent = data.setlist.name || "";
-      document.title = (data.setlist.name || "Setlist") + " — Programação";
+      document.title = (data.setlist.name || "Setlist") + " — Letras";
     }
     if (descEl && data.setlist) {
       var d = (data.setlist.description || "").trim();
@@ -95,9 +144,7 @@
     if (hintEl) {
       var n = (data.songs && data.songs.length) || 0;
       hintEl.textContent =
-        "Programação do show · " +
-        songCountLabel(n) +
-        " · atualiza automaticamente";
+        "Letras · " + songCountLabel(n) + " · atualiza automaticamente";
     }
     if (!mainEl) return;
 
@@ -110,7 +157,14 @@
       return;
     }
 
-    mainEl.innerHTML = data.songs.map(renderSong).join("");
+    var hash = window.location.hash;
+    mainEl.innerHTML = renderMain(data.songs);
+    if (hash) {
+      var target = document.querySelector(hash);
+      if (target) {
+        target.scrollIntoView({ behavior: "instant", block: "start" });
+      }
+    }
   }
 
   function flashUpdated() {
@@ -126,9 +180,7 @@
     if (inFlight || document.hidden) return;
     inFlight = true;
     var url =
-      pollUrl() +
-      "?r=" +
-      encodeURIComponent(revision || "");
+      pollUrl() + "?r=" + encodeURIComponent(revision || "");
 
     fetch(url, { credentials: "omit", cache: "no-store" })
       .then(function (res) {

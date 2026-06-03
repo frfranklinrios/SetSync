@@ -439,13 +439,11 @@ def view(setlist_id):
     from security import external_url_for
     share_on = bool(setlist.get('public_share_enabled'))
     share_token = (setlist.get('public_share_token') or '').strip()
-    public_lista_url = None
-    public_imprimir_url = None
+    public_letras_url = None
     if share_on and share_token:
         from setlist_public import public_share_urls
         urls = public_share_urls(share_token)
-        public_lista_url = urls['lista']
-        public_imprimir_url = urls['imprimir']
+        public_letras_url = urls['letras']
 
     return render_template(
         'setlists/view.html',
@@ -454,8 +452,7 @@ def view(setlist_id):
         cifras=cifras,
         vocalists=vocalists,
         public_share_enabled=share_on,
-        public_lista_url=public_lista_url,
-        public_imprimir_url=public_imprimir_url,
+        public_letras_url=public_letras_url,
     )
 
 
@@ -463,7 +460,7 @@ def _render_public_setlist_page(token: str):
     from security import check_rate_limit
     from setlist_public import prepare_public_letras_payload
 
-    if not check_rate_limit(f'public-lista:{token}', max_attempts=120, window_sec=60):
+    if not check_rate_limit(f'public-letras:{token}', max_attempts=120, window_sec=60):
         return 'Muitas requisições. Tente em instantes.', 429
 
     data = prepare_public_letras_payload(token)
@@ -476,16 +473,16 @@ def _render_public_setlist_page(token: str):
     )
 
 
-@setlists_bp.route('/compartilhar/<token>')
-def public_compartilhar(token):
-    """Página pública da setlist: programação ao vivo (sem login, sem cifras)."""
+@setlists_bp.route('/letras/<token>')
+def public_letras(token):
+    """Página pública: letras da setlist com menu de navegação."""
     return _render_public_setlist_page(token)
 
 
-@setlists_bp.route('/letras/<token>')
-def public_letras(token):
-    """Redireciona para a página pública canônica (/compartilhar/)."""
-    return redirect(url_for('setlists.public_compartilhar', token=token), code=302)
+@setlists_bp.route('/compartilhar/<token>')
+def public_compartilhar(token):
+    """Compat: redireciona para a página de letras."""
+    return redirect(url_for('setlists.public_letras', token=token), code=302)
 
 
 @setlists_bp.route('/compartilhar/<token>/imprimir')
@@ -509,7 +506,7 @@ def public_imprimir(token):
         autoprint=request.args.get('print', '').lower() in ('1', 'true', 'yes'),
         public_mode=True,
         public_token=token,
-        public_lista_url=urls['lista'],
+        public_letras_url=urls['letras'],
         **{k: v for k, v in data.items() if k != 'empty'},
     )
 
@@ -518,7 +515,7 @@ def _public_setlist_json_response(token: str):
     from security import check_rate_limit
     from setlist_public import public_letras_api_payload
 
-    if not check_rate_limit(f'public-lista-poll:{token}', max_attempts=300, window_sec=60):
+    if not check_rate_limit(f'public-letras-poll:{token}', max_attempts=300, window_sec=60):
         return jsonify({'ok': False, 'detail': 'rate_limit'}), 429
 
     payload = public_letras_api_payload(token)
@@ -545,7 +542,7 @@ def public_letras_data(token):
 @setlists_bp.route('/<setlist_id>/compartilhar-qr.png')
 @login_required
 def public_share_qr(setlist_id):
-    """QR Code PNG: ?dest=lista|letras (página pública) ou imprimir."""
+    """QR Code PNG: ?dest=letras (página de letras) ou imprimir."""
     user_id = session['user_id']
     setlist = get_setlist(setlist_id)
     ok, _band = _require_setlist_access(setlist, user_id)
@@ -562,14 +559,14 @@ def public_share_qr(setlist_id):
     from setlist_public import public_share_urls
     from qr_util import qrcode_png_bytes
 
-    dest = (request.args.get('dest') or 'lista').strip().lower()
+    dest = (request.args.get('dest') or 'letras').strip().lower()
     urls = public_share_urls(share_token)
     if dest == 'imprimir':
         public_url = urls['imprimir']
         suffix = 'impressao'
     else:
-        public_url = urls['lista']
-        suffix = 'programacao'
+        public_url = urls['letras']
+        suffix = 'letras'
     try:
         png = qrcode_png_bytes(public_url)
     except Exception:
@@ -591,7 +588,7 @@ def public_share_qr(setlist_id):
 @setlists_bp.route('/<setlist_id>/letras-qr.png')
 @login_required
 def public_letras_qr(setlist_id):
-    """Atalho: QR da página pública (programação)."""
+    """Atalho: QR da página pública de letras."""
     return public_share_qr(setlist_id)
 
 
@@ -618,7 +615,7 @@ def public_link_manage(setlist_id):
             flash('Adicione músicas à setlist antes de publicar o link.', 'warning')
             return redirect(url_for('setlists.view', setlist_id=setlist_id))
         set_setlist_public_share(setlist_id, True)
-        flash('Página pública ativada. Copie o link ou QR da programação para a equipe.', 'success')
+        flash('Link público de letras ativado. Copie o link ou QR para a equipe.', 'success')
     elif action == 'disable':
         set_setlist_public_share(setlist_id, False)
         flash('Link público desativado.', 'success')
