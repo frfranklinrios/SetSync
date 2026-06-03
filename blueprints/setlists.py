@@ -498,12 +498,15 @@ def _public_setlist_json_response(token: str):
     if not check_rate_limit(f'public-letras-poll:{token}', max_attempts=300, window_sec=60):
         return jsonify({'ok': False, 'detail': 'rate_limit'}), 429
 
-    payload = public_letras_api_payload(token)
+    client_revision = (request.args.get('r') or '').strip()
+    payload = public_letras_api_payload(token, client_revision=client_revision)
     if not payload:
         return jsonify({'ok': False, 'detail': 'not_found'}), 404
 
     resp = jsonify(payload)
     resp.headers['Cache-Control'] = 'no-store'
+    if client_revision and payload.get('revision') == client_revision and len(payload) <= 3:
+        resp.headers['X-SetSync-Poll'] = 'unchanged'
     return resp
 
 

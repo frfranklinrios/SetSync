@@ -153,12 +153,13 @@ def _build_songs_for_public(setlist_id: str, band_id: str) -> list[dict[str, Any
 
     cifras_raw = get_setlist_cifras(setlist_id)
     vocalists = get_band_vocalists(band_id)
+    vocalist_by_id = {v['id']: v for v in vocalists}
     default_vid = vocalists[0]['id'] if vocalists else None
     songs: list[dict[str, Any]] = []
 
     for i, c in enumerate(cifras_raw, start=1):
         vid = c.get('setlist_vocalist_id') or default_vid
-        v = get_band_vocalist(vid) if vid else None
+        v = vocalist_by_id.get(vid) if vid else None
         songs.append({
             'index': i,
             'titulo': c.get('titulo') or 'Sem título',
@@ -173,12 +174,54 @@ def _build_songs_for_public(setlist_id: str, band_id: str) -> list[dict[str, Any
     return songs
 
 
+def compute_public_letras_revision_fast(setlist: dict, band: dict, setlist_id: str) -> str:
+    """Fingerprint leve (metadados + updated_at) — evita reprocessar letras no polling."""
+    from db import get_db
+
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT sc.position, sc.vocalist_id AS setlist_vocalist_id,
+                  ci.id AS cifra_id, ci.updated_at, ci.titulo, ci.artista, ci.tom_original
+           FROM setlist_cifras sc
+           JOIN cifras ci ON ci.id = sc.cifra_id
+           WHERE sc.setlist_id = ?
+           ORDER BY sc.position''',
+        (setlist_id,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+
+    payload = {
+        'setlist': {
+            'name': setlist.get('name'),
+            'description': setlist.get('description'),
+            'updated_at': str(setlist.get('updated_at') or ''),
+        },
+        'band_logo': (band.get('logo_filename') or '').strip(),
+        'songs': [
+            {
+                'id': r.get('cifra_id'),
+                'index': i,
+                'titulo': r.get('titulo'),
+                'artista': r.get('artista'),
+                'tom': r.get('tom_original'),
+                'vocalist_id': r.get('setlist_vocalist_id'),
+                'updated_at': str(r.get('updated_at') or ''),
+            }
+            for i, r in enumerate(rows, start=1)
+        ],
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()[:20]
+
+
 def compute_public_letras_revision(
     setlist: dict,
     band: dict,
     songs: list[dict[str, Any]],
 ) -> str:
-    """Fingerprint do conteúdo exibido — usado pelo cliente para detectar mudanças."""
+    """Fingerprint completo (inclui letras) — compatibilidade com snapshots antigos."""
     payload = {
         'setlist': {
             'name': setlist.get('name'),
@@ -213,7 +256,7 @@ def build_public_letras_snapshot(token: str) -> dict[str, Any] | None:
         return None
 
     songs = _build_songs_for_public(setlist['id'], band['id'])
-    revision = compute_public_letras_revision(setlist, band, songs)
+    revision = compute_public_letras_revision_fast(setlist, band, setlist['id'])
 
     from band_logos import band_has_logo, band_logo_data_uri
 
@@ -262,20 +305,32 @@ def prepare_public_print_data(token: str) -> dict[str, Any] | None:
     return build_setlist_print_payload(setlist['id'])
 
 
-def public_letras_api_payload(token: str) -> dict[str, Any] | None:
-    """JSON leve para atualização em tempo real (polling)."""
-    snap = build_public_letras_snapshot(token)
-    if not snap:
+def public_letras_api_payload(
+    token: str,
+    client_revision: str | None = None,
+) -> dict[str, Any] | None:
+    """JSON para polling; se revision do cliente coincide, resposta mínima (sem reprocessar letras)."""
+    setlist = get_setlist_by_public_token(token)
+    if not setlist:
         return None
+    band = get_band(setlist['band_id'])
+    if not band:
+        return None
+
+    revision = compute_public_letras_revision_fast(setlist, band, setlist['id'])
+    client_revision = (client_revision or '').strip()
+    if client_revision and client_revision == revision:
+        return {'ok': True, 'revision': revision}
+
+    songs = _build_songs_for_public(setlist['id'], band['id'])
     return {
         'ok': True,
-        'revision': snap['revision'],
+        'revision': revision,
         'setlist': {
-            'name': snap['setlist'].get('name'),
-            'description': snap['setlist'].get('description') or '',
+            'name': setlist.get('name'),
+            'description': setlist.get('description') or '',
         },
-        'band': {'name': snap['band'].get('name')},
-        'band_logo_data_uri': snap['band_logo_data_uri'],
+        'band': {'name': band.get('name')},
         'songs': [
             {
                 'index': s['index'],
@@ -285,6 +340,6 @@ def public_letras_api_payload(token: str) -> dict[str, Any] | None:
                 'vocalist_name': s['vocalist_name'],
                 'lyrics': s['lyrics'],
             }
-            for s in snap['songs']
+            for s in songs
         ],
     }

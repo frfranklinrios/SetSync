@@ -318,7 +318,7 @@
                 <p class="mb-1 text-muted">Banda</p>
                 <p class="fw-semibold mb-3">{{ band.name }}</p>
                 <p class="mb-1 text-muted">Adicionada</p>
-                <p class="mb-0">{{ cifra.created_at[:10] }}</p>
+                <p class="mb-0">{{ cifra.created_at|date_short }}</p>
             </div>
         </div>
     </div>

@@ -11,7 +11,7 @@ from blueprints.assinatura import assinatura_bp, webhook as mp_webhook_view
 from blueprints.notifications import notifications_bp
 from db import init_db
 from extensions import init_scheduler
-from util import highlight_chords_html, normalize_tom_label
+from util import highlight_chords_html, normalize_tom_label, format_date_short
 from flask_wtf.csrf import CSRFProtect
 import os
 from urllib.parse import urlparse
@@ -45,6 +45,7 @@ if env == 'production':
 
 app.jinja_env.filters['highlight_chords'] = highlight_chords_html
 app.jinja_env.filters['normalize_tom'] = normalize_tom_label
+app.jinja_env.filters['date_short'] = format_date_short
 
 with app.app_context():
     init_db()

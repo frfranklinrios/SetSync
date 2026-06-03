@@ -1,7 +1,20 @@
 
+from datetime import date, datetime
+
 from pychord import Chord
 import re
 import html as html_lib
+
+
+def format_date_short(value) -> str:
+    """Data curta para templates (SQLite str ou datetime do PostgreSQL)."""
+    if not value:
+        return ''
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d')
+    if isinstance(value, date):
+        return value.isoformat()
+    return str(value)[:10]
 
 
 def _to_br_note(note):
