@@ -52,6 +52,7 @@ def _init_postgres_schema(c) -> None:
             vocalist_name TEXT,
             logo_filename TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (owner_id) REFERENCES users(id)
         )''',
         '''CREATE TABLE IF NOT EXISTS band_members (
@@ -186,6 +187,7 @@ def init_db():
     if IS_POSTGRES:
         _init_postgres_schema(c)
         db.commit()
+        add_column_if_missing(c, 'bands', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
         _migrate_assinaturas_schema(c)
         db.commit()
         db.close()

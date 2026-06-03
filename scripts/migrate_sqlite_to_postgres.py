@@ -62,7 +62,7 @@ def main() -> int:
     for mod in list(sys.modules):
         if mod in ('database', 'db'):
             del sys.modules[mod]
-    from database import IS_POSTGRES, get_db
+    from database import IS_POSTGRES, get_db, table_columns
     from db import init_db
 
     if not IS_POSTGRES:
@@ -100,14 +100,27 @@ def main() -> int:
         rows = src.execute(f'SELECT * FROM {table}').fetchall()
         if not rows:
             continue
-        cols = rows[0].keys()
+        pg_cols = set(table_columns(c, table))
+        cols = [k for k in rows[0].keys() if k in pg_cols]
+        skipped = [k for k in rows[0].keys() if k not in pg_cols]
+        if skipped:
+            print(f'  {table}: ignorando colunas extras {skipped}')
+        if not cols:
+            print(f'  {table}: pulado (nenhuma coluna em comum)')
+            continue
         col_list = ', '.join(cols)
         placeholders = ', '.join(['?'] * len(cols))
         sql = f'INSERT INTO {table} ({col_list}) VALUES ({placeholders})'
+        imported = 0
         for row in rows:
-            c.execute(sql, tuple(row[c] for c in cols))
+            data = {c: row[c] for c in cols}
+            if table == 'assinaturas' and not (data.get('banda_id') or '').strip():
+                print(f'  {table}: ignorando assinatura sem banda_id ({data.get("id")})')
+                continue
+            c.execute(sql, tuple(data[c] for c in cols))
+            imported += 1
         dst.commit()
-        print(f'importado {table}: {len(rows)}')
+        print(f'importado {table}: {imported}' + (f' (de {len(rows)})' if imported != len(rows) else ''))
 
     if counts.get('setlists', 0):
         c.execute(
