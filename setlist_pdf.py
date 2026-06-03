@@ -1,6 +1,7 @@
 """Gera PDF da setlist (folha de palco + cifras) via Playwright/Chromium."""
 from __future__ import annotations
 
+import os
 import re
 from urllib.parse import urlparse
 
@@ -91,3 +92,32 @@ def build_pdf_download_name(setlist_name: str, band_name: str | None = None) -> 
     if band_name:
         parts.insert(0, _safe_filename(band_name))
     return ' — '.join(parts) + '.pdf'
+
+
+def build_setlist_pdf_url(
+    setlist_id: str,
+    user_id: str,
+    *,
+    cols: str = '2',
+    base_url: str | None = None,
+) -> str:
+    """URL interna da página de impressão (lista + cifras) para captura em PDF."""
+    from security import make_pdf_access_token
+
+    token = make_pdf_access_token(setlist_id, user_id)
+    internal = (base_url or os.getenv('SETSYNC_INTERNAL_URL') or 'http://127.0.0.1:5000').rstrip('/')
+    cols = '1' if str(cols) == '1' else '2'
+    return (
+        f'{internal}/setlists/{setlist_id}/imprimir'
+        f'?cols={cols}&pdfgen=1&pdf_token={token}'
+    )
+
+
+def generate_setlist_pdf_bytes(
+    setlist_id: str,
+    user_id: str,
+    *,
+    cols: str = '2',
+) -> bytes:
+    """PDF A4 com folha de palco (lista) e cifras completas na sequência."""
+    return render_url_to_pdf(build_setlist_pdf_url(setlist_id, user_id, cols=cols))

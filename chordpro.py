@@ -42,6 +42,52 @@ def parse_chordpro_directive(line: str) -> tuple[str, str] | None:
     return m.group(1).strip().lower(), (m.group(2) or '').strip()
 
 
+_COMMENT_LOOSE_RE = re.compile(
+    r'^\{\s*comment\s*:\s*(.*?)(?:\})?\s*$',
+    re.IGNORECASE,
+)
+
+
+def is_comment_line(line: str) -> bool:
+    """True se a linha for diretiva {comment: ...} (não exibir nem salvar)."""
+    return parse_comment_line(line) is not None
+
+
+def strip_comment_lines_from_text(text: str) -> str:
+    """Remove linhas {comment: ...} do corpo da cifra."""
+    if not text:
+        return text
+    out: list[str] = []
+    for raw in text.replace('\r\n', '\n').replace('\r', '\n').split('\n'):
+        if is_comment_line(raw.strip()):
+            continue
+        out.append(raw)
+    return '\n'.join(out)
+
+
+# Compat: nome antigo usado em prepare_cifra_sheet
+normalize_comment_lines_in_text = strip_comment_lines_from_text
+
+
+def parse_comment_line(line: str) -> str | None:
+    """
+    Extrai rótulo de {comment: ...} (formato estrito ou colagem com `}` faltando).
+    Retorna None se a linha não for comentário ChordPro.
+    """
+    stripped = (line or '').strip()
+    if not stripped:
+        return None
+    directive = parse_chordpro_directive(stripped)
+    if directive and directive[0] == 'comment':
+        return directive[1]
+    if re.fullmatch(r'\{\s*comment\s*\}', stripped, re.IGNORECASE):
+        return ''
+    m = _COMMENT_LOOSE_RE.match(stripped)
+    if m:
+        return m.group(1).strip()
+    return None
+
+
 def is_chordpro_document(text: str) -> bool:
     if not text:
         return False
@@ -133,6 +179,10 @@ def parse_conteudo_to_cifra_data(conteudo: str) -> list[dict[str, Any]]:
             i += 1
             continue
 
+        if is_comment_line(stripped):
+            i += 1
+            continue
+
         directive = parse_chordpro_directive(stripped)
         if directive:
             name, value = directive
@@ -140,16 +190,6 @@ def parse_conteudo_to_cifra_data(conteudo: str) -> list[dict[str, Any]]:
                 i += 1
                 continue
             if name == 'comment':
-                label = value or '—'
-                result.append({
-                    'segundo': seq,
-                    'texto_letra': label,
-                    'acorde': '',
-                    'group': group,
-                    'section': label,
-                })
-                seq += 1
-                group += 1
                 i += 1
                 continue
             if name in SECTION_DIRECTIVES:
@@ -252,6 +292,9 @@ def parse_conteudo_to_cifra_data(conteudo: str) -> list[dict[str, Any]]:
             i += 2
             continue
 
+        if is_comment_line(stripped):
+            i += 1
+            continue
         result.append({
             'segundo': seq,
             'texto_letra': line,
@@ -282,7 +325,7 @@ def _group_to_chordpro_lines(items: list[dict[str, Any]]) -> list[str]:
     has_chord = any((it.get('acorde') or '').strip() for it in items)
     merged = _merge_group_to_line(items)
     if not has_chord and _is_section_label(merged):
-        return [_directive('comment', merged.strip())]
+        return []
     if merged.strip():
         return [merged.rstrip()]
     return []
@@ -337,10 +380,9 @@ def conteudo_to_chordpro(
         if not prev_was_blank and out and out[-1] != '':
             out.append('')
         for sl in section_lines:
-            if preserve_existing_sections and sl.strip().startswith('{') and 'comment' in sl.lower():
-                out.append(sl.strip())
-            else:
-                out.append(sl)
+            if is_comment_line(sl.strip()):
+                continue
+            out.append(sl)
         prev_was_blank = False
 
     while out and out[-1] == '':

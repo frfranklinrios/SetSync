@@ -232,7 +232,11 @@ def login():
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
-        login_id = request.form.get('username', '').strip()
+        login_id = (
+            request.form.get('username')
+            or request.form.get('email')
+            or ''
+        ).strip()
         password = request.form.get('password', '')
         rate_key = f'login:{request.remote_addr}:{login_id.lower()}'
         if not check_rate_limit(rate_key):
@@ -251,7 +255,7 @@ def login():
             invite_token = _invite_token_from_request()
             return _redirect_after_auth(user, invite_token)
 
-        flash('Usuário ou senha incorretos', 'danger')
+        flash('Usuário, e-mail ou senha incorretos', 'danger')
 
     invite_token = _invite_token_from_request()
     invite_band = get_band(parse_band_invite_token(invite_token)) if invite_token else None

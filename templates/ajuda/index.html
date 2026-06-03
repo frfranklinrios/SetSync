@@ -176,7 +176,7 @@
   <div>
     <h2>Ajuda</h2>
     <p class="help-muted mb-0">
-      Guia do SetSync: bandas, cifras, setlists e modo palco. Atualizado para a versão em uso no site.
+      Guia do SetSync em <strong>setsync.com.br</strong> — bandas, cifras, setlists e modo palco.
     </p>
   </div>
   <a class="btn btn-outline-secondary btn-sm"
@@ -191,11 +191,15 @@
     <div class="list-group list-group-flush">
       <a class="list-group-item" href="#conta">
         <strong>Conta e acesso</strong>
-        <div class="text-muted" style="font-size:0.8rem;">Login, sessão, Google</div>
+        <div class="text-muted" style="font-size:0.8rem;">Login, e-mail, Google</div>
       </a>
       <a class="list-group-item" href="#primeiros-passos">
         <strong>Primeiros passos</strong>
         <div class="text-muted" style="font-size:0.8rem;">Da conta ao primeiro show</div>
+      </a>
+      <a class="list-group-item" href="#planos">
+        <strong>Planos</strong>
+        <div class="text-muted" style="font-size:0.8rem;">Grátis, Pro, Worship</div>
       </a>
       <a class="list-group-item" href="#bandas">
         <strong>Bandas e membros</strong>
@@ -203,7 +207,7 @@
       </a>
       <a class="list-group-item" href="#cifras">
         <strong>Cifras</strong>
-        <div class="text-muted" style="font-size:0.8rem;">Cadastro, tom, tablaturas</div>
+        <div class="text-muted" style="font-size:0.8rem;">ChordPro, colar cifra, diagramas</div>
       </a>
       <a class="list-group-item" href="#transposicao">
         <strong>Transposição</strong>
@@ -211,7 +215,7 @@
       </a>
       <a class="list-group-item" href="#setlists">
         <strong>Setlists</strong>
-        <div class="text-muted" style="font-size:0.8rem;">Ordem, cantora/cantor e tom por faixa</div>
+        <div class="text-muted" style="font-size:0.8rem;">Ordem, link público de letras</div>
       </a>
       <a class="list-group-item" href="#modo-tocar">
         <strong>Modo Tocar</strong>
@@ -238,6 +242,7 @@
       <div class="card-body">
         <ul>
           <li>Crie conta com <strong>e-mail e senha</strong> ou use <strong>Entrar com Google</strong>.</li>
+          <li>No login, use <strong>usuário ou e-mail</strong> (o e-mail não diferencia maiúsculas/minúsculas).</li>
           <li>A sessão permanece ativa por cerca de <strong>2 dias</strong> no mesmo dispositivo e é renovada enquanto você usa o app.</li>
           <li>Quem recebe um <strong>link de convite</strong> de banda pode se cadastrar e já entra na banda automaticamente (veja abaixo).</li>
         </ul>
@@ -257,6 +262,31 @@
         </ol>
         <div class="help-callout">
           No palco: use <strong>2 colunas</strong> (<span class="kbd">C</span>) ou <strong>caber na tela</strong> (<span class="kbd">A</span>) em cifras longas, e o <strong>auto-scroll</strong> (<span class="kbd">Espaço</span>) para rolar sozinho até o fim da música.
+        </div>
+      </div>
+    </section>
+
+    <section class="card help-section" id="planos">
+      <div class="card-header">Planos</div>
+      <div class="card-body">
+        <p>
+          Cada <strong>banda</strong> tem seu próprio plano. Veja detalhes e upgrade em
+          <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a>
+          {% if current_user.is_authenticated %} (menu superior){% endif %}.
+        </p>
+        <table class="help-table">
+          <tr><th>Grátis</th><td>Até 30 músicas, 5 integrantes, 10 setlists e 1 banda por conta.</td></tr>
+          <tr><th>Pro</th><td>Músicas, integrantes e setlists ilimitados na banda; exportação em PDF.</td></tr>
+          <tr><th>Worship</th><td>Tudo do Pro em várias bandas do mesmo dono (ideal para igrejas).</td></tr>
+        </table>
+        <ul>
+          <li>Ao atingir um limite do plano grátis, o app avisa e oferece upgrade.</li>
+          <li><strong>Vouchers</strong> promocionais liberam Pro por tempo determinado (código enviado pela equipe SetSync).</li>
+          <li>No plano grátis podem aparecer <strong>anúncios</strong> em algumas telas; contas Pro/Worship não exibem anúncios.</li>
+        </ul>
+        <div class="help-callout">
+          Ministérios com várias bandas: confira a página
+          <a href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a> (plano Worship).
         </div>
       </div>
     </section>
@@ -293,8 +323,21 @@
         <h3>Cadastro</h3>
         <ul>
           <li><strong>Título</strong> e <strong>artista</strong> aparecem nas listas e no Modo Tocar.</li>
-          <li><strong>Tom</strong> é a referência original (ex.: <span class="code">G</span>, <span class="code">C#m</span>).</li>
-          <li>No texto, acordes podem usar colchetes: <span class="code">[Am]</span> misturados à letra.</li>
+          <li><strong>Tom</strong> é a referência original (ex.: <span class="code">G</span>, <span class="code">Bm</span>, <span class="code">C#m</span>).</li>
+          <li>O conteúdo é salvo em <strong>ChordPro</strong>; acordes podem usar colchetes <span class="code">[Am]</span> ou linhas só de acordes acima da letra.</li>
+        </ul>
+
+        <h3>Colar de outro site</h3>
+        <ul>
+          <li>Em <strong>Adicionar</strong> ou <strong>Editar</strong> cifra, cole o texto copiado de um <strong>site de cifras</strong> (<span class="kbd">Ctrl</span>+<span class="kbd">V</span>) no campo da cifra.</li>
+          <li>A conversão para ChordPro costuma ser <strong>automática</strong> ao colar; se não reconhecer, use o botão <strong>Converter colagem</strong>.</li>
+          <li>Funciona com colagem em <strong>texto plano</strong> (acordes e letra em linhas separadas) ou com o conteúdo copiado da página.</li>
+          <li>Se a letra sair cortada ou com trechos estranhos, revise no editor antes de salvar.</li>
+        </ul>
+
+        <h3>Diagramas de acordes</h3>
+        <ul>
+          <li>Em qualquer tela com cifra formatada, <strong>toque em um acorde</strong> para abrir o diagrama (violão ou cavaco).</li>
         </ul>
 
         <h3>Listas</h3>
@@ -315,6 +358,7 @@
       <div class="card-body">
         <ul>
           <li>O tom exibido pode ser alterado <strong>sem mudar o arquivo original</strong> da cifra.</li>
+          <li>Tons <strong>menores</strong> (ex.: <span class="code">Bm</span>, <span class="code">Am</span>) são tratados corretamente na lista de transposição — não confundem com a relativa maior.</li>
           <li>Com <strong>várias cantoras/cantores</strong>, o SetSync guarda a transposição de cada pessoa por música.</li>
           <li>No Modo Tocar, escolha a cantora/cantor no topo para ver o tom certo; a mudança pode ser salva na banda.</li>
           <li>Na <strong>setlist</strong>, cada linha pode ter cantora/cantor e tom próprios para aquele show.</li>
@@ -330,6 +374,15 @@
           <li>Na tela da setlist, <strong>arraste pelo ícone</strong> à esquerda para reordenar; a ordem é salva automaticamente.</li>
           <li>Em cada música da lista você pode escolher a <strong>cantora/cantor</strong> e ver o <strong>tom</strong> daquela faixa.</li>
           <li>Use <strong>Tocar</strong> no topo para abrir o Modo Tocar com todas as músicas do setlist.</li>
+        </ul>
+
+        <h3>Link público de letras</h3>
+        <ul>
+          <li>Na setlist, abra <strong>Link público</strong> e toque em <strong>Ativar link</strong> (admins da banda).</li>
+          <li>O visitante vê um <strong>menu de músicas</strong> e a letra de cada uma, <strong>sem login</strong>; a página atualiza quando você altera a setlist.</li>
+          <li>Copie o link ou use o <strong>QR Code</strong> para projetor, equipe de som ou congregação.</li>
+          <li><strong>Gerar novo link</strong> invalida o anterior — use se o link vazou.</li>
+          <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio).</li>
         </ul>
       </div>
     </section>
@@ -348,6 +401,11 @@
         <h3>Lista de músicas</h3>
         <ul>
           <li><span class="kbd">L</span> ou o ícone de lista abre o menu lateral com todas as músicas do setlist (toque para pular direto).</li>
+        </ul>
+
+        <h3>Acordes no palco</h3>
+        <ul>
+          <li><strong>Toque em um acorde</strong> na cifra para ver o diagrama (violão/cavaco), como nas outras telas.</li>
         </ul>
 
         <h3>Atalhos úteis</h3>
@@ -372,20 +430,17 @@
       <div class="card-header">Importar cifra (Cifra → SetSync)</div>
       <div class="card-body">
         <p>
-          Ao <strong>adicionar</strong> ou <strong>editar</strong> uma cifra, use o botão <strong>Cifra → SetSync</strong>.
-          A ferramenta abre integrada ao app e pode preencher título, tom e conteúdo.
+          Além de <strong>colar de um site de cifras</strong> (veja seção Cifras), você pode usar o botão <strong>Cifra → SetSync</strong>
+          ao adicionar ou editar uma música. A ferramenta preenche título, tom e conteúdo a partir de uma URL.
         </p>
-        <h3>Modos</h3>
+        <h3>Modos da ferramenta</h3>
         <ul>
-          <li><strong>Enviar áudio</strong> — MP3/WAV; o servidor analisa e monta o lead sheet (recomendado em VPS).</li>
-          <li><strong>Somente cifra</strong> — importa texto e acordes da página; sem BPM automático.</li>
-          <li><strong>YouTube no servidor</strong> — só se habilitado no servidor; pode exigir cookies e falhar em hospedagem simples.</li>
+          <li><strong>Somente cifra</strong> — cole a URL da página da música em um site de cifras compatível.</li>
+          <li><strong>Enviar áudio</strong> — MP3/WAV para gerar cifra/lead sheet (quando disponível no servidor).</li>
         </ul>
-        <h3>No servidor (administrador)</h3>
-        <ul>
-          <li><span class="code">ffmpeg</span> para conversão de áudio enviado.</li>
-          <li><span class="code">playwright install chromium</span> se for usar captura de vídeo do player.</li>
-        </ul>
+        <div class="help-callout">
+          Para a maioria das músicas, <strong>colar o texto</strong> no formulário da cifra é o caminho mais rápido.
+        </div>
       </div>
     </section>
 
@@ -404,25 +459,45 @@
     <section class="card help-section" id="problemas">
       <div class="card-header">Problemas comuns</div>
       <div class="card-body">
-        <h3>Página em branco ou “Internal Server Error”</h3>
+        <h3>Não consigo entrar</h3>
         <ul>
-          <li>Atualize com <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>.</li>
-          <li>Se instalou como PWA, feche o app e abra de novo pelo ícone ou pelo navegador.</li>
+          <li>Use <strong>usuário ou e-mail</strong> cadastrados (não é necessário lembrar só o usuário).</li>
+          <li>Conta criada com Google: use <strong>Entrar com Google</strong> com o mesmo e-mail.</li>
         </ul>
 
-        <h3>Importador ou modal “Not Found”</h3>
+        <h3>Colagem da cifra falhou</h3>
         <ul>
-          <li>Confirme que está logado e que a rota <span class="code">/cifras/import/tool</span> abre (hard refresh no PWA).</li>
+          <li>Copie de novo a cifra inteira (versão simplificada costuma colar melhor).</li>
+          <li>Use <strong>Converter colagem</strong> após colar; confira se há linhas de acordes acima da letra.</li>
+          <li>Palavras partidas ou comentários estranhos: edite manualmente antes de salvar.</li>
         </ul>
 
-        <h3>Erro de ffmpeg ou Playwright</h3>
+        <h3>Transposição / tom errado</h3>
         <ul>
-          <li>No servidor: instale <span class="code">ffmpeg</span> e, se necessário, execute <span class="code">playwright install chromium</span> no ambiente do app (Docker já inclui na imagem oficial).</li>
+          <li>Confira o <strong>tom original</strong> no cadastro da música (ex.: <span class="code">Bm</span> para menor).</li>
+          <li>No Modo Tocar, verifique a <strong>cantora/cantor</strong> selecionada no topo.</li>
         </ul>
 
-        <h3>Layout estranho no celular</h3>
+        <h3>Link público de letras</h3>
         <ul>
-          <li>Listas e setlist foram otimizadas para telas estreitas; gire o aparelho ou use Modo Tocar em tela cheia para ler cifras.</li>
+          <li>Só funciona com o link <strong>ativado</strong> na setlist; link antigo para de funcionar ao <strong>gerar novo link</strong>.</li>
+          <li>Visitantes não precisam de conta; a página pode levar alguns segundos para refletir mudanças na setlist.</li>
+        </ul>
+
+        <h3>Limite do plano grátis</h3>
+        <ul>
+          <li>Mensagem ao criar música, membro ou setlist: veja <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a> para upgrade Pro na banda.</li>
+        </ul>
+
+        <h3>Página em branco ou desatualizada</h3>
+        <ul>
+          <li>Atualize com <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span> (ou limpe cache do PWA).</li>
+          <li>Se instalou como app, feche e abra de novo pelo ícone.</li>
+        </ul>
+
+        <h3>Layout no celular</h3>
+        <ul>
+          <li>Use <strong>Modo Tocar</strong> em tela cheia (<span class="kbd">F</span>) para ler cifras no palco.</li>
         </ul>
       </div>
     </section>

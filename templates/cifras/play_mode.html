@@ -1,6 +1,10 @@
 {% extends "index.html" %}
 {% block title %}Tocar — {{ setlist.name }}{% endblock %}
 
+{% block adsense_head %}{% endblock %}
+{% block adsense_footer %}{% endblock %}
+{% block adsense_content %}{% endblock %}
+
 {% block content %}
 <style>
 /* ============================================================
@@ -1006,15 +1010,35 @@ body.play-mode.edges-hint .tap-zone {
         function isSectionLabel(text) {
             var t = String(text || '').trim();
             if (!t) return true;
+            if (/^\{\s*comment\s*:/i.test(t)) return true;
             if (/^spa$/i.test(t)) return true;
             if (/^(intro|riff|outro|verso|refrão|refrao|ponte|solo|tab)\b/i.test(t)) return true;
             if (/^\[?\s*tab\b/i.test(t)) return true;
             if (/^parte\s+\d+\s+de\s+\d+$/i.test(t)) return true;
             return false;
         }
+        function sectionLabelFromItem(item) {
+            if (!item) return '';
+            if (item.section) return String(item.section).trim();
+            var lyric = (item.texto_letra != null) ? String(item.texto_letra).trim() : '';
+            var m = lyric.match(/^\{\s*comment\s*:\s*(.*?)(?:\})?\s*$/i);
+            if (m) return m[1].trim();
+            return lyric;
+        }
+        function isSectionGroup(group) {
+            if (!group || group.length !== 1) return false;
+            var item = group[0] || {};
+            if ((item.acorde || '').trim()) return false;
+            if (item.section) return true;
+            var lyric = (item.texto_letra != null) ? String(item.texto_letra).trim() : '';
+            if (/^\{\s*comment\s*:/i.test(lyric)) return true;
+            return isSectionLabel(lyric);
+        }
         function keepToken(item) {
             if (!item) return false;
             var lyric = (item.texto_letra != null) ? String(item.texto_letra) : '';
+            if (/^\{\s*comment\s*:/i.test(lyric.trim())) return false;
+            if (item.section && !(item.acorde || '').trim()) return false;
             if (!item.acorde && isSectionLabel(lyric)) return false;
             if (isHtmlArtifact(lyric)) return false;
             if (isTabLine(lyric)) return false;
@@ -1048,6 +1072,9 @@ body.play-mode.edges-hint .tap-zone {
 
         var html = '';
         groups.forEach(function(group) {
+            if (isSectionGroup(group)) {
+                return;
+            }
             html += '<div class="sp-line">';
             for (var i = 0; i < group.length; i++) {
                 var item = group[i] || {};

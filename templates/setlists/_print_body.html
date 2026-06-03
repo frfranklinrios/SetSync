@@ -20,36 +20,28 @@
             </p>
         </header>
 
-        <table class="palco-table">
-            <thead>
-                <tr>
-                    <th class="palco-th-num" scope="col">#</th>
-                    <th class="palco-th-song" scope="col">Música</th>
-                    <th class="palco-th-key" scope="col">Tom</th>
-                    <th class="palco-th-vox" scope="col">Canta</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sheet in sheets %}
-                <tr class="palco-row">
-                    <td class="palco-num">{{ sheet.index }}</td>
-                    <td class="palco-song">
-                        <span class="palco-song-title">{{ sheet.titulo }}</span>
-                        {% if sheet.artista %}
-                        <span class="palco-song-artist">{{ sheet.artista }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="palco-key">
-                        <span class="palco-key-value">{{ sheet.display_key or '—' }}</span>
-                        {% if sheet.semitones and sheet.tom_original and sheet.display_key != sheet.tom_original %}
-                        <span class="palco-key-orig">cad. {{ sheet.tom_original }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="palco-vox">{{ sheet.vocalist_name or '—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <ol class="palco-list">
+            {% for sheet in sheets %}
+            <li class="palco-item">
+                <span class="palco-num" aria-hidden="true">{{ sheet.index }}</span>
+                <div class="palco-item-main">
+                    <span class="palco-song-title">{{ sheet.titulo }}</span>
+                    {% if sheet.artista %}
+                    <span class="palco-song-artist">{{ sheet.artista }}</span>
+                    {% endif %}
+                </div>
+                <div class="palco-item-meta">
+                    <span class="palco-key-value">{{ sheet.display_key or '—' }}</span>
+                    {% if sheet.semitones and sheet.tom_original and sheet.display_key != sheet.tom_original %}
+                    <span class="palco-key-orig">cad. {{ sheet.tom_original }}</span>
+                    {% endif %}
+                    {% if sheet.vocalist_name %}
+                    <span class="palco-vox">{{ sheet.vocalist_name }}</span>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ol>
 
         <p class="palco-foot">Cifras completas na sequência ↓</p>
     </section>

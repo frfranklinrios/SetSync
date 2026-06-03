@@ -2,7 +2,8 @@ import os
 from datetime import timedelta
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+# override=False: variáveis do Docker/systemd têm prioridade sobre .env no disco
+load_dotenv(override=False)
 
 
 def _session_lifetime() -> timedelta:

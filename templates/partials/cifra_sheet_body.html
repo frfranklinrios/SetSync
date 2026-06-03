@@ -1,6 +1,11 @@
 {# Corpo da folha: structured, HTML ou grade — espera dict `sheet` #}
 {% if sheet.grouped_cifra and sheet.grouped_cifra|length > 0 %}
     {% for group in sheet.grouped_cifra %}
+    {% set first = group[0] %}
+    {% set is_section = group|length == 1 and not first.acorde and first.section %}
+    {% if is_section %}
+    <p class="cifra-section sp-section">{{ first.section or first.texto_letra }}</p>
+    {% else %}
     <div class="sp-line">
         {% for item in group %}
         <span class="sp-item">
@@ -9,6 +14,7 @@
         </span>
         {% endfor %}
     </div>
+    {% endif %}
     {% endfor %}
 {% elif sheet.conteudo_html %}
     {{ sheet.conteudo_html | safe }}

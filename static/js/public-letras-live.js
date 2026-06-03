@@ -45,6 +45,9 @@
         var artist = song.artista
           ? '<span class="pl-menu-artist">' + esc(song.artista) + "</span>"
           : "";
+        var vox = song.vocalist_name
+          ? '<span class="pl-menu-vox">' + esc(song.vocalist_name) + "</span>"
+          : "";
         var key = song.display_key
           ? '<span class="pl-menu-key">' + esc(song.display_key) + "</span>"
           : "";
@@ -61,6 +64,7 @@
           esc(song.titulo) +
           "</span>" +
           artist +
+          vox +
           "</span>" +
           key +
           "</a></li>"

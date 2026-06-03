@@ -191,22 +191,71 @@ def _group_cifra_data(data):
     if not data:
         return []
     if 'group' not in data[0]:
-        return [data]
-    groups = []
+        groups = [data]
+    else:
+        groups = []
+        current_g = None
+        current_items = []
+        for item in data:
+            g = item.get('group', 0)
+            if g != current_g:
+                if current_items:
+                    groups.append(current_items)
+                current_g = g
+                current_items = [item]
+            else:
+                current_items.append(item)
+        if current_items:
+            groups.append(current_items)
+    return _normalize_grouped_sections(groups)
+
+
+def _is_stored_comment_item(item: dict) -> bool:
+    from chordpro import is_comment_line
+
+    raw = (item.get('texto_letra') or '').strip()
+    if (item.get('acorde') or '').strip():
+        return False
+    if is_comment_line(raw):
+        return True
+    if raw.lower().startswith('{comment'):
+        return True
+    return False
+
+
+def _normalize_grouped_sections(groups):
+    """Remove itens {comment: ...} da exibição (dados legados no cifra_json)."""
+    if not groups:
+        return groups
+
+    flat: list[dict] = []
+    for group in groups:
+        for item in group:
+            if _is_stored_comment_item(item):
+                continue
+            flat.append(dict(item))
+
+    if not flat:
+        return []
+
+    if 'group' not in flat[0]:
+        return [flat]
+
+    rebuilt: list[list[dict]] = []
     current_g = None
-    current_items = []
-    for item in data:
+    bucket: list[dict] = []
+    for item in flat:
         g = item.get('group', 0)
         if g != current_g:
-            if current_items:
-                groups.append(current_items)
+            if bucket:
+                rebuilt.append(bucket)
             current_g = g
-            current_items = [item]
+            bucket = [item]
         else:
-            current_items.append(item)
-    if current_items:
-        groups.append(current_items)
-    return groups
+            bucket.append(item)
+    if bucket:
+        rebuilt.append(bucket)
+    return rebuilt
 
 
 def _parse_conteudo_to_cifra_data(conteudo):
@@ -215,12 +264,26 @@ def _parse_conteudo_to_cifra_data(conteudo):
     return parse_conteudo_to_cifra_data(conteudo)
 
 
+def _cifra_for_display(cifra: dict) -> dict:
+    """Remove {comment: ...} do texto exibido no editor/visualização."""
+    from chordpro import strip_comment_lines_from_text
+
+    out = dict(cifra)
+    raw = (out.get('conteudo') or '').strip()
+    if raw:
+        out['conteudo'] = strip_comment_lines_from_text(raw)
+    return out
+
+
 def _prepare_conteudo_for_save(conteudo, *, titulo, artista, tom_original, cifra_json_raw=None):
     """Converte para ChordPro no disco e alinha cifra_json ao corpo salvo."""
     from chordpro import conteudo_to_chordpro, cifra_json_from_conteudo
 
+    from chordpro import strip_comment_lines_from_text
+
+    conteudo_limpo = strip_comment_lines_from_text(conteudo or '')
     chordpro_body = conteudo_to_chordpro(
-        conteudo or '',
+        conteudo_limpo,
         titulo=titulo or '',
         artista=artista or '',
         key=(tom_original or '').strip(),
@@ -373,7 +436,10 @@ def prepare_cifra_sheet(cifra, semitones=0):
     tom_orig = normalize_tom_label(cifra.get('tom_original') or '')
     display_key = key_at_transpose(tom_orig, semi) if semi else tom_orig
 
+    from chordpro import strip_comment_lines_from_text
+
     conteudo = sanitize_tab_html_artifacts(cifra.get('conteudo') or '')
+    conteudo = strip_comment_lines_from_text(conteudo)
     if semi:
         conteudo = pychord_transpose_text(conteudo, semi)
     conteudo = format_text_chords_br(conteudo, tom_orig)
@@ -500,6 +566,7 @@ def view(cifra_id):
     current_transpose = resolve_cifra_transpose(cifra_id, cifra['tom_original'])
     display_key = key_at_transpose(cifra['tom_original'], current_transpose)
 
+    cifra = _cifra_for_display(cifra)
     conteudo = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
     # Transpor usando pychord se possível
     if current_transpose != 0:
@@ -723,7 +790,7 @@ def edit(cifra_id):
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
-    return render_template('cifras/edit.html', cifra=cifra, band=band)
+    return render_template('cifras/edit.html', cifra=_cifra_for_display(cifra), band=band)
 
 @cifras_bp.route('/<cifra_id>/delete', methods=['POST'])
 @login_required

@@ -54,13 +54,13 @@
 
     <div class="mb-3">
         <label class="form-label d-flex flex-wrap align-items-center gap-2">
-            <span>Cifra <small class="text-muted">(colar do Cifra Club ou editar; salva em ChordPro)</small></span>
+            <span>Cifra <small class="text-muted">(colar de um site de cifras ou editar; salva em ChordPro)</small></span>
             <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="btn-converter-colagem">
                 Converter colagem
             </button>
         </label>
         <textarea class="form-control" id="conteudo" name="conteudo" rows="16"
-                  placeholder="Cole a cifra copiada do Cifra Club (Ctrl+V) para converter automaticamente">{{ cifra.conteudo }}</textarea>
+                  placeholder="Cole a cifra copiada de um site (Ctrl+V) para converter automaticamente">{{ cifra.conteudo }}</textarea>
         <div class="cifraclub-paste-hint form-text" role="status"></div>
     </div>
 
@@ -116,7 +116,7 @@
 {% include 'cifras/_cifras_tool_modal.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
-<script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=3"></script>
 <script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifras-tool-bridge.js') }}"></script>
 
@@ -392,7 +392,7 @@ if (window.SetSyncCifraClubPaste) {
     if (btnColagem) {
         btnColagem.addEventListener('click', function () {
             if (!SetSyncCifraClubPaste.aplicarNormalizacao(ta, pasteOptsEdit)) {
-                alert('Não reconheci colagem do Cifra Club neste texto. Cole a cifra com linhas de acordes alinhadas por espaços.');
+                alert('Não reconheci o formato desta colagem. Cole a cifra com linhas de acordes alinhadas por espaços.');
             }
         });
     }

@@ -84,9 +84,9 @@ def build_setlist_print_payload(
         sheets.append(sheet)
 
     if cols is None:
-        two_cols = request.args.get('cols', '1') == '2'
+        two_cols = request.args.get('cols', '2') != '1'
     else:
-        two_cols = str(cols) == '2'
+        two_cols = str(cols) != '1'
     if compact is None:
         palco_compact = len(sheets) > 10 or request.args.get('compact', '') == '1'
     else:
@@ -144,29 +144,33 @@ def imprimir(setlist_id):
 @setlists_bp.route('/<setlist_id>/exportar-pdf')
 @login_required
 def exportar_pdf(setlist_id):
-    """PDF via WeasyPrint (feature premium)."""
-    from monetizacao import pode_exportar_pdf, resposta_plano_necessario
-    from setlist_weasyprint import html_to_pdf_bytes, render_setlist_pdf_html
+    """PDF com folha de palco (lista) + cifras completas (Chromium)."""
+    return _send_setlist_pdf_download(setlist_id, session['user_id'])
 
-    data = _prepare_setlist_print_data(setlist_id, session['user_id'])
+
+def _send_setlist_pdf_download(setlist_id: str, user_id: str):
+    """Valida acesso/plano e devolve PDF (lista de músicas + cifras)."""
+    from monetizacao import pode_exportar_pdf, resposta_plano_necessario
+    from setlist_pdf import build_pdf_download_name, generate_setlist_pdf_bytes
+
+    data = _prepare_setlist_print_data(setlist_id, user_id)
     if data is None:
-        flash('Setlist não encontrada ou sem permissão', 'danger')
+        flash('Setlist não encontrada' if not get_setlist(setlist_id) else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
     if data.get('empty'):
-        flash('Setlist vazia', 'warning')
+        flash('Setlist vazia — adicione músicas antes de gerar o PDF.', 'warning')
         return redirect(url_for('setlists.view', setlist_id=setlist_id))
     if not pode_exportar_pdf(data['band']['id']):
         return resposta_plano_necessario()
 
     try:
-        html = render_setlist_pdf_html(current_app, data)
-        pdf_bytes = html_to_pdf_bytes(html)
+        cols = request.args.get('cols', '2')
+        pdf_bytes = generate_setlist_pdf_bytes(setlist_id, user_id, cols=cols)
     except Exception as exc:
-        current_app.logger.exception('Erro ao gerar PDF: %s', exc)
-        flash('Não foi possível gerar o PDF. Verifique se o WeasyPrint está instalado.', 'danger')
-        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+        current_app.logger.exception('Erro ao gerar PDF da setlist %s: %s', setlist_id, exc)
+        flash(f'Não foi possível gerar o PDF: {exc}', 'danger')
+        return redirect(url_for('setlists.imprimir', setlist_id=setlist_id))
 
-    from setlist_pdf import build_pdf_download_name
     filename = build_pdf_download_name(data['setlist']['name'], data['band']['name'])
     return send_file(
         BytesIO(pdf_bytes),
@@ -179,44 +183,8 @@ def exportar_pdf(setlist_id):
 @setlists_bp.route('/<setlist_id>/pdf')
 @login_required
 def download_pdf(setlist_id):
-    """Gera e baixa PDF formatado (Chromium)."""
-    from monetizacao import pode_exportar_pdf, resposta_plano_necessario
-
-    data = _prepare_setlist_print_data(setlist_id, session['user_id'])
-    if data is None:
-        flash('Setlist não encontrada' if not get_setlist(setlist_id) else 'Sem permissão', 'danger')
-        return redirect(url_for('dashboard'))
-    if data.get('empty'):
-        flash('Setlist vazia — adicione músicas antes de gerar o PDF.', 'warning')
-        return redirect(url_for('setlists.view', setlist_id=setlist_id))
-    if not pode_exportar_pdf(data['band']['id']):
-        return resposta_plano_necessario()
-
-    from setlist_pdf import build_pdf_download_name, render_url_to_pdf
-    from security import make_pdf_access_token
-    import os
-
-    try:
-        cols = request.args.get('cols', '1')
-        user_id = session['user_id']
-        token = make_pdf_access_token(setlist_id, user_id)
-        internal = (os.getenv('SETSYNC_INTERNAL_URL') or 'http://127.0.0.1:5000').rstrip('/')
-        pdf_url = (
-            f'{internal}/setlists/{setlist_id}/imprimir'
-            f'?cols={cols}&pdfgen=1&pdf_token={token}'
-        )
-        pdf_bytes = render_url_to_pdf(pdf_url)
-    except Exception as exc:
-        flash(f'Não foi possível gerar o PDF: {exc}', 'danger')
-        return redirect(url_for('setlists.imprimir', setlist_id=setlist_id))
-
-    filename = build_pdf_download_name(data['setlist']['name'], data['band']['name'])
-    return send_file(
-        BytesIO(pdf_bytes),
-        mimetype='application/pdf',
-        as_attachment=True,
-        download_name=filename,
-    )
+    """Alias: mesmo PDF que exportar-pdf (lista + cifras)."""
+    return _send_setlist_pdf_download(setlist_id, session['user_id'])
 
 
 # Modo tocar: exibe músicas em duas colunas com paginação
@@ -466,10 +434,22 @@ def _render_public_setlist_page(token: str):
     data = prepare_public_letras_payload(token)
     if not data:
         abort(404)
+    from adsense import adsense_ativo, get_adsense_config, usuario_deve_ver_anuncios
+
+    band = data.get('band') or {}
+    band_id = band.get('id')
+    adsense_cfg = get_adsense_config()
+    adsense_show = (
+        adsense_ativo()
+        and band_id
+        and usuario_deve_ver_anuncios(None, band_id, cfg=adsense_cfg)
+    )
     return render_template(
         'setlists/public_letras.html',
         **data,
         public_token=token,
+        adsense_show=adsense_show,
+        adsense=adsense_cfg,
     )
 
 

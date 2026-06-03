@@ -101,8 +101,6 @@
       var merged = mergeGroup(items);
       if (!merged.trim()) return;
       if (!hasChord && isSectionLabel(merged)) {
-        if (idx > 0 && out.length && out[out.length - 1] !== "") out.push("");
-        out.push(directive("comment", merged.trim()));
         return;
       }
       if (idx > 0 && out.length && out[out.length - 1] !== "") out.push("");

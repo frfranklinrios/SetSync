@@ -325,16 +325,18 @@ def get_user_by_username(username):
 def get_user_by_login(identifier: str) -> dict | None:
     """
     Busca usuário pelo username ou pelo e-mail (mesmo campo do formulário de login).
-    No VPS e local usam o mesmo SQLite; o identificador deve existir na base em uso.
+    E-mail é comparado sem diferenciar maiúsculas/minúsculas.
     """
     ident = (identifier or '').strip()
     if not ident:
         return None
+    if '@' in ident:
+        user = get_user_by_email(ident)
+        if user:
+            return user
     user = get_user_by_username(ident)
     if user:
         return user
-    if '@' in ident:
-        return get_user_by_email(ident)
     db = get_db()
     c = db.cursor()
     c.execute('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', (ident,))
@@ -344,9 +346,12 @@ def get_user_by_login(identifier: str) -> dict | None:
 
 
 def get_user_by_email(email):
+    email = (email or '').strip()
+    if not email:
+        return None
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM users WHERE email = ?', (email,))
+    c.execute('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', (email,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None

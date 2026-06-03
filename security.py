@@ -51,9 +51,11 @@ def get_allowed_hosts() -> set[str]:
     return {'localhost', '127.0.0.1'}
 
 
-def validate_request_host() -> None:
-    """Bloqueia Host header poisoning (403)."""
-    if request.path in ('/sw.js', '/manifest.webmanifest', '/health'):
+def validate_request_host():
+    """Bloqueia Host header poisoning (403). Redireciona hosts legados ao canônico."""
+    from flask import redirect
+
+    if request.path in ('/sw.js', '/manifest.webmanifest', '/health', '/ads.txt'):
         return
     host = (request.host or '').split(':')[0].lower()
     if not host:
@@ -62,6 +64,15 @@ def validate_request_host() -> None:
     if host not in allowed:
         current_app.logger.warning('Host rejeitado: %s (permitidos: %s)', host, allowed)
         abort(403)
+
+    base = canonical_base_url()
+    if base:
+        canon_host = (urlparse(base).hostname or '').lower()
+        if canon_host and host != canon_host and host in allowed:
+            target = base.rstrip('/') + request.full_path
+            if target.endswith('?') and '?' not in request.full_path:
+                target = target[:-1]
+            return redirect(target, code=301)
 
 
 def canonical_base_url() -> str | None:

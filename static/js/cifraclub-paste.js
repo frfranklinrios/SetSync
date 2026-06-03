@@ -1,5 +1,5 @@
 /**
- * Converte colagem do Cifra Club (HTML ou texto com marcação) para o formato SetSync.
+ * Converte colagem de sites de cifras (HTML ou texto) para o formato SetSync.
  */
 (function (global) {
   "use strict";
@@ -426,7 +426,7 @@
 
       if (isCifraClubUrl(plain)) {
         ev.preventDefault();
-        showPasteHint(textarea, "Importando do Cifra Club…");
+        showPasteHint(textarea, "Importando da URL…");
         importFromCifraClubUrl(plain.trim())
           .then(function (data) {
             var payload = {
@@ -446,10 +446,10 @@
               textarea.value = data.cifra || "";
               textarea.dispatchEvent(new Event("input", { bubbles: true }));
             }
-            showPasteHint(textarea, "Cifra importada do Cifra Club.");
+            showPasteHint(textarea, "Cifra importada da URL.");
           })
           .catch(function (err) {
-            alert(err.message || "Falha ao importar URL do Cifra Club.");
+            alert(err.message || "Falha ao importar a URL da cifra.");
           });
         return;
       }
@@ -471,7 +471,7 @@
       if (options.onConverted) options.onConverted(converted);
       showPasteHint(
         textarea,
-        "Colagem do Cifra Club convertida para o formato SetSync."
+        "Colagem convertida para o formato SetSync."
       );
     });
   }

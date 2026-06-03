@@ -102,12 +102,15 @@ def conteudo_to_lyrics_plain(conteudo: str) -> str:
         if not stripped:
             lines_out.append('')
             continue
+        from chordpro import is_comment_line
+
+        if is_comment_line(stripped):
+            continue
         directive = parse_chordpro_directive(stripped)
         if directive:
             name, value = directive
-            if name == 'comment' and value:
-                lines_out.append(value)
-            continue
+            if name == 'comment':
+                continue
         line = CHORD_INLINE_RE.sub('', raw)
         lines_out.append(line.rstrip())
     while lines_out and not lines_out[-1].strip():

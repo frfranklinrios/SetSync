@@ -234,3 +234,39 @@ Abra o `init_point` / `sandbox_init_point` impresso no terminal.
 ## 13. HTTP 402 no frontend
 
 O script `static/js/plano-limite.js` intercepta respostas `402` com `erro: limite_plano` ou `plano_necessario` e abre modal com link para `/assinatura/planos`.
+
+## 14. Google AdSense (plano grátis)
+
+Anúncios aparecem **somente** quando a banda em contexto (ou todas as bandas do dono) está no **plano grátis**, sem Pro/Worship/voucher ativo. Usuários com Worship ativa, superadmin ou qualquer banda própria premium **não** veem anúncios.
+
+### Variáveis
+
+| Variável | Descrição |
+|----------|-----------|
+| `ADSENSE_ENABLED` | `1` para ligar (padrão: ligado se `ADSENSE_CLIENT` estiver definido) |
+| `ADSENSE_CLIENT` | ID do editor (`ca-pub-...`) do painel AdSense |
+| `ADSENSE_SLOT_FOOTER` | Slot opcional do bloco no rodapé das páginas |
+| `ADSENSE_SLOT_CONTENT` | Slot opcional (use `{% block adsense_content %}` nos templates) |
+
+### Onde entra no site
+
+- Layout principal (`templates/index.html`): script no `<head>` e slot acima do footer.
+- Páginas públicas (home, planos) e usuários grátis logados.
+- Link público de letras (`/setlists/letras/<token>`) se a banda for grátis.
+- **Sem** anúncios: login/registro, admin, modo tocar, impressão/PDF.
+
+### Ativar em produção
+
+1. Aprove a conta no [Google AdSense](https://www.google.com/adsense/) com o domínio `https://setsync.com.br`.
+2. Copie o **data-ad-client** (`ca-pub-...`) para o `.env` da VPS.
+3. Confirme `https://setsync.com.br/ads.txt` (arquivo na raiz + Nginx na borda). No AdSense → **Sites** → verificar ads.txt → **Verificar novamente** após deploy.
+4. No AdSense → **Anúncios** → **Por unidade de anúncio** → **Display ads** → responsivo; copie o número de `data-ad-slot` para `ADSENSE_SLOT_FOOTER` no `.env` (melhora preenchimento e relatórios).
+5. Rebuild do container: `docker compose -f docker-compose.prod.yml up -d --build`.
+
+Teste local da lógica (sem rede):
+
+```bash
+python3 scripts/test_adsense_eligibility.py
+```
+
+> **LGPD:** se exigir consentimento de cookies para publicidade, adicione um banner de opt-in antes de carregar o script — o SetSync hoje só prepara a carga condicional por plano.

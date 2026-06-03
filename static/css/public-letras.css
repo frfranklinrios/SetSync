@@ -190,6 +190,12 @@ body {
   color: var(--pl-muted);
 }
 
+.pl-menu-vox {
+  font-size: 0.78rem;
+  color: var(--pl-accent);
+  font-weight: 500;
+}
+
 .pl-menu-key {
   font-size: 0.72rem;
   padding: 0.15rem 0.5rem;

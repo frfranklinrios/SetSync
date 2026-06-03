@@ -22,9 +22,13 @@
             <input type="hidden" name="convite_token" value="{{ invite_token }}">
             {% endif %}
             <div class="mb-3">
-                <label for="username" class="form-label">Usuário ou e-mail</label>
-                <input type="text" class="form-control" id="username" name="username" required autofocus
-                       autocomplete="username" placeholder="mesmo login do site em produção">
+                <label for="login_id" class="form-label">Usuário ou e-mail</label>
+                <input type="text" class="form-control" id="login_id" name="username" required autofocus
+                       autocomplete="username email"
+                       inputmode="email"
+                       placeholder="seu_usuario ou voce@email.com"
+                       aria-describedby="login_id_help">
+                <div id="login_id_help" class="form-text">Use o mesmo usuário do cadastro ou o e-mail da conta.</div>
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">Senha</label>

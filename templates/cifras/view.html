@@ -40,6 +40,19 @@
     break-inside: avoid;
     column-span: all;
 }
+.cifra-container .cifra-section,
+.cifra-container .sp-section {
+    display: block;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--chord-highlight, #c2410c);
+    margin: 0.85rem 0 0.45rem;
+    padding: 0.2rem 0 0.35rem;
+    border-bottom: 1px solid var(--chord-highlight-border, rgba(194, 65, 12, 0.35));
+    column-span: all;
+}
 .cifra-container .sp-line {
     display: flex;
     flex-wrap: wrap;
@@ -201,16 +214,8 @@
 
         <div class="cifra-container cifra-sheet-paper cifra-two-cols{% if conteudo_html or grouped_cifra %} play-layout{% endif %}" id="cifra-body">
             {% if grouped_cifra and grouped_cifra|length > 0 %}
-                {% for group in grouped_cifra %}
-                    <div class="sp-line">
-                        {% for item in group %}
-                            <span class="sp-item">
-                                <span class="sp-chord">{% if item.acorde %}{{ item.acorde }}{% else %}&nbsp;{% endif %}</span>
-                                <span class="sp-word">{% if item.texto_letra %}{{ item.texto_letra }}{% else %}&nbsp;{% endif %}</span>
-                            </span>
-                        {% endfor %}
-                    </div>
-                {% endfor %}
+                {% set sheet = {'grouped_cifra': grouped_cifra} %}
+                {% include 'partials/cifra_sheet_body.html' %}
             {% elif conteudo_html %}
                 {{ conteudo_html | safe }}
             {% else %}

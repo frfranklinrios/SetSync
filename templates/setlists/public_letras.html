@@ -8,7 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=7">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=8">
+    {% if adsense_show %}
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense.client }}"
+         crossorigin="anonymous"></script>
+    {% endif %}
 </head>
 <body>
 <header class="pl-header">
@@ -42,6 +46,7 @@
                     <span class="pl-menu-text">
                         <span class="pl-menu-song">{{ song.titulo }}</span>
                         {% if song.artista %}<span class="pl-menu-artist">{{ song.artista }}</span>{% endif %}
+                        {% if song.vocalist_name %}<span class="pl-menu-vox">{{ song.vocalist_name }}</span>{% endif %}
                     </span>
                     {% if song.display_key %}<span class="pl-menu-key">{{ song.display_key }}</span>{% endif %}
                 </a>
@@ -85,8 +90,15 @@
     {% endif %}
 </main>
 
+{% if adsense_show %}
+<aside class="pl-adsense" role="complementary" aria-label="Anúncio">
+    {% set slot = adsense.slots.footer %}
+    {% include 'partials/adsense_slot.html' %}
+</aside>
+{% endif %}
+
 <footer class="pl-footer">
-    <a href="https://setsync.dados.tec.br" rel="noopener noreferrer">SetSync</a>
+    <a href="https://setsync.com.br" rel="noopener noreferrer">SetSync</a>
 </footer>
 
 <script>
@@ -96,6 +108,6 @@ window.PUBLIC_LETRAS = {
     pollUrl: {{ url_for('setlists.public_letras_data', token=public_token)|tojson }}
 };
 </script>
-<script src="{{ url_for('static', filename='js/public-letras-live.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/public-letras-live.js') }}?v=6"></script>
 </body>
 </html>

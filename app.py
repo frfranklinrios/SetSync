@@ -50,14 +50,17 @@ with app.app_context():
     init_db()
 
 _PWA_ASSET_PATHS = frozenset(('/sw.js', '/manifest.webmanifest'))
+_ADS_TXT_PATH = '/ads.txt'
 
 
 @app.before_request
 def before_request():
-    if request.path in _PWA_ASSET_PATHS:
+    if request.path in _PWA_ASSET_PATHS or request.path == _ADS_TXT_PATH:
         return
     from security import validate_request_host
-    validate_request_host()
+    host_redirect = validate_request_host()
+    if host_redirect is not None:
+        return host_redirect
     if 'user_id' in session:
         session.permanent = True
         from db import is_superadmin as _is_superadmin
@@ -66,6 +69,9 @@ def before_request():
 
 @app.after_request
 def security_headers(response):
+    if request.path == _ADS_TXT_PATH:
+        response.headers.pop('Set-Cookie', None)
+        return response
     if request.path in _PWA_ASSET_PATHS:
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         response.headers.pop('Set-Cookie', None)
@@ -100,6 +106,25 @@ csrf.exempt(mp_webhook_view)
 @app.route('/health')
 def health():
     return 'ok', 200
+
+
+@app.route('/ads.txt')
+def ads_txt():
+    """Arquivo na raiz do projeto (IAB ads.txt) — fallback se o proxy não servir na borda."""
+    from adsense import ads_txt_body
+
+    root_file = os.path.join(app.root_path, 'ads.txt')
+    if os.path.isfile(root_file):
+        resp = make_response(send_from_directory(app.root_path, 'ads.txt', mimetype='text/plain'))
+    else:
+        body = ads_txt_body()
+        if not body:
+            return 'Not Found', 404
+        resp = make_response(body)
+        resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    resp.headers['Cache-Control'] = 'public, max-age=86400'
+    resp.headers.pop('Set-Cookie', None)
+    return resp
 
 
 @app.route('/')
@@ -170,6 +195,22 @@ def dashboard():
         owned_bands=owned_bands,
         is_superadmin=False,
         planos_resumo=resumo_planos_usuario(owned_bands),
+    )
+
+
+@app.context_processor
+def inject_adsense():
+    from adsense import adsense_exibir_na_requisicao, get_adsense_config, usuario_deve_ver_anuncios
+
+    user_id = session.get('user_id')
+    cfg = get_adsense_config()
+    exibir = adsense_exibir_na_requisicao(user_id)
+    return dict(
+        adsense=cfg,
+        adsense_exibir=exibir,
+        adsense_para_banda=lambda band_id: (
+            usuario_deve_ver_anuncios(user_id, band_id, cfg=cfg) if cfg['enabled'] else False
+        ),
     )
 
 

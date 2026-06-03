@@ -163,6 +163,30 @@ html.setlist-print-root.pdfgen .palco-foot {
   display: none;
 }
 
+html.setlist-print-root.pdfgen .setlist-print-cifras-intro {
+  display: none;
+}
+
+html.setlist-print-root.pdfgen .setlist-print-song {
+  break-before: page;
+  page-break-before: always;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+  margin-bottom: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+html.setlist-print-root.pdfgen .setlist-print-song.is-long {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+html.setlist-print-root.pdfgen .setlist-print-song + .setlist-print-song {
+  border-top: none;
+  padding-top: 0;
+}
+
 .palco-eyebrow {
   margin: 0 0 0.25rem;
   font-size: 0.72rem;
@@ -192,61 +216,37 @@ html.setlist-print-root.pdfgen .palco-foot {
   color: var(--muted, #94a3b8);
 }
 
-.palco-table {
-  width: 100%;
-  border-collapse: collapse;
+.palco-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
   font-size: 0.95rem;
 }
 
-.palco-table thead {
-  display: table-header-group;
+.palco-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem 0.85rem;
+  padding: 0.42rem 0;
+  border-bottom: 1px solid var(--ss-rule, #e8edf2);
 }
 
-.palco-table thead th {
-  padding: 0.55rem 0.65rem;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: left;
-  color: var(--muted, #64748b);
-  border-bottom: 2px solid var(--ss-border, #cbd5e1);
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.palco-th-num {
-  width: 2.5rem;
-  text-align: center !important;
-}
-
-.palco-th-key {
-  width: 5.5rem;
-  text-align: center !important;
-}
-
-.palco-th-vox {
-  width: 7.5rem;
-}
-
-.palco-row:nth-child(even) {
-  background: rgba(0, 0, 0, 0.025);
-}
-
-.palco-row td {
-  padding: 0.65rem 0.65rem;
-  vertical-align: middle;
-  border-bottom: 1px solid var(--ss-rule, #e2e8f0);
+.palco-item:last-child {
+  border-bottom: none;
 }
 
 .palco-num {
-  text-align: center;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--muted, #64748b);
+  flex: 0 0 1.35rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--muted, #94a3b8);
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
-.palco-song {
+.palco-item-main {
+  flex: 1 1 auto;
+  min-width: 0;
   line-height: 1.25;
 }
 
@@ -259,27 +259,29 @@ html.setlist-print-root.pdfgen .palco-foot {
 
 .palco-song-artist {
   display: block;
-  margin-top: 0.12rem;
+  margin-top: 0.1rem;
   font-size: 0.8rem;
   color: var(--muted, #64748b);
 }
 
-.palco-key {
-  text-align: center;
+.palco-item-meta {
+  flex: 0 0 auto;
+  text-align: right;
+  line-height: 1.2;
+  max-width: 42%;
 }
 
 .palco-key-value {
   display: block;
-  font-size: clamp(1.25rem, 3.5vw, 1.65rem);
+  font-size: clamp(1.1rem, 3vw, 1.45rem);
   font-weight: 800;
-  line-height: 1.1;
   color: var(--ss-chord, #c2410c);
   font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
 }
 
 .palco-key-orig {
   display: block;
-  margin-top: 0.15rem;
+  margin-top: 0.1rem;
   font-size: 0.62rem;
   font-weight: 600;
   color: var(--muted, #94a3b8);
@@ -288,9 +290,11 @@ html.setlist-print-root.pdfgen .palco-foot {
 }
 
 .palco-vox {
-  font-size: 0.92rem;
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--ss-fg, #334155);
+  color: var(--muted, #64748b);
 }
 
 .palco-foot {
@@ -310,12 +314,12 @@ html.setlist-print-root.palco-compact .palco-title {
   font-size: 1.35rem;
 }
 
-html.setlist-print-root.palco-compact .palco-table {
+html.setlist-print-root.palco-compact .palco-list {
   font-size: 0.82rem;
 }
 
-html.setlist-print-root.palco-compact .palco-row td {
-  padding: 0.38rem 0.45rem;
+html.setlist-print-root.palco-compact .palco-item {
+  padding: 0.28rem 0;
 }
 
 html.setlist-print-root.palco-compact .palco-key-value {
@@ -473,6 +477,24 @@ html.setlist-print-root.palco-compact .palco-song-artist {
   page-break-inside: auto;
 }
 
+.setlist-print-sheet .sp-section,
+.setlist-print-sheet .cifra-section {
+  display: block;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--chord-highlight, #c2410c);
+  margin: 0.85rem 0 0.45rem;
+  padding: 0.2rem 0 0.35rem;
+  border-bottom: 1px solid var(--chord-highlight-border, rgba(194, 65, 12, 0.35));
+}
+
+.setlist-print-sheet .sp-section:first-child,
+.setlist-print-sheet .cifra-section:first-child {
+  margin-top: 0.25rem;
+}
+
 .setlist-print-sheet .sp-item {
   display: inline-flex;
   flex-direction: column;
@@ -554,59 +576,34 @@ html.setlist-print-root.palco-compact .palco-song-artist {
   font-weight: 600;
 }
 
-/* Telas estreitas: palco em cards empilhados */
+/* Telas estreitas: meta abaixo do título */
 @media (max-width: 560px) {
-  .palco-table thead {
-    display: none;
+  .palco-item {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
   }
 
-  .palco-table,
-  .palco-table tbody,
-  .palco-table tr,
-  .palco-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .palco-row {
-    margin-bottom: 0.65rem;
-    padding: 0.65rem 0.75rem;
-    border: 1px solid var(--ss-border, #e2e8f0);
-    border-radius: 8px;
-  }
-
-  .palco-row td {
-    border: none;
-    padding: 0.2rem 0;
-  }
-
-  .palco-num {
+  .palco-item-meta {
+    flex: 1 1 100%;
+    max-width: none;
     text-align: left;
-    font-size: 0.75rem;
-    margin-bottom: 0.25rem;
+    padding-left: 2rem;
   }
 
-  .palco-num::before {
-    content: "# ";
-    font-weight: 600;
-    color: var(--muted, #94a3b8);
-  }
-
-  .palco-key {
-    text-align: left;
-    margin-top: 0.35rem;
+  .palco-key-value,
+  .palco-vox {
+    display: inline;
+    margin-top: 0;
   }
 
   .palco-key-value {
-    display: inline;
-    font-size: 1.35rem;
     margin-right: 0.5rem;
   }
 
   .palco-vox::before {
-    content: "Canta: ";
-    font-weight: 600;
-    color: var(--muted, #64748b);
+    content: "· ";
+    font-weight: 400;
+    color: var(--muted, #94a3b8);
   }
 }
 
@@ -647,7 +644,7 @@ html.setlist-print-root.palco-compact .palco-song-artist {
 
   .setlist-print-palco,
   .setlist-print-sheet,
-  .palco-table {
+  .palco-list {
     background: #fff !important;
     color: #1c1917 !important;
   }
@@ -662,61 +659,30 @@ html.setlist-print-root.palco-compact .palco-song-artist {
     box-shadow: none !important;
   }
 
-  .palco-table {
-    border: 1px solid #cbd5e1 !important;
-  }
-
-  .palco-table thead th {
-    border-bottom: 2px solid #94a3b8 !important;
-  }
-
-  .palco-row td {
-    border-bottom: 1px solid #e2e8f0 !important;
-  }
-
-  .palco-row:last-child td {
-    border-bottom: none !important;
+  .palco-item {
+    border-bottom-color: #e8edf2 !important;
   }
 
   .palco-foot {
     display: none;
   }
 
-  .palco-table thead th {
-    background: #f1f5f9 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .palco-row:nth-child(even) {
-    background: #f8fafc !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
   .palco-key-value {
     color: #b45309 !important;
   }
 
-  .palco-foot {
-    margin-top: 0.75rem;
-  }
-
   .setlist-print-cifras-intro {
-    break-before: avoid;
-    page-break-before: avoid;
-    margin-bottom: 0.75rem;
-    padding: 0.45rem 0 0.6rem;
-    border-top: 3px solid #c2410c !important;
-    border-bottom: 1px solid #cbd5e1 !important;
+    display: none !important;
   }
 
   .setlist-print-song {
-    break-before: auto;
-    page-break-before: auto;
+    break-before: page;
+    page-break-before: always;
     break-inside: avoid-page;
     page-break-inside: avoid;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+    padding-top: 0;
+    border-top: none !important;
   }
 
   .setlist-print-song.is-long {
@@ -746,8 +712,8 @@ html.setlist-print-root.palco-compact .palco-song-artist {
   }
 
   .setlist-print-song + .setlist-print-song {
-    padding-top: 0.35rem;
-    border-top: 1px solid #e7e5e4;
+    padding-top: 0;
+    border-top: none !important;
   }
 
   .setlist-print-sheet.cifra-container,
