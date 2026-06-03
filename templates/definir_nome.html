@@ -12,6 +12,7 @@
           Seu usuário está cadastrado, mas ainda falta definir o nome que aparece no SetSync.
         </p>
         <form method="POST" action="{{ url_for('auth.definir_nome', next=next) }}">
+          {% include 'partials/csrf_input.html' %}
           <div class="mb-3">
             <label class="form-label" for="display_name">Como gostaria de ser chamado?</label>
             <input

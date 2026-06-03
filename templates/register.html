@@ -18,6 +18,7 @@
         {% endif %}
 
         <form method="POST">
+            {% include 'partials/csrf_input.html' %}
             {% if invite_token %}
             <input type="hidden" name="convite_token" value="{{ invite_token }}">
             {% endif %}

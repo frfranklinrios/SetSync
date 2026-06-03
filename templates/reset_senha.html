@@ -25,6 +25,7 @@
             Escolha uma senha com no mínimo 10 caracteres.
         </p>
         <form method="POST">
+            {% include 'partials/csrf_input.html' %}
             <div class="mb-3">
                 <label for="password" class="form-label">Nova senha</label>
                 <input type="password" class="form-control" id="password" name="password" required autofocus

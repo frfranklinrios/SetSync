@@ -168,6 +168,10 @@ def clear_rate_limit(key: str) -> None:
 
 
 def safe_redirect_path(path: str | None) -> str | None:
+    """Path interno seguro para ?next= (não APIs nem JSON)."""
     if not path or not path.startswith('/') or path.startswith('//'):
+        return None
+    low = path.lower().split('?', 1)[0]
+    if '/api/' in low or low.endswith('.json') or low.endswith('.webmanifest'):
         return None
     return path

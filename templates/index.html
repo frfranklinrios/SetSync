@@ -34,7 +34,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="{{ url_for('manifest') }}">
-    <meta name="theme-color" content="#2ab5a0">
+    <meta name="theme-color" content="#0f172a">
     <meta name="application-name" content="SetSync">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -745,6 +745,7 @@
                                 <li><hr class="dropdown-divider my-1"></li>
                                 <li>
                                     <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                                        {% include 'partials/csrf_input.html' %}
                                         <button type="submit" class="dropdown-item text-danger">Sair</button>
                                     </form>
                                 </li>
