@@ -24,15 +24,35 @@
     border-radius: inherit;
 }
 .band-tile .tile-settings,
-.band-tile h6,
-.band-tile p,
 .band-tile .band-meta { position: relative; z-index: 2; pointer-events: none; }
 .band-tile .tile-settings { pointer-events: auto; }
-.band-tile h6 a { pointer-events: none; }
 [data-theme="dark"] .band-tile { background: #0b1422; }
 
+.band-tile-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.45rem;
+}
+.band-tile-logo {
+    max-height: 48px;
+    max-width: 72px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 4px;
+}
+[data-theme="dark"] .band-tile-logo { background: #0f172a; }
+.band-tile-text { min-width: 0; flex: 1; }
+.band-tile .band-tile-head,
+.band-tile .band-tile-head h6,
+.band-tile .band-tile-head p { position: relative; z-index: 2; pointer-events: none; }
 .band-tile h6 { font-weight: 700; margin: 0 0 0.15rem; font-size: 1.02rem; color: var(--text); }
-.band-desc { font-size: 0.82rem; color: var(--muted); margin: 0 0 0.7rem; min-height: 1.2em; }
+.band-desc { font-size: 0.82rem; color: var(--muted); margin: 0; min-height: 1.2em; }
 .band-meta { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .tile-badge {
     font-size: 0.7rem; color: var(--muted);
@@ -89,8 +109,8 @@
     <div class="col-md-6 col-lg-4">
         <div class="band-tile">
             <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
-            <h6>{{ band.name }}</h6>
-            <p class="band-desc">{{ band.description or '—' }}</p>
+            {% set desc = band.description or '—' %}
+            {% include 'partials/band_tile_head.html' %}
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin</span>
                 <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
@@ -111,8 +131,8 @@
     <div class="col-md-6 col-lg-4">
         <div class="band-tile">
             <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
-            <h6>{{ band.name }}</h6>
-            <p class="band-desc">{{ band.description or '—' }}</p>
+            {% set desc = band.description or '—' %}
+            {% include 'partials/band_tile_head.html' %}
             <div class="band-meta">
                 <span class="tile-badge">Membro</span>
                 <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>
@@ -131,8 +151,8 @@
     <div class="col-md-6 col-lg-4">
         <div class="band-tile">
             <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
-            <h6>{{ band.name }}</h6>
-            <p class="band-desc">{{ band.description or '—' }}</p>
+            {% set desc = band.description or '—' %}
+            {% include 'partials/band_tile_head.html' %}
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin global</span>
                 <span class="tile-badge"><i class="fas fa-users"></i> {{ band.members|length }}</span>

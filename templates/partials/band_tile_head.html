@@ -1,0 +1,10 @@
+{# Cabeçalho do card de banda (nome + logo opcional). Variável: band, desc #}
+<div class="band-tile-head">
+    {% if band.has_logo %}
+    <img src="{{ url_for('bands.band_logo', band_id=band.id) }}" alt="" class="band-tile-logo" loading="lazy" width="72" height="48">
+    {% endif %}
+    <div class="band-tile-text">
+        <h6>{{ band.name }}</h6>
+        <p class="band-desc">{{ desc }}</p>
+    </div>
+</div>

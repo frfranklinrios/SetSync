@@ -1065,7 +1065,9 @@ def get_owned_bands(user_id):
 
 
 def enrich_bands_for_display(bands) -> list[dict]:
-    """Anexa members, cifras e owner para cards de listagem/dashboard."""
+    """Anexa members, cifras, owner e flag de logo para cards de listagem/dashboard."""
+    from band_logos import band_has_logo
+
     result = []
     for band in bands:
         b = dict(band)
@@ -1073,6 +1075,7 @@ def enrich_bands_for_display(bands) -> list[dict]:
         b['cifras'] = get_band_cifras(b['id'])
         owner = get_user(b.get('owner_id'))
         b['owner'] = owner or {}
+        b['has_logo'] = band_has_logo(b)
         result.append(b)
     return result
 

@@ -23,8 +23,28 @@
 }
 [data-theme="dark"] .band-tile { background: #0b1422; }
 
+.band-tile-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.band-tile-logo {
+    max-height: 48px;
+    max-width: 72px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 4px;
+}
+[data-theme="dark"] .band-tile-logo { background: #0f172a; }
+.band-tile-text { min-width: 0; flex: 1; }
 .band-tile h6 { font-weight: 700; margin-bottom: 0.1rem; font-size: 1rem; color: var(--text); }
-.band-desc { font-size: 0.82rem; color: var(--muted); margin: 0 0 0.7rem; min-height: 1.2em; }
+.band-desc { font-size: 0.82rem; color: var(--muted); margin: 0; min-height: 1.2em; }
 .band-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .tile-badge {
     font-size: 0.7rem;
@@ -103,8 +123,8 @@
     {% for band in bands %}
     <div class="col-md-6 col-lg-4">
         <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile">
-            <h6>{{ band.name }}</h6>
-            <p class="band-desc">Titular: {{ user_display_name(band.owner) if band.owner else '—' }}</p>
+            {% set desc = 'Titular: ' ~ (user_display_name(band.owner) if band.owner else '—') %}
+            {% include 'partials/band_tile_head.html' %}
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin global</span>
                 {% if band.plano_ui %}
@@ -126,8 +146,8 @@
     {% for band in owned_bands %}
     <div class="col-md-6 col-lg-4">
         <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile">
-            <h6>{{ band.name }}</h6>
-            <p class="band-desc">{{ band.description or '—' }}</p>
+            {% set desc = band.description or '—' %}
+            {% include 'partials/band_tile_head.html' %}
             <div class="band-meta">
                 <span class="tile-badge role-admin">Admin</span>
                 {% if band.plano_ui %}
@@ -148,8 +168,8 @@
     {% for band in member_only %}
     <div class="col-md-6 col-lg-4">
         <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile">
-            <h6>{{ band.name }}</h6>
-            <p class="band-desc">Por {{ user_display_name(band.owner) if band.owner else '—' }}</p>
+            {% set desc = 'Por ' ~ (user_display_name(band.owner) if band.owner else '—') %}
+            {% include 'partials/band_tile_head.html' %}
             <div class="band-meta">
                 <span class="tile-badge">Membro</span>
                 {% if band.plano_ui %}
