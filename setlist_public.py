@@ -239,6 +239,26 @@ def prepare_public_letras_payload(token: str) -> dict[str, Any] | None:
     }
 
 
+def public_share_urls(token: str) -> dict[str, str]:
+    from security import external_url_for
+
+    t = (token or '').strip()
+    return {
+        'letras': external_url_for('setlists.public_letras', token=t),
+        'imprimir': external_url_for('setlists.public_imprimir', token=t),
+    }
+
+
+def prepare_public_print_data(token: str) -> dict[str, Any] | None:
+    """Dados da página de impressão (folha de palco + cifras) via token público."""
+    setlist = get_setlist_by_public_token(token)
+    if not setlist:
+        return None
+    from blueprints.setlists import build_setlist_print_payload
+
+    return build_setlist_print_payload(setlist['id'])
+
+
 def public_letras_api_payload(token: str) -> dict[str, Any] | None:
     """JSON leve para atualização em tempo real (polling)."""
     snap = build_public_letras_snapshot(token)

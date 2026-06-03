@@ -53,8 +53,8 @@
     <summary class="setlist-public-link-summary">
         <span class="setlist-public-link-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
         <span class="setlist-public-link-summary-text">
-            <span class="setlist-public-link-title"><i class="fas fa-link me-1"></i> Link público — letras</span>
-            <span class="text-muted setlist-public-link-sub">Cantores e público no celular, sem login</span>
+            <span class="setlist-public-link-title"><i class="fas fa-link me-1"></i> Compartilhamento público</span>
+            <span class="text-muted setlist-public-link-sub">Letras e impressão (folha de palco + cifras)</span>
         </span>
         {% if public_share_enabled %}
         <span class="badge text-bg-success ms-auto">Ativo</span>
@@ -65,33 +65,61 @@
 
     <div class="setlist-public-link-body">
         <p class="text-muted mb-3" style="font-size:0.82rem;">
-            Compartilhe o link ou o QR Code para acompanhar as letras em tempo real.
+            Compartilhe links ou QR Codes. As letras atualizam em tempo real; a impressão abre na folha de palco.
         </p>
 
         {% if public_share_enabled and public_letras_url %}
-        <div class="public-letras-share-row mb-3">
+        <p class="fw-semibold mb-2" style="font-size:0.84rem;"><i class="fas fa-align-left me-1"></i> Letras (tempo real)</p>
+        <div class="public-letras-share-row mb-4">
             <div class="public-letras-qr-wrap">
-                <img src="{{ url_for('setlists.public_letras_qr', setlist_id=setlist.id) }}"
-                     width="160" height="160" alt="QR Code — letras da setlist"
+                <img src="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='letras') }}"
+                     width="140" height="140" alt="QR Code — letras"
                      class="public-letras-qr">
-                <a href="{{ url_for('setlists.public_letras_qr', setlist_id=setlist.id, download=1) }}"
+                <a href="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='letras', download=1) }}"
                    class="btn btn-outline-secondary btn-sm mt-2 w-100">
                     <i class="fas fa-download me-1"></i> Baixar QR
                 </a>
-                <p class="text-muted mb-0 mt-2" style="font-size:0.75rem;text-align:center;">
-                    Escaneie para abrir as letras
-                </p>
             </div>
             <div class="public-letras-link-wrap">
-                <div class="input-group input-group-sm">
-                    <input type="text" class="form-control" id="public-letras-url" readonly
-                           value="{{ public_letras_url }}" aria-label="Link público">
-                    <button type="button" class="btn btn-outline-primary" id="btn-copy-public-link">
+                <div class="input-group input-group-sm mb-2">
+                    <input type="text" class="form-control js-public-url" readonly
+                           value="{{ public_letras_url }}" aria-label="Link letras">
+                    <button type="button" class="btn btn-outline-primary js-public-copy">
                         <i class="fas fa-copy me-1"></i> Copiar
                     </button>
                 </div>
+                <a href="{{ public_letras_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+                    <i class="fas fa-external-link-alt me-1"></i> Abrir letras
+                </a>
             </div>
         </div>
+
+        {% if public_imprimir_url %}
+        <p class="fw-semibold mb-2" style="font-size:0.84rem;"><i class="fas fa-print me-1"></i> Impressão (folha de palco + cifras)</p>
+        <div class="public-letras-share-row mb-3">
+            <div class="public-letras-qr-wrap">
+                <img src="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='imprimir') }}"
+                     width="140" height="140" alt="QR Code — impressão"
+                     class="public-letras-qr">
+                <a href="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='imprimir', download=1) }}"
+                   class="btn btn-outline-secondary btn-sm mt-2 w-100">
+                    <i class="fas fa-download me-1"></i> Baixar QR
+                </a>
+            </div>
+            <div class="public-letras-link-wrap">
+                <div class="input-group input-group-sm mb-2">
+                    <input type="text" class="form-control js-public-url" readonly
+                           value="{{ public_imprimir_url }}" aria-label="Link impressão">
+                    <button type="button" class="btn btn-outline-primary js-public-copy">
+                        <i class="fas fa-copy me-1"></i> Copiar
+                    </button>
+                </div>
+                <a href="{{ public_imprimir_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+                    <i class="fas fa-external-link-alt me-1"></i> Abrir impressão
+                </a>
+            </div>
+        </div>
+        {% endif %}
         {% endif %}
 
         <div class="d-flex flex-wrap gap-2">
@@ -117,11 +145,6 @@
                     <i class="fas fa-ban me-1"></i> Desativar
                 </button>
             </form>
-            {% if public_letras_url %}
-            <a href="{{ public_letras_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
-                <i class="fas fa-external-link-alt me-1"></i> Abrir página
-            </a>
-            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -202,27 +225,28 @@
 </style>
 <script>
 (function () {
-    var btn = document.getElementById('btn-copy-public-link');
-    var inp = document.getElementById('public-letras-url');
-    if (!btn || !inp) return;
-    btn.addEventListener('click', function () {
-        inp.select();
-        inp.setSelectionRange(0, 99999);
-        var done = function () {
-            btn.innerHTML = '<i class="fas fa-check me-1"></i> Copiado';
-            setTimeout(function () {
-                btn.innerHTML = '<i class="fas fa-copy me-1"></i> Copiar';
-            }, 2000);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(inp.value).then(done).catch(function () {
+    document.querySelectorAll('.js-public-copy').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var wrap = btn.closest('.public-letras-link-wrap');
+            var inp = wrap && wrap.querySelector('.js-public-url');
+            if (!inp) return;
+            inp.select();
+            inp.setSelectionRange(0, 99999);
+            var label = btn.innerHTML;
+            var done = function () {
+                btn.innerHTML = '<i class="fas fa-check me-1"></i> Copiado';
+                setTimeout(function () { btn.innerHTML = label; }, 2000);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(inp.value).then(done).catch(function () {
+                    document.execCommand('copy');
+                    done();
+                });
+            } else {
                 document.execCommand('copy');
                 done();
-            });
-        } else {
-            document.execCommand('copy');
-            done();
-        }
+            }
+        });
     });
 })();
 </script>

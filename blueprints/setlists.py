@@ -38,8 +38,13 @@ def _require_setlist_access(setlist, user_id):
     return True, band
 
 
-def _prepare_setlist_print_data(setlist_id, user_id):
-    """Monta setlist, band e sheets para impressão/PDF. Retorna None se sem acesso ou vazia."""
+def build_setlist_print_payload(
+    setlist_id,
+    *,
+    cols: str | None = None,
+    compact: bool | None = None,
+):
+    """Monta setlist, band e sheets para impressão. Retorna dict ou None se setlist inexistente."""
     from datetime import datetime
     from db import get_band_vocalists, get_band_vocalist
     from blueprints.cifras import (
@@ -50,8 +55,11 @@ def _prepare_setlist_print_data(setlist_id, user_id):
     )
 
     setlist = get_setlist(setlist_id)
-    ok, band = _require_setlist_access(setlist, user_id)
-    if not ok:
+    if not setlist:
+        return None
+
+    band = get_band(setlist['band_id'])
+    if not band:
         return None
 
     cifras_raw = get_setlist_cifras(setlist_id)
@@ -75,8 +83,14 @@ def _prepare_setlist_print_data(setlist_id, user_id):
         )
         sheets.append(sheet)
 
-    two_cols = request.args.get('cols', '1') == '2'
-    palco_compact = len(sheets) > 10 or request.args.get('compact', '') == '1'
+    if cols is None:
+        two_cols = request.args.get('cols', '1') == '2'
+    else:
+        two_cols = str(cols) == '2'
+    if compact is None:
+        palco_compact = len(sheets) > 10 or request.args.get('compact', '') == '1'
+    else:
+        palco_compact = bool(compact)
 
     from band_logos import band_has_logo, band_logo_data_uri
 
@@ -91,6 +105,15 @@ def _prepare_setlist_print_data(setlist_id, user_id):
         'band_has_logo': band_has_logo(band),
         'band_logo_data_uri': band_logo_data_uri(band),
     }
+
+
+def _prepare_setlist_print_data(setlist_id, user_id):
+    """Monta setlist, band e sheets para impressão/PDF. Retorna None se sem acesso ou vazia."""
+    setlist = get_setlist(setlist_id)
+    ok, _band = _require_setlist_access(setlist, user_id)
+    if not ok:
+        return None
+    return build_setlist_print_payload(setlist_id)
 
 
 @setlists_bp.route('/<setlist_id>/imprimir')
@@ -416,10 +439,13 @@ def view(setlist_id):
     from security import external_url_for
     share_on = bool(setlist.get('public_share_enabled'))
     share_token = (setlist.get('public_share_token') or '').strip()
-    public_letras_url = (
-        external_url_for('setlists.public_letras', token=share_token)
-        if share_on and share_token else None
-    )
+    public_letras_url = None
+    public_imprimir_url = None
+    if share_on and share_token:
+        from setlist_public import public_share_urls
+        urls = public_share_urls(share_token)
+        public_letras_url = urls['letras']
+        public_imprimir_url = urls['imprimir']
 
     return render_template(
         'setlists/view.html',
@@ -429,6 +455,7 @@ def view(setlist_id):
         vocalists=vocalists,
         public_share_enabled=share_on,
         public_letras_url=public_letras_url,
+        public_imprimir_url=public_imprimir_url,
     )
 
 
@@ -451,6 +478,32 @@ def public_letras(token):
     )
 
 
+@setlists_bp.route('/compartilhar/<token>/imprimir')
+def public_imprimir(token):
+    """Impressão pública: folha de palco + cifras (sem login)."""
+    from security import check_rate_limit
+    from setlist_public import prepare_public_print_data, public_share_urls
+
+    if not check_rate_limit(f'public-print:{token}', max_attempts=80, window_sec=60):
+        return 'Muitas requisições. Tente em instantes.', 429
+
+    data = prepare_public_print_data(token)
+    if not data:
+        abort(404)
+    if data.get('empty'):
+        abort(404)
+
+    urls = public_share_urls(token)
+    return render_template(
+        'setlists/print_public.html',
+        autoprint=request.args.get('print', '').lower() in ('1', 'true', 'yes'),
+        public_mode=True,
+        public_token=token,
+        public_letras_url=urls['letras'],
+        **{k: v for k, v in data.items() if k != 'empty'},
+    )
+
+
 @setlists_bp.route('/letras/<token>/dados.json')
 def public_letras_data(token):
     """API para sincronização em tempo real da página pública."""
@@ -469,10 +522,10 @@ def public_letras_data(token):
     return resp
 
 
-@setlists_bp.route('/<setlist_id>/letras-qr.png')
+@setlists_bp.route('/<setlist_id>/compartilhar-qr.png')
 @login_required
-def public_letras_qr(setlist_id):
-    """QR Code PNG do link público de letras (membros da banda)."""
+def public_share_qr(setlist_id):
+    """QR Code PNG dos links públicos (letras ou impressão). ?dest=letras|imprimir"""
     user_id = session['user_id']
     setlist = get_setlist(setlist_id)
     ok, _band = _require_setlist_access(setlist, user_id)
@@ -486,14 +539,17 @@ def public_letras_qr(setlist_id):
     if not share_token:
         abort(404)
 
-    from security import external_url_for
+    from setlist_public import public_share_urls
     from qr_util import qrcode_png_bytes
 
-    public_url = external_url_for('setlists.public_letras', token=share_token)
+    dest = (request.args.get('dest') or 'letras').strip().lower()
+    urls = public_share_urls(share_token)
+    public_url = urls.get('imprimir') if dest == 'imprimir' else urls['letras']
+    suffix = 'impressao' if dest == 'imprimir' else 'letras'
     try:
         png = qrcode_png_bytes(public_url)
     except Exception:
-        current_app.logger.exception('Falha ao gerar QR da setlist %s', setlist_id)
+        current_app.logger.exception('Falha ao gerar QR (%s) setlist %s', dest, setlist_id)
         abort(500)
 
     as_download = request.args.get('download', '').lower() in ('1', 'true', 'yes')
@@ -504,8 +560,15 @@ def public_letras_qr(setlist_id):
         mimetype='image/png',
         max_age=300,
         as_attachment=as_download,
-        download_name=f'{safe_name}-letras-qr.png',
+        download_name=f'{safe_name}-{suffix}-qr.png',
     )
+
+
+@setlists_bp.route('/<setlist_id>/letras-qr.png')
+@login_required
+def public_letras_qr(setlist_id):
+    """Atalho: QR do link de letras."""
+    return public_share_qr(setlist_id)
 
 
 @setlists_bp.route('/<setlist_id>/link-publico', methods=['POST'])
@@ -531,7 +594,7 @@ def public_link_manage(setlist_id):
             flash('Adicione músicas à setlist antes de publicar o link.', 'warning')
             return redirect(url_for('setlists.view', setlist_id=setlist_id))
         set_setlist_public_share(setlist_id, True)
-        flash('Link público ativado. Copie e envie para cantores ou público.', 'success')
+        flash('Links públicos ativados (letras e impressão). Copie e envie para a equipe.', 'success')
     elif action == 'disable':
         set_setlist_public_share(setlist_id, False)
         flash('Link público desativado.', 'success')
