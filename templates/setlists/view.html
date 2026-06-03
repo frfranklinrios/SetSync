@@ -48,6 +48,93 @@
     </div>
 </div>
 
+{% if cifras|length > 0 %}
+<div class="card mb-4" style="border-color:var(--border);">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <div>
+                <h6 class="mb-1"><i class="fas fa-link me-1"></i> Link público — letras</h6>
+                <p class="text-muted mb-0" style="font-size:0.82rem;">
+                    Cantores e público acompanham as letras no celular, sem precisar entrar no SetSync.
+                </p>
+            </div>
+            {% if public_share_enabled %}
+            <span class="badge text-bg-success">Ativo</span>
+            {% else %}
+            <span class="badge text-bg-secondary">Desativado</span>
+            {% endif %}
+        </div>
+
+        {% if public_share_enabled and public_letras_url %}
+        <div class="input-group input-group-sm mb-3" style="max-width:100%;">
+            <input type="text" class="form-control" id="public-letras-url" readonly
+                   value="{{ public_letras_url }}" aria-label="Link público">
+            <button type="button" class="btn btn-outline-primary" id="btn-copy-public-link">
+                <i class="fas fa-copy me-1"></i> Copiar
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="d-flex flex-wrap gap-2">
+            {% if not public_share_enabled %}
+            <form method="POST" action="{{ url_for('setlists.public_link_manage', setlist_id=setlist.id) }}">
+                <input type="hidden" name="action" value="enable">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-globe me-1"></i> Ativar link
+                </button>
+            </form>
+            {% else %}
+            <form method="POST" action="{{ url_for('setlists.public_link_manage', setlist_id=setlist.id) }}"
+                  onsubmit="return confirm('Gerar novo link? O link atual deixará de funcionar.');">
+                <input type="hidden" name="action" value="rotate">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-sync-alt me-1"></i> Novo link
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('setlists.public_link_manage', setlist_id=setlist.id) }}"
+                  onsubmit="return confirm('Desativar o link público?');">
+                <input type="hidden" name="action" value="disable">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-ban me-1"></i> Desativar
+                </button>
+            </form>
+            {% if public_letras_url %}
+            <a href="{{ public_letras_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+                <i class="fas fa-external-link-alt me-1"></i> Abrir página
+            </a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var btn = document.getElementById('btn-copy-public-link');
+    var inp = document.getElementById('public-letras-url');
+    if (!btn || !inp) return;
+    btn.addEventListener('click', function () {
+        inp.select();
+        inp.setSelectionRange(0, 99999);
+        var done = function () {
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> Copiado';
+            setTimeout(function () {
+                btn.innerHTML = '<i class="fas fa-copy me-1"></i> Copiar';
+            }, 2000);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(inp.value).then(done).catch(function () {
+                document.execCommand('copy');
+                done();
+            });
+        } else {
+            document.execCommand('copy');
+            done();
+        }
+    });
+})();
+</script>
+{% endif %}
+
 {% if cifras %}
 <div class="tip">
     <i class="fas fa-grip-vertical"></i>

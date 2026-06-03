@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ setlist.name }} — Letras</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}">
+</head>
+<body>
+<header class="pl-header">
+    <div class="pl-brand">
+        {% if band_logo_data_uri %}
+        <img src="{{ band_logo_data_uri }}" alt="" class="pl-band-logo" width="120" height="56">
+        {% endif %}
+        <div>
+            <p class="pl-eyebrow">{{ band.name }}</p>
+            <h1 class="pl-title">{{ setlist.name }}</h1>
+            {% if setlist.description %}
+            <p class="pl-desc">{{ setlist.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <p class="pl-hint">Letras para acompanhar · {{ songs|length }} música{{ '' if songs|length == 1 else 's' }}</p>
+</header>
+
+<main class="pl-main">
+    {% for song in songs %}
+    <article class="pl-song" id="musica-{{ song.index }}">
+        <header class="pl-song-hd">
+            <span class="pl-num">{{ song.index }}</span>
+            <div class="pl-song-titles">
+                <h2>{{ song.titulo }}</h2>
+                {% if song.artista %}<p class="pl-artist">{{ song.artista }}</p>{% endif %}
+            </div>
+            <div class="pl-song-meta">
+                {% if song.display_key %}
+                <span class="pl-key" title="Tom">Tom {{ song.display_key }}</span>
+                {% endif %}
+                {% if song.vocalist_name %}
+                <span class="pl-vox">{{ song.vocalist_name }}</span>
+                {% endif %}
+            </div>
+        </header>
+        {% if song.lyrics %}
+        <pre class="pl-lyrics">{{ song.lyrics }}</pre>
+        {% else %}
+        <p class="pl-empty-song text-muted">Letra não disponível para esta música.</p>
+        {% endif %}
+    </article>
+    {% endfor %}
+</main>
+
+<footer class="pl-footer">
+    <a href="https://setsync.dados.tec.br" rel="noopener noreferrer">SetSync</a>
+</footer>
+</body>
+</html>

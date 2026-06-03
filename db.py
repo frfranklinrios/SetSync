@@ -131,6 +131,8 @@ def init_db():
     _add_column('bands', 'vocalist_name', 'TEXT')
     _add_column('bands', 'logo_filename', 'TEXT')
     _add_column('setlists', 'vocalist_id', 'TEXT')
+    _add_column('setlists', 'public_share_token', 'TEXT')
+    _add_column('setlists', 'public_share_enabled', 'INTEGER DEFAULT 0')
     _add_column('setlist_cifras', 'vocalist_id', 'TEXT')
 
     c.execute('''

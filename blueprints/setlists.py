@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from io import BytesIO
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_file, current_app, abort
 from models_setlist import (
     create_setlist, get_band_setlists, get_setlist, delete_setlist,
     add_cifra_to_setlist, remove_cifra_from_setlist, reorder_setlist, get_setlist_cifras,
@@ -412,10 +412,74 @@ def view(setlist_id):
         row['row_display_key'] = cifra_display_key(c, vocalist_id=vid) if c.get('tom_original') else ''
         cifras.append(row)
 
+    from security import external_url_for
+    share_on = bool(setlist.get('public_share_enabled'))
+    share_token = (setlist.get('public_share_token') or '').strip()
+    public_letras_url = (
+        external_url_for('setlists.public_letras', token=share_token)
+        if share_on and share_token else None
+    )
+
     return render_template(
         'setlists/view.html',
         setlist=setlist,
         band=band,
         cifras=cifras,
         vocalists=vocalists,
+        public_share_enabled=share_on,
+        public_letras_url=public_letras_url,
     )
+
+
+@setlists_bp.route('/letras/<token>')
+def public_letras(token):
+    """Página pública: letras da setlist (sem login)."""
+    from security import check_rate_limit
+    from setlist_public import prepare_public_letras_payload
+
+    if not check_rate_limit(f'public-letras:{token}', max_attempts=120, window_sec=60):
+        return 'Muitas requisições. Tente em instantes.', 429
+
+    data = prepare_public_letras_payload(token)
+    if not data:
+        abort(404)
+    return render_template('setlists/public_letras.html', **data)
+
+
+@setlists_bp.route('/<setlist_id>/link-publico', methods=['POST'])
+@login_required
+def public_link_manage(setlist_id):
+    """Ativa, desativa ou renova o link público de letras."""
+    user_id = session['user_id']
+    setlist = get_setlist(setlist_id)
+    ok, band = _require_setlist_access(setlist, user_id)
+    if not ok:
+        flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
+        return redirect(url_for('dashboard'))
+
+    if not is_band_admin(setlist['band_id'], user_id):
+        flash('Apenas administradores da banda podem gerenciar o link público.', 'danger')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+
+    action = (request.form.get('action') or '').strip()
+    from setlist_public import rotate_setlist_public_token, set_setlist_public_share
+
+    if action == 'enable':
+        if not get_setlist_cifras(setlist_id):
+            flash('Adicione músicas à setlist antes de publicar o link.', 'warning')
+            return redirect(url_for('setlists.view', setlist_id=setlist_id))
+        set_setlist_public_share(setlist_id, True)
+        flash('Link público ativado. Copie e envie para cantores ou público.', 'success')
+    elif action == 'disable':
+        set_setlist_public_share(setlist_id, False)
+        flash('Link público desativado.', 'success')
+    elif action == 'rotate':
+        if not setlist.get('public_share_enabled'):
+            set_setlist_public_share(setlist_id, True)
+        else:
+            rotate_setlist_public_token(setlist_id)
+        flash('Novo link gerado. Links antigos não funcionam mais.', 'success')
+    else:
+        flash('Ação inválida.', 'danger')
+
+    return redirect(url_for('setlists.view', setlist_id=setlist_id))
