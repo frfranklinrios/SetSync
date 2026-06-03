@@ -11,6 +11,7 @@ from models_setlist import get_setlist, get_setlist_cifras
 from util import format_text_chords_br, pychord_transpose_text, sanitize_tab_html_artifacts
 
 CHORD_INLINE_RE = re.compile(r'\[[^\]]+\]')
+PARENTHETICAL_RE = re.compile(r'\([^)]*\)')
 
 
 def _new_share_token() -> str:
@@ -75,6 +76,21 @@ def rotate_setlist_public_token(setlist_id) -> str | None:
     return token
 
 
+def clean_lyrics_for_public(text: str) -> str:
+    """Remove parênteses e anotações entre parênteses das letras públicas."""
+    if not text:
+        return ''
+    out = PARENTHETICAL_RE.sub('', text)
+    out = out.replace('(', '').replace(')', '')
+    lines = []
+    for raw in out.split('\n'):
+        line = re.sub(r'[ \t]+', ' ', raw).strip()
+        lines.append(line)
+    while lines and not lines[-1]:
+        lines.pop()
+    return '\n'.join(lines)
+
+
 def conteudo_to_lyrics_plain(conteudo: str) -> str:
     """Remove acordes e diretivas; preserva letra e quebras de seção."""
     text = sanitize_tab_html_artifacts((conteudo or '').replace('\r\n', '\n'))
@@ -94,7 +110,7 @@ def conteudo_to_lyrics_plain(conteudo: str) -> str:
         lines_out.append(line.rstrip())
     while lines_out and not lines_out[-1].strip():
         lines_out.pop()
-    return '\n'.join(lines_out)
+    return clean_lyrics_for_public('\n'.join(lines_out))
 
 
 def lyrics_from_cifra(cifra: dict, vocalist_id: str | None = None) -> str:
@@ -118,7 +134,7 @@ def lyrics_from_cifra(cifra: dict, vocalist_id: str | None = None) -> str:
             if line:
                 blocks.append(line)
         if blocks:
-            return '\n\n'.join(blocks)
+            return clean_lyrics_for_public('\n\n'.join(blocks))
 
     body = cifra.get('conteudo') or ''
     if semi:
