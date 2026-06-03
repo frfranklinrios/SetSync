@@ -16,6 +16,7 @@ def render_setlist_pdf_html(app, data: dict) -> str:
             band=data['band'],
             sheets=data.get('sheets', []),
             printed_at=data.get('printed_at') or datetime.now(),
+            band_logo_data_uri=data.get('band_logo_data_uri'),
         )
 
 

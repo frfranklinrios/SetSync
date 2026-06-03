@@ -1,12 +1,13 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, send_file, abort
 from blueprints.auth import login_required
 from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_bands,
                 update_band, delete_band, get_band_members, add_band_member, remove_band_member,
                 is_band_member, is_band_admin, is_superadmin, can_delete_band,
-                can_edit_band_settings, get_user, enrich_bands_for_display, user_display_name)
+                can_edit_band_settings, set_band_logo_filename, get_user,
+                enrich_bands_for_display, user_display_name)
 from band_invites import make_band_invite_token
 from security import external_url_for
 import band_notifications as bn
@@ -87,11 +88,38 @@ def view(band_id):
     from blueprints.cifras import vocalist_label_for_band
     vocalist_name = vocalist_label_for_band(band_id)
 
-    return render_template('bands/view.html', band=band, members=members,
-                           cifras=cifras, setlists=setlists,
-                           owner=owner, vocalist_name=vocalist_name,
-                           is_admin=admin,
-                           is_superadmin=is_superadmin(user_id))
+    from band_logos import band_has_logo
+    return render_template(
+        'bands/view.html',
+        band=band,
+        members=members,
+        cifras=cifras,
+        setlists=setlists,
+        owner=owner,
+        vocalist_name=vocalist_name,
+        is_admin=admin,
+        is_superadmin=is_superadmin(user_id),
+        band_has_logo=band_has_logo(band),
+        band_logo_url=url_for('bands.band_logo', band_id=band_id) if band_has_logo(band) else None,
+    )
+
+@bands_bp.route('/<band_id>/logo')
+@login_required
+def band_logo(band_id):
+    """Serve o logo da banda (membros autenticados)."""
+    band = get_band(band_id)
+    user_id = session['user_id']
+    if not band or not is_band_member(band_id, user_id):
+        abort(404)
+    filename = (band.get('logo_filename') or '').strip()
+    if not filename:
+        abort(404)
+    from band_logos import logo_path
+    path = logo_path(band_id, filename)
+    if not path:
+        abort(404)
+    return send_file(path, max_age=3600)
+
 
 @bands_bp.route('/<band_id>/settings', methods=['GET', 'POST'])
 @login_required
@@ -142,6 +170,24 @@ def settings(band_id):
                 except ValueError as e:
                     flash(str(e), 'danger')
 
+        elif action == 'upload_logo':
+            from band_logos import save_band_logo_upload
+            logo_file = request.files.get('logo')
+            filename, err = save_band_logo_upload(band_id, logo_file)
+            if err:
+                flash(err, 'danger')
+            else:
+                set_band_logo_filename(band_id, filename)
+                bn.band_updated(band_id, user_id)
+                flash('Logo da banda atualizado.', 'success')
+
+        elif action == 'remove_logo':
+            from band_logos import delete_band_logo_files
+            delete_band_logo_files(band_id)
+            set_band_logo_filename(band_id, None)
+            bn.band_updated(band_id, user_id)
+            flash('Logo removido.', 'success')
+
         elif action == 'delete_vocalist':
             vid = request.form.get('vocalist_id', '').strip()
             if vid and band_vocalist_belongs_to_band(vid, band_id):
@@ -159,11 +205,14 @@ def settings(band_id):
     from db import get_band_vocalists
     band_members = get_band_members(band_id)
     vocalists = get_band_vocalists(band_id)
+    from band_logos import band_has_logo
     return render_template(
         'bands/settings.html',
         band=band,
         band_members=band_members,
         vocalists=vocalists,
+        band_has_logo=band_has_logo(band),
+        band_logo_url=url_for('bands.band_logo', band_id=band_id) if band_has_logo(band) else None,
     )
 
 @bands_bp.route('/<band_id>/members')

@@ -597,10 +597,29 @@ def highlight_chords_html(text):
     result = []
     i = 0
 
+    from chordpro import parse_chordpro_directive, SECTION_DIRECTIVES
+
     while i < len(lines):
         line = lines[i]
         if not line.strip():
             result.append('')
+            i += 1
+            continue
+
+        directive = parse_chordpro_directive(line.strip())
+        if directive:
+            name, value = directive
+            if name == 'comment':
+                label = html_lib.escape(value or '—')
+                result.append(f'<span class="cifra-section">{label}</span>')
+            elif name in SECTION_DIRECTIVES:
+                label = html_lib.escape(value or SECTION_DIRECTIVES[name].title())
+                result.append(f'<span class="cifra-section">{label}</span>')
+            elif name not in ('title', 't', 'artist', 'subtitle', 'st', 'key', 'capo', 'tempo', 'time'):
+                if not name.startswith('end_of'):
+                    result.append(
+                        f'<span class="cifra-directive">{html_lib.escape(line.strip())}</span>'
+                    )
             i += 1
             continue
 
@@ -665,10 +684,29 @@ def highlight_chords_play_html(text):
     i = 0
     re_br = re.compile(r'\[([^\]]+)\]([^\[]*)')
 
+    from chordpro import parse_chordpro_directive, SECTION_DIRECTIVES
+
     while i < len(lines):
         line = lines[i]
         if not line.strip():
             result.append('')
+            i += 1
+            continue
+
+        directive = parse_chordpro_directive(line.strip())
+        if directive:
+            name, value = directive
+            if name == 'comment':
+                label = html_lib.escape(value or '—')
+                result.append(f'<span class="cifra-section">{label}</span>')
+            elif name in SECTION_DIRECTIVES:
+                label = html_lib.escape(value or SECTION_DIRECTIVES[name].title())
+                result.append(f'<span class="cifra-section">{label}</span>')
+            elif name not in ('title', 't', 'artist', 'subtitle', 'st', 'key', 'capo', 'tempo', 'time'):
+                if not name.startswith('end_of'):
+                    result.append(
+                        f'<span class="cifra-directive">{html_lib.escape(line.strip())}</span>'
+                    )
             i += 1
             continue
 

@@ -15,9 +15,16 @@
         .song-title { font-weight: 600; }
         .artist { display: block; font-size: 9pt; color: #6b7280; }
         .footer { font-size: 8pt; color: #9ca3af; margin-top: 24px; text-align: center; }
+        .pdf-header { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+        .pdf-band-logo { max-height: 48px; max-width: 200px; object-fit: contain; }
     </style>
 </head>
 <body>
+    {% if band_logo_data_uri %}
+    <div class="pdf-header">
+        <img src="{{ band_logo_data_uri }}" alt="" class="pdf-band-logo">
+    </div>
+    {% endif %}
     <h1>{{ setlist.name }}</h1>
     <p class="meta">
         {{ band.name }} · {{ printed_at.strftime('%d/%m/%Y %H:%M') }}

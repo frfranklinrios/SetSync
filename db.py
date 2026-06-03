@@ -129,6 +129,7 @@ def init_db():
     _add_column('cifras', 'transpose_semitones', 'INTEGER DEFAULT 0')
     _add_column('bands', 'vocalist_user_id', 'TEXT')
     _add_column('bands', 'vocalist_name', 'TEXT')
+    _add_column('bands', 'logo_filename', 'TEXT')
     _add_column('setlists', 'vocalist_id', 'TEXT')
     _add_column('setlist_cifras', 'vocalist_id', 'TEXT')
 
@@ -844,6 +845,14 @@ def update_band(band_id, name, description, **_ignored):
     db.close()
 
 
+def set_band_logo_filename(band_id: str, filename: str | None) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE bands SET logo_filename = ? WHERE id = ?', (filename, band_id))
+    db.commit()
+    db.close()
+
+
 def _vocalist_row_dict(row) -> dict:
     d = dict(row)
     if d.get('user_id'):
@@ -1005,6 +1014,11 @@ def set_cifra_vocalist_transpose(cifra_id: str, vocalist_id: str, semitones: int
 
 
 def delete_band(band_id):
+    try:
+        from band_logos import delete_band_logo_files
+        delete_band_logo_files(band_id)
+    except Exception:
+        pass
     db = get_db()
     c = db.cursor()
     # Remover em cascata: setlist_cifras → setlists → cifras → band_members → band

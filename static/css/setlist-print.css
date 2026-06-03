@@ -100,10 +100,29 @@ html.setlist-print-root .breadcrumb-item.active {
 }
 
 .palco-logo {
-  width: 28px;
-  height: 28px;
   object-fit: contain;
   opacity: 0.92;
+}
+
+.palco-logo-setsync {
+  width: 28px;
+  height: 28px;
+}
+
+.palco-logo-band {
+  max-width: min(220px, 55vw);
+  max-height: 56px;
+  width: auto;
+  height: auto;
+}
+
+.palco-header-brand:has(.palco-logo-band) {
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.palco-header-brand:has(.palco-logo-band) .palco-eyebrow {
+  margin-top: 0.15rem;
 }
 
 .setlist-print-toolbar .toolbar-hint {

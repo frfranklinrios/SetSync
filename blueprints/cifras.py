@@ -209,85 +209,24 @@ def _group_cifra_data(data):
 
 
 def _parse_conteudo_to_cifra_data(conteudo):
-    """Parse simples do conteudo textual para estrutura cifra_json-like.
+    """Parse ChordPro, colchetes ou duas linhas → estrutura cifra_json."""
+    from chordpro import parse_conteudo_to_cifra_data
+    return parse_conteudo_to_cifra_data(conteudo)
 
-    Focado em preservar espacos no formato com colchetes, incluindo texto
-    antes do primeiro acorde na linha.
-    """
-    text = (conteudo or '').replace('\r\n', '\n').replace('\r', '\n')
-    lines = text.split('\n')
-    result = []
-    seq = 0
-    group = 0
 
-    for line in lines:
-        if not line.strip():
-            group += 1
-            continue
+def _prepare_conteudo_for_save(conteudo, *, titulo, artista, tom_original, cifra_json_raw=None):
+    """Converte para ChordPro no disco e alinha cifra_json ao corpo salvo."""
+    from chordpro import conteudo_to_chordpro, cifra_json_from_conteudo
 
-        s = line.strip()
-        if _is_tab_line(s) or _is_tab_header(s) or _is_tab_meta_line(s):
-            group += 1
-            continue
-        if re.fullmatch(r'spa', s, flags=re.I):
-            group += 1
-            continue
-        if _TAB_ARTIFACT_RE.search(s) and '[' not in s:
-            group += 1
-            continue
-
-        if '[' in line and ']' in line:
-            re_br = re.compile(r'\[([^\]]+)\]([^\[]*)')
-            last = 0
-            matched = False
-            for m in re_br.finditer(line):
-                matched = True
-                if m.start() > last:
-                    prefixo = line[last:m.start()]
-                    if prefixo:
-                        result.append({
-                            'segundo': seq,
-                            'texto_letra': prefixo,
-                            'acorde': '',
-                            'group': group,
-                        })
-                        seq += 1
-
-                result.append({
-                    'segundo': seq,
-                    'texto_letra': (m.group(2) or ''),
-                    'acorde': (m.group(1) or '').strip(),
-                    'group': group,
-                })
-                seq += 1
-                last = m.end()
-
-            if matched and last < len(line):
-                sufixo = line[last:]
-                if sufixo:
-                    result.append({
-                        'segundo': seq,
-                        'texto_letra': sufixo,
-                        'acorde': '',
-                        'group': group,
-                    })
-                    seq += 1
-
-            if matched:
-                group += 1
-                continue
-
-        # Fallback para linha sem colchetes: conserva como letra pura
-        result.append({
-            'segundo': seq,
-            'texto_letra': line,
-            'acorde': '',
-            'group': group,
-        })
-        seq += 1
-        group += 1
-
-    return result
+    chordpro_body = conteudo_to_chordpro(
+        conteudo or '',
+        titulo=titulo or '',
+        artista=artista or '',
+        key=(tom_original or '').strip(),
+    )
+    parsed = cifra_json_from_conteudo(chordpro_body)
+    cifra_json = json.dumps(parsed, ensure_ascii=False) if parsed else cifra_json_raw
+    return chordpro_body, cifra_json
 
 
 def _space_count(cifra_data):
@@ -700,6 +639,14 @@ def add(band_id):
         if cifra_json is False or grade_json is False:
             return render_template('cifras/add.html', band=band)
 
+        conteudo, cifra_json = _prepare_conteudo_for_save(
+            conteudo,
+            titulo=titulo,
+            artista=artista,
+            tom_original=tom_original,
+            cifra_json_raw=cifra_json,
+        )
+
         cifra_id = create_cifra(titulo, artista, tom_original, conteudo or '',
                                 band_id, cifra_json, grade_json, bpm, duracao_seg)
         bn.cifra_created(band_id, user_id, cifra_id, titulo)
@@ -760,6 +707,14 @@ def edit(cifra_id):
             bpm = cifra.get('bpm')
         if duracao_seg is None:
             duracao_seg = cifra.get('duracao_seg')
+
+        conteudo, cifra_json = _prepare_conteudo_for_save(
+            conteudo,
+            titulo=titulo,
+            artista=artista,
+            tom_original=tom_original,
+            cifra_json_raw=cifra_json,
+        )
 
         update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
                      cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)

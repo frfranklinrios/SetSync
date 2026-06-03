@@ -101,10 +101,10 @@
         <!-- Coluna esquerda: textarea de entrada -->
         <div>
             <label class="form-label">
-                Cifra  <small class="text-muted">(colchetes ou duas linhas)</small>
+                Cifra  <small class="text-muted">(colar do Cifra Club ou editar; salva em ChordPro)</small>
             </label>
             <textarea class="form-control" id="conteudo" name="conteudo" rows="16"
-                placeholder="[Am] Verso um aqui&#10;[Em] Mais uma linha&#10;&#10;Ou no formato duas linhas:&#10;Am      Em&#10;Letra da música"></textarea>
+                placeholder="Cole a cifra copiada do Cifra Club (Ctrl+V) — converte automaticamente&#10;&#10;Ou: [Am] Verso aqui&#10;Am      Em&#10;Letra da música"></textarea>
         </div>
 
         <!-- Coluna direita: preview estruturado -->
@@ -159,6 +159,8 @@
 {% include 'cifras/_cifras_tool_modal.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifras-tool-bridge.js') }}"></script>
 
 <script>
@@ -520,8 +522,18 @@ document.getElementById('upload_grade').addEventListener('change', function () {
     });
 });
 
-// ── Live update ao digitar ─────────────────────────────────────────────────────
+// ── Colar do Cifra Club ────────────────────────────────────────────────────────
 const ta = document.getElementById('conteudo');
+if (window.SetSyncCifraClubPaste) {
+    SetSyncCifraClubPaste.attach(ta, {
+        onConverted: function () {
+            _uploadedCifraJson = null;
+            renderPreview(parseConteudo(ta.value));
+        }
+    });
+}
+
+// ── Live update ao digitar ─────────────────────────────────────────────────────
 ta.addEventListener('input', () => {
     _uploadedCifraJson = null; // usuário editou → não usar o JSON do arquivo
     renderPreview(parseConteudo(ta.value));
@@ -529,7 +541,14 @@ ta.addEventListener('input', () => {
 
 // ── Antes de submeter: popula os hidden inputs ────────────────────────────────
 document.getElementById('cifra-form').addEventListener('submit', function (event) {
-    const data = _uploadedCifraJson || parseConteudo(ta.value);
+    if (window.SetSyncChordPro && ta.value.trim()) {
+        ta.value = SetSyncChordPro.toChordPro(ta.value, {
+            titulo: document.querySelector('[name="titulo"]').value,
+            artista: document.querySelector('[name="artista"]').value,
+            key: document.querySelector('[name="tom_original"]').value,
+        });
+    }
+    _uploadedCifraJson = null;
     if (data.length > 0) {
         document.getElementById('cifra_json_hidden').value = JSON.stringify(data);
     }

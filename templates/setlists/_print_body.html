@@ -3,7 +3,11 @@
     <section class="setlist-print-palco" aria-label="Folha de palco">
         <header class="palco-header">
             <div class="palco-header-brand">
-                <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="" class="palco-logo" width="28" height="28">
+                {% if band_logo_data_uri %}
+                <img src="{{ band_logo_data_uri }}" alt="" class="palco-logo palco-logo-band" width="120" height="56">
+                {% else %}
+                <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="" class="palco-logo palco-logo-setsync" width="28" height="28">
+                {% endif %}
                 <p class="palco-eyebrow">Setlist · {{ band.name }}</p>
             </div>
             <h1 class="palco-title">{{ setlist.name }}</h1>

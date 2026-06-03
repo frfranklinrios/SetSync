@@ -77,6 +77,8 @@ def _prepare_setlist_print_data(setlist_id, user_id):
     two_cols = request.args.get('cols', '1') == '2'
     palco_compact = len(sheets) > 10 or request.args.get('compact', '') == '1'
 
+    from band_logos import band_has_logo, band_logo_data_uri
+
     return {
         'empty': False,
         'setlist': setlist,
@@ -85,6 +87,8 @@ def _prepare_setlist_print_data(setlist_id, user_id):
         'printed_at': datetime.now(),
         'two_cols': two_cols,
         'palco_compact': palco_compact,
+        'band_has_logo': band_has_logo(band),
+        'band_logo_data_uri': band_logo_data_uri(band),
     }
 
 

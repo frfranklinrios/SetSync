@@ -174,8 +174,9 @@ def extrair_tablaturas_do_html(html: str) -> str:
     return padrao.sub(_substituir, html)
 
 
-def converter_pre_para_inline(pre_element) -> str:
-    html_bruto = extrair_tablaturas_do_html(pre_element.decode_contents())
+def converter_html_para_inline(html: str) -> str:
+    """Converte HTML colado do Cifra Club (ou similar) para texto inline SetSync."""
+    html_bruto = extrair_tablaturas_do_html(html or "")
     linhas_html = re.split(r"\r\n?|\n", html_bruto)
     saida: list[str] = []
     indice = 0
@@ -209,6 +210,10 @@ def converter_pre_para_inline(pre_element) -> str:
         indice += 1
 
     return "\n".join(saida)
+
+
+def converter_pre_para_inline(pre_element) -> str:
+    return converter_html_para_inline(pre_element.decode_contents())
 
 
 def primeiro_texto(soup: BeautifulSoup, seletores: list[str]) -> str:

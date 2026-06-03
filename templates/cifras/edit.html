@@ -54,9 +54,10 @@
 
     <div class="mb-3">
         <label class="form-label">
-            Cifra <small class="text-muted">(colchetes ou duas linhas)</small>
+            Cifra <small class="text-muted">(colar do Cifra Club ou editar; salva em ChordPro)</small>
         </label>
-        <textarea class="form-control" id="conteudo" name="conteudo" rows="16">{{ cifra.conteudo }}</textarea>
+        <textarea class="form-control" id="conteudo" name="conteudo" rows="16"
+                  placeholder="Cole a cifra copiada do Cifra Club (Ctrl+V) para converter automaticamente">{{ cifra.conteudo }}</textarea>
     </div>
 
     <div class="mb-3">
@@ -111,6 +112,8 @@
 {% include 'cifras/_cifras_tool_modal.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifras-tool-bridge.js') }}"></script>
 
 <script>
@@ -370,6 +373,10 @@ const ta = document.getElementById('conteudo');
 let _uploadedCifraJson = null; // JSON do arquivo carregado (preserva 'segundo' original)
 let _taModified = false;       // usuário editou o textarea manualmente
 
+if (window.SetSyncCifraClubPaste) {
+    SetSyncCifraClubPaste.attach(ta);
+}
+
 function readJsonFile(input, callback) {
     const file = input.files[0];
     if (!file) return;
@@ -426,11 +433,17 @@ try {
 
 // ── Antes de submeter ────────────────────────────────────────────────────
 document.getElementById('cifra-form').addEventListener('submit', function (event) {
+    if (window.SetSyncChordPro && ta.value.trim()) {
+        ta.value = SetSyncChordPro.toChordPro(ta.value, {
+            titulo: document.querySelector('[name="titulo"]').value,
+            artista: document.querySelector('[name="artista"]').value,
+            key: document.querySelector('[name="tom_original"]').value,
+        });
+    }
     if (_uploadedCifraJson) {
         // Arquivo importado → preserva o campo 'segundo' original
         document.getElementById('cifra_json_hidden').value = JSON.stringify(_uploadedCifraJson);
     } else if (_taModified) {
-        // Usuário editou o texto → regera a partir do textarea
         const parsed = parseConteudo(ta.value);
         if (parsed.length > 0) {
             document.getElementById('cifra_json_hidden').value = JSON.stringify(parsed);

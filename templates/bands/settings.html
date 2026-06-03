@@ -36,6 +36,44 @@
         </div>
 
         <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-image me-1"></i> Logo da banda</div>
+            <div class="card-body">
+                <p class="form-text mb-3">
+                    Aparece na página da banda e no cabeçalho das impressões e PDFs da setlist.
+                    PNG, JPG ou WebP — até 2 MB.
+                </p>
+                {% if band_has_logo and band_logo_url %}
+                <div class="mb-3 d-flex align-items-center gap-3 flex-wrap">
+                    <img src="{{ band_logo_url }}" alt="Logo {{ band.name }}"
+                         style="max-height:72px; max-width:220px; object-fit:contain; border-radius:6px; background:var(--surface-2, #f3f4f6); padding:6px;">
+                    <form method="POST" class="d-inline"
+                          onsubmit="return confirm('Remover o logo desta banda?')">
+                        <input type="hidden" name="action" value="remove_logo">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash me-1"></i> Remover logo
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <p class="text-muted mb-3" style="font-size:0.85rem;">Nenhum logo enviado.</p>
+                {% endif %}
+                <form method="POST" enctype="multipart/form-data" class="{% if band_has_logo %}border-top pt-3{% endif %}">
+                    <input type="hidden" name="action" value="upload_logo">
+                    <div class="mb-3">
+                        <label for="band_logo" class="form-label">
+                            {% if band_has_logo %}Substituir imagem{% else %}Enviar logo{% endif %}
+                        </label>
+                        <input type="file" class="form-control" id="band_logo" name="logo"
+                               accept="image/png,image/jpeg,image/webp"{% if not band_has_logo %} required{% endif %}>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-upload me-1"></i> {% if band_has_logo %}Atualizar logo{% else %}Enviar logo{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
             <div class="card-header"><i class="fas fa-microphone me-1"></i> Cantoras/cantores</div>
             <div class="card-body">
                 <p class="form-text mb-3">
