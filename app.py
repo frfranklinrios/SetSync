@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session, send_from_directory, make_response, request
+from flask import Flask, render_template, redirect, url_for, session, send_from_directory, make_response, request, flash
 from config import config
 from blueprints.auth import auth_bp, login_required
 from blueprints.bands import bands_bp
@@ -13,7 +13,7 @@ from blueprints.blog import blog_bp
 from db import init_db
 from extensions import init_scheduler
 from util import highlight_chords_html, normalize_tom_label, format_date_short
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 import os
 from urllib.parse import urlparse
 from flask_mail import Mail
@@ -38,6 +38,20 @@ if canonical:
 
 mail = Mail(app)
 csrf = CSRFProtect(app)
+
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    """Token CSRF inválido/expirado (ex.: logout em outra aba, botão voltar,
+    formulário aberto há muito tempo). Em vez de um 400 cru, volta à página de
+    origem — o novo GET emite um token válido e a nova tentativa funciona."""
+    flash('Sua sessão expirou. Atualizamos a página, tente novamente.', 'warning')
+    ref = request.referrer
+    if ref:
+        ref_host = urlparse(ref).netloc
+        if not ref_host or ref_host == urlparse(request.host_url).netloc:
+            return redirect(ref)
+    return redirect(url_for('auth.login'))
 
 if env == 'production':
     from werkzeug.middleware.proxy_fix import ProxyFix
