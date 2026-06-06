@@ -83,6 +83,13 @@ Com `FLASK_ENV=production` e `TRUST_PROXY=1`, o OAuth Google usa URLs `https://`
 | `CIFRAS_YOUTUBE_NO_SERVER` | `1` (recomendado na VPS) |
 | `SESSION_COOKIE_SECURE` | `1` com HTTPS; `0` só para teste em HTTP |
 | `GUNICORN_WORKERS` | `1` (SQLite) |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | SMTP para recuperação de senha, onboarding e avisos (opcional) |
+
+Para Gmail: senha de app em [Google Account](https://myaccount.google.com/apppasswords). Teste:
+
+```bash
+python scripts/send_test_email.py seu@email.com
+```
 
 ## 6. Admin global
 
@@ -131,5 +138,6 @@ Agende cópia periódica de:
 | Google OAuth redirect errado | Nginx sem `X-Forwarded-Proto` ou domínio diferente do Console |
 | `database is locked` | `GUNICORN_WORKERS` > 1 com SQLite |
 | Admin não aparece | `SETSYNC_SUPERADMIN_*` vazio ou app não reiniciado |
+| E-mails não chegam | `MAIL_USERNAME`/`MAIL_PASSWORD` vazios ou remetente inválido — teste com `scripts/send_test_email.py` |
 
 Ver também `docs/05-troubleshooting.md`.

@@ -17,12 +17,15 @@ from flask_mail import Message
 def is_configured() -> bool:
     """True se o Flask-Mail está inicializado e tem credenciais SMTP.
 
-    A extensão ``mail`` é sempre registrada em ``app.py``, então o sinal real
-    de "pronto para enviar" é haver um ``MAIL_USERNAME`` configurado.
+    A extensão ``mail`` é sempre registrada em ``app.py``; o sinal de
+    "pronto para enviar" é haver ``MAIL_USERNAME`` e ``MAIL_PASSWORD``.
     """
     if not current_app.extensions.get('mail'):
         return False
-    return bool(current_app.config.get('MAIL_USERNAME'))
+    return bool(
+        current_app.config.get('MAIL_USERNAME')
+        and current_app.config.get('MAIL_PASSWORD')
+    )
 
 
 def send_email(

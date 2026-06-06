@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from db import ensure_onboarding_rows, list_onboarding_pending, mark_onboarding_sent, get_user
-from email_service import send_email
+from email_service import is_configured, send_email
 from security import external_url_for
 
 # Dias após cadastro para cada e-mail (0 = imediato)
@@ -121,6 +121,9 @@ def registrar_onboarding_usuario(usuario_id: str) -> None:
 
 def verificar_e_disparar_onboarding() -> int:
     """Job diário: envia e-mails de onboarding no prazo. Retorna quantidade enviada."""
+    if not is_configured():
+        return 0
+
     urls = _urls()
     agora = datetime.utcnow()
     enviados = 0
@@ -145,15 +148,15 @@ def verificar_e_disparar_onboarding() -> int:
         tpl = _EMAILS.get(num)
         if not tpl:
             continue
-        try:
-            send_email(
-                [email],
-                tpl['subject'],
-                tpl['html'].format(**urls),
-                tpl['body'].format(**urls),
-            )
+        ok = send_email(
+            [email],
+            tpl['subject'],
+            tpl['html'].format(**urls),
+            tpl['body'].format(**urls),
+        )
+        if ok:
             mark_onboarding_sent(row['id'], 'enviado')
             enviados += 1
-        except Exception:
+        else:
             mark_onboarding_sent(row['id'], 'erro')
     return enviados

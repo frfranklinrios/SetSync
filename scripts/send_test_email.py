@@ -5,8 +5,8 @@ Uso:
     python scripts/send_test_email.py destino@exemplo.com
 
 Lê as variáveis MAIL_* do ambiente (.env) e tenta enviar de verdade,
-imprimindo o resultado. Útil para conferir credenciais (ex.: senha de app
-do Gmail) antes de confiar nos e-mails automáticos do app.
+imprimindo o resultado. Útil para conferir credenciais (Zoho, Gmail etc.)
+antes de confiar nos e-mails automáticos do app.
 """
 
 from __future__ import annotations
@@ -42,6 +42,7 @@ def main() -> int:
         print(f"Servidor:  {app.config.get('MAIL_SERVER')}:{app.config.get('MAIL_PORT')}")
         print(f"TLS:       {app.config.get('MAIL_USE_TLS')}")
         print(f"Usuário:   {app.config.get('MAIL_USERNAME') or '(vazio)'}")
+        print(f"Senha:     {'(definida)' if app.config.get('MAIL_PASSWORD') else '(vazia)'}")
         print(f"Remetente: {app.config.get('MAIL_DEFAULT_SENDER')}")
         print(f"Destino:   {destino}\n")
 

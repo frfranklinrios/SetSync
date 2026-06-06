@@ -110,6 +110,7 @@ Requisitos do importador: `ffmpeg` no PATH; `playwright install chromium` para c
 | `MP_*` | Mercado Pago (planos Pro/Worship) — ver `MONETIZACAO.md` |
 | `ADSENSE_*` | Google AdSense (plano grátis) — ver `MONETIZACAO.md` |
 | `GOOGLE_CLIENT_ID` / `SECRET` | Login com Google (opcional) |
+| `MAIL_*` | SMTP para recuperação de senha e avisos (opcional — ver `.env.example`) |
 
 Lista completa: **`.env.example`**.
 

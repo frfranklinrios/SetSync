@@ -25,14 +25,19 @@ Adicione ao `.env` na raiz do projeto:
 
 ### E-mail (vouchers e avisos)
 
+Opcional até configurar SMTP. Sem `MAIL_PASSWORD`, o app funciona — só não envia e-mails.
+
 | Variável | Descrição |
 |----------|-----------|
-| `MAIL_SERVER` | Ex: `smtp.gmail.com` |
-| `MAIL_PORT` | Ex: `587` |
-| `MAIL_USE_TLS` | `1` |
-| `MAIL_USERNAME` | Usuário SMTP |
-| `MAIL_PASSWORD` | Senha ou app password |
-| `MAIL_DEFAULT_SENDER` | Ex: `SetSync <seu@email.com>` |
+| `MAIL_SERVER` | Ex: `smtp.zoho.com` (Registro.br + Zoho) ou `smtp.gmail.com` (Google Workspace) |
+| `MAIL_PORT` | `587` (TLS) ou `465` (SSL) |
+| `MAIL_USE_TLS` | `1` na porta 587 |
+| `MAIL_USE_SSL` | `1` na porta 465 |
+| `MAIL_USERNAME` | Ex: `contato@setsync.com.br` |
+| `MAIL_PASSWORD` | Senha da caixa ou senha de app |
+| `MAIL_DEFAULT_SENDER` | Ex: `SetSync <contato@setsync.com.br>` |
+
+Teste: `python scripts/send_test_email.py seu@email.com`
 
 ## 3. Criar planos de recorrência
 

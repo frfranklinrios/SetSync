@@ -46,9 +46,8 @@ def avisar_vouchers_proximo_vencimento() -> None:
         expira = datetime.strptime(str(row['expira_em'])[:19], '%Y-%m-%d %H:%M:%S')
         dias = max(1, (expira - datetime.utcnow()).days)
         email = row.get('owner_email')
-        if email:
-            send_voucher_aviso_email(email, plano_nome, dias)
-        marcar_aviso_voucher_enviado(row['id'])
+        if email and send_voucher_aviso_email(email, plano_nome, dias):
+            marcar_aviso_voucher_enviado(row['id'])
 
 
 def avisar_trials_proximo_vencimento() -> None:
