@@ -52,7 +52,7 @@
         <div class="cta-row p-0">
             <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
             {% if whatsapp %}
-            <a href="https://wa.me/{{ whatsapp }}?text=Olá!%20Tenho%20interesse%20no%20SetSync%20para%20nossa%20igreja."
+            <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
                class="btn btn-success btn-lg" target="_blank" rel="noopener">
                 <i class="fab fa-whatsapp me-1"></i> Falar no WhatsApp
             </a>

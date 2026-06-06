@@ -1,0 +1,42 @@
+{% extends "index.html" %}
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block extra_head %}
+<link rel="canonical" href="{{ canonical_url }}">
+<meta property="og:title" content="{{ meta_title }}">
+<meta property="og:description" content="{{ meta_description }}">
+<meta property="og:image" content="{{ og_image }}">
+<meta property="og:url" content="{{ canonical_url }}">
+<meta property="og:type" content="article">
+<meta name="description" content="{{ meta_description }}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": {{ post.titulo|tojson }},
+  "description": {{ meta_description|tojson }},
+  "datePublished": {{ (post.publicado_em or '')[:10]|tojson }},
+  "dateModified": {{ (post.atualizado_em or post.publicado_em or '')[:10]|tojson }},
+  "author": { "@type": "Organization", "name": {{ (post.autor or 'SetSync')|tojson }} },
+  "image": {{ og_image|tojson }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": {{ canonical_url|tojson }} }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<article class="container py-4" style="max-width:760px;">
+    <p class="text-muted small mb-2">
+        <a href="{{ url_for('blog.blog_index') }}">← Blog</a>
+        · {{ (post.publicado_em or '')[:10] }}
+        {% if post.autor %}· {{ post.autor }}{% endif %}
+    </p>
+    <h1 class="mb-3" style="font-size:clamp(1.5rem,4vw,2rem);font-weight:700;">{{ post.titulo }}</h1>
+    <div class="blog-conteudo" style="line-height:1.7;">
+        {{ conteudo_html|safe }}
+    </div>
+    {% if post.tags %}
+    <p class="mt-4 small text-muted">Tags: {{ post.tags }}</p>
+    {% endif %}
+</article>
+{% endblock %}

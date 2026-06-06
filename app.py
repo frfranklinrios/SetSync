@@ -9,6 +9,7 @@ from blueprints.ajuda import ajuda_bp
 from blueprints.admin import admin_bp
 from blueprints.assinatura import assinatura_bp, webhook as mp_webhook_view
 from blueprints.notifications import notifications_bp
+from blueprints.blog import blog_bp
 from db import init_db
 from extensions import init_scheduler
 from util import highlight_chords_html, normalize_tom_label, format_date_short
@@ -51,12 +52,11 @@ with app.app_context():
     init_db()
 
 _PWA_ASSET_PATHS = frozenset(('/sw.js', '/manifest.webmanifest'))
-_ADS_TXT_PATH = '/ads.txt'
 
 
 @app.before_request
 def before_request():
-    if request.path in _PWA_ASSET_PATHS or request.path == _ADS_TXT_PATH:
+    if request.path in _PWA_ASSET_PATHS:
         return
     from security import validate_request_host
     host_redirect = validate_request_host()
@@ -70,9 +70,6 @@ def before_request():
 
 @app.after_request
 def security_headers(response):
-    if request.path == _ADS_TXT_PATH:
-        response.headers.pop('Set-Cookie', None)
-        return response
     if request.path in _PWA_ASSET_PATHS:
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         response.headers.pop('Set-Cookie', None)
@@ -98,6 +95,7 @@ app.register_blueprint(ajuda_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(assinatura_bp)
 app.register_blueprint(notifications_bp)
+app.register_blueprint(blog_bp)
 init_scheduler(app)
 
 # Webhook Mercado Pago: POST externo sem CSRF de formulário
@@ -109,32 +107,23 @@ def health():
     return 'ok', 200
 
 
-@app.route('/ads.txt')
-def ads_txt():
-    """Arquivo na raiz do projeto (IAB ads.txt) — fallback se o proxy não servir na borda."""
-    from adsense import ads_txt_body
-
-    root_file = os.path.join(app.root_path, 'ads.txt')
-    if os.path.isfile(root_file):
-        resp = make_response(send_from_directory(app.root_path, 'ads.txt', mimetype='text/plain'))
-    else:
-        body = ads_txt_body()
-        if not body:
-            return 'Not Found', 404
-        resp = make_response(body)
-        resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
-    resp.headers['Cache-Control'] = 'public, max-age=86400'
-    resp.headers.pop('Set-Cookie', None)
-    return resp
-
-
 @app.route('/')
 def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
     from monetizacao import planos_para_site
+    from db import count_bands, count_cifras, count_setlists, list_testimonials
 
-    return render_template('home.html', planos_site=planos_para_site())
+    return render_template(
+        'home.html',
+        planos_site=planos_para_site(),
+        stats={
+            'bandas': count_bands(),
+            'musicas': count_cifras(),
+            'setlists': count_setlists(),
+        },
+        testimonials=list_testimonials(active_only=True),
+    )
 
 
 @app.route('/sw.js')
@@ -166,6 +155,35 @@ def exportar_setlist_pdf(setlist_id):
     return exportar_pdf(setlist_id)
 
 
+
+@app.route('/sitemap.xml')
+def sitemap():
+    from db import list_blog_posts
+
+    pages = [
+        {'loc': url_for('index', _external=True), 'changefreq': 'weekly', 'priority': '1.0'},
+        {'loc': url_for('assinatura_bp.igrejas', _external=True), 'changefreq': 'monthly', 'priority': '0.8'},
+        {'loc': url_for('blog.blog_index', _external=True), 'changefreq': 'daily', 'priority': '0.9'},
+        {'loc': url_for('ajuda.index', _external=True), 'changefreq': 'monthly', 'priority': '0.6'},
+        {'loc': url_for('auth.register', _external=True), 'changefreq': 'monthly', 'priority': '0.7'},
+    ]
+    for post in list_blog_posts(published_only=True):
+        lastmod = ''
+        if post.get('atualizado_em'):
+            lastmod = str(post['atualizado_em'])[:10]
+        elif post.get('publicado_em'):
+            lastmod = str(post['publicado_em'])[:10]
+        pages.append({
+            'loc': url_for('blog.blog_post', slug=post['slug'], _external=True),
+            'changefreq': 'monthly',
+            'priority': '0.7',
+            'lastmod': lastmod,
+        })
+    resp = make_response(render_template('sitemap.xml', pages=pages))
+    resp.headers['Content-Type'] = 'application/xml; charset=utf-8'
+    return resp
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -173,10 +191,21 @@ def dashboard():
         get_user_bands, get_owned_bands, get_all_bands,
         enrich_bands_for_display, is_superadmin,
     )
-    from monetizacao import enrich_bands_plano, resumo_planos_usuario
+    from monetizacao import enrich_bands_plano, resumo_planos_usuario, dias_restantes_trial, get_assinatura_banda
 
     user_id = session['user_id']
     sa = is_superadmin(user_id)
+
+    def _trial_ctx(bands_list):
+        for b in bands_list:
+            dias = dias_restantes_trial(b['id'])
+            if dias is not None:
+                return {'ativo': True, 'dias': dias, 'band_name': b['name']}
+            ass = get_assinatura_banda(b['id'])
+            if ass.trial_usado and not ass.trial_ativo():
+                return {'expirado': True, 'band_name': b['name']}
+        return None
+
     if sa:
         all_bands = enrich_bands_plano(enrich_bands_for_display(get_all_bands()))
         owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
@@ -186,6 +215,7 @@ def dashboard():
             owned_bands=owned_bands,
             is_superadmin=True,
             planos_resumo=resumo_planos_usuario(owned_bands),
+            trial_ui=_trial_ctx(owned_bands),
         )
 
     bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
@@ -196,22 +226,16 @@ def dashboard():
         owned_bands=owned_bands,
         is_superadmin=False,
         planos_resumo=resumo_planos_usuario(owned_bands),
+        trial_ui=_trial_ctx(owned_bands),
     )
 
 
 @app.context_processor
-def inject_adsense():
-    from adsense import adsense_exibir_na_requisicao, get_adsense_config, usuario_deve_ver_anuncios
-
-    user_id = session.get('user_id')
-    cfg = get_adsense_config()
-    exibir = adsense_exibir_na_requisicao(user_id)
+def inject_site_config():
+    from config import whatsapp_number, whatsapp_message
     return dict(
-        adsense=cfg,
-        adsense_exibir=exibir,
-        adsense_para_banda=lambda band_id: (
-            usuario_deve_ver_anuncios(user_id, band_id, cfg=cfg) if cfg['enabled'] else False
-        ),
+        whatsapp_number=whatsapp_number(),
+        whatsapp_message=whatsapp_message(),
     )
 
 

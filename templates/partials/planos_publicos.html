@@ -1,14 +1,37 @@
 {# planos_site: list[PlanoSite] de monetizacao.planos_para_site() #}
-<div class="planos-publicos-grid">
+<div class="toggle-periodo text-center mb-4">
+    <span class="me-2">Mensal</span>
+    <label class="switch d-inline-flex align-items-center mx-1">
+        <input type="checkbox" id="toggle-anual" aria-label="Alternar preços anuais">
+        <span class="slider"></span>
+    </label>
+    <span class="ms-2">Anual <span class="badge-economia badge bg-success ms-1" hidden id="badge-economia">2 meses grátis</span></span>
+</div>
+<style>
+.switch { position:relative; width:48px; height:26px; }
+.switch input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; inset:0; background:#cbd5e1; border-radius:999px; transition:.2s; }
+.slider:before { position:absolute; content:""; height:20px; width:20px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; }
+.switch input:checked + .slider { background:var(--accent,#ea580c); }
+.switch input:checked + .slider:before { transform:translateX(22px); }
+</style>
+<div class="planos-publicos-grid" id="planos-publicos-grid">
     {% for p in planos_site %}
-    <article class="plano-publico-card{% if p.destaque %} plano-publico-card--destaque{% endif %}">
+    <article class="plano-publico-card{% if p.destaque %} plano-publico-card--destaque{% endif %}"
+             data-plano-id="{{ p.id }}"
+             data-preco-mensal="{{ p.preco_label }}{% if p.sufixo %}<small>{{ p.sufixo }}</small>{% endif %}"
+             data-preco-anual="{% if p.preco_anual_label %}{{ p.preco_anual_label }}<small>{{ p.sufixo_anual or '/ano' }}</small>{% endif %}"
+             data-economia="{{ p.economia_anual or '' }}">
         {% if p.destaque %}
         <span class="plano-publico-badge">Mais popular</span>
         {% endif %}
         <h3 class="plano-publico-nome">{{ p.nome }}</h3>
-        <p class="plano-publico-preco">
+        <p class="plano-publico-preco js-plano-preco">
             {{ p.preco_label }}{% if p.sufixo %}<small>{{ p.sufixo }}</small>{% endif %}
         </p>
+        {% if p.economia_anual %}
+        <p class="small text-success mb-2 js-plano-economia" hidden>{{ p.economia_anual }}</p>
+        {% endif %}
         <ul class="plano-publico-features">
             {% for feat in p.features %}
             <li><i class="fas fa-check" aria-hidden="true"></i>{{ feat }}</li>
@@ -21,3 +44,26 @@
     </article>
     {% endfor %}
 </div>
+<script>
+(function () {
+    var toggle = document.getElementById('toggle-anual');
+    if (!toggle) return;
+    function apply(anual) {
+        document.querySelectorAll('#planos-publicos-grid .plano-publico-card').forEach(function (card) {
+            var precoEl = card.querySelector('.js-plano-preco');
+            var ecoEl = card.querySelector('.js-plano-economia');
+            if (!precoEl) return;
+            if (anual && card.dataset.precoAnual) {
+                precoEl.innerHTML = card.dataset.precoAnual;
+                if (ecoEl) ecoEl.hidden = false;
+            } else {
+                precoEl.innerHTML = card.dataset.precoMensal;
+                if (ecoEl) ecoEl.hidden = true;
+            }
+        });
+        var badge = document.getElementById('badge-economia');
+        if (badge) badge.hidden = !anual;
+    }
+    toggle.addEventListener('change', function () { apply(toggle.checked); });
+})();
+</script>

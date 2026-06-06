@@ -347,5 +347,10 @@ def admin_vouchers_usos(codigo):
 @assinatura_bp.route('/igrejas')
 def igrejas():
     """Landing page para igrejas."""
-    whatsapp = os.getenv('SETSYNC_WHATSAPP', '5511999999999')
-    return render_template('igrejas.html', planos_site=planos_para_site(), whatsapp=whatsapp)
+    from config import whatsapp_number, whatsapp_message
+    return render_template(
+        'igrejas.html',
+        planos_site=planos_para_site(),
+        whatsapp=whatsapp_number(),
+        whatsapp_message=whatsapp_message(),
+    )

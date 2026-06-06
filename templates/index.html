@@ -657,21 +657,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/list-rows.css') }}?v=4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=7">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=3">
-    <style>
-        .ss-adsense {
-            margin: 1.25rem auto;
-            max-width: 728px;
-            min-height: 90px;
-            text-align: center;
-        }
-        body.play-mode .ss-adsense { display: none !important; }
-        @media print { .ss-adsense { display: none !important; } }
-    </style>
-    {% block adsense_head %}
-    {% if adsense_exibir %}
-    {% include 'partials/adsense_head.html' %}
-    {% endif %}
-    {% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -759,6 +744,9 @@
                             <a class="nav-link" href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('blog.blog_index') }}">Blog</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
                         </li>
                         <li class="nav-item">
@@ -794,17 +782,7 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
-        {% block adsense_content %}{% endblock %}
     </main>
-
-    {% block adsense_footer %}
-    {% if adsense_exibir %}
-    <div class="container mb-3">
-        {% set slot = adsense.slots.footer %}
-        {% include 'partials/adsense_slot.html' %}
-    </div>
-    {% endif %}
-    {% endblock %}
 
     <footer>
         <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync">
@@ -1603,7 +1581,7 @@
         });
     })();
     </script>
-    <script src="{{ url_for('static', filename='js/plano-limite.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=1"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

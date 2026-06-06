@@ -323,9 +323,9 @@ def create(band_id):
         if not name:
             flash('Nome obrigatório', 'danger')
             return render_template('setlists/create.html', band=band)
-        from monetizacao import check_limite, resposta_limite_plano
+        from monetizacao import check_limite, resposta_limite_plano, LIMITES_GRATIS
         if not check_limite(band, 'setlist'):
-            resp = resposta_limite_plano()
+            resp = resposta_limite_plano('setlists', LIMITES_GRATIS['setlist'])
             if resp:
                 return resp
         setlist_id = create_setlist(band_id, name, description)

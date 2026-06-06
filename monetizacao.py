@@ -80,6 +80,9 @@ class PlanoSite:
     features: tuple[str, ...]
     cta: str
     cta_outline: bool
+    preco_anual_label: str = ''
+    sufixo_anual: str = '/ano'
+    economia_anual: str = ''
 
 
 def _preco_label(valor: float | None) -> str:
@@ -124,6 +127,8 @@ def planos_para_site() -> list[PlanoSite]:
             ),
             cta='Criar conta',
             cta_outline=False,
+            preco_anual_label='R$ 249',
+            economia_anual='Economize R$ 99/ano',
         ),
         PlanoSite(
             id=PLANO_WORSHIP,
@@ -138,6 +143,8 @@ def planos_para_site() -> list[PlanoSite]:
             ),
             cta='Criar conta',
             cta_outline=True,
+            preco_anual_label='R$ 599',
+            economia_anual='Economize R$ 229/ano',
         ),
     ]
 
@@ -184,6 +191,23 @@ class Assinatura:
     def data_cancelamento(self) -> datetime | None:
         return _parse_dt(self._row.get('data_cancelamento'))
 
+    @property
+    def trial_inicio(self) -> datetime | None:
+        return _parse_dt(self._row.get('trial_inicio'))
+
+    @property
+    def trial_fim(self) -> datetime | None:
+        return _parse_dt(self._row.get('trial_fim'))
+
+    @property
+    def trial_usado(self) -> bool:
+        return bool(self._row.get('trial_usado'))
+
+    def trial_ativo(self) -> bool:
+        if not self.trial_usado or not self.trial_fim:
+            return False
+        return _agora_utc() < self.trial_fim
+
     @classmethod
     def from_row(cls, row: dict[str, Any] | None) -> Assinatura | None:
         if not row:
@@ -197,7 +221,9 @@ class Assinatura:
         return PLANOS.get(self.plano, PLANOS[PLANO_GRATIS])
 
     def tem_acesso_premium(self) -> bool:
-        """Pro/Worship com assinatura ativa (paga ou voucher futuro)."""
+        """Pro/Worship com assinatura ativa (paga ou voucher futuro) ou trial Pro."""
+        if self.trial_ativo():
+            return True
         return (
             self.plano in PLANOS_PAGOS
             and self.status in (STATUS_ATIVA, 'voucher')
@@ -441,6 +467,18 @@ def plano_badge_ui(banda_id: str) -> dict[str, Any]:
         label = 'Grátis'
         label_curto = 'Grátis'
 
+    if assinatura.trial_ativo():
+        dias = dias_restantes_trial(banda_id)
+        badge = 'success'
+        label_curto = f'Trial Pro · {dias} dias' if dias is not None else 'Trial Pro'
+        label = label_curto
+        periodo = {
+            'tem_periodo': True,
+            'tipo': 'trial',
+            'texto_restante': f'{dias} dias restantes' if dias is not None else 'Trial ativo',
+            'urgencia': 'ok' if (dias or 0) > 3 else 'atencao',
+        }
+
     return {
         'label': label,
         'label_curto': label_curto,
@@ -543,13 +581,54 @@ def pode_exportar_pdf(banda_id: str) -> bool:
     return assinatura.tem_acesso_premium()
 
 
-def resposta_limite_plano():
+def get_plano_efetivo(banda_id: str) -> str:
+    """Plano real considerando trial Pro ativo."""
+    assinatura = get_assinatura_banda(banda_id)
+    if assinatura.trial_ativo():
+        return PLANO_PRO
+    if assinatura.tem_acesso_premium() and assinatura.plano in PLANOS_PAGOS:
+        return assinatura.plano
+    return assinatura.plano if assinatura.plano else PLANO_GRATIS
+
+
+def iniciar_trial_banda(banda_id: str) -> bool:
+    """Inicia trial Pro de 14 dias na primeira banda elegível."""
+    from db import get_assinatura, update_assinatura_trial
+
+    row = get_assinatura(banda_id)
+    if not row or row.get('trial_usado'):
+        return False
+    agora = _agora_utc()
+    fim = agora + timedelta(days=14)
+    fmt = '%Y-%m-%d %H:%M:%S'
+    update_assinatura_trial(
+        banda_id,
+        trial_inicio=agora.strftime(fmt),
+        trial_fim=fim.strftime(fmt),
+        trial_usado=1,
+    )
+    return True
+
+
+def dias_restantes_trial(banda_id: str) -> int | None:
+    assinatura = get_assinatura_banda(banda_id)
+    if not assinatura.trial_ativo() or not assinatura.trial_fim:
+        return None
+    return max(0, _dias_calendario(_agora_utc(), assinatura.trial_fim))
+
+
+def resposta_limite_plano(recurso: str = 'recursos', limite: int | None = None):
     """Resposta HTTP 402 padronizada (JSON ou redirect)."""
     from flask import jsonify, redirect, flash, request
 
+    limite_val = limite if limite is not None else LIMITES_GRATIS.get(recurso.rstrip('s'), 0)
     payload = {
+        'status': 'limite_atingido',
         'erro': 'limite_plano',
-        'mensagem': 'Você atingiu o limite do plano grátis.',
+        'recurso': recurso,
+        'limite': limite_val,
+        'plano_atual': 'Grátis',
+        'mensagem': f'Você atingiu o limite do plano Grátis ({limite_val} {recurso}).',
         'upgrade_url': '/assinatura/planos',
     }
     if request.accept_mimetypes.best == 'application/json' or request.is_json:

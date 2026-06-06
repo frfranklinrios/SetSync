@@ -45,13 +45,20 @@ def create():
             flash('Nome da banda é obrigatório', 'danger')
             return render_template('bands/create.html')
 
-        from monetizacao import check_limite, resposta_limite_plano
+        from monetizacao import check_limite, resposta_limite_plano, LIMITES_GRATIS
         if not check_limite({'id': '', 'owner_id': user_id}, 'banda'):
-            resp = resposta_limite_plano()
+            resp = resposta_limite_plano('bandas', LIMITES_GRATIS['banda'])
             if resp:
                 return resp
         
         band_id = create_band(name, description, user_id)
+        from monetizacao import iniciar_trial_banda
+        if iniciar_trial_banda(band_id):
+            flash(
+                'Trial Pro de 14 dias ativado nesta banda — sem cartão. '
+                'Aproveite recursos ilimitados!',
+                'info',
+            )
         import admin_notifications as an
         an.band_created(band_id, user_id)
         flash(f'Banda "{name}" criada com sucesso!', 'success')
@@ -268,9 +275,9 @@ def invite(band_id):
         flash('Usuário já é membro', 'danger')
         return redirect(url_for('bands.members', band_id=band_id))
 
-    from monetizacao import check_limite, resposta_limite_plano
+    from monetizacao import check_limite, resposta_limite_plano, LIMITES_GRATIS
     if not check_limite(band, 'integrante'):
-        resp = resposta_limite_plano()
+        resp = resposta_limite_plano('integrantes', LIMITES_GRATIS['integrante'])
         if resp:
             return resp
     

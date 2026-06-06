@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database import (
@@ -41,6 +41,7 @@ def _init_postgres_schema(c) -> None:
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT,
             google_id TEXT,
+            is_superadmin INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )''',
         '''CREATE TABLE IF NOT EXISTS bands (
@@ -128,6 +129,9 @@ def _init_postgres_schema(c) -> None:
             data_inicio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             data_proxima_cobranca TIMESTAMP,
             data_cancelamento TIMESTAMP,
+            trial_inicio TIMESTAMP,
+            trial_fim TIMESTAMP,
+            trial_usado INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (banda_id) REFERENCES bands(id) ON DELETE CASCADE
         )''',
         '''CREATE TABLE IF NOT EXISTS vouchers (
@@ -174,6 +178,41 @@ def _init_postgres_schema(c) -> None:
         )''',
         '''CREATE INDEX IF NOT EXISTS idx_notifications_user_created
            ON notifications(user_id, created_at DESC)''',
+        '''CREATE TABLE IF NOT EXISTS testimonials (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            cidade TEXT,
+            descricao TEXT,
+            texto TEXT NOT NULL,
+            foto_url TEXT,
+            ativo INTEGER NOT NULL DEFAULT 1,
+            ordem INTEGER NOT NULL DEFAULT 0,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''',
+        '''CREATE TABLE IF NOT EXISTS blog_posts (
+            id SERIAL PRIMARY KEY,
+            slug TEXT UNIQUE NOT NULL,
+            titulo TEXT NOT NULL,
+            resumo TEXT,
+            conteudo TEXT,
+            autor TEXT,
+            publicado INTEGER NOT NULL DEFAULT 0,
+            publicado_em TIMESTAMP,
+            atualizado_em TIMESTAMP,
+            meta_title TEXT,
+            meta_description TEXT,
+            imagem_capa TEXT,
+            tags TEXT
+        )''',
+        '''CREATE TABLE IF NOT EXISTS onboarding_emails (
+            id SERIAL PRIMARY KEY,
+            usuario_id TEXT NOT NULL,
+            email_numero INTEGER NOT NULL,
+            enviado_em TIMESTAMP,
+            status TEXT NOT NULL DEFAULT 'pendente',
+            UNIQUE (usuario_id, email_numero),
+            FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+        )''',
     ]
     for sql in statements:
         c.execute(sql)
@@ -188,7 +227,12 @@ def init_db():
         _init_postgres_schema(c)
         db.commit()
         add_column_if_missing(c, 'bands', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+        add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
+        add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
+        add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
+        add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
         _migrate_assinaturas_schema(c)
+        _migrate_content_schema(c)
         db.commit()
         db.close()
         return
@@ -304,9 +348,64 @@ def init_db():
     _migrate_vouchers_schema(c)
     add_column_if_missing(c, 'vouchers', 'eh_vitalicio', 'INTEGER NOT NULL DEFAULT 0')
     _migrate_notifications_schema(c)
+    add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
+    add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
+    add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
+    _migrate_content_schema(c)
     db.commit()
 
     db.close()
+
+
+def _migrate_content_schema(c) -> None:
+    """Tabelas de conteúdo (depoimentos, blog, onboarding) e seeds iniciais."""
+    if not IS_POSTGRES:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS testimonials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                cidade TEXT,
+                descricao TEXT,
+                texto TEXT NOT NULL,
+                foto_url TEXT,
+                ativo INTEGER NOT NULL DEFAULT 1,
+                ordem INTEGER NOT NULL DEFAULT 0,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS blog_posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug TEXT UNIQUE NOT NULL,
+                titulo TEXT NOT NULL,
+                resumo TEXT,
+                conteudo TEXT,
+                autor TEXT,
+                publicado INTEGER NOT NULL DEFAULT 0,
+                publicado_em TIMESTAMP,
+                atualizado_em TIMESTAMP,
+                meta_title TEXT,
+                meta_description TEXT,
+                imagem_capa TEXT,
+                tags TEXT
+            )
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS onboarding_emails (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario_id TEXT NOT NULL,
+                email_numero INTEGER NOT NULL,
+                enviado_em TIMESTAMP,
+                status TEXT NOT NULL DEFAULT 'pendente',
+                UNIQUE (usuario_id, email_numero),
+                FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ''')
+    _sync_superadmins_from_env(c)
+    from content_seed import seed_testimonials, seed_blog_posts
+    seed_testimonials(c)
+    seed_blog_posts(c)
 
 
 def _split_vocalist_names(raw: str) -> list[str]:
@@ -511,20 +610,49 @@ def verify_password(user_id, password):
 
 
 def is_superadmin(user_id):
-    """Administrador global via .env — sem coluna no banco (ideal para deploy Contabo)."""
+    """Administrador global via coluna no banco ou variáveis SETSYNC_SUPERADMIN_* no .env."""
     if not user_id:
-        return False
-    env_users, env_emails = _env_superadmin_identifiers()
-    if not env_users and not env_emails:
         return False
     user = get_user(user_id)
     if not user:
+        return False
+    if user.get('is_superadmin'):
+        return True
+    env_users, env_emails = _env_superadmin_identifiers()
+    if not env_users and not env_emails:
         return False
     if user.get('username', '').lower() in env_users:
         return True
     if user.get('email', '').lower() in env_emails:
         return True
     return False
+
+
+def _sync_superadmins_from_env(c) -> None:
+    """Marca is_superadmin=1 para contas listadas no .env (idempotente)."""
+    env_users, env_emails = _env_superadmin_identifiers()
+    if not env_users and not env_emails:
+        return
+    c.execute('SELECT id, username, email FROM users')
+    for row in c.fetchall():
+        uname = (row['username'] or '').lower()
+        email = (row['email'] or '').lower()
+        if uname in env_users or email in env_emails:
+            c.execute('UPDATE users SET is_superadmin = 1 WHERE id = ?', (row['id'],))
+
+
+def set_user_superadmin(user_id: str, enabled: bool) -> bool:
+    """Promove ou revoga admin global persistente no banco."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE users SET is_superadmin = ? WHERE id = ?',
+        (1 if enabled else 0, user_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
 
 
 def get_all_users():
@@ -1556,3 +1684,284 @@ def mark_all_notifications_read(user_id: str) -> int:
     db.commit()
     db.close()
     return n
+
+
+# ── Estatísticas públicas ───────────────────────────────────────────────────
+
+def count_bands() -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM bands')
+    n = int(c.fetchone()['n'] or 0)
+    db.close()
+    return n
+
+
+def count_cifras() -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM cifras')
+    n = int(c.fetchone()['n'] or 0)
+    db.close()
+    return n
+
+
+def count_setlists() -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM setlists')
+    n = int(c.fetchone()['n'] or 0)
+    db.close()
+    return n
+
+
+# ── Depoimentos ─────────────────────────────────────────────────────────────
+
+def list_testimonials(active_only: bool = True) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    if active_only:
+        c.execute(
+            'SELECT * FROM testimonials WHERE ativo = 1 ORDER BY ordem ASC, id ASC'
+        )
+    else:
+        c.execute('SELECT * FROM testimonials ORDER BY ordem ASC, id ASC')
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def get_testimonial(testimonial_id: int) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM testimonials WHERE id = ?', (testimonial_id,))
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def create_testimonial(data: dict) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO testimonials (nome, cidade, descricao, texto, foto_url, ativo, ordem)
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        (
+            data['nome'], data.get('cidade'), data.get('descricao'),
+            data['texto'], data.get('foto_url'),
+            1 if data.get('ativo', True) else 0,
+            int(data.get('ordem') or 0),
+        ),
+    )
+    tid = c.lastrowid
+    db.commit()
+    db.close()
+    return int(tid)
+
+
+def update_testimonial(testimonial_id: int, data: dict) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE testimonials SET nome=?, cidade=?, descricao=?, texto=?,
+           foto_url=?, ativo=?, ordem=? WHERE id=?''',
+        (
+            data['nome'], data.get('cidade'), data.get('descricao'),
+            data['texto'], data.get('foto_url'),
+            1 if data.get('ativo', True) else 0,
+            int(data.get('ordem') or 0),
+            testimonial_id,
+        ),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
+def delete_testimonial(testimonial_id: int) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute('DELETE FROM testimonials WHERE id = ?', (testimonial_id,))
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
+# ── Blog ────────────────────────────────────────────────────────────────────
+
+def list_blog_posts(published_only: bool = True) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    if published_only:
+        c.execute(
+            'SELECT * FROM blog_posts WHERE publicado = 1 ORDER BY publicado_em DESC, id DESC'
+        )
+    else:
+        c.execute('SELECT * FROM blog_posts ORDER BY publicado_em DESC, id DESC')
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def get_blog_post_by_slug(slug: str, published_only: bool = True) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    if published_only:
+        c.execute(
+            'SELECT * FROM blog_posts WHERE slug = ? AND publicado = 1', (slug,)
+        )
+    else:
+        c.execute('SELECT * FROM blog_posts WHERE slug = ?', (slug,))
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def upsert_blog_post(data: dict) -> None:
+    db = get_db()
+    c = db.cursor()
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    c.execute('SELECT id FROM blog_posts WHERE slug = ?', (data['slug'],))
+    existing = c.fetchone()
+    pub = 1 if data.get('publicado') else 0
+    pub_em = data.get('publicado_em') or (now if pub else None)
+    if existing:
+        c.execute(
+            '''UPDATE blog_posts SET titulo=?, resumo=?, conteudo=?, autor=?,
+               publicado=?, publicado_em=?, atualizado_em=?, meta_title=?,
+               meta_description=?, imagem_capa=?, tags=? WHERE slug=?''',
+            (
+                data['titulo'], data.get('resumo'), data.get('conteudo'),
+                data.get('autor'), pub, pub_em, now,
+                data.get('meta_title'), data.get('meta_description'),
+                data.get('imagem_capa'), data.get('tags'), data['slug'],
+            ),
+        )
+    else:
+        c.execute(
+            '''INSERT INTO blog_posts
+               (slug, titulo, resumo, conteudo, autor, publicado, publicado_em,
+                atualizado_em, meta_title, meta_description, imagem_capa, tags)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                data['slug'], data['titulo'], data.get('resumo'),
+                data.get('conteudo'), data.get('autor'), pub, pub_em, now,
+                data.get('meta_title'), data.get('meta_description'),
+                data.get('imagem_capa'), data.get('tags'),
+            ),
+        )
+    db.commit()
+    db.close()
+
+
+# ── Onboarding e-mails ──────────────────────────────────────────────────────
+
+def ensure_onboarding_rows(usuario_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    for n in range(1, 6):
+        try:
+            c.execute(
+                '''INSERT INTO onboarding_emails (usuario_id, email_numero, status)
+                   VALUES (?, ?, 'pendente')''',
+                (usuario_id, n),
+            )
+        except IntegrityError:
+            pass
+    db.commit()
+    db.close()
+
+
+def list_onboarding_pending() -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT oe.*, u.email, u.username, u.display_name, u.created_at AS user_created_at
+           FROM onboarding_emails oe
+           JOIN users u ON u.id = oe.usuario_id
+           WHERE oe.status = 'pendente'
+           ORDER BY oe.usuario_id, oe.email_numero'''
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def mark_onboarding_sent(row_id: int, status: str = 'enviado') -> None:
+    db = get_db()
+    c = db.cursor()
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    c.execute(
+        'UPDATE onboarding_emails SET status = ?, enviado_em = ? WHERE id = ?',
+        (status, now, row_id),
+    )
+    db.commit()
+    db.close()
+
+
+def update_assinatura_trial(
+    banda_id: str,
+    *,
+    trial_inicio: str | None = None,
+    trial_fim: str | None = None,
+    trial_usado: int | None = None,
+) -> None:
+    parts: list[str] = []
+    vals: list = []
+    if trial_inicio is not None:
+        parts.append('trial_inicio = ?')
+        vals.append(trial_inicio)
+    if trial_fim is not None:
+        parts.append('trial_fim = ?')
+        vals.append(trial_fim)
+    if trial_usado is not None:
+        parts.append('trial_usado = ?')
+        vals.append(trial_usado)
+    if not parts:
+        return
+    vals.append(banda_id)
+    db = get_db()
+    c = db.cursor()
+    c.execute(f'UPDATE assinaturas SET {", ".join(parts)} WHERE banda_id = ?', vals)
+    db.commit()
+    db.close()
+
+
+def list_trials_expiring_soon(days: int = 3) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    limite = (datetime.utcnow() + timedelta(days=days)).strftime('%Y-%m-%d %H:%M:%S')
+    agora = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    c.execute(
+        '''SELECT a.*, b.name AS band_name, b.owner_id, u.email AS owner_email
+           FROM assinaturas a
+           JOIN bands b ON b.id = a.banda_id
+           JOIN users u ON u.id = b.owner_id
+           WHERE a.trial_usado = 1 AND a.trial_fim IS NOT NULL
+             AND a.trial_fim > ? AND a.trial_fim <= ?
+             AND a.plano = 'gratis' AND a.status = 'ativa' ''',
+        (agora, limite),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def list_expired_trials() -> list[dict]:
+    agora = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT a.*, b.name AS band_name, b.owner_id, u.email AS owner_email
+           FROM assinaturas a
+           JOIN bands b ON b.id = a.banda_id
+           JOIN users u ON u.id = b.owner_id
+           WHERE a.trial_usado = 1 AND a.trial_fim IS NOT NULL
+             AND a.trial_fim <= ? AND a.plano = 'gratis' AND a.status = 'ativa' ''',
+        (agora,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows

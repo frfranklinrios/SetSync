@@ -208,6 +208,8 @@ def register():
 
         user = get_user(user_id)
         _login_user_session(user)
+        from onboarding_emails import registrar_onboarding_usuario
+        registrar_onboarding_usuario(user_id)
         import admin_notifications as an
         an.user_registered(user_id)
         if invite_band:
@@ -326,6 +328,8 @@ def google_callback():
                 flash('Erro ao criar conta', 'danger')
                 return redirect(url_for('auth.login'))
             user = get_user(user_id)
+            from onboarding_emails import registrar_onboarding_usuario
+            registrar_onboarding_usuario(user_id)
             import admin_notifications as an
             an.user_registered(user_id)
     

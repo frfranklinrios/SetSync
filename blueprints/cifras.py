@@ -697,9 +697,9 @@ def add(band_id):
             flash('Preencha título e artista', 'danger')
             return render_template('cifras/add.html', band=band)
 
-        from monetizacao import check_limite, resposta_limite_plano
+        from monetizacao import check_limite, resposta_limite_plano, LIMITES_GRATIS
         if not check_limite(band, 'musica'):
-            resp = resposta_limite_plano()
+            resp = resposta_limite_plano('músicas', LIMITES_GRATIS['musica'])
             if resp:
                 return resp
 

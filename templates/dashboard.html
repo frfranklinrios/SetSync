@@ -102,6 +102,19 @@
     </div>
 </div>
 
+{% if trial_ui and trial_ui.ativo %}
+<div class="alert alert-success py-2 mb-3" style="font-size:0.9rem;">
+    🎸 <strong>Trial Pro</strong> — {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %} restante{% if trial_ui.dias != 1 %}s{% endif %}
+    na banda <strong>{{ trial_ui.band_name }}</strong>.
+    <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Conheça o Pro</a>
+</div>
+{% elif trial_ui and trial_ui.expirado %}
+<div class="alert alert-warning py-2 mb-3" style="font-size:0.9rem;">
+    Seu trial Pro em <strong>{{ trial_ui.band_name }}</strong> terminou.
+    <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Assine para continuar sem limites</a>
+</div>
+{% endif %}
+
 {% if planos_resumo and planos_resumo.tem_banda and not is_superadmin %}
 <div class="planos-resumo-card">
     <div class="fw-semibold mb-3" style="font-size:0.9rem;">

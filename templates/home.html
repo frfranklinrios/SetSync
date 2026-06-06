@@ -283,6 +283,86 @@
 }
 .home-cta-band h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
 .home-cta-band p { color: var(--muted); margin-bottom: 1.25rem; }
+
+.home-stats {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+}
+.home-stats-grid {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    text-align: center;
+}
+@media (max-width: 576px) { .home-stats-grid { grid-template-columns: 1fr; } }
+.home-stat-num {
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+}
+[data-theme="dark"] .home-stat-num { color: #2ab5a0; }
+.home-stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 0.35rem; }
+
+.home-testimonials { background: #fff; border-top: 1px solid var(--border); }
+[data-theme="dark"] .home-testimonials { background: #0b1422; }
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+@media (max-width: 768px) { .testimonials-grid { grid-template-columns: 1fr; } }
+.testimonial-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    height: 100%;
+    background: var(--bg);
+}
+.testimonial-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--chord-highlight-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: var(--accent); margin-bottom: 0.75rem;
+}
+.testimonial-name { font-weight: 700; }
+.testimonial-desc { font-size: 0.82rem; color: var(--muted); }
+.testimonial-text { font-style: italic; font-size: 0.9rem; margin-top: 0.75rem; line-height: 1.55; }
+
+.secao-screenshots {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+.mockup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 1.5rem;
+    align-items: end;
+    margin-top: 1.5rem;
+}
+@media (max-width: 768px) { .mockup-grid { grid-template-columns: 1fr; } }
+.mockup-mobile, .mockup-desktop {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0f172a;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+}
+.mockup-mobile img, .mockup-desktop img {
+    width: 100%; height: auto; display: block;
+}
+.mockup-placeholder {
+    padding: 2rem 1rem;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    min-height: 200px;
+    display: flex; align-items: center; justify-content: center;
+}
 </style>
 {% endblock %}
 
@@ -317,6 +397,25 @@
         </div>
     </div>
 </section>
+
+{% if stats %}
+<section class="home-stats" id="estatisticas">
+    <div class="home-stats-grid">
+        <div>
+            <div class="home-stat-num" data-stat="bandas" data-target="{{ stats.bandas }}">0</div>
+            <div class="home-stat-label">Bandas ativas</div>
+        </div>
+        <div>
+            <div class="home-stat-num" data-stat="musicas" data-target="{{ stats.musicas }}">0</div>
+            <div class="home-stat-label">Músicas cadastradas</div>
+        </div>
+        <div>
+            <div class="home-stat-num" data-stat="setlists" data-target="{{ stats.setlists }}">0</div>
+            <div class="home-stat-label">Setlists criados</div>
+        </div>
+    </div>
+</section>
+{% endif %}
 
 <section class="home-planos" id="planos">
     <div class="home-planos-inner">
@@ -370,6 +469,42 @@
     </div>
 </section>
 
+{% if testimonials %}
+<section class="home-section home-testimonials">
+    <h2>Quem usa recomenda</h2>
+    <p class="section-sub">Bandas e ministérios que já sincronizaram o repertório no SetSync.</p>
+    <div class="testimonials-grid">
+        {% for t in testimonials[:3] %}
+        <article class="testimonial-card">
+            <div class="testimonial-avatar" aria-hidden="true">{{ t.nome[:1] }}</div>
+            <div class="testimonial-name">{{ t.nome }}</div>
+            <div class="testimonial-desc">{{ t.descricao }}{% if t.cidade %} · {{ t.cidade }}{% endif %}</div>
+            <p class="testimonial-text">"{{ t.texto }}"</p>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="secao-screenshots">
+    <h2>Veja o SetSync em ação</h2>
+    <p class="section-sub mx-auto" style="max-width:36rem;">Modo Tocar no celular e painel de setlists no desktop.</p>
+    <div class="mockup-grid">
+        <div class="mockup-mobile">
+            <img src="{{ url_for('static', filename='screenshots/modo-tocar-mobile.png') }}"
+                 alt="Modo Tocar no celular — tela cheia com cifra e auto-scroll"
+                 loading="lazy"
+                 onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'mockup-placeholder',textContent:'Screenshot mobile (390×844) — veja static/screenshots/README.md'}))">
+        </div>
+        <div class="mockup-desktop">
+            <img src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
+                 alt="Painel de setlists — organize o roteiro do show"
+                 loading="lazy"
+                 onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'mockup-placeholder',textContent:'Screenshot desktop (1280×800) — veja static/screenshots/README.md'}))">
+        </div>
+    </div>
+</section>
+
 <section class="home-section pt-0">
     <h2>Como começar</h2>
     <p class="section-sub">Em poucos minutos sua banda já está ensaiando com o SetSync.</p>
@@ -406,4 +541,37 @@
         <i class="fas fa-download me-1"></i> Instalar app
     </button>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var els = document.querySelectorAll('.home-stat-num[data-target]');
+    if (!els.length || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.textContent = el.dataset.target; });
+        return;
+    }
+    function animate(el) {
+        var target = parseInt(el.dataset.target, 10) || 0;
+        var start = 0;
+        var duration = 1200;
+        var t0 = performance.now();
+        function frame(t) {
+            var p = Math.min(1, (t - t0) / duration);
+            el.textContent = Math.round(start + (target - start) * p);
+            if (p < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    }
+    var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+            if (e.isIntersecting) {
+                animate(e.target);
+                obs.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.3 });
+    els.forEach(function (el) { obs.observe(el); });
+})();
+</script>
 {% endblock %}

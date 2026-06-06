@@ -1,0 +1,43 @@
+{% extends "index.html" %}
+{% block title %}{% if testimonial %}Editar{% else %}Novo{% endif %} depoimento — Admin{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">{% if testimonial %}Editar{% else %}Novo{% endif %} depoimento</h1>
+<form method="post" class="card card-body" style="max-width:640px;">
+    {% include 'partials/csrf_input.html' %}
+    <div class="mb-3">
+        <label class="form-label">Nome *</label>
+        <input type="text" name="nome" class="form-control" required value="{{ testimonial.nome if testimonial else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Cidade</label>
+        <input type="text" name="cidade" class="form-control" value="{{ testimonial.cidade if testimonial else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Descrição (ex: Guitarrista — Banda X)</label>
+        <input type="text" name="descricao" class="form-control" value="{{ testimonial.descricao if testimonial else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Texto *</label>
+        <textarea name="texto" class="form-control" rows="4" required>{{ testimonial.texto if testimonial else '' }}</textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">URL da foto (opcional)</label>
+        <input type="url" name="foto_url" class="form-control" value="{{ testimonial.foto_url if testimonial else '' }}">
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Ordem</label>
+            <input type="number" name="ordem" class="form-control" value="{{ testimonial.ordem if testimonial else 0 }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="ativo" value="1" id="ativo"
+                    {% if testimonial is none or testimonial.ativo %}checked{% endif %}>
+                <label class="form-check-label" for="ativo">Ativo na homepage</label>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="{{ url_for('admin.depoimentos') }}" class="btn btn-link">Cancelar</a>
+</form>
+{% endblock %}

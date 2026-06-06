@@ -52,3 +52,18 @@ config = {
     'production': ProductionConfig,
     'default': DevelopmentConfig
 }
+
+
+def whatsapp_number() -> str:
+    """Número WhatsApp (DDI+DDD+número, sem +). WHATSAPP_NUMBER ou SETSYNC_WHATSAPP."""
+    return (
+        os.getenv('WHATSAPP_NUMBER', '').strip()
+        or os.getenv('SETSYNC_WHATSAPP', '').strip()
+    )
+
+
+def whatsapp_message() -> str:
+    return os.getenv(
+        'WHATSAPP_MESSAGE',
+        'Olá! Tenho interesse no SetSync para nossa igreja.',
+    ).strip()

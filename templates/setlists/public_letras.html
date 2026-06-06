@@ -29,10 +29,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/public-letras.css') }}?v=9">
-    {% if adsense_show %}
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense.client }}"
-         crossorigin="anonymous"></script>
-    {% endif %}
 </head>
 <body>
 <header class="pl-header">
@@ -115,12 +111,6 @@
     {% endif %}
 </main>
 
-{% if adsense_show %}
-<aside class="pl-adsense" role="complementary" aria-label="Anúncio">
-    {% set slot = adsense.slots.footer %}
-    {% include 'partials/adsense_slot.html' %}
-</aside>
-{% endif %}
 
 <footer class="pl-footer">
     <a href="https://setsync.com.br" rel="noopener noreferrer">SetSync</a>
