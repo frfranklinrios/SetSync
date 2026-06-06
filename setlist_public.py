@@ -141,10 +141,12 @@ def lyrics_from_cifra(cifra: dict, vocalist_id: str | None = None) -> str:
         if blocks:
             return clean_lyrics_for_public('\n\n'.join(blocks))
 
+    tom_orig = cifra.get('tom_original')
     body = cifra.get('conteudo') or ''
     if semi:
-        body = pychord_transpose_text(body, semi)
-    body = format_text_chords_br(body, cifra.get('tom_original'))
+        body = pychord_transpose_text(body, semi, tom_orig)
+    from util import key_at_transpose
+    body = format_text_chords_br(body, key_at_transpose(tom_orig, semi))
     return conteudo_to_lyrics_plain(body)
 
 

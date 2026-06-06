@@ -109,6 +109,11 @@ def main() -> int:
     opts = get_transposition_options("Bm")
     check("Bm (Original)" in opts.values(), "opções de transposição incluem Bm original")
     check("Gm" in opts.values(), "opções de transposição incluem Gm")
+    # Grafia ciente da armadura: transpor para tom bemol gera bemóis (Eb, não D#).
+    from util import pychord_transpose_text
+    check(key_at_transpose("C", 3) == "Eb", f"C+3 -> {key_at_transpose('C', 3)!r} (esperado Eb)")
+    check(pychord_transpose_text("G", 3, "C") == "Bb",
+          f"G transposto C->Eb -> {pychord_transpose_text('G', 3, 'C')!r} (esperado Bb)")
 
     print("\n=== Rotas Flask ===")
     rules = {r.rule: r.endpoint for r in app.url_map.iter_rules()}

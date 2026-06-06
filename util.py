@@ -73,35 +73,21 @@ def prefer_flats_for_tom(tom_original):
     return root in _FLAT_MAJOR_ROOTS
 
 
-def _spell_root_per_preference(note, prefer_flats):
-    n = _to_br_note(note or '')
-    if prefer_flats or '#' in n:
-        return n
-    return _ENHARMONIC_FLAT_TO_SHARP.get(n, n)
-
-
-def _apply_chord_spelling_preference(chord_str, prefer_flats):
-    parts = _split_chord_root_quality(chord_str)
-    if not parts:
-        return chord_str
-    root, quality, bass = parts
-    root = _spell_root_per_preference(root, prefer_flats)
-    if bass:
-        bass = _spell_root_per_preference(bass, prefer_flats)
-    out = root + quality
-    if bass:
-        out += '/' + bass
-    return out
-
-
 def format_text_chords_br(text, tom_original=None):
-    """Padroniza todos os acordes encontrados em um texto."""
+    """Padroniza todos os acordes de um texto, grafando-os pela armadura do tom.
+
+    `tom_original` aqui é o tom em que os acordes do texto JÁ estão (no fluxo de
+    transposição, passe o tom de destino). Sustenido vs. bemol segue a escala
+    desse tom; sem tom, mantém a grafia recebida.
+    """
     if text is None:
         return ''
-    prefer_flats = prefer_flats_for_tom(tom_original) if tom_original else False
+    key_table = build_key_spelling(tom_original) if tom_original else None
 
     def _fmt(match):
-        chord = _apply_chord_spelling_preference(match.group(1), prefer_flats)
+        chord = match.group(1)
+        if key_table is not None:
+            chord = _respell_chord_with_key(chord, key_table)
         return to_brazilian_chord_notation(chord)
 
     return re.sub(_CHORD_REGEX_WB, _fmt, str(text))
@@ -199,6 +185,72 @@ def _note_semitone_index(note):
     return None
 
 
+# --- Grafia ciente da armadura (sustenido vs. bemol pelo tom de destino) ---
+# Graus da escala em semitons a partir da tônica.
+_MAJOR_STEPS = (0, 2, 4, 5, 7, 9, 11)
+_MINOR_STEPS = (0, 2, 3, 5, 7, 8, 10)  # menor natural
+_LETTERS = ('C', 'D', 'E', 'F', 'G', 'A', 'B')
+_LETTER_PC = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
+
+# Tonalidades canônicas práticas por pitch class (evita tons com dobrados,
+# ex.: usa Eb em vez de D#, F# em vez de Gb). Índice = semitom a partir de C.
+_MAJOR_KEY_BY_PC = ('C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')
+_MINOR_KEY_BY_PC = ('Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm')
+
+
+def build_key_spelling(tom):
+    """12 grafias preferidas (índice = semitom) para a armadura do `tom`.
+
+    Notas diatônicas recebem a grafia da escala do tom (ex.: em Ré maior o
+    índice 1 é Dó#, nunca Réb, pois Dó# é o 7º grau). Notas fora da escala
+    seguem a tendência do tom (# em tons sustenidos, b em bemóis), já
+    evitando E#/B#/Cb/Fb por usar as tabelas cromáticas base.
+    """
+    root = parse_tom_root(tom)
+    root_pc = _note_semitone_index(root)
+    if root_pc is None:
+        return list(_CHROMATIC_SHARP)
+    prefer_flats = prefer_flats_for_tom(tom)
+    table = list(_CHROMATIC_FLAT if prefer_flats else _CHROMATIC_SHARP)
+    steps = _MINOR_STEPS if tom_is_minor(tom) else _MAJOR_STEPS
+    li = _LETTERS.index(root[0].upper())
+    for i, step in enumerate(steps):
+        pc = (root_pc + step) % 12
+        letter = _LETTERS[(li + i) % 7]
+        diff = (pc - _LETTER_PC[letter]) % 12
+        if diff > 6:
+            diff -= 12
+        acc = {0: '', 1: '#', -1: 'b'}.get(diff)
+        if acc is None:
+            continue  # grau exigiria dobrado (##/bb): mantém a cromática base
+        table[pc] = letter + acc
+    return table
+
+
+def _respell_chord_with_key(chord_str, key_table):
+    """Reescreve raiz/baixo de um acorde com a grafia da armadura (key_table)."""
+    parts = _split_chord_root_quality(chord_str)
+    if not parts:
+        return chord_str
+    root, quality, bass = parts
+    idx = _note_semitone_index(root)
+    if idx is not None:
+        root = key_table[idx]
+    if bass:
+        idx_b = _note_semitone_index(bass)
+        if idx_b is not None:
+            bass = key_table[idx_b]
+    out = root + quality
+    if bass:
+        out += '/' + bass
+    return out
+
+
+def _dest_key_spelling(tom_origem, semitones):
+    """Tabela de grafia do tom resultante de transpor `tom_origem` em semitons."""
+    return build_key_spelling(key_at_transpose(tom_origem, semitones))
+
+
 def _spell_semitone(semitone, prefer_flats=False):
     return _CHROMATIC_FLAT[semitone % 12] if prefer_flats else _CHROMATIC_SHARP[semitone % 12]
 
@@ -232,8 +284,12 @@ def _respell_chord_roots(transposed, original):
     return out
 
 
-def pychord_transpose_chord(chord_str, semitones):
-    """Transpõe um acorde usando pychord (mais robusto para acordes complexos)."""
+def pychord_transpose_chord(chord_str, semitones, key_table=None):
+    """Transpõe um acorde usando pychord (mais robusto para acordes complexos).
+
+    Com `key_table` (grafia da armadura do tom de destino), a raiz/baixo são
+    grafadas pela escala do destino; sem ela, preserva o estilo #/b do original.
+    """
     normalized = _normalize_chord_for_pychord(chord_str)
     try:
         chord = Chord(normalized)
@@ -243,7 +299,10 @@ def pychord_transpose_chord(chord_str, semitones):
         if chord_str.endswith('+') and not new_str.endswith('+'):
             # Re-aplica o "+" se a entrada original usava (mantém estilo BR)
             new_str = re.sub(r'maj(\d+)$', r'\1+', new_str)
-        new_str = _respell_chord_roots(new_str, chord_str)
+        if key_table is not None:
+            new_str = _respell_chord_with_key(new_str, key_table)
+        else:
+            new_str = _respell_chord_roots(new_str, chord_str)
         return to_brazilian_chord_notation(new_str)
     except Exception:
         return to_brazilian_chord_notation(chord_str)
@@ -300,21 +359,26 @@ def pychord_highlight_chords(text):
         print("Acordes não reconhecidos pelo pychord:", not_recognized)
     return result
 
-def pychord_transpose_text(text, semitones):
-    """Transpõe todos os acordes de um texto usando pychord. Suporta º/° como diminuto."""
+def pychord_transpose_text(text, semitones, tom_origem=None):
+    """Transpõe todos os acordes de um texto usando pychord. Suporta º/° como diminuto.
+
+    Passe `tom_origem` para que os acordes resultantes sejam grafados pela
+    armadura do tom de destino (ex.: Dó→Mi♭ gera Eb, não D#).
+    """
     if semitones == 0:
         return text or ''
     if text is None:
         return ''
+    key_table = _dest_key_spelling(tom_origem, semitones) if tom_origem else None
     stripped = text.strip()
     # Token isolado (grade harmônica: "F#", "G#m", "%", etc.)
     if stripped == '%':
         return '%'
     if CHORD_TOKEN_RE.match(stripped):
-        return pychord_transpose_chord(stripped, semitones)
+        return pychord_transpose_chord(stripped, semitones, key_table)
 
     def transp(match):
-        return pychord_transpose_chord(match.group(1), semitones)
+        return pychord_transpose_chord(match.group(1), semitones, key_table)
 
     return re.sub(_CHORD_REGEX_WB, transp, text)
 
@@ -482,33 +546,30 @@ def semitones_between_keys(from_tom, to_key):
 
 
 def key_at_transpose(tom_original, semitones):
-    """Nome da tonalidade resultante após transpor (sustenidos por padrão)."""
+    """Nome da tonalidade resultante após transpor, em tom canônico prático.
+
+    Usa a grafia padrão de cada tonalidade (ex.: Eb e não D#, F# e não Gb),
+    coerente com a grafia dos acordes após a transposição.
+    """
     root = parse_tom_root(tom_original)
     idx = _note_semitone_index(root)
     if idx is None:
         return root
-    prefer_flats = prefer_flats_for_tom(tom_original)
-    key = _spell_semitone(idx + semitones, prefer_flats=prefer_flats)
-    if tom_is_minor(tom_original):
-        key += 'm'
-    return key
+    pc = (idx + semitones) % 12
+    table = _MINOR_KEY_BY_PC if tom_is_minor(tom_original) else _MAJOR_KEY_BY_PC
+    return table[pc]
 
 
 def get_absolute_key_list(tom_original=None):
-    """Lista das 12 tonalidades para seleção (maiores ou menores conforme o cadastro)."""
-    if prefer_flats_for_tom(tom_original or ''):
-        chromatic = list(_CHROMATIC_FLAT)
-    else:
-        chromatic = list(_CHROMATIC_SHARP)
+    """Lista das 12 tonalidades canônicas para seleção (maiores ou menores)."""
     if tom_is_minor(tom_original or ''):
-        return [f'{k}m' for k in chromatic]
-    return chromatic
+        return list(_MINOR_KEY_BY_PC)
+    return list(_MAJOR_KEY_BY_PC)
 
 
 def get_play_mode_key_options():
-    """Maiores e menores para o modo tocar (setlists com tons mistos)."""
-    majors = list(_CHROMATIC_SHARP)
-    return majors + [f'{k}m' for k in majors]
+    """Maiores e menores canônicas para o modo tocar (setlists com tons mistos)."""
+    return list(_MAJOR_KEY_BY_PC) + list(_MINOR_KEY_BY_PC)
 
 
 def get_transposition_options(tom_original):

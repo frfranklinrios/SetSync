@@ -327,9 +327,10 @@ def _load_best_structured_cifra(cifra, semitones=0):
         return []
 
     if semitones:
+        tom_orig = cifra.get('tom_original')
         for item in data:
             if item.get('acorde'):
-                item['acorde'] = pychord_transpose_text(item['acorde'], semitones)
+                item['acorde'] = pychord_transpose_text(item['acorde'], semitones, tom_orig)
 
     for item in data:
         if item.get('acorde'):
@@ -338,7 +339,7 @@ def _load_best_structured_cifra(cifra, semitones=0):
     return data
 
 
-def _transpose_grade_data(grade_list, semitones=0):
+def _transpose_grade_data(grade_list, semitones=0, tom_origem=None):
     """Transpõe acordes da grade harmônica, preservando '%' (repeat)."""
     result = []
     for comp in grade_list:
@@ -348,7 +349,7 @@ def _transpose_grade_data(grade_list, semitones=0):
             if token == '%':
                 acordes.append('%')
             elif semitones:
-                acordes.append(pychord_transpose_text(token, semitones))
+                acordes.append(pychord_transpose_text(token, semitones, tom_origem))
             else:
                 acordes.append(to_brazilian_chord_notation(token))
         comp['acordes'] = acordes
@@ -361,7 +362,7 @@ def _load_display_grade_data(cifra, semitones=0):
     flat = resolve_to_grade_flat(cifra)
     if not flat:
         return None
-    return _transpose_grade_data(flat, semitones)
+    return _transpose_grade_data(flat, semitones, cifra.get('tom_original'))
 
 
 def _transpose_leadsheet(doc: dict, semitones: int) -> dict:
@@ -369,9 +370,10 @@ def _transpose_leadsheet(doc: dict, semitones: int) -> dict:
     if not semitones:
         return doc
     out = copy.deepcopy(doc)
+    tom_origem = (out.get('song') or {}).get('key')
     for evt in out.get('events') or []:
         if isinstance(evt, dict) and evt.get('type') == 'chord' and evt.get('value'):
-            evt['value'] = pychord_transpose_text(str(evt['value']), semitones)
+            evt['value'] = pychord_transpose_text(str(evt['value']), semitones, tom_origem)
     song = out.setdefault('song', {})
     if song.get('key'):
         song['key'] = key_at_transpose(song['key'], semitones)
@@ -441,8 +443,8 @@ def prepare_cifra_sheet(cifra, semitones=0):
     conteudo = sanitize_tab_html_artifacts(cifra.get('conteudo') or '')
     conteudo = strip_comment_lines_from_text(conteudo)
     if semi:
-        conteudo = pychord_transpose_text(conteudo, semi)
-    conteudo = format_text_chords_br(conteudo, tom_orig)
+        conteudo = pychord_transpose_text(conteudo, semi, tom_orig)
+    conteudo = format_text_chords_br(conteudo, key_at_transpose(tom_orig, semi))
 
     cifra_data = _load_best_structured_cifra(cifra, semi)
     grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
@@ -570,8 +572,8 @@ def view(cifra_id):
     conteudo = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
     # Transpor usando pychord se possível
     if current_transpose != 0:
-        conteudo = pychord_transpose_text(conteudo, current_transpose)
-    conteudo = format_text_chords_br(conteudo, cifra['tom_original'])
+        conteudo = pychord_transpose_text(conteudo, current_transpose, cifra['tom_original'])
+    conteudo = format_text_chords_br(conteudo, key_at_transpose(cifra['tom_original'], current_transpose))
 
     # Parsear cifra_json e grade_json
     cifra_data = _load_best_structured_cifra(cifra, current_transpose)
@@ -867,8 +869,8 @@ def get_transposed(cifra_id):
     want_grade = request.args.get('grade', '0') == '1'
 
     raw = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
-    transposed = pychord_transpose_text(raw, semitones) if semitones else raw
-    transposed = format_text_chords_br(transposed, cifra['tom_original'])
+    transposed = pychord_transpose_text(raw, semitones, cifra['tom_original']) if semitones else raw
+    transposed = format_text_chords_br(transposed, key_at_transpose(cifra['tom_original'], semitones))
 
     payload = {
         'tom_original': cifra['tom_original'],
