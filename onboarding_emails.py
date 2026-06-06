@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from db import ensure_onboarding_rows, list_onboarding_pending, mark_onboarding_sent, get_user
-from monetizacao_emails import _send
+from email_service import send_email
 from security import external_url_for
 
 # Dias após cadastro para cada e-mail (0 = imediato)
@@ -146,7 +146,7 @@ def verificar_e_disparar_onboarding() -> int:
         if not tpl:
             continue
         try:
-            _send(
+            send_email(
                 [email],
                 tpl['subject'],
                 tpl['html'].format(**urls),

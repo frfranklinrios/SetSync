@@ -12,7 +12,8 @@ from db import (
     list_trials_expiring_soon,
 )
 from monetizacao import PLANOS
-from monetizacao_emails import send_voucher_aviso_email, send_voucher_expirado_email, _send
+from email_service import send_email
+from monetizacao_emails import send_voucher_aviso_email, send_voucher_expirado_email
 from onboarding_emails import verificar_e_disparar_onboarding
 from security import external_url_for
 from vouchers import STATUS_EXPIRADO
@@ -67,7 +68,7 @@ def avisar_trials_proximo_vencimento() -> None:
             f'<p>Seu <strong>trial Pro</strong> termina em <strong>3 dias</strong>.</p>'
             f'<p><a href="{link}">Fazer upgrade — R$ 29/mês</a></p>'
         )
-        _send([email], subject, html, body)
+        send_email([email], subject, html, body)
 
 
 def run_daily_voucher_jobs() -> None:

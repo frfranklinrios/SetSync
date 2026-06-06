@@ -70,12 +70,20 @@ def _redirect_after_auth(user, invite_token: str | None = None):
 
 
 def send_reset_email(email, token):
-    from flask_mail import Message
-    mail = current_app.extensions['mail']
+    from email_service import send_email
     link = external_url_for('auth.reset_senha', token=token)
-    msg = Message('Recuperação de senha - SetSync', recipients=[email])
-    msg.body = f'Para redefinir sua senha, clique no link: {link}\nSe você não solicitou, ignore este e-mail.'
-    mail.send(msg)
+    body = (
+        f'Para redefinir sua senha, clique no link: {link}\n'
+        'O link expira em 1 hora. Se você não solicitou, ignore este e-mail.'
+    )
+    html = (
+        '<p>Recebemos um pedido para redefinir sua senha no SetSync.</p>'
+        f'<p><a href="{link}" style="display:inline-block;padding:12px 24px;'
+        'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
+        'Redefinir minha senha</a></p>'
+        '<p>O link expira em 1 hora. Se você não solicitou, ignore este e-mail.</p>'
+    )
+    send_email([email], 'Recuperação de senha - SetSync', html, body)
 
 @auth_bp.route('/recuperar-senha', methods=['GET', 'POST'])
 def recuperar_senha():

@@ -2,20 +2,8 @@
 
 from __future__ import annotations
 
-from flask import current_app
-from flask_mail import Message
+from email_service import send_email
 from security import external_url_for
-
-
-def _send(recipients: list[str], subject: str, html: str, body: str) -> None:
-    if not recipients or not recipients[0]:
-        return
-    mail = current_app.extensions.get('mail')
-    if not mail:
-        current_app.logger.warning('Flask-Mail não configurado; e-mail não enviado: %s', subject)
-        return
-    msg = Message(subject=subject, recipients=recipients, body=body, html=html)
-    mail.send(msg)
 
 
 def send_voucher_expirado_email(email: str, plano_nome: str) -> None:
@@ -31,7 +19,7 @@ def send_voucher_expirado_email(email: str, plano_nome: str) -> None:
         f'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
         f'Assinar agora</a></p>'
     )
-    _send([email], subject, html, body)
+    send_email([email], subject, html, body)
 
 
 def send_voucher_aviso_email(email: str, plano_nome: str, dias_restantes: int) -> None:
@@ -46,11 +34,11 @@ def send_voucher_aviso_email(email: str, plano_nome: str, dias_restantes: int) -
         f'<strong>{dias_restantes} dias</strong>.</p>'
         f'<p><a href="{link}">Assinar agora</a></p>'
     )
-    _send([email], subject, html, body)
+    send_email([email], subject, html, body)
 
 
 def send_indicacao_recompensa_email(email: str, dias: int) -> None:
     subject = 'Alguém usou seu link! Você ganhou dias grátis.'
     body = f'Alguém usou seu voucher de indicação! Você ganhou {dias} dias grátis no SetSync.'
     html = f'<p>Alguém usou seu link de indicação!</p><p>Você ganhou <strong>{dias} dias grátis</strong>.</p>'
-    _send([email], subject, html, body)
+    send_email([email], subject, html, body)
