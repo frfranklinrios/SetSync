@@ -22,6 +22,8 @@ __pycache__/
 *.sqlite
 *.sqlite3
 data/
+backups/
+*.sql
 
 # Uploads / mídia gerada
 uploads/
