@@ -15,8 +15,8 @@
   "@type": "BlogPosting",
   "headline": {{ post.titulo|tojson }},
   "description": {{ meta_description|tojson }},
-  "datePublished": {{ (post.publicado_em or '')[:10]|tojson }},
-  "dateModified": {{ (post.atualizado_em or post.publicado_em or '')[:10]|tojson }},
+  "datePublished": {{ post.publicado_em|date_short|tojson }},
+  "dateModified": {{ (post.atualizado_em or post.publicado_em)|date_short|tojson }},
   "author": { "@type": "Organization", "name": {{ (post.autor or 'SetSync')|tojson }} },
   "image": {{ og_image|tojson }},
   "mainEntityOfPage": { "@type": "WebPage", "@id": {{ canonical_url|tojson }} }
@@ -28,7 +28,7 @@
 <article class="container py-4" style="max-width:760px;">
     <p class="text-muted small mb-2">
         <a href="{{ url_for('blog.blog_index') }}">← Blog</a>
-        · {{ (post.publicado_em or '')[:10] }}
+        · {{ post.publicado_em|date_short }}
         {% if post.autor %}· {{ post.autor }}{% endif %}
     </p>
     <h1 class="mb-3" style="font-size:clamp(1.5rem,4vw,2rem);font-weight:700;">{{ post.titulo }}</h1>

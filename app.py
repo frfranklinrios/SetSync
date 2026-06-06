@@ -168,11 +168,8 @@ def sitemap():
         {'loc': url_for('auth.register', _external=True), 'changefreq': 'monthly', 'priority': '0.7'},
     ]
     for post in list_blog_posts(published_only=True):
-        lastmod = ''
-        if post.get('atualizado_em'):
-            lastmod = str(post['atualizado_em'])[:10]
-        elif post.get('publicado_em'):
-            lastmod = str(post['publicado_em'])[:10]
+        from util import format_date_short
+        lastmod = format_date_short(post.get('atualizado_em') or post.get('publicado_em'))
         pages.append({
             'loc': url_for('blog.blog_post', slug=post['slug'], _external=True),
             'changefreq': 'monthly',

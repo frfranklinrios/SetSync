@@ -16,7 +16,7 @@
                             {{ post.titulo }}
                         </a>
                     </h2>
-                    <p class="text-muted small mb-2">{{ (post.publicado_em or '')[:10] }}</p>
+                    <p class="text-muted small mb-2">{{ post.publicado_em|date_short }}</p>
                     <p class="mb-2">{{ post.resumo }}</p>
                     <a href="{{ url_for('blog.blog_post', slug=post.slug) }}">Ler artigo →</a>
                 </div>

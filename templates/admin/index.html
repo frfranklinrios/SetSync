@@ -159,7 +159,7 @@
                         <tr>
                             <td><strong>{{ u.username }}</strong></td>
                             <td>{{ u.email }}</td>
-                            <td>{{ (u.created_at or '')[:10] }}</td>
+                            <td>{{ u.created_at|date_short }}</td>
                             <td>
                                 {% if u.is_env_admin %}
                                 <span class="admin-badge-sa">Sim</span>
