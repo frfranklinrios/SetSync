@@ -1,4 +1,5 @@
-from flask import Flask, render_template, redirect, url_for, session, send_from_directory, make_response, request, flash
+from flask import Flask, render_template, redirect, url_for, session, send_from_directory, make_response, request, flash, jsonify
+from werkzeug.exceptions import HTTPException
 from config import config
 from blueprints.auth import auth_bp, login_required
 from blueprints.bands import bands_bp
@@ -52,6 +53,64 @@ def handle_csrf_error(e):
         if not ref_host or ref_host == urlparse(request.host_url).netloc:
             return redirect(ref)
     return redirect(url_for('auth.login'))
+
+
+@app.teardown_appcontext
+def _release_db_connections(exc):
+    """Fecha conexões de banco que vazaram na requisição (evita esgotar o Postgres)."""
+    from database import close_leaked_connections
+    leaked = close_leaked_connections()
+    if leaked:
+        app.logger.warning(
+            'Fechadas %d conexão(ões) de banco não encerradas em %s %s',
+            leaked, request.method if request else '?', request.path if request else '?',
+        )
+
+
+def _wants_json_response() -> bool:
+    """True quando o cliente é AJAX/JSON (saves do front-end usam fetch com JSON)."""
+    return (
+        request.is_json
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or request.accept_mimetypes.best == 'application/json'
+        or request.path.startswith('/api')
+    )
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(e):
+    """Erros não tratados: loga o traceback e responde de forma útil.
+
+    Antes, uma exceção virava a página padrão 'Internal Server Error' do Flask
+    (e os saves AJAX falhavam em silêncio). Agora o erro fica no log e o
+    front-end recebe um JSON tratável.
+    """
+    if isinstance(e, HTTPException):
+        return e  # 404/403/400/CSRF etc. seguem seu próprio tratamento
+    if app.debug:
+        raise e  # em desenvolvimento, mantém o debugger interativo
+    app.logger.exception(
+        'Erro não tratado em %s %s', request.method, request.path,
+    )
+    if _wants_json_response():
+        return jsonify({'ok': False, 'error': 'Erro ao processar. Tente novamente.'}), 500
+    # HTML inline (sem template/context processors) para não depender do banco,
+    # que pode ser justamente a origem do erro.
+    html = (
+        '<!doctype html><html lang="pt-br"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        '<title>Erro — SetSync</title>'
+        '<style>body{font-family:system-ui,sans-serif;background:#0c0a09;color:#e7e5e4;'
+        'display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;padding:1.5rem}'
+        '.box{max-width:420px;text-align:center}h1{font-size:1.3rem;margin:0 0 .5rem}'
+        'p{color:#a8a29e;font-size:.95rem;margin:0 0 1.25rem}'
+        'a{display:inline-block;padding:10px 22px;background:#ea580c;color:#fff;'
+        'text-decoration:none;border-radius:8px;font-weight:600}</style></head>'
+        '<body><div class="box"><h1>Algo deu errado</h1>'
+        '<p>Tivemos um problema ao processar sua solicitação. Tente novamente em instantes.</p>'
+        '<a href="/">Voltar ao início</a></div></body></html>'
+    )
+    return html, 500
 
 if env == 'production':
     from werkzeug.middleware.proxy_fix import ProxyFix

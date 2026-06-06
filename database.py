@@ -4,7 +4,44 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
+import threading
 from typing import Any
+
+# Rastreio de conexões abertas por thread. Em produção (PostgreSQL + gthread)
+# cada get_db() abre uma conexão; se a função que a usa lançar antes do close(),
+# a conexão vaza e, acumulando, esgota o limite do banco (erro 500 ao salvar).
+# O teardown da requisição chama close_leaked_connections() para fechar o que
+# sobrou na thread atual.
+_open_conns = threading.local()
+
+
+def _track_conn(conn) -> None:
+    conns = getattr(_open_conns, 'conns', None)
+    if conns is None:
+        conns = set()
+        _open_conns.conns = conns
+    conns.add(conn)
+
+
+def _untrack_conn(conn) -> None:
+    conns = getattr(_open_conns, 'conns', None)
+    if conns is not None:
+        conns.discard(conn)
+
+
+def close_leaked_connections() -> int:
+    """Fecha conexões da thread atual não encerradas (proteção anti-vazamento)."""
+    conns = getattr(_open_conns, 'conns', None)
+    if not conns:
+        return 0
+    leaked = list(conns)
+    for conn in leaked:
+        try:
+            conn.close()
+        except Exception:
+            pass
+    conns.clear()
+    return len(leaked)
 
 DATABASE_URL = (os.getenv('DATABASE_URL') or 'sqlite:///data/banda.db').strip()
 IS_POSTGRES = DATABASE_URL.startswith(('postgresql://', 'postgres://'))
@@ -127,7 +164,28 @@ class CompatConnection:
         self._raw.rollback()
 
     def close(self):
-        self._raw.close()
+        _untrack_conn(self)
+        try:
+            self._raw.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if exc_type is not None:
+            try:
+                self._raw.rollback()
+            except Exception:
+                pass
+        else:
+            try:
+                self._raw.commit()
+            except Exception:
+                pass
+        self.close()
+        return False
 
     def executescript(self, script: str) -> None:
         if self._is_postgres:
@@ -142,11 +200,15 @@ class CompatConnection:
 def get_db() -> CompatConnection:
     if IS_POSTGRES:
         conn = psycopg2.connect(DATABASE_URL)
-        return CompatConnection(conn, is_postgres=True)
-    os.makedirs(os.path.dirname(SQLITE_PATH) or '.', exist_ok=True)
-    conn = sqlite3.connect(SQLITE_PATH)
-    conn.row_factory = sqlite3.Row
-    return CompatConnection(conn, is_postgres=False)
+        wrapped = CompatConnection(conn, is_postgres=True)
+    else:
+        os.makedirs(os.path.dirname(SQLITE_PATH) or '.', exist_ok=True)
+        conn = sqlite3.connect(SQLITE_PATH, timeout=15)
+        conn.row_factory = sqlite3.Row
+        conn.execute('PRAGMA busy_timeout=15000')
+        wrapped = CompatConnection(conn, is_postgres=False)
+    _track_conn(wrapped)
+    return wrapped
 
 
 def table_columns(cursor: CompatCursor, table: str) -> list[str]:
