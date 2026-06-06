@@ -721,12 +721,15 @@ html.setlist-print-root.palco-compact .palco-song-artist {
     font-size: 1.05rem !important;
   }
 
+  /* Impressão/PDF: acordes em preto e negrito (o laranja imprime fraco). */
   .setlist-print-sheet .sp-chord,
   .setlist-print-sheet .chord,
   .setlist-print-sheet .cifra-chords,
+  .setlist-print-grade-line,
   .palco-key-value,
   .setlist-print-cifras-label {
-    color: #c2410c !important;
+    color: #000 !important;
+    font-weight: 800 !important;
   }
 
   .setlist-print-sheet .sp-word,
