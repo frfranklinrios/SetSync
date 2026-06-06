@@ -81,14 +81,16 @@ def view(band_id):
         return redirect(url_for('dashboard'))
     
     from db import get_band_cifras
-    from models_setlist import get_band_setlists, get_setlist_cifras
+    from models_setlist import get_band_setlists, count_setlist_cifras_by_ids
     members = get_band_members(band_id)
     cifras = get_band_cifras(band_id)
     setlists_raw = get_band_setlists(band_id)
+    sl_ids = [s['id'] for s in setlists_raw]
+    sl_counts = count_setlist_cifras_by_ids(sl_ids)
     setlists = []
     for s in setlists_raw:
         s = dict(s)
-        s['cifras_count'] = len(get_setlist_cifras(s['id']))
+        s['cifras_count'] = sl_counts.get(int(s['id']), 0)
         setlists.append(s)
     owner = get_user(band['owner_id'])
     admin = is_band_admin(band_id, user_id)

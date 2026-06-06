@@ -7,12 +7,16 @@ import sqlite3
 import threading
 from typing import Any
 
-# Rastreio de conexões abertas por thread. Em produção (PostgreSQL + gthread)
-# cada get_db() abre uma conexão; se a função que a usa lançar antes do close(),
-# a conexão vaza e, acumulando, esgota o limite do banco (erro 500 ao salvar).
-# O teardown da requisição chama close_leaked_connections() para fechar o que
-# sobrou na thread atual.
+# Rastreio de conexões abertas por thread. Com PostgreSQL, get_db() reutiliza uma
+# conexão do pool por requisição (refcount); close() devolve ao pool quando refs=0.
+# O teardown chama close_leaked_connections() para encerrar o que sobrou.
 _open_conns = threading.local()
+_pg_request = threading.local()
+_pg_pool = None
+_pg_pool_lock = threading.Lock()
+
+DATABASE_URL = (os.getenv('DATABASE_URL') or 'sqlite:///data/banda.db').strip()
+IS_POSTGRES = DATABASE_URL.startswith(('postgresql://', 'postgres://'))
 
 
 def _track_conn(conn) -> None:
@@ -29,22 +33,73 @@ def _untrack_conn(conn) -> None:
         conns.discard(conn)
 
 
+def _pg_pool_max() -> int:
+    explicit = int(os.getenv('PG_POOL_MAX', '0') or '0')
+    if explicit > 0:
+        return explicit
+    workers = max(1, int(os.getenv('GUNICORN_WORKERS', '1')))
+    threads = max(1, int(os.getenv('GUNICORN_THREADS', '4')))
+    return workers * threads + 4
+
+
+def _get_pg_pool():
+    global _pg_pool
+    if _pg_pool is not None:
+        return _pg_pool
+    with _pg_pool_lock:
+        if _pg_pool is None:
+            import psycopg2.pool
+
+            _pg_pool = psycopg2.pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=_pg_pool_max(),
+                dsn=DATABASE_URL,
+            )
+    return _pg_pool
+
+
+def _release_pg_request_conn() -> None:
+    raw = getattr(_pg_request, 'raw', None)
+    wrapped = getattr(_pg_request, 'wrapped', None)
+    if raw is None:
+        return
+    if wrapped is not None:
+        _untrack_conn(wrapped)
+    try:
+        if not raw.closed:
+            raw.rollback()
+    except Exception:
+        pass
+    try:
+        _get_pg_pool().putconn(raw)
+    except Exception:
+        try:
+            raw.close()
+        except Exception:
+            pass
+    _pg_request.raw = None
+    _pg_request.wrapped = None
+    _pg_request.refs = 0
+
+
 def close_leaked_connections() -> int:
     """Fecha conexões da thread atual não encerradas (proteção anti-vazamento)."""
+    leaked = 0
+    if IS_POSTGRES and getattr(_pg_request, 'raw', None) is not None:
+        _release_pg_request_conn()
+        leaked += 1
+
     conns = getattr(_open_conns, 'conns', None)
     if not conns:
-        return 0
-    leaked = list(conns)
-    for conn in leaked:
+        return leaked
+    for conn in list(conns):
         try:
             conn.close()
         except Exception:
             pass
+        leaked += 1
     conns.clear()
-    return len(leaked)
-
-DATABASE_URL = (os.getenv('DATABASE_URL') or 'sqlite:///data/banda.db').strip()
-IS_POSTGRES = DATABASE_URL.startswith(('postgresql://', 'postgres://'))
+    return leaked
 
 
 def _sqlite_path() -> str:
@@ -143,9 +198,10 @@ class CompatCursor:
 
 
 class CompatConnection:
-    def __init__(self, raw, *, is_postgres: bool):
+    def __init__(self, raw, *, is_postgres: bool, pooled: bool = False):
         self._raw = raw
         self._is_postgres = is_postgres
+        self._pooled = pooled
 
     def cursor(self) -> CompatCursor:
         if self._is_postgres:
@@ -164,6 +220,14 @@ class CompatConnection:
         self._raw.rollback()
 
     def close(self):
+        if self._pooled:
+            _untrack_conn(self)
+            refs = getattr(_pg_request, 'refs', 0)
+            if refs > 0:
+                _pg_request.refs = refs - 1
+            if _pg_request.refs <= 0 and getattr(_pg_request, 'wrapped', None) is self:
+                _release_pg_request_conn()
+            return
         _untrack_conn(self)
         try:
             self._raw.close()
@@ -199,14 +263,25 @@ class CompatConnection:
 
 def get_db() -> CompatConnection:
     if IS_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
-        wrapped = CompatConnection(conn, is_postgres=True)
-    else:
-        os.makedirs(os.path.dirname(SQLITE_PATH) or '.', exist_ok=True)
-        conn = sqlite3.connect(SQLITE_PATH, timeout=15)
-        conn.row_factory = sqlite3.Row
-        conn.execute('PRAGMA busy_timeout=15000')
-        wrapped = CompatConnection(conn, is_postgres=False)
+        wrapped = getattr(_pg_request, 'wrapped', None)
+        if wrapped is not None and not getattr(_pg_request.raw, 'closed', True):
+            _pg_request.refs = getattr(_pg_request, 'refs', 0) + 1
+            _track_conn(wrapped)
+            return wrapped
+
+        raw = _get_pg_pool().getconn()
+        wrapped = CompatConnection(raw, is_postgres=True, pooled=True)
+        _pg_request.raw = raw
+        _pg_request.wrapped = wrapped
+        _pg_request.refs = 1
+        _track_conn(wrapped)
+        return wrapped
+
+    os.makedirs(os.path.dirname(SQLITE_PATH) or '.', exist_ok=True)
+    conn = sqlite3.connect(SQLITE_PATH, timeout=15)
+    conn.row_factory = sqlite3.Row
+    conn.execute('PRAGMA busy_timeout=15000')
+    wrapped = CompatConnection(conn, is_postgres=False)
     _track_conn(wrapped)
     return wrapped
 

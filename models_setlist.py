@@ -108,6 +108,28 @@ def reorder_setlist(setlist_id, ordered_cifra_ids):
     db.commit()
     db.close()
 
+def count_setlist_cifras_by_ids(setlist_ids: list) -> dict[int, int]:
+    """Contagem de faixas por setlist em uma única query."""
+    if not setlist_ids:
+        return {}
+    placeholders = ','.join('?' * len(setlist_ids))
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        f'''SELECT setlist_id, COUNT(*) AS n
+            FROM setlist_cifras
+            WHERE setlist_id IN ({placeholders})
+            GROUP BY setlist_id''',
+        tuple(setlist_ids),
+    )
+    rows = c.fetchall()
+    db.close()
+    counts = {int(sid): 0 for sid in setlist_ids}
+    for row in rows:
+        counts[int(row['setlist_id'])] = int(row['n'])
+    return counts
+
+
 def get_setlist_cifras(setlist_id):
     db = get_db()
     c = db.cursor()

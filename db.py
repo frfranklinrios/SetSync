@@ -233,6 +233,7 @@ def init_db():
         add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
         _migrate_assinaturas_schema(c)
         _migrate_content_schema(c)
+        _ensure_perf_indexes(c)
         db.commit()
         db.close()
         return
@@ -353,6 +354,7 @@ def init_db():
     add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
     _migrate_content_schema(c)
+    _ensure_perf_indexes(c)
     db.commit()
 
     db.close()
@@ -1346,17 +1348,98 @@ def get_owned_bands(user_id):
     return [dict(r) for r in rows]
 
 
+def _in_placeholders(ids: list) -> tuple[str, tuple]:
+    if not ids:
+        return '', ()
+    return ','.join('?' * len(ids)), tuple(ids)
+
+
+def _ensure_perf_indexes(c) -> None:
+    """Índices em FKs usadas em quase toda listagem."""
+    for sql in (
+        'CREATE INDEX IF NOT EXISTS idx_band_members_band ON band_members(band_id)',
+        'CREATE INDEX IF NOT EXISTS idx_band_members_user ON band_members(user_id)',
+        'CREATE INDEX IF NOT EXISTS idx_cifras_band ON cifras(band_id)',
+        'CREATE INDEX IF NOT EXISTS idx_setlists_band ON setlists(band_id)',
+        'CREATE INDEX IF NOT EXISTS idx_setlist_cifras_setlist ON setlist_cifras(setlist_id)',
+        'CREATE INDEX IF NOT EXISTS idx_assinaturas_banda ON assinaturas(banda_id)',
+    ):
+        c.execute(sql)
+
+
+def _members_by_band_ids(band_ids: list[str]) -> dict[str, list[dict]]:
+    if not band_ids:
+        return {}
+    ph, params = _in_placeholders(band_ids)
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        f'''SELECT users.*, band_members.role, band_members.band_id AS band_id
+            FROM users
+            JOIN band_members ON users.id = band_members.user_id
+            WHERE band_members.band_id IN ({ph})''',
+        params,
+    )
+    rows = c.fetchall()
+    db.close()
+    out: dict[str, list[dict]] = {bid: [] for bid in band_ids}
+    for row in rows:
+        out[row['band_id']].append(dict(row))
+    return out
+
+
+def _cifra_summaries_by_band_ids(band_ids: list[str]) -> dict[str, list[dict]]:
+    """Metadados leves das cifras (sem conteudo/json) para cards do dashboard."""
+    if not band_ids:
+        return {}
+    ph, params = _in_placeholders(band_ids)
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        f'''SELECT id, band_id, titulo, artista, tom_original, created_at, updated_at
+            FROM cifras WHERE band_id IN ({ph}) ORDER BY titulo''',
+        params,
+    )
+    rows = c.fetchall()
+    db.close()
+    out: dict[str, list[dict]] = {bid: [] for bid in band_ids}
+    for row in rows:
+        out[row['band_id']].append(dict(row))
+    return out
+
+
+def _users_by_ids(user_ids: list[str]) -> dict[str, dict]:
+    if not user_ids:
+        return {}
+    ph, params = _in_placeholders(user_ids)
+    db = get_db()
+    c = db.cursor()
+    c.execute(f'SELECT * FROM users WHERE id IN ({ph})', params)
+    rows = c.fetchall()
+    db.close()
+    return {row['id']: dict(row) for row in rows}
+
+
 def enrich_bands_for_display(bands) -> list[dict]:
     """Anexa members, cifras, owner e flag de logo para cards de listagem/dashboard."""
     from band_logos import band_has_logo
 
+    if not bands:
+        return []
+
+    band_ids = [b['id'] for b in bands]
+    owner_ids = list({b.get('owner_id') for b in bands if b.get('owner_id')})
+    members_map = _members_by_band_ids(band_ids)
+    cifras_map = _cifra_summaries_by_band_ids(band_ids)
+    owners_map = _users_by_ids(owner_ids)
+
     result = []
     for band in bands:
         b = dict(band)
-        b['members'] = get_band_members(b['id'])
-        b['cifras'] = get_band_cifras(b['id'])
-        owner = get_user(b.get('owner_id'))
-        b['owner'] = owner or {}
+        bid = b['id']
+        b['members'] = members_map.get(bid, [])
+        b['cifras'] = cifras_map.get(bid, [])
+        b['owner'] = owners_map.get(b.get('owner_id'), {})
         b['has_logo'] = band_has_logo(b)
         result.append(b)
     return result
