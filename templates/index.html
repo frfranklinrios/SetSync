@@ -729,6 +729,11 @@
                                 </li>
                                 <li><hr class="dropdown-divider my-1"></li>
                                 <li>
+                                    <a class="dropdown-item" href="{{ url_for('auth.perfil') }}">
+                                        <i class="fas fa-user-circle me-1"></i> Meu perfil
+                                    </a>
+                                </li>
+                                <li>
                                     <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
                                         {% include 'partials/csrf_input.html' %}
                                         <button type="submit" class="dropdown-item text-danger">Sair</button>

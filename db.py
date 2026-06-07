@@ -42,6 +42,8 @@ def _init_postgres_schema(c) -> None:
             password_hash TEXT,
             google_id TEXT,
             is_superadmin INTEGER NOT NULL DEFAULT 0,
+            phone TEXT,
+            whatsapp_notify INTEGER NOT NULL DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )''',
         '''CREATE TABLE IF NOT EXISTS bands (
@@ -228,10 +230,13 @@ def init_db():
         db.commit()
         add_column_if_missing(c, 'bands', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
         add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
+        add_column_if_missing(c, 'users', 'phone', 'TEXT')
+        add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
         add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
         add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
         add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
         _migrate_assinaturas_schema(c)
+        _migrate_notifications_schema(c)
         _migrate_content_schema(c)
         _ensure_perf_indexes(c)
         db.commit()
@@ -350,6 +355,8 @@ def init_db():
     add_column_if_missing(c, 'vouchers', 'eh_vitalicio', 'INTEGER NOT NULL DEFAULT 0')
     _migrate_notifications_schema(c)
     add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'phone', 'TEXT')
+    add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
@@ -487,6 +494,37 @@ def update_user_display_name(user_id: str, display_name: str | None):
     c.execute('UPDATE users SET display_name = ? WHERE id = ?', (display_name, user_id))
     db.commit()
     db.close()
+
+
+def update_user_profile(
+    user_id: str,
+    *,
+    display_name: str | None = None,
+    phone: str | None = None,
+    whatsapp_notify: bool | None = None,
+) -> None:
+    from whatsapp_service import normalize_whatsapp_phone
+
+    db = get_db()
+    c = db.cursor()
+    if display_name is not None:
+        c.execute('UPDATE users SET display_name = ? WHERE id = ?', (display_name, user_id))
+    if phone is not None:
+        normalized = normalize_whatsapp_phone(phone) if phone.strip() else None
+        c.execute('UPDATE users SET phone = ? WHERE id = ?', (normalized, user_id))
+    if whatsapp_notify is not None:
+        c.execute(
+            'UPDATE users SET whatsapp_notify = ? WHERE id = ?',
+            (1 if whatsapp_notify else 0, user_id),
+        )
+    db.commit()
+    db.close()
+
+
+def user_wants_whatsapp_notifications(user: dict | None) -> bool:
+    if not user:
+        return False
+    return int(user.get('whatsapp_notify') or 0) == 1
 
 
 # ── Users ──────────────────────────────────────────────────────────────────
@@ -1661,6 +1699,19 @@ def create_notification(
     )
     db.commit()
     db.close()
+    try:
+        from whatsapp_service import dispatch_notification_whatsapp
+        dispatch_notification_whatsapp(
+            user_id,
+            title=title,
+            body=body or '',
+            url_path=url_path,
+        )
+    except Exception:
+        import logging
+        logging.getLogger('setsync.whatsapp').exception(
+            'Falha ao enviar notificação WhatsApp para %s', user_id,
+        )
     return nid
 
 

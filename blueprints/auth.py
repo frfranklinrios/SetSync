@@ -4,7 +4,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from db import (create_user, get_user_by_username, get_user_by_login, get_user, verify_password,
                 get_user_by_google_id, create_google_user, get_user_by_email,
-                update_user_display_name, is_superadmin, get_band)
+                update_user_display_name, update_user_profile, is_superadmin, get_band)
+from whatsapp_service import normalize_whatsapp_phone
 from band_invites import parse_band_invite_token, apply_band_invite
 import band_notifications as bn
 from google_oauth import handle_google_callback, get_authorization_url
@@ -372,4 +373,42 @@ def definir_nome():
     if session.get('display_name'):
         return redirect(next_page)
     return render_template('definir_nome.html', next=next_page, suggested=session.get('username') or '')
+
+
+@auth_bp.route('/perfil', methods=['GET', 'POST'])
+@login_required
+def perfil():
+    """Nome, WhatsApp e preferências de notificação."""
+    user = get_user(session['user_id'])
+    if not user:
+        flash('Usuário não encontrado.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        nome = (request.form.get('display_name') or '').strip()
+        phone_raw = (request.form.get('phone') or '').strip()
+        whatsapp_notify = request.form.get('whatsapp_notify') == '1'
+
+        if len(nome) < 2:
+            flash('Digite um nome com pelo menos 2 caracteres.', 'warning')
+            return render_template('perfil.html', user=user)
+        if len(nome) > 60:
+            flash('Digite um nome com no máximo 60 caracteres.', 'warning')
+            return render_template('perfil.html', user=user)
+
+        if phone_raw and not normalize_whatsapp_phone(phone_raw):
+            flash('WhatsApp inválido. Use DDD + número (ex.: 11 99999-9999).', 'warning')
+            return render_template('perfil.html', user=user)
+
+        update_user_profile(
+            session['user_id'],
+            display_name=nome,
+            phone=phone_raw,
+            whatsapp_notify=whatsapp_notify if phone_raw else False,
+        )
+        session['display_name'] = nome
+        flash('Perfil atualizado.', 'success')
+        return redirect(url_for('auth.perfil'))
+
+    return render_template('perfil.html', user=user)
 
