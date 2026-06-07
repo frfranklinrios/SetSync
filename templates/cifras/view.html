@@ -133,17 +133,39 @@
     max-width: 100%;
 }
 
-.transpose-select {
-    background: #0f172a;
-    color: var(--chord-highlight);
+.transpose-stepper {
+    display: flex;
+    align-items: stretch;
     border: 1px solid var(--chord-highlight);
     border-radius: 7px;
-    font-size: 0.875rem;
-    padding: 0.45rem 0.75rem;
+    overflow: hidden;
+    background: #0f172a;
     width: 100%;
-    cursor: pointer;
 }
-.transpose-select:focus { outline: none; box-shadow: 0 0 0 3px var(--chord-highlight-ring); }
+.transpose-step-btn {
+    flex: 0 0 auto;
+    background: transparent;
+    border: none;
+    color: var(--chord-highlight);
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+    font-size: 1.15rem;
+    line-height: 1;
+    font-family: inherit;
+}
+.transpose-step-btn:hover:not(:disabled) { background: rgba(255,255,255,0.08); }
+.transpose-step-btn:disabled { opacity: 0.35; cursor: default; }
+.transpose-key-lbl {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--chord-highlight);
+    border-left: 1px solid var(--chord-highlight);
+    border-right: 1px solid var(--chord-highlight);
+}
 
 .sl-item {
     display: flex; align-items: center; gap: 0.5rem;
@@ -173,11 +195,14 @@
 [data-theme="light"] .cifra-tab-line { color: #334155; }
 [data-theme="light"] .tab-string { color: #d97706; }
 [data-theme="light"] .tab-tech { color: #92400e; }
-[data-theme="light"] .transpose-select {
+[data-theme="light"] .transpose-stepper {
     background: #fff;
-    color: var(--chord-highlight);
     border-color: var(--chord-highlight-border);
 }
+[data-theme="light"] .transpose-key-lbl {
+    border-color: var(--chord-highlight-border);
+}
+[data-theme="light"] .transpose-step-btn:hover:not(:disabled) { background: rgba(0,0,0,0.06); }
 [data-theme="light"] .sl-item { color: #374151; }
 [data-theme="light"] .sl-item:hover { background: #f9fafb; }
 </style>
@@ -277,14 +302,15 @@
                     para um tom por voz. Enquanto isso, o tom vale para toda a banda.
                 </p>
                 {% endif %}
-                <select class="transpose-select" id="transpose-select"
-                        data-vocalist="{{ active_vocalist_id or '' }}">
-                    {% for semitones, label in transpositions.items() %}
-                    <option value="{{ semitones }}" {% if current_transpose == semitones %}selected{% endif %}>
-                        {{ label }}
-                    </option>
-                    {% endfor %}
-                </select>
+                <div class="transpose-stepper" id="transpose-stepper" role="group" aria-label="Transpor"
+                     data-transpose="{{ current_transpose }}"
+                     data-vocalist="{{ active_vocalist_id or '' }}">
+                    <button type="button" class="transpose-step-btn" id="transpose-down"
+                            aria-label="Descer meio tom">−</button>
+                    <span class="transpose-key-lbl" id="transpose-key-lbl" title="Tom atual">{{ display_key }}</span>
+                    <button type="button" class="transpose-step-btn" id="transpose-up"
+                            aria-label="Subir meio tom">+</button>
+                </div>
             </div>
         </div>
 
@@ -331,13 +357,36 @@
 const CIFRA_BASE = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
 const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}";
 (function () {
-    var sel = document.getElementById('transpose-select');
-    if (!sel) return;
-    sel.addEventListener('change', function () {
-        var url = CIFRA_BASE + '?transpose=' + encodeURIComponent(this.value);
-        if (sel.dataset.vocalist) url += '&vocalist=' + encodeURIComponent(sel.dataset.vocalist);
+    var stepper = document.getElementById('transpose-stepper');
+    if (!stepper) return;
+    var TRANSPOSE_MIN = -6;
+    var TRANSPOSE_MAX = 6;
+
+    function normalizeSemitones(semi) {
+        var s = ((Number(semi) || 0) % 12 + 12) % 12;
+        return s > 6 ? s - 12 : s;
+    }
+
+    var current = normalizeSemitones(parseInt(stepper.dataset.transpose, 10) || 0);
+    var btnDown = document.getElementById('transpose-down');
+    var btnUp = document.getElementById('transpose-up');
+
+    function goTranspose(delta) {
+        var next = normalizeSemitones(current + delta);
+        if (next < TRANSPOSE_MIN || next > TRANSPOSE_MAX) return;
+        var url = CIFRA_BASE + '?transpose=' + encodeURIComponent(next);
+        if (stepper.dataset.vocalist) url += '&vocalist=' + encodeURIComponent(stepper.dataset.vocalist);
         location.href = url;
-    });
+    }
+
+    if (btnDown) {
+        btnDown.disabled = current <= TRANSPOSE_MIN;
+        btnDown.addEventListener('click', function () { goTranspose(-1); });
+    }
+    if (btnUp) {
+        btnUp.disabled = current >= TRANSPOSE_MAX;
+        btnUp.addEventListener('click', function () { goTranspose(1); });
+    }
 })();
 const LEADSHEET_DOC = {{ leadsheet_document|tojson if leadsheet_document else 'null' }};
 const CIFRA_TITULO = {{ cifra.titulo|tojson }};

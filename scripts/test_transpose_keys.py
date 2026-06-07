@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from util import (
     build_key_spelling,
     key_at_transpose,
+    normalize_transpose_semitones,
     pychord_transpose_text,
     format_text_chords_br,
     get_absolute_key_list,
@@ -66,6 +67,28 @@ def main() -> int:
     out = pychord_transpose_text(linha, semi, 'C')
     out = format_text_chords_br(out, key_at_transpose('C', semi))
     check(out == 'Eb  Cm  Ab  Bb', f"linha C->Eb -> {out!r} (esperado 'Eb  Cm  Ab  Bb')")
+
+    print('\n=== B → Bb (Gostoso demais) ===')
+    from util import pychord_transpose_chord, transpose_chord_display
+    check(pychord_transpose_chord('B', -1, None) == 'Bb',
+          f"B -1 sem armadura -> {pychord_transpose_chord('B', -1, None)!r} (esperado Bb)")
+    check(transpose_chord_display('B', -1, 'B') == 'Bb',
+          f"B -1 com tom B -> {transpose_chord_display('B', -1, 'B')!r}")
+    check(transpose_chord_display('A#', -1, 'B') == 'A',
+          f"A# -1 em Bb -> {transpose_chord_display('A#', -1, 'B')!r} (esperado A)")
+    linha_gd = '[B]Tô com saudade de [A#]tu'
+    out_gd = pychord_transpose_text(linha_gd, -1, 'B')
+    out_gd = format_text_chords_br(out_gd, key_at_transpose('B', -1))
+    check('A#' not in out_gd and 'Bb' in out_gd,
+          f"linha Gostoso B->Bb -> {out_gd!r}")
+
+    print('\n=== normalize_transpose_semitones ===')
+    check(normalize_transpose_semitones(7) == -5, f"+7 -> {normalize_transpose_semitones(7)!r} (esperado -5)")
+    check(normalize_transpose_semitones(-7) == 5, f"-7 -> {normalize_transpose_semitones(-7)!r} (esperado 5)")
+    check(normalize_transpose_semitones(0) == 0, "0 -> 0")
+    check(normalize_transpose_semitones(11) == -1, f"+11 -> {normalize_transpose_semitones(11)!r} (esperado -1)")
+    check(key_at_transpose('C', 7) == key_at_transpose('C', -5),
+          "C+7 e C-5 devem dar o mesmo tom")
 
     print('\n=== dropdown canônico ===')
     majors = get_absolute_key_list('C')

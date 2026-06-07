@@ -1578,10 +1578,12 @@ def delete_cifra(cifra_id):
 
 def set_cifra_transpose_semitones(cifra_id, semitones: int, vocalist_id: str | None = None) -> None:
     """Tom de performance por cantor(a); sem cantores, grava na cifra."""
+    from util import normalize_transpose_semitones
+
     cifra = get_cifra(cifra_id)
     if not cifra:
         return
-    semi = int(semitones)
+    semi = normalize_transpose_semitones(semitones)
     band_id = cifra['band_id']
     vocalists = get_band_vocalists(band_id)
     if vocalists:

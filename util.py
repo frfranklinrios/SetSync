@@ -255,8 +255,22 @@ def _spell_semitone(semitone, prefer_flats=False):
     return _CHROMATIC_FLAT[semitone % 12] if prefer_flats else _CHROMATIC_SHARP[semitone % 12]
 
 
+def _prefer_flats_for_respell(note: str, original_note: str | None = None) -> bool:
+    """Define sustenido vs. bemol ao reescrever uma nota já transposta pelo pychord."""
+    if 'b' in note and '#' not in note:
+        return True
+    if '#' in note:
+        return False
+    if original_note:
+        return 'b' in original_note and '#' not in original_note
+    return False
+
+
 def _respell_chord_roots(transposed, original):
-    """Mantém o estilo de bemóis/sustenidos do acorde original após transpor."""
+    """Fallback de grafia quando não há armadura do tom de destino.
+
+    Preserva bemóis que o pychord já emitiu (ex.: B -1 semitom → Bb, nunca A#).
+    """
     orig = _split_chord_root_quality(original)
     new = _split_chord_root_quality(transposed)
     if not orig or not new:
@@ -265,15 +279,13 @@ def _respell_chord_roots(transposed, original):
     orig_root, _, orig_bass = orig
     new_root, quality, new_bass = new
 
-    prefer_flats = ('b' in orig_root and '#' not in orig_root)
+    prefer_flats = _prefer_flats_for_respell(new_root, orig_root)
     idx = _note_semitone_index(new_root)
     if idx is not None:
         new_root = _spell_semitone(idx, prefer_flats=prefer_flats)
 
     if new_bass:
-        prefer_flats_b = bool(
-            orig_bass and 'b' in orig_bass and '#' not in orig_bass
-        )
+        prefer_flats_b = _prefer_flats_for_respell(new_bass, orig_bass)
         idx_b = _note_semitone_index(new_bass)
         if idx_b is not None:
             new_bass = _spell_semitone(idx_b, prefer_flats=prefer_flats_b)
@@ -282,6 +294,15 @@ def _respell_chord_roots(transposed, original):
     if new_bass:
         out += '/' + new_bass
     return out
+
+
+def transpose_chord_display(chord_str, semitones: int, tom_origem: str | None) -> str:
+    """Transpõe um acorde e grafia pela armadura do tom de destino."""
+    tom = normalize_tom_label(tom_origem or 'C')
+    if not semitones:
+        return format_text_chords_br(chord_str, tom)
+    out = pychord_transpose_text(chord_str, semitones, tom)
+    return format_text_chords_br(out, key_at_transpose(tom, semitones))
 
 
 def pychord_transpose_chord(chord_str, semitones, key_table=None):
@@ -543,6 +564,21 @@ def semitones_between_keys(from_tom, to_key):
     elif diff < -6:
         diff += 12
     return diff
+
+
+def normalize_transpose_semitones(semitones) -> int:
+    """Normaliza o deslocamento ao menor caminho cromático (−6 a +6).
+
+    +7 e −5 representam o mesmo tom; evita rótulos errados ao usar botões +/−.
+    """
+    try:
+        semi = int(semitones)
+    except (TypeError, ValueError):
+        return 0
+    semi %= 12
+    if semi > 6:
+        return semi - 12
+    return semi
 
 
 def key_at_transpose(tom_original, semitones):

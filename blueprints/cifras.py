@@ -29,7 +29,7 @@ from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   split_chord_progression, chord_components_info,
                   to_brazilian_chord_notation, format_text_chords_br,
                   get_transposition_options, key_at_transpose, get_absolute_key_list,
-                  get_play_mode_key_options, build_transpose_map, parse_tom_root,
+                  build_transpose_map, parse_tom_root, normalize_transpose_semitones,
                   normalize_tom_label,
                   sanitize_tab_html_artifacts, content_has_tablatura,
                   highlight_chords_play_html,
@@ -126,7 +126,7 @@ def cifra_display_key(cifra, vocalist_id: str | None = None, setlist_id=None):
     tom = (cifra.get('tom_original') or '').strip()
     if vocalist_id is None and setlist_id:
         vocalist_id = get_active_vocalist_id(cifra.get('band_id'), setlist_id=setlist_id)
-    semi = cifra_transpose_semitones(cifra, vocalist_id)
+    semi = normalize_transpose_semitones(cifra_transpose_semitones(cifra, vocalist_id))
     if semi:
         return key_at_transpose(tom, semi)
     return normalize_tom_label(tom)
@@ -138,10 +138,12 @@ def resolve_cifra_transpose(cifra_id, tom_original):
     band_id = cifra.get('band_id') if cifra else None
     vid = get_active_vocalist_id(band_id) if band_id else None
     if 'transpose' in request.args:
-        semitones = request.args.get('transpose', 0, type=int)
+        semitones = normalize_transpose_semitones(request.args.get('transpose', 0, type=int))
         set_cifra_transpose_semitones(cifra_id, semitones, vocalist_id=vid)
     else:
-        semitones = cifra_transpose_semitones(cifra, vid) if cifra else 0
+        semitones = normalize_transpose_semitones(
+            cifra_transpose_semitones(cifra, vid) if cifra else 0
+        )
 
     if semitones:
         session[PLAY_TARGET_KEY_SESSION] = key_at_transpose(tom_original, semitones)
@@ -326,21 +328,23 @@ def _load_best_structured_cifra(cifra, semitones=0):
     if not data:
         return []
 
-    if semitones:
-        tom_orig = cifra.get('tom_original')
-        for item in data:
-            if item.get('acorde'):
-                item['acorde'] = pychord_transpose_text(item['acorde'], semitones, tom_orig)
+    from util import normalize_tom_label, transpose_chord_display
 
+    tom_orig = normalize_tom_label(cifra.get('tom_original') or '')
     for item in data:
         if item.get('acorde'):
-            item['acorde'] = to_brazilian_chord_notation(item['acorde'])
+            item['acorde'] = transpose_chord_display(
+                item['acorde'], semitones, tom_orig or 'C',
+            )
 
     return data
 
 
 def _transpose_grade_data(grade_list, semitones=0, tom_origem=None):
     """Transpõe acordes da grade harmônica, preservando '%' (repeat)."""
+    from util import normalize_tom_label, transpose_chord_display
+
+    tom = normalize_tom_label(tom_origem or 'C')
     result = []
     for comp in grade_list:
         comp = dict(comp)
@@ -348,10 +352,8 @@ def _transpose_grade_data(grade_list, semitones=0, tom_origem=None):
         for token in comp.get('acordes', []):
             if token == '%':
                 acordes.append('%')
-            elif semitones:
-                acordes.append(pychord_transpose_text(token, semitones, tom_origem))
             else:
-                acordes.append(to_brazilian_chord_notation(token))
+                acordes.append(transpose_chord_display(token, semitones, tom))
         comp['acordes'] = acordes
         result.append(comp)
     return result
@@ -365,18 +367,22 @@ def _load_display_grade_data(cifra, semitones=0):
     return _transpose_grade_data(flat, semitones, cifra.get('tom_original'))
 
 
-def _transpose_leadsheet(doc: dict, semitones: int) -> dict:
+def _transpose_leadsheet(doc: dict, semitones: int, tom_fallback: str | None = None) -> dict:
     """Transpõe acordes do documento LeadSheet."""
     if not semitones:
         return doc
     out = copy.deepcopy(doc)
-    tom_origem = (out.get('song') or {}).get('key')
+    from util import normalize_tom_label, transpose_chord_display
+
+    song = out.setdefault('song', {})
+    tom_origem = normalize_tom_label(
+        (song.get('key') or '').strip() or tom_fallback or 'C'
+    )
     for evt in out.get('events') or []:
         if isinstance(evt, dict) and evt.get('type') == 'chord' and evt.get('value'):
-            evt['value'] = pychord_transpose_text(str(evt['value']), semitones, tom_origem)
-    song = out.setdefault('song', {})
+            evt['value'] = transpose_chord_display(str(evt['value']), semitones, tom_origem)
     if song.get('key'):
-        song['key'] = key_at_transpose(song['key'], semitones)
+        song['key'] = key_at_transpose(tom_origem, semitones)
     return out
 
 
@@ -386,7 +392,7 @@ def _load_display_leadsheet(cifra, semitones=0):
     if not doc:
         return None
     if semitones:
-        return _transpose_leadsheet(doc, semitones)
+        return _transpose_leadsheet(doc, semitones, cifra.get('tom_original'))
     return doc
 
 
@@ -521,10 +527,13 @@ def enrich_cifra_for_tocar(cifra, setlist_id=None):
     c['tom_root'] = parse_tom_root(c.get('tom_original'))
     c['transpose_map'] = build_transpose_map(c.get('tom_original'))
     if band_id:
-        c['transpose_by_vocalist'] = get_cifra_transpose_by_vocalists(c['id'], band_id)
+        c['transpose_by_vocalist'] = {
+            vid: normalize_transpose_semitones(semi)
+            for vid, semi in get_cifra_transpose_by_vocalists(c['id'], band_id).items()
+        }
     else:
         c['transpose_by_vocalist'] = {}
-    c['transpose_semitones'] = cifra_transpose_semitones(c, active_vid)
+    c['transpose_semitones'] = normalize_transpose_semitones(cifra_transpose_semitones(c, active_vid))
     c['has_tablatura'] = has_tab
     doc = resolve_leadsheet_document(c)
     if doc:
@@ -635,7 +644,6 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         setlist=setlist,
         band=band,
         all_cifras=all_cifras,
-        key_options=get_play_mode_key_options(),
         start_idx=start_idx,
         is_virtual=is_virtual,
         exit_url=exit_url,
@@ -825,7 +833,7 @@ def save_transpose(cifra_id):
     if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
         return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
     data = request.get_json(silent=True) or {}
-    semitones = int(data.get('semitones', 0))
+    semitones = normalize_transpose_semitones(int(data.get('semitones', 0)))
     band_id = cifra['band_id']
     vid = get_active_vocalist_id(band_id, data.get('vocalist_id'))
     set_cifra_transpose_semitones(cifra_id, semitones, vocalist_id=vid)

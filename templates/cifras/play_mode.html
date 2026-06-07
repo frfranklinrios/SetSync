@@ -146,27 +146,48 @@ body { overflow-x: hidden; }
 [data-theme="light"] .font-ctrl button:hover { background: rgba(0,0,0,0.13); }
 [data-theme="light"] .font-ctrl span { color: #475569; }
 
-/* Transpose select */
+/* Transpose stepper (+ / −) */
 .transpose-mini {
-    background: var(--chord-highlight-bg);
-    color: var(--chord-highlight);
+    font-family: inherit;
+}
+.transpose-stepper {
+    display: inline-flex;
+    align-items: stretch;
     border: 1px solid var(--chord-highlight-border);
     border-radius: 6px;
-    font-size: 0.78rem;
-    padding: 0.32rem 0.5rem;
-    font-family: inherit;
-    cursor: pointer;
-    max-width: 130px;
-}
-.transpose-mini:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px var(--chord-highlight-ring);
-}
-[data-theme="light"] .transpose-mini {
+    overflow: hidden;
     background: var(--chord-highlight-bg);
+    vertical-align: middle;
+}
+.transpose-step-btn {
+    background: transparent;
+    border: none;
     color: var(--chord-highlight);
+    padding: 0.32rem 0.55rem;
+    cursor: pointer;
+    font-size: 1.05rem;
+    line-height: 1;
+    font-family: inherit;
+}
+.transpose-step-btn:hover:not(:disabled) { background: rgba(255,255,255,0.08); }
+.transpose-step-btn:disabled { opacity: 0.35; cursor: default; }
+.transpose-key-lbl {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    padding: 0.32rem 0.4rem;
+    min-width: 2.4rem;
+    color: var(--chord-highlight);
+    font-weight: 600;
+    border-left: 1px solid var(--chord-highlight-border);
+    border-right: 1px solid var(--chord-highlight-border);
+}
+[data-theme="light"] .transpose-stepper {
+    background: var(--chord-highlight-bg);
     border-color: var(--chord-highlight-border);
 }
+[data-theme="light"] .transpose-step-btn:hover:not(:disabled) { background: rgba(0,0,0,0.06); }
 
 /* ── CIFRA AREA (bordas fixas; só o miolo rola) ───────────────── */
 #cifra-wrap {
@@ -704,13 +725,14 @@ body.play-mode.edges-hint .tap-zone {
                 {% endfor %}
             </select>
             {% endif %}
-            <select id="transpose-sel" class="transpose-mini" onchange="onTransposeChange(this.value)"
-                    title="{% if vocalist_name %}Tom para {{ vocalist_name }}{% else %}Transpor{% endif %}">
-                <option value="">Original (cadastro)</option>
-                {% for key in key_options %}
-                <option value="{{ key }}">{{ key }}</option>
-                {% endfor %}
-            </select>
+            <div class="transpose-stepper transpose-mini" role="group"
+                 aria-label="{% if vocalist_name %}Tom para {{ vocalist_name }}{% else %}Transpor{% endif %}">
+                <button type="button" class="transpose-step-btn" id="transpose-down"
+                        onclick="onTransposeStep(-1)" aria-label="Descer meio tom">−</button>
+                <span id="transpose-key-lbl" class="transpose-key-lbl" title="Tom atual">—</span>
+                <button type="button" class="transpose-step-btn" id="transpose-up"
+                        onclick="onTransposeStep(1)" aria-label="Subir meio tom">+</button>
+            </div>
 
             <div class="font-ctrl" role="group" aria-label="Tamanho da fonte">
                 <button onclick="changeFontSize(-1)" title="Diminuir (-)" aria-label="Diminuir fonte">−</button>
@@ -870,55 +892,65 @@ body.play-mode.edges-hint .tap-zone {
 
     const SAVE_TRANSPOSE_URL = {{ url_for('cifras.save_transpose', cifra_id='__ID__')|tojson }};
 
+    var NOTE_PC = {
+        'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 'F': 5,
+        'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+    };
+    var MAJOR_BY_PC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+    var MINOR_BY_PC = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm'];
+
+    function normalizeSemitones(semi) {
+        var s = ((Number(semi) || 0) % 12 + 12) % 12;
+        return s > 6 ? s - 12 : s;
+    }
+
+    function tomIsMinor(c) {
+        var t = (c && (c.tom_original || c.tom_root || c.tom)) || '';
+        return /\bm\b|\bmenor\b/i.test(t);
+    }
+
+    function keyAtTranspose(c, semi) {
+        if (!c) return '—';
+        var root = c.tom_root || 'C';
+        var idx = NOTE_PC[root];
+        if (idx === undefined) return root;
+        var pc = (idx + semi) % 12;
+        if (pc < 0) pc += 12;
+        var table = tomIsMinor(c) ? MINOR_BY_PC : MAJOR_BY_PC;
+        return table[pc];
+    }
+
+    function migrateLegacyTargetKey(c) {
+        if (!c || !targetKey || !c.transpose_map) return;
+        var hasStored = (c.transpose_semitones !== undefined && c.transpose_semitones !== null && c.transpose_semitones !== 0);
+        if (activeVocalistId && c.transpose_by_vocalist && c.transpose_by_vocalist[activeVocalistId] !== undefined) {
+            hasStored = true;
+        }
+        if (hasStored || c.transpose_map[targetKey] === undefined) return;
+        c.transpose_semitones = normalizeSemitones(c.transpose_map[targetKey]);
+        if (activeVocalistId) {
+            if (!c.transpose_by_vocalist) c.transpose_by_vocalist = {};
+            c.transpose_by_vocalist[activeVocalistId] = c.transpose_semitones;
+        }
+    }
+
     function getTranspose(c) {
         if (!c) return 0;
+        migrateLegacyTargetKey(c);
         if (activeVocalistId && c.transpose_by_vocalist && c.transpose_by_vocalist[activeVocalistId] !== undefined) {
-            return Number(c.transpose_by_vocalist[activeVocalistId]) || 0;
+            return normalizeSemitones(c.transpose_by_vocalist[activeVocalistId]);
         }
         if (c.transpose_semitones !== undefined && c.transpose_semitones !== null) {
-            return Number(c.transpose_semitones) || 0;
+            return normalizeSemitones(c.transpose_semitones);
         }
-        if (!targetKey || !c.transpose_map) return 0;
-        var semi = c.transpose_map[targetKey];
-        return (semi === undefined || semi === null) ? 0 : semi;
+        return 0;
     }
 
     function getDisplayKey(c) {
         if (!c) return '—';
         var semi = getTranspose(c);
-        var tk = targetKeyForSemitones(c, semi);
-        if (tk) return tk;
-        return c.tom || c.tom_root || '—';
-    }
-
-    function targetKeyForSemitones(c, semi) {
-        if (!c || !c.transpose_map) return '';
-        if (semi === 0 || semi === '0') {
-            return c.tom_root || normalizeKeyLabel(c.tom_original) || '';
-        }
-        var keys = Object.keys(c.transpose_map);
-        for (var i = 0; i < keys.length; i++) {
-            var k = keys[i];
-            if (Number(c.transpose_map[k]) === Number(semi)) return k;
-        }
-        return '';
-    }
-
-    function normalizeKeyLabel(k) {
-        if (!k) return '';
-        return String(k).replace(/\s*\(original\)\s*/i, '').trim();
-    }
-
-    function syncTargetKeyFromTranspose(c) {
-        if (!c) return;
-        var semi = getTranspose(c);
-        var canon = targetKeyForSemitones(c, semi);
-        if (!canon) return;
-        if (!targetKey || c.transpose_map[targetKey] === undefined) {
-            targetKey = canon;
-            localStorage.setItem('play.targetKey', targetKey);
-            sessionStorage.setItem('play.targetKey', targetKey);
-        }
+        if (semi === 0) return c.tom_root || c.tom || '—';
+        return keyAtTranspose(c, semi);
     }
 
     function getLeadSheetWidth() {
@@ -1203,13 +1235,7 @@ body.play-mode.edges-hint .tap-zone {
             item.classList.toggle('active', i === current);
         });
 
-        syncTargetKeyFromTranspose(c);
-        var sel = document.getElementById('transpose-sel');
-        if (sel) {
-            var tk = targetKeyForSemitones(c, t) || targetKey || '';
-            if (tk) sel.value = tk;
-            else sel.value = '';
-        }
+        updateTransposeUi(c);
 
         // load html (cached or fetch)
         if (gradeMode) {
@@ -1370,6 +1396,7 @@ body.play-mode.edges-hint .tap-zone {
     // ── Transpose ───────────────────────────
     function persistTransposeForCifra(c, semitones) {
         if (!c || !c.id) return;
+        semitones = normalizeSemitones(semitones);
         c.transpose_semitones = semitones;
         if (activeVocalistId) {
             if (!c.transpose_by_vocalist) c.transpose_by_vocalist = {};
@@ -1404,24 +1431,34 @@ body.play-mode.edges-hint .tap-zone {
         render();
     }
 
-    function onTransposeChange(value) {
-        targetKey = value || '';
-        if (targetKey) {
-            localStorage.setItem('play.targetKey', targetKey);
-            sessionStorage.setItem('play.targetKey', targetKey);
+    var TRANSPOSE_MIN = -6;
+    var TRANSPOSE_MAX = 6;
+
+    function updateTransposeUi(c) {
+        var lbl = document.getElementById('transpose-key-lbl');
+        var btnDown = document.getElementById('transpose-down');
+        var btnUp = document.getElementById('transpose-up');
+        if (!lbl || !c) return;
+        var semi = getTranspose(c);
+        var key = getDisplayKey(c);
+        var cadastro = c.tom_root || c.tom_original || c.tom || '';
+        if (semi === 0) {
+            lbl.textContent = key;
+            lbl.title = 'Tom original (cadastro: ' + cadastro + ')';
         } else {
-            localStorage.removeItem('play.targetKey');
-            sessionStorage.removeItem('play.targetKey');
+            lbl.textContent = key;
+            lbl.title = key + ' — ' + (semi > 0 ? '+' : '') + semi + ' semitons de ' + cadastro;
         }
+        if (btnDown) btnDown.disabled = semi <= TRANSPOSE_MIN;
+        if (btnUp) btnUp.disabled = semi >= TRANSPOSE_MAX;
+    }
+
+    function onTransposeStep(delta) {
         var c = getCurrent();
-        if (c) {
-            var semi = 0;
-            if (targetKey && c.transpose_map) {
-                semi = c.transpose_map[targetKey];
-                if (semi === undefined || semi === null) semi = 0;
-            }
-            persistTransposeForCifra(c, semi);
-        }
+        if (!c || !delta) return;
+        var semi = normalizeSemitones(getTranspose(c) + delta);
+        if (semi < TRANSPOSE_MIN || semi > TRANSPOSE_MAX) return;
+        persistTransposeForCifra(c, semi);
         render();
     }
 
@@ -1743,7 +1780,7 @@ body.play-mode.edges-hint .tap-zone {
     window.toggleScroll = toggleScroll;
     window.toggleDrawer = toggleDrawer;
     window.closeDrawer = closeDrawer;
-    window.onTransposeChange = onTransposeChange;
+    window.onTransposeStep = onTransposeStep;
     window.onVocalistChange = onVocalistChange;
     window.toggleFullscreen = toggleFullscreen;
     window.adjustSpeed = adjustSpeed;
@@ -1751,7 +1788,6 @@ body.play-mode.edges-hint .tap-zone {
     window.toggleGrade = toggleGrade;
 
     // ── Init ────────────────────────────────
-    syncTargetKeyFromTranspose(CIFRAS[current] || CIFRAS[0]);
     applyTwoCols();
     document.getElementById('fit-btn').classList.toggle('pb-on', fitMode);
     buildDots();
