@@ -15,12 +15,7 @@
 }
 </style>
 
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-1">
-    <h2 class="mb-0">Editar Cifra</h2>
-    <button type="button" class="btn btn-outline-primary btn-sm" onclick="openCifrasToolModal()">
-        Cifra → SetSync
-    </button>
-</div>
+<h2 class="mb-1">Editar Cifra</h2>
 <p class="text-muted mb-4" style="font-size:.875rem;">{{ band.name }}</p>
 
 <form method="POST" id="cifra-form" class="mt-2">
@@ -114,12 +109,10 @@
     </div>
 </form>
 
-{% include 'cifras/_cifras_tool_modal.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=3"></script>
 <script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
-<script src="{{ url_for('static', filename='js/cifras-tool-bridge.js') }}"></script>
 
 <script>
 const CHORD_TOKEN = /^[A-G][#b]?(?:(?:maj7?|min|m7b5|m7|M7?|m|dim7?|aug|sus[24]?|add9?|\d+|[+\-°º]|[b#]\d))*(?:\/[A-G][#b]?)?$/;
