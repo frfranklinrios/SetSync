@@ -15,6 +15,7 @@ from monetizacao import PLANOS
 from email_service import send_email
 from monetizacao_emails import send_voucher_aviso_email, send_voucher_expirado_email
 from onboarding_emails import verificar_e_disparar_onboarding
+from retention_emails import verificar_e_disparar_retencao
 from security import external_url_for
 from vouchers import STATUS_EXPIRADO
 
@@ -75,3 +76,4 @@ def run_daily_voucher_jobs() -> None:
     verificar_vouchers_vencidos()
     avisar_trials_proximo_vencimento()
     verificar_e_disparar_onboarding()
+    verificar_e_disparar_retencao()

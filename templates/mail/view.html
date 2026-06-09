@@ -1,0 +1,42 @@
+{% extends "index.html" %}
+{% block title %}{{ msg.subject or 'Mensagem' }} · E-mail{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('mail_web.inbox') if msg.folder != 'sent' else url_for('mail_web.sent') }}" class="text-muted" style="font-size:0.88rem;">
+        <i class="fas fa-arrow-left me-1"></i> Voltar
+    </a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h1 class="h5 mb-3">{{ msg.subject or '(sem assunto)' }}</h1>
+        <dl class="row mb-0" style="font-size:0.88rem;">
+            <dt class="col-sm-2 text-muted">De</dt>
+            <dd class="col-sm-10">{{ msg.sender }}</dd>
+            <dt class="col-sm-2 text-muted">Para</dt>
+            <dd class="col-sm-10">{{ msg.recipients }}</dd>
+            <dt class="col-sm-2 text-muted">Data</dt>
+            <dd class="col-sm-10">{{ msg.created_at|date_short }}</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body" style="white-space:pre-wrap; font-size:0.92rem; line-height:1.55;">
+        {% if msg.body_html %}
+            {{ msg.body_html|safe }}
+        {% else %}
+            {{ msg.body_text or '' }}
+        {% endif %}
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('mail_web.delete_email', email_id=msg.id) }}"
+      onsubmit="return confirm('Excluir esta mensagem?');">
+    {% include 'partials/csrf_input.html' %}
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+        <i class="fas fa-trash me-1"></i> Excluir
+    </button>
+</form>
+{% endblock %}

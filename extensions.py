@@ -27,4 +27,27 @@ def init_scheduler(app) -> None:
 
     _scheduler.add_job(_job, 'cron', hour=6, minute=0, id='voucher_daily')
     _scheduler.start()
-    app.logger.info('APScheduler: job diário de vouchers agendado (06:00 UTC)')
+    app.logger.info('APScheduler: jobs diários (vouchers, onboarding, retenção) às 06:00 UTC')
+
+    _init_whatsapp_server(app)
+
+
+def _init_whatsapp_server(app) -> None:
+    """Garante instância Evolution ao subir (provider evolution)."""
+    from whatsapp_config import whatsapp_provider
+
+    if whatsapp_provider() != 'evolution':
+        return
+    with app.app_context():
+        try:
+            from whatsapp_server.client import ensure_instance, is_reachable
+
+            if not is_reachable():
+                app.logger.warning(
+                    'Evolution API indisponível — WhatsApp ficará offline até o container subir'
+                )
+                return
+            if ensure_instance():
+                app.logger.info('WhatsApp Evolution: instância pronta')
+        except Exception as exc:
+            app.logger.warning('WhatsApp Evolution: init falhou: %s', exc)

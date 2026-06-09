@@ -33,3 +33,14 @@ MAIL_DEFAULT_SENDER = _parse_default_sender(
     os.getenv('MAIL_DEFAULT_SENDER'),
     MAIL_USERNAME,
 )
+
+
+def webmail_url() -> str | None:
+    """URL pública do webmail (HTTPS, sem porta 8080)."""
+    raw = (os.getenv('SETSYNC_WEBMAIL_URL') or '').strip()
+    if not raw:
+        return None
+    raw = raw.replace(':8080', '').rstrip('/')
+    if raw.startswith('http://mail.'):
+        raw = 'https://' + raw[len('http://'):]
+    return raw

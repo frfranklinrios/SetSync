@@ -1,0 +1,119 @@
+{% extends "index.html" %}
+{% block title %}WhatsApp — Admin SetSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-2">
+  <div class="col-lg-8">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      <div>
+        <h2 class="mb-1">WhatsApp — notificações</h2>
+        <p class="text-muted mb-0" style="font-size:0.9rem;">
+          Servidor local (Evolution API). Usuários recebem alertas da banda no celular.
+          {% if official_number %}
+          <br>Número oficial: <strong>+{{ official_number[:2] }} {{ official_number[2:4] }} {{ official_number[4:9] }}-{{ official_number[9:] }}</strong>
+          {% endif %}
+        </p>
+      </div>
+      <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary btn-sm">← Admin</a>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <h3 class="h6 mb-3">Status</h3>
+        <ul class="list-unstyled mb-0" style="font-size:0.92rem;">
+          <li class="mb-2">
+            <strong>Provider:</strong> {{ status.provider }}
+          </li>
+          <li class="mb-2">
+            <strong>Notificações:</strong>
+            {% if status.enabled %}ativas{% else %}desativadas{% endif %}
+          </li>
+          {% if not meta_mode %}
+          <li class="mb-2">
+            <strong>API:</strong>
+            {% if status.api_reachable %}
+              <span class="text-success">online</span> ({{ status.api_url }})
+            {% else %}
+              <span class="text-danger">indisponível</span> — suba o container <code>evolution-api</code>
+            {% endif %}
+          </li>
+          <li class="mb-2">
+            <strong>Instância:</strong> {{ status.instance }}
+          </li>
+          {% endif %}
+          <li>
+            <strong>Conexão WhatsApp:</strong>
+            {% if status.connected %}
+              <span class="badge bg-success">conectado</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">aguardando pareamento</span>
+            {% endif %}
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    {% if meta_mode %}
+    <div class="card">
+      <div class="card-body">
+        <p class="mb-0">
+          Modo <strong>Meta Cloud API</strong>. Defina <code>WHATSAPP_API_TOKEN</code> e
+          <code>WHATSAPP_PHONE_NUMBER_ID</code> no <code>.env</code>.
+          Para servidor próprio, use <code>WHATSAPP_PROVIDER=evolution</code>.
+        </p>
+      </div>
+    </div>
+    {% elif status.connected %}
+    <div class="card">
+      <div class="card-body">
+        <p class="text-success mb-2"><i class="fab fa-whatsapp me-1"></i> Número pareado e pronto para enviar.</p>
+        <p class="text-muted mb-3" style="font-size:0.85rem;">
+          Usuários precisam cadastrar o WhatsApp em <strong>Meu perfil</strong> e manter o opt-in ativo.
+        </p>
+        <form method="POST" action="{{ url_for('whatsapp_admin.reconectar') }}">
+          {% include 'partials/csrf_input.html' %}
+          <button type="submit" class="btn btn-outline-warning btn-sm">Trocar número (novo QR)</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-body text-center">
+        <h3 class="h6 mb-3">Escaneie o QR Code</h3>
+        <p class="text-muted" style="font-size:0.85rem;">
+          {% if official_number %}
+          Use o chip <strong>+{{ official_number[:2] }} {{ official_number[2:4] }} {{ official_number[4:9] }}-{{ official_number[9:] }}</strong>.
+          {% endif %}
+          WhatsApp → Aparelhos conectados → Conectar aparelho
+        </p>
+        {% if qr and qr.ok and qr.base64 %}
+        <img src="{{ qr.base64 }}" alt="QR Code WhatsApp" class="img-fluid mb-3" style="max-width:280px;border-radius:8px;">
+        {% if qr.pairingCode %}
+        <p class="small text-muted">Código de pareamento: <strong>{{ qr.pairingCode }}</strong></p>
+        {% endif %}
+        {% elif qr and qr.code and not qr.base64 %}
+        <p class="text-muted">Código WhatsApp Web:</p>
+        <p style="font-size:1.75rem;font-weight:700;letter-spacing:0.2em">{{ qr.code }}</p>
+        {% elif qr and not qr.ok %}
+        <p class="text-warning">{{ qr.error }}</p>
+        <p class="text-muted small mb-0">
+          Alternativa: túnel SSH <code>ssh -L 8088:127.0.0.1:8088 seu-servidor</code>
+          e abra <a href="http://127.0.0.1:8088/manager" target="_blank" rel="noopener">Evolution Manager</a>.
+        </p>
+        {% else %}
+        <p class="text-muted">Carregando QR… <a href="">Atualizar página</a></p>
+        {% endif %}
+        <p class="text-muted mt-3 mb-0" style="font-size:0.8rem;">
+          A página recarrega a cada 25s. O QR expira rápido — escaneie assim que aparecer.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% if not status.connected and not meta_mode %}
+<script>
+setTimeout(function () { window.location.reload(); }, 25000);
+</script>
+{% endif %}
+{% endblock %}

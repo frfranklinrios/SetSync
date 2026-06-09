@@ -1,0 +1,38 @@
+{% extends "index.html" %}
+{% block title %}Escrever e-mail · SetSync{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('mail_web.inbox') }}" class="text-muted" style="font-size:0.88rem;">
+        <i class="fas fa-arrow-left me-1"></i> Caixa de entrada
+    </a>
+</div>
+
+<h1 class="h5 mb-3"><i class="fas fa-pen me-2"></i>Nova mensagem</h1>
+<p class="text-muted mb-3" style="font-size:0.85rem;">Enviando como <strong>{{ mailbox }}</strong></p>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('mail_web.compose') }}">
+            {% include 'partials/csrf_input.html' %}
+            <div class="mb-3">
+                <label class="form-label" for="to">Para</label>
+                <input type="text" class="form-control" id="to" name="to" value="{{ to }}" required
+                       placeholder="destino@exemplo.com">
+                <div class="form-text">Vários destinatários separados por vírgula.</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="subject">Assunto</label>
+                <input type="text" class="form-control" id="subject" name="subject" value="{{ subject }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="body">Mensagem</label>
+                <textarea class="form-control" id="body" name="body" rows="12" required>{{ body }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane me-1"></i> Enviar
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

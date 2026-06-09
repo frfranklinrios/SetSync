@@ -697,6 +697,13 @@
                                 <i class="fas fa-shield-halved me-1"></i> Admin
                             </a>
                         </li>
+                        {% if mail_inbox_url %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ mail_inbox_url }}">
+                                <i class="fas fa-inbox me-1"></i> E-mail
+                            </a>
+                        </li>
+                        {% endif %}
                         {% endif %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('bands.list_bands') }}">Bandas</a>
@@ -750,6 +757,13 @@
                                         <i class="fas fa-user-circle me-1"></i> Meu perfil
                                     </a>
                                 </li>
+                                {% if current_user.is_superadmin and mail_inbox_url %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ mail_inbox_url }}">
+                                        <i class="fas fa-inbox me-1"></i> Caixa de entrada
+                                    </a>
+                                </li>
+                                {% endif %}
                                 <li>
                                     <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
                                         {% include 'partials/csrf_input.html' %}

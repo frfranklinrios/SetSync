@@ -1,4 +1,4 @@
-"""Envio de notificações por WhatsApp (Meta Cloud API)."""
+"""Envio de notificações por WhatsApp (Evolution API ou Meta Cloud API)."""
 
 from __future__ import annotations
 
@@ -14,18 +14,30 @@ from whatsapp_config import (
     whatsapp_api_version,
     whatsapp_notifications_enabled,
     whatsapp_phone_number_id,
+    whatsapp_provider,
     whatsapp_template_name,
 )
 
 logger = logging.getLogger('setsync.whatsapp')
 
 
+def _meta_configured() -> bool:
+    return bool(whatsapp_api_token() and whatsapp_phone_number_id())
+
+
+def _evolution_configured() -> bool:
+    from whatsapp_server.config import evolution_api_key
+
+    return bool(evolution_api_key())
+
+
 def is_configured() -> bool:
-    return bool(
-        whatsapp_notifications_enabled()
-        and whatsapp_api_token()
-        and whatsapp_phone_number_id()
-    )
+    if not whatsapp_notifications_enabled():
+        return False
+    provider = whatsapp_provider()
+    if provider == 'meta':
+        return _meta_configured()
+    return _evolution_configured()
 
 
 def normalize_whatsapp_phone(raw: str | None) -> str | None:
@@ -44,41 +56,8 @@ def normalize_whatsapp_phone(raw: str | None) -> str | None:
     return None
 
 
-def _api_url() -> str:
-    pid = whatsapp_phone_number_id()
-    ver = whatsapp_api_version()
-    return f'https://graph.facebook.com/{ver}/{pid}/messages'
-
-
-def _post_message(payload: dict[str, Any]) -> bool:
-    if not is_configured():
-        logger.warning('WhatsApp API não configurada; mensagem não enviada')
-        return False
-    try:
-        resp = requests.post(
-            _api_url(),
-            headers={
-                'Authorization': f'Bearer {whatsapp_api_token()}',
-                'Content-Type': 'application/json',
-            },
-            json=payload,
-            timeout=20,
-        )
-        if resp.ok:
-            return True
-        logger.error(
-            'WhatsApp API erro %s: %s',
-            resp.status_code,
-            (resp.text or '')[:500],
-        )
-        return False
-    except Exception:
-        logger.exception('Falha ao enviar WhatsApp')
-        return False
-
-
 def _format_notification_text(title: str, body: str, url_path: str | None) -> str:
-    lines = [f'*SetSync*', f'*{title}*']
+    lines = ['*SetSync*', f'*{title}*']
     if body:
         lines.append(body)
     base = canonical_app_url()
@@ -89,16 +68,36 @@ def _format_notification_text(title: str, body: str, url_path: str | None) -> st
     return '\n\n'.join(lines)
 
 
-def send_whatsapp_text(to_phone: str, text: str) -> bool:
-    phone = normalize_whatsapp_phone(to_phone)
-    if not phone or not text.strip():
+# ── Meta Cloud API ────────────────────────────────────────────────────────────
+
+def _meta_api_url() -> str:
+    pid = whatsapp_phone_number_id()
+    ver = whatsapp_api_version()
+    return f'https://graph.facebook.com/{ver}/{pid}/messages'
+
+
+def _meta_post(payload: dict[str, Any]) -> bool:
+    try:
+        resp = requests.post(
+            _meta_api_url(),
+            headers={
+                'Authorization': f'Bearer {whatsapp_api_token()}',
+                'Content-Type': 'application/json',
+            },
+            json=payload,
+            timeout=20,
+        )
+        if resp.ok:
+            return True
+        logger.error(
+            'WhatsApp Meta API erro %s: %s',
+            resp.status_code,
+            (resp.text or '')[:500],
+        )
         return False
-    return _post_message({
-        'messaging_product': 'whatsapp',
-        'to': phone,
-        'type': 'text',
-        'text': {'preview_url': True, 'body': text[:4096]},
-    })
+    except Exception:
+        logger.exception('Falha ao enviar WhatsApp (Meta)')
+        return False
 
 
 def send_whatsapp_template(to_phone: str, title: str, body: str, link: str) -> bool:
@@ -111,25 +110,56 @@ def send_whatsapp_template(to_phone: str, title: str, body: str, link: str) -> b
         {'type': 'text', 'text': (body or ' ')[:800]},
         {'type': 'text', 'text': (link or canonical_app_url() or 'setsync.com.br')[:200]},
     ]
-    return _post_message({
+    return _meta_post({
         'messaging_product': 'whatsapp',
         'to': phone,
         'type': 'template',
         'template': {
             'name': template,
             'language': {'code': 'pt_BR'},
-            'components': [{
-                'type': 'body',
-                'parameters': params,
-            }],
+            'components': [{'type': 'body', 'parameters': params}],
         },
     })
+
+
+def _send_meta_text(to_phone: str, text: str) -> bool:
+    phone = normalize_whatsapp_phone(to_phone)
+    if not phone or not text.strip():
+        return False
+    return _meta_post({
+        'messaging_product': 'whatsapp',
+        'to': phone,
+        'type': 'text',
+        'text': {'preview_url': True, 'body': text[:4096]},
+    })
+
+
+# ── Evolution API (servidor local) ──────────────────────────────────────────────
+
+def _send_evolution_text(to_phone: str, text: str) -> bool:
+    from whatsapp_server.client import send_text
+
+    phone = normalize_whatsapp_phone(to_phone)
+    if not phone:
+        return False
+    return send_text(phone, text)
+
+
+# ── API pública ───────────────────────────────────────────────────────────────
+
+def send_whatsapp_text(to_phone: str, text: str) -> bool:
+    if not is_configured():
+        logger.warning('WhatsApp não configurado; mensagem não enviada')
+        return False
+    if whatsapp_provider() == 'meta':
+        return _send_meta_text(to_phone, text)
+    return _send_evolution_text(to_phone, text)
 
 
 def send_notification_message(to_phone: str, title: str, body: str, url_path: str | None) -> bool:
     base = canonical_app_url()
     link = f'{base}{url_path}' if base and url_path else (url_path or base or '')
-    if whatsapp_template_name():
+    if whatsapp_provider() == 'meta' and whatsapp_template_name():
         return send_whatsapp_template(to_phone, title, body, link)
     text = _format_notification_text(title, body, url_path)
     return send_whatsapp_text(to_phone, text)
@@ -154,3 +184,25 @@ def dispatch_notification_whatsapp(
     if not phone:
         return False
     return send_notification_message(phone, title, body, url_path)
+
+
+def provider_status() -> dict[str, Any]:
+    """Status para painel admin."""
+    provider = whatsapp_provider()
+    out: dict[str, Any] = {
+        'provider': provider,
+        'enabled': whatsapp_notifications_enabled(),
+        'configured': is_configured(),
+    }
+    if provider == 'meta':
+        out['connected'] = _meta_configured()
+        return out
+    from whatsapp_server.client import connection_state, is_connected, is_reachable
+    from whatsapp_server.config import evolution_api_url, evolution_instance
+
+    out['api_url'] = evolution_api_url()
+    out['instance'] = evolution_instance()
+    out['api_reachable'] = is_reachable()
+    out['connected'] = is_connected() if out['api_reachable'] else False
+    out['connection'] = connection_state() if out['api_reachable'] else {}
+    return out

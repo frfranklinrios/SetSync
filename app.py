@@ -11,6 +11,8 @@ from blueprints.admin import admin_bp
 from blueprints.assinatura import assinatura_bp, webhook as mp_webhook_view
 from blueprints.notifications import notifications_bp
 from blueprints.blog import blog_bp
+from blueprints.mail_web import mail_web_bp
+from blueprints.whatsapp_admin import whatsapp_admin_bp
 from db import init_db
 from extensions import init_scheduler
 from util import highlight_chords_html, normalize_tom_label, format_date_short
@@ -169,6 +171,8 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(assinatura_bp)
 app.register_blueprint(notifications_bp)
 app.register_blueprint(blog_bp)
+app.register_blueprint(mail_web_bp)
+app.register_blueprint(whatsapp_admin_bp)
 init_scheduler(app)
 
 # Webhook Mercado Pago: POST externo sem CSRF de formulário
@@ -303,9 +307,21 @@ def dashboard():
 @app.context_processor
 def inject_site_config():
     from config import whatsapp_number, whatsapp_message
+    from db import is_superadmin as _is_superadmin
+
+    mail_inbox_url = None
+    user_id = session.get('user_id')
+    if user_id and _is_superadmin(user_id):
+        try:
+            mail_inbox_url = url_for('mail_web.inbox')
+        except RuntimeError:
+            mail_inbox_url = '/admin/email/'
+
     return dict(
         whatsapp_number=whatsapp_number(),
         whatsapp_message=whatsapp_message(),
+        webmail_url=mail_inbox_url,
+        mail_inbox_url=mail_inbox_url,
     )
 
 

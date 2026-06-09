@@ -1,0 +1,40 @@
+{% extends "index.html" %}
+{% block title %}Caixa de entrada · SetSync{% endblock %}
+
+{% block content %}
+{% include "mail/_nav.html" %}
+
+<div class="card">
+    <div class="list-group list-group-flush">
+        {% if emails %}
+            {% for e in emails %}
+            <a href="{{ url_for('mail_web.view_email', email_id=e.id) }}"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-start gap-3"
+               style="background:var(--bg); border-color:var(--border); color:inherit;">
+                <div class="min-w-0 flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        {% if not e.is_read and folder == 'inbox' %}
+                        <span class="badge bg-primary" style="font-size:0.6rem;">novo</span>
+                        {% endif %}
+                        <strong class="text-truncate" style="font-size:0.92rem;">
+                            {% if folder == 'sent' %}{{ e.recipients }}{% else %}{{ e.sender }}{% endif %}
+                        </strong>
+                    </div>
+                    <div class="text-truncate" style="font-size:0.88rem;">{{ e.subject or '(sem assunto)' }}</div>
+                    <div class="text-muted text-truncate" style="font-size:0.78rem;">
+                        {{ (e.body_text or '')[:120] }}
+                    </div>
+                </div>
+                <small class="text-muted text-nowrap" style="font-size:0.72rem;">
+                    {{ e.created_at|date_short }}
+                </small>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="list-group-item text-muted text-center py-5" style="background:var(--bg); border-color:var(--border);">
+                {% if folder == 'sent' %}Nenhum e-mail enviado ainda.{% else %}Caixa de entrada vazia.{% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -44,6 +44,8 @@ def _init_postgres_schema(c) -> None:
             is_superadmin INTEGER NOT NULL DEFAULT 0,
             phone TEXT,
             whatsapp_notify INTEGER NOT NULL DEFAULT 1,
+            email_notify INTEGER NOT NULL DEFAULT 1,
+            last_login_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )''',
         '''CREATE TABLE IF NOT EXISTS bands (
@@ -215,6 +217,15 @@ def _init_postgres_schema(c) -> None:
             UNIQUE (usuario_id, email_numero),
             FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
         )''',
+        '''CREATE TABLE IF NOT EXISTS retention_emails (
+            id SERIAL PRIMARY KEY,
+            usuario_id TEXT NOT NULL,
+            campaign TEXT NOT NULL,
+            enviado_em TIMESTAMP,
+            status TEXT NOT NULL DEFAULT 'pendente',
+            UNIQUE (usuario_id, campaign),
+            FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+        )''',
     ]
     for sql in statements:
         c.execute(sql)
@@ -232,6 +243,8 @@ def init_db():
         add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
         add_column_if_missing(c, 'users', 'phone', 'TEXT')
         add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
+        add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
+        add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
         add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
         add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
         add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
@@ -357,6 +370,8 @@ def init_db():
     add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'users', 'phone', 'TEXT')
     add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
+    add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
+    add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
@@ -408,6 +423,29 @@ def _migrate_content_schema(c) -> None:
                 enviado_em TIMESTAMP,
                 status TEXT NOT NULL DEFAULT 'pendente',
                 UNIQUE (usuario_id, email_numero),
+                FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS retention_emails (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario_id TEXT NOT NULL,
+                campaign TEXT NOT NULL,
+                enviado_em TIMESTAMP,
+                status TEXT NOT NULL DEFAULT 'pendente',
+                UNIQUE (usuario_id, campaign),
+                FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ''')
+    if IS_POSTGRES:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS retention_emails (
+                id SERIAL PRIMARY KEY,
+                usuario_id TEXT NOT NULL,
+                campaign TEXT NOT NULL,
+                enviado_em TIMESTAMP,
+                status TEXT NOT NULL DEFAULT 'pendente',
+                UNIQUE (usuario_id, campaign),
                 FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
@@ -502,6 +540,7 @@ def update_user_profile(
     display_name: str | None = None,
     phone: str | None = None,
     whatsapp_notify: bool | None = None,
+    email_notify: bool | None = None,
 ) -> None:
     from whatsapp_service import normalize_whatsapp_phone
 
@@ -517,6 +556,20 @@ def update_user_profile(
             'UPDATE users SET whatsapp_notify = ? WHERE id = ?',
             (1 if whatsapp_notify else 0, user_id),
         )
+    if email_notify is not None:
+        c.execute(
+            'UPDATE users SET email_notify = ? WHERE id = ?',
+            (1 if email_notify else 0, user_id),
+        )
+    db.commit()
+    db.close()
+
+
+def touch_user_last_login(user_id: str) -> None:
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE users SET last_login_at = ? WHERE id = ?', (now, user_id))
     db.commit()
     db.close()
 
@@ -525,6 +578,20 @@ def user_wants_whatsapp_notifications(user: dict | None) -> bool:
     if not user:
         return False
     return int(user.get('whatsapp_notify') or 0) == 1
+
+
+def user_has_phone(user: dict | None) -> bool:
+    if not user:
+        return False
+    return bool((user.get('phone') or '').strip())
+
+
+def user_wants_email_notifications(user: dict | None) -> bool:
+    if not user:
+        return False
+    if user.get('email_notify') is None:
+        return True
+    return int(user.get('email_notify') or 0) == 1
 
 
 # ── Users ──────────────────────────────────────────────────────────────────
@@ -1712,6 +1779,19 @@ def create_notification(
         logging.getLogger('setsync.whatsapp').exception(
             'Falha ao enviar notificação WhatsApp para %s', user_id,
         )
+    try:
+        from notification_email_service import dispatch_notification_email
+        dispatch_notification_email(
+            user_id,
+            title=title,
+            body=body or '',
+            url_path=url_path,
+        )
+    except Exception:
+        import logging
+        logging.getLogger('setsync.email_notify').exception(
+            'Falha ao enviar notificação por e-mail para %s', user_id,
+        )
     return nid
 
 
@@ -2101,3 +2181,112 @@ def list_expired_trials() -> list[dict]:
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     return rows
+
+
+# ── Retenção anti-churn ───────────────────────────────────────────────────────
+
+def retention_was_sent(usuario_id: str, campaign: str) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT 1 FROM retention_emails
+           WHERE usuario_id = ? AND campaign = ? AND status = 'enviado' LIMIT 1''',
+        (usuario_id, campaign),
+    )
+    found = c.fetchone() is not None
+    db.close()
+    return found
+
+
+def mark_retention_sent(usuario_id: str, campaign: str, status: str = 'enviado') -> None:
+    db = get_db()
+    c = db.cursor()
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        c.execute(
+            '''INSERT INTO retention_emails (usuario_id, campaign, status, enviado_em)
+               VALUES (?, ?, ?, ?)''',
+            (usuario_id, campaign, status, now),
+        )
+    except IntegrityError:
+        c.execute(
+            '''UPDATE retention_emails SET status = ?, enviado_em = ?
+               WHERE usuario_id = ? AND campaign = ?''',
+            (status, now, usuario_id, campaign),
+        )
+    db.commit()
+    db.close()
+
+
+def list_retention_candidates_inactive(min_days: int) -> list[dict]:
+    cutoff = (datetime.utcnow() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    db = get_db()
+    c = db.cursor()
+    if IS_POSTGRES:
+        c.execute(
+            '''SELECT u.*
+               FROM users u
+               WHERE COALESCE(u.email, '') != ''
+                 AND COALESCE(u.email_notify, 1) = 1
+                 AND COALESCE(u.last_login_at, u.created_at) <= ?::timestamp
+               ORDER BY u.created_at''',
+            (cutoff,),
+        )
+    else:
+        c.execute(
+            '''SELECT u.*
+               FROM users u
+               WHERE COALESCE(u.email, '') != ''
+                 AND COALESCE(u.email_notify, 1) = 1
+                 AND datetime(COALESCE(u.last_login_at, u.created_at)) <= datetime(?)
+               ORDER BY u.created_at''',
+            (cutoff,),
+        )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def list_retention_candidates_no_band(*, min_days: int) -> list[dict]:
+    cutoff = (datetime.utcnow() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    db = get_db()
+    c = db.cursor()
+    if IS_POSTGRES:
+        c.execute(
+            '''SELECT u.*
+               FROM users u
+               WHERE COALESCE(u.email, '') != ''
+                 AND COALESCE(u.email_notify, 1) = 1
+                 AND u.created_at <= ?::timestamp
+                 AND NOT EXISTS (
+                     SELECT 1 FROM band_members bm WHERE bm.user_id = u.id
+                 )
+                 AND NOT EXISTS (
+                     SELECT 1 FROM bands b WHERE b.owner_id = u.id
+                 )
+               ORDER BY u.created_at''',
+            (cutoff,),
+        )
+    else:
+        c.execute(
+            '''SELECT u.*
+               FROM users u
+               WHERE COALESCE(u.email, '') != ''
+                 AND COALESCE(u.email_notify, 1) = 1
+                 AND datetime(u.created_at) <= datetime(?)
+                 AND NOT EXISTS (
+                     SELECT 1 FROM band_members bm WHERE bm.user_id = u.id
+                 )
+                 AND NOT EXISTS (
+                     SELECT 1 FROM bands b WHERE b.owner_id = u.id
+                 )
+               ORDER BY u.created_at''',
+            (cutoff,),
+        )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def list_retention_candidates_trial_expired() -> list[dict]:
+    return list_expired_trials()

@@ -4,7 +4,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from db import (create_user, get_user_by_username, get_user_by_login, get_user, verify_password,
                 get_user_by_google_id, create_google_user, get_user_by_email,
-                update_user_display_name, update_user_profile, is_superadmin, get_band)
+                update_user_display_name, update_user_profile, is_superadmin, get_band,
+                touch_user_last_login, user_has_phone)
 from whatsapp_service import normalize_whatsapp_phone
 from band_invites import parse_band_invite_token, apply_band_invite
 import band_notifications as bn
@@ -18,6 +19,21 @@ from security import (
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 MIN_PASSWORD_LEN = 10
+
+# Rotas que não exigem WhatsApp cadastrado (evita loop de redirect).
+_PHONE_PROMPT_EXEMPT = frozenset({
+    'auth.definir_whatsapp',
+    'auth.definir_nome',
+    'auth.perfil',
+    'auth.logout',
+    'auth.login',
+    'auth.register',
+    'auth.recuperar_senha',
+    'auth.reset_senha',
+    'auth.google',
+    'auth.google_callback',
+    'auth.convite',
+})
 
 
 def _password_reset_serializer():
@@ -45,6 +61,23 @@ def _login_user_session(user):
     session['display_name'] = (user.get('display_name') or '').strip()
     session['is_superadmin'] = is_superadmin(user['id'])
     session.permanent = True
+    touch_user_last_login(user['id'])
+
+
+def _auth_setup_redirect(next_page: str):
+    """Nome → WhatsApp → destino (após login/cadastro)."""
+    if not session.get('display_name'):
+        return redirect(url_for('auth.definir_nome', next=next_page))
+    if _should_prompt_phone():
+        return redirect(url_for('auth.definir_whatsapp', next=next_page))
+    return redirect(next_page)
+
+
+def _should_prompt_phone() -> bool:
+    if session.get('skip_phone_prompt'):
+        return False
+    user = get_user(session.get('user_id'))
+    return bool(user and not user_has_phone(user))
 
 
 def _redirect_after_auth(user, invite_token: str | None = None):
@@ -58,16 +91,12 @@ def _redirect_after_auth(user, invite_token: str | None = None):
             if result == 'added':
                 bn.member_joined_via_invite(band_id, user['id'])
                 flash(f'Você entrou na banda {name}!', 'success')
-            if not session.get('display_name'):
-                return redirect(url_for('auth.definir_nome', next=url_for('bands.view', band_id=band_id)))
-            return redirect(url_for('bands.view', band_id=band_id))
+            return _auth_setup_redirect(url_for('bands.view', band_id=band_id))
 
     next_page = request.args.get('next')
     if next_page and safe_redirect_path(next_page):
-        return redirect(next_page)
-    if not session.get('display_name'):
-        return redirect(url_for('auth.definir_nome', next=url_for('dashboard')))
-    return redirect(url_for('dashboard'))
+        return _auth_setup_redirect(next_page)
+    return _auth_setup_redirect(url_for('dashboard'))
 
 
 def send_reset_email(email, token):
@@ -137,6 +166,10 @@ def login_required(f):
             if nxt:
                 return redirect(url_for('auth.login', next=nxt))
             return redirect(url_for('auth.login'))
+        endpoint = request.endpoint or ''
+        if endpoint not in _PHONE_PROMPT_EXEMPT and _should_prompt_phone():
+            nxt = safe_redirect_path(request.path) or url_for('dashboard')
+            return redirect(url_for('auth.definir_whatsapp', next=nxt))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -371,8 +404,53 @@ def definir_nome():
         return redirect(next_page)
 
     if session.get('display_name'):
+        if _should_prompt_phone():
+            return redirect(url_for('auth.definir_whatsapp', next=next_page))
         return redirect(next_page)
     return render_template('definir_nome.html', next=next_page, suggested=session.get('username') or '')
+
+
+@auth_bp.route('/whatsapp', methods=['GET', 'POST'])
+@login_required
+def definir_whatsapp():
+    """Pede WhatsApp para contas sem telefone (usuários antigos no login)."""
+    next_page = request.args.get('next') or url_for('dashboard')
+    if not safe_redirect_path(next_page):
+        next_page = url_for('dashboard')
+
+    if request.args.get('pular') == '1':
+        session['skip_phone_prompt'] = True
+        session.modified = True
+        flash('Você pode cadastrar o WhatsApp depois em Meu perfil.', 'info')
+        return redirect(next_page)
+
+    user = get_user(session['user_id'])
+    if user and user_has_phone(user):
+        return redirect(next_page)
+
+    if request.method == 'POST':
+        phone_raw = (request.form.get('phone') or '').strip()
+        whatsapp_notify = request.form.get('whatsapp_notify') == '1'
+
+        if not phone_raw:
+            flash('Informe seu número de WhatsApp ou clique em Agora não.', 'warning')
+            return render_template('definir_whatsapp.html', next=next_page)
+
+        if not normalize_whatsapp_phone(phone_raw):
+            flash('WhatsApp inválido. Use DDD + número (ex.: 85 99784-9547).', 'warning')
+            return render_template('definir_whatsapp.html', next=next_page)
+
+        update_user_profile(
+            session['user_id'],
+            phone=phone_raw,
+            whatsapp_notify=whatsapp_notify,
+        )
+        session.pop('skip_phone_prompt', None)
+        session.modified = True
+        flash('WhatsApp cadastrado! Você receberá alertas da banda por aqui.', 'success')
+        return redirect(next_page)
+
+    return render_template('definir_whatsapp.html', next=next_page)
 
 
 @auth_bp.route('/perfil', methods=['GET', 'POST'])
@@ -384,13 +462,13 @@ def perfil():
         flash('Usuário não encontrado.', 'danger')
         return redirect(url_for('dashboard'))
 
-    webmail_url = (os.getenv('SETSYNC_WEBMAIL_URL') or '').strip() or None
-    perfil_ctx = dict(user=user, webmail_url=webmail_url)
+    perfil_ctx = dict(user=user)
 
     if request.method == 'POST':
         nome = (request.form.get('display_name') or '').strip()
         phone_raw = (request.form.get('phone') or '').strip()
         whatsapp_notify = request.form.get('whatsapp_notify') == '1'
+        email_notify = request.form.get('email_notify') == '1'
 
         if len(nome) < 2:
             flash('Digite um nome com pelo menos 2 caracteres.', 'warning')
@@ -408,6 +486,7 @@ def perfil():
             display_name=nome,
             phone=phone_raw,
             whatsapp_notify=whatsapp_notify if phone_raw else False,
+            email_notify=email_notify,
         )
         session['display_name'] = nome
         flash('Perfil atualizado.', 'success')

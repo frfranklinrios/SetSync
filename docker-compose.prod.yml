@@ -22,10 +22,67 @@ services:
     networks:
       - default
 
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.3.7
+    container_name: setsync-evolution
+    env_file:
+      - .env
+    environment:
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      SERVER_URL: http://127.0.0.1:8088
+      CONFIG_SESSION_PHONE_CLIENT: SetSync
+      CONFIG_SESSION_PHONE_NAME: SetSync
+      DEL_INSTANCE: "false"
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://setsync:${POSTGRES_PASSWORD}@postgres:5432/evolution
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
+      CACHE_REDIS_ENABLED: "false"
+      WEBHOOK_GLOBAL_ENABLED: "false"
+      QRCODE_LIMIT: "30"
+    volumes:
+      - ./data/evolution:/evolution/instances
+    ports:
+      - "127.0.0.1:8088:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - default
+
+  mail:
+    build:
+      context: .
+      dockerfile: Dockerfile.mail
+    container_name: setsync-mail
+    env_file:
+      - .env
+    environment:
+      MAIL_DATA_DIR: /app/data/mail
+      MAIL_DATABASE_PATH: /app/data/mail/emails.db
+      SMTP_CONNECT_HOST: mail
+    volumes:
+      - ./data/mail:/app/data/mail
+    ports:
+      - "25:25"
+      - "587:587"
+    restart: unless-stopped
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      - default
+
   web:
     build: .
     env_file:
       - .env
+    environment:
+      MAIL_DATA_DIR: /app/data/mail
+      MAIL_DATABASE_PATH: /app/data/mail/emails.db
+      SMTP_CONNECT_HOST: mail
+      EVOLUTION_API_URL: http://evolution-api:8080
     ports:
       - "127.0.0.1:5001:5000"
     volumes:
@@ -33,6 +90,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mail:
+        condition: service_started
+      evolution-api:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:5000/health"]
@@ -43,7 +104,6 @@ services:
     networks:
       - default
       - nginx_proxy_net
-      - mail_net
 
 volumes:
   setsync_pg_prod:
@@ -52,6 +112,3 @@ networks:
   nginx_proxy_net:
     external: true
     name: root_backend
-  mail_net:
-    external: true
-    name: servidor_email_default
