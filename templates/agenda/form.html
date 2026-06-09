@@ -114,6 +114,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/form-submit-once.js') }}?v=1"></script>
 {% if google_maps_api_key %}
 <script src="{{ url_for('static', filename='js/agenda-location-autocomplete.js') }}?v=1"></script>
 <script async defer

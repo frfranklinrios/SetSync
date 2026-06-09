@@ -1,6 +1,6 @@
 // SetSync service worker — app-shell + offline fallback
 // Bump CACHE_VERSION whenever the app shell changes so old caches are evicted.
-const CACHE_VERSION = 'setsync-v9';
+const CACHE_VERSION = 'setsync-v10';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 
@@ -34,6 +34,8 @@ function isCacheableResponse(response) {
     if (!response || !response.ok) return false;
     if (response.type === 'opaqueredirect') return false;
     if (response.redirected) return false;
+    const cc = (response.headers.get('Cache-Control') || '').toLowerCase();
+    if (cc.includes('no-store') || cc.includes('private')) return false;
     return true;
 }
 

@@ -162,6 +162,8 @@ def security_headers(response):
             'Strict-Transport-Security',
             'max-age=31536000; includeSubDomains',
         )
+    if 'user_id' in session and request.method == 'GET':
+        response.headers['Cache-Control'] = 'no-store, private'
     return response
 
 # Registro de Blueprints

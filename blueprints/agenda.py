@@ -156,8 +156,11 @@ def create(band_id):
             )
         event_id = create_band_event(band_id, created_by=user_id, **data)
         bn.event_created(band_id, user_id, event_id, data['title'], data['event_type'])
-        flash('Evento criado. Defina a escalação dos integrantes.', 'success')
-        return redirect(url_for('agenda.escala', event_id=event_id))
+        flash(
+            'Evento criado. Use o botão Escalação na lista para definir quem participa.',
+            'success',
+        )
+        return redirect(url_for('bands.view', band_id=band_id) + '#tab-agenda')
 
     return render_template(
         'agenda/form.html',
