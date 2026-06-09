@@ -176,7 +176,7 @@
   <div>
     <h2>Ajuda</h2>
     <p class="help-muted mb-0">
-      Guia do SetSync em <strong>setsync.com.br</strong> — bandas, cifras, setlists e modo palco.
+      Guia do SetSync em <strong>setsync.com.br</strong> — bandas, cifras, setlists, agenda e modo palco.
     </p>
   </div>
   <a class="btn btn-outline-secondary btn-sm"
@@ -216,6 +216,14 @@
       <a class="list-group-item" href="#setlists">
         <strong>Setlists</strong>
         <div class="text-muted" style="font-size:0.8rem;">Ordem, link público de letras</div>
+      </a>
+      <a class="list-group-item" href="#agenda">
+        <strong>Agenda e escalação</strong>
+        <div class="text-muted" style="font-size:0.8rem;">Ensaios, calendário, equipe por evento</div>
+      </a>
+      <a class="list-group-item" href="#notificacoes">
+        <strong>Alertas</strong>
+        <div class="text-muted" style="font-size:0.8rem;">E-mail, WhatsApp e lembretes</div>
       </a>
       <a class="list-group-item" href="#modo-tocar">
         <strong>Modo Tocar</strong>
@@ -258,7 +266,8 @@
           <li>Em <strong>Configurações da banda</strong>, cadastre <strong>cantoras/cantores</strong> se mais de uma pessoa canta em tons diferentes.</li>
           <li>Adicione <strong>cifras</strong> (manual ou pelo importador <span class="code">Cifra → SetSync</span>).</li>
           <li>Monte um <strong>setlist</strong> com a ordem do culto ou show.</li>
-          <li>Toque em <strong>Tocar</strong> para abrir o <strong>Modo Tocar</strong> em tela cheia.</li>
+          <li>Na aba <strong>Agenda</strong>, registre ensaios e cultos e, se quiser, <strong>escale</strong> quem participa.</li>
+          <li>Toque em <strong>Tocar</strong> (na setlist ou no evento) para abrir o <strong>Modo Tocar</strong> em tela cheia.</li>
         </ol>
         <div class="help-callout">
           No palco: use <strong>2 colunas</strong> (<span class="kbd">C</span>) ou <strong>caber na tela</strong> (<span class="kbd">A</span>) em cifras longas, e o <strong>auto-scroll</strong> (<span class="kbd">Espaço</span>) para rolar sozinho até o fim da música.
@@ -383,6 +392,62 @@
           <li>Copie o link ou use o <strong>QR Code</strong> para projetor, equipe de som ou congregação.</li>
           <li><strong>Gerar novo link</strong> invalida o anterior — use se o link vazou.</li>
           <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card help-section" id="agenda">
+      <div class="card-header">Agenda e escalação</div>
+      <div class="card-body">
+        <p>
+          Cada banda tem uma <strong>Agenda</strong> para organizar ensaios e shows (cultos, apresentações).
+          Abra a banda → aba <span class="code">Agenda</span>.
+        </p>
+
+        <h3>Eventos</h3>
+        <ul>
+          <li>Admins criam eventos com <strong>título</strong>, <strong>tipo</strong> (ensaio ou show), <strong>data/hora</strong>, local e observações.</li>
+          <li>É possível vincular uma <strong>setlist</strong> ao evento — o roteiro daquele culto ou ensaio.</li>
+          <li>No detalhe do evento, use <strong>Tocar setlist</strong> para ir direto ao Modo Tocar.</li>
+          <li>O <strong>painel inicial</strong> mostra os próximos eventos das suas bandas.</li>
+        </ul>
+
+        <h3>Calendário</h3>
+        <ul>
+          <li>A aba Agenda exibe um <strong>calendário mensal</strong> com ensaios e shows coloridos.</li>
+          <li>Use as setas para mudar de mês ou <strong>Hoje</strong> para voltar ao mês atual.</li>
+          <li>Toque em um evento no calendário ou na lista abaixo para ver detalhes.</li>
+        </ul>
+
+        <h3>Escalação (ministérios e bandas grandes)</h3>
+        <ul>
+          <li>Em cada evento, admins abrem <strong>Escalação</strong> e marcam quem participa.</li>
+          <li>Campo <strong>Função</strong> é opcional (ex.: Vocal, Bateria, Teclado).</li>
+          <li>Use <strong>Buscar</strong>, <strong>Marcar todos</strong> ou <strong>Limpar</strong> para agilizar.</li>
+          <li>Se <strong>nenhuma escala</strong> for definida, todos os membros da banda são considerados no evento.</li>
+          <li>Integrantes <strong>recém-escalados</strong> recebem notificação (e e-mail/WhatsApp, se ativados no perfil).</li>
+        </ul>
+
+        <h3>Lembretes</h3>
+        <ul>
+          <li><strong>24 horas antes</strong> do evento, quem está na escala (ou todos, se não houver escala) recebe lembrete por notificação, e-mail e WhatsApp.</li>
+        </ul>
+
+        <div class="help-callout">
+          Após criar um evento, o SetSync já leva você à tela de escalação. Você também encontra o botão laranja
+          <strong>Escalação</strong> na lista de eventos e no detalhe do evento.
+        </div>
+      </div>
+    </section>
+
+    <section class="card help-section" id="notificacoes">
+      <div class="card-header">Alertas (e-mail e WhatsApp)</div>
+      <div class="card-body">
+        <ul>
+          <li>Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>, cadastre <strong>WhatsApp</strong> e ative alertas por e-mail e WhatsApp.</li>
+          <li>Você recebe avisos sobre mudanças na banda: cifras, setlists, convites, eventos na agenda e quando for <strong>escalado</strong>.</li>
+          <li>E-mails saem de <span class="code">contato@setsync.com.br</span>.</li>
+          <li>Contas <span class="code">@setsync.com.br</span> também podem usar o webmail interno (superadmin).</li>
         </ul>
       </div>
     </section>
