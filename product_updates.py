@@ -7,6 +7,7 @@ from db import create_notification, get_all_users, mark_retention_sent, retentio
 # Identificador único — não reenvia se o script rodar de novo.
 CAMPAIGN_NOTIFICACOES_2026_06 = 'product_notificacoes_2026_06'
 CAMPAIGN_NOTIFICACOES_2026_06_RETRY = 'product_notificacoes_2026_06_retry'
+CAMPAIGN_AGENDA_2026_06 = 'product_agenda_2026_06'
 
 _ANNOUNCEMENTS = {
     CAMPAIGN_NOTIFICACOES_2026_06: {
@@ -30,6 +31,20 @@ _ANNOUNCEMENTS = {
             'Os e-mails saem de contato@setsync.com.br.'
         ),
         'url_path': '/auth/perfil',
+    },
+    CAMPAIGN_AGENDA_2026_06: {
+        'type': 'product_update',
+        'title': 'Novidade: Agenda da banda com calendário e escalação',
+        'body': (
+            'Organize ensaios e cultos na nova Agenda da banda:\n\n'
+            '• Calendário mensal na aba Agenda\n'
+            '• Vincule uma setlist a cada evento\n'
+            '• Escale integrantes por evento (ideal para ministérios grandes)\n'
+            '• Próximos eventos no painel inicial\n'
+            '• Lembrete automático 24h antes (e-mail, WhatsApp e notificação)\n\n'
+            'Abra sua banda → aba Agenda para começar.'
+        ),
+        'url_path': '/dashboard',
     },
 }
 

@@ -29,6 +29,17 @@ def init_scheduler(app) -> None:
     _scheduler.start()
     app.logger.info('APScheduler: jobs diários (vouchers, onboarding, retenção) às 06:00 UTC')
 
+    def _agenda_job():
+        with app.app_context():
+            from scheduler_jobs import run_agenda_reminder_jobs
+            try:
+                run_agenda_reminder_jobs()
+            except Exception as exc:
+                app.logger.exception('Erro no job de lembretes da agenda: %s', exc)
+
+    _scheduler.add_job(_agenda_job, 'cron', minute=0, id='agenda_reminders_hourly')
+    app.logger.info('APScheduler: lembretes de agenda a cada hora (24h antes do evento)')
+
     _init_whatsapp_server(app)
 
 

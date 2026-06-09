@@ -81,6 +81,40 @@
     border: 1px dashed var(--border); border-radius: 10px;
 }
 .empty i { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+
+.upcoming-events-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.15rem;
+    background: #fff;
+    margin-bottom: 1.25rem;
+}
+[data-theme="dark"] .upcoming-events-card { background: #0b1422; }
+.upcoming-event-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    color: inherit;
+}
+.upcoming-event-item:last-child { border-bottom: none; padding-bottom: 0; }
+.upcoming-event-item:first-of-type { padding-top: 0; }
+.upcoming-event-item:hover .upcoming-event-title { color: var(--accent); }
+.upcoming-event-title { font-weight: 600; font-size: 0.92rem; margin-bottom: 0.15rem; }
+.upcoming-event-meta { font-size: 0.8rem; color: var(--muted); }
+.upcoming-event-when {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(42,181,160,0.1);
+    border: 1px solid rgba(42,181,160,0.25);
+}
 </style>
 
 <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
@@ -123,6 +157,42 @@
     </div>
     {% for item in planos_resumo.itens %}
     {% include 'partials/plano_periodo_card.html' %}
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if upcoming_events %}
+<div class="upcoming-events-card">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <div class="fw-semibold" style="font-size:0.9rem;">
+            <i class="fas fa-calendar-alt me-1 text-muted"></i> Próximos eventos
+        </div>
+        <span class="text-muted" style="font-size:0.78rem;">Ensaios e shows nas suas bandas</span>
+    </div>
+    {% for event in upcoming_events %}
+    <a href="{{ url_for('agenda.view', event_id=event.id) }}" class="upcoming-event-item">
+        <div class="min-width-0">
+            <div class="upcoming-event-title">
+                {% if event.event_type == 'show' %}
+                <i class="fas fa-star text-warning me-1" style="font-size:0.8rem;"></i>
+                {% else %}
+                <i class="fas fa-drum text-muted me-1" style="font-size:0.8rem;"></i>
+                {% endif %}
+                {{ event.title }}
+            </div>
+            <div class="upcoming-event-meta">
+                {{ event.band_name }}
+                · {{ event.starts_at | format_event_datetime }}
+                {% if event.location %} · {{ event.location }}{% endif %}
+                {% if event.setlist_name %} · {{ event.setlist_name }}{% endif %}
+                {% if event.user_scaled %} · <span class="text-success">você na escala</span>{% elif event.scale_preview %} · {{ event.scale_preview }}{% endif %}
+            </div>
+        </div>
+        {% set rel = event.starts_at | event_relative_label %}
+        {% if rel %}
+        <span class="upcoming-event-when">{{ rel }}</span>
+        {% endif %}
+    </a>
     {% endfor %}
 </div>
 {% endif %}

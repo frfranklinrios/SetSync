@@ -238,6 +238,79 @@ def setlist_song_added(band_id: str, actor_user_id: str, setlist_id: int, setlis
     )
 
 
+def _event_type_label(event_type: str | None) -> str:
+    return {'ensaio': 'ensaio', 'show': 'show'}.get((event_type or '').strip(), 'evento')
+
+
+def event_created(band_id: str, actor_user_id: str, event_id: str, title: str, event_type: str):
+    actor = _actor_name(actor_user_id)
+    band = _band_label(band_id)
+    tipo = _event_type_label(event_type)
+    return _notify_members(
+        band_id,
+        actor_user_id,
+        'event_created',
+        f'{band} — {tipo} agendado',
+        f'{actor} marcou «{title}» na agenda.',
+        url_path=f'/agenda/{event_id}',
+    )
+
+
+def event_updated(band_id: str, actor_user_id: str, event_id: str, title: str, event_type: str):
+    actor = _actor_name(actor_user_id)
+    band = _band_label(band_id)
+    tipo = _event_type_label(event_type)
+    return _notify_members(
+        band_id,
+        actor_user_id,
+        'event_updated',
+        f'{band} — {tipo} atualizado',
+        f'{actor} alterou «{title}» na agenda.',
+        url_path=f'/agenda/{event_id}',
+    )
+
+
+def event_scale_assigned(
+    band_id: str,
+    actor_user_id: str,
+    event_id: str,
+    title: str,
+    user_ids: list[str] | set[str],
+):
+    """Notifica integrantes recém-escalados para um evento."""
+    actor = _actor_name(actor_user_id)
+    band = _band_label(band_id)
+    count = 0
+    for uid in user_ids or []:
+        if not uid or uid == actor_user_id:
+            continue
+        create_notification(
+            uid,
+            band_id=band_id,
+            actor_user_id=actor_user_id,
+            type='event_scale_assigned',
+            title=f'{band} — você está na escala',
+            body=f'{actor} te escalou para «{title}».',
+            url_path=f'/agenda/{event_id}',
+        )
+        count += 1
+    return count
+
+
+def event_deleted(band_id: str, actor_user_id: str, title: str, event_type: str | None):
+    actor = _actor_name(actor_user_id)
+    band = _band_label(band_id)
+    tipo = _event_type_label(event_type)
+    return _notify_members(
+        band_id,
+        actor_user_id,
+        'event_deleted',
+        f'{band} — {tipo} cancelado',
+        f'{actor} removeu «{title}» da agenda.',
+        url_path=f'/bands/{band_id}#tab-agenda',
+    )
+
+
 def setlist_song_removed(band_id: str, actor_user_id: str, setlist_id: int, setlist_name: str, song_title: str):
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)

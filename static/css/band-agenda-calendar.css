@@ -1,0 +1,248 @@
+/* Calendário da agenda da banda */
+.agenda-cal-wrap {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card-bg, #fff);
+    padding: 1rem 1.1rem 1.15rem;
+    margin-bottom: 1.25rem;
+}
+[data-theme="dark"] .agenda-cal-wrap {
+    background: #0b1422;
+}
+
+.agenda-cal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.agenda-cal-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.agenda-cal-nav {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.agenda-cal-nav .btn {
+    padding: 0.25rem 0.55rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.agenda-cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+}
+
+.agenda-cal-weekday {
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    padding: 0.2rem 0;
+}
+
+.agenda-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.agenda-cal-cell {
+    min-height: 76px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 5px 5px;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow: hidden;
+}
+[data-theme="dark"] .agenda-cal-cell {
+    background: #0f172a;
+}
+
+.agenda-cal-cell.is-outside {
+    opacity: 0.38;
+}
+
+.agenda-cal-cell.is-today {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(234, 88, 12, 0.25);
+}
+
+.agenda-cal-cell.is-selected {
+    border-color: #2ab5a0;
+    box-shadow: 0 0 0 1px rgba(42, 181, 160, 0.35);
+}
+
+.agenda-cal-daynum {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--muted);
+    line-height: 1.1;
+    flex-shrink: 0;
+}
+
+.agenda-cal-cell.is-today .agenda-cal-daynum {
+    color: var(--accent);
+}
+
+.agenda-cal-events {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
+    flex: 1;
+}
+
+.agenda-cal-event {
+    display: block;
+    font-size: 0.62rem;
+    line-height: 1.25;
+    padding: 2px 4px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid transparent;
+}
+.agenda-cal-event:hover {
+    filter: brightness(1.05);
+    text-decoration: none;
+    color: inherit;
+}
+
+.agenda-cal-event.type-ensaio {
+    background: rgba(42, 181, 160, 0.14);
+    border-color: rgba(42, 181, 160, 0.35);
+    color: #0f766e;
+}
+[data-theme="dark"] .agenda-cal-event.type-ensaio {
+    color: #5eead4;
+}
+
+.agenda-cal-event.type-show {
+    background: rgba(234, 179, 8, 0.18);
+    border-color: rgba(234, 179, 8, 0.4);
+    color: #a16207;
+}
+[data-theme="dark"] .agenda-cal-event.type-show {
+    color: #fde047;
+}
+
+.agenda-cal-more {
+    font-size: 0.6rem;
+    color: var(--muted);
+    padding-left: 2px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    text-align: left;
+}
+
+.agenda-cal-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+}
+
+.agenda-cal-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.agenda-cal-legend i {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+.agenda-cal-legend .lg-ensaio {
+    background: rgba(42, 181, 160, 0.5);
+    border: 1px solid rgba(42, 181, 160, 0.6);
+}
+.agenda-cal-legend .lg-show {
+    background: rgba(234, 179, 8, 0.55);
+    border: 1px solid rgba(234, 179, 8, 0.65);
+}
+
+.agenda-cal-day-detail {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+    display: none;
+}
+.agenda-cal-day-detail.is-open {
+    display: block;
+}
+
+.agenda-cal-day-detail h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    color: var(--text);
+}
+
+.agenda-cal-day-detail ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.agenda-cal-day-detail li {
+    margin-bottom: 0.35rem;
+}
+
+.agenda-cal-day-detail a {
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: var(--text);
+}
+.agenda-cal-day-detail a:hover {
+    color: var(--accent);
+}
+
+.agenda-cal-day-detail .meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+@media (max-width: 576px) {
+    .agenda-cal-cell {
+        min-height: 52px;
+        padding: 3px;
+    }
+    .agenda-cal-event {
+        font-size: 0;
+        padding: 0;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        align-self: flex-start;
+    }
+    .agenda-cal-more {
+        font-size: 0.55rem;
+    }
+}

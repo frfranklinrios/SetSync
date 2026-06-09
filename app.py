@@ -13,6 +13,8 @@ from blueprints.notifications import notifications_bp
 from blueprints.blog import blog_bp
 from blueprints.mail_web import mail_web_bp
 from blueprints.whatsapp_admin import whatsapp_admin_bp
+from blueprints.agenda import agenda_bp
+from agenda_util import event_relative_label, format_event_datetime
 from db import init_db
 from extensions import init_scheduler
 from util import highlight_chords_html, normalize_tom_label, format_date_short
@@ -122,6 +124,8 @@ if env == 'production':
 app.jinja_env.filters['highlight_chords'] = highlight_chords_html
 app.jinja_env.filters['normalize_tom'] = normalize_tom_label
 app.jinja_env.filters['date_short'] = format_date_short
+app.jinja_env.filters['format_event_datetime'] = format_event_datetime
+app.jinja_env.filters['event_relative_label'] = event_relative_label
 
 with app.app_context():
     init_db()
@@ -173,6 +177,7 @@ app.register_blueprint(notifications_bp)
 app.register_blueprint(blog_bp)
 app.register_blueprint(mail_web_bp)
 app.register_blueprint(whatsapp_admin_bp)
+app.register_blueprint(agenda_bp)
 init_scheduler(app)
 
 # Webhook Mercado Pago: POST externo sem CSRF de formulário
@@ -280,13 +285,33 @@ def dashboard():
                 return {'expirado': True, 'band_name': b['name']}
         return None
 
+    from models_agenda import (
+        get_events_scale_summaries,
+        get_events_where_user_assigned,
+        get_upcoming_events_for_user,
+    )
+
+    def _enrich_upcoming(events):
+        ids = [e['id'] for e in events]
+        scaled = get_events_where_user_assigned(user_id, ids)
+        summaries = get_events_scale_summaries(ids)
+        for e in events:
+            e['user_scaled'] = e['id'] in scaled
+            s = summaries.get(e['id'], {})
+            e['scale_preview'] = s.get('preview', '')
+        return events
+
     if sa:
         all_bands = enrich_bands_plano(enrich_bands_for_display(get_all_bands()))
         owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
+        upcoming_events = _enrich_upcoming(
+            get_upcoming_events_for_user(user_id, all_bands=True, limit=8),
+        )
         return render_template(
             'dashboard.html',
             bands=all_bands,
             owned_bands=owned_bands,
+            upcoming_events=upcoming_events,
             is_superadmin=True,
             planos_resumo=resumo_planos_usuario(owned_bands),
             trial_ui=_trial_ctx(owned_bands),
@@ -294,10 +319,12 @@ def dashboard():
 
     bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
     owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
+    upcoming_events = _enrich_upcoming(get_upcoming_events_for_user(user_id, limit=8))
     return render_template(
         'dashboard.html',
         bands=bands,
         owned_bands=owned_bands,
+        upcoming_events=upcoming_events,
         is_superadmin=False,
         planos_resumo=resumo_planos_usuario(owned_bands),
         trial_ui=_trial_ctx(owned_bands),

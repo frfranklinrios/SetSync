@@ -1,0 +1,138 @@
+{% extends "index.html" %}
+{% block title %}{{ event.title }} — {{ band.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}#tab-agenda">Agenda</a></li>
+        <li class="breadcrumb-item active">{{ event.title }}</li>
+    </ol>
+</nav>
+
+<div class="page-head">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+            {% if event.event_type == 'show' %}
+            <span class="badge text-bg-warning"><i class="fas fa-star me-1"></i> Show</span>
+            {% else %}
+            <span class="badge text-bg-secondary"><i class="fas fa-drum me-1"></i> Ensaio</span>
+            {% endif %}
+        </div>
+        <h2 class="mb-1" style="font-size:1.6rem;">{{ event.title }}</h2>
+        <p class="text-muted mb-0" style="font-size:0.9rem;">
+            <i class="far fa-calendar me-1"></i> {{ format_event_datetime(event.starts_at) }}
+            {% if event.ends_at %}
+            <span class="text-muted"> — {{ format_event_datetime(event.ends_at) }}</span>
+            {% endif %}
+        </p>
+        {% if event.location %}
+        <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">
+            <i class="fas fa-map-marker-alt me-1"></i> {{ event.location }}
+        </p>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        {% if event.setlist_id %}
+        <a href="{{ url_for('setlists.tocar', setlist_id=event.setlist_id) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-play me-1"></i> Tocar setlist
+        </a>
+        <a href="{{ url_for('setlists.view', setlist_id=event.setlist_id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-list me-1"></i> Ver setlist
+        </a>
+        {% endif %}
+        {% if is_admin %}
+        <a href="{{ url_for('agenda.escala', event_id=event.id) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-user-check me-1"></i> Escalação
+        </a>
+        <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-pen me-1"></i> Editar
+        </a>
+        <form action="{{ url_for('agenda.delete', event_id=event.id) }}" method="POST" class="d-inline"
+              onsubmit="return confirm('Remover este evento da agenda?')">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="fas fa-trash me-1"></i> Excluir
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+            <h3 class="h6 mb-0">
+                <i class="fas fa-user-check me-1"></i> Escalação
+                {% if user_is_scaled and assignments %}
+                <span class="badge text-bg-success ms-1" style="font-size:0.7rem;">Você</span>
+                {% endif %}
+            </h3>
+        </div>
+        {% if assignments %}
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            {% for a in assignments %}
+            <span class="badge rounded-pill text-bg-light border" style="font-size:0.8rem; font-weight:500; color:var(--text);">
+                {{ user_display_name(a) }}{% if a.role_label %} · {{ a.role_label }}{% endif %}
+            </span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-3" style="font-size:0.88rem;">
+            Nenhuma escala definida — todos os integrantes da banda são considerados para este evento.
+        </p>
+        {% endif %}
+        {% if is_admin %}
+        <a href="{{ url_for('agenda.escala', event_id=event.id) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-user-check me-1"></i>
+            {% if assignments %}Editar escalação{% else %}Definir escalação{% endif %}
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if event.notes %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h3 class="h6 text-muted mb-2">Observações</h3>
+        <p class="mb-0" style="white-space:pre-wrap; font-size:0.9rem;">{{ event.notes }}</p>
+    </div>
+</div>
+{% endif %}
+
+{% if event.setlist_id %}
+<div class="card">
+    <div class="card-body">
+        <h3 class="h6 mb-3">
+            <i class="fas fa-list me-1"></i> Setlist: {{ event.setlist_name or 'Sem nome' }}
+        </h3>
+        {% if setlist_cifras %}
+        <ol class="mb-0 ps-3" style="font-size:0.9rem;">
+            {% for item in setlist_cifras %}
+            <li class="mb-1">{{ item.titulo }}{% if item.artista %} — {{ item.artista }}{% endif %}</li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="text-muted mb-0" style="font-size:0.88rem;">Setlist vinculada, mas sem músicas cadastradas.</p>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="empty" style="margin-top:1rem;">
+    <i class="fas fa-list"></i>
+    <p class="mb-0" style="font-size:0.9rem;">Nenhuma setlist vinculada a este evento.</p>
+    {% if is_admin %}
+    <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="btn btn-outline-primary btn-sm mt-3">
+        Vincular setlist
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<p class="mt-4">
+    <a href="{{ url_for('bands.view', band_id=band.id) }}#tab-agenda" class="text-muted" style="font-size:0.85rem;">
+        <i class="fas fa-arrow-left me-1"></i> Voltar à agenda
+    </a>
+</p>
+{% endblock %}

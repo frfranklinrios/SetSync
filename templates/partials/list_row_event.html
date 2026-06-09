@@ -1,0 +1,40 @@
+{# Linha de evento na agenda da banda #}
+{% macro event_row(event, band, is_admin=false) %}
+<div class="row-item">
+    <div class="row-info">
+        <a href="{{ url_for('agenda.view', event_id=event.id) }}">
+            <div class="row-title">
+                {% if event.event_type == 'show' %}
+                <i class="fas fa-star text-warning me-1" title="Show"></i>
+                {% else %}
+                <i class="fas fa-drum text-muted me-1" title="Ensaio"></i>
+                {% endif %}
+                {{ event.title }}
+            </div>
+            <div class="row-sub">
+                {{ event.starts_at | format_event_datetime }}
+                {% if event.location %} · {{ event.location }}{% endif %}
+                {% if event.setlist_name %} · Setlist: {{ event.setlist_name }}{% endif %}
+                {% if event.scale_count %} · <i class="fas fa-user-check" style="font-size:0.72rem;"></i> {{ event.scale_preview or (event.scale_count ~ ' na escala') }}{% endif %}
+            </div>
+        </a>
+    </div>
+    <div class="row-actions">
+        {% if is_admin %}
+        <a href="{{ url_for('agenda.escala', event_id=event.id) }}" class="btn btn-primary btn-sm event-escala-btn" title="Definir quem participa">
+            <i class="fas fa-user-check me-1"></i><span class="event-escala-label">Escalação</span>
+        </a>
+        {% endif %}
+        {% if event.setlist_id %}
+        <a href="{{ url_for('setlists.tocar', setlist_id=event.setlist_id) }}" class="icon-btn" title="Tocar setlist">
+            <i class="fas fa-play"></i>
+        </a>
+        {% endif %}
+        {% if is_admin %}
+        <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="icon-btn" title="Editar">
+            <i class="fas fa-pen"></i>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}

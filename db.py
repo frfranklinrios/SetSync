@@ -106,6 +106,22 @@ def _init_postgres_schema(c) -> None:
             FOREIGN KEY (setlist_id) REFERENCES setlists(id) ON DELETE CASCADE,
             FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE
         )''',
+        '''CREATE TABLE IF NOT EXISTS band_events (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            setlist_id INTEGER,
+            event_type TEXT NOT NULL DEFAULT 'ensaio',
+            title TEXT NOT NULL,
+            starts_at TIMESTAMP NOT NULL,
+            ends_at TIMESTAMP,
+            location TEXT,
+            notes TEXT,
+            created_by TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (setlist_id) REFERENCES setlists(id) ON DELETE SET NULL,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )''',
         '''CREATE TABLE IF NOT EXISTS band_vocalists (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
@@ -251,6 +267,7 @@ def init_db():
         _migrate_assinaturas_schema(c)
         _migrate_notifications_schema(c)
         _migrate_content_schema(c)
+        _migrate_agenda_schema(c)
         _ensure_perf_indexes(c)
         db.commit()
         db.close()
@@ -376,10 +393,55 @@ def init_db():
     add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
     _migrate_content_schema(c)
+    _migrate_agenda_schema(c)
     _ensure_perf_indexes(c)
     db.commit()
 
     db.close()
+
+
+def _migrate_agenda_schema(c) -> None:
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_events (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            setlist_id INTEGER,
+            event_type TEXT NOT NULL DEFAULT 'ensaio',
+            title TEXT NOT NULL,
+            starts_at TIMESTAMP NOT NULL,
+            ends_at TIMESTAMP,
+            location TEXT,
+            notes TEXT,
+            created_by TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (setlist_id) REFERENCES setlists(id) ON DELETE SET NULL,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS event_reminders (
+            event_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (event_id, user_id),
+            FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_event_assignments (
+            event_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            role_label TEXT,
+            assigned_by TEXT,
+            assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (event_id, user_id),
+            FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (assigned_by) REFERENCES users(id)
+        )
+    ''')
 
 
 def _migrate_content_schema(c) -> None:
@@ -1466,6 +1528,8 @@ def _ensure_perf_indexes(c) -> None:
         'CREATE INDEX IF NOT EXISTS idx_band_members_user ON band_members(user_id)',
         'CREATE INDEX IF NOT EXISTS idx_cifras_band ON cifras(band_id)',
         'CREATE INDEX IF NOT EXISTS idx_setlists_band ON setlists(band_id)',
+        'CREATE INDEX IF NOT EXISTS idx_band_events_band_starts ON band_events(band_id, starts_at)',
+        'CREATE INDEX IF NOT EXISTS idx_band_event_assignments_event ON band_event_assignments(event_id)',
         'CREATE INDEX IF NOT EXISTS idx_setlist_cifras_setlist ON setlist_cifras(setlist_id)',
         'CREATE INDEX IF NOT EXISTS idx_assinaturas_banda ON assinaturas(banda_id)',
     ):

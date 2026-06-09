@@ -98,12 +98,43 @@ def view(band_id):
     vocalist_name = vocalist_label_for_band(band_id)
 
     from band_logos import band_has_logo
+    from datetime import datetime
+    from models_agenda import get_band_events, get_events_scale_summaries
+
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    all_events = get_band_events(band_id)
+    scale_summaries = get_events_scale_summaries([e['id'] for e in all_events])
+    for e in all_events:
+        summary = scale_summaries.get(e['id'], {})
+        e['scale_count'] = summary.get('count', 0)
+        e['scale_preview'] = summary.get('preview', '')
+
+    events_upcoming = [e for e in all_events if str(e.get('starts_at') or '') >= now]
+    events_past = [e for e in all_events if str(e.get('starts_at') or '') < now]
+    events_past.reverse()
+
+    events_calendar = [
+        {
+            'id': e['id'],
+            'title': e.get('title') or '',
+            'event_type': e.get('event_type') or 'ensaio',
+            'starts_at': str(e.get('starts_at') or '')[:19],
+            'location': e.get('location') or '',
+            'scale_preview': e.get('scale_preview') or '',
+            'url': url_for('agenda.view', event_id=e['id']),
+        }
+        for e in all_events
+    ]
+
     return render_template(
         'bands/view.html',
         band=band,
         members=members,
         cifras=cifras,
         setlists=setlists,
+        events_upcoming=events_upcoming,
+        events_past=events_past,
+        events_calendar=events_calendar,
         owner=owner,
         vocalist_name=vocalist_name,
         is_admin=admin,

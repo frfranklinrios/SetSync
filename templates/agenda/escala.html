@@ -1,0 +1,167 @@
+{% extends "index.html" %}
+{% block title %}Escalação — {{ event.title }}{% endblock %}
+
+{% block content %}
+<style>
+.escala-head { margin-bottom: 1.25rem; }
+.escala-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.escala-search {
+    max-width: 280px;
+    flex: 1;
+    min-width: 160px;
+}
+.escala-member {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background: var(--card-bg, #fff);
+}
+[data-theme="dark"] .escala-member { background: #0b1422; }
+.escala-member.is-selected {
+    border-color: rgba(42, 181, 160, 0.5);
+    background: rgba(42, 181, 160, 0.06);
+}
+.escala-member-check { flex-shrink: 0; }
+.escala-member-info { flex: 1; min-width: 0; }
+.escala-member-name { font-weight: 600; font-size: 0.9rem; }
+.escala-member-email { font-size: 0.78rem; color: var(--muted); }
+.escala-member-role { width: 140px; flex-shrink: 0; }
+.escala-member-role input { font-size: 0.82rem; }
+.escala-count {
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+</style>
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('agenda.view', event_id=event.id) }}">{{ event.title }}</a></li>
+        <li class="breadcrumb-item active">Escalação</li>
+    </ol>
+</nav>
+
+<div class="escala-head">
+    <h2 class="mb-1" style="font-size:1.35rem;">Escalação do evento</h2>
+    <p class="text-muted mb-0" style="font-size:0.9rem;">
+        <strong>{{ event.title }}</strong> · {{ format_event_datetime(event.starts_at) }}
+    </p>
+    <p class="text-muted mb-0 mt-2" style="font-size:0.85rem;">
+        Selecione quem participa deste ensaio ou culto. Integrantes escalados recebem lembrete e notificação.
+        Se ninguém for selecionado, todos os membros são considerados.
+    </p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" id="escala-form">
+            {% include 'partials/csrf_input.html' %}
+
+            <div class="escala-toolbar">
+                <input type="search" class="form-control form-control-sm escala-search" id="escala-search"
+                       placeholder="Buscar integrante…" autocomplete="off">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="escala-select-all">Marcar todos</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="escala-clear-all">Limpar</button>
+                <span class="escala-count ms-auto" id="escala-count">0 selecionado(s)</span>
+            </div>
+
+            <div id="escala-members">
+                {% for m in members %}
+                {% set mid = m.id %}
+                {% set sel = current.get(mid) %}
+                <div class="escala-member{% if sel %} is-selected{% endif %}" data-name="{{ (user_display_name(m) ~ ' ' ~ (m.email or ''))|lower }}">
+                    <div class="escala-member-check">
+                        <input type="checkbox" class="form-check-input escala-cb" name="member_ids" value="{{ mid }}"
+                               id="member-{{ mid }}"{% if sel %} checked{% endif %}>
+                    </div>
+                    <label class="escala-member-info mb-0" for="member-{{ mid }}" style="cursor:pointer;">
+                        <div class="escala-member-name">{{ user_display_name(m) }}</div>
+                        {% if m.email %}
+                        <div class="escala-member-email">{{ m.email }}</div>
+                        {% endif %}
+                    </label>
+                    <div class="escala-member-role">
+                        <input type="text" class="form-control form-control-sm" name="role_{{ mid }}"
+                               value="{{ sel.role_label if sel and sel.role_label else '' }}"
+                               placeholder="Função" maxlength="40"
+                               title="Ex.: Vocal, Bateria, Teclado">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if not members %}
+            <p class="text-muted mb-0">Nenhum integrante na banda. Convide membros em Configurações.</p>
+            {% endif %}
+
+            <div class="d-flex gap-2 flex-wrap mt-4">
+                <button type="submit" class="btn btn-primary">Salvar escalação</button>
+                <a href="{{ url_for('agenda.view', event_id=event.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    var search = document.getElementById('escala-search');
+    var members = document.querySelectorAll('.escala-member');
+    var countEl = document.getElementById('escala-count');
+    var form = document.getElementById('escala-form');
+
+    function updateCount() {
+        var n = form.querySelectorAll('.escala-cb:checked').length;
+        countEl.textContent = n + ' selecionado' + (n === 1 ? '' : 's');
+        members.forEach(function (row) {
+            var cb = row.querySelector('.escala-cb');
+            row.classList.toggle('is-selected', cb && cb.checked);
+        });
+    }
+
+    function filterRows(q) {
+        q = (q || '').toLowerCase().trim();
+        members.forEach(function (row) {
+            var name = row.getAttribute('data-name') || '';
+            row.style.display = !q || name.indexOf(q) !== -1 ? '' : 'none';
+        });
+    }
+
+    if (search) {
+        search.addEventListener('input', function () { filterRows(search.value); });
+    }
+    form.addEventListener('change', function (e) {
+        if (e.target.classList.contains('escala-cb')) updateCount();
+    });
+    var btnAll = document.getElementById('escala-select-all');
+    var btnClear = document.getElementById('escala-clear-all');
+    if (btnAll) {
+        btnAll.addEventListener('click', function () {
+            members.forEach(function (row) {
+                if (row.style.display === 'none') return;
+                var cb = row.querySelector('.escala-cb');
+                if (cb) cb.checked = true;
+            });
+            updateCount();
+        });
+    }
+    if (btnClear) {
+        btnClear.addEventListener('click', function () {
+            form.querySelectorAll('.escala-cb').forEach(function (cb) { cb.checked = false; });
+            updateCount();
+        });
+    }
+    updateCount();
+})();
+</script>
+{% endblock %}

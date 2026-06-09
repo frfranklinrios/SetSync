@@ -1,6 +1,7 @@
 {% extends "index.html" %}
 {% from 'partials/list_row_cifra.html' import cifra_row with context %}
 {% from 'partials/list_row_setlist.html' import setlist_row with context %}
+{% from 'partials/list_row_event.html' import event_row with context %}
 
 {% block title %}{{ band.name }} - SetSync{% endblock %}
 
@@ -37,7 +38,25 @@
     color: var(--muted);
     margin: 0;
 }
+.agenda-list-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: var(--muted);
+    margin: 0 0 0.6rem;
+}
+.event-escala-btn {
+    font-size: 0.72rem;
+    padding: 0.28rem 0.55rem;
+    white-space: nowrap;
+}
+@media (max-width: 480px) {
+    .event-escala-label { display: none; }
+    .event-escala-btn { padding: 0.28rem 0.45rem; }
+}
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/band-agenda-calendar.css') }}?v=1">
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb" style="font-size:0.82rem;">
@@ -82,6 +101,12 @@
         <a class="nav-link" data-bs-toggle="tab" href="#tab-setlists">
             <i class="fas fa-list me-1"></i> Setlists
             <span class="badge bg-light text-muted border ms-1" style="font-size:0.7rem;">{{ setlists|length }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-agenda">
+            <i class="fas fa-calendar-alt me-1"></i> Agenda
+            <span class="badge bg-light text-muted border ms-1" style="font-size:0.7rem;">{{ events_upcoming|length + events_past|length }}</span>
         </a>
     </li>
     <li class="nav-item">
@@ -156,6 +181,56 @@
         {% endif %}
     </div>
 
+    <!-- ───────────── AGENDA ───────────── -->
+    <div class="tab-pane fade" id="tab-agenda">
+        <div class="tab-head">
+            <p class="tab-count">
+                {% set total_events = events_upcoming|length + events_past|length %}
+                {{ total_events }} evento{{ '' if total_events == 1 else 's' }}
+                {% if events_upcoming|length %} · {{ events_upcoming|length }} próximo{{ '' if events_upcoming|length == 1 else 's' }}{% endif %}
+            </p>
+            {% if is_admin %}
+            <a href="{{ url_for('agenda.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Novo evento
+            </a>
+            {% endif %}
+        </div>
+
+        <div id="band-agenda-calendar" class="agenda-cal-wrap" aria-label="Calendário de eventos"></div>
+        <script type="application/json" id="band-agenda-events-json">{{ events_calendar | tojson }}</script>
+
+        {% if events_upcoming or events_past %}
+        <p class="agenda-list-title mt-1">Lista de eventos</p>
+        {% if events_upcoming %}
+        <h3 class="h6 text-muted mb-2">Próximos</h3>
+        <div class="row-card mb-4">
+            {% for event in events_upcoming %}
+            {{ event_row(event, band, is_admin=is_admin) }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if events_past %}
+        <h3 class="h6 text-muted mb-2">Anteriores</h3>
+        <div class="row-card">
+            {% for event in events_past %}
+            {{ event_row(event, band, is_admin=is_admin) }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="agenda-list-title">Lista de eventos</p>
+        <div class="empty">
+            <i class="fas fa-calendar-alt"></i>
+            <p class="mb-3" style="font-size:0.9rem;">Nenhum ensaio ou show na agenda.</p>
+            {% if is_admin %}
+            <a href="{{ url_for('agenda.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Registrar primeiro evento
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
     <!-- ───────────── MEMBROS ───────────── -->
     <div class="tab-pane fade" id="tab-membros">
         <div class="tab-head">
@@ -186,4 +261,16 @@
         </div>
     </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/band-agenda-calendar.js') }}?v=1"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var hash = window.location.hash;
+    if (!hash) return;
+    var tab = document.querySelector('#bandTabs a[href="' + hash + '"]');
+    if (tab && typeof bootstrap !== 'undefined') {
+        bootstrap.Tab.getOrCreateInstance(tab).show();
+    }
+});
+</script>
 {% endblock %}

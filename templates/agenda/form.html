@@ -1,0 +1,96 @@
+{% extends "index.html" %}
+{% block title %}{% if event %}Editar evento{% else %}Novo evento{% endif %} — {{ band.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item active">{% if event %}Editar{% else %}Novo evento{% endif %}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <h2 class="mb-3" style="font-size:1.35rem;">
+            {% if event %}Editar evento{% else %}Registrar ensaio ou show{% endif %}
+        </h2>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    {% include 'partials/csrf_input.html' %}
+                    <div class="mb-3">
+                        <label class="form-label" for="title">Título</label>
+                        <input type="text" class="form-control" id="title" name="title" required maxlength="120"
+                               value="{{ event.title if event else '' }}"
+                               placeholder="Ex.: Ensaio geral, Culto domingo">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="event_type">Tipo</label>
+                        <select class="form-select" id="event_type" name="event_type">
+                            <option value="ensaio" {% if not event or event.event_type == 'ensaio' %}selected{% endif %}>Ensaio</option>
+                            <option value="show" {% if event and event.event_type == 'show' %}selected{% endif %}>Show / Apresentação</option>
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="date">Data</label>
+                            {% set start_dt = split_event_datetime(event.starts_at if event else '') %}
+                            <input type="date" class="form-control" id="date" name="date" required value="{{ start_dt[0] }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="time">Horário</label>
+                            <input type="time" class="form-control" id="time" name="time" required value="{{ start_dt[1] or '19:00' }}">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="end_date">Término (opcional)</label>
+                            {% set end_dt = split_event_datetime(event.ends_at if event else '') %}
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_dt[0] }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="end_time">Hora fim</label>
+                            <input type="time" class="form-control" id="end_time" name="end_time" value="{{ end_dt[1] }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="location">Local</label>
+                        <input type="text" class="form-control" id="location" name="location" maxlength="200"
+                               value="{{ event.location if event and event.location else '' }}"
+                               placeholder="Ex.: Igreja, estúdio, endereço">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="setlist_id">Setlist</label>
+                        <select class="form-select" id="setlist_id" name="setlist_id">
+                            <option value="">— Sem setlist —</option>
+                            {% for sl in setlists %}
+                            <option value="{{ sl.id }}"
+                                {% if event and event.setlist_id == sl.id %}selected
+                                {% elif not event and prefill_setlist|string == sl.id|string %}selected{% endif %}>
+                                {{ sl.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Vincule o roteiro de músicas deste ensaio ou show.</div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="notes">Observações</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                  placeholder="Detalhes, contato, dress code…">{{ event.notes if event and event.notes else '' }}</textarea>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                        {% if event %}
+                        <a href="{{ url_for('agenda.escala', event_id=event.id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-user-check me-1"></i> Escalação
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('bands.view', band_id=band.id) }}#tab-agenda" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
