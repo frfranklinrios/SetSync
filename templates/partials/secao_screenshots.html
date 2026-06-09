@@ -1,0 +1,100 @@
+<section class="secao-screenshots" aria-labelledby="secao-screenshots-titulo">
+    <h2 id="secao-screenshots-titulo">Veja o SetSync em ação</h2>
+    <p class="section-sub mx-auto">Modo Tocar no celular e painel de setlists no desktop.</p>
+    <div class="mockup-grid">
+        <figure class="mockup-mobile">
+            <div class="mockup-mobile-frame">
+                <img src="{{ url_for('static', filename='screenshots/modo-tocar-mobile.png') }}"
+                     alt="Modo Tocar no celular — cifra em tela cheia com transposição e auto-scroll"
+                     width="540" height="1170"
+                     loading="lazy"
+                     decoding="async">
+            </div>
+            <figcaption class="mockup-caption">Modo Tocar — palco no bolso</figcaption>
+        </figure>
+        <figure class="mockup-desktop">
+            <div class="mockup-desktop-frame">
+                <img src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
+                     alt="Painel de setlists — organize o roteiro do show com tom por cantor"
+                     width="1389" height="822"
+                     loading="lazy"
+                     decoding="async">
+            </div>
+            <figcaption class="mockup-caption">Setlist — roteiro do culto ou show</figcaption>
+        </figure>
+    </div>
+</section>
+<style>
+.secao-screenshots {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+    text-align: center;
+}
+.secao-screenshots .section-sub {
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+.mockup-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.65fr);
+    gap: 2rem;
+    align-items: end;
+    margin-top: 2rem;
+    text-align: center;
+}
+.mockup-mobile,
+.mockup-desktop {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.mockup-mobile-frame {
+    width: min(100%, 272px);
+    padding: 10px;
+    border: 1px solid #334155;
+    border-radius: 28px;
+    background: linear-gradient(180deg, #1e293b 0%, #0b1422 100%);
+    box-shadow:
+        0 24px 48px rgba(15, 23, 42, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.mockup-mobile-frame img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 18px;
+    border: 1px solid #1e293b;
+}
+.mockup-desktop-frame {
+    width: 100%;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0b1422;
+    box-shadow: 0 20px 44px rgba(15, 23, 42, 0.22);
+}
+.mockup-desktop-frame img {
+    width: 100%;
+    height: auto;
+    display: block;
+    vertical-align: middle;
+}
+.mockup-caption {
+    margin-top: 0.85rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 500;
+}
+@media (max-width: 768px) {
+    .mockup-grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+        align-items: center;
+    }
+    .mockup-mobile { order: 1; }
+    .mockup-desktop { order: 2; }
+}
+</style>

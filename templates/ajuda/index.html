@@ -1,6 +1,16 @@
 {% extends "index.html" %}
 
-{% block title %}Ajuda · SetSync{% endblock %}
+{% block title %}Ajuda SetSync — Guia de cifras, setlists e transposição online{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('ajuda.index') }}">
+<meta name="description" content="Central de ajuda do SetSync: importar cifras, transpor acordes, usar o Modo Tocar, agenda da banda, planos e limites. Respostas passo a passo para sua equipe.">
+<meta property="og:title" content="Ajuda SetSync — Guia de cifras, setlists e transposição online">
+<meta property="og:description" content="Central de ajuda do SetSync: importar cifras, transpor acordes, usar o Modo Tocar, agenda da banda, planos e limites. Respostas passo a passo para sua equipe.">
+<meta property="og:url" content="{{ external_url_for('ajuda.index') }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ site_og_image }}">
+{% endblock %}
 
 {% block content %}
 <style>

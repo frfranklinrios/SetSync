@@ -1,5 +1,16 @@
 {% extends "index.html" %}
-{% block title %}SetSync para Igrejas{% endblock %}
+{% block title %}SetSync para Igrejas — Cifras, setlists e ministério de louvor{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('assinatura_bp.igrejas') }}">
+<meta name="description" content="Gerencie várias bandas de louvor em uma conta. Cifras com transposição, setlists, agenda de ensaios e cultos. Conheça o plano Worship e comece grátis.">
+<meta property="og:title" content="SetSync para Igrejas — Cifras, setlists e ministério de louvor">
+<meta property="og:description" content="Gerencie várias bandas de louvor em uma conta. Cifras com transposição, setlists, agenda de ensaios e cultos. Conheça o plano Worship e comece grátis.">
+<meta property="og:url" content="{{ external_url_for('assinatura_bp.igrejas') }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ site_og_image }}">
+{% endblock %}
+
 {% block main_class %}home-page{% endblock %}
 
 {% block extra_head %}
@@ -79,6 +90,8 @@
         <p>Tom por cantora/cantor, setlist compartilhada e Modo Tocar para a equipe inteira.</p>
     </div>
 </section>
+
+{% include 'partials/secao_screenshots.html' %}
 
 <section class="home-planos" id="planos">
     <div class="home-planos-inner">

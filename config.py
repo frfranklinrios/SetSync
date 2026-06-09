@@ -37,6 +37,14 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
     GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
+
+def google_oauth_enabled() -> bool:
+    """Login com Google só quando client_id e secret estão configurados."""
+    return bool(
+        (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
+        and (os.getenv('GOOGLE_CLIENT_SECRET') or '').strip()
+    )
+
 class DevelopmentConfig(Config):
     DEBUG = True
 

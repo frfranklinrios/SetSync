@@ -335,6 +335,8 @@ def dashboard():
 def inject_site_config():
     from config import whatsapp_number, whatsapp_message
     from db import is_superadmin as _is_superadmin
+    from config import google_oauth_enabled
+    from security import external_url_for as _external_url_for
 
     mail_inbox_url = None
     user_id = session.get('user_id')
@@ -349,6 +351,9 @@ def inject_site_config():
         whatsapp_message=whatsapp_message(),
         webmail_url=mail_inbox_url,
         mail_inbox_url=mail_inbox_url,
+        external_url_for=_external_url_for,
+        site_og_image=_external_url_for('static', filename='logoSetSync.png'),
+        google_oauth_enabled=google_oauth_enabled(),
     )
 
 

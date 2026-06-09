@@ -510,19 +510,39 @@ body { overflow-x: hidden; }
     .cifra-body { font-size: var(--play-font, 1.28rem); line-height: 2.15; padding: 2.5rem 6vw; }
 }
 
-/* ── AUTO-HIDE CHROME (mais cifra na tela) ── */
+/* ── AUTO-HIDE CHROME: só info da música no topo; cifra ocupa o resto ── */
 #play-bar, #play-foot {
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: padding 0.25s ease, border-color 0.25s ease;
+}
+body.play-mode.chrome-hidden #play-bar .pb-chrome-ctrl {
+    display: none !important;
 }
 body.play-mode.chrome-hidden #play-bar {
-    opacity: 0;
-    transform: translateY(-100%);
-    pointer-events: none;
+    padding: 0.4rem 1rem;
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+body.play-mode.chrome-hidden #play-bar .pb-song {
+    flex: 1 1 100%;
+    max-width: 100%;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+body.play-mode.chrome-hidden #play-bar .pb-title {
+    font-size: 1.02rem;
 }
 body.play-mode.chrome-hidden #play-foot {
-    opacity: 0;
-    transform: translateY(100%);
-    pointer-events: none;
+    display: none !important;
+}
+body.play-mode.chrome-hidden #cifra-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+body.play-mode.chrome-hidden #scroll-badge,
+body.play-mode.chrome-hidden #speed-pill,
+body.play-mode.chrome-hidden #kbd-hint {
+    bottom: 1rem;
 }
 
 /* ── EDGE TAP ZONES (overlay nas bordas — não reduz largura da cifra) ── */
@@ -702,21 +722,21 @@ body.play-mode.edges-hint .tap-zone {
 <div id="play-app">
     <!-- Top bar -->
     <div id="play-bar">
-        <button class="pb-btn" onclick="toggleDrawer()" title="Lista (L)" aria-label="Abrir lista">
+        <button class="pb-btn pb-chrome-ctrl" onclick="toggleDrawer()" title="Lista (L)" aria-label="Abrir lista">
             <i class="fas fa-list"></i>
         </button>
-        <button class="pb-btn" id="btn-prev" onclick="prevSong()" title="Música anterior" aria-label="Música anterior">
+        <button class="pb-btn pb-chrome-ctrl" id="btn-prev" onclick="prevSong()" title="Música anterior" aria-label="Música anterior">
             <i class="fas fa-chevron-left"></i>
         </button>
-        <div class="pb-song">
+        <div class="pb-song" id="bar-song" title="Toque para mostrar controles">
             <div class="pb-title" id="bar-title">—</div>
             <div class="pb-meta" id="bar-meta"></div>
         </div>
-        <button class="pb-btn" id="btn-next" onclick="nextSong()" title="Próxima música" aria-label="Próxima música">
+        <button class="pb-btn pb-chrome-ctrl" id="btn-next" onclick="nextSong()" title="Próxima música" aria-label="Próxima música">
             <i class="fas fa-chevron-right"></i>
         </button>
 
-        <div class="bar-group-extra">
+        <div class="bar-group-extra pb-chrome-ctrl">
             {% if vocalists|length > 0 %}
             <select id="vocalist-sel" class="transpose-mini me-1" onchange="onVocalistChange(this.value)"
                     title="Cantora/cantor desta setlist">
@@ -762,7 +782,7 @@ body.play-mode.edges-hint .tap-zone {
         </div>
 
         <a href="{{ exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id)) }}"
-           class="pb-btn pb-exit" title="Sair (Esc)" aria-label="Sair">
+           class="pb-btn pb-exit pb-chrome-ctrl" title="Sair (Esc)" aria-label="Sair">
             <i class="fas fa-times"></i>
         </a>
     </div>
@@ -1635,18 +1655,33 @@ body.play-mode.edges-hint .tap-zone {
     // ── Auto-hide chrome após inatividade ──
     var IDLE_MS = 3500;
     var idleTimer = null;
-    function showChrome() {
-        document.body.classList.remove('chrome-hidden');
+    function scheduleHideChrome() {
         clearTimeout(idleTimer);
         idleTimer = setTimeout(function () {
-            // Não esconde se drawer ou speed pill estiverem ativos
             if (document.getElementById('play-drawer').classList.contains('open')) return;
             document.body.classList.add('chrome-hidden');
         }, IDLE_MS);
     }
+    function showChrome() {
+        document.body.classList.remove('chrome-hidden');
+        scheduleHideChrome();
+    }
+    function onPlayActivity() {
+        // Com chrome oculto, toques na cifra não reabrem o painel
+        if (document.body.classList.contains('chrome-hidden')) return;
+        scheduleHideChrome();
+    }
     ['touchstart', 'mousemove', 'keydown', 'click'].forEach(function (ev) {
-        document.addEventListener(ev, showChrome, { passive: true });
+        document.addEventListener(ev, onPlayActivity, { passive: true });
     });
+    var barSong = document.getElementById('bar-song');
+    if (barSong) {
+        barSong.addEventListener('click', function (e) {
+            if (!document.body.classList.contains('chrome-hidden')) return;
+            e.stopPropagation();
+            showChrome();
+        });
+    }
 
     // ── Drawer ──────────────────────────────
     function toggleDrawer() {

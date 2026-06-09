@@ -57,6 +57,20 @@ class MonetizacaoNegocioTest(unittest.TestCase):
         rows = [r for r in list_onboarding_pending() if r['usuario_id'] == uid]
         self.assertEqual(len(rows), 5)
 
+    def test_planos_site_desconto_anual(self):
+        from monetizacao import PLANO_PRO, PLANO_WORSHIP, planos_para_site
+
+        planos = {p.id: p for p in planos_para_site()}
+        pro = planos[PLANO_PRO]
+        worship = planos[PLANO_WORSHIP]
+
+        self.assertEqual(pro.desconto_anual_pct, 28)
+        self.assertEqual(worship.desconto_anual_pct, 28)
+        self.assertEqual(pro.preco_mensal_equivalente_label, 'R$ 20,75/mês')
+        self.assertEqual(worship.preco_mensal_equivalente_label, 'R$ 49,92/mês')
+        self.assertEqual(pro.cobrado_anual_label, 'cobrado anualmente — R$ 249/ano')
+        self.assertEqual(worship.cobrado_anual_label, 'cobrado anualmente — R$ 599/ano')
+
 
 if __name__ == '__main__':
     unittest.main()

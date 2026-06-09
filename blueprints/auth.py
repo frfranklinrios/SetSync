@@ -318,6 +318,14 @@ def logout():
 
 @auth_bp.route('/google')
 def google():
+    from config import google_oauth_enabled
+
+    if not google_oauth_enabled():
+        flash(
+            'Login com Google não está configurado no servidor. Use e-mail e senha ou contate o suporte.',
+            'warning',
+        )
+        return redirect(url_for('auth.login'))
     token = request.args.get('convite', '').strip()
     if token and parse_band_invite_token(token):
         session['pending_band_invite'] = token

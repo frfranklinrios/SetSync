@@ -1,5 +1,16 @@
 {% extends "index.html" %}
-{% block title %}Blog — SetSync{% endblock %}
+{% block title %}Blog SetSync — Cifras para banda gospel e organização de louvor{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('blog.blog_index') }}">
+<meta name="description" content="Artigos sobre transposição de acordes online, montagem de setlists gospel, apps de cifras e organização do ministério de louvor. Dicas práticas do SetSync.">
+<meta property="og:title" content="Blog SetSync — Cifras para banda gospel e organização de louvor">
+<meta property="og:description" content="Artigos sobre transposição de acordes online, montagem de setlists gospel, apps de cifras e organização do ministério de louvor. Dicas práticas do SetSync.">
+<meta property="og:url" content="{{ external_url_for('blog.blog_index') }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ site_og_image }}">
+{% endblock %}
+
 {% block main_class %}home-page{% endblock %}
 
 {% block content %}

@@ -20,6 +20,8 @@ PLANO_PRO = 'pro'
 PLANO_WORSHIP = 'worship'
 
 PLANOS_PAGOS = (PLANO_PRO, PLANO_WORSHIP)
+PRECO_PRO_ANUAL = 249.0
+PRECO_WORSHIP_ANUAL = 599.0
 STATUS_ATIVA = 'ativa'
 STATUS_CANCELADA = 'cancelada'
 STATUS_INADIMPLENTE = 'inadimplente'
@@ -83,6 +85,9 @@ class PlanoSite:
     preco_anual_label: str = ''
     sufixo_anual: str = '/ano'
     economia_anual: str = ''
+    preco_mensal_equivalente_label: str = ''
+    cobrado_anual_label: str = ''
+    desconto_anual_pct: int = 0
 
 
 def _preco_label(valor: float | None) -> str:
@@ -91,6 +96,31 @@ def _preco_label(valor: float | None) -> str:
     if valor == int(valor):
         return f'R$ {int(valor)}'
     return f'R$ {valor:.2f}'.replace('.', ',')
+
+
+def _desconto_anual_pct(preco_mensal: float, preco_anual: float) -> int:
+    total_mensal = preco_mensal * 12
+    if total_mensal <= 0:
+        return 0
+    return round((1 - preco_anual / total_mensal) * 100)
+
+
+def _preco_mensal_equivalente_label(preco_anual: float) -> str:
+    equiv = preco_anual / 12
+    if equiv == int(equiv):
+        return f'R$ {int(equiv)}/mês'
+    return f'R$ {equiv:.2f}'.replace('.', ',') + '/mês'
+
+
+def _cobrado_anual_label(preco_anual: float) -> str:
+    return f'cobrado anualmente — {_preco_label(preco_anual)}/ano'
+
+
+def _economia_anual_label(preco_mensal: float, preco_anual: float) -> str:
+    economia = preco_mensal * 12 - preco_anual
+    if economia <= 0:
+        return ''
+    return f'Economize {_preco_label(economia)}/ano'
 
 
 def planos_para_site() -> list[PlanoSite]:
@@ -127,8 +157,11 @@ def planos_para_site() -> list[PlanoSite]:
             ),
             cta='Criar conta',
             cta_outline=False,
-            preco_anual_label='R$ 249',
-            economia_anual='Economize R$ 99/ano',
+            preco_anual_label=_preco_label(PRECO_PRO_ANUAL),
+            economia_anual=_economia_anual_label(pro.preco_mensal, PRECO_PRO_ANUAL),
+            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(PRECO_PRO_ANUAL),
+            cobrado_anual_label=_cobrado_anual_label(PRECO_PRO_ANUAL),
+            desconto_anual_pct=_desconto_anual_pct(pro.preco_mensal, PRECO_PRO_ANUAL),
         ),
         PlanoSite(
             id=PLANO_WORSHIP,
@@ -143,8 +176,11 @@ def planos_para_site() -> list[PlanoSite]:
             ),
             cta='Criar conta',
             cta_outline=True,
-            preco_anual_label='R$ 599',
-            economia_anual='Economize R$ 229/ano',
+            preco_anual_label=_preco_label(PRECO_WORSHIP_ANUAL),
+            economia_anual=_economia_anual_label(worship.preco_mensal, PRECO_WORSHIP_ANUAL),
+            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(PRECO_WORSHIP_ANUAL),
+            cobrado_anual_label=_cobrado_anual_label(PRECO_WORSHIP_ANUAL),
+            desconto_anual_pct=_desconto_anual_pct(worship.preco_mensal, PRECO_WORSHIP_ANUAL),
         ),
     ]
 

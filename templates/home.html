@@ -1,6 +1,16 @@
 {% extends "index.html" %}
 
-{% block title %}SetSync — Cifras e setlists para sua banda{% endblock %}
+{% block title %}SetSync — Cifras para banda gospel, setlists e transposição online{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('index') }}">
+<meta name="description" content="Organize cifras, monte setlists e toque no Modo Tocar com transposição de acordes. Plano grátis para começar — feito para bandas e ministérios de louvor.">
+<meta property="og:title" content="SetSync — Cifras para banda gospel, setlists e transposição online">
+<meta property="og:description" content="Organize cifras, monte setlists e toque no Modo Tocar com transposição de acordes. Plano grátis para começar — feito para bandas e ministérios de louvor.">
+<meta property="og:url" content="{{ external_url_for('index') }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ site_og_image }}">
+{% endblock %}
 
 {% block main_class %}home-page{% endblock %}
 
@@ -332,37 +342,6 @@
 .testimonial-desc { font-size: 0.82rem; color: var(--muted); }
 .testimonial-text { font-style: italic; font-size: 0.9rem; margin-top: 0.75rem; line-height: 1.55; }
 
-.secao-screenshots {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 3rem 1.5rem;
-    text-align: center;
-}
-.mockup-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.6fr;
-    gap: 1.5rem;
-    align-items: end;
-    margin-top: 1.5rem;
-}
-@media (max-width: 768px) { .mockup-grid { grid-template-columns: 1fr; } }
-.mockup-mobile, .mockup-desktop {
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    background: #0f172a;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
-}
-.mockup-mobile img, .mockup-desktop img {
-    width: 100%; height: auto; display: block;
-}
-.mockup-placeholder {
-    padding: 2rem 1rem;
-    color: #94a3b8;
-    font-size: 0.85rem;
-    min-height: 200px;
-    display: flex; align-items: center; justify-content: center;
-}
 </style>
 {% endblock %}
 
@@ -502,24 +481,7 @@
 </section>
 {% endif %}
 
-<section class="secao-screenshots">
-    <h2>Veja o SetSync em ação</h2>
-    <p class="section-sub mx-auto" style="max-width:36rem;">Modo Tocar no celular e painel de setlists no desktop.</p>
-    <div class="mockup-grid">
-        <div class="mockup-mobile">
-            <img src="{{ url_for('static', filename='screenshots/modo-tocar-mobile.png') }}"
-                 alt="Modo Tocar no celular — tela cheia com cifra e auto-scroll"
-                 loading="lazy"
-                 onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'mockup-placeholder',textContent:'Screenshot mobile (390×844) — veja static/screenshots/README.md'}))">
-        </div>
-        <div class="mockup-desktop">
-            <img src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
-                 alt="Painel de setlists — organize o roteiro do show"
-                 loading="lazy"
-                 onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'mockup-placeholder',textContent:'Screenshot desktop (1280×800) — veja static/screenshots/README.md'}))">
-        </div>
-    </div>
-</section>
+{% include 'partials/secao_screenshots.html' %}
 
 <section class="home-section pt-0">
     <h2>Como começar</h2>

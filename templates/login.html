@@ -39,11 +39,13 @@
             <button type="submit" class="btn btn-primary w-100">Entrar</button>
         </form>
 
+        {% if google_oauth_enabled %}
         <div class="d-flex align-items-center my-4">
             <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size:0.75rem;">OU</span><hr class="flex-grow-1">
         </div>
 
         <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Entrar com Google</a>
+        {% endif %}
 
         <p class="text-center text-muted mt-4" style="font-size:0.875rem;">
             Novo por aqui?
