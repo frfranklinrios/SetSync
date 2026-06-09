@@ -43,6 +43,7 @@ services:
     networks:
       - default
       - nginx_proxy_net
+      - mail_net
 
 volumes:
   setsync_pg_prod:
@@ -51,3 +52,6 @@ networks:
   nginx_proxy_net:
     external: true
     name: root_backend
+  mail_net:
+    external: true
+    name: servidor_email_default

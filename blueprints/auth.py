@@ -384,6 +384,9 @@ def perfil():
         flash('Usuário não encontrado.', 'danger')
         return redirect(url_for('dashboard'))
 
+    webmail_url = (os.getenv('SETSYNC_WEBMAIL_URL') or '').strip() or None
+    perfil_ctx = dict(user=user, webmail_url=webmail_url)
+
     if request.method == 'POST':
         nome = (request.form.get('display_name') or '').strip()
         phone_raw = (request.form.get('phone') or '').strip()
@@ -391,14 +394,14 @@ def perfil():
 
         if len(nome) < 2:
             flash('Digite um nome com pelo menos 2 caracteres.', 'warning')
-            return render_template('perfil.html', user=user)
+            return render_template('perfil.html', **perfil_ctx)
         if len(nome) > 60:
             flash('Digite um nome com no máximo 60 caracteres.', 'warning')
-            return render_template('perfil.html', user=user)
+            return render_template('perfil.html', **perfil_ctx)
 
         if phone_raw and not normalize_whatsapp_phone(phone_raw):
             flash('WhatsApp inválido. Use DDD + número (ex.: 11 99999-9999).', 'warning')
-            return render_template('perfil.html', user=user)
+            return render_template('perfil.html', **perfil_ctx)
 
         update_user_profile(
             session['user_id'],
@@ -410,5 +413,5 @@ def perfil():
         flash('Perfil atualizado.', 'success')
         return redirect(url_for('auth.perfil'))
 
-    return render_template('perfil.html', user=user)
+    return render_template('perfil.html', **perfil_ctx)
 
