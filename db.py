@@ -115,6 +115,9 @@ def _init_postgres_schema(c) -> None:
             starts_at TIMESTAMP NOT NULL,
             ends_at TIMESTAMP,
             location TEXT,
+            location_lat REAL,
+            location_lng REAL,
+            location_place_id TEXT,
             notes TEXT,
             created_by TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -442,6 +445,9 @@ def _migrate_agenda_schema(c) -> None:
             FOREIGN KEY (assigned_by) REFERENCES users(id)
         )
     ''')
+    add_column_if_missing(c, 'band_events', 'location_lat', 'REAL')
+    add_column_if_missing(c, 'band_events', 'location_lng', 'REAL')
+    add_column_if_missing(c, 'band_events', 'location_place_id', 'TEXT')
 
 
 def _migrate_content_schema(c) -> None:

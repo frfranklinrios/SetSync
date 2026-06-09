@@ -21,6 +21,9 @@ def create_band_event(
     starts_at: str,
     ends_at: str | None = None,
     location: str | None = None,
+    location_lat: float | None = None,
+    location_lng: float | None = None,
+    location_place_id: str | None = None,
     notes: str | None = None,
     setlist_id: int | None = None,
     created_by: str | None = None,
@@ -32,8 +35,9 @@ def create_band_event(
     c.execute(
         '''INSERT INTO band_events
            (id, band_id, setlist_id, event_type, title, starts_at, ends_at,
-            location, notes, created_by, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            location, location_lat, location_lng, location_place_id,
+            notes, created_by, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (
             event_id,
             band_id,
@@ -43,6 +47,9 @@ def create_band_event(
             starts_at,
             ends_at,
             location,
+            location_lat,
+            location_lng,
+            location_place_id,
             notes,
             created_by,
             now,
@@ -105,6 +112,9 @@ def update_band_event(
     starts_at: str,
     ends_at: str | None,
     location: str | None,
+    location_lat: float | None,
+    location_lng: float | None,
+    location_place_id: str | None,
     notes: str | None,
     setlist_id: int | None,
 ) -> None:
@@ -113,9 +123,14 @@ def update_band_event(
     c.execute(
         '''UPDATE band_events
            SET title = ?, event_type = ?, starts_at = ?, ends_at = ?,
-               location = ?, notes = ?, setlist_id = ?
+               location = ?, location_lat = ?, location_lng = ?, location_place_id = ?,
+               notes = ?, setlist_id = ?
            WHERE id = ?''',
-        (title, event_type, starts_at, ends_at, location, notes, setlist_id, event_id),
+        (
+            title, event_type, starts_at, ends_at,
+            location, location_lat, location_lng, location_place_id,
+            notes, setlist_id, event_id,
+        ),
     )
     db.commit()
     db.close()

@@ -8,6 +8,7 @@ from db import create_notification, get_all_users, mark_retention_sent, retentio
 CAMPAIGN_NOTIFICACOES_2026_06 = 'product_notificacoes_2026_06'
 CAMPAIGN_NOTIFICACOES_2026_06_RETRY = 'product_notificacoes_2026_06_retry'
 CAMPAIGN_AGENDA_2026_06 = 'product_agenda_2026_06'
+CAMPAIGN_MAPS_AGENDA_2026_06 = 'product_maps_agenda_2026_06'
 
 _ANNOUNCEMENTS = {
     CAMPAIGN_NOTIFICACOES_2026_06: {
@@ -43,6 +44,17 @@ _ANNOUNCEMENTS = {
             '• Próximos eventos no painel inicial\n'
             '• Lembrete automático 24h antes (e-mail, WhatsApp e notificação)\n\n'
             'Abra sua banda → aba Agenda para começar.'
+        ),
+        'url_path': '/dashboard',
+    },
+    CAMPAIGN_MAPS_AGENDA_2026_06: {
+        'type': 'product_update',
+        'title': 'Agenda: local com Google Maps',
+        'body': (
+            'Ao criar ou editar um evento na Agenda, o campo Local agora tem '
+            'sugestões do Google Maps — igreja, estúdio ou endereço.\n\n'
+            'No detalhe do evento você abre o mapa e vê a localização embutida. '
+            'Ideal para o time chegar certo no ensaio ou culto.'
         ),
         'url_path': '/dashboard',
     },

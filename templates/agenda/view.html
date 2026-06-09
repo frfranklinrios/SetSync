@@ -29,7 +29,14 @@
         </p>
         {% if event.location %}
         <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">
-            <i class="fas fa-map-marker-alt me-1"></i> {{ event.location }}
+            <i class="fas fa-map-marker-alt me-1"></i>
+            {% if maps_open_url %}
+            <a href="{{ maps_open_url }}" target="_blank" rel="noopener noreferrer" class="text-muted">
+                {{ event.location }}
+            </a>
+            {% else %}
+            {{ event.location }}
+            {% endif %}
         </p>
         {% endif %}
     </div>
@@ -91,6 +98,18 @@
         {% endif %}
     </div>
 </div>
+
+{% if event.location and maps_embed_url %}
+<div class="agenda-map-embed mb-4">
+    <iframe
+        title="Mapa — {{ event.location }}"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        allowfullscreen
+        src="{{ maps_embed_url }}"></iframe>
+</div>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/agenda-location.css') }}?v=1">
+{% endif %}
 
 {% if event.notes %}
 <div class="card mb-4">

@@ -1,6 +1,10 @@
 {% extends "index.html" %}
 {% block title %}{% if event %}Editar evento{% else %}Novo evento{% endif %} — {{ band.name }}{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/agenda-location.css') }}?v=1">
+{% endblock %}
+
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb" style="font-size:0.82rem;">
@@ -54,11 +58,25 @@
                             <input type="time" class="form-control" id="end_time" name="end_time" value="{{ end_dt[1] }}">
                         </div>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3 agenda-location-wrap">
                         <label class="form-label" for="location">Local</label>
-                        <input type="text" class="form-control" id="location" name="location" maxlength="200"
+                        <input type="text" class="form-control" id="location" name="location" maxlength="300"
                                value="{{ event.location if event and event.location else '' }}"
-                               placeholder="Ex.: Igreja, estúdio, endereço">
+                               placeholder="{% if google_maps_api_key %}Busque igreja, estúdio ou endereço…{% else %}Ex.: Igreja, estúdio, endereço{% endif %}"
+                               autocomplete="off">
+                        <input type="hidden" name="location_lat" id="location_lat"
+                               value="{{ event.location_lat if event and event.location_lat is not none else '' }}">
+                        <input type="hidden" name="location_lng" id="location_lng"
+                               value="{{ event.location_lng if event and event.location_lng is not none else '' }}">
+                        <input type="hidden" name="location_place_id" id="location_place_id"
+                               value="{{ event.location_place_id if event and event.location_place_id else '' }}">
+                        <div class="form-text">
+                            {% if google_maps_api_key %}
+                            Sugestões do Google Maps ao digitar. Selecione um resultado para salvar o ponto no mapa.
+                            {% else %}
+                            Digite o nome ou endereço do local.
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="setlist_id">Setlist</label>
@@ -93,4 +111,12 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if google_maps_api_key %}
+<script src="{{ url_for('static', filename='js/agenda-location-autocomplete.js') }}?v=1"></script>
+<script async defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&language=pt-BR&region=BR&callback=SetSyncInitAgendaLocation"></script>
+{% endif %}
 {% endblock %}

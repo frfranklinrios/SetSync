@@ -10,6 +10,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
 import band_notifications as bn
+from agenda_maps import (
+    event_maps_context,
+    google_maps_api_key,
+    parse_location_coords,
+)
 from agenda_util import (
     event_type_label,
     format_event_datetime,
@@ -76,7 +81,16 @@ def _read_event_form(band_id: str) -> dict | None:
     end_time = (request.form.get('end_time') or '').strip()
     if end_date:
         ends_at = parse_event_datetime(end_date, end_time or '23:59')
-    location = (request.form.get('location') or '').strip() or None
+    location = (request.form.get('location') or '').strip()[:300] or None
+    location_lat, location_lng = parse_location_coords(
+        request.form.get('location_lat'),
+        request.form.get('location_lng'),
+    )
+    location_place_id = (request.form.get('location_place_id') or '').strip()[:120] or None
+    if location and not location_lat and not location_place_id:
+        location_lat = location_lng = location_place_id = None
+    if not location:
+        location_lat = location_lng = location_place_id = None
     notes = (request.form.get('notes') or '').strip() or None
     setlist_raw = (request.form.get('setlist_id') or '').strip()
     setlist_id = _valid_setlist_for_band(int(setlist_raw), band_id) if setlist_raw.isdigit() else None
@@ -97,8 +111,18 @@ def _read_event_form(band_id: str) -> dict | None:
         'starts_at': starts_at,
         'ends_at': ends_at,
         'location': location,
+        'location_lat': location_lat,
+        'location_lng': location_lng,
+        'location_place_id': location_place_id,
         'notes': notes,
         'setlist_id': setlist_id,
+    }
+
+
+def _form_template_ctx(**extra):
+    return {
+        'google_maps_api_key': google_maps_api_key(),
+        **extra,
     }
 
 
@@ -121,12 +145,14 @@ def create(band_id):
         if not data:
             return render_template(
                 'agenda/form.html',
-                band=band,
-                setlists=setlists,
-                event=None,
-                prefill_setlist=prefill_setlist,
-                event_types=EVENT_TYPES,
-                split_event_datetime=split_event_datetime,
+                **_form_template_ctx(
+                    band=band,
+                    setlists=setlists,
+                    event=None,
+                    prefill_setlist=prefill_setlist,
+                    event_types=EVENT_TYPES,
+                    split_event_datetime=split_event_datetime,
+                ),
             )
         event_id = create_band_event(band_id, created_by=user_id, **data)
         bn.event_created(band_id, user_id, event_id, data['title'], data['event_type'])
@@ -135,12 +161,14 @@ def create(band_id):
 
     return render_template(
         'agenda/form.html',
-        band=band,
-        setlists=setlists,
-        event=None,
-        prefill_setlist=prefill_setlist,
-        event_types=EVENT_TYPES,
-        split_event_datetime=split_event_datetime,
+        **_form_template_ctx(
+            band=band,
+            setlists=setlists,
+            event=None,
+            prefill_setlist=prefill_setlist,
+            event_types=EVENT_TYPES,
+            split_event_datetime=split_event_datetime,
+        ),
     )
 
 
@@ -167,6 +195,7 @@ def view(event_id):
         event_type_label=event_type_label(event.get('event_type')),
         format_event_datetime=format_event_datetime,
         user_display_name=user_display_name,
+        **event_maps_context(event),
     )
 
 
@@ -187,12 +216,14 @@ def edit(event_id):
         if not data:
             return render_template(
                 'agenda/form.html',
-                band=band,
-                setlists=setlists,
-                event=event,
-                prefill_setlist='',
-                event_types=EVENT_TYPES,
-                split_event_datetime=split_event_datetime,
+                **_form_template_ctx(
+                    band=band,
+                    setlists=setlists,
+                    event=event,
+                    prefill_setlist='',
+                    event_types=EVENT_TYPES,
+                    split_event_datetime=split_event_datetime,
+                ),
             )
         update_band_event(event_id, **data)
         bn.event_updated(band['id'], user_id, event_id, data['title'], data['event_type'])
@@ -201,12 +232,14 @@ def edit(event_id):
 
     return render_template(
         'agenda/form.html',
-        band=band,
-        setlists=setlists,
-        event=event,
-        prefill_setlist='',
-        event_types=EVENT_TYPES,
-        split_event_datetime=split_event_datetime,
+        **_form_template_ctx(
+            band=band,
+            setlists=setlists,
+            event=event,
+            prefill_setlist='',
+            event_types=EVENT_TYPES,
+            split_event_datetime=split_event_datetime,
+        ),
     )
 
 
