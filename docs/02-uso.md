@@ -34,7 +34,7 @@
 
 - Bordas e setas **← →**: rolar a cifra; próxima música só no fim da rolagem
 - Botões **◀ ▶** na barra: trocar música imediatamente
-- **L**: lista lateral · **Espaço**: auto-scroll · **C**: 2 colunas · **A**: caber · **G**: lead sheet · **F**: tela cheia · **T**: tema · **Esc**: sair
+- **L**: lista lateral · **Espaço**: auto-scroll · **C**: 2 colunas · **A**: caber · **G**: chord sheet · **F**: tela cheia · **T**: tema · **Esc**: sair
 
 ## Ajuda no app
 

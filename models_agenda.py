@@ -294,12 +294,55 @@ def set_event_assignments(
         role = (item.get('role_label') or '').strip() or None
         c.execute(
             '''INSERT INTO band_event_assignments
-               (event_id, user_id, role_label, assigned_by, assigned_at)
-               VALUES (?, ?, ?, ?, ?)''',
+               (event_id, user_id, role_label, assigned_by, assigned_at,
+                response_status, response_note, responded_at)
+               VALUES (?, ?, ?, ?, ?, 'pending', NULL, NULL)''',
             (event_id, uid, role, assigned_by, now),
         )
     db.commit()
     db.close()
+
+
+def get_user_event_assignment(event_id: str, user_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT a.*, u.display_name, u.username
+           FROM band_event_assignments a
+           JOIN users u ON u.id = a.user_id
+           WHERE a.event_id = ? AND a.user_id = ?''',
+        (event_id, user_id),
+    )
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def respond_event_assignment(
+    event_id: str,
+    user_id: str,
+    *,
+    accepted: bool,
+    note: str | None = None,
+) -> dict | None:
+    """Registra aceite ou recusa do escalado. Retorna a linha atualizada."""
+    status = 'accepted' if accepted else 'declined'
+    note = (note or '').strip()[:500] or None
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE band_event_assignments
+           SET response_status = ?, response_note = ?, responded_at = ?
+           WHERE event_id = ? AND user_id = ?''',
+        (status, note, now, event_id, user_id),
+    )
+    if c.rowcount < 1:
+        db.close()
+        return None
+    db.commit()
+    db.close()
+    return get_user_event_assignment(event_id, user_id)
 
 
 def get_events_where_user_assigned(user_id: str, event_ids: list[str]) -> set[str]:

@@ -137,7 +137,7 @@
         {% if cifras %}
         <div class="row-card">
             {% for cifra in cifras %}
-            {{ cifra_row(cifra, band, show_admin_actions=is_admin) }}
+            {{ cifra_row(cifra, band, show_edit=is_member, show_delete=is_admin) }}
             {% endfor %}
         </div>
         {% else %}
@@ -189,11 +189,9 @@
                 {{ total_events }} evento{{ '' if total_events == 1 else 's' }}
                 {% if events_upcoming|length %} · {{ events_upcoming|length }} próximo{{ '' if events_upcoming|length == 1 else 's' }}{% endif %}
             </p>
-            {% if is_admin %}
             <a href="{{ url_for('agenda.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Novo evento
             </a>
-            {% endif %}
         </div>
 
         <div id="band-agenda-calendar" class="agenda-cal-wrap" aria-label="Calendário de eventos"></div>
@@ -205,7 +203,7 @@
         <h3 class="h6 text-muted mb-2">Próximos</h3>
         <div class="row-card mb-4">
             {% for event in events_upcoming %}
-            {{ event_row(event, band, is_admin=is_admin) }}
+            {{ event_row(event, band, can_edit=is_member, is_admin=is_admin) }}
             {% endfor %}
         </div>
         {% endif %}
@@ -213,7 +211,7 @@
         <h3 class="h6 text-muted mb-2">Anteriores</h3>
         <div class="row-card">
             {% for event in events_past %}
-            {{ event_row(event, band, is_admin=is_admin) }}
+            {{ event_row(event, band, can_edit=is_member, is_admin=is_admin) }}
             {% endfor %}
         </div>
         {% endif %}
@@ -222,11 +220,9 @@
         <div class="empty">
             <i class="fas fa-calendar-alt"></i>
             <p class="mb-3" style="font-size:0.9rem;">Nenhum ensaio ou show na agenda.</p>
-            {% if is_admin %}
             <a href="{{ url_for('agenda.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Registrar primeiro evento
             </a>
-            {% endif %}
         </div>
         {% endif %}
     </div>
@@ -246,7 +242,7 @@
             {% for member in members %}
             <div class="row-item">
                 <div class="row-info">
-                    <div class="row-title">{{ member.display_name or member.username }}</div>
+                    <div class="row-title">{{ user_display_name(member) }}</div>
                     <div class="row-sub">{{ member.email }}</div>
                 </div>
                 {% if member.role == 'owner' %}

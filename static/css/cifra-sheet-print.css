@@ -315,16 +315,26 @@
   column-gap: clamp(1.5rem, 4vw, 2.5rem);
 }
 
-/* Lead Sheet no modo tocar (tecla G) */
+/* Chord sheet no modo tocar (tecla G) — folha branca estilo PDF */
 #play-app .cifra-body.cifra-sheet-paper.grade-mode {
-  background: var(--ss-bg) !important;
-  padding: clamp(0.35rem, 1.5vw, 0.85rem) clamp(0.3rem, 1.5vw, 1rem) !important;
+  background: #ffffff !important;
+  color: #1c1917 !important;
+  padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.4rem, 1.5vw, 1.1rem) !important;
   overflow-x: hidden;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 }
 
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-play {
+  --ss-fg: #1c1917;
+  --ss-bg: #ffffff;
+  --ss-muted: #57534e;
+  --ss-border: #d6d3d1;
+  --ss-rule: #e7e5e4;
+}
+
+/* Lead sheet legado (staff detalhado) — não aplicar ao chord-sheet PDF */
 #play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap {
   color: var(--ss-fg) !important;
   font-family: var(--cifra-mono-font) !important;
@@ -339,50 +349,118 @@
 #play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-systems,
 #play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-system,
 #play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-line,
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bars {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bars {
   max-width: 100%;
   box-sizing: border-box;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bars {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bars {
   background: var(--ss-tab-bg) !important;
   border: 1px solid var(--ss-border) !important;
   border-radius: 2px;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-part-label {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-part-label {
   color: var(--ss-muted) !important;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bar {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bar {
   border-left-color: var(--ss-muted) !important;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bar-col:first-child .staff-bar {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bar-col:first-child .staff-bar {
   border-left-color: var(--ss-chord) !important;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-bar-col.staff-bar-last .staff-bar {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bar-col.staff-bar-last .staff-bar {
   border-right: 2px solid var(--ss-chord) !important;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-cell {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .pulse-cell {
   border-right-color: var(--ss-border) !important;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-cell .chord-text {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .pulse-cell .chord-text {
   color: var(--ss-chord) !important;
   font-family: inherit !important;
   font-weight: 700;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-empty {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .pulse-empty {
   color: var(--ss-muted) !important;
 }
 
 #play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-chord-play {
   color: var(--ss-chord) !important;
   font-family: var(--cifra-mono-font) !important;
+}
+
+/* Chord sheet (tecla G) — folha estilo PDF / chordsheet.com */
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-play.chord-sheet-paper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: var(--ss-fg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-meta-strip {
+  color: var(--ss-muted) !important;
+  border-bottom-color: var(--ss-border) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-pdf-title-song,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-pdf-title-song {
+  color: var(--ss-fg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-pdf-title-artist,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-pdf-title-artist {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-section-text,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-section-text {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-section--boxed .chord-sheet-section-text,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-section--boxed .chord-sheet-section-text {
+  color: var(--ss-fg) !important;
+  border-color: var(--ss-fg) !important;
+  background: var(--ss-bg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-staff-bars,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-staff-bars {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid #1c1917 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-play .staff-bar,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-play .staff-bar {
+  border-left-color: var(--ss-fg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-play .staff-bar-col.staff-bar-last .staff-bar,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-play .staff-bar-col.staff-bar-last .staff-bar {
+  border-right-color: var(--ss-fg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-cell .chord-text,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-split-item .chord-text,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-cell .chord-text,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-split-item .chord-text {
+  color: var(--ss-fg) !important;
+  font-family: "Patrick Hand SC", cursive !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-empty,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-empty {
+  color: var(--ss-muted) !important;
 }
 
 #play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-sep-play,
@@ -442,5 +520,36 @@
   main.container {
     max-width: 100% !important;
     padding: 0 !important;
+  }
+
+  /* Acordes em negrito na impressão (cifra, chord sheet e lead sheet) */
+  #cifra-col .cifra-container.cifra-sheet-paper .chord,
+  #cifra-col .cifra-container.cifra-sheet-paper .sp-chord,
+  #cifra-col .cifra-container.cifra-sheet-paper .cifra-chords,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .sp-chord,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .cifra-chords,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-cell .chord-text,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-split-item .chord-text,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .grade-chord-play,
+  #play-app .cifra-body.cifra-sheet-paper .chord,
+  #play-app .cifra-body.cifra-sheet-paper .sp-chord,
+  #play-app .cifra-body.cifra-sheet-paper .cifra-chords,
+  #play-app .cifra-body.cifra-sheet-paper .grade-chord-play,
+  #play-app .cifra-body.cifra-sheet-paper .grade-visual-chord:not(.repeat),
+  #play-app .cifra-body.cifra-sheet-paper .pulse-cell .chord-text,
+  #play-app .cifra-body.cifra-sheet-paper .chord-split-item .chord-text,
+  .setlist-print-sheet.cifra-sheet-paper .chord,
+  .setlist-print-sheet.cifra-sheet-paper .sp-chord,
+  .setlist-print-sheet.cifra-sheet-paper .cifra-chords,
+  .chord-sheet-play .pulse-cell .chord-text,
+  .chord-sheet-play .chord-split-item .chord-text,
+  .chord-sheet-play .chord-text .chord-symbol,
+  .chord-sheet-play .chord-text .chord-quality,
+  .chord-sheet-play .chord-text .accidental,
+  .leadsheet-play-wrap .pulse-cell .chord-text,
+  .leadsheet-play-wrap .chord-split-item .chord-text,
+  .setlist-print-grade-line {
+    font-weight: 700 !important;
   }
 }

@@ -1,5 +1,5 @@
 {# Linha de evento na agenda da banda #}
-{% macro event_row(event, band, is_admin=false) %}
+{% macro event_row(event, band, can_edit=false, is_admin=false) %}
 <div class="row-item">
     <div class="row-info">
         <a href="{{ url_for('agenda.view', event_id=event.id) }}">
@@ -20,7 +20,7 @@
         </a>
     </div>
     <div class="row-actions">
-        {% if is_admin %}
+        {% if can_edit %}
         <a href="{{ url_for('agenda.escala', event_id=event.id) }}" class="btn btn-primary btn-sm event-escala-btn" title="Definir quem participa">
             <i class="fas fa-user-check me-1"></i><span class="event-escala-label">Escalação</span>
         </a>
@@ -30,7 +30,7 @@
             <i class="fas fa-play"></i>
         </a>
         {% endif %}
-        {% if is_admin %}
+        {% if can_edit %}
         <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="icon-btn" title="Editar">
             <i class="fas fa-pen"></i>
         </a>

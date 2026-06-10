@@ -178,7 +178,7 @@ def _parse_extra_fields(form):
             json.loads(grade_json_raw)
             grade_json = grade_json_raw
         except ValueError:
-            flash('JSON do lead sheet inválido — verifique o formato', 'danger')
+            flash('JSON do chord sheet inválido — verifique o formato', 'danger')
             return None, False, None, None
 
     bpm = float(bpm_raw) if bpm_raw else None
@@ -555,7 +555,13 @@ def list_by_band(band_id):
         return redirect(url_for('dashboard'))
     
     cifras = get_band_cifras(band_id)
-    return render_template('cifras/list.html', band=band, cifras=cifras)
+    return render_template(
+        'cifras/list.html',
+        band=band,
+        cifras=cifras,
+        is_member=True,
+        is_admin=is_band_admin(band_id, user_id),
+    )
 
 @cifras_bp.route('/<cifra_id>')
 @login_required
@@ -908,22 +914,13 @@ def get_transposed(cifra_id):
 @login_required
 def chord_info():
     """Retorna notas/componentes de um acorde (ou progressão) para diagramas."""
+    from chord_diagram import chord_diagram_payload
+
     symbol = request.args.get('symbol', '').strip()
-    if not symbol:
-        return jsonify({'error': 'Acorde não informado'}), 400
-
-    chunks = split_chord_progression(symbol)
-    if not chunks:
-        chunks = [symbol]
-
-    result = []
-    for chunk in chunks:
-        info = chord_components_info(chunk)
-        if info:
-            info['display'] = to_brazilian_chord_notation(info.get('display', chunk))
-            result.append(info)
-
-    return jsonify({'chords': result})
+    payload = chord_diagram_payload(symbol)
+    if payload.get('error') and not payload.get('chords'):
+        return jsonify(payload), 400
+    return jsonify(payload)
 
 
 # ── LeadSheet (substitui grade harmônica) ───────────────────────────────────

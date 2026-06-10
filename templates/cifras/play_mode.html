@@ -635,7 +635,7 @@ body.play-mode.edges-hint .tap-zone {
     #speed-pill { bottom: 4.6rem; padding: 0.4rem 0.65rem; font-size: 0.85rem; }
     #speed-pill button { width: 34px; height: 34px; font-size: 1.05rem; }
 }
-/* ── Lead Sheet (play mode) — detalhes em leadsheet-play.css ─────────── */
+/* ── Chord Sheet (play mode) — detalhes em leadsheet-play.css ─────────── */
 .grade-bars-play {
     font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
     font-size: 1.05em;
@@ -692,9 +692,12 @@ body.play-mode.edges-hint .tap-zone {
     color: var(--chord-highlight);
 }
 </style>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=9">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=8">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand+SC&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=12">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=9">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=15">
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 
@@ -766,8 +769,8 @@ body.play-mode.edges-hint .tap-zone {
             <button class="pb-btn" id="cols-btn" onclick="toggleCols()" title="2 colunas (C)" aria-label="Alternar 2 colunas">
                 <i class="fas fa-columns"></i><span class="pb-label-text">&nbsp;2 col</span>
             </button>
-            <button class="pb-btn" id="grade-btn" onclick="toggleGrade()" title="Lead sheet (G)" aria-label="Lead sheet">
-                <i class="fas fa-table-columns"></i><span class="pb-label-text">&nbsp;Lead sheet</span>
+            <button class="pb-btn" id="grade-btn" onclick="toggleGrade()" title="Chord sheet (G)" aria-label="Chord sheet">
+                <i class="fas fa-table-columns"></i><span class="pb-label-text">&nbsp;Chord sheet</span>
             </button>
             <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
                 <i class="fas fa-angle-double-down"></i><span class="pb-label-text">&nbsp;Scroll</span>
@@ -821,7 +824,7 @@ body.play-mode.edges-hint .tap-zone {
 <!-- Keyboard hint -->
 <div id="kbd-hint">Bordas ou ← →: paginar cifra (próxima música só na última página) · L lista · Espaço auto-scroll · Esc sair</div>
 
-<script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=10"></script>
+<script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=16"></script>
 <script id="cifras-data" type="application/json">
 [{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
@@ -991,21 +994,18 @@ body.play-mode.edges-hint .tap-zone {
         var el = document.getElementById('cifra-content');
         el.innerHTML = html;
         el.classList.remove('fading');
-        var lsWrap = el.querySelector('.leadsheet-play-wrap');
-        if (lsWrap && gradeMode) {
+        var csWrap = el.querySelector('.chord-sheet-wrap, .leadsheet-play-wrap');
+        if (csWrap && gradeMode) {
             requestAnimationFrame(function () {
                 var measured = getLeadSheetWidth();
-                var laid = parseInt(lsWrap.getAttribute('data-layout-width') || '0', 10);
+                var laid = parseInt(csWrap.getAttribute('data-layout-width') || '0', 10);
                 if (Math.abs(measured - laid) > 12) {
                     var c = getCurrent();
                     if (!c) return;
                     var key = c.id + ':' + getTranspose(c);
-                    var doc = leadsheetCache[key];
-                    if (doc && LeadsheetPlayRender.isLeadsheet(doc)) {
-                        renderHtml(LeadsheetPlayRender.renderHtml(doc, {
-                            wrapWidth: measured,
-                            hideHeader: true
-                        }));
+                    var doc = leadsheetCache[key] || gradeCache[key];
+                    if (doc) {
+                        renderHtml(buildLeadSheetHtml(doc, c));
                         return;
                     }
                 }
@@ -1022,26 +1022,37 @@ body.play-mode.edges-hint .tap-zone {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    function playModeEmptyLeadSheetMessage() {
+    function playModeEmptyChordSheetMessage() {
         return '<div class="grade-empty-play" style="padding:2rem 4vw;color:#475569;font-size:0.9rem;">' +
-            'Lead Sheet não disponível para esta música. Configure no editor Lead Sheet da cifra.' +
+            'Chord sheet não disponível para esta música. Configure no editor Chord Sheet da cifra.' +
             '</div>';
     }
 
     function buildLeadSheetHtml(doc, cifraMeta) {
         if (!LeadsheetPlayRender) {
-            return playModeEmptyLeadSheetMessage();
+            return playModeEmptyChordSheetMessage();
+        }
+        var opts = {
+            wrapWidth: getLeadSheetWidth(),
+            hideHeader: false,
+            hideTitle: true,
+            paper: true,
+            title: cifraMeta && cifraMeta.titulo,
+            artist: cifraMeta && cifraMeta.artista,
+            songKey: cifraMeta ? getDisplayKey(cifraMeta) : ''
+        };
+        if (LeadsheetPlayRender.renderChordSheetHtml) {
+            if (LeadsheetPlayRender.isLeadsheet(doc) || (Array.isArray(doc) && doc.length)) {
+                return LeadsheetPlayRender.renderChordSheetHtml(doc, opts);
+            }
         }
         if (LeadsheetPlayRender.isLeadsheet(doc)) {
-            return LeadsheetPlayRender.renderHtml(doc, {
-                wrapWidth: getLeadSheetWidth(),
-                hideHeader: true
-            });
+            return LeadsheetPlayRender.renderHtml(doc, opts);
         }
         if (Array.isArray(doc) && doc.length && LeadsheetPlayRender.renderLegacyGradeHtml) {
             return LeadsheetPlayRender.renderLegacyGradeHtml(doc);
         }
-        return playModeEmptyLeadSheetMessage();
+        return playModeEmptyChordSheetMessage();
     }
 
     function buildStructuredHtml(cifraData) {

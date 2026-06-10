@@ -83,7 +83,7 @@
                 <td>{% if v.eh_vitalicio %}Vitalício{% else %}{{ v.dias }} dias{% endif %}</td>
                 <td>{{ v.usos_atual }}{% if v.max_usos %}/{{ v.max_usos }}{% else %}/∞{% endif %}</td>
                 <td>{{ v.data_expiracao or '—' }}</td>
-                <td>{{ v.criador.username if v.criador else '—' }}</td>
+                <td>{{ user_display_name(v.criador) if v.criador else '—' }}</td>
                 <td>{% if v.ativo %}Sim{% else %}Não{% endif %}</td>
                 <td class="text-nowrap">
                     {% if v.ativo %}

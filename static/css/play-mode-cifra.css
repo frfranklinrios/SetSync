@@ -1,17 +1,18 @@
 /**
- * Modo tocar — tipografia PT Mono (carregar por último, após estilos inline do template).
+ * Modo tocar — tipografia PT Mono (cifra normal).
+ * Chord sheet (tecla G) usa Patrick Hand SC via leadsheet-play.css.
  */
 
-#play-app #cifra-content,
-#play-app #cifra-content .chord,
-#play-app #cifra-content .cj-chord,
-#play-app #cifra-content .sp-chord,
-#play-app #cifra-content .sp-word,
-#play-app #cifra-content .cifra-chords,
-#play-app #cifra-content .cifra-lyric,
-#play-app #cifra-content .cifra-tab-line,
-#play-app #cifra-content .cifra-tab-title,
-#play-app #cifra-content .cifra-tab-meta,
+#play-app #cifra-content:not(.grade-mode),
+#play-app #cifra-content:not(.grade-mode) .chord,
+#play-app #cifra-content:not(.grade-mode) .cj-chord,
+#play-app #cifra-content:not(.grade-mode) .sp-chord,
+#play-app #cifra-content:not(.grade-mode) .sp-word,
+#play-app #cifra-content:not(.grade-mode) .cifra-chords,
+#play-app #cifra-content:not(.grade-mode) .cifra-lyric,
+#play-app #cifra-content:not(.grade-mode) .cifra-tab-line,
+#play-app #cifra-content:not(.grade-mode) .cifra-tab-title,
+#play-app #cifra-content:not(.grade-mode) .cifra-tab-meta,
 #play-app #cifra-content .grade-bars-play,
 #play-app #cifra-content .grade-inline-play,
 #play-app #cifra-content .grade-line-play,
@@ -25,28 +26,29 @@
 #play-app #cifra-content .leadsheet-play-title,
 #play-app #cifra-content .leadsheet-play-meta,
 #play-app #cifra-content .leadsheet-systems,
-#play-app #cifra-content .staff-part-label,
-#play-app #cifra-content .pulse-cell,
-#play-app #cifra-content .pulse-cell .chord-text,
-#play-app #cifra-content .pulse-empty,
-#play-app #cifra-content .accidental,
-#play-app #cifra-content .chord-quality,
+#play-app #cifra-content .leadsheet-play-wrap .staff-part-label,
+#play-app #cifra-content .leadsheet-play-wrap .pulse-cell,
+#play-app #cifra-content .leadsheet-play-wrap .pulse-cell .chord-text,
+#play-app #cifra-content .leadsheet-play-wrap .pulse-empty,
+#play-app #cifra-content .leadsheet-play-wrap .accidental,
+#play-app #cifra-content .leadsheet-play-wrap .chord-quality,
 #play-app #cifra-content .grade-empty-play {
   font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, "Courier New", Courier, monospace) !important;
   font-variant-ligatures: none !important;
   font-feature-settings: "liga" 0 !important;
 }
 
-/* Cor dos acordes — último CSS do modo tocar; respeita tema claro (laranja) / escuro (ciano) */
-#play-app #cifra-content .chord,
-#play-app #cifra-content .cj-chord,
-#play-app #cifra-content .sp-chord,
-#play-app #cifra-content .cifra-chords,
+/* Cor dos acordes — cifra normal (não chord sheet PDF) */
+#play-app #cifra-content:not(.grade-mode) .chord,
+#play-app #cifra-content:not(.grade-mode) .cj-chord,
+#play-app #cifra-content:not(.grade-mode) .sp-chord,
+#play-app #cifra-content:not(.grade-mode) .cifra-chords,
 #play-app #cifra-content .grade-chord-play,
 #play-app #cifra-content .grade-visual-chord,
-#play-app #cifra-content .pulse-cell .chord-text {
+#play-app #cifra-content .leadsheet-play-wrap .pulse-cell .chord-text {
   color: var(--chord-highlight, #c2410c) !important;
 }
+
 #play-app #cifra-content .grade-visual-chord.repeat {
   color: var(--muted, #94a3b8) !important;
   font-weight: 400 !important;
@@ -56,19 +58,19 @@
   font-size: clamp(1rem, 3.2vw, 1.15rem) !important;
 }
 
-#play-app #cifra-content.grade-mode .pulse-cell .chord-text {
+#play-app #cifra-content.grade-mode .leadsheet-play-wrap .pulse-cell .chord-text {
   font-size: clamp(0.85rem, 2.8vw, 1em) !important;
 }
 
-#play-app #cifra-content .pulse-cell .chord-text.chord-sm {
+#play-app #cifra-content .leadsheet-play-wrap .pulse-cell .chord-text.chord-sm {
   font-size: 0.78em !important;
 }
 
-#play-app #cifra-content .pulse-cell .chord-text.chord-md {
+#play-app #cifra-content .leadsheet-play-wrap .pulse-cell .chord-text.chord-md {
   font-size: 0.85em !important;
 }
 
-#play-app #cifra-content .pulse-cell .chord-text.chord-lg {
+#play-app #cifra-content .leadsheet-play-wrap .pulse-cell .chord-text.chord-lg {
   font-size: 0.92em !important;
 }
 
@@ -80,4 +82,37 @@
   text-transform: uppercase;
   color: var(--muted, #64748b);
   margin: 0.65rem 0 0.35rem;
+}
+
+/* Chord sheet PDF — não herdar mono/ciano do modo tocar */
+#play-app #cifra-content.grade-mode .chord-sheet-play,
+#play-app #cifra-content.grade-mode .chord-sheet-play .pulse-cell,
+#play-app #cifra-content.grade-mode .chord-sheet-play .pulse-cell .chord-text,
+#play-app #cifra-content.grade-mode .chord-sheet-play .chord-split-item .chord-text,
+#play-app #cifra-content.grade-mode .chord-sheet-play .pulse-empty,
+#play-app #cifra-content.grade-mode .chord-sheet-play .chord-quality,
+#play-app #cifra-content.grade-mode .chord-sheet-play .accidental,
+#play-app #cifra-content.grade-mode .chord-sheet-play .chord-sheet-meta-strip,
+#play-app #cifra-content.grade-mode .chord-sheet-play .chord-sheet-pdf-title-song,
+#play-app #cifra-content.grade-mode .chord-sheet-play .chord-sheet-pdf-title-artist {
+  font-family: "Patrick Hand SC", "Segoe Print", cursive !important;
+  font-variant-ligatures: normal !important;
+  font-feature-settings: normal !important;
+}
+
+#play-app #cifra-content.grade-mode .chord-sheet-play .pulse-cell .chord-text,
+#play-app #cifra-content.grade-mode .chord-sheet-play .chord-split-item .chord-text {
+  color: #1c1917 !important;
+  font-size: clamp(1rem, 3.2vw, 1.2rem) !important;
+  font-weight: 400 !important;
+}
+
+#play-app #cifra-content.grade-mode .chord-sheet-play .pulse-empty {
+  color: #78716c !important;
+  font-weight: 400 !important;
+}
+
+#play-app #cifra-content.grade-mode .chord-sheet-play .chord-sheet-meta-strip {
+  color: #57534e !important;
+  font-size: 0.72em !important;
 }

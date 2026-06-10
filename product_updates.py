@@ -9,6 +9,7 @@ CAMPAIGN_NOTIFICACOES_2026_06 = 'product_notificacoes_2026_06'
 CAMPAIGN_NOTIFICACOES_2026_06_RETRY = 'product_notificacoes_2026_06_retry'
 CAMPAIGN_AGENDA_2026_06 = 'product_agenda_2026_06'
 CAMPAIGN_MAPS_AGENDA_2026_06 = 'product_maps_agenda_2026_06'
+CAMPAIGN_JUN_2026_06 = 'product_jun_2026_06'
 
 _ANNOUNCEMENTS = {
     CAMPAIGN_NOTIFICACOES_2026_06: {
@@ -55,6 +56,21 @@ _ANNOUNCEMENTS = {
             'sugestões do Google Maps — igreja, estúdio ou endereço.\n\n'
             'No detalhe do evento você abre o mapa e vê a localização embutida. '
             'Ideal para o time chegar certo no ensaio ou culto.'
+        ),
+        'url_path': '/dashboard',
+    },
+    CAMPAIGN_JUN_2026_06: {
+        'type': 'product_update',
+        'title': 'Novidades: diagramas, permissões e escalação',
+        'body': (
+            'Atualizamos o SetSync com melhorias pedidas pela comunidade:\n\n'
+            '• Diagramas de acordes reais (dedos e pestana) + escalas no braço — toque em um acorde na cifra\n'
+            '• Todos os membros podem editar cifras e eventos da banda\n'
+            '• Escalação: aceitar ou recusar com aviso para quem convocou\n'
+            '• Nome de exibição obrigatório — é assim que a banda vê você\n'
+            '• Impressão de cifras com acordes em negrito\n'
+            '• Chord sheet no modo tocar com visual mais limpo\n\n'
+            'Abra uma cifra e toque em um acorde para testar os diagramas.'
         ),
         'url_path': '/dashboard',
     },

@@ -27,7 +27,7 @@
             {% for member in band_members %}
             <div class="row-item">
                 <div class="row-info">
-                    <div class="row-title">{{ member.display_name or member.username }}</div>
+                    <div class="row-title">{{ user_display_name(member) }}</div>
                     <div class="row-sub">{{ member.email }}</div>
                 </div>
                 {% if band.owner_id == member.id %}
@@ -35,15 +35,29 @@
                 {% elif member.id in vocalist_user_ids %}
                 <span class="row-badge owner">Cantora/cantor</span>
                 {% elif member.role == 'admin' %}
-                <span class="row-badge owner">Admin</span>
+                <span class="row-badge owner">Admin da banda</span>
                 {% else %}
                 <span class="row-badge neutral">Membro</span>
                 {% endif %}
                 {% if band.owner_id != member.id and band.owner_id == current_user.id %}
-                <div class="row-actions">
+                <div class="row-actions d-flex align-items-center gap-1">
+                    <form action="{{ url_for('bands.set_member_role', band_id=band.id, member_id=member.id) }}" method="POST" class="d-inline">
+                        {% include 'partials/csrf_input.html' %}
+                        {% if member.role == 'admin' %}
+                        <input type="hidden" name="role" value="member">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm" title="Remover admin da banda">
+                            <i class="fas fa-user-shield me-1"></i> Membro
+                        </button>
+                        {% else %}
+                        <input type="hidden" name="role" value="admin">
+                        <button type="submit" class="btn btn-outline-primary btn-sm" title="Tornar admin da banda">
+                            <i class="fas fa-user-shield me-1"></i> Admin
+                        </button>
+                        {% endif %}
+                    </form>
                     <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
                           method="POST" class="d-inline"
-                          onsubmit="return confirm('Remover {{ member.display_name or member.username }} da banda?')">
+                          onsubmit="return confirm('Remover {{ user_display_name(member) }} da banda?')">
                         {% include 'partials/csrf_input.html' %}
                         <button type="submit" class="icon-btn danger" title="Remover">
                             <i class="fas fa-user-minus"></i>
@@ -71,6 +85,16 @@
                     </button>
                 </div>
                 <small class="text-muted">Válido por 14 dias.</small>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Papéis na banda</div>
+            <div class="card-body">
+                <p class="text-muted mb-0" style="font-size:0.85rem;">
+                    <strong>Admin da banda</strong> gerencia membros e convites.
+                    <strong>Membros</strong> editam cifras e eventos da agenda.
+                    Isso é diferente do <strong>superadmin do app</strong> (painel Admin global).
+                </p>
             </div>
         </div>
         <div class="card">

@@ -32,6 +32,8 @@ from models_agenda import (
     get_band_event,
     get_event_assignment_user_ids,
     get_event_assignments,
+    get_user_event_assignment,
+    respond_event_assignment,
     set_event_assignments,
     update_band_event,
 )
@@ -133,9 +135,6 @@ def create(band_id):
     if not band:
         flash('Banda não encontrada ou sem acesso.', 'danger')
         return redirect(url_for('dashboard'))
-    if not is_band_admin(band_id, user_id):
-        flash('Apenas administradores podem criar eventos na agenda.', 'danger')
-        return redirect(url_for('bands.view', band_id=band_id))
 
     setlists = get_band_setlists(band_id)
     prefill_setlist = request.args.get('setlist_id', '')
@@ -187,13 +186,16 @@ def view(event_id):
     if event.get('setlist_id'):
         setlist_cifras = get_setlist_cifras(int(event['setlist_id']))
     assignments = get_event_assignments(event_id)
+    user_assignment = get_user_event_assignment(event_id, user_id)
     return render_template(
         'agenda/view.html',
         event=event,
         band=band,
         is_admin=is_band_admin(band['id'], user_id),
+        can_edit=True,
         assignments=assignments,
-        user_is_scaled=any(a['user_id'] == user_id for a in assignments),
+        user_assignment=user_assignment,
+        user_is_scaled=user_assignment is not None,
         setlist_cifras=setlist_cifras,
         event_type_label=event_type_label(event.get('event_type')),
         format_event_datetime=format_event_datetime,
@@ -208,10 +210,6 @@ def edit(event_id):
     event, band, user_id = _require_event_access(event_id)
     if not event:
         abort(404)
-    if not is_band_admin(band['id'], user_id):
-        flash('Apenas administradores podem editar eventos.', 'danger')
-        return redirect(url_for('agenda.view', event_id=event_id))
-
     setlists = get_band_setlists(band['id'])
 
     if request.method == 'POST':
@@ -266,10 +264,6 @@ def escala(event_id):
     event, band, user_id = _require_event_access(event_id)
     if not event:
         abort(404)
-    if not is_band_admin(band['id'], user_id):
-        flash('Apenas administradores podem definir a escalação.', 'danger')
-        return redirect(url_for('agenda.view', event_id=event_id))
-
     members = get_band_members(band['id'])
     current = {a['user_id']: a for a in get_event_assignments(event_id)}
 
@@ -299,6 +293,49 @@ def escala(event_id):
         format_event_datetime=format_event_datetime,
         user_display_name=user_display_name,
     )
+
+
+@agenda_bp.route('/<event_id>/escala/responder', methods=['POST'])
+@login_required
+def respond_scale(event_id):
+    event, band, user_id = _require_event_access(event_id)
+    if not event:
+        abort(404)
+    assignment = get_user_event_assignment(event_id, user_id)
+    if not assignment:
+        flash('Você não está escalado para este evento.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
+
+    action = (request.form.get('action') or '').strip().lower()
+    if action not in ('accept', 'decline'):
+        flash('Resposta inválida.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
+
+    note = (request.form.get('note') or '').strip()
+    updated = respond_event_assignment(
+        event_id,
+        user_id,
+        accepted=(action == 'accept'),
+        note=note,
+    )
+    if not updated:
+        flash('Não foi possível registrar sua resposta.', 'danger')
+        return redirect(url_for('agenda.view', event_id=event_id))
+
+    bn.event_scale_response(
+        band['id'],
+        user_id,
+        event_id,
+        event['title'],
+        accepted=(action == 'accept'),
+        note=note,
+        assigned_by=assignment.get('assigned_by'),
+    )
+    if action == 'accept':
+        flash('Presença confirmada na escalação.', 'success')
+    else:
+        flash('Recusa registrada. Quem te escalou foi notificado.', 'info')
+    return redirect(url_for('agenda.view', event_id=event_id))
 
 
 @agenda_bp.route('/<event_id>/delete', methods=['POST'])

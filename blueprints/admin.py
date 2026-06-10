@@ -19,6 +19,7 @@ from db import (
     update_testimonial,
     delete_testimonial,
     set_user_superadmin,
+    is_superadmin_env_only,
 )
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -54,6 +55,8 @@ def index():
         band['cifras_count'] = len(get_band_cifras(band['id']))
 
     for u in users:
+        u['is_superadmin_db'] = bool(u.get('is_superadmin'))
+        u['is_superadmin_env'] = is_superadmin_env_only(u['id'])
         u['is_env_admin'] = is_superadmin(u['id'])
 
     env_users = os.getenv('SETSYNC_SUPERADMIN_USERNAMES', '').strip()
@@ -141,7 +144,7 @@ def depoimentos_excluir(testimonial_id: int):
 def toggle_superadmin(user_id: str):
     enabled = request.form.get('enabled') == '1'
     if set_user_superadmin(user_id, enabled):
-        flash('Privilégio de admin atualizado.', 'success')
+        flash('Privilégio de superadmin do app atualizado.', 'success')
     else:
         flash('Usuário não encontrado.', 'danger')
     return redirect(url_for('admin.index') + '#tab-users')

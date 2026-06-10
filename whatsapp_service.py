@@ -56,6 +56,21 @@ def normalize_whatsapp_phone(raw: str | None) -> str | None:
     return None
 
 
+def format_whatsapp_display(phone: str | None) -> str:
+    """Formata número armazenado para exibição (ex.: +55 (11) 99999-9999)."""
+    digits = re.sub(r'\D', '', phone or '')
+    if not digits:
+        return ''
+    if digits.startswith('55') and len(digits) >= 12:
+        ddd = digits[2:4]
+        rest = digits[4:]
+        if len(rest) == 9:
+            return f'+55 ({ddd}) {rest[:5]}-{rest[5:]}'
+        if len(rest) == 8:
+            return f'+55 ({ddd}) {rest[:4]}-{rest[4:]}'
+    return f'+{digits}'
+
+
 def _format_notification_text(title: str, body: str, url_path: str | None) -> str:
     lines = ['*SetSync*', f'*{title}*']
     if body:

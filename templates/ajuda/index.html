@@ -239,6 +239,10 @@
         <strong>Modo Tocar</strong>
         <div class="text-muted" style="font-size:0.8rem;">Rolagem, atalhos, lista lateral</div>
       </a>
+      <a class="list-group-item" href="#chord-sheet">
+        <strong>Chord sheet</strong>
+        <div class="text-muted" style="font-size:0.8rem;">Grade de acordes estilo PDF</div>
+      </a>
       <a class="list-group-item" href="#importador">
         <strong>Importar cifra</strong>
         <div class="text-muted" style="font-size:0.8rem;">Cifra → SetSync</div>
@@ -491,7 +495,7 @@
           <tr><th><span class="kbd">+</span> / <span class="kbd">−</span></th><td>Aumenta / diminui fonte</td></tr>
           <tr><th><span class="kbd">C</span></th><td>Duas colunas</td></tr>
           <tr><th><span class="kbd">A</span></th><td>Caber na tela (ajuste automático)</td></tr>
-          <tr><th><span class="kbd">G</span></th><td>Lead Sheet (quando disponível)</td></tr>
+          <tr><th><span class="kbd">G</span></th><td>Chord sheet (quando disponível)</td></tr>
           <tr><th><span class="kbd">F</span></th><td>Tela cheia</td></tr>
           <tr><th><span class="kbd">T</span></th><td>Tema claro / escuro</td></tr>
           <tr><th><span class="kbd">Esc</span></th><td>Fecha lista ou sai do modo tocar</td></tr>
@@ -499,6 +503,34 @@
 
         <div class="help-callout">
           Em tablets e celulares, prefira <strong>tela cheia</strong> e evite gestos do navegador (voltar) durante o show.
+        </div>
+      </div>
+    </section>
+
+    <section class="card help-section" id="chord-sheet">
+      <div class="card-header">Chord sheet (grade de acordes)</div>
+      <div class="card-body">
+        <p>
+          O <strong>Chord sheet</strong> mostra só a progressão harmônica em folha branca, no estilo do
+          <a href="https://www.chordsheet.com/manual/" target="_blank" rel="noopener">Chord Sheet Maker</a>
+          (chordsheet.com): 4 compassos por linha, pauta com linhas verticais e seções destacadas.
+        </p>
+        <h3>Como usar</h3>
+        <ul>
+          <li>Configure na cifra em <strong>Editor Chord Sheet</strong> (ou importe da grade harmônica).</li>
+          <li>No <strong>Modo Tocar</strong>, pressione <span class="kbd">G</span> ou toque no botão <strong>Chord sheet</strong>.</li>
+          <li>Na visualização da cifra, use a aba <strong>Chord sheet</strong> para pré-visualizar.</li>
+        </ul>
+        <h3>O que o SetSync segue do manual</h3>
+        <ul>
+          <li><a href="https://www.chordsheet.com/manual/grid" target="_blank" rel="noopener">Grid system</a> — 4 compassos por linha, alinhamento vertical.</li>
+          <li><a href="https://www.chordsheet.com/manual/style" target="_blank" rel="noopener">Bar line style Regular</a> — acordes acima da linha, divisórias entre compassos.</li>
+          <li><a href="https://www.chordsheet.com/manual/bars-and-chords" target="_blank" rel="noopener">Split bars</a> — vários acordes no mesmo compasso (editor ou grade com mais de um acorde por linha).</li>
+          <li><a href="https://www.chordsheet.com/manual/meta" target="_blank" rel="noopener">Meta characters</a> — <code>%</code> repetir 1 compasso, <code>%%</code> repetir 2, seções com marcador.</li>
+        </ul>
+        <div class="help-callout">
+          Referência visual: <a href="https://www.chordsheet.com/manual/quickstart" target="_blank" rel="noopener">Quickstart</a> e o PDF de exemplo em
+          <code>/static/docs/chordsheet-referencia.pdf</code>.
         </div>
       </div>
     </section>
@@ -513,7 +545,7 @@
         <h3>Modos da ferramenta</h3>
         <ul>
           <li><strong>Somente cifra</strong> — cole a URL da página da música em um site de cifras compatível.</li>
-          <li><strong>Enviar áudio</strong> — MP3/WAV para gerar cifra/lead sheet (quando disponível no servidor).</li>
+          <li><strong>Enviar áudio</strong> — MP3/WAV para gerar cifra/chord sheet (quando disponível no servidor).</li>
         </ul>
         <div class="help-callout">
           Para a maioria das músicas, <strong>colar o texto</strong> no formulário da cifra é o caminho mais rápido.

@@ -9,7 +9,7 @@
       <div class="card-header">Seu nome no app</div>
       <div class="card-body">
         <p class="text-muted mb-3" style="font-size:0.92rem;">
-          Seu usuário está cadastrado, mas ainda falta definir o nome que aparece no SetSync.
+          Informe como você quer aparecer para os integrantes da banda — na escalação, notificações e listas de membros.
         </p>
         <form method="POST" action="{{ url_for('auth.definir_nome', next=next) }}">
           {% include 'partials/csrf_input.html' %}
@@ -24,17 +24,14 @@
               placeholder="Ex.: Franklin Rios"
               required
               autofocus
+              maxlength="60"
             >
-            <div class="form-text">Esse nome aparece no menu e no dashboard.</div>
+            <div class="form-text">Seu login (@{{ current_user.username }}) continua igual — só o nome exibido muda.</div>
           </div>
-          <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Salvar</button>
-            <a class="btn btn-outline-secondary" href="{{ next }}">Agora não</a>
-          </div>
+          <button type="submit" class="btn btn-primary w-100">Continuar</button>
         </form>
       </div>
     </div>
   </div>
 </div>
 {% endblock %}
-

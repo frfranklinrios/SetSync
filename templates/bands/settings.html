@@ -131,7 +131,7 @@
                             <select class="form-select" id="vocalist_user_id" name="vocalist_user_id">
                                 <option value="">— Escolher —</option>
                                 {% for m in band_members %}
-                                <option value="{{ m.id }}">{{ m.display_name or m.username }}</option>
+                                <option value="{{ m.id }}">{{ user_display_name(m) }}</option>
                                 {% endfor %}
                             </select>
                         </div>

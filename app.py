@@ -18,6 +18,7 @@ from agenda_util import event_relative_label, format_event_datetime
 from db import init_db
 from extensions import init_scheduler
 from util import highlight_chords_html, normalize_tom_label, format_date_short
+from whatsapp_service import format_whatsapp_display
 from flask_wtf.csrf import CSRFProtect, CSRFError
 import os
 from urllib.parse import urlparse
@@ -126,6 +127,7 @@ app.jinja_env.filters['normalize_tom'] = normalize_tom_label
 app.jinja_env.filters['date_short'] = format_date_short
 app.jinja_env.filters['format_event_datetime'] = format_event_datetime
 app.jinja_env.filters['event_relative_label'] = event_relative_label
+app.jinja_env.filters['whatsapp_display'] = format_whatsapp_display
 
 with app.app_context():
     init_db()

@@ -1,0 +1,326 @@
+/* ── Diagramas de acordes (modal) ─────────────────────────── */
+
+.chord-modal .modal-content {
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.chord-modal .modal-header {
+  border-bottom: 1px solid var(--border);
+}
+
+.chord-modal .modal-title {
+  color: var(--text);
+}
+
+.chord-modal .modal-body {
+  background: var(--bg);
+}
+
+.diagram-view-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.diagram-view-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.28rem 0.85rem;
+  cursor: pointer;
+}
+
+.diagram-view-btn.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.chord-instruments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.bass-options {
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: -0.25rem 0 0.8rem;
+}
+
+.bass-options.show {
+  display: flex;
+}
+
+.modal-option-row {
+  display: none;
+  margin: 0 0 0.7rem;
+}
+
+.modal-option-row.show {
+  display: block;
+}
+
+.modal-option-title {
+  color: var(--muted);
+  font-size: 0.73rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.bass-opt-btn,
+.chord-inst-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 7px;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+}
+
+.bass-opt-btn {
+  font-size: 0.74rem;
+  padding: 0.25rem 0.55rem;
+}
+
+.bass-opt-btn.active,
+.chord-inst-btn.active {
+  border-color: var(--accent);
+  color: #fff;
+  background: var(--accent);
+}
+
+.chord-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.chord-chip {
+  border: 1px solid rgba(42, 181, 160, 0.4);
+  background: rgba(42, 181, 160, 0.08);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 0.18rem 0.65rem;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.chord-chip.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.chord-diagram-wrap {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem;
+  overflow-x: auto;
+}
+
+.diagram-chord-name {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0.45rem;
+  color: var(--text);
+}
+
+.diagram-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.diagram-grid {
+  stroke: var(--text);
+  stroke-width: 1.6;
+  opacity: 0.9;
+}
+
+.diagram-nut {
+  stroke: var(--text);
+  stroke-width: 5;
+}
+
+.diagram-barre {
+  stroke: var(--text);
+  stroke-width: 9;
+  stroke-linecap: round;
+  opacity: 0.92;
+}
+
+.diagram-dot {
+  fill: var(--text);
+}
+
+.diagram-dot-root {
+  fill: var(--text);
+  stroke: var(--bg);
+  stroke-width: 2.5;
+}
+
+.diagram-finger-num {
+  fill: var(--bg);
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.diagram-scale-name {
+  font-size: 1.45rem;
+}
+
+.diagram-scale-dot {
+  fill: var(--accent);
+  opacity: 0.75;
+}
+
+.diagram-scale-root {
+  fill: var(--chord-highlight, var(--accent));
+  opacity: 1;
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.diagram-scale-open {
+  opacity: 0.9;
+}
+
+.diagram-open,
+.diagram-mute,
+.diagram-fret-text {
+  fill: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.diagram-fret-text {
+  text-anchor: end;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.arpeggio-box {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem;
+}
+
+.bass-arp-wrap {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem;
+  overflow-x: auto;
+}
+
+.bass-arp-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.bass-grid {
+  stroke: var(--text);
+  stroke-width: 1.8;
+  opacity: 0.95;
+}
+
+.bass-nut {
+  stroke: var(--text);
+  stroke-width: 8;
+}
+
+.bass-string-label,
+.bass-fret-label {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.bass-fret-label {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.bass-dot-fill {
+  fill: var(--text);
+}
+
+.bass-dot-open {
+  fill: var(--bg);
+  stroke: var(--text);
+  stroke-width: 2.2;
+}
+
+.bass-step-num {
+  fill: var(--bg);
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.bass-step-num-open {
+  fill: var(--text);
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.arp-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.arp-step {
+  border: 1px solid rgba(42, 181, 160, 0.35);
+  background: rgba(42, 181, 160, 0.08);
+  border-radius: 7px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.76rem;
+}
+
+.chord-notes {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Acordes clicáveis nas cifras */
+.chord,
+.cj-chord,
+.sp-chord,
+.grade-chord,
+.grade-chord-play,
+.grade-visual-chord {
+  color: var(--chord-highlight);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grade-visual-chord.repeat {
+  color: var(--muted);
+  font-weight: 400;
+}

@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from product_updates import CAMPAIGN_MAPS_AGENDA_2026_06, enviar_comunicado
+from product_updates import CAMPAIGN_JUN_2026_06, enviar_comunicado
 
 
 def main() -> int:
@@ -30,8 +30,8 @@ def main() -> int:
     )
     parser.add_argument(
         '--campaign',
-        default=CAMPAIGN_MAPS_AGENDA_2026_06,
-        help='ID da campanha (padrão: maps agenda jun/2026)',
+        default=CAMPAIGN_JUN_2026_06,
+        help='ID da campanha (padrão: novidades jun/2026)',
     )
     args = parser.parse_args()
 

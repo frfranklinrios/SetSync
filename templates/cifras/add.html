@@ -120,7 +120,7 @@
     </div>
 
     <div class="mb-3">
-        <p class="form-text mb-2">Após criar a cifra, use o <strong>editor Lead sheet</strong> para montar a progressão por compasso.</p>
+        <p class="form-text mb-2">Após criar a cifra, use o <strong>editor Chord sheet</strong> para montar a progressão por compasso.</p>
     </div>
 
     <!-- Upload de JSONs -->
@@ -142,9 +142,9 @@
                 </div>
             </div>
             <div class="col-md-8">
-                <label class="form-label small fw-semibold">Lead sheet JSON</label>
+                <label class="form-label small fw-semibold">Chord sheet JSON</label>
                 <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
-                <div class="form-text">setsync_grade.json &mdash; lead sheet por compasso</div>
+                <div class="form-text">setsync_grade.json &mdash; chord sheet por compasso</div>
             </div>
         </div>
     </details>
@@ -571,7 +571,7 @@ document.getElementById('cifra-form').addEventListener('submit', function (event
     if (gradeText) {
         var parsedGrade = parseGradeTextToJson(gradeText);
         if (!parsedGrade) {
-            alert('Não foi possível interpretar o lead sheet. Use Parte A, ▸ Seção e acordes por compasso.');
+            alert('Não foi possível interpretar o chord sheet. Use Parte A, ▸ Seção e acordes por compasso.');
             event.preventDefault();
             return;
         }

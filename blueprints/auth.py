@@ -20,10 +20,10 @@ from security import (
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 MIN_PASSWORD_LEN = 10
 
-# Rotas que não exigem WhatsApp cadastrado (evita loop de redirect).
-_PHONE_PROMPT_EXEMPT = frozenset({
-    'auth.definir_whatsapp',
+# Rotas isentas de pedir nome ou WhatsApp (evita loop de redirect).
+_SETUP_PROMPT_EXEMPT = frozenset({
     'auth.definir_nome',
+    'auth.definir_whatsapp',
     'auth.perfil',
     'auth.logout',
     'auth.login',
@@ -71,6 +71,20 @@ def _auth_setup_redirect(next_page: str):
     if _should_prompt_phone():
         return redirect(url_for('auth.definir_whatsapp', next=next_page))
     return redirect(next_page)
+
+
+def _should_prompt_display_name() -> bool:
+    if (session.get('display_name') or '').strip():
+        return False
+    user = get_user(session.get('user_id'))
+    if not user:
+        return False
+    nome = (user.get('display_name') or '').strip()
+    if nome:
+        session['display_name'] = nome
+        session.modified = True
+        return False
+    return True
 
 
 def _should_prompt_phone() -> bool:
@@ -167,9 +181,12 @@ def login_required(f):
                 return redirect(url_for('auth.login', next=nxt))
             return redirect(url_for('auth.login'))
         endpoint = request.endpoint or ''
-        if endpoint not in _PHONE_PROMPT_EXEMPT and _should_prompt_phone():
+        if endpoint not in _SETUP_PROMPT_EXEMPT:
             nxt = safe_redirect_path(request.path) or url_for('dashboard')
-            return redirect(url_for('auth.definir_whatsapp', next=nxt))
+            if _should_prompt_display_name():
+                return redirect(url_for('auth.definir_nome', next=nxt))
+            if _should_prompt_phone():
+                return redirect(url_for('auth.definir_whatsapp', next=nxt))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -409,6 +426,8 @@ def definir_nome():
         update_user_display_name(session['user_id'], nome)
         session['display_name'] = nome
         flash(f'Perfeito, {nome}!', 'success')
+        if _should_prompt_phone():
+            return redirect(url_for('auth.definir_whatsapp', next=next_page))
         return redirect(next_page)
 
     if session.get('display_name'):

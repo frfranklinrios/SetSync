@@ -35,7 +35,7 @@
 {% if cifras %}
 <div class="row-card">
     {% for cifra in cifras %}
-    {{ cifra_row(cifra, band, show_admin_actions=true) }}
+    {{ cifra_row(cifra, band, show_edit=is_member, show_delete=is_admin) }}
     {% endfor %}
 </div>
 {% else %}

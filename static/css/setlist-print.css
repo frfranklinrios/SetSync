@@ -725,6 +725,12 @@ html.setlist-print-root.palco-compact .palco-song-artist {
   .setlist-print-sheet .sp-chord,
   .setlist-print-sheet .chord,
   .setlist-print-sheet .cifra-chords,
+  .setlist-print-sheet .pulse-cell .chord-text,
+  .setlist-print-sheet .chord-split-item .chord-text,
+  .setlist-print-sheet .chord-text .chord-symbol,
+  .setlist-print-sheet .chord-text .chord-quality,
+  .setlist-print-sheet .chord-text .accidental,
+  .setlist-print-sheet .grade-chord-play,
   .setlist-print-grade-line,
   .palco-key-value,
   .setlist-print-cifras-label {

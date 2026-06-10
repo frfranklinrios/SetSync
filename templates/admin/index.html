@@ -93,7 +93,7 @@
                         {% for band in bands %}
                         <tr>
                             <td><strong>{{ band.name }}</strong></td>
-                            <td>{{ band.owner.username or band.owner.email or '—' }}</td>
+                            <td>{{ user_display_name(band.owner) if band.owner else '—' }}</td>
                             <td>{{ band.members_count }}</td>
                             <td>{{ band.cifras_count }}</td>
                             <td class="text-end">
@@ -144,9 +144,10 @@
     </div>
 
     <div class="tab-pane fade" id="tab-users">
-        <div class="alert alert-secondary py-2 mb-3" style="font-size:0.85rem;">
-            Administradores globais: variável <code>SETSYNC_SUPERADMIN_*</code> no servidor
-            <strong>ou</strong> promoção persistente no banco (coluna <code>is_superadmin</code>).
+        <div class="alert alert-warning py-2 mb-3" style="font-size:0.85rem;">
+            <strong>Superadmin do app</strong> — vê todas as bandas e o painel Admin.
+            Não confundir com <strong>admin de banda</strong> (titular promove em Membros da banda).
+            Superadmin via <code>SETSYNC_SUPERADMIN_*</code> no servidor ou coluna <code>is_superadmin</code> no banco.
         </div>
         <div class="card">
             <div class="table-responsive">
@@ -155,36 +156,62 @@
                         <tr>
                             <th>Usuário</th>
                             <th>E-mail</th>
+                            <th>WhatsApp</th>
                             <th>Cadastro</th>
-                            <th>Admin</th>
+                            <th>Superadmin</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for u in users %}
                         <tr>
-                            <td><strong>{{ u.username }}</strong></td>
+                            <td>
+                                <strong>{{ user_display_name(u) }}</strong>
+                                <span class="text-muted" style="font-size:0.78rem;">@{{ u.username }}</span>
+                            </td>
                             <td>{{ u.email }}</td>
+                            <td>
+                                {% if u.phone %}
+                                <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener noreferrer"
+                                   class="text-decoration-none" title="Abrir no WhatsApp">
+                                    <i class="fab fa-whatsapp text-success me-1"></i>{{ u.phone|whatsapp_display }}
+                                </a>
+                                {% if u.whatsapp_notify %}
+                                <span class="text-muted" style="font-size:0.72rem;" title="Alertas WhatsApp ativos">· alertas</span>
+                                {% else %}
+                                <span class="text-muted" style="font-size:0.72rem;" title="Sem opt-in de alertas">· sem alertas</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                             <td>{{ u.created_at|date_short }}</td>
                             <td>
                                 {% if u.is_env_admin %}
                                 <span class="admin-badge-sa">Sim</span>
+                                {% if u.is_superadmin_env %}
+                                <span class="text-muted" style="font-size:0.75rem;"> (.env)</span>
+                                {% elif u.is_superadmin_db %}
+                                <span class="text-muted" style="font-size:0.75rem;"> (banco)</span>
+                                {% endif %}
                                 {% else %}
                                 <span class="text-muted">Não</span>
                                 {% endif %}
                             </td>
                             <td class="text-end">
-                                {% if u.is_env_admin %}
+                                {% if u.is_superadmin_db %}
                                 <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
                                     {% include 'partials/csrf_input.html' %}
                                     <input type="hidden" name="enabled" value="0">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">Revogar admin</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Revogar superadmin</button>
                                 </form>
+                                {% elif u.is_superadmin_env %}
+                                <span class="text-muted" style="font-size:0.8rem;">Definido no .env</span>
                                 {% else %}
                                 <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
                                     {% include 'partials/csrf_input.html' %}
                                     <input type="hidden" name="enabled" value="1">
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Tornar admin</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Tornar superadmin</button>
                                 </form>
                                 {% endif %}
                             </td>

@@ -1,4 +1,365 @@
-/* Lead Sheet — modo tocar e visualização da cifra (responsivo) */
+/* Chord Sheet — modo tocar e visualização da cifra (responsivo) */
+
+/* Grade estilo Chord Sheet Maker / PDF (compassos em linha, só acordes) */
+.chord-sheet-play {
+  --chord-sheet-font: "Patrick Hand SC", "Segoe Print", "Bradley Hand", cursive;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-family: var(--chord-sheet-font);
+  font-size: clamp(1rem, 3vw, 1.15rem);
+  color: var(--ss-fg, #1c1917);
+  letter-spacing: 0.01em;
+}
+
+#play-app .chord-sheet-play {
+  font-size: clamp(1rem, 3vw, 1.15rem);
+}
+
+.chord-sheet-play.chord-sheet-paper {
+  background: var(--ss-bg, #111827);
+  color: var(--ss-fg, #e7e5e4);
+  border: 1px solid var(--ss-border, #334155);
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow, 0 2px 12px rgba(0, 0, 0, 0.25));
+  padding: clamp(0.75rem, 2vw, 1.15rem);
+}
+
+.chord-sheet-play .chord-sheet-meta-strip {
+  font-size: 0.72em;
+  color: var(--ss-muted, #94a3b8);
+  text-align: center;
+  letter-spacing: 0.02em;
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--ss-border, #334155);
+}
+
+.chord-sheet-play .chord-sheet-body {
+  width: 100%;
+  max-width: 100%;
+}
+
+.chord-sheet-play .chord-sheet-staff-system {
+  margin-bottom: 0.38rem;
+}
+
+#play-app .cifra-body.grade-mode .chord-sheet-play .chord-sheet-staff-system {
+  margin-bottom: 0.42rem;
+}
+
+.chord-sheet-play .chord-sheet-staff-system:last-child {
+  margin-bottom: 0;
+}
+
+/* Cabeçalho estilo PDF (título à esquerda, artista à direita) */
+.chord-sheet-play .chord-sheet-pdf-header {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--ss-rule, #e7e5e4);
+}
+
+.chord-sheet-play .chord-sheet-pdf-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.chord-sheet-play .chord-sheet-pdf-title-song {
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
+  font-weight: 700;
+  color: var(--ss-fg, #1c1917);
+  line-height: 1.2;
+}
+
+.chord-sheet-play .chord-sheet-pdf-title-artist {
+  font-size: clamp(0.85rem, 2.8vw, 1rem);
+  font-weight: 600;
+  color: var(--ss-muted, #57534e);
+  line-height: 1.2;
+  margin-left: auto;
+  text-align: right;
+}
+
+/* Seção — caixa (A, B) ou linhas laterais (Refrão, Verso) */
+.chord-sheet-play .chord-sheet-section {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0.85rem 0 0.35rem;
+  padding: 0;
+  border: none;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.chord-sheet-play .chord-sheet-section:first-child {
+  margin-top: 0.15rem;
+}
+
+.chord-sheet-play .chord-sheet-section--boxed {
+  display: block;
+  text-align: left;
+  margin: 0.65rem 0 0.25rem;
+}
+
+.chord-sheet-play .chord-sheet-section--boxed::before,
+.chord-sheet-play .chord-sheet-section--boxed::after {
+  display: none;
+}
+
+.chord-sheet-play .chord-sheet-section--boxed .chord-sheet-section-text {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border: 1px solid var(--ss-fg, #1c1917);
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ss-fg, #1c1917);
+  background: var(--ss-bg, #fff);
+}
+
+.chord-sheet-play .chord-sheet-section:not(.chord-sheet-section--boxed)::before,
+.chord-sheet-play .chord-sheet-section:not(.chord-sheet-section--boxed)::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--ss-border, #d6d3d1);
+}
+
+.chord-sheet-play .chord-sheet-section-text {
+  flex-shrink: 0;
+  font-size: 0.68em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ss-muted, #57534e);
+}
+
+/* Pauta estilo PDF chordsheet.com — acordes acima da linha, compassos verticais */
+.chord-sheet-play .chord-sheet-staff-bars {
+  display: flex;
+  align-items: flex-end;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: clamp(2.5rem, 8vw, 3rem);
+  padding: 0.1rem 0 0;
+  box-sizing: border-box;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid var(--ss-fg, #1c1917) !important;
+  border-radius: 0 !important;
+}
+
+.chord-sheet-play .staff-bar-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.chord-sheet-play .staff-bar-col--pad .staff-bar {
+  border-left-color: transparent !important;
+  visibility: hidden;
+}
+
+.chord-sheet-play .staff-bar {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 2rem;
+  border-left: 1px solid var(--ss-fg, #1c1917);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 2px 0.3rem;
+  background: transparent;
+}
+
+.chord-sheet-play .staff-bar-col:first-child .staff-bar {
+  border-left-width: 2px;
+}
+
+.chord-sheet-play .staff-bar-col.staff-bar-last .staff-bar {
+  border-right: 2px solid var(--ss-fg, #1c1917);
+}
+
+.chord-sheet-play .staff-bar-col.staff-bar-section-start .staff-bar {
+  border-left-width: 3px;
+}
+
+.chord-sheet-play .staff-bar-col.staff-bar-section-end .staff-bar {
+  border-right: 3px solid var(--ss-fg, #1c1917);
+}
+
+.chord-sheet-play .pulse-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.chord-sheet-play .pulse-grid--solo .pulse-cell,
+.chord-sheet-play .pulse-grid--simile .pulse-cell {
+  border-right: none;
+  justify-content: center;
+}
+
+.chord-sheet-play .pulse-grid--split {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-evenly;
+  width: 100%;
+  gap: 0.15rem;
+  padding: 0 0.15rem;
+}
+
+.chord-sheet-play .chord-split-item {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+}
+
+.chord-sheet-play .pulse-cell {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+  padding: 0 clamp(2px, 0.8vw, 4px);
+  box-sizing: border-box;
+  border-right: none;
+  overflow: hidden;
+}
+
+.chord-sheet-play .pulse-grid:not(.pulse-grid--solo):not(.pulse-grid--simile) .pulse-cell {
+  justify-content: center;
+}
+
+.chord-sheet-play .pulse-cell .chord-text,
+.chord-sheet-play .chord-split-item .chord-text {
+  display: inline-block;
+  line-height: 1.05;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+  font-family: var(--chord-sheet-font);
+  color: var(--ss-fg, #1c1917);
+  font-size: clamp(1rem, 3.2vw, 1.2rem);
+}
+
+.chord-sheet-play .chord-text .chord-quality {
+  font-size: 0.58em;
+  vertical-align: 0.5em;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.chord-sheet-play .chord-text .chord-quality--maj {
+  font-size: 0.5em;
+  letter-spacing: -0.02em;
+}
+
+.chord-sheet-play .chord-text .chord-symbol {
+  font-size: 0.92em;
+  font-weight: 400;
+}
+
+.chord-sheet-play .chord-text .accidental {
+  font-size: 0.72em;
+  vertical-align: 0.05em;
+}
+
+.chord-sheet-play .pulse-empty {
+  font-size: clamp(0.8rem, 2.4vw, 0.95rem);
+  font-weight: 700;
+  color: var(--ss-muted, #78716c);
+}
+
+.chord-sheet-play .leadsheet-play-title {
+  font-size: clamp(1rem, 3.5vw, 1.15rem);
+  font-weight: 700;
+  color: var(--ss-chord, var(--chord-highlight, #c2410c));
+  line-height: 1.2;
+  text-align: center;
+  margin-bottom: 0.15rem;
+}
+
+.chord-sheet-play .leadsheet-play-header {
+  text-align: center;
+  border-bottom: 1px solid var(--ss-rule, #e7e5e4);
+  padding-bottom: 0.55rem;
+  margin-bottom: 0.65rem;
+}
+
+.chord-sheet-play .chord-sheet-chord {
+  font-weight: 700;
+  font-size: clamp(0.88rem, 3vw, 1.15rem);
+  line-height: 1.1;
+  color: var(--ss-chord, var(--chord-highlight, #ea580c));
+  word-break: break-word;
+}
+
+.chord-sheet-play .chord-sheet-chord--solo {
+  font-size: clamp(0.95rem, 3.4vw, 1.28rem);
+}
+
+.chord-sheet-play .chord-sheet-repeat {
+  font-size: clamp(1rem, 3.2vw, 1.25rem);
+  font-weight: 700;
+  color: var(--ss-muted, #94a3b8);
+  line-height: 1;
+}
+
+.chord-sheet-play .chord-sheet-beats {
+  display: grid;
+  grid-template-columns: repeat(var(--beats, 4), minmax(0, 1fr));
+  width: 100%;
+  height: 100%;
+  align-items: center;
+}
+
+.chord-sheet-play .chord-sheet-beat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 1px;
+  border-right: 1px dashed var(--ss-border, rgba(100, 116, 139, 0.45));
+}
+
+.chord-sheet-play .chord-sheet-beat:last-child {
+  border-right: none;
+}
+
+.chord-sheet-play .chord-sheet-beat .chord-sheet-chord {
+  font-size: clamp(0.72rem, 2.4vw, 0.92rem);
+}
+
+.chord-sheet-play .chord-sheet-beat--repeat {
+  font-size: clamp(0.78rem, 2.5vw, 0.95rem);
+  font-weight: 700;
+  color: var(--ss-muted, #94a3b8);
+}
+
+.chord-sheet-play .leadsheet-play-header {
+  border-bottom: 1px solid var(--chord-highlight-border, rgba(234, 88, 12, 0.25));
+  padding: 0 0 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+/* Lead Sheet (visualização staff) — editor e preview detalhado */
 .leadsheet-view-panel .leadsheet-play-wrap {
   padding: clamp(0.75rem, 2.5vw, 1.25rem);
 }

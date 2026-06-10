@@ -270,6 +270,42 @@ def event_updated(band_id: str, actor_user_id: str, event_id: str, title: str, e
     )
 
 
+def event_scale_response(
+    band_id: str,
+    responder_user_id: str,
+    event_id: str,
+    title: str,
+    *,
+    accepted: bool,
+    note: str | None,
+    assigned_by: str | None,
+):
+    """Notifica quem escalou sobre aceite ou recusa."""
+    if not assigned_by or assigned_by == responder_user_id:
+        return 0
+    responder = _actor_name(responder_user_id)
+    band = _band_label(band_id)
+    if accepted:
+        ntype = 'event_scale_accepted'
+        verb = 'aceitou'
+    else:
+        ntype = 'event_scale_declined'
+        verb = 'recusou'
+    body = f'{responder} {verb} a escalação para «{title}».'
+    if note:
+        body += f' Observação: {note}'
+    create_notification(
+        assigned_by,
+        band_id=band_id,
+        actor_user_id=responder_user_id,
+        type=ntype,
+        title=f'{band} — resposta da escalação',
+        body=body,
+        url_path=f'/agenda/{event_id}',
+    )
+    return 1
+
+
 def event_scale_assigned(
     band_id: str,
     actor_user_id: str,

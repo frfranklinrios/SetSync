@@ -448,6 +448,9 @@ def _migrate_agenda_schema(c) -> None:
     add_column_if_missing(c, 'band_events', 'location_lat', 'REAL')
     add_column_if_missing(c, 'band_events', 'location_lng', 'REAL')
     add_column_if_missing(c, 'band_events', 'location_place_id', 'TEXT')
+    add_column_if_missing(c, 'band_event_assignments', 'response_status', "TEXT DEFAULT 'pending'")
+    add_column_if_missing(c, 'band_event_assignments', 'response_note', 'TEXT')
+    add_column_if_missing(c, 'band_event_assignments', 'responded_at', 'TIMESTAMP')
 
 
 def _migrate_content_schema(c) -> None:
@@ -1654,6 +1657,40 @@ def remove_band_member(band_id, user_id):
     c.execute('DELETE FROM band_members WHERE band_id = ? AND user_id = ?', (band_id, user_id))
     db.commit()
     db.close()
+
+
+def update_band_member_role(band_id: str, user_id: str, role: str) -> bool:
+    """Atualiza papel do membro na banda (member | admin). Não altera owner."""
+    role = (role or 'member').strip().lower()
+    if role not in ('member', 'admin'):
+        role = 'member'
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        "UPDATE band_members SET role = ? WHERE band_id = ? AND user_id = ? AND role != 'owner'",
+        (role, band_id, user_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
+def is_superadmin_env_only(user_id: str) -> bool:
+    """True se o superadmin vem só do .env (não revogável pela UI)."""
+    if not user_id:
+        return False
+    user = get_user(user_id)
+    if not user or user.get('is_superadmin'):
+        return False
+    env_users, env_emails = _env_superadmin_identifiers()
+    if not env_users and not env_emails:
+        return False
+    if user.get('username', '').lower() in env_users:
+        return True
+    if user.get('email', '').lower() in env_emails:
+        return True
+    return False
 
 
 def is_band_member(band_id, user_id):

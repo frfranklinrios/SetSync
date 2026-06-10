@@ -7,6 +7,7 @@ from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_
                 update_band, delete_band, get_band_members, add_band_member, remove_band_member,
                 is_band_member, is_band_admin, is_superadmin, can_delete_band,
                 can_edit_band_settings, set_band_logo_filename, get_user,
+                update_band_member_role,
                 enrich_bands_for_display, user_display_name)
 from band_invites import make_band_invite_token
 from security import external_url_for
@@ -138,6 +139,7 @@ def view(band_id):
         owner=owner,
         vocalist_name=vocalist_name,
         is_admin=admin,
+        is_member=True,
         is_superadmin=is_superadmin(user_id),
         band_has_logo=band_has_logo(band),
         band_logo_url=url_for('bands.band_logo', band_id=band_id) if band_has_logo(band) else None,
@@ -319,6 +321,36 @@ def invite(band_id):
     bn.member_added_by_admin(band_id, user_id, invited_user_id)
     flash(f'{user_display_name(user)} adicionado à banda', 'success')
     return redirect(url_for('bands.members', band_id=band_id))
+
+@bands_bp.route('/<band_id>/members/<member_id>/role', methods=['POST'])
+@login_required
+def set_member_role(band_id, member_id):
+    user_id = session['user_id']
+    band = get_band(band_id)
+
+    if not band or band['owner_id'] != user_id:
+        flash('Só o titular da banda pode alterar papéis de membros.', 'danger')
+        return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
+
+    if member_id == band['owner_id']:
+        flash('O titular da banda não pode ter o papel alterado.', 'warning')
+        return redirect(url_for('bands.members', band_id=band_id))
+
+    role = (request.form.get('role') or 'member').strip().lower()
+    if role not in ('member', 'admin'):
+        role = 'member'
+
+    if update_band_member_role(band_id, member_id, role):
+        target = get_user(member_id)
+        label = 'administrador da banda' if role == 'admin' else 'membro'
+        flash(
+            f'{user_display_name(target)} agora é {label} em {band["name"]}.',
+            'success',
+        )
+    else:
+        flash('Não foi possível atualizar o papel do membro.', 'danger')
+    return redirect(url_for('bands.members', band_id=band_id))
+
 
 @bands_bp.route('/<band_id>/remove-member/<user_id_to_remove>', methods=['POST'])
 @login_required

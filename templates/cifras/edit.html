@@ -61,13 +61,13 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label fw-semibold">Lead Sheet</label>
+        <label class="form-label fw-semibold">Chord Sheet</label>
         <p class="form-text mb-2">
             Substitui o formato antigo por compasso. Edite compassos, partes, letra e acordes no editor visual.
         </p>
         <a href="{{ url_for('cifras.leadsheet_editor', cifra_id=cifra.id) }}"
            class="btn btn-outline-info">
-            <i class="fas fa-table-cells me-1"></i> Abrir editor Lead Sheet
+            <i class="fas fa-table-cells me-1"></i> Abrir editor Chord Sheet
         </a>
         {% if cifra.leadsheet_json or cifra.grade_json %}
         <span class="badge text-bg-success ms-2">Dados cadastrados</span>
@@ -95,9 +95,9 @@
                 </div>
             </div>
             <div class="col-md-8">
-                <label class="form-label small fw-semibold">Lead Sheet JSON</label>
+                <label class="form-label small fw-semibold">Chord Sheet JSON</label>
                 <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
-                <div class="form-text">Lead sheet (schema sections + events) ou formato legado por compasso</div>
+                <div class="form-text">Chord sheet (schema sections + events) ou formato legado por compasso</div>
             </div>
         </div>
     </details>
@@ -474,7 +474,7 @@ document.getElementById('cifra-form').addEventListener('submit', function (event
     if (gradeText) {
         var parsedGrade = parseGradeTextToJson(gradeText);
         if (!parsedGrade) {
-            alert('Não foi possível interpretar o lead sheet. Use Parte A, ▸ Seção e acordes por compasso.');
+            alert('Não foi possível interpretar o chord sheet. Use Parte A, ▸ Seção e acordes por compasso.');
             event.preventDefault();
             return;
         }

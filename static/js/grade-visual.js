@@ -1,5 +1,5 @@
 /**
- * Lead sheet visual + conversão texto ↔ JSON (formato SetSync).
+ * Chord sheet visual + conversão texto ↔ JSON (formato SetSync).
  */
 (function (global) {
   function escHtml(s) {
@@ -69,11 +69,11 @@
       : flatToPartes(data);
 
     if (!partes.length) {
-      el.innerHTML = '<div class="grade-visual-header">Sem lead sheet.</div>';
+      el.innerHTML = '<div class="grade-visual-header">Sem chord sheet.</div>';
       return;
     }
 
-    var header = opts.title || "Lead sheet";
+    var header = opts.title || "Chord sheet";
     if (opts.compasso) header += " · Compasso " + escHtml(opts.compasso);
     var html = '<div class="grade-visual-root">';
     html += '<div class="grade-visual-header">' + header + "</div>";
