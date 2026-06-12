@@ -396,6 +396,28 @@ def _load_display_leadsheet(cifra, semitones=0):
     return doc
 
 
+def _lyrics_at_semitones(cifra, semitones=0):
+    """Letra sem acordes, transposta conforme semitones."""
+    from setlist_public import clean_lyrics_for_public, conteudo_to_lyrics_plain
+
+    data = _load_best_structured_cifra(cifra, semitones)
+    if data:
+        blocks: list[str] = []
+        for group in _group_cifra_data(data):
+            parts = [str(item.get('texto_letra') or '') for item in group if item.get('texto_letra')]
+            line = ''.join(parts).strip()
+            if line:
+                blocks.append(line)
+        if blocks:
+            return clean_lyrics_for_public('\n\n'.join(blocks))
+
+    raw = sanitize_tab_html_artifacts(cifra.get('conteudo') or '')
+    if semitones:
+        raw = pychord_transpose_text(raw, semitones, cifra.get('tom_original'))
+    raw = format_text_chords_br(raw, key_at_transpose(cifra.get('tom_original'), semitones))
+    return conteudo_to_lyrics_plain(raw)
+
+
 def _grade_flat_to_print_html(grade_list):
     """HTML simples da grade para impressão quando não há cifra linha a linha."""
     if not grade_list:
@@ -468,6 +490,15 @@ def prepare_cifra_sheet(cifra, semitones=0):
         if grade_data:
             grade_html = _grade_flat_to_print_html(grade_data)
 
+    lyrics_plain = _lyrics_at_semitones(cifra, semi)
+    chordsheet_html = None
+    from chordsheet_bridge import cifra_has_chordsheet, render_cifra_chordsheet_html
+
+    if cifra_has_chordsheet(cifra):
+        chordsheet_html = render_cifra_chordsheet_html(
+            cifra, semitones=semi, display_key=display_key
+        )
+
     return {
         'titulo': cifra.get('titulo') or 'Sem título',
         'artista': (cifra.get('artista') or '').strip(),
@@ -477,7 +508,11 @@ def prepare_cifra_sheet(cifra, semitones=0):
         'grouped_cifra': grouped_cifra,
         'conteudo_html': conteudo_html,
         'grade_html': grade_html,
+        'lyrics_plain': lyrics_plain,
+        'chordsheet_html': chordsheet_html,
         'has_content': bool(grouped_cifra or conteudo_html or grade_html),
+        'has_lyrics': bool((lyrics_plain or '').strip()),
+        'has_chordsheet': bool(chordsheet_html),
     }
 
 
@@ -535,6 +570,7 @@ def enrich_cifra_for_tocar(cifra, setlist_id=None):
         c['transpose_by_vocalist'] = {}
     c['transpose_semitones'] = normalize_transpose_semitones(cifra_transpose_semitones(c, active_vid))
     c['has_tablatura'] = has_tab
+    c['lyrics_plain'] = _lyrics_at_semitones(c, c.get('transpose_semitones') or 0)
     doc = resolve_leadsheet_document(c)
     if doc:
         c['leadsheet_json'] = json.dumps(doc, ensure_ascii=False)
@@ -616,6 +652,13 @@ def view(cifra_id):
     vocalist_name = vocalist_entry_display_name(active_vocalist) if active_vocalist else None
     vocalist_linked = bool(active_vocalist and active_vocalist.get('user_id'))
 
+    from chordsheet_bridge import cifra_has_chordsheet
+    from setlist_public import lyrics_from_cifra
+
+    active_tab = (request.args.get('tab') or 'cifra').strip().lower()
+    if active_tab not in ('cifra', 'chordsheet', 'letra'):
+        active_tab = 'cifra'
+
     return render_template('cifras/view.html',
                            cifra=cifra,
                            band=band,
@@ -624,7 +667,10 @@ def view(cifra_id):
                            cifra_data=cifra_data,
                            grade_data=grade_data,
                            leadsheet_document=leadsheet_document,
+                           has_chordsheet=cifra_has_chordsheet(cifra) or bool(leadsheet_document),
                            grouped_cifra=grouped_cifra,
+                           lyrics_plain=lyrics_from_cifra(cifra, vocalist_id=active_vocalist_id),
+                           active_tab=active_tab,
                            transpositions=transpositions,
                            current_transpose=current_transpose,
                            display_key=display_key,
@@ -739,6 +785,33 @@ def add(band_id):
 
     return render_template('cifras/add.html', band=band)
 
+def _edit_page_context(cifra, band, active_tab=None):
+    from chordsheet.examples import EXAMPLES
+    from chordsheet_bridge import load_editor_initial
+    from setlist_public import lyrics_from_cifra
+
+    tab = (active_tab or request.args.get('tab') or 'cifra').strip().lower()
+    if tab not in ('cifra', 'chordsheet', 'letra'):
+        tab = 'cifra'
+    initial = load_editor_initial(cifra)
+    examples_public = {
+        key: {
+            'title': ex.get('title', key),
+            'meta': ex.get('meta') or {},
+            'source': ex.get('source') or '',
+        }
+        for key, ex in EXAMPLES.items()
+    }
+    return {
+        'cifra': _cifra_for_display(cifra),
+        'band': band,
+        'active_tab': tab,
+        'lyrics_plain': lyrics_from_cifra(cifra),
+        'chordsheet_initial': initial,
+        'chordsheet_examples': examples_public,
+    }
+
+
 @cifras_bp.route('/<cifra_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(cifra_id):
@@ -762,11 +835,15 @@ def edit(cifra_id):
         conteudo = request.form.get('conteudo', '').strip() or cifra['conteudo']
         if not titulo or not artista:
             flash('Preencha título e artista', 'danger')
-            return render_template('cifras/edit.html', cifra=cifra, band=band)
+            cifra['titulo'] = titulo
+            cifra['artista'] = artista
+            cifra['tom_original'] = tom_original
+            cifra['conteudo'] = conteudo
+            return render_template('cifras/edit.html', **_edit_page_context(cifra, band))
 
         cifra_json_new, grade_json_new, bpm, duracao_seg = _parse_extra_fields(request.form)
         if cifra_json_new is False or grade_json_new is False:
-            return render_template('cifras/edit.html', cifra=cifra, band=band)
+            return render_template('cifras/edit.html', **_edit_page_context(cifra, band))
 
         # Mantém valores existentes se nada novo foi enviado
         cifra_json = cifra_json_new if cifra_json_new is not None else cifra.get('cifra_json')
@@ -806,7 +883,7 @@ def edit(cifra_id):
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
-    return render_template('cifras/edit.html', cifra=_cifra_for_display(cifra), band=band)
+    return render_template('cifras/edit.html', **_edit_page_context(cifra, band))
 
 @cifras_bp.route('/<cifra_id>/delete', methods=['POST'])
 @login_required
@@ -869,6 +946,7 @@ def get_transposed(cifra_id):
     - ?html=1 para HTML destacado (conteudo)
     - ?structured=1 para retornar cifra_json transposta
     - ?grade=1 para retornar grade_json transposta
+    - ?lyrics=1 para letra sem acordes (transposta)
     """
     user_id = session['user_id']
     cifra = get_cifra(cifra_id)
@@ -881,6 +959,7 @@ def get_transposed(cifra_id):
     want_play = request.args.get('play', '0') == '1'
     want_structured = request.args.get('structured', '0') == '1'
     want_grade = request.args.get('grade', '0') == '1'
+    want_lyrics = request.args.get('lyrics', '0') == '1'
 
     raw = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
     transposed = pychord_transpose_text(raw, semitones, cifra['tom_original']) if semitones else raw
@@ -907,7 +986,35 @@ def get_transposed(cifra_id):
         if leadsheet:
             payload['leadsheet'] = leadsheet
 
+    if want_lyrics:
+        payload['lyrics_plain'] = _lyrics_at_semitones(cifra, semitones)
+
     return jsonify(payload)
+
+
+@cifras_bp.route('/<cifra_id>/chordsheet/render', methods=['GET'])
+@login_required
+def chordsheet_render(cifra_id):
+    """Renderiza chord sheet (módulo chordsheet) em HTML para play mode e visualização."""
+    from chordsheet_bridge import render_cifra_chordsheet_html
+
+    user_id = session['user_id']
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], user_id):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+
+    semitones = normalize_transpose_semitones(
+        request.args.get('semitones', 0, type=int)
+    )
+    display_key = key_at_transpose(cifra['tom_original'], semitones)
+    html = render_cifra_chordsheet_html(
+        cifra,
+        semitones=semitones,
+        display_key=display_key,
+    )
+    if not html:
+        return jsonify({'ok': False, 'error': 'Chord sheet indisponível'}), 404
+    return jsonify({'ok': True, 'html': html, 'display_key': display_key})
 
 
 @cifras_bp.route('/chord-info', methods=['GET'])
@@ -929,6 +1036,7 @@ def chord_info():
 @cifras_bp.route('/<cifra_id>/leadsheet')
 @login_required
 def leadsheet_editor(cifra_id):
+    """Redireciona para edição unificada na aba Chord Sheet."""
     user_id = session['user_id']
     cifra = get_cifra(cifra_id)
     if not cifra:
@@ -937,15 +1045,100 @@ def leadsheet_editor(cifra_id):
     if not is_band_member(cifra['band_id'], user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
+    return redirect(url_for('cifras.edit', cifra_id=cifra_id, tab='chordsheet'))
 
-    band = get_band(cifra['band_id'])
-    initial = resolve_leadsheet_document(cifra)
-    return render_template(
-        'cifras/leadsheet_edit.html',
-        cifra=cifra,
-        band=band,
-        initial_leadsheet=initial,
-    )
+
+@cifras_bp.route('/<cifra_id>/chordsheet/api/render', methods=['POST'])
+@login_required
+def chordsheet_api_render(cifra_id):
+    from chordsheet.parser import parse_chart
+    from chordsheet.render import render_chart_html
+    from chordsheet_bridge import apply_chart_cifra_spelling
+    from util import normalize_tom_label
+
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    data = request.get_json(force=True) or {}
+    try:
+        meta = data.get('meta') or {}
+        spell_key = normalize_tom_label(
+            meta.get('key') or cifra.get('tom_original') or ''
+        )
+        chart = parse_chart(
+            data.get('source', ''),
+            meta=meta,
+            prefs=data.get('prefs') or {},
+        )
+        if spell_key:
+            apply_chart_cifra_spelling(chart, spell_key)
+        html = render_chart_html(chart)
+        return jsonify({'ok': True, 'html': html, 'bar_count': len(chart.bars)})
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 400
+
+
+@cifras_bp.route('/<cifra_id>/chordsheet/api/transpose', methods=['POST'])
+@login_required
+def chordsheet_api_transpose(cifra_id):
+    from dataclasses import asdict
+
+    from chordsheet.parser import parse_chart
+    from chordsheet.transpose import transpose_chart
+    from chordsheet_bridge import apply_chart_cifra_spelling
+    from util import key_at_transpose, normalize_tom_label, normalize_transpose_semitones
+
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    data = request.get_json(force=True) or {}
+    semitones = normalize_transpose_semitones(int(data.get('semitones', 0)))
+    try:
+        meta = data.get('meta') or {}
+        tom = normalize_tom_label(meta.get('key') or cifra.get('tom_original') or '')
+        chart = parse_chart(
+            data.get('source', ''),
+            meta=meta,
+            prefs=data.get('prefs') or {},
+        )
+        transposed = transpose_chart(chart, semitones)
+        if tom:
+            apply_chart_cifra_spelling(
+                transposed, key_at_transpose(tom, semitones)
+            )
+        return jsonify({
+            'ok': True,
+            'source': transposed.to_source(),
+            'meta': asdict(transposed.meta),
+        })
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 400
+
+
+@cifras_bp.route('/<cifra_id>/chordsheet/api/save', methods=['POST'])
+@login_required
+def chordsheet_api_save(cifra_id):
+    from chordsheet_bridge import persist_chordsheet_payload
+
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    data = request.get_json(force=True) or {}
+    try:
+        persist_chordsheet_payload(cifra_id, data)
+        titulo = (data.get('meta') or {}).get('title') or cifra.get('titulo') or 'Cifra'
+        bn.cifra_updated(cifra['band_id'], session['user_id'], cifra_id, titulo)
+        redirect_to = (data.get('redirect_to') or '').strip()
+        if redirect_to == 'edit':
+            redirect_url = url_for('cifras.edit', cifra_id=cifra_id, tab='chordsheet')
+        else:
+            redirect_url = url_for('cifras.view', cifra_id=cifra_id, tab='chordsheet')
+        return jsonify({
+            'ok': True,
+            'redirect': redirect_url,
+        })
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 400
 
 
 @cifras_bp.route('/<cifra_id>/leadsheet/api/gerar', methods=['POST'])

@@ -38,11 +38,47 @@ def _require_setlist_access(setlist, user_id):
     return True, band
 
 
+PRINT_SECTION_KEYS = ('indice', 'cifras', 'letras', 'chordsheet')
+
+
+def parse_print_sections(source=None) -> dict[str, bool]:
+    """Seções do PDF/impressão: indice, cifras, letras, chordsheet."""
+    source = source if source is not None else request.args
+    keys = PRINT_SECTION_KEYS
+    explicit = any(source.get(k) is not None for k in keys)
+    raw_list = source.get('sections')
+    if raw_list is not None:
+        explicit = True
+    if not explicit:
+        return {k: True for k in keys}
+
+    sections = {k: False for k in keys}
+    if raw_list is not None:
+        selected = {
+            s.strip().lower()
+            for s in str(raw_list).split(',')
+            if s.strip()
+        }
+        if 'chordsheets' in selected:
+            selected.add('chordsheet')
+        for k in keys:
+            sections[k] = k in selected
+    else:
+        for k in keys:
+            val = source.get(k)
+            sections[k] = str(val or '').lower() in ('1', 'true', 'yes', 'on')
+
+    if not any(sections.values()):
+        return {k: True for k in keys}
+    return sections
+
+
 def build_setlist_print_payload(
     setlist_id,
     *,
     cols: str | None = None,
     compact: bool | None = None,
+    sections: dict[str, bool] | None = None,
 ):
     """Monta setlist, band e sheets para impressão. Retorna dict ou None se setlist inexistente."""
     from datetime import datetime
@@ -92,6 +128,9 @@ def build_setlist_print_payload(
     else:
         palco_compact = bool(compact)
 
+    if sections is None:
+        sections = parse_print_sections()
+
     from band_logos import band_has_logo, band_logo_data_uri
 
     return {
@@ -102,6 +141,7 @@ def build_setlist_print_payload(
         'printed_at': datetime.now(),
         'two_cols': two_cols,
         'palco_compact': palco_compact,
+        'print_sections': sections,
         'band_has_logo': band_has_logo(band),
         'band_logo_data_uri': band_logo_data_uri(band),
     }
@@ -144,12 +184,12 @@ def imprimir(setlist_id):
 @setlists_bp.route('/<setlist_id>/exportar-pdf')
 @login_required
 def exportar_pdf(setlist_id):
-    """PDF com folha de palco (lista) + cifras completas (Chromium)."""
+    """PDF com folha de palco, cifras, letras e chord sheets (Chromium)."""
     return _send_setlist_pdf_download(setlist_id, session['user_id'])
 
 
 def _send_setlist_pdf_download(setlist_id: str, user_id: str):
-    """Valida acesso/plano e devolve PDF (lista de músicas + cifras)."""
+    """Valida acesso/plano e devolve PDF (palco + cifras + letras + chord sheets)."""
     from monetizacao import pode_exportar_pdf, resposta_plano_necessario
     from setlist_pdf import build_pdf_download_name, generate_setlist_pdf_bytes
 
@@ -163,9 +203,16 @@ def _send_setlist_pdf_download(setlist_id: str, user_id: str):
     if not pode_exportar_pdf(data['band']['id']):
         return resposta_plano_necessario()
 
+    sections = parse_print_sections()
+    if not any(sections.values()):
+        flash('Selecione ao menos uma seção para o PDF.', 'warning')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+
     try:
         cols = request.args.get('cols', '2')
-        pdf_bytes = generate_setlist_pdf_bytes(setlist_id, user_id, cols=cols)
+        pdf_bytes = generate_setlist_pdf_bytes(
+            setlist_id, user_id, cols=cols, sections=sections
+        )
     except Exception as exc:
         current_app.logger.exception('Erro ao gerar PDF da setlist %s: %s', setlist_id, exc)
         flash(f'Não foi possível gerar o PDF: {exc}', 'danger')
@@ -307,14 +354,20 @@ def list_setlists(band_id):
         s = dict(s)
         s['cifras_count'] = len(get_setlist_cifras(s['id']))
         setlists.append(s)
-    return render_template('setlists/list.html', band=band, setlists=setlists)
+    return render_template(
+        'setlists/list.html',
+        band=band,
+        setlists=setlists,
+        can_edit=True,
+        is_admin=is_band_admin(band_id, user_id),
+    )
 
 @setlists_bp.route('/create/<band_id>', methods=['GET', 'POST'])
 @login_required
 def create(band_id):
     user_id = session['user_id']
     band = get_band(band_id)
-    if not band or not is_band_admin(band_id, user_id):
+    if not band or not is_band_member(band_id, user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('bands.view', band_id=band_id))
     if request.method == 'POST':
@@ -348,7 +401,8 @@ def set_cifra_vocalist(setlist_id, cifra_id):
     vid = (data.get('vocalist_id') or '').strip()
     if vid and not band_vocalist_belongs_to_band(vid, band['id']):
         return jsonify({'ok': False, 'error': 'Cantora/cantor inválido'}), 400
-    set_setlist_cifra_vocalist(setlist_id, cifra_id, vid or None)
+    if not set_setlist_cifra_vocalist(setlist_id, cifra_id, vid or None):
+        return jsonify({'ok': False, 'error': 'Música não encontrada na setlist'}), 404
     cifra = get_cifra(cifra_id)
     v = get_band_vocalist(vid) if vid else None
     vname = vocalist_entry_display_name(v) if v else ''
@@ -390,6 +444,8 @@ def view(setlist_id):
 
     from db import get_band_vocalists, get_band_vocalist
     from blueprints.cifras import cifra_display_key, vocalist_entry_display_name
+    from chordsheet_bridge import cifra_has_chordsheet
+    from setlist_public import lyrics_from_cifra
 
     cifras_raw = get_setlist_cifras(setlist_id)
     vocalists = get_band_vocalists(band['id'])
@@ -397,11 +453,14 @@ def view(setlist_id):
     cifras = []
     for c in cifras_raw:
         row = dict(c)
-        vid = row.get('setlist_vocalist_id') or default_vid
+        raw_vid = row.get('setlist_vocalist_id')
+        vid = str(raw_vid) if raw_vid else (str(default_vid) if default_vid else None)
         row['row_vocalist_id'] = vid
         v = get_band_vocalist(vid) if vid else None
         row['row_vocalist_name'] = vocalist_entry_display_name(v) if v else ''
         row['row_display_key'] = cifra_display_key(c, vocalist_id=vid) if c.get('tom_original') else ''
+        row['has_lyrics'] = bool((lyrics_from_cifra(c, vocalist_id=vid) or '').strip())
+        row['has_chordsheet'] = cifra_has_chordsheet(c)
         cifras.append(row)
 
     from security import external_url_for
@@ -421,6 +480,8 @@ def view(setlist_id):
         vocalists=vocalists,
         public_share_enabled=share_on,
         public_letras_url=public_letras_url,
+        can_edit=True,
+        is_admin=is_band_admin(band['id'], user_id),
     )
 
 

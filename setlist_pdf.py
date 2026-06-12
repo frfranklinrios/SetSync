@@ -99,18 +99,21 @@ def build_setlist_pdf_url(
     user_id: str,
     *,
     cols: str = '2',
+    sections: dict[str, bool] | None = None,
     base_url: str | None = None,
 ) -> str:
-    """URL interna da página de impressão (lista + cifras) para captura em PDF."""
+    """URL interna da página de impressão para captura em PDF."""
     from security import make_pdf_access_token
 
     token = make_pdf_access_token(setlist_id, user_id)
     internal = (base_url or os.getenv('SETSYNC_INTERNAL_URL') or 'http://127.0.0.1:5000').rstrip('/')
     cols = '1' if str(cols) == '1' else '2'
-    return (
-        f'{internal}/setlists/{setlist_id}/imprimir'
-        f'?cols={cols}&pdfgen=1&pdf_token={token}'
-    )
+    parts = [f'cols={cols}', 'pdfgen=1', f'pdf_token={token}']
+    if sections:
+        for key, on in sections.items():
+            if on:
+                parts.append(f'{key}=1')
+    return f'{internal}/setlists/{setlist_id}/imprimir?' + '&'.join(parts)
 
 
 def generate_setlist_pdf_bytes(
@@ -118,6 +121,9 @@ def generate_setlist_pdf_bytes(
     user_id: str,
     *,
     cols: str = '2',
+    sections: dict[str, bool] | None = None,
 ) -> bytes:
-    """PDF A4 com folha de palco (lista) e cifras completas na sequência."""
-    return render_url_to_pdf(build_setlist_pdf_url(setlist_id, user_id, cols=cols))
+    """PDF A4 com seções selecionadas (índice, cifras, letras, chord sheet)."""
+    return render_url_to_pdf(
+        build_setlist_pdf_url(setlist_id, user_id, cols=cols, sections=sections)
+    )

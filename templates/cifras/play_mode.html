@@ -114,6 +114,25 @@ body { overflow-x: hidden; }
 }
 [data-theme="light"] .pb-btn.pb-exit:hover { background: rgba(220,38,38,0.18); }
 
+/* Dropdown de visualização (Cifra / Chord sheet / Letra) */
+.pb-view-dropdown { position: relative; }
+.pb-view-dropdown .dropdown-toggle::after { margin-left: 0.35rem; }
+.pb-view-dropdown .dropdown-menu {
+    min-width: 10.5rem;
+    font-size: 0.82rem;
+    border-radius: 8px;
+    padding: 0.25rem;
+}
+.pb-view-dropdown .dropdown-item {
+    border-radius: 6px;
+    padding: 0.4rem 0.65rem;
+}
+.pb-view-dropdown .dropdown-item.active {
+    background: var(--chord-highlight-bg);
+    color: var(--chord-highlight);
+    font-weight: 600;
+}
+
 /* Font controls */
 .font-ctrl {
     display: flex;
@@ -321,6 +340,27 @@ body { overflow-x: hidden; }
 }
 [data-theme="light"] .cifra-body.two-col {
     column-rule-color: var(--chord-highlight-border);
+}
+
+.cifra-body.letra-mode {
+    white-space: pre-wrap;
+    font-family: var(--font-sans);
+    line-height: 1.7;
+    word-break: break-word;
+}
+.cifra-body .letra-play-pane {
+    max-width: 42rem;
+    margin: 0 auto;
+    font-size: 1.05em;
+}
+.cifra-body.letra-mode.two-col .letra-play-pane {
+    max-width: none;
+    margin: 0;
+}
+.cifra-body .letra-play-empty {
+    color: #64748b;
+    font-style: italic;
+    font-size: 0.9rem;
 }
 .cifra-body.two-col .cifra-chords,
 .cifra-body.two-col .cifra-lyric {
@@ -695,9 +735,13 @@ body.play-mode.edges-hint .tap-zone {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand+SC&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=12">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=15">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=9">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=15">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=16">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=12">
+<style>
+#cifra-content.grade-mode .cs-play-embed.setsync-cs-sheet { padding: 0; }
+</style>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 
@@ -769,9 +813,18 @@ body.play-mode.edges-hint .tap-zone {
             <button class="pb-btn" id="cols-btn" onclick="toggleCols()" title="2 colunas (C)" aria-label="Alternar 2 colunas">
                 <i class="fas fa-columns"></i><span class="pb-label-text">&nbsp;2 col</span>
             </button>
-            <button class="pb-btn" id="grade-btn" onclick="toggleGrade()" title="Chord sheet (G)" aria-label="Chord sheet">
-                <i class="fas fa-table-columns"></i><span class="pb-label-text">&nbsp;Chord sheet</span>
-            </button>
+            <div class="dropdown pb-view-dropdown">
+                <button class="pb-btn dropdown-toggle" id="view-mode-btn" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false"
+                        title="Visualização (G alterna)" aria-label="Modo de visualização">
+                    <i class="fas fa-layer-group"></i><span class="pb-label-text">&nbsp;<span id="view-mode-label">Cifra</span></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="view-mode-menu">
+                    <li><button type="button" class="dropdown-item active" data-view-mode="cifra">Cifra</button></li>
+                    <li><button type="button" class="dropdown-item" data-view-mode="chordsheet">Chord sheet</button></li>
+                    <li><button type="button" class="dropdown-item" data-view-mode="letra">Letra</button></li>
+                </ul>
+            </div>
             <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
                 <i class="fas fa-angle-double-down"></i><span class="pb-label-text">&nbsp;Scroll</span>
             </button>
@@ -826,7 +879,7 @@ body.play-mode.edges-hint .tap-zone {
 
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=16"></script>
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"lyrics_plain":{{ cifra.lyrics_plain | default('') | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -872,10 +925,16 @@ body.play-mode.edges-hint .tap-zone {
     var structuredCache = {};    // (cifra_id + ':' + semitones) -> cifra_data[]
     var gradeCache = {};         // (cifra_id + ':' + semitones) -> grade_data[] (legado)
     var leadsheetCache = {};     // (cifra_id + ':' + semitones) -> LeadSheet JSON
+    var chordSheetHtmlCache = {}; // (cifra_id + ':' + semitones) -> HTML do módulo chordsheet
+    var lyricsCache = {};         // (cifra_id + ':' + semitones) -> letra plain
+    var CHORDSHEET_RENDER_URL = '{{ url_for("cifras.chordsheet_render", cifra_id="__ID__") }}';
+    var VIEW_MODE_LABELS = { cifra: 'Cifra', chordsheet: 'Chord sheet', letra: 'Letra' };
+    var VIEW_MODE_CYCLE = ['cifra', 'chordsheet', 'letra'];
 
     // Pre-cache the original (semitones=0) html
     CIFRAS.forEach(function (c) {
         htmlCache[c.id + ':0'] = c.html;
+        if (c.lyrics_plain) lyricsCache[c.id + ':0'] = c.lyrics_plain;
         if (Array.isArray(c.cifra_structured) && c.cifra_structured.length) {
             structuredCache[c.id + ':0'] = c.cifra_structured;
         }
@@ -908,7 +967,8 @@ body.play-mode.edges-hint .tap-zone {
     ];
     var speedIdx = parseInt(sessionStorage.getItem('play.speedIdx') || '1', 10);
     if (speedIdx < 0 || speedIdx >= SPEED_PRESETS.length) speedIdx = 1;
-    var gradeMode = false;
+    var viewMode = sessionStorage.getItem('play.viewMode') || 'cifra';
+    if (VIEW_MODE_CYCLE.indexOf(viewMode) === -1) viewMode = 'cifra';
 
     // ── Render ──────────────────────────────
     function getCurrent() { return CIFRAS[current]; }
@@ -994,26 +1054,35 @@ body.play-mode.edges-hint .tap-zone {
         var el = document.getElementById('cifra-content');
         el.innerHTML = html;
         el.classList.remove('fading');
-        var csWrap = el.querySelector('.chord-sheet-wrap, .leadsheet-play-wrap');
-        if (csWrap && gradeMode) {
+        var csWrap = el.querySelector('.cs-chart, .chord-sheet-wrap, .leadsheet-play-wrap');
+        if (csWrap && viewMode === 'chordsheet') {
+            if (csWrap.classList.contains('cs-chart')) {
+                tryResumeAutoScroll();
+                return;
+            }
             requestAnimationFrame(function () {
                 var measured = getLeadSheetWidth();
                 var laid = parseInt(csWrap.getAttribute('data-layout-width') || '0', 10);
                 if (Math.abs(measured - laid) > 12) {
                     var c = getCurrent();
                     if (!c) return;
-                    var key = c.id + ':' + getTranspose(c);
-                    var doc = leadsheetCache[key] || gradeCache[key];
-                    if (doc) {
-                        renderHtml(buildLeadSheetHtml(doc, c));
-                        return;
-                    }
+                    var t = getTranspose(c);
+                    fetchChordSheetHtml(c.id, t, function (html) {
+                        if (html) {
+                            renderHtml('<div class="cs-play-embed setsync-cs-sheet">' + html + '</div>');
+                            return;
+                        }
+                        var key = c.id + ':' + t;
+                        var doc = leadsheetCache[key] || gradeCache[key];
+                        if (doc) renderHtml(buildLeadSheetHtml(doc, c));
+                    });
+                    return;
                 }
                 tryResumeAutoScroll();
             });
             return;
         }
-        if (fitMode && !twoColActive && !gradeMode) requestAnimationFrame(autoFit);
+        if (fitMode && !twoColActive && viewMode === 'cifra') requestAnimationFrame(autoFit);
         requestAnimationFrame(updateTapZoneState);
         tryResumeAutoScroll();
     }
@@ -1026,6 +1095,24 @@ body.play-mode.edges-hint .tap-zone {
         return '<div class="grade-empty-play" style="padding:2rem 4vw;color:#475569;font-size:0.9rem;">' +
             'Chord sheet não disponível para esta música. Configure no editor Chord Sheet da cifra.' +
             '</div>';
+    }
+
+    function fetchChordSheetHtml(id, semitones, cb) {
+        var key = id + ':' + semitones;
+        if (chordSheetHtmlCache[key]) { cb(chordSheetHtmlCache[key]); return; }
+        var url = CHORDSHEET_RENDER_URL.replace('__ID__', encodeURIComponent(id))
+            + '?semitones=' + encodeURIComponent(semitones);
+        fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && data.ok && data.html) {
+                    chordSheetHtmlCache[key] = data.html;
+                    cb(data.html);
+                } else {
+                    cb(null);
+                }
+            })
+            .catch(function () { cb(null); });
     }
 
     function buildLeadSheetHtml(doc, cifraMeta) {
@@ -1206,6 +1293,33 @@ body.play-mode.edges-hint .tap-zone {
             .catch(function () { cb(structuredCache[id + ':0'] || null); });
     }
 
+    function buildLyricsHtml(text) {
+        var t = String(text || '').trim();
+        if (!t) {
+            return '<div class="letra-play-empty">Sem letra cadastrada.</div>';
+        }
+        return '<div class="letra-play-pane">' + escHtml(t) + '</div>';
+    }
+
+    function fetchLyrics(id, semitones, cb) {
+        var key = id + ':' + semitones;
+        if (lyricsCache[key]) { cb(lyricsCache[key]); return; }
+        var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
+                    .replace('__ID__', encodeURIComponent(id))
+                    + '?semitones=' + semitones + '&lyrics=1';
+        document.getElementById('cifra-content').classList.add('fading');
+        fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var text = (data && data.lyrics_plain) ? String(data.lyrics_plain) : '';
+                lyricsCache[key] = text;
+                cb(text);
+            })
+            .catch(function () {
+                cb(lyricsCache[id + ':0'] || '');
+            });
+    }
+
     function fetchGrade(id, semitones, cb) {
         var key = id + ':' + semitones;
         if (leadsheetCache[key]) { cb(leadsheetCache[key]); return; }
@@ -1268,32 +1382,41 @@ body.play-mode.edges-hint .tap-zone {
 
         updateTransposeUi(c);
 
-        // load html (cached or fetch)
-        if (gradeMode) {
-            var el = document.getElementById('cifra-content');
+        var el = document.getElementById('cifra-content');
+        el.classList.remove('grade-mode', 'letra-mode', 'structured-mode', 'two-col');
+
+        if (viewMode === 'chordsheet') {
             el.classList.add('grade-mode');
-            el.classList.remove('structured-mode');
-            fetchGrade(c.id, t, function (gd) {
-                renderHtml(buildLeadSheetHtml(gd, c));
+            fetchChordSheetHtml(c.id, t, function (html) {
+                if (html) {
+                    renderHtml('<div class="cs-play-embed setsync-cs-sheet">' + html + '</div>');
+                    return;
+                }
+                fetchGrade(c.id, t, function (gd) {
+                    renderHtml(buildLeadSheetHtml(gd, c));
+                });
+            });
+        } else if (viewMode === 'letra') {
+            el.classList.add('letra-mode');
+            if (twoColActive) el.classList.add('two-col');
+            fetchLyrics(c.id, t, function (text) {
+                renderHtml(buildLyricsHtml(text));
             });
         } else {
-            document.getElementById('cifra-content').classList.remove('grade-mode');
+            if (twoColActive) el.classList.add('two-col');
             var sd0 = structuredCache[c.id + ':0'] || null;
             if (sd0 && sd0.length && !c.has_tablatura) {
-                var el2 = document.getElementById('cifra-content');
-                el2.classList.add('structured-mode');
+                el.classList.add('structured-mode');
                 fetchStructured(c.id, t, function (sd) {
                     if (sd && sd.length) {
                         renderHtml(buildStructuredHtml(sd));
                     } else {
-                        document.getElementById('cifra-content').classList.remove('structured-mode');
+                        el.classList.remove('structured-mode');
                         fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
                     }
                 });
             } else {
-                var elPlain = document.getElementById('cifra-content');
-                elPlain.classList.remove('structured-mode');
-                if (c.has_tablatura) elPlain.classList.add('structured-mode');
+                if (c.has_tablatura) el.classList.add('structured-mode');
                 fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
             }
         }
@@ -1452,12 +1575,20 @@ body.play-mode.edges-hint .tap-zone {
             sessionStorage.removeItem('play.vocalistId');
         }
         if (SETLIST_VOCALIST_URL) {
-            fetch(SETLIST_VOCALIST_URL, {
+            var fetchFn = window.ssFetch || window.fetch;
+            fetchFn(SETLIST_VOCALIST_URL, {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ vocalist_id: activeVocalistId || null })
-            }).catch(function () {});
+            }).then(function (r) {
+                if (!r.ok) throw new Error('http');
+                return r.json();
+            }).then(function (data) {
+                if (!data.ok) throw new Error(data.error || 'fail');
+            }).catch(function () {
+                console.warn('SetSync: falha ao salvar cantor da setlist');
+            });
         }
         render();
     }
@@ -1546,29 +1677,56 @@ body.play-mode.edges-hint .tap-zone {
         applyFont();
     }
 
-    // ── Two-col ─────────────────────────────
+    // ── Two-col (cifra e letra) ─────────────
+    function twoColSupported() {
+        return viewMode === 'cifra' || viewMode === 'letra';
+    }
+
     function applyTwoCols() {
         var el = document.getElementById('cifra-content');
         var btn = document.getElementById('cols-btn');
-        if (twoColActive) {
+        var on = twoColActive && twoColSupported();
+        if (on) {
             el.classList.add('two-col');
             btn.classList.add('pb-on');
         } else {
             el.classList.remove('two-col');
-            btn.classList.remove('pb-on');
+            btn.classList.toggle('pb-on', twoColActive && twoColSupported());
+            if (!twoColSupported()) btn.classList.remove('pb-on');
         }
     }
     function toggleCols() {
+        if (!twoColSupported()) return;
         twoColActive = !twoColActive;
         sessionStorage.setItem('play.twoCols', twoColActive ? '1' : '0');
         applyTwoCols();
+        if (viewMode === 'letra') render();
         if (twoColActive && isScrolling) stopScroll();
     }
 
-    function toggleGrade() {
-        gradeMode = !gradeMode;
-        document.getElementById('grade-btn').classList.toggle('pb-on', gradeMode);
+    function updateViewModeUi() {
+        var label = document.getElementById('view-mode-label');
+        var btn = document.getElementById('view-mode-btn');
+        if (label) label.textContent = VIEW_MODE_LABELS[viewMode] || 'Cifra';
+        if (btn) btn.classList.toggle('pb-on', viewMode !== 'cifra');
+        document.querySelectorAll('#view-mode-menu [data-view-mode]').forEach(function (item) {
+            item.classList.toggle('active', item.getAttribute('data-view-mode') === viewMode);
+        });
+    }
+
+    function setViewMode(mode) {
+        if (VIEW_MODE_CYCLE.indexOf(mode) === -1) mode = 'cifra';
+        if (viewMode === mode) return;
+        viewMode = mode;
+        sessionStorage.setItem('play.viewMode', viewMode);
+        updateViewModeUi();
+        if (viewMode !== 'cifra' && isScrolling) stopScroll();
         render();
+    }
+
+    function cycleViewMode() {
+        var idx = VIEW_MODE_CYCLE.indexOf(viewMode);
+        setViewMode(VIEW_MODE_CYCLE[(idx + 1) % VIEW_MODE_CYCLE.length]);
     }
 
     // ── Auto-scroll ─────────────────────────
@@ -1752,7 +1910,7 @@ body.play-mode.edges-hint .tap-zone {
             case 'a': case 'A': toggleFit(); break;
             case 'f': case 'F': toggleFullscreen(); break;
             case 't': case 'T': if (typeof toggleTheme === 'function') toggleTheme(); break;
-            case 'g': case 'G': toggleGrade(); break;
+            case 'g': case 'G': cycleViewMode(); break;
             case ' ': e.preventDefault(); toggleScroll(); break;
             case 'PageDown': e.preventDefault(); tapScrollDown(); break;
             case 'PageUp': e.preventDefault(); tapScrollUp(); break;
@@ -1831,9 +1989,17 @@ body.play-mode.edges-hint .tap-zone {
     window.toggleFullscreen = toggleFullscreen;
     window.adjustSpeed = adjustSpeed;
     window.toggleFit = toggleFit;
-    window.toggleGrade = toggleGrade;
+    window.setViewMode = setViewMode;
+    window.cycleViewMode = cycleViewMode;
+
+    document.querySelectorAll('#view-mode-menu [data-view-mode]').forEach(function (item) {
+        item.addEventListener('click', function () {
+            setViewMode(item.getAttribute('data-view-mode'));
+        });
+    });
 
     // ── Init ────────────────────────────────
+    updateViewModeUi();
     applyTwoCols();
     document.getElementById('fit-btn').classList.toggle('pb-on', fitMode);
     buildDots();
@@ -1850,7 +2016,7 @@ body.play-mode.edges-hint .tap-zone {
     function scheduleLeadSheetReflow() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
-            if (gradeMode) render();
+            if (viewMode === 'chordsheet') render();
             else applyFont();
         }, 100);
     }
@@ -1861,7 +2027,7 @@ body.play-mode.edges-hint .tap-zone {
     var cifraScrollEl = scrollWrap();
     if (cifraScrollEl && typeof ResizeObserver !== 'undefined') {
         cifraWrapRo = new ResizeObserver(function () {
-            if (gradeMode) scheduleLeadSheetReflow();
+            if (viewMode === 'chordsheet') scheduleLeadSheetReflow();
         });
         cifraWrapRo.observe(cifraScrollEl);
     }

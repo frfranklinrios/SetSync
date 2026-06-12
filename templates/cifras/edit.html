@@ -7,112 +7,256 @@
 #conteudo { font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace); font-size: 0.88rem;
             resize: vertical; min-height: 320px; }
 
-#grade_text {
+.cifra-edit-tabs .nav-link { font-size: 0.875rem; font-weight: 500; }
+.cifra-edit-tabs .tab-pane { padding-top: 0.75rem; }
+
+.letra-edit-pane {
+    white-space: pre-wrap;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-elevated, var(--card-bg));
+    color: var(--text);
+    min-height: 16rem;
+    max-height: 28rem;
+    overflow-y: auto;
+    column-count: 2;
+    column-gap: 2rem;
+    column-rule: 1px solid var(--border);
+    word-break: break-word;
+}
+@media (max-width: 720px) {
+    .letra-edit-pane { column-count: 1; column-rule: none; }
+}
+.letra-edit-pane.empty { color: var(--muted); font-style: italic; }
+
+/* Chord sheet embutido */
+.chordsheet-embed.layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+@media (max-width: 960px) { .chordsheet-embed.layout { grid-template-columns: 1fr; } }
+.chordsheet-embed .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem;
+}
+.chordsheet-embed .panel h2 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin: 0 0 0.65rem;
+}
+.chordsheet-embed .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+}
+.chordsheet-embed .meta-grid label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.15rem;
+}
+.chordsheet-embed textarea#source {
+    width: 100%;
+    min-height: 280px;
     font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
     font-size: 0.84rem;
     resize: vertical;
-    min-height: 220px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 0.5rem;
 }
+.chordsheet-embed .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.5rem 0;
+}
+.chordsheet-embed .toolbar button {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    cursor: pointer;
+}
+.chordsheet-embed .toolbar .btn-primary {
+    background: #0d9488;
+    border-color: #0d9488;
+    color: #fff;
+}
+.chordsheet-embed .preview-wrap {
+    background: var(--ss-canvas, #f5f5f4);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem;
+    overflow: auto;
+    min-height: 320px;
+}
+.chordsheet-embed .hint { font-size: 0.78rem; color: var(--muted); margin: 0.35rem 0 0; }
+.chordsheet-embed .status {
+    font-size: 0.78rem;
+    margin-top: 0.35rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(45, 212, 191, 0.12);
+    color: var(--text);
+}
+.chordsheet-embed .status.err { background: rgba(239,68,68,0.12); color: #dc2626; }
+[data-theme="dark"] .chordsheet-embed .status.err { color: #fca5a5; }
 </style>
 
-<h2 class="mb-1">Editar Cifra</h2>
-<p class="text-muted mb-4" style="font-size:.875rem;">{{ band.name }}</p>
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">Editar música</h2>
+        <p class="text-muted mb-0" style="font-size:.875rem;">{{ band.name }}</p>
+    </div>
+    <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="btn btn-outline-secondary btn-sm">← Voltar</a>
+</div>
 
-<form method="POST" id="cifra-form" class="mt-2">
+<form method="POST" id="cifra-form">
     {% include 'partials/csrf_input.html' %}
     <input type="hidden" name="cifra_json" id="cifra_json_hidden">
     <input type="hidden" name="grade_json" id="grade_json_hidden">
     <input type="hidden" name="duracao_seg" id="duracao_seg_hidden" value="{{ cifra.duracao_seg or '' }}">
 
-    <div class="row g-3 mb-3">
-        <div class="col-md-5">
-            <label class="form-label">Título</label>
-            <input type="text" class="form-control" name="titulo"
-                   value="{{ cifra.titulo }}" required>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Artista</label>
-            <input type="text" class="form-control" name="artista"
-                   value="{{ cifra.artista }}" required>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Tom</label>
-            <input type="text" class="form-control" name="tom_original"
-                   value="{{ cifra.tom_original }}" placeholder="Ex.: B, F#m, Bmaj7">
-            <div class="form-text">Referência para transposição (ex.: B, F#m)</div>
-        </div>
-        <div class="col-md-1">
-            <label class="form-label">BPM</label>
-            <input type="number" class="form-control" name="bpm" step="0.1"
-                   value="{{ cifra.bpm or '' }}">
-        </div>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label d-flex flex-wrap align-items-center gap-2">
-            <span>Cifra <small class="text-muted">(colar de um site de cifras ou editar; salva em ChordPro)</small></span>
-            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="btn-converter-colagem">
-                Converter colagem
-            </button>
-        </label>
-        <textarea class="form-control" id="conteudo" name="conteudo" rows="16"
-                  placeholder="Cole a cifra copiada de um site (Ctrl+V) para converter automaticamente">{{ cifra.conteudo }}</textarea>
-        <div class="cifraclub-paste-hint form-text" role="status"></div>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label fw-semibold">Chord Sheet</label>
-        <p class="form-text mb-2">
-            Substitui o formato antigo por compasso. Edite compassos, partes, letra e acordes no editor visual.
-        </p>
-        <a href="{{ url_for('cifras.leadsheet_editor', cifra_id=cifra.id) }}"
-           class="btn btn-outline-info">
-            <i class="fas fa-table-cells me-1"></i> Abrir editor Chord Sheet
-        </a>
-        {% if cifra.leadsheet_json or cifra.grade_json %}
-        <span class="badge text-bg-success ms-2">Dados cadastrados</span>
-        {% else %}
-        <span class="badge text-bg-secondary ms-2">Não configurado</span>
-        {% endif %}
-    </div>
-
-    <!-- Upload de JSONs -->
-    <details class="mb-3">
-        <summary class="fw-semibold" style="cursor:pointer;font-size:.875rem;">
-            &#128196; Importar arquivos JSON
-            <small class="text-muted ms-1">setsync_cifra / leadsheet</small>
-        </summary>
-        <div class="row g-3 mt-1">
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Cifra JSON</label>
-                <input type="file" class="form-control form-control-sm" id="upload_cifra" accept=".json">
-                <div class="form-text">setsync_cifra.json &mdash; substitui a cifra atual</div>
-                <div class="form-check mt-2">
-                    <input class="form-check-input" type="checkbox" id="timeline_keep_original">
-                    <label class="form-check-label" for="timeline_keep_original" style="font-size:.78rem;">
-                        Timeline: manter tempo original (não iniciar em 0s)
-                    </label>
+    <div class="card mb-3">
+        <div class="card-header">Informações da música</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" name="titulo"
+                           value="{{ cifra.titulo }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Artista</label>
+                    <input type="text" class="form-control" name="artista"
+                           value="{{ cifra.artista }}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tom</label>
+                    <input type="text" class="form-control" name="tom_original"
+                           value="{{ cifra.tom_original }}" placeholder="Ex.: B, F#m">
+                    <div class="form-text">Referência para transposição</div>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">BPM</label>
+                    <input type="number" class="form-control" name="bpm" step="0.1"
+                           value="{{ cifra.bpm or '' }}">
                 </div>
             </div>
-            <div class="col-md-8">
-                <label class="form-label small fw-semibold">Chord Sheet JSON</label>
-                <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
-                <div class="form-text">Chord sheet (schema sections + events) ou formato legado por compasso</div>
-            </div>
         </div>
-    </details>
+    </div>
+
+    <ul class="nav nav-tabs cifra-edit-tabs" id="cifraEditTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link{% if active_tab == 'cifra' %} active{% endif %}" id="tab-cifra-btn"
+                    data-bs-toggle="tab" data-bs-target="#tab-cifra" type="button" role="tab">Cifra</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link{% if active_tab == 'chordsheet' %} active{% endif %}" id="tab-chordsheet-btn"
+                    data-bs-toggle="tab" data-bs-target="#tab-chordsheet" type="button" role="tab">Chord Sheet</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link{% if active_tab == 'letra' %} active{% endif %}" id="tab-letra-btn"
+                    data-bs-toggle="tab" data-bs-target="#tab-letra" type="button" role="tab">Letra</button>
+        </li>
+    </ul>
+
+    <div class="tab-content mb-3" id="cifraEditTabContent">
+        <div class="tab-pane fade{% if active_tab == 'cifra' %} show active{% endif %}" id="tab-cifra" role="tabpanel">
+            <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
+                <label class="form-label mb-0">
+                    Cifra <small class="text-muted">(colar de um site ou editar; salva em ChordPro)</small>
+                </label>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="btn-converter-colagem">
+                    Converter colagem
+                </button>
+            </div>
+            <textarea class="form-control" id="conteudo" name="conteudo" rows="16"
+                      placeholder="Cole a cifra copiada de um site (Ctrl+V) para converter automaticamente">{{ cifra.conteudo }}</textarea>
+            <div class="cifraclub-paste-hint form-text" role="status"></div>
+
+            <details class="mt-3">
+                <summary class="fw-semibold" style="cursor:pointer;font-size:.875rem;">
+                    Importar arquivos JSON
+                    <small class="text-muted ms-1">setsync_cifra / leadsheet</small>
+                </summary>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Cifra JSON</label>
+                        <input type="file" class="form-control form-control-sm" id="upload_cifra" accept=".json">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="timeline_keep_original">
+                            <label class="form-check-label" for="timeline_keep_original" style="font-size:.78rem;">
+                                Timeline: manter tempo original
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label small fw-semibold">Chord Sheet JSON</label>
+                        <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="tab-pane fade{% if active_tab == 'chordsheet' %} show active{% endif %}" id="tab-chordsheet" role="tabpanel">
+            {% include 'partials/chordsheet_editor_embed.html' %}
+        </div>
+
+        <div class="tab-pane fade{% if active_tab == 'letra' %} show active{% endif %}" id="tab-letra" role="tabpanel">
+            <p class="form-text mb-2">
+                Prévia da letra extraída da cifra (sem acordes). Para alterar o texto, edite na aba <strong>Cifra</strong>.
+            </p>
+            <div id="letra-preview" class="letra-edit-pane{% if not lyrics_plain or not lyrics_plain.strip() %} empty{% endif %}">{{ lyrics_plain or 'Sem letra cadastrada.' }}</div>
+        </div>
+    </div>
 
     <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        <button type="submit" class="btn btn-primary">Salvar alterações</button>
         <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}"
            class="btn btn-outline-secondary">Cancelar</a>
     </div>
 </form>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=15">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=12">
+<script src="{{ url_for('static', filename='js/csrf.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=3"></script>
 <script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
+<script>
+window.CHORDSHEET_EDITOR = {
+    cifraId: {{ cifra.id | tojson }},
+    initial: {{ chordsheet_initial | tojson }},
+    examples: {{ chordsheet_examples | tojson }},
+    embedMode: true,
+    lazyInit: true,
+    urls: {
+        render: {{ url_for('cifras.chordsheet_api_render', cifra_id=cifra.id) | tojson }},
+        transpose: {{ url_for('cifras.chordsheet_api_transpose', cifra_id=cifra.id) | tojson }},
+        save: {{ url_for('cifras.chordsheet_api_save', cifra_id=cifra.id) | tojson }},
+        view: {{ url_for('cifras.view', cifra_id=cifra.id) | tojson }}
+    },
+    draftKey: "setsync.chordsheet.draft:{{ cifra.id }}"
+};
+</script>
+<script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=8"></script>
 
 <script>
 const CHORD_TOKEN = /^[A-G][#b]?(?:(?:maj7?|min|m7b5|m7|M7?|m|dim7?|aug|sus[24]?|add9?|\d+|[+\-°º]|[b#]\d))*(?:\/[A-G][#b]?)?$/;
@@ -138,31 +282,16 @@ function parseConteudo(text) {
             const re = /\[([^\]]+)\]([^\[]*)/g;
             let m;
             let lastIndex = 0;
-
             while ((m = re.exec(line)) !== null) {
                 if (m.index > lastIndex) {
-                    const prefixo = line.slice(lastIndex, m.index);
-                    if (prefixo.length) {
-                        result.push({ segundo: seq++, texto_letra: prefixo, acorde: '', group });
-                    }
+                    result.push({ segundo: seq++, texto_letra: line.slice(lastIndex, m.index), acorde: '', group });
                 }
-
-                result.push({
-                    segundo: seq++,
-                    texto_letra: String(m[2] || ''),
-                    acorde: m[1].trim(),
-                    group
-                });
+                result.push({ segundo: seq++, texto_letra: String(m[2] || ''), acorde: m[1].trim(), group });
                 lastIndex = re.lastIndex;
             }
-
             if (lastIndex < line.length) {
-                const sufixo = line.slice(lastIndex);
-                if (sufixo.length) {
-                    result.push({ segundo: seq++, texto_letra: sufixo, acorde: '', group });
-                }
+                result.push({ segundo: seq++, texto_letra: line.slice(lastIndex), acorde: '', group });
             }
-
             group++; i++; continue;
         }
 
@@ -188,208 +317,112 @@ function parseConteudo(text) {
 
 function buildEditableTextFromCifraJson(data) {
     if (!Array.isArray(data) || !data.length) return '';
-
-    var hasGroup = data.some(function (item) {
-        return item && item.group != null;
-    });
-
+    var hasGroup = data.some(function (item) { return item && item.group != null; });
     if (!hasGroup) {
         return data.map(function (item) {
-            var chord = (item && item.acorde) ? ('[' + item.acorde + '] ') : '';
-            var lyric = (item && item.texto_letra) ? String(item.texto_letra) : '';
-            return chord + lyric;
+            return ((item && item.acorde) ? ('[' + item.acorde + '] ') : '') + ((item && item.texto_letra) ? String(item.texto_letra) : '');
         }).join('\n');
     }
-
-    var groups = {};
-    var order = [];
+    var groups = {}, order = [];
     data.forEach(function (item) {
         var g = (item && item.group != null) ? String(item.group) : '__nogroup__';
-        if (!groups[g]) {
-            groups[g] = [];
-            order.push(g);
-        }
+        if (!groups[g]) { groups[g] = []; order.push(g); }
         groups[g].push(item || {});
     });
-
     return order.map(function (g) {
         return groups[g].map(function (item) {
-            var chord = item.acorde ? ('[' + item.acorde + ']') : '';
-            var lyric = item.texto_letra ? String(item.texto_letra) : '';
-            return chord + lyric;
+            return (item.acorde ? ('[' + item.acorde + ']') : '') + (item.texto_letra ? String(item.texto_letra) : '');
         }).join('').replace(/\r/g, '').replace(/\s+$/g, '');
     }).join('\n\n');
 }
 
 function normalizeImportedCifraJson(data, keepOriginalTimeline) {
     if (!Array.isArray(data) || !data.length) return null;
-
-    // Formato já nativo do app: [{ segundo, texto_letra, acorde, group? }, ...]
-    if (Object.prototype.hasOwnProperty.call(data[0], 'acorde')) {
-        return data;
-    }
-
-    // Formato timeline: [{ timestamp_ms, event_type: 'chord'|'text', value, duration_ms }, ...]
-    if (!Object.prototype.hasOwnProperty.call(data[0], 'event_type')) {
-        return null;
-    }
-
-    var events = data
-        .filter(function (e) { return e && (e.event_type === 'chord' || e.event_type === 'text'); })
-        .slice()
-        .sort(function (a, b) {
-            var ta = Number(a.timestamp_ms) || 0;
-            var tb = Number(b.timestamp_ms) || 0;
-            return ta - tb;
-        });
-
+    if (Object.prototype.hasOwnProperty.call(data[0], 'acorde')) return data;
+    if (!Object.prototype.hasOwnProperty.call(data[0], 'event_type')) return null;
+    var events = data.filter(function (e) { return e && (e.event_type === 'chord' || e.event_type === 'text'); })
+        .sort(function (a, b) { return (Number(a.timestamp_ms) || 0) - (Number(b.timestamp_ms) || 0); });
     if (!events.length) return null;
-
     var firstTs = Number(events[0].timestamp_ms) || 0;
-    var out = [];
-    var group = 0;
-    var currentChord = '';
-    var currentText = '';
-    var currentStartTs = null;
-    var lastTextTs = null;
-
+    var out = [], group = 0, currentChord = '', currentText = '', currentStartTs = null, lastTextTs = null;
     function pushCurrent() {
         var lyric = String(currentText || '').replace(/\r/g, '');
         if (!currentChord && !lyric.trim()) return;
         var absMs = Number(currentStartTs);
         if (!Number.isFinite(absMs)) absMs = firstTs;
-        var relMs = keepOriginalTimeline
-            ? Math.max(0, absMs)
-            : Math.max(0, absMs - firstTs);
         out.push({
-            segundo: Math.floor(relMs / 1000),
+            segundo: Math.floor((keepOriginalTimeline ? Math.max(0, absMs) : Math.max(0, absMs - firstTs)) / 1000),
             texto_letra: lyric,
             acorde: currentChord || '',
             group: group
         });
     }
-
     events.forEach(function (ev) {
         var ts = Number(ev.timestamp_ms) || 0;
-
         if (ev.event_type === 'chord') {
-            if (lastTextTs != null && ts - lastTextTs > 1800 && out.length) {
-                group += 1;
-            }
+            if (lastTextTs != null && ts - lastTextTs > 1800 && out.length) group += 1;
             pushCurrent();
             currentChord = String(ev.value || '').trim();
             currentText = '';
             currentStartTs = ts;
             return;
         }
-
-        if (currentStartTs == null) {
-            currentStartTs = ts;
-        }
+        if (currentStartTs == null) currentStartTs = ts;
         currentText += String(ev.value || '');
         lastTextTs = ts;
     });
-
     pushCurrent();
     return out.length ? out : null;
 }
 
-function parseGradeTextToJson(text) {
-    var lines = String(text || '').split('\n');
+function extractLyricsPreview(text) {
+    text = String(text || '').replace(/\r\n/g, '\n');
+    var lines = text.split('\n');
     var out = [];
-    var compasso = 1;
-    var currentParte = '';
-
-    lines.forEach(function(raw) {
-        var line = String(raw || '').trim();
-        if (!line) return;
-
-        if (/^Partes\s+detectadas/i.test(line)) return;
-
-        var parteMatch = line.match(/^Parte\s+([A-Za-z0-9_-]+)/i);
-        if (parteMatch) {
-            currentParte = String(parteMatch[1] || '').toUpperCase();
-            return;
-        }
-
-        if (line.indexOf('|') === -1) return;
-
-        var bars = line
-            .split('|')
-            .map(function(s) { return String(s || '').trim(); })
-            .filter(function(s) { return s.length > 0; });
-
-        bars.forEach(function(bar) {
-            var acordes = bar
-                .split(/\s+/)
-                .map(function(t) { return String(t || '').trim(); })
-                .filter(function(t) { return t.length > 0; });
-            if (!acordes.length) return;
-
-            var item = { compasso: compasso++, acordes: acordes };
-            if (currentParte) item.parte = currentParte;
-            out.push(item);
-        });
+    lines.forEach(function (raw) {
+        var stripped = raw.trim();
+        if (!stripped) { out.push(''); return; }
+        if (/^\{[^}]+\}/.test(stripped) || /^\{c:/.test(stripped) || /^\{comment:/.test(stripped)) return;
+        if (isChordLine(stripped)) return;
+        var line = stripped.replace(/\[([^\]]+)\]/g, '');
+        out.push(line.trimRight());
     });
-
-    return out.length ? out : null;
+    while (out.length && !out[out.length - 1].trim()) out.pop();
+    return out.join('\n').trim();
 }
 
-function fillGradeTextFromJson(data) {
-    var ta = document.getElementById('grade_text');
-    if (!ta || !Array.isArray(data) || !data.length) return;
-
-    var groups = {};
-    var order = [];
-
-    data.forEach(function(item) {
-        var parte = (item && item.parte) ? String(item.parte).toUpperCase() : '';
-        var key = parte || '__SEM_PARTE__';
-        if (!groups[key]) {
-            groups[key] = [];
-            order.push(key);
-        }
-        groups[key].push(item);
-    });
-
-    var lines = [];
-    order.forEach(function(key) {
-        if (key !== '__SEM_PARTE__') {
-            lines.push('Parte ' + key);
-        }
-        var bars = groups[key].map(function(item) {
-            var acordes = (item && Array.isArray(item.acordes)) ? item.acordes : [];
-            var safe = acordes.length ? acordes : ['%'];
-            return '| ' + safe.join(' ') + ' |';
-        });
-        if (bars.length) lines.push(bars.join(' '));
-    });
-
-    ta.value = lines.join('\n');
+function updateLetraPreview() {
+    var el = document.getElementById('letra-preview');
+    var ta = document.getElementById('conteudo');
+    if (!el || !ta) return;
+    var text = extractLyricsPreview(ta.value);
+    if (!text) {
+        el.textContent = 'Sem letra cadastrada.';
+        el.classList.add('empty');
+    } else {
+        el.textContent = text;
+        el.classList.remove('empty');
+    }
 }
 
 const ta = document.getElementById('conteudo');
-
-// ── Upload/edit state ────────────────────────────────────────────────────
-let _uploadedCifraJson = null; // JSON do arquivo carregado (preserva 'segundo' original)
-let _taModified = false;       // usuário editou o textarea manualmente
+let _uploadedCifraJson = null;
+let _taModified = false;
 
 const pasteOptsEdit = {
     onConverted: function () {
         _taModified = true;
         _uploadedCifraJson = null;
+        updateLetraPreview();
     }
 };
 if (window.SetSyncCifraClubPaste) {
     SetSyncCifraClubPaste.attach(ta, pasteOptsEdit);
-    const btnColagem = document.getElementById('btn-converter-colagem');
-    if (btnColagem) {
-        btnColagem.addEventListener('click', function () {
-            if (!SetSyncCifraClubPaste.aplicarNormalizacao(ta, pasteOptsEdit)) {
-                alert('Não reconheci o formato desta colagem. Cole a cifra com linhas de acordes alinhadas por espaços.');
-            }
-        });
-    }
+    document.getElementById('btn-converter-colagem').addEventListener('click', function () {
+        if (!SetSyncCifraClubPaste.aplicarNormalizacao(ta, pasteOptsEdit)) {
+            alert('Não reconheci o formato desta colagem.');
+        }
+    });
 }
 
 function readJsonFile(input, callback) {
@@ -398,55 +431,39 @@ function readJsonFile(input, callback) {
     const reader = new FileReader();
     reader.onload = function (e) {
         try { callback(JSON.parse(e.target.result), file.name); }
-        catch (err) { alert('Arquivo inválido \u2014 JSON malformado: ' + file.name); }
+        catch (err) { alert('JSON inválido: ' + file.name); }
     };
     reader.readAsText(file);
 }
 
-// ── Upload: Cifra JSON ───────────────────────────────────────────────────
 document.getElementById('upload_cifra').addEventListener('change', function () {
-    readJsonFile(this, function (data, fname) {
-        var keepOriginal = !!(document.getElementById('timeline_keep_original') && document.getElementById('timeline_keep_original').checked);
+    readJsonFile(this, function (data) {
+        var keepOriginal = document.getElementById('timeline_keep_original').checked;
         var normalized = normalizeImportedCifraJson(data, keepOriginal);
-        if (!normalized) {
-            alert('Formato inválido.\nEsperado: JSON de cifra do SetSync ou timeline com event_type/timestamp_ms/value.');
-            return;
-        }
+        if (!normalized) { alert('Formato de cifra JSON inválido.'); return; }
         _uploadedCifraJson = normalized;
         _taModified = false;
         ta.value = buildEditableTextFromCifraJson(normalized);
+        updateLetraPreview();
     });
 });
 
-// ── Upload: Grade JSON ───────────────────────────────────────────────────
 document.getElementById('upload_grade').addEventListener('change', function () {
-    readJsonFile(this, function (data, fname) {
+    readJsonFile(this, function (data) {
         if (!Array.isArray(data) || !data.length || !('acordes' in data[0])) {
-            alert('Formato inválido.\nEsperado: [{compasso, acordes}, \u2026]');
+            alert('Formato de grade inválido.');
             return;
         }
         document.getElementById('grade_json_hidden').value = JSON.stringify(data);
-        fillGradeTextFromJson(data);
     });
 });
 
-ta.addEventListener('input', () => {
+ta.addEventListener('input', function () {
     _taModified = true;
     _uploadedCifraJson = null;
+    updateLetraPreview();
 });
 
-// Preenche o campo textual da grade com a grade existente, se houver.
-try {
-    var _existingGradeRaw = {{ cifra.grade_json|tojson if cifra.grade_json else 'null' }};
-    if (_existingGradeRaw) {
-        var _existingGrade = (typeof _existingGradeRaw === 'string')
-            ? JSON.parse(_existingGradeRaw)
-            : _existingGradeRaw;
-        fillGradeTextFromJson(_existingGrade);
-    }
-} catch (e) {}
-
-// ── Antes de submeter ────────────────────────────────────────────────────
 document.getElementById('cifra-form').addEventListener('submit', function (event) {
     if (window.SetSyncCifraClubPaste && SetSyncCifraClubPaste.normalizarColagem) {
         ta.value = SetSyncCifraClubPaste.normalizarColagem(ta.value);
@@ -459,7 +476,6 @@ document.getElementById('cifra-form').addEventListener('submit', function (event
         });
     }
     if (_uploadedCifraJson) {
-        // Arquivo importado → preserva o campo 'segundo' original
         document.getElementById('cifra_json_hidden').value = JSON.stringify(_uploadedCifraJson);
     } else if (_taModified) {
         const parsed = parseConteudo(ta.value);
@@ -467,30 +483,20 @@ document.getElementById('cifra-form').addEventListener('submit', function (event
             document.getElementById('cifra_json_hidden').value = JSON.stringify(parsed);
         }
     }
-    // else: cifra_json_hidden fica vazio → backend preserva o valor existente no DB
-
-    var gradeTa = document.getElementById('grade_text');
-    var gradeText = gradeTa ? String(gradeTa.value || '').trim() : '';
-    if (gradeText) {
-        var parsedGrade = parseGradeTextToJson(gradeText);
-        if (!parsedGrade) {
-            alert('Não foi possível interpretar o chord sheet. Use Parte A, ▸ Seção e acordes por compasso.');
-            event.preventDefault();
-            return;
-        }
-        document.getElementById('grade_json_hidden').value = JSON.stringify(parsedGrade);
-    }
-
 });
 
-if (window.SetSyncGradeVisual) {
-    parseGradeTextToJson = function (text) {
-        return SetSyncGradeVisual.parseGradeTextToJson(text);
-    };
-    fillGradeTextFromJson = function (data) {
-        var gradeTa = document.getElementById('grade_text');
-        if (gradeTa && data) gradeTa.value = SetSyncGradeVisual.jsonToText(data);
-    };
-}
+(function () {
+    var tabList = document.getElementById('cifraEditTabs');
+    if (!tabList) return;
+    tabList.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (btn) {
+        btn.addEventListener('shown.bs.tab', function () {
+            var target = btn.getAttribute('data-bs-target');
+            if (!target) return;
+            var url = new URL(window.location.href);
+            url.searchParams.set('tab', target.replace('#tab-', ''));
+            history.replaceState(null, '', url.toString());
+        });
+    });
+})();
 </script>
 {% endblock %}

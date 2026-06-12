@@ -14,6 +14,7 @@ O SetSync é um gerenciador de **cifras** e **setlists** para bandas, com foco e
 - **Cifra**: letra + acordes (com tom de referência). Pode incluir tablaturas.
 - **Setlist**: lista ordenada de cifras para uma apresentação/ensaio.
 - **Modo Tocar**: visualização otimizada para palco; a cifra pode ser transposta em tempo real.
+- **Chord sheet**: progressão harmônica no formato [chordsheet.com](https://www.chordsheet.com/) (módulo `chordsheet/`, extensão `&` para semi-pulsos).
 
 ## Onde ficam as coisas
 
@@ -22,4 +23,5 @@ O SetSync é um gerenciador de **cifras** e **setlists** para bandas, com foco e
 - **Templates**: Jinja2 em `templates/`.
 - **PWA**: `static/sw.js`, `static/manifest.webmanifest` e ícones em `static/icons/`.
 - **Importador de cifras**: `blueprints/cifras_import.py` + pacote `cifras_tool/` + UI em `templates/cifras_tool/embed.html`.
+- **Chord sheet**: `chordsheet/` (parser, render, prefs), ponte `chordsheet_bridge.py`, docs em `docs/chordsheet-formato.md`.
 

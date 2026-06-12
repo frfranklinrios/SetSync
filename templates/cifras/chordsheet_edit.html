@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <script>
+    (function () {
+        var K = 'setsync-theme';
+        var root = document.documentElement;
+        function norm(v) { return v === 'light' ? 'light' : 'dark'; }
+        function apply(t, opts) {
+            opts = opts || {};
+            t = norm(t);
+            root.setAttribute('data-theme', t);
+            root.setAttribute('data-bs-theme', t);
+            if (opts.persist !== false) {
+                try { localStorage.setItem(K, t); } catch (e) {}
+            }
+        }
+        apply(localStorage.getItem(K) || 'dark');
+        window.setSetSyncTheme = apply;
+    })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Chord Sheet — {{ cifra.titulo }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=PT+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=15">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=12">
+    <style>
+        :root {
+            --chord-highlight: #c2410c;
+        }
+        [data-theme="dark"] {
+            --chord-highlight: #2dd4bf;
+        }
+        body.chordsheet-editor-page {
+            --chord-highlight: #c2410c;
+            --ss-chord: var(--chord-highlight);
+        }
+        [data-theme="light"] body.chordsheet-editor-page {
+            --ss-bg: #f1f5f9;
+            --ss-surface: #ffffff;
+            --ss-surface-2: #f8fafc;
+            --ss-border: #e2e8f0;
+            --ss-text: #1e293b;
+            --ss-muted: #64748b;
+            --ss-accent: #ea580c;
+            --ss-accent-soft: rgba(234, 88, 12, 0.12);
+        }
+        [data-theme="dark"] body.chordsheet-editor-page {
+            --chord-highlight: #2dd4bf;
+            --ss-chord: var(--chord-highlight);
+        }
+        .chordsheet-editor-page .preview-wrap {
+            background: var(--ss-canvas) !important;
+        }
+        .setsync-topbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .setsync-topbar a, .setsync-topbar button {
+            font-family: var(--ui-font);
+            font-size: 0.82rem;
+            border-radius: 6px;
+            padding: 0.35rem 0.65rem;
+            border: 1px solid #334155;
+            background: var(--ss-surface-2);
+            color: var(--ss-text);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .setsync-topbar a:hover, .setsync-topbar button:hover { border-color: var(--ss-accent); }
+        .setsync-topbar .btn-save-top {
+            background: #0d9488;
+            border-color: #0d9488;
+            color: #fff;
+        }
+    </style>
+</head>
+<body class="chordsheet-editor-page">
+<div class="page">
+    <header class="app-header">
+        <span class="module-badge">setsync.chordsheet</span>
+        <h1>Chord Sheet Maker</h1>
+        <p class="subtitle">Editor no formato <a href="https://www.chordsheet.com/manual/" target="_blank" rel="noopener" style="color:var(--ss-accent)">chordsheet.com</a> — {{ band.name }}</p>
+        <div class="setsync-topbar">
+            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">← Voltar à cifra</a>
+            <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}">Editar cifra</a>
+            <button type="button" class="btn-save-top" id="btn-save-top">Salvar</button>
+            <button type="button" id="btn-print-top">Imprimir prévia</button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <div class="panel editor-panel">
+            <h2>Fonte</h2>
+            <div class="meta-grid">
+                <div>
+                    <label for="meta-title">Título</label>
+                    <input id="meta-title" type="text" autocomplete="off" />
+                </div>
+                <div>
+                    <label for="meta-artist">Artista</label>
+                    <input id="meta-artist" type="text" autocomplete="off" />
+                </div>
+                <div>
+                    <label for="meta-key">Tom</label>
+                    <input id="meta-key" type="text" autocomplete="off" placeholder="C, G, F#m…" />
+                </div>
+                <div>
+                    <label for="meta-bpm">BPM</label>
+                    <input id="meta-bpm" type="text" autocomplete="off" placeholder="120" />
+                </div>
+                <div>
+                    <label for="meta-ts">Compasso</label>
+                    <select id="meta-ts">
+                        <option value="4/4">4/4</option>
+                        <option value="3/4">3/4</option>
+                        <option value="6/8">6/8</option>
+                        <option value="2/4">2/4</option>
+                        <option value="12/8">12/8</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="meta-capo">Capo</label>
+                    <input id="meta-capo" type="text" autocomplete="off" />
+                </div>
+            </div>
+
+            <label for="examples" style="font-size:0.75rem;color:var(--ss-muted);display:block;margin-bottom:0.2rem;">Exemplos</label>
+            <select id="examples" style="width:100%;margin-bottom:0.5rem;">
+                <option value="">— carregar exemplo —</option>
+                {% for key, ex in examples.items() %}
+                <option value="{{ key }}">{{ ex.title }}</option>
+                {% endfor %}
+            </select>
+
+            <textarea id="source" spellcheck="false" placeholder="= Intro&#10;C Am F G&#10;= Verso&#10;C Am F G"></textarea>
+
+            <div class="toolbar">
+                <button type="button" id="btn-transpose-down" title="Transpor -1 semitom">♭ −1</button>
+                <button type="button" id="btn-transpose-up" title="Transpor +1 semitom">♯ +1</button>
+                <button type="button" id="btn-render">Atualizar</button>
+                <button type="button" id="btn-print">Imprimir</button>
+                <button type="button" class="btn-primary" id="btn-save">Salvar na cifra</button>
+            </div>
+
+            <details class="prefs">
+                <summary>Preferências de layout</summary>
+                <div class="prefs-row">
+                    <label>Compassos/linha
+                        <select id="pref-bars-per-row">
+                            {% for n in range(1, 9) %}
+                            <option value="{{ n }}"{% if n == 4 %} selected{% endif %}>{{ n }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label>Tamanho
+                        <select id="pref-font-size">
+                            <option value="M">M</option>
+                            <option value="S">S</option>
+                            <option value="XS">XS</option>
+                        </select>
+                    </label>
+                    <label>Espaçamento
+                        <select id="pref-line-spacing">
+                            <option value="normal">Normal</option>
+                            <option value="compact">Compacto</option>
+                            <option value="relaxed">Relaxado</option>
+                        </select>
+                    </label>
+                    <label>Alinhamento
+                        <select id="pref-align-chords">
+                            <option value="auto">Auto</option>
+                            <option value="left">Esquerda</option>
+                            <option value="center">Centro</option>
+                        </select>
+                    </label>
+                    <label>Maj7
+                        <select id="pref-maj7">
+                            <option value="delta">Δ</option>
+                            <option value="MA7">MA7</option>
+                            <option value="maj7">maj7</option>
+                        </select>
+                    </label>
+                    <label>Dim
+                        <select id="pref-dim">
+                            <option value="circle">°</option>
+                            <option value="dim">dim</option>
+                        </select>
+                    </label>
+                    <label>½dim
+                        <select id="pref-half-dim">
+                            <option value="oslash">ø</option>
+                            <option value="m7b5">m7b5</option>
+                        </select>
+                    </label>
+                    <label>Estilo de barra
+                        <select id="pref-bar-line-style">
+                            <option value="regular">Regular</option>
+                            <option value="none">Sem linhas</option>
+                            <option value="grille">Grille</option>
+                            <option value="trackline">Trackline</option>
+                            <option value="tab" selected>Tab</option>
+                        </select>
+                    </label>
+                    <label class="pref-tab-only" hidden>Linhas tab
+                        <select id="pref-tab-lines">
+                            {% for n in range(3, 9) %}
+                            <option value="{{ n }}"{% if n == 6 %} selected{% endif %}>{{ n }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="pref-tab-only" hidden>
+                        <input type="checkbox" id="pref-tab-barlines" checked /> Barras no tab
+                    </label>
+                    <label>
+                        <input type="checkbox" id="pref-show-footer" checked /> Rodapé
+                    </label>
+                </div>
+            </details>
+
+            <div class="status" id="status" hidden></div>
+            <details class="prefs" style="margin-top:0.5rem;">
+                <summary style="font-size:0.8rem;cursor:pointer;">Meta caracteres (sintaxe)</summary>
+                <ul class="hint" style="font-size:0.72rem;line-height:1.45;margin:0.35rem 0 0;padding-left:1.1rem;">
+                    <li><code>- texto</code> — rótulo; <code>#</code> — comentário; <code>+</code> — nova página</li>
+                    <li><code>= A</code> — seção; <code>A_B</code> — acordes no mesmo compasso; <code>*</code> — vazio</li>
+                    <li><code>(A B C D)x2</code> — repetição; <code>1.</code> <code>2.</code> — voltas</li>
+                    <li><code>%</code> <code>%%</code> — simile; <code>%1</code> — repete compasso anterior</li>
+                </ul>
+            </details>
+            <p class="hint">Exemplo completo: <strong>Manual — Meta Characters</strong> no menu acima.</p>
+        </div>
+
+        <div class="panel">
+            <h2>Prévia</h2>
+            <div class="preview-wrap setsync-cs-sheet" id="preview">
+                <p style="color:#78716c;font-size:0.85rem;">Digite a fonte ou carregue um exemplo…</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/csrf.js') }}?v=1"></script>
+<script>
+window.CHORDSHEET_EDITOR = {
+    cifraId: {{ cifra.id | tojson }},
+    initial: {{ initial | tojson }},
+    examples: {{ examples_json | tojson }},
+    urls: {
+        render: {{ url_for('cifras.chordsheet_api_render', cifra_id=cifra.id) | tojson }},
+        transpose: {{ url_for('cifras.chordsheet_api_transpose', cifra_id=cifra.id) | tojson }},
+        save: {{ url_for('cifras.chordsheet_api_save', cifra_id=cifra.id) | tojson }},
+        view: {{ url_for('cifras.view', cifra_id=cifra.id) | tojson }}
+    },
+    draftKey: "setsync.chordsheet.draft:{{ cifra.id }}"
+};
+</script>
+<script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=8"></script>
+</body>
+</html>

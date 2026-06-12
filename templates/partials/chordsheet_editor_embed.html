@@ -1,0 +1,148 @@
+{# Editor Chord Sheet embutido na edição da cifra — metadados vêm do form principal #}
+<div class="chordsheet-embed layout">
+    <div class="panel editor-panel">
+        <h2>Fonte</h2>
+        <div class="meta-grid chordsheet-embed-meta">
+            <div>
+                <label for="meta-ts">Compasso</label>
+                <select id="meta-ts">
+                    <option value="4/4">4/4</option>
+                    <option value="3/4">3/4</option>
+                    <option value="6/8">6/8</option>
+                    <option value="2/4">2/4</option>
+                    <option value="12/8">12/8</option>
+                </select>
+            </div>
+            <div>
+                <label for="meta-capo">Capo</label>
+                <input id="meta-capo" type="text" autocomplete="off" />
+            </div>
+        </div>
+        <p class="form-text mb-2" style="font-size:0.78rem;">
+            Título, artista, tom e BPM usam os campos do topo da página.
+        </p>
+
+        <label for="examples" style="font-size:0.75rem;color:var(--ss-muted, var(--muted));display:block;margin-bottom:0.2rem;">Exemplos</label>
+        <select id="examples" style="width:100%;margin-bottom:0.5rem;">
+            <option value="">— carregar exemplo —</option>
+            {% for key, ex in chordsheet_examples.items() %}
+            <option value="{{ key }}">{{ ex.title }}</option>
+            {% endfor %}
+        </select>
+
+        <textarea id="source" spellcheck="false" placeholder="= Intro&#10;C Am F G&#10;= Verso&#10;C Am F G"></textarea>
+
+        <div class="toolbar">
+            <button type="button" id="btn-transpose-down" title="Transpor -1 semitom">♭ −1</button>
+            <button type="button" id="btn-transpose-up" title="Transpor +1 semitom">♯ +1</button>
+            <button type="button" id="btn-render">Atualizar</button>
+            <button type="button" class="btn-primary" id="btn-save">Salvar chord sheet</button>
+        </div>
+
+        <details class="prefs">
+            <summary>Preferências de layout</summary>
+            <div class="prefs-row">
+                <label>Compassos/linha
+                    <select id="pref-bars-per-row">
+                        {% for n in range(1, 9) %}
+                        <option value="{{ n }}"{% if n == 4 %} selected{% endif %}>{{ n }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Tamanho
+                    <select id="pref-font-size">
+                        <option value="M">M</option>
+                        <option value="S">S</option>
+                        <option value="XS">XS</option>
+                    </select>
+                </label>
+                <label>Espaçamento
+                    <select id="pref-line-spacing">
+                        <option value="normal">Normal</option>
+                        <option value="compact">Compacto</option>
+                        <option value="relaxed">Relaxado</option>
+                    </select>
+                </label>
+                <label>Alinhamento
+                    <select id="pref-align-chords">
+                        <option value="auto">Auto</option>
+                        <option value="left">Esquerda</option>
+                        <option value="center">Centro</option>
+                    </select>
+                </label>
+                <label>Maj7
+                    <select id="pref-maj7">
+                        <option value="delta">Δ</option>
+                        <option value="MA7">MA7</option>
+                        <option value="maj7">maj7</option>
+                    </select>
+                </label>
+                <label>Dim
+                    <select id="pref-dim">
+                        <option value="circle">°</option>
+                        <option value="dim">dim</option>
+                    </select>
+                </label>
+                <label>½dim
+                    <select id="pref-half-dim">
+                        <option value="oslash">ø</option>
+                        <option value="m7b5">m7b5</option>
+                    </select>
+                </label>
+                <label>Estilo de barra
+                    <select id="pref-bar-line-style">
+                        <option value="regular">Regular</option>
+                        <option value="none">Sem linhas</option>
+                        <option value="grille">Grille</option>
+                        <option value="trackline">Trackline</option>
+                        <option value="tab" selected>Tab</option>
+                    </select>
+                </label>
+                <label class="pref-tab-only" hidden>Linhas tab
+                    <select id="pref-tab-lines">
+                        {% for n in range(3, 9) %}
+                        <option value="{{ n }}"{% if n == 6 %} selected{% endif %}>{{ n }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="pref-tab-only" hidden>
+                    <input type="checkbox" id="pref-tab-barlines" checked /> Barras no tab
+                </label>
+                <label>
+                    <input type="checkbox" id="pref-show-footer" checked /> Rodapé
+                </label>
+            </div>
+        </details>
+
+        <div class="status" id="status" hidden></div>
+        <details class="prefs" style="margin-top:0.5rem;">
+            <summary style="font-size:0.8rem;cursor:pointer;">Meta caracteres (sintaxe)</summary>
+            <ul class="hint" style="font-size:0.72rem;line-height:1.45;margin:0.35rem 0 0;padding-left:1.1rem;">
+                <li><code>- texto</code> — rótulo acima da pauta</li>
+                <li><code># texto</code> — comentário (não imprime)</li>
+                <li><code>+ texto</code> — quebra de página</li>
+                <li><code>= A</code> — seção em caixa</li>
+                <li><code>A B</code> — um compasso por acorde; <code>C_D</code> — dois pulsos no mesmo compasso</li>
+                <li><code>C&D</code> — dois semi-pulsos no compasso (metade cada); <code>C&D_E</code> — semi-pulsos no 1º pulso + acorde no 2º</li>
+                <li><code>*</code> — compasso vazio</li>
+                <li><code>(A B C D)x2</code> — repetição com <code>|:</code> … <code>:|</code></li>
+                <li><code>1.</code> <code>2.</code> — primeiras/segundas voltas</li>
+                <li><code>%</code> / <code>%%</code> — simile de 1 ou 2 compassos</li>
+                <li><code>%1</code> — repete o compasso anterior; <code>%4</code> — quatro compassos</li>
+                <li><code>Am?</code> — acorde opcional; <code>G,,,</code> — batidas</li>
+            </ul>
+        </details>
+        <p class="hint">
+            Exemplos: <strong>Manual — Meta Characters</strong>, <strong>Semi-pulsos (&amp;)</strong>.
+            <a href="{{ url_for('ajuda.index') }}#chord-sheet">Ajuda</a>
+            · especificação: <code>docs/chordsheet-formato.md</code>
+        </p>
+    </div>
+
+    <div class="panel">
+        <h2>Prévia</h2>
+        <div class="preview-wrap setsync-cs-sheet" id="preview">
+            <p style="color:#78716c;font-size:0.85rem;">Digite a fonte ou carregue um exemplo…</p>
+        </div>
+    </div>
+</div>

@@ -1,6 +1,13 @@
-{# Corpo compartilhado: folha de palco + cifras. Variáveis: setlist, band, sheets, printed_at, two_cols, palco_compact #}
+{# Corpo compartilhado: seções opcionais via print_sections #}
+{% set ps = print_sections or {'indice': true, 'cifras': true, 'letras': true, 'chordsheet': true} %}
+{% set any_lyrics = sheets | selectattr('has_lyrics') | list | length > 0 %}
+{% set any_chordsheets = sheets | selectattr('has_chordsheet') | list | length > 0 %}
+{% set show_letras = ps.letras and any_lyrics %}
+{% set show_chordsheets = ps.chordsheet and any_chordsheets %}
+
 <article class="setlist-print-doc">
-    <section class="setlist-print-palco" id="folha-palco" aria-label="Folha de palco">
+    {% if ps.indice %}
+    <section class="setlist-print-palco" id="folha-palco" aria-label="Índice da setlist">
         <header class="palco-header">
             <div class="palco-header-brand">
                 {% if band_logo_data_uri %}
@@ -43,31 +50,65 @@
             {% endfor %}
         </ol>
 
-        <p class="palco-foot">Cifras completas na sequência ↓</p>
+        {% if ps.cifras or show_letras or show_chordsheets %}
+        <p class="palco-foot">Conteúdo completo na sequência ↓</p>
+        {% endif %}
     </section>
+    {% endif %}
 
+    {% if ps.cifras %}
     <section class="setlist-print-cifras" aria-label="Cifras">
-        <p class="setlist-print-cifras-intro">
-            <span class="setlist-print-cifras-label">Cifras</span>
-            <span class="setlist-print-cifras-sub">{{ setlist.name }}</span>
+        <p class="setlist-print-section-intro">
+            <span class="setlist-print-section-label">Cifras</span>
+            <span class="setlist-print-section-sub">{{ setlist.name }}</span>
         </p>
 
         {% for sheet in sheets %}
-        <section class="setlist-print-song" id="song-{{ sheet.index }}">
-            <header class="setlist-print-song-hd">
-                <div class="setlist-print-song-titles">
-                    <h2><span class="setlist-print-song-idx">{{ sheet.index }}.</span> {{ sheet.titulo }}</h2>
-                    <p class="sub">
-                        {% if sheet.artista %}<span class="sub-artist">{{ sheet.artista }}</span>{% endif %}
-                        <span class="sub-key">Tom <strong>{{ sheet.display_key or '—' }}</strong></span>
-                        {% if sheet.vocalist_name %}<span class="sub-vox">{{ sheet.vocalist_name }}</span>{% endif %}
-                    </p>
-                </div>
-            </header>
+        <section class="setlist-print-song" id="song-cifra-{{ sheet.index }}">
+            {% include 'partials/setlist_print_song_header.html' %}
             <div class="cifra-container cifra-sheet-paper setlist-print-sheet play-layout{% if sheet.grouped_cifra %} structured-mode{% endif %}{% if two_cols %} cifra-two-cols{% endif %}">
                 {% include 'partials/cifra_sheet_body.html' %}
             </div>
         </section>
         {% endfor %}
     </section>
+    {% endif %}
+
+    {% if show_letras %}
+    <section class="setlist-print-letras" aria-label="Letras">
+        <p class="setlist-print-section-intro">
+            <span class="setlist-print-section-label">Letras</span>
+            <span class="setlist-print-section-sub">{{ setlist.name }}</span>
+        </p>
+
+        {% for sheet in sheets %}
+        {% if sheet.has_lyrics %}
+        <section class="setlist-print-song setlist-print-song--letra" id="song-letra-{{ sheet.index }}">
+            {% include 'partials/setlist_print_song_header.html' %}
+            <div class="setlist-print-letra-sheet cifra-sheet-paper{% if two_cols %} cifra-two-cols{% endif %}">{{ sheet.lyrics_plain }}</div>
+        </section>
+        {% endif %}
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if show_chordsheets %}
+    <section class="setlist-print-chordsheets" aria-label="Chord sheets">
+        <p class="setlist-print-section-intro">
+            <span class="setlist-print-section-label">Chord sheets</span>
+            <span class="setlist-print-section-sub">{{ setlist.name }}</span>
+        </p>
+
+        {% for sheet in sheets %}
+        {% if sheet.has_chordsheet %}
+        <section class="setlist-print-song setlist-print-song--chordsheet" id="song-cs-{{ sheet.index }}">
+            {% include 'partials/setlist_print_song_header.html' %}
+            <div class="cifra-sheet-paper setlist-print-chordsheet-wrap setsync-cs-sheet">
+                {{ sheet.chordsheet_html | safe }}
+            </div>
+        </section>
+        {% endif %}
+        {% endfor %}
+    </section>
+    {% endif %}
 </article>

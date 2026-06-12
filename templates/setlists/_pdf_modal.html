@@ -1,0 +1,170 @@
+{% set print_lyrics_count = cifras | selectattr('has_lyrics') | list | length %}
+{% set print_chordsheet_count = cifras | selectattr('has_chordsheet') | list | length %}
+
+<div class="modal fade" id="setlistPdfModal" tabindex="-1" aria-labelledby="setlistPdfModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="setlistPdfModalLabel">
+                    <i class="fas fa-file-pdf me-2 text-danger"></i>Exportar PDF
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3" style="font-size:0.88rem;">
+                    Marque o que deve entrar no PDF desta setlist.
+                </p>
+                <div class="vstack gap-2">
+                    <div class="form-check">
+                        <input class="form-check-input setlist-pdf-section" type="checkbox" value="indice" id="pdf-section-indice" checked>
+                        <label class="form-check-label" for="pdf-section-indice">
+                            <strong>Índice</strong>
+                            <span class="text-muted d-block" style="font-size:0.8rem;">Folha de palco com lista de músicas, tom e vocalista</span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input setlist-pdf-section" type="checkbox" value="cifras" id="pdf-section-cifras" checked>
+                        <label class="form-check-label" for="pdf-section-cifras">
+                            <strong>Cifras</strong>
+                            <span class="text-muted d-block" style="font-size:0.8rem;">{{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }} no tom de cada linha</span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input setlist-pdf-section" type="checkbox" value="letras" id="pdf-section-letras"
+                               {% if print_lyrics_count == 0 %}disabled{% else %}checked{% endif %}>
+                        <label class="form-check-label{% if print_lyrics_count == 0 %} text-muted{% endif %}" for="pdf-section-letras">
+                            <strong>Letras</strong>
+                            <span class="text-muted d-block" style="font-size:0.8rem;">
+                                {% if print_lyrics_count > 0 %}
+                                {{ print_lyrics_count }} música{{ '' if print_lyrics_count == 1 else 's' }} com letra
+                                {% else %}
+                                Nenhuma música com letra cadastrada
+                                {% endif %}
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input setlist-pdf-section" type="checkbox" value="chordsheet" id="pdf-section-chordsheet"
+                               {% if print_chordsheet_count == 0 %}disabled{% else %}checked{% endif %}>
+                        <label class="form-check-label{% if print_chordsheet_count == 0 %} text-muted{% endif %}" for="pdf-section-chordsheet">
+                            <strong>Chord sheet</strong>
+                            <span class="text-muted d-block" style="font-size:0.8rem;">
+                                {% if print_chordsheet_count > 0 %}
+                                {{ print_chordsheet_count }} música{{ '' if print_chordsheet_count == 1 else 's' }} com chord sheet
+                                {% else %}
+                                Nenhuma música com chord sheet
+                                {% endif %}
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                <p class="text-danger mb-0 mt-3 d-none" style="font-size:0.82rem;" id="pdf-sections-error">
+                    Selecione ao menos uma seção.
+                </p>
+            </div>
+            <div class="modal-footer flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-pdf-preview">
+                    <i class="fas fa-eye me-1"></i> Visualizar
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-pdf-download">
+                    <i class="fas fa-download me-1"></i> Gerar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var STORAGE_KEY = 'setsync.setlistPdfSections';
+    var pdfBase = {{ url_for('setlists.exportar_pdf', setlist_id=setlist.id) | tojson }};
+    var printBase = {{ url_for('setlists.imprimir', setlist_id=setlist.id) | tojson }};
+    var modalEl = document.getElementById('setlistPdfModal');
+    var btnPdf = document.getElementById('btn-setlist-pdf');
+    if (!modalEl || !btnPdf) return;
+
+    var checks = modalEl.querySelectorAll('.setlist-pdf-section');
+    var errEl = document.getElementById('pdf-sections-error');
+    var bsModal = null;
+
+    function getModal() {
+        if (!bsModal && window.bootstrap && bootstrap.Modal) {
+            bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        }
+        return bsModal;
+    }
+
+    function readSections() {
+        var out = {};
+        checks.forEach(function (el) {
+            if (!el.disabled) out[el.value] = el.checked;
+        });
+        return out;
+    }
+
+    function applySections(sections) {
+        if (!sections) return;
+        checks.forEach(function (el) {
+            if (el.disabled) return;
+            if (Object.prototype.hasOwnProperty.call(sections, el.value)) {
+                el.checked = !!sections[el.value];
+            }
+        });
+    }
+
+    function loadSaved() {
+        try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) applySections(JSON.parse(raw));
+        } catch (e) { /* ignore */ }
+    }
+
+    function saveSections() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(readSections()));
+        } catch (e) { /* ignore */ }
+    }
+
+    function buildQuery(sections) {
+        return Object.keys(sections)
+            .filter(function (k) { return sections[k]; })
+            .map(function (k) { return encodeURIComponent(k) + '=1'; })
+            .join('&');
+    }
+
+    function selectedSections() {
+        var sections = readSections();
+        var any = Object.keys(sections).some(function (k) { return sections[k]; });
+        if (errEl) errEl.classList.toggle('d-none', any);
+        return any ? sections : null;
+    }
+
+    function goPdf() {
+        var sections = selectedSections();
+        if (!sections) return;
+        saveSections();
+        var q = buildQuery(sections);
+        window.location.href = q ? (pdfBase + '?' + q) : pdfBase;
+    }
+
+    function goPreview() {
+        var sections = selectedSections();
+        if (!sections) return;
+        saveSections();
+        var q = buildQuery(sections);
+        window.open(q ? (printBase + '?' + q) : printBase, '_blank', 'noopener');
+    }
+
+    btnPdf.addEventListener('click', function (e) {
+        e.preventDefault();
+        loadSaved();
+        var m = getModal();
+        if (m) m.show();
+    });
+
+    modalEl.addEventListener('show.bs.modal', loadSaved);
+    document.getElementById('btn-pdf-download').addEventListener('click', goPdf);
+    document.getElementById('btn-pdf-preview').addEventListener('click', goPreview);
+})();
+</script>

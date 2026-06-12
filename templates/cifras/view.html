@@ -7,7 +7,7 @@
     overflow-x: auto;
     word-break: normal;
 }
-/* Visualização: cifra sempre em duas colunas */
+/* Duas colunas (opcional — aba Letra; cifra na view usa uma coluna) */
 .cifra-container.cifra-two-cols {
     column-count: 2;
     white-space: pre-wrap;
@@ -205,6 +205,48 @@
 [data-theme="light"] .transpose-step-btn:hover:not(:disabled) { background: rgba(0,0,0,0.06); }
 [data-theme="light"] .sl-item { color: #374151; }
 [data-theme="light"] .sl-item:hover { background: #f9fafb; }
+[data-theme="light"] #cifra-col .cifra-container.cifra-sheet-paper,
+[data-theme="light"] #cifra-col .leadsheet-view-panel.cifra-sheet-paper {
+    background: #ffffff !important;
+    color: #1c1917 !important;
+    border-color: #d6d3d1 !important;
+}
+[data-theme="light"] #cifra-col .cifra-container.cifra-sheet-paper .sp-word,
+[data-theme="light"] #cifra-col .cifra-container.cifra-sheet-paper .cifra-lyric {
+    color: #292524 !important;
+}
+
+.cifra-content-tabs .nav-link { font-size: 0.875rem; font-weight: 500; }
+.cifra-content-tabs .tab-pane { padding-top: 0.75rem; }
+.letra-pane {
+    white-space: pre-wrap;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    padding: 1.35rem 1.6rem;
+    border: 1px solid var(--ss-border, var(--border));
+    border-radius: 2px;
+    background: var(--ss-bg, var(--card-bg));
+    color: var(--ss-fg, var(--text));
+    box-shadow: var(--ss-shadow, none);
+    min-height: 12rem;
+}
+.letra-pane.cifra-two-cols {
+    column-count: 2;
+    column-gap: 2.25rem;
+    column-rule: 1px solid var(--ss-rule, var(--border));
+    word-break: break-word;
+}
+@media (max-width: 720px) {
+    .letra-pane.cifra-two-cols { column-count: 1; column-rule: none; }
+}
+.letra-pane.empty { color: var(--muted); font-style: italic; }
+.chordsheet-empty-hint {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
 </style>
 
 <div id="normal-header" class="mb-3">
@@ -238,28 +280,71 @@
             </div>
         </div>
 
-        <div class="cifra-container cifra-sheet-paper cifra-two-cols{% if conteudo_html or grouped_cifra %} play-layout{% endif %}" id="cifra-body">
-            {% if grouped_cifra and grouped_cifra|length > 0 %}
-                {% set sheet = {'grouped_cifra': grouped_cifra} %}
-                {% include 'partials/cifra_sheet_body.html' %}
-            {% elif conteudo_html %}
-                {{ conteudo_html | safe }}
-            {% else %}
-                <em style="color: #888;">Cifra sem conteúdo.</em>
-            {% endif %}
-        </div>
+        <ul class="nav nav-tabs cifra-content-tabs" id="cifraViewTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link{% if active_tab == 'cifra' %} active{% endif %}" id="tab-cifra-btn"
+                        data-bs-toggle="tab" data-bs-target="#tab-cifra" type="button" role="tab"
+                        aria-controls="tab-cifra" aria-selected="{{ 'true' if active_tab == 'cifra' else 'false' }}">
+                    Cifra
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link{% if active_tab == 'chordsheet' %} active{% endif %}" id="tab-chordsheet-btn"
+                        data-bs-toggle="tab" data-bs-target="#tab-chordsheet" type="button" role="tab"
+                        aria-controls="tab-chordsheet" aria-selected="{{ 'true' if active_tab == 'chordsheet' else 'false' }}">
+                    Chord Sheet
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link{% if active_tab == 'letra' %} active{% endif %}" id="tab-letra-btn"
+                        data-bs-toggle="tab" data-bs-target="#tab-letra" type="button" role="tab"
+                        aria-controls="tab-letra" aria-selected="{{ 'true' if active_tab == 'letra' else 'false' }}">
+                    Letra
+                </button>
+            </li>
+        </ul>
 
-        {% if leadsheet_document %}
-        <div class="leadsheet-view-panel cifra-sheet-paper">
-            <div id="leadsheet-view-mount"></div>
+        <div class="tab-content" id="cifraViewTabContent">
+            <div class="tab-pane fade{% if active_tab == 'cifra' %} show active{% endif %}" id="tab-cifra" role="tabpanel" aria-labelledby="tab-cifra-btn">
+                <div class="cifra-container cifra-sheet-paper{% if conteudo_html or grouped_cifra %} play-layout{% endif %}" id="cifra-body">
+                    {% if grouped_cifra and grouped_cifra|length > 0 %}
+                        {% set sheet = {'grouped_cifra': grouped_cifra} %}
+                        {% include 'partials/cifra_sheet_body.html' %}
+                    {% elif conteudo_html %}
+                        {{ conteudo_html | safe }}
+                    {% else %}
+                        <em style="color: #888;">Cifra sem conteúdo.</em>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="tab-pane fade{% if active_tab == 'chordsheet' %} show active{% endif %}" id="tab-chordsheet" role="tabpanel" aria-labelledby="tab-chordsheet-btn">
+                {% if has_chordsheet %}
+                <div class="leadsheet-view-panel cifra-sheet-paper">
+                    <div id="leadsheet-view-mount"></div>
+                </div>
+                {% elif is_member %}
+                <div class="chordsheet-empty-hint">
+                    <p class="mb-2">Nenhum chord sheet cadastrado.</p>
+                    <a href="{{ url_for('cifras.edit', cifra_id=cifra.id, tab='chordsheet') }}" class="btn btn-outline-info btn-sm">
+                        Configurar Chord Sheet
+                    </a>
+                </div>
+                {% else %}
+                <div class="chordsheet-empty-hint">
+                    <p class="mb-0">Chord sheet não disponível.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane fade{% if active_tab == 'letra' %} show active{% endif %}" id="tab-letra" role="tabpanel" aria-labelledby="tab-letra-btn">
+                {% if lyrics_plain and lyrics_plain.strip() %}
+                <div class="letra-pane cifra-sheet-paper cifra-two-cols">{{ lyrics_plain }}</div>
+                {% else %}
+                <div class="letra-pane cifra-sheet-paper cifra-two-cols empty">Sem letra cadastrada.</div>
+                {% endif %}
+            </div>
         </div>
-        {% elif is_member %}
-        <div class="mt-3">
-            <a href="{{ url_for('cifras.leadsheet_editor', cifra_id=cifra.id) }}" class="btn btn-outline-info btn-sm">
-                Configurar Chord Sheet
-            </a>
-        </div>
-        {% endif %}
 
         {% if setlist|length > 1 %}
         <div class="d-flex justify-content-between mt-3">
@@ -353,8 +438,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand+SC&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=12">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=15">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=15">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=16">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=12">
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=15"></script>
 <script>
 const CIFRA_BASE = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
@@ -394,13 +480,20 @@ const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra
 const LEADSHEET_DOC = {{ leadsheet_document|tojson if leadsheet_document else 'null' }};
 const CIFRA_TITULO = {{ cifra.titulo|tojson }};
 const CIFRA_ARTISTA = {{ cifra.artista|tojson }};
+const CHORDSHEET_RENDER_URL = "{{ url_for('cifras.chordsheet_render', cifra_id=cifra.id) }}";
+const CURRENT_TRANSPOSE = {{ current_transpose|tojson }};
 
 (function () {
     var mount = document.getElementById('leadsheet-view-mount');
-    if (!mount || !window.LeadsheetPlayRender || !LEADSHEET_DOC) return;
+    if (!mount || !{{ has_chordsheet|tojson }}) return;
 
+    var chordsheetRendered = false;
     var resizeTimer = null;
-    function renderLeadSheetView() {
+    function renderClientFallback() {
+        if (!window.LeadsheetPlayRender || !LEADSHEET_DOC) {
+            mount.innerHTML = '<em style="color:#888;">Chord sheet indisponível.</em>';
+            return;
+        }
         var panel = mount.closest('.leadsheet-view-panel');
         var w = (panel && panel.clientWidth) || mount.clientWidth || window.innerWidth;
         mount.innerHTML = (LeadsheetPlayRender.renderChordSheetHtml || LeadsheetPlayRender.renderHtml)(LEADSHEET_DOC, {
@@ -411,20 +504,68 @@ const CIFRA_ARTISTA = {{ cifra.artista|tojson }};
         });
     }
 
-    renderLeadSheetView();
+    function renderLeadSheetView() {
+        fetch(CHORDSHEET_RENDER_URL + '?semitones=' + encodeURIComponent(CURRENT_TRANSPOSE), {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && data.ok && data.html) {
+                    mount.innerHTML = '<div class="cs-view-embed setsync-cs-sheet">' + data.html + '</div>';
+                } else {
+                    renderClientFallback();
+                }
+            })
+            .catch(function () { renderClientFallback(); });
+    }
+
+    function maybeRenderLeadSheet() {
+        if (chordsheetRendered) return;
+        chordsheetRendered = true;
+        renderLeadSheetView();
+    }
+
+    var csTab = document.getElementById('tab-chordsheet');
+    if (csTab && csTab.classList.contains('show')) {
+        maybeRenderLeadSheet();
+    } else {
+        var csBtn = document.getElementById('tab-chordsheet-btn');
+        if (csBtn) {
+            csBtn.addEventListener('shown.bs.tab', maybeRenderLeadSheet, { once: true });
+        }
+    }
+
     window.addEventListener('resize', function () {
+        if (!chordsheetRendered) return;
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(renderLeadSheetView, 100);
+        resizeTimer = setTimeout(renderLeadSheetView, 150);
     });
     if (typeof ResizeObserver !== 'undefined') {
         var panel = mount.closest('.leadsheet-view-panel');
         if (panel) {
             new ResizeObserver(function () {
+                if (!chordsheetRendered) return;
                 clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(renderLeadSheetView, 100);
+                resizeTimer = setTimeout(renderLeadSheetView, 150);
             }).observe(panel);
         }
     }
+})();
+
+(function () {
+    var tabList = document.getElementById('cifraViewTabs');
+    if (!tabList) return;
+    tabList.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (btn) {
+        btn.addEventListener('shown.bs.tab', function () {
+            var target = btn.getAttribute('data-bs-target');
+            if (!target) return;
+            var tabName = target.replace('#tab-', '');
+            var url = new URL(window.location.href);
+            url.searchParams.set('tab', tabName);
+            history.replaceState(null, '', url.toString());
+        });
+    });
 })();
 
 document.addEventListener('keydown', function (e) {

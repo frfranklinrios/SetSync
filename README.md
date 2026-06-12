@@ -14,13 +14,15 @@
 | [docs/05-troubleshooting.md](docs/05-troubleshooting.md) | Problemas comuns |
 | [docs/06-deploy-contabo.md](docs/06-deploy-contabo.md) | Deploy em VPS (Contabo) |
 | [docs/MIGRACAO_POSTGRES.md](docs/MIGRACAO_POSTGRES.md) | SQLite → PostgreSQL |
+| [docs/chordsheet-formato.md](docs/chordsheet-formato.md) | Formato chord sheet (setsync.chordsheet) |
+| [docs/chordsheet-prompt-ia.md](docs/chordsheet-prompt-ia.md) | Prompt para gerar chord sheets com IA |
 | [MONETIZACAO.md](MONETIZACAO.md) | Planos, Mercado Pago e vouchers |
 
 ## Funcionalidades
 
 - **Bandas e membros** — convites por e-mail, papéis (admin/membro), logo da banda
 - **Cantores** — vários vocalistas por banda, tom de transposição por cantor
-- **Cifras** — ChordPro, colagem de sites, lead sheet, tablatura, tons maiores/menores
+- **Cifras** — ChordPro, colagem de sites, lead sheet, **chord sheet** (chordsheet.com), tablatura, tons maiores/menores
 - **Transposição** — em tempo real; tom salvo para toda a banda e por cantor na setlist
 - **Setlists** — ordenação por arrastar, cantor/tom por música, link público de letras
 - **PDF e impressão** — folha de palco (lista simples) + cifras em sequência (A4, 2 colunas)
