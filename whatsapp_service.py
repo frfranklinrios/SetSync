@@ -71,16 +71,28 @@ def format_whatsapp_display(phone: str | None) -> str:
     return f'+{digits}'
 
 
-def _format_notification_text(title: str, body: str, url_path: str | None) -> str:
-    lines = ['*SetSync*', f'*{title}*']
-    if body:
-        lines.append(body)
+def _notification_link(url_path: str | None) -> str | None:
+    if not url_path:
+        return None
     base = canonical_app_url()
-    if url_path and base:
-        lines.append(f'{base}{url_path}')
-    elif url_path:
-        lines.append(url_path)
-    return '\n\n'.join(lines)
+    if base and url_path.startswith('/'):
+        return f'{base}{url_path}'
+    return url_path
+
+
+def _format_notification_text(title: str, body: str, url_path: str | None) -> str:
+    """Texto WhatsApp — sem preview de link (linkPreview desligado no envio)."""
+    parts: list[str] = ['*SetSync*']
+    clean_title = (title or '').strip()
+    if clean_title:
+        parts.append(f'*{clean_title}*')
+    clean_body = (body or '').strip()
+    if clean_body:
+        parts.append(clean_body)
+    link = _notification_link(url_path)
+    if link:
+        parts.append(f'_Abrir no app:_\n{link}')
+    return '\n\n'.join(parts)
 
 
 # ── Meta Cloud API ────────────────────────────────────────────────────────────
@@ -137,7 +149,7 @@ def send_whatsapp_template(to_phone: str, title: str, body: str, link: str) -> b
     })
 
 
-def _send_meta_text(to_phone: str, text: str) -> bool:
+def _send_meta_text(to_phone: str, text: str, *, link_preview: bool = False) -> bool:
     phone = normalize_whatsapp_phone(to_phone)
     if not phone or not text.strip():
         return False
@@ -145,39 +157,38 @@ def _send_meta_text(to_phone: str, text: str) -> bool:
         'messaging_product': 'whatsapp',
         'to': phone,
         'type': 'text',
-        'text': {'preview_url': True, 'body': text[:4096]},
+        'text': {'preview_url': bool(link_preview), 'body': text[:4096]},
     })
 
 
 # ── Evolution API (servidor local) ──────────────────────────────────────────────
 
-def _send_evolution_text(to_phone: str, text: str) -> bool:
+def _send_evolution_text(to_phone: str, text: str, *, link_preview: bool = False) -> bool:
     from whatsapp_server.client import send_text
 
     phone = normalize_whatsapp_phone(to_phone)
     if not phone:
         return False
-    return send_text(phone, text)
+    return send_text(phone, text, link_preview=link_preview)
 
 
 # ── API pública ───────────────────────────────────────────────────────────────
 
-def send_whatsapp_text(to_phone: str, text: str) -> bool:
+def send_whatsapp_text(to_phone: str, text: str, *, link_preview: bool = False) -> bool:
     if not is_configured():
         logger.warning('WhatsApp não configurado; mensagem não enviada')
         return False
     if whatsapp_provider() == 'meta':
-        return _send_meta_text(to_phone, text)
-    return _send_evolution_text(to_phone, text)
+        return _send_meta_text(to_phone, text, link_preview=link_preview)
+    return _send_evolution_text(to_phone, text, link_preview=link_preview)
 
 
 def send_notification_message(to_phone: str, title: str, body: str, url_path: str | None) -> bool:
-    base = canonical_app_url()
-    link = f'{base}{url_path}' if base and url_path else (url_path or base or '')
+    link = _notification_link(url_path) or canonical_app_url() or ''
     if whatsapp_provider() == 'meta' and whatsapp_template_name():
         return send_whatsapp_template(to_phone, title, body, link)
     text = _format_notification_text(title, body, url_path)
-    return send_whatsapp_text(to_phone, text)
+    return send_whatsapp_text(to_phone, text, link_preview=False)
 
 
 def dispatch_notification_whatsapp(

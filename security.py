@@ -51,11 +51,22 @@ def get_allowed_hosts() -> set[str]:
     return {'localhost', '127.0.0.1'}
 
 
+_SEO_PUBLIC_PATHS = frozenset({
+    '/sw.js',
+    '/manifest.webmanifest',
+    '/health',
+    '/ads.txt',
+    '/robots.txt',
+    '/sitemap.xml',
+    '/google47ebf77ba640d99c.html',
+})
+
+
 def validate_request_host():
     """Bloqueia Host header poisoning (403). Redireciona hosts legados ao canônico."""
     from flask import redirect
 
-    if request.path in ('/sw.js', '/manifest.webmanifest', '/health', '/ads.txt'):
+    if request.path in _SEO_PUBLIC_PATHS:
         return
     host = (request.host or '').split(':')[0].lower()
     if not host:
@@ -69,9 +80,9 @@ def validate_request_host():
     if base:
         canon_host = (urlparse(base).hostname or '').lower()
         if canon_host and host != canon_host and host in allowed:
-            target = base.rstrip('/') + request.full_path
-            if target.endswith('?') and '?' not in request.full_path:
-                target = target[:-1]
+            path = request.path or '/'
+            qs = (request.query_string or b'').decode('utf-8', errors='replace').strip()
+            target = base.rstrip('/') + path + (f'?{qs}' if qs else '')
             return redirect(target, code=301)
 
 

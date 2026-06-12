@@ -40,6 +40,36 @@ def init_scheduler(app) -> None:
     _scheduler.add_job(_agenda_job, 'cron', minute=0, id='agenda_reminders_hourly')
     app.logger.info('APScheduler: lembretes de agenda a cada hora (24h antes do evento)')
 
+    def _cifra_digest_job():
+        with app.app_context():
+            from scheduler_jobs import run_whatsapp_cifra_digest_jobs
+            try:
+                run_whatsapp_cifra_digest_jobs()
+            except Exception as exc:
+                app.logger.exception('Erro no digest WhatsApp de cifras: %s', exc)
+
+    from config import app_timezone_name
+    from zoneinfo import ZoneInfo
+
+    _tz_name = app_timezone_name()
+    try:
+        _tz = ZoneInfo(_tz_name)
+    except Exception:
+        _tz = None
+
+    _scheduler.add_job(
+        _cifra_digest_job,
+        'cron',
+        hour=21,
+        minute=0,
+        timezone=_tz,
+        id='whatsapp_cifra_digest_daily',
+    )
+    app.logger.info(
+        'APScheduler: digest WhatsApp de cifras editadas às 21:00 (%s)',
+        _tz_name,
+    )
+
     _init_whatsapp_server(app)
 
 

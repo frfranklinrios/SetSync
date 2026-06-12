@@ -163,6 +163,8 @@ html.setlist-print-root.pdfgen .palco-foot {
   display: none;
 }
 
+html.setlist-print-root.pdfgen .setlist-print-section-intro,
+html.setlist-print-root.pdfgen .setlist-print-section-intro,
 html.setlist-print-root.pdfgen .setlist-print-cifras-intro {
   display: none;
 }
@@ -339,6 +341,7 @@ html.setlist-print-root.palco-compact .palco-song-artist {
   margin-top: 0;
 }
 
+.setlist-print-section-intro,
 .setlist-print-cifras-intro {
   display: flex;
   flex-wrap: wrap;
@@ -350,6 +353,7 @@ html.setlist-print-root.palco-compact .palco-song-artist {
   border-bottom: 1px solid var(--ss-border, #cbd5e1);
 }
 
+.setlist-print-section-label,
 .setlist-print-cifras-label {
   font-size: 0.95rem;
   font-weight: 800;
@@ -358,9 +362,48 @@ html.setlist-print-root.palco-compact .palco-song-artist {
   color: var(--chord-highlight, #c2410c);
 }
 
+.setlist-print-section-sub,
 .setlist-print-cifras-sub {
   font-size: 0.78rem;
   color: var(--muted, #64748b);
+}
+
+.setlist-print-letras,
+.setlist-print-chordsheets {
+  margin-top: 1.5rem;
+}
+
+.setlist-print-letra-sheet {
+  white-space: pre-wrap;
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  padding: 1.1rem 1.35rem;
+  color: var(--ss-fg, #1c1917);
+  background: var(--ss-bg, #fff);
+  border: 1px solid var(--ss-border, #d6d3d1);
+  border-radius: 2px;
+  word-break: break-word;
+}
+
+.setlist-print-letra-sheet.cifra-two-cols {
+  column-count: 2;
+  column-gap: 2rem;
+  column-rule: 1px solid var(--ss-rule, #e7e5e4);
+}
+
+.setlist-print-chordsheet-wrap {
+  padding: 1rem 1.25rem;
+  background: var(--ss-bg, #fff);
+  border: 1px solid var(--ss-border, #d6d3d1);
+  border-radius: 2px;
+}
+
+.setlist-print-chordsheet-wrap .cs-chart {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .setlist-print-song {
@@ -671,8 +714,22 @@ html.setlist-print-root.palco-compact .palco-song-artist {
     color: #b45309 !important;
   }
 
+  .setlist-print-section-intro,
   .setlist-print-cifras-intro {
     display: none !important;
+  }
+
+  .setlist-print-letras,
+  .setlist-print-chordsheets {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .setlist-print-letra-sheet,
+  .setlist-print-chordsheet-wrap {
+    background: #fff !important;
+    color: #1c1917 !important;
+    border-color: #d6d3d1 !important;
   }
 
   .setlist-print-song {

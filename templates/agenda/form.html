@@ -116,6 +116,17 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/form-submit-once.js') }}?v=1"></script>
 {% if google_maps_api_key %}
+<div id="agenda-maps-auth-alert" class="alert alert-warning py-2 small d-none mb-3" role="alert">
+    <i class="fas fa-map-marked-alt me-1"></i>
+    Sugestões do Google Maps indisponíveis no momento. Digite o endereço manualmente ou
+    <a href="{{ maps_open_url or 'https://maps.google.com' }}" target="_blank" rel="noopener">abra no Google Maps</a>.
+</div>
+<script>
+window.gm_authFailure = function () {
+    var el = document.getElementById('agenda-maps-auth-alert');
+    if (el) el.classList.remove('d-none');
+};
+</script>
 <script src="{{ url_for('static', filename='js/agenda-location-autocomplete.js') }}?v=1"></script>
 <script async defer
         src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&language=pt-BR&region=BR&callback=SetSyncInitAgendaLocation"></script>

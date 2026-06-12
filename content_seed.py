@@ -105,6 +105,26 @@ def _blog_posts_data() -> list[dict]:
             'meta_description': 'Entenda a diferença entre tom e escala e como isso afeta cifras, setlists e ensaios.',
             'conteudo': _POST_TOM_ESCALA,
         },
+        {
+            'slug': 'compartilhar-cifras-com-a-banda',
+            'titulo': 'Como compartilhar cifras com a banda sem perder a versão certa',
+            'resumo': 'Pare de mandar print no WhatsApp: repertório único, convites por link, setlist sincronizada e letras públicas para a equipe.',
+            'autor': 'Equipe SetSync',
+            'tags': 'compartilhar cifras, banda, repertório, setlist',
+            'meta_title': 'Compartilhar cifras com a banda — guia SetSync',
+            'meta_description': 'Aprenda a compartilhar cifras com sua banda: repertório centralizado, convites, setlists e link público de letras.',
+            'conteudo': _POST_COMPARTILHAR_CIFRAS,
+        },
+        {
+            'slug': 'gerenciar-bandas-ministerio-louvor',
+            'titulo': 'Como gerenciar bandas e ministérios de louvor no mesmo lugar',
+            'resumo': 'Convites, permissões, várias bandas na conta Worship e agenda com escalação — sem planilha perdida.',
+            'autor': 'Equipe SetSync',
+            'tags': 'gerenciar bandas, ministério, louvor, igreja',
+            'meta_title': 'Gerenciar bandas de louvor — SetSync',
+            'meta_description': 'Guia para gerenciar bandas: convidar músicos, organizar repertório, setlists e múltiplos ministérios na igreja.',
+            'conteudo': _POST_GERENCIAR_BANDAS,
+        },
     ]
     for i, p in enumerate(posts):
         p['publicado'] = True
@@ -113,10 +133,11 @@ def _blog_posts_data() -> list[dict]:
 
 
 def seed_blog_posts(c) -> None:
-    c.execute('SELECT COUNT(*) AS n FROM blog_posts')
-    if (c.fetchone()['n'] or 0) > 0:
-        return
+    """Insere posts iniciais; em deploys seguintes só adiciona slugs novos."""
     for p in _blog_posts_data():
+        c.execute('SELECT id FROM blog_posts WHERE slug = ?', (p['slug'],))
+        if c.fetchone():
+            continue
         c.execute(
             '''INSERT INTO blog_posts
                (slug, titulo, resumo, conteudo, autor, publicado, publicado_em,
@@ -214,4 +235,32 @@ _POST_TOM_ESCALA = """
 <li>Ignorar modulação no meio da música.</li>
 </ul>
 <p>Entender tom vs. escala acelera ensaios e evita friction entre teoria e palco. Estude o básico e automatize o resto com ferramentas que respeitam o tom de cada cantor.</p>
+"""
+
+_POST_COMPARTILHAR_CIFRAS = """
+<h2>O problema do print no WhatsApp</h2>
+<p>Toda banda já viveu isso: alguém manda a cifra errada, uma versão antiga ou um tom que não combina com o cantor do culto. Compartilhar cifras de verdade exige <strong>uma fonte única</strong> que todos confiem.</p>
+<h2>Repertório centralizado no SetSync</h2>
+<p>Cadastre cada música uma vez. Admins editam; membros da banda só tocam a versão aprovada. Cifra, letra e chord sheet ficam na mesma ficha — sem pastas "final_v3".</p>
+<h2>Convite por link</h2>
+<p>Crie a banda e envie o link de convite por WhatsApp ou e-mail. Guitarristas, tecladistas, bateristas e vocalistas entram na mesma equipe com permissões claras.</p>
+<h2>Setlist + tom por cantor</h2>
+<p>Ao montar o culto, escolha quem canta cada música. A transposição abre automaticamente no tom certo — inclusive no Modo Tocar, tela cheia no palco.</p>
+<h2>Link público de letras</h2>
+<p>Para quem não precisa ver acordes (projeção ou equipe de apoio), use o link público de letras da setlist sem expor o repertório inteiro da banda.</p>
+<p>Compartilhar cifras bem é menos sobre tecnologia e mais sobre processo. O SetSync elimina o retrabalho para você focar no ensaio.</p>
+"""
+
+_POST_GERENCIAR_BANDAS = """
+<h2>Mais de uma equipe, um só lugar</h2>
+<p>Igrejas com louvor de domingo, jovens e vigília costumam espalhar cifras em grupos diferentes. Gerenciar bandas com clareza evita confusão de versões e integrantes perdidos.</p>
+<h2>Plano Worship: várias bandas na conta</h2>
+<p>Uma assinatura Worship cobre múltiplos ministérios. Cada banda tem repertório, setlists e convites próprios — sem misturar músicas entre equipes.</p>
+<h2>Permissões: admin e membro</h2>
+<p>Admins cadastram músicas, montam setlists e convidam pessoas. Membros consultam e tocam. Ideal para rotatividade de voluntários que entram e saem ao longo do ano.</p>
+<h2>Agenda e escalação</h2>
+<p>Marque ensaios e cultos, vincule a setlist do evento e escale quem participa. Lembretes por e-mail e WhatsApp reduzem faltas de última hora.</p>
+<h2>Métricas do ministério</h2>
+<p>Veja quantas músicas há no acervo, quantos setlists foram montados e quando a equipe ensaiou. Dados simples para liderança pastoral e musical.</p>
+<p>Gerenciar bandas de louvor não precisa ser planilha infinita. Centralize repertório, pessoas e agenda — e deixe o grupo do WhatsApp só para comunicação rápida.</p>
 """

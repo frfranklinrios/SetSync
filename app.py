@@ -11,6 +11,7 @@ from blueprints.admin import admin_bp
 from blueprints.assinatura import assinatura_bp, webhook as mp_webhook_view
 from blueprints.notifications import notifications_bp
 from blueprints.blog import blog_bp
+from blueprints.guia import guia_bp
 from blueprints.mail_web import mail_web_bp
 from blueprints.whatsapp_admin import whatsapp_admin_bp
 from blueprints.agenda import agenda_bp
@@ -129,15 +130,27 @@ app.jinja_env.filters['format_event_datetime'] = format_event_datetime
 app.jinja_env.filters['event_relative_label'] = event_relative_label
 app.jinja_env.filters['whatsapp_display'] = format_whatsapp_display
 
+
+def _faq_to_schema(item: dict) -> dict:
+    return {
+        '@type': 'Question',
+        'name': item['q'],
+        'acceptedAnswer': {'@type': 'Answer', 'text': item['a']},
+    }
+
+
+app.jinja_env.filters['faq_to_schema'] = _faq_to_schema
+
 with app.app_context():
     init_db()
 
 _PWA_ASSET_PATHS = frozenset(('/sw.js', '/manifest.webmanifest'))
+_SEO_ASSET_PATHS = frozenset(('/robots.txt', '/sitemap.xml', '/google47ebf77ba640d99c.html'))
 
 
 @app.before_request
 def before_request():
-    if request.path in _PWA_ASSET_PATHS:
+    if request.path in _PWA_ASSET_PATHS or request.path in _SEO_ASSET_PATHS:
         return
     from security import validate_request_host
     host_redirect = validate_request_host()
@@ -179,6 +192,7 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(assinatura_bp)
 app.register_blueprint(notifications_bp)
 app.register_blueprint(blog_bp)
+app.register_blueprint(guia_bp)
 app.register_blueprint(mail_web_bp)
 app.register_blueprint(whatsapp_admin_bp)
 app.register_blueprint(agenda_bp)
@@ -186,6 +200,19 @@ init_scheduler(app)
 
 # Webhook Mercado Pago: POST externo sem CSRF de formulário
 csrf.exempt(mp_webhook_view)
+
+# APIs JSON autenticadas (login_required) — fetch do editor Chord Sheet / LeadSheet
+for _csrf_json_endpoint in (
+    'cifras.chordsheet_api_render',
+    'cifras.chordsheet_api_transpose',
+    'cifras.chordsheet_api_save',
+    'cifras.leadsheet_api_gerar',
+    'cifras.leadsheet_api_salvar',
+    'cifras.leadsheet_api_analisar',
+):
+    _view = app.view_functions.get(_csrf_json_endpoint)
+    if _view:
+        csrf.exempt(_view)
 
 
 @app.route('/health')
@@ -228,6 +255,44 @@ def manifest():
     return resp
 
 
+@app.route('/google47ebf77ba640d99c.html')
+def google_site_verification():
+    """Verificação de propriedade no Google Search Console."""
+    resp = make_response(
+        send_from_directory(app.root_path, 'google47ebf77ba640d99c.html')
+    )
+    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+    return resp
+
+
+@app.route('/robots.txt')
+def robots_txt():
+    """Orienta crawlers e aponta para o sitemap canônico."""
+    from security import external_url_for
+
+    sitemap_url = external_url_for('sitemap')
+    body = (
+        'User-agent: *\n'
+        'Allow: /\n'
+        '\n'
+        'Disallow: /dashboard\n'
+        'Disallow: /admin/\n'
+        'Disallow: /bands/\n'
+        'Disallow: /cifras/\n'
+        'Disallow: /setlists/\n'
+        'Disallow: /notifications/\n'
+        'Disallow: /assinatura/\n'
+        'Disallow: /setlist/\n'
+        'Disallow: /letras/\n'
+        'Disallow: /agenda/\n'
+        '\n'
+        f'Sitemap: {sitemap_url}\n'
+    )
+    resp = make_response(body)
+    resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    return resp
+
+
 @app.route('/offline')
 def offline():
     return render_template('offline.html')
@@ -245,25 +310,38 @@ def exportar_setlist_pdf(setlist_id):
 @app.route('/sitemap.xml')
 def sitemap():
     from db import list_blog_posts
+    from security import external_url_for
+
+    from seo_pages import list_seo_pages
 
     pages = [
-        {'loc': url_for('index', _external=True), 'changefreq': 'weekly', 'priority': '1.0'},
-        {'loc': url_for('assinatura_bp.igrejas', _external=True), 'changefreq': 'monthly', 'priority': '0.8'},
-        {'loc': url_for('blog.blog_index', _external=True), 'changefreq': 'daily', 'priority': '0.9'},
-        {'loc': url_for('ajuda.index', _external=True), 'changefreq': 'monthly', 'priority': '0.6'},
-        {'loc': url_for('auth.register', _external=True), 'changefreq': 'monthly', 'priority': '0.7'},
+        {'loc': external_url_for('index'), 'changefreq': 'weekly', 'priority': '1.0'},
+        {'loc': external_url_for('guia.guia_index'), 'changefreq': 'weekly', 'priority': '0.92'},
+        {'loc': external_url_for('assinatura_bp.igrejas'), 'changefreq': 'monthly', 'priority': '0.85'},
+        {'loc': external_url_for('blog.blog_index'), 'changefreq': 'daily', 'priority': '0.9'},
+        {'loc': external_url_for('ajuda.index'), 'changefreq': 'monthly', 'priority': '0.75'},
+        {'loc': external_url_for('auth.register'), 'changefreq': 'monthly', 'priority': '0.8'},
+        {'loc': external_url_for('auth.login'), 'changefreq': 'yearly', 'priority': '0.4'},
     ]
+    for page in list_seo_pages():
+        pages.append({
+            'loc': external_url_for('guia.guia_page', slug=page['slug']),
+            'changefreq': 'monthly',
+            'priority': '0.65',
+        })
     for post in list_blog_posts(published_only=True):
         from util import format_date_short
         lastmod = format_date_short(post.get('atualizado_em') or post.get('publicado_em'))
         pages.append({
-            'loc': url_for('blog.blog_post', slug=post['slug'], _external=True),
+            'loc': external_url_for('blog.blog_post', slug=post['slug']),
             'changefreq': 'monthly',
             'priority': '0.7',
             'lastmod': lastmod,
         })
-    resp = make_response(render_template('sitemap.xml', pages=pages))
+    xml = render_template('sitemap.xml', pages=pages)
+    resp = make_response(xml)
     resp.headers['Content-Type'] = 'application/xml; charset=utf-8'
+    resp.headers['Cache-Control'] = 'public, max-age=3600'
     return resp
 
 
@@ -335,12 +413,29 @@ def dashboard():
     )
 
 
+_SEO_PUBLIC_ENDPOINTS = frozenset({
+    'index',
+    'guia.guia_index',
+    'guia.guia_page',
+    'blog.blog_index',
+    'blog.blog_post',
+    'ajuda.index',
+    'assinatura_bp.igrejas',
+    'auth.register',
+    'auth.login',
+    'sitemap',
+    'robots_txt',
+    'google_site_verification',
+})
+
+
 @app.context_processor
 def inject_site_config():
     from config import whatsapp_number, whatsapp_message
     from db import is_superadmin as _is_superadmin
     from config import google_oauth_enabled
     from security import external_url_for as _external_url_for
+    from flask import request as _request
 
     mail_inbox_url = None
     user_id = session.get('user_id')
@@ -350,14 +445,21 @@ def inject_site_config():
         except RuntimeError:
             mail_inbox_url = '/admin/email/'
 
+    from seo_pages import faq_entries as _faq_entries
+
+    ep = _request.endpoint if _request else None
+    site_url = _external_url_for('index')
     return dict(
+        faq_entries=_faq_entries(),
         whatsapp_number=whatsapp_number(),
         whatsapp_message=whatsapp_message(),
         webmail_url=mail_inbox_url,
         mail_inbox_url=mail_inbox_url,
         external_url_for=_external_url_for,
+        site_url=site_url,
         site_og_image=_external_url_for('static', filename='logoSetSync.png'),
         google_oauth_enabled=google_oauth_enabled(),
+        seo_noindex=bool(ep and ep not in _SEO_PUBLIC_ENDPOINTS),
     )
 
 

@@ -1,0 +1,7 @@
+<script type="application/ld+json">
+{{ {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faq_entries|map('faq_to_schema')|list
+}|tojson }}
+</script>

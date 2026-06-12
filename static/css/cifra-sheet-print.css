@@ -16,7 +16,8 @@
   --ss-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
-[data-theme="light"] {
+[data-theme="light"],
+html[data-theme="light"] {
   --ss-canvas: #f5f5f4;
   --ss-bg: #ffffff;
   --ss-fg: #1c1917;
@@ -29,7 +30,8 @@
   --ss-tab-border: #ea580c;
 }
 
-[data-theme="dark"] {
+[data-theme="dark"],
+html[data-theme="dark"] {
   --ss-canvas: #0b1220;
   --ss-bg: #111827;
   --ss-fg: #e7e5e4;
@@ -63,6 +65,11 @@
 }
 
 /* ── Folha: cifra (ver cifra) ─────────────────────────────────────── */
+#cifra-col .cifra-container.cifra-sheet-paper,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper {
+  --ss-chord: var(--chord-highlight, #c2410c);
+}
+
 #cifra-col .cifra-container.cifra-sheet-paper {
   background: var(--ss-bg) !important;
   color: var(--ss-fg) !important;
@@ -315,8 +322,8 @@
   column-gap: clamp(1.5rem, 4vw, 2.5rem);
 }
 
-/* Chord sheet no modo tocar (tecla G) — folha branca estilo PDF */
-#play-app .cifra-body.cifra-sheet-paper.grade-mode {
+/* Chord sheet legado JS (tecla G) — folha branca estilo PDF */
+#play-app .cifra-body.cifra-sheet-paper.grade-mode:not(:has(.setsync-cs-sheet)) {
   background: #ffffff !important;
   color: #1c1917 !important;
   padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.4rem, 1.5vw, 1.1rem) !important;
@@ -326,12 +333,147 @@
   box-sizing: border-box;
 }
 
-#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-play {
+#play-app .cifra-body.cifra-sheet-paper.grade-mode:not(:has(.setsync-cs-sheet)) .chord-sheet-play {
   --ss-fg: #1c1917;
   --ss-bg: #ffffff;
   --ss-muted: #57534e;
   --ss-border: #d6d3d1;
   --ss-rule: #e7e5e4;
+}
+
+/* ── Chord Sheet (módulo chordsheet / .cs-chart) — tema SetSync ─── */
+
+.setsync-cs-sheet {
+  --rb-paper: var(--ss-bg);
+  --rb-ink: var(--ss-fg);
+  --rb-line: var(--ss-border);
+  --ss-chord: var(--chord-highlight, #c2410c);
+  --cs-chord-accent: var(--chord-highlight, #c2410c);
+  color: var(--ss-fg);
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .cs-view-embed.setsync-cs-sheet,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .setsync-cs-sheet {
+  padding: 1.1rem 1.35rem 1.25rem;
+  box-sizing: border-box;
+}
+
+#cifra-col .setsync-cs-sheet .cs-chart,
+#play-app .setsync-cs-sheet .cs-chart {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: var(--ss-fg) !important;
+  max-width: 100%;
+}
+
+.setsync-cs-sheet .cs-meta-top,
+.setsync-cs-sheet .cs-running-header,
+.setsync-cs-sheet .cs-running-top,
+.setsync-cs-sheet .cs-running-key,
+.setsync-cs-sheet .cs-running-bpm {
+  color: var(--ss-muted) !important;
+}
+
+.setsync-cs-sheet .cs-running-title {
+  color: var(--ss-chord) !important;
+}
+
+.setsync-cs-sheet .cs-sub,
+.setsync-cs-sheet .cs-artist,
+.setsync-cs-sheet .cs-annotation,
+.setsync-cs-sheet .cs-literal,
+.setsync-cs-sheet .cs-float-label,
+.setsync-cs-sheet .cs-volta,
+.setsync-cs-sheet .cs-paren,
+.setsync-cs-sheet .cs-chord-note {
+  color: var(--ss-muted) !important;
+}
+
+.setsync-cs-sheet .cs-rule,
+.setsync-cs-sheet .cs-running-header {
+  border-color: var(--ss-rule) !important;
+}
+
+.setsync-cs-sheet .cs-rule {
+  background: var(--ss-rule) !important;
+}
+
+.setsync-cs-sheet .cs-title,
+.setsync-cs-sheet .cs-chord,
+.setsync-cs-sheet .cs-chord .cs-root,
+.setsync-cs-sheet .cs-chord .cs-acc,
+.setsync-cs-sheet .cs-chord .cs-qual,
+.setsync-cs-sheet .cs-ts-stack,
+.setsync-cs-sheet .cs-running-title,
+.setsync-cs-sheet .cs-empty {
+  color: var(--cs-chord-accent, var(--ss-chord)) !important;
+}
+
+.setsync-cs-sheet .cs-ts-beam {
+  background: currentColor !important;
+}
+
+.setsync-cs-sheet .cs-section span {
+  border-color: var(--ss-fg) !important;
+  color: var(--ss-fg) !important;
+}
+
+.setsync-cs-sheet .cs-nav-marker {
+  color: var(--ss-fg) !important;
+}
+
+.setsync-cs-sheet .cs-barline-start.cs-bl-single,
+.setsync-cs-sheet .cs-bl-bar,
+.setsync-cs-sheet .cs-bl-dots span,
+.setsync-cs-sheet .cs-barline-start.cs-bl-double::before,
+.setsync-cs-sheet .cs-barline-start.cs-bl-double::after,
+.setsync-cs-sheet .cs-barline-end.cs-bl-double::before,
+.setsync-cs-sheet .cs-barline-end.cs-bl-double::after {
+  background-color: var(--ss-fg) !important;
+}
+
+.setsync-cs-sheet .cs-strokes {
+  color: var(--ss-fg) !important;
+}
+
+.setsync-cs-sheet .cs-footer {
+  color: var(--ss-muted) !important;
+  border-top-color: var(--ss-rule) !important;
+}
+
+.setsync-cs-sheet .cs-bl-style-grille .cs-row-bars {
+  border-color: var(--ss-fg) !important;
+}
+
+/* Modo tocar — chord sheet Python */
+#play-app #cifra-wrap:has(.setsync-cs-sheet) {
+  background: var(--ss-canvas) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode:has(.setsync-cs-sheet) {
+  background: transparent !important;
+  color: inherit !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: clamp(0.5rem, 2vw, 1.25rem) clamp(0.75rem, 3vw, 1.5rem) !important;
+}
+
+#play-app .setsync-cs-sheet.cs-play-embed {
+  background: var(--ss-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow);
+  max-width: min(1100px, 100%);
+  margin: clamp(0.5rem, 2vw, 1.25rem) auto;
+  padding: clamp(1rem, 3vw, 1.35rem) clamp(1rem, 4vw, 1.6rem) !important;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* Lead sheet legado (staff detalhado) — não aplicar ao chord-sheet PDF */

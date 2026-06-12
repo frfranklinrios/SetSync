@@ -79,6 +79,8 @@ services:
     env_file:
       - .env
     environment:
+      TZ: ${SETSYNC_TIMEZONE:-America/Fortaleza}
+      SETSYNC_TIMEZONE: ${SETSYNC_TIMEZONE:-America/Fortaleza}
       MAIL_DATA_DIR: /app/data/mail
       MAIL_DATABASE_PATH: /app/data/mail/emails.db
       SMTP_CONNECT_HOST: mail

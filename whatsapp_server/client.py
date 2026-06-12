@@ -160,25 +160,36 @@ def logout_instance(name: str | None = None) -> bool:
     return resp is not None and resp.ok
 
 
-def send_text(phone: str, text: str, name: str | None = None) -> bool:
+def send_text(
+    phone: str,
+    text: str,
+    name: str | None = None,
+    *,
+    link_preview: bool = False,
+) -> bool:
     inst = name or evolution_instance()
     if not phone or not text.strip():
         return False
     if not is_connected(inst):
         logger.warning('WhatsApp não conectado (instância %s)', inst)
         return False
-    resp = _request(
-        'POST',
-        f'/message/sendText/{inst}',
-        json={'number': phone, 'text': text[:4096]},
-    )
-    if resp is None:
-        return False
-    if resp.ok:
-        return True
+    text_body = text[:4096]
+    payloads: list[dict[str, Any]] = [
+        {'number': phone, 'text': text_body, 'linkPreview': bool(link_preview)},
+        {'number': phone, 'text': text_body},
+    ]
+    last_resp = None
+    for payload in payloads:
+        last_resp = _request('POST', f'/message/sendText/{inst}', json=payload)
+        if last_resp is None:
+            return False
+        if last_resp.ok:
+            return True
+        if last_resp.status_code not in (400, 422):
+            break
     logger.error(
         'Evolution sendText erro %s: %s',
-        resp.status_code,
-        (resp.text or '')[:500],
+        last_resp.status_code if last_resp else '?',
+        ((last_resp.text if last_resp else '') or '')[:500],
     )
     return False

@@ -20,24 +20,28 @@
             {{ setlists|length }} setlist{{ '' if setlists|length == 1 else 's' }} em {{ band.name }}
         </p>
     </div>
+    {% if can_edit %}
     <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i> Nova Setlist
     </a>
+    {% endif %}
 </div>
 
 {% if setlists %}
 <div class="row-card">
     {% for setlist in setlists %}
-    {{ setlist_row(setlist, band, is_admin=true) }}
+    {{ setlist_row(setlist, band, is_admin=is_admin) }}
     {% endfor %}
 </div>
 {% else %}
 <div class="empty">
     <i class="fas fa-list"></i>
     <p class="mb-3" style="font-size:0.9rem;">Nenhuma setlist criada ainda.</p>
+    {% if can_edit %}
     <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i> Criar Primeira Setlist
     </a>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

@@ -38,9 +38,11 @@ def split_event_datetime(value: str | None) -> tuple[str, str]:
         return str(value)[:10], ''
 
 
-def format_event_datetime(value: str | None) -> str:
+def format_event_datetime(value: str | datetime | None) -> str:
     if not value:
         return '—'
+    if isinstance(value, datetime):
+        return value.strftime('%d/%m/%Y às %H:%M')
     try:
         dt = datetime.strptime(str(value)[:19], '%Y-%m-%d %H:%M:%S')
         return dt.strftime('%d/%m/%Y às %H:%M')

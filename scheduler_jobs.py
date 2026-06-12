@@ -82,3 +82,10 @@ def run_daily_voucher_jobs() -> None:
 
 def run_agenda_reminder_jobs() -> None:
     verificar_e_enviar_lembretes_agenda()
+
+
+def run_whatsapp_cifra_digest_jobs() -> None:
+    """Um WhatsApp por usuário com resumo das cifras editadas no dia."""
+    from whatsapp_cifra_digest import send_pending_cifra_digests
+
+    send_pending_cifra_digests()

@@ -7,6 +7,7 @@ from db import (
     get_band,
     get_band_members,
     get_user,
+    queue_whatsapp_cifra_digest,
     user_display_name,
 )
 
@@ -176,14 +177,30 @@ def cifra_created(band_id: str, actor_user_id: str, cifra_id: str, titulo: str):
 def cifra_updated(band_id: str, actor_user_id: str, cifra_id: str, titulo: str):
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
-    return _notify_members(
-        band_id,
-        actor_user_id,
-        'cifra_updated',
-        f'{band} — cifra editada',
-        f'{actor} editou a cifra «{titulo}».',
-        url_path=f'/cifras/{cifra_id}',
+    url_path = f'/cifras/{cifra_id}'
+    recipients = _member_ids(band_id, exclude=actor_user_id)
+    if not recipients:
+        return 0
+    count = create_notifications_for_users(
+        recipients,
+        band_id=band_id,
+        actor_user_id=actor_user_id,
+        type='cifra_updated',
+        title=f'{band} — cifra editada',
+        body=f'{actor} editou a cifra «{titulo}».',
+        url_path=url_path,
+        skip_whatsapp=True,
     )
+    for uid in recipients:
+        queue_whatsapp_cifra_digest(
+            uid,
+            band_id=band_id,
+            cifra_id=cifra_id,
+            titulo=titulo,
+            actor_user_id=actor_user_id,
+            url_path=url_path,
+        )
+    return count
 
 
 def cifra_deleted(band_id: str, actor_user_id: str, titulo: str):

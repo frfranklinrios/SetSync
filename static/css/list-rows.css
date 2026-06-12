@@ -172,6 +172,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.row-vocalist-sel.is-saving {
+  opacity: 0.65;
+  outline: 2px solid var(--accent, #ea580c);
+  outline-offset: 1px;
+}
+.row-vocalist-sel.is-saved {
+  outline: 2px solid #16a34a;
+  outline-offset: 1px;
+}
+.row-vocalist-sel.is-error {
+  outline: 2px solid #dc2626;
+  outline-offset: 1px;
+}
 .row-vocalist-sel {
   font-size: 0.8rem;
   font-weight: 600;

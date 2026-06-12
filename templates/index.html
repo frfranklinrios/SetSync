@@ -32,6 +32,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}SetSync{% endblock %}</title>
     {% block seo %}{% endblock %}
+    {% if seo_noindex %}
+    <meta name="robots" content="noindex, nofollow">
+    {% endif %}
 
     <!-- PWA -->
     <link rel="manifest" href="{{ url_for('manifest') }}">
@@ -437,7 +440,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/setsync-theme.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/list-rows.css') }}?v=4">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=7">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=15">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=2">
     {% block extra_head %}{% endblock %}
@@ -546,6 +549,9 @@
                             <a class="nav-link" href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('guia.guia_index') }}">Guia</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('blog.blog_index') }}">Blog</a>
                         </li>
                         <li class="nav-item">
@@ -589,6 +595,11 @@
     <footer>
         <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync">
         &copy; 2026 SetSync
+        {% if not current_user.is_authenticated %}
+        · <a href="{{ url_for('guia.guia_index') }}" class="text-muted">Guia</a>
+        · <a href="{{ url_for('blog.blog_index') }}" class="text-muted">Blog</a>
+        · <a href="{{ url_for('ajuda.index') }}" class="text-muted">Ajuda</a>
+        {% endif %}
     </footer>
 
     <div class="modal fade chord-modal" id="chordModal" tabindex="-1" aria-hidden="true">

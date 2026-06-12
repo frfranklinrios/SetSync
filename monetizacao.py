@@ -12,16 +12,24 @@ from db import (
     count_band_setlists,
     count_owned_bands,
     get_assinatura,
+    owner_has_individual_ativa,
     owner_has_worship_ativa,
 )
 
 PLANO_GRATIS = 'gratis'
+PLANO_INDIVIDUAL = 'individual'
 PLANO_PRO = 'pro'
 PLANO_WORSHIP = 'worship'
 
-PLANOS_PAGOS = (PLANO_PRO, PLANO_WORSHIP)
+PLANOS_PAGOS = (PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP)
+PRECO_INDIVIDUAL_ANUAL = 149.0
 PRECO_PRO_ANUAL = 249.0
 PRECO_WORSHIP_ANUAL = 599.0
+
+LIMITES_INDIVIDUAL = {
+    'integrante': 1,
+    'banda': 1,
+}
 STATUS_ATIVA = 'ativa'
 STATUS_CANCELADA = 'cancelada'
 STATUS_INADIMPLENTE = 'inadimplente'
@@ -54,6 +62,12 @@ PLANOS: dict[str, Plano] = {
         nome='Grátis',
         preco_mensal=None,
         limites=dict(LIMITES_GRATIS),
+    ),
+    PLANO_INDIVIDUAL: Plano(
+        id=PLANO_INDIVIDUAL,
+        nome='Individual',
+        preco_mensal=15.0,
+        limites=dict(LIMITES_INDIVIDUAL),
     ),
     PLANO_PRO: Plano(
         id=PLANO_PRO,
@@ -126,6 +140,7 @@ def _economia_anual_label(preco_mensal: float, preco_anual: float) -> str:
 def planos_para_site() -> list[PlanoSite]:
     """Lista de planos com preços e limites para templates públicos."""
     lim = LIMITES_GRATIS
+    individual = PLANOS[PLANO_INDIVIDUAL]
     pro = PLANOS[PLANO_PRO]
     worship = PLANOS[PLANO_WORSHIP]
     return [
@@ -145,15 +160,35 @@ def planos_para_site() -> list[PlanoSite]:
             cta_outline=True,
         ),
         PlanoSite(
+            id=PLANO_INDIVIDUAL,
+            nome=individual.nome,
+            preco_label=_preco_label(individual.preco_mensal),
+            sufixo='/mês',
+            destaque=False,
+            features=(
+                'Para quem toca sozinho',
+                '1 banda · só você no elenco',
+                'Músicas e setlists ilimitados',
+                'Exportar setlist em PDF',
+            ),
+            cta='Começar solo',
+            cta_outline=True,
+            preco_anual_label=_preco_label(PRECO_INDIVIDUAL_ANUAL),
+            economia_anual=_economia_anual_label(individual.preco_mensal, PRECO_INDIVIDUAL_ANUAL),
+            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(PRECO_INDIVIDUAL_ANUAL),
+            cobrado_anual_label=_cobrado_anual_label(PRECO_INDIVIDUAL_ANUAL),
+            desconto_anual_pct=_desconto_anual_pct(individual.preco_mensal, PRECO_INDIVIDUAL_ANUAL),
+        ),
+        PlanoSite(
             id=PLANO_PRO,
             nome=pro.nome,
             preco_label=_preco_label(pro.preco_mensal),
             sufixo='/banda/mês',
             destaque=True,
             features=(
-                'Músicas, setlists e integrantes ilimitados',
+                'Banda com vários integrantes',
+                'Músicas, setlists e membros ilimitados',
                 'Exportar setlist em PDF',
-                'Por banda ou ministério',
             ),
             cta='Criar conta',
             cta_outline=False,
@@ -474,6 +509,12 @@ def plano_badge_ui(banda_id: str) -> dict[str, Any]:
         label = label_curto
         if periodo.get('texto_restante'):
             label = f'{label_curto} · {periodo["texto_restante"]}'
+    elif plano == PLANO_INDIVIDUAL and status == STATUS_ATIVA:
+        badge = 'primary'
+        label_curto = 'Individual'
+        label = 'Individual · solo'
+        if periodo.get('texto_restante'):
+            label = f'Individual · {periodo["texto_restante"]}'
     elif plano == PLANO_PRO and status == STATUS_ATIVA:
         badge = 'primary'
         label_curto = 'Pro'
@@ -565,9 +606,11 @@ def get_assinatura_banda(banda_id: str) -> Assinatura:
 
 
 def _plano_sem_limites_para_banda(banda: dict, assinatura: Assinatura) -> bool:
-    if assinatura.tem_acesso_premium():
+    if assinatura.trial_ativo():
         return True
-    return False
+    if not assinatura.tem_acesso_premium():
+        return False
+    return assinatura.plano != PLANO_INDIVIDUAL
 
 
 def check_limite(banda: dict, recurso: str) -> bool:
@@ -589,11 +632,18 @@ def check_limite(banda: dict, recurso: str) -> bool:
     if recurso == 'banda':
         if owner_has_worship_ativa(owner_id):
             return True
-        limite = LIMITES_GRATIS['banda']
-        return count_owned_bands(owner_id) < limite
+        if owner_has_individual_ativa(owner_id):
+            return count_owned_bands(owner_id) < LIMITES_INDIVIDUAL['banda']
+        return count_owned_bands(owner_id) < LIMITES_GRATIS['banda']
 
     if _plano_sem_limites_para_banda(banda, assinatura):
         return True
+
+    if assinatura.tem_acesso_premium() and assinatura.plano == PLANO_INDIVIDUAL:
+        if recurso == 'integrante':
+            return count_band_members(banda_id) < LIMITES_INDIVIDUAL['integrante']
+        if recurso in ('musica', 'setlist'):
+            return True
 
     limite = LIMITES_GRATIS.get(recurso)
     if limite is None:

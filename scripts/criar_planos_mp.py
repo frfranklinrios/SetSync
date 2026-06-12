@@ -6,7 +6,7 @@ Uso:
   uv run python scripts/validar_token_mp.py   # primeiro
   uv run python scripts/criar_planos_mp.py
 
-Imprime os IDs para MP_PLAN_PRO_ID e MP_PLAN_WORSHIP_ID no .env
+Imprime os IDs para MP_PLAN_INDIVIDUAL_ID, MP_PLAN_PRO_ID e MP_PLAN_WORSHIP_ID no .env
 """
 
 from __future__ import annotations
@@ -80,6 +80,8 @@ def main() -> None:
     print('Validando Access Token…')
     validar_token(token)
 
+    print('Criando plano Individual (R$ 15/mês)…')
+    individual_id = criar_plano(token, 'SetSync Individual', 15.0)
     print('Criando plano Pro (R$ 29/mês)…')
     pro_id = criar_plano(token, 'SetSync Pro', 29.0)
     print('Criando plano Worship (R$ 69/mês)…')
@@ -87,6 +89,7 @@ def main() -> None:
 
     print()
     print('Cole no .env:')
+    print(f'MP_PLAN_INDIVIDUAL_ID={individual_id}')
     print(f'MP_PLAN_PRO_ID={pro_id}')
     print(f'MP_PLAN_WORSHIP_ID={worship_id}')
 

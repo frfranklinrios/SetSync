@@ -787,6 +787,23 @@ def verify_password(user_id, password):
     return check_password_hash(user['password_hash'], password)
 
 
+def update_user_password_by_email(email: str, password: str) -> bool:
+    """Define nova senha para o usuário com este e-mail. Retorna False se não existir."""
+    user = get_user_by_email(email)
+    if not user:
+        return False
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE users SET password_hash = ? WHERE id = ?',
+        (generate_password_hash(password), user['id']),
+    )
+    updated = (c.rowcount or 0) > 0
+    db.commit()
+    db.close()
+    return updated
+
+
 def is_superadmin(user_id):
     """Administrador global via coluna no banco ou variáveis SETSYNC_SUPERADMIN_* no .env."""
     if not user_id:
@@ -950,14 +967,25 @@ def get_assinatura(banda_id: str) -> dict | None:
 
 def owner_has_worship_ativa(owner_id: str) -> bool:
     """True se o usuário possui alguma banda com plano Worship ativo."""
+    return owner_has_plano_premium(owner_id, 'worship')
+
+
+def owner_has_individual_ativa(owner_id: str) -> bool:
+    """True se o usuário possui alguma banda com plano Individual ativo."""
+    return owner_has_plano_premium(owner_id, 'individual')
+
+
+def owner_has_plano_premium(owner_id: str, plano: str) -> bool:
+    """True se o dono tem banda com plano pago/voucher ativo."""
     db = get_db()
     c = db.cursor()
     c.execute(
         '''SELECT 1 FROM assinaturas a
            JOIN bands b ON b.id = a.banda_id
-           WHERE b.owner_id = ? AND a.plano = 'worship' AND a.status = 'ativa'
+           WHERE b.owner_id = ? AND a.plano = ?
+             AND a.status IN ('ativa', 'voucher')
            LIMIT 1''',
-        (owner_id,),
+        (owner_id, plano),
     )
     found = c.fetchone() is not None
     db.close()
@@ -1836,6 +1864,127 @@ def _migrate_notifications_schema(c) -> None:
         CREATE INDEX IF NOT EXISTS idx_notifications_user_created
         ON notifications(user_id, created_at DESC)
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS whatsapp_cifra_digest (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            band_id TEXT NOT NULL,
+            cifra_id TEXT NOT NULL,
+            titulo TEXT NOT NULL,
+            actor_user_id TEXT,
+            url_path TEXT,
+            digest_date TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sent_at TIMESTAMP,
+            UNIQUE (user_id, cifra_id, digest_date),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+        )
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_whatsapp_cifra_digest_pending
+        ON whatsapp_cifra_digest(user_id, digest_date)
+        WHERE sent_at IS NULL
+    ''')
+
+
+def _digest_date_sp() -> str:
+    from config import app_today_str
+
+    return app_today_str()
+
+
+def queue_whatsapp_cifra_digest(
+    user_id: str,
+    *,
+    band_id: str,
+    cifra_id: str,
+    titulo: str,
+    actor_user_id: str | None,
+    url_path: str | None,
+) -> None:
+    """Acumula edição de cifra para um único WhatsApp no fim do dia."""
+    digest_date = _digest_date_sp()
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT id FROM whatsapp_cifra_digest
+           WHERE user_id = ? AND cifra_id = ? AND digest_date = ?''',
+        (user_id, cifra_id, digest_date),
+    )
+    row = c.fetchone()
+    if row:
+        c.execute(
+            '''UPDATE whatsapp_cifra_digest
+               SET titulo = ?, actor_user_id = ?, url_path = ?, band_id = ?,
+                   updated_at = CURRENT_TIMESTAMP
+               WHERE id = ?''',
+            (titulo, actor_user_id, url_path, band_id, row['id']),
+        )
+    else:
+        c.execute(
+            '''INSERT INTO whatsapp_cifra_digest
+               (id, user_id, band_id, cifra_id, titulo, actor_user_id, url_path, digest_date)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                str(uuid.uuid4()),
+                user_id,
+                band_id,
+                cifra_id,
+                titulo,
+                actor_user_id,
+                url_path,
+                digest_date,
+            ),
+        )
+    db.commit()
+    db.close()
+
+
+def list_pending_whatsapp_cifra_digest_user_ids() -> list[str]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT DISTINCT user_id FROM whatsapp_cifra_digest
+           WHERE sent_at IS NULL ORDER BY user_id''',
+    )
+    ids = [r['user_id'] for r in c.fetchall()]
+    db.close()
+    return ids
+
+
+def list_whatsapp_cifra_digest_for_user(user_id: str, *, pending_only: bool = True) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    sql = '''
+        SELECT d.*, b.name AS band_name
+        FROM whatsapp_cifra_digest d
+        JOIN bands b ON b.id = d.band_id
+        WHERE d.user_id = ?
+    '''
+    params: list = [user_id]
+    if pending_only:
+        sql += ' AND d.sent_at IS NULL'
+    sql += ' ORDER BY b.name, d.titulo'
+    c.execute(sql, params)
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def mark_whatsapp_cifra_digest_sent(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE whatsapp_cifra_digest SET sent_at = CURRENT_TIMESTAMP
+           WHERE user_id = ? AND sent_at IS NULL''',
+        (user_id,),
+    )
+    n = c.rowcount if c.rowcount is not None else 0
+    db.commit()
+    db.close()
+    return int(n)
 
 
 def create_notification(
@@ -1848,6 +1997,7 @@ def create_notification(
     body: str = '',
     url_path: str | None = None,
     payload: dict | None = None,
+    skip_whatsapp: bool = False,
 ) -> str:
     import json
     if url_path and (not url_path.startswith('/') or url_path.startswith('//')):
@@ -1873,19 +2023,20 @@ def create_notification(
     )
     db.commit()
     db.close()
-    try:
-        from whatsapp_service import dispatch_notification_whatsapp
-        dispatch_notification_whatsapp(
-            user_id,
-            title=title,
-            body=body or '',
-            url_path=url_path,
-        )
-    except Exception:
-        import logging
-        logging.getLogger('setsync.whatsapp').exception(
-            'Falha ao enviar notificação WhatsApp para %s', user_id,
-        )
+    if not skip_whatsapp:
+        try:
+            from whatsapp_service import dispatch_notification_whatsapp
+            dispatch_notification_whatsapp(
+                user_id,
+                title=title,
+                body=body or '',
+                url_path=url_path,
+            )
+        except Exception:
+            import logging
+            logging.getLogger('setsync.whatsapp').exception(
+                'Falha ao enviar notificação WhatsApp para %s', user_id,
+            )
     try:
         from notification_email_service import dispatch_notification_email
         dispatch_notification_email(
@@ -1912,6 +2063,7 @@ def create_notifications_for_users(
     body: str = '',
     url_path: str | None = None,
     payload: dict | None = None,
+    skip_whatsapp: bool = False,
 ) -> int:
     seen = set()
     count = 0
@@ -1928,6 +2080,7 @@ def create_notifications_for_users(
             body=body,
             url_path=url_path,
             payload=payload,
+            skip_whatsapp=skip_whatsapp,
         )
         count += 1
     return count

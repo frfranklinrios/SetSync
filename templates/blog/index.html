@@ -9,11 +9,16 @@
 <meta property="og:url" content="{{ external_url_for('blog.blog_index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
+{% include 'partials/seo_public.html' %}
 {% endblock %}
 
 {% block main_class %}home-page{% endblock %}
 
 {% block content %}
+<p class="text-muted small mb-3">
+    Busca algo específico? Veja o <a href="{{ url_for('guia.guia_index') }}">Guia SetSync</a>
+    com temas como compartilhar cifras, gerenciar bandas e setlist online.
+</p>
 <div class="container py-4" style="max-width:900px;">
     <h1 class="mb-1" style="font-size:1.75rem;font-weight:700;">Blog SetSync</h1>
     <p class="text-muted mb-4">Dicas de cifras, setlists e ministério de louvor.</p>

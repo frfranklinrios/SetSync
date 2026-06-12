@@ -17,6 +17,7 @@ Adicione ao `.env` na raiz do projeto:
 | `MP_ACCESS_TOKEN` | Token de **produção** (`APP_USR-...`) |
 | `MP_ACCESS_TOKEN_TEST` | Token de **sandbox** para desenvolvimento |
 | `MP_WEBHOOK_SECRET` | Segredo para validar notificações (`x-signature`) |
+| `MP_PLAN_INDIVIDUAL_ID` | ID do plano Individual (R$ 15/mês) — referência no painel MP |
 | `MP_PLAN_PRO_ID` | ID do plano de recorrência Pro (R$ 29/mês) |
 | `MP_PLAN_WORSHIP_ID` | ID do plano Worship (R$ 69/mês) |
 | `MP_ENVIRONMENT` | `sandbox` ou `production` |

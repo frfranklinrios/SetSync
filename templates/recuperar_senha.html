@@ -10,19 +10,30 @@
         </div>
         <h1 class="h4 text-center mb-1">Recuperar senha</h1>
         <p class="text-muted text-center mb-4" style="font-size:0.875rem;">
-            Enviaremos um link para redefinir sua senha.
+            Enviaremos um link para redefinir sua senha por <strong>e-mail</strong>
+            e, se você cadastrou, também pelo <strong>WhatsApp</strong>. Válido por 1 hora.
         </p>
+        {% if not recovery_available %}
+        <div class="alert alert-warning py-2 mb-3" style="font-size:0.85rem;">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            Recuperação indisponível no momento. Tente mais tarde.
+        </div>
+        {% endif %}
         <form method="POST">
             {% include 'partials/csrf_input.html' %}
             <div class="mb-3">
                 <label for="email" class="form-label">E-mail cadastrado</label>
                 <input type="email" class="form-control" id="email" name="email" required autofocus
-                       autocomplete="email">
+                       autocomplete="email" value="{{ email or '' }}"
+                       {% if not recovery_available %}disabled{% endif %}>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Enviar link</button>
+            <button type="submit" class="btn btn-primary w-100"
+                    {% if not recovery_available %}disabled{% endif %}>
+                Enviar link de recuperação
+            </button>
         </form>
         {% if message %}
-        <div class="alert alert-info mt-3 mb-0" style="font-size:0.875rem;">{{ message }}</div>
+        <div class="alert alert-{{ message_kind or 'info' }} mt-3 mb-0" style="font-size:0.875rem;">{{ message }}</div>
         {% endif %}
         <p class="text-center mt-4 mb-0" style="font-size:0.875rem;">
             <a href="{{ url_for('auth.login') }}" style="color:var(--accent);text-decoration:none;">Voltar ao login</a>

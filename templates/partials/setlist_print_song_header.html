@@ -1,0 +1,11 @@
+{# Cabeçalho de música na impressão/PDF — espera `sheet` #}
+<header class="setlist-print-song-hd">
+    <div class="setlist-print-song-titles">
+        <h2><span class="setlist-print-song-idx">{{ sheet.index }}.</span> {{ sheet.titulo }}</h2>
+        <p class="sub">
+            {% if sheet.artista %}<span class="sub-artist">{{ sheet.artista }}</span>{% endif %}
+            <span class="sub-key">Tom <strong>{{ sheet.display_key or '—' }}</strong></span>
+            {% if sheet.vocalist_name %}<span class="sub-vox">{{ sheet.vocalist_name }}</span>{% endif %}
+        </p>
+    </div>
+</header>

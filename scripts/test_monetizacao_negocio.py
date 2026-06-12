@@ -58,18 +58,36 @@ class MonetizacaoNegocioTest(unittest.TestCase):
         self.assertEqual(len(rows), 5)
 
     def test_planos_site_desconto_anual(self):
-        from monetizacao import PLANO_PRO, PLANO_WORSHIP, planos_para_site
+        from monetizacao import PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP, planos_para_site
 
         planos = {p.id: p for p in planos_para_site()}
+        individual = planos[PLANO_INDIVIDUAL]
         pro = planos[PLANO_PRO]
         worship = planos[PLANO_WORSHIP]
 
+        self.assertEqual(individual.desconto_anual_pct, 17)
         self.assertEqual(pro.desconto_anual_pct, 28)
         self.assertEqual(worship.desconto_anual_pct, 28)
+        self.assertEqual(individual.preco_mensal_equivalente_label, 'R$ 12,42/mês')
         self.assertEqual(pro.preco_mensal_equivalente_label, 'R$ 20,75/mês')
         self.assertEqual(worship.preco_mensal_equivalente_label, 'R$ 49,92/mês')
+        self.assertEqual(individual.cobrado_anual_label, 'cobrado anualmente — R$ 149/ano')
         self.assertEqual(pro.cobrado_anual_label, 'cobrado anualmente — R$ 249/ano')
         self.assertEqual(worship.cobrado_anual_label, 'cobrado anualmente — R$ 599/ano')
+
+    def test_individual_limita_integrante_e_banda(self):
+        from db import create_user, create_band, update_assinatura
+        from monetizacao import PLANO_INDIVIDUAL, STATUS_ATIVA, check_limite, pode_exportar_pdf
+
+        uid = create_user('solouser', 'solo@test.com', 'senha1234567')
+        band_id = create_band('Solo', '', uid)
+        update_assinatura(band_id, plano=PLANO_INDIVIDUAL, status=STATUS_ATIVA)
+        band = {'id': band_id, 'owner_id': uid}
+        self.assertTrue(check_limite(band, 'musica'))
+        self.assertTrue(check_limite(band, 'setlist'))
+        self.assertTrue(pode_exportar_pdf(band_id))
+        self.assertFalse(check_limite(band, 'integrante'))
+        self.assertFalse(check_limite(band, 'banda'))
 
 
 if __name__ == '__main__':

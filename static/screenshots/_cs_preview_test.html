@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<style>
+/* Variáveis compartilhadas (view/play/embed) — não sobrescrever --ss-bg do tema do app */
+:root {
+    --rb-paper: #ffffff;
+    --rb-ink: #1c1917;
+    --rb-line: #44403c;
+    --ss-chord: var(--chord-highlight, #c2410c);
+    --ui-font: "Inter", "Roboto", "SF Pro Text", system-ui, -apple-system, sans-serif;
+    --cifra-mono-font: "PT Mono", ui-monospace, "Courier New", Courier, monospace;
+    --sheet-font: var(--cifra-mono-font);
+}
+
+/* UI escura só na página standalone do editor */
+body.chordsheet-editor-page {
+    --ss-bg: #0b1220;
+    --ss-surface: #111827;
+    --ss-surface-2: #0f172a;
+    --ss-border: #1f2937;
+    --ss-text: #e2e8f0;
+    --ss-muted: #94a3b8;
+    --ss-accent: #2dd4bf;
+    --ss-accent-soft: rgba(45, 212, 191, 0.12);
+    margin: 0;
+    background: var(--ss-bg);
+    color: var(--ss-text);
+    font-family: var(--ui-font);
+    line-height: 1.45;
+}
+
+* { box-sizing: border-box; }
+
+.page { max-width: 1280px; margin: 0 auto; padding: 1rem 0.85rem 2rem; }
+
+.app-header { margin-bottom: 1rem; }
+.app-header h1 { font-size: 1.35rem; margin: 0 0 0.2rem; }
+.module-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ss-accent);
+    background: var(--ss-accent-soft);
+    border: 1px solid rgba(45, 212, 191, 0.3);
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+    margin-bottom: 0.35rem;
+}
+.subtitle { color: var(--ss-muted); font-size: 0.88rem; margin: 0; }
+
+.layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+@media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+
+.panel {
+    background: var(--ss-surface);
+    border: 1px solid var(--ss-border);
+    border-radius: 10px;
+    padding: 0.85rem;
+}
+.panel h2 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ss-muted);
+    margin: 0 0 0.65rem;
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+}
+.meta-grid label { font-size: 0.75rem; color: var(--ss-muted); display: block; margin-bottom: 0.15rem; }
+.meta-grid input, .meta-grid select, textarea {
+    width: 100%;
+    background: var(--ss-surface-2);
+    border: 1px solid #334155;
+    color: var(--ss-text);
+    border-radius: 6px;
+    padding: 0.4rem 0.5rem;
+    font-family: var(--ui-font);
+}
+textarea#source {
+    min-height: 280px;
+    font-family: var(--cifra-mono-font);
+    font-size: 0.88rem;
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0;
+    line-height: 1.5;
+    resize: vertical;
+}
+textarea#source:focus, input:focus, select:focus {
+    outline: none;
+    border-color: var(--ss-accent);
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.5rem 0;
+}
+.btn {
+    font-family: var(--ui-font);
+    font-size: 0.82rem;
+    border-radius: 6px;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid #334155;
+    background: var(--ss-surface-2);
+    color: var(--ss-text);
+    cursor: pointer;
+}
+.btn:hover { border-color: var(--ss-accent); }
+.btn-primary { background: #0d9488; border-color: #0d9488; color: #fff; }
+.btn-primary:hover { background: #0f766e; }
+.hint { font-size: 0.78rem; color: var(--ss-muted); margin: 0.35rem 0 0; }
+
+.prefs details { margin-top: 0.65rem; }
+.prefs summary { cursor: pointer; color: var(--ss-muted); font-size: 0.82rem; }
+.prefs-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.45rem; }
+.prefs-row label { font-size: 0.75rem; color: var(--ss-muted); }
+.prefs-row select { font-size: 0.8rem; padding: 0.2rem 0.35rem; }
+
+.preview-wrap {
+    background: #e7e5e4;
+    border: 1px solid var(--ss-border);
+    border-radius: 8px;
+    padding: 0.65rem;
+    overflow: auto;
+    min-height: 420px;
+}
+
+/* ——— Folha (mesma tipografia dos PDFs SetSync) ——— */
+.cs-chart {
+    background: var(--rb-paper);
+    color: var(--rb-ink);
+    padding: 1.1rem 1.35rem 1rem;
+    border-radius: 2px;
+    border: 1px solid #d6d3d1;
+    font-family: var(--sheet-font);
+    font-size: 1.05rem;
+    line-height: 1.45;
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0;
+}
+.cs-header { font-family: var(--sheet-font); margin-bottom: 0.5rem; }
+.cs-meta-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--ui-font);
+    font-size: 0.72rem;
+    font-style: italic;
+    color: var(--ss-muted, #57534e);
+    white-space: nowrap;
+}
+.cs-meta-top .cs-bpm { font-style: italic; }
+
+.cs-title-row {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr 2.2rem;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.2rem 0 0.1rem;
+}
+.cs-title-row .cs-header-ts {
+    justify-self: start;
+    align-self: center;
+}
+
+/* Compasso empilhado (estilo partitura) */
+.cs-ts-stack {
+    display: inline-grid;
+    grid-template-rows: auto auto auto;
+    justify-items: center;
+    align-content: center;
+    flex-shrink: 0;
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+    color: var(--rb-ink);
+    line-height: 1;
+}
+.cs-ts-num,
+.cs-ts-den {
+    display: block;
+    min-width: 0.9em;
+    text-align: center;
+}
+.cs-ts-beam {
+    display: block;
+    width: 0.85em;
+    height: 1px;
+    background: currentColor;
+    margin: 0.12em 0;
+    opacity: 0.9;
+}
+.cs-header-ts {
+    font-family: var(--ui-font);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+.cs-title {
+    font-family: var(--sheet-font);
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-align: center;
+    margin: 0;
+    color: var(--ss-chord);
+    letter-spacing: 0.01em;
+    justify-self: center;
+}
+.cs-artist {
+    text-align: right;
+    justify-self: end;
+    font-family: var(--ui-font);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    line-height: 1.2;
+    min-height: 0.85rem;
+}
+.cs-sub {
+    text-align: center;
+    font-family: var(--ui-font);
+    font-size: 0.68rem;
+    color: var(--ss-muted, #78716c);
+}
+.cs-rule { height: 1px; background: var(--ss-rule, #d6d3d1); margin: 0.4rem 0 0.5rem; }
+
+.cs-row { margin-bottom: 0.45rem; }
+.cs-row.cs-row-section-start { margin-top: 1.1rem; }
+.cs-row-bars {
+    display: grid;
+    grid-template-columns: repeat(var(--cs-bars-per-row, 4), minmax(0, 1fr));
+    align-items: stretch;
+    width: 100%;
+}
+.cs-section {
+    font-family: var(--ui-font);
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    text-transform: lowercase;
+}
+.cs-section span {
+    border: 1.5px solid var(--rb-ink);
+    padding: 0.08rem 0.4rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+}
+.cs-bar {
+    display: flex;
+    align-items: stretch;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 2.65rem;
+    padding-left: calc(var(--cs-indent, 0) * 0.65rem);
+}
+.cs-ts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    padding: 0 0.35rem 0 0.15rem;
+    line-height: 1.05;
+    color: var(--rb-ink);
+}
+/* Barras estilo chordsheet.com: | fino · || duplo fino · |] fino+grosso */
+.cs-barline {
+    flex-shrink: 0;
+    align-self: stretch;
+}
+.cs-barline-end.cs-bl-single { display: none; }
+.cs-barline-start.cs-bl-single {
+    width: 1px;
+    margin-left: 2px;
+    background: var(--rb-ink);
+}
+.cs-barline-start.cs-bl-double,
+.cs-barline-end.cs-bl-double {
+    position: relative;
+    width: 3px;
+    min-width: 3px;
+    margin: 0 2px;
+    background: transparent;
+}
+.cs-barline-start.cs-bl-double::before,
+.cs-barline-start.cs-bl-double::after,
+.cs-barline-end.cs-bl-double::before,
+.cs-barline-end.cs-bl-double::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--rb-ink);
+}
+.cs-barline-start.cs-bl-double::before,
+.cs-barline-end.cs-bl-double::before { left: 0; }
+.cs-barline-start.cs-bl-double::after,
+.cs-barline-end.cs-bl-double::after { left: 2px; }
+.cs-barline-start.cs-bl-repeat-start,
+.cs-barline-end.cs-bl-repeat-end,
+.cs-barline-end.cs-bl-final {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: auto;
+    gap: 2px;
+    padding: 0 2px;
+    background: transparent;
+}
+.cs-bl-bar {
+    align-self: stretch;
+    flex-shrink: 0;
+    background: var(--rb-ink);
+}
+.cs-bl-bar.cs-bl-thin { width: 1px; }
+.cs-bl-bar.cs-bl-thick { width: 3px; }
+.cs-bl-dots {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 2px;
+    align-self: center;
+}
+.cs-bl-dots span {
+    display: block;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--rb-ink);
+}
+.cs-chords {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    min-height: 2.2rem;
+    min-width: 0;
+}
+.cs-chords.cs-chords-beats {
+    display: grid;
+    grid-template-columns: repeat(var(--cs-beats, 4), minmax(0, 1fr));
+    gap: 0;
+    align-items: center;
+    padding: 0.15rem 0.2rem;
+}
+.cs-beat {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+.cs-align-center { justify-content: center; }
+.cs-align-left { justify-content: flex-start; padding-left: 0.4rem; }
+.cs-chord {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--ss-chord);
+    font-family: var(--sheet-font);
+}
+.cs-qual { font-size: 0.72em; vertical-align: super; }
+.cs-acc { font-size: 0.85em; }
+.cs-simile {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    font-size: 1.1rem;
+    opacity: 0.75;
+    line-height: 1;
+    position: relative;
+    min-height: 1.6rem;
+}
+.cs-simile-slash {
+    font-size: 1.35rem;
+    font-weight: 300;
+    font-style: italic;
+    line-height: 0.85;
+}
+.cs-simile-dots {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: -0.15rem;
+}
+.cs-simile-dots span {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--rb-ink);
+}
+.cs-simile-num {
+    font-size: 0.62rem;
+    font-weight: 700;
+    font-family: var(--ui-font);
+    opacity: 0.85;
+}
+.cs-bar[data-col-span] {
+    grid-column: span var(--cs-col-span, 2);
+}
+.cs-bar[data-col-span="2"] { --cs-col-span: 2; }
+.cs-bar[data-col-span="3"] { --cs-col-span: 3; }
+.cs-bar[data-col-span="4"] { --cs-col-span: 4; }
+.cs-repeat-count {
+    position: absolute;
+    right: 0.15rem;
+    bottom: 0.1rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-family: var(--ui-font);
+    color: var(--ss-muted, #57534e);
+    pointer-events: none;
+}
+.cs-bar { position: relative; }
+.cs-empty {
+    color: var(--ss-chord);
+    font-size: 1.45em;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 1;
+    font-family: var(--sheet-font);
+}
+.cs-nc { font-size: 0.85rem; font-family: var(--ui-font); font-weight: 600; }
+.cs-row-full .cs-row-bars,
+.cs-row-full { display: block; }
+.cs-nav-row {
+    width: 100%;
+    text-align: center;
+    padding: 0.35rem 0 0.1rem;
+    margin-top: 0.1rem;
+}
+.cs-nav-marker {
+    display: inline-block;
+    font-family: var(--sheet-font);
+    font-size: 0.88rem;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.03em;
+    color: var(--rb-ink);
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+.cs-nav-glyph {
+    font-size: 1.1rem;
+    line-height: 1;
+    margin-right: 0.15rem;
+}
+.cs-annotation {
+    font-family: var(--ui-font);
+    font-size: 0.72rem;
+    font-style: italic;
+    color: var(--ss-muted, #57534e);
+    margin: 0.15rem 0 0.25rem;
+    padding-left: 0.15rem;
+}
+.cs-literal {
+    font-family: var(--ui-font);
+    font-size: 0.72rem;
+    color: var(--ss-muted, #57534e);
+    margin: 0.2rem 0;
+    white-space: pre-wrap;
+}
+.cs-cols-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+    font-style: normal;
+}
+.cs-col { display: block; }
+.cs-blank-spacer { height: 0.65rem; }
+.cs-float-label {
+    position: absolute;
+    left: -1.6rem;
+    font-family: var(--ui-font);
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--ss-muted, #57534e);
+    align-self: center;
+}
+.cs-bar { position: relative; }
+.cs-bar-ts {
+    font-family: var(--ui-font);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0 0.15rem;
+    align-self: center;
+}
+.cs-strokes {
+    font-size: 0.72em;
+    color: var(--rb-ink);
+    margin-left: 0.05rem;
+    letter-spacing: -0.08em;
+}
+.cs-paren { font-size: 0.9em; color: #57534e; }
+.cs-chord-note {
+    font-family: var(--ui-font);
+    font-size: 0.58rem;
+    font-style: italic;
+    color: var(--ss-muted, #78716c);
+    margin-left: 0.15rem;
+}
+.cs-blank-bass { opacity: 0.85; }
+.cs-volta-slot {
+    flex: 0 0 1.4rem;
+    width: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    align-self: center;
+    padding-right: 0.12rem;
+    font-variant-numeric: tabular-nums;
+}
+.cs-volta {
+    font-family: var(--ui-font);
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--ss-muted, #57534e);
+    line-height: 1;
+    white-space: nowrap;
+}
+.cs-bar-phantom {
+    visibility: hidden;
+    pointer-events: none;
+    min-height: 0;
+    min-width: 0;
+}
+.cs-bar-phantom .cs-barline,
+.cs-bar-phantom .cs-chords {
+    display: none;
+}
+.cs-page-break {
+    break-before: page;
+    page-break-before: always;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.cs-footer {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--ui-font);
+    font-size: 0.58rem;
+    color: #a8a29e;
+    border-top: 1px solid #e7e5e4;
+    margin-top: 0.6rem;
+    padding-top: 0.35rem;
+}
+.cs-print-footer-spacer { display: none; }
+.cs-size-s .cs-chord { font-size: 1rem; }
+.cs-size-xs .cs-chord { font-size: 0.88rem; }
+.cs-spacing-compact .cs-row { margin-bottom: 0.2rem; }
+.cs-spacing-compact .cs-row.cs-row-section-start { margin-top: 0.65rem; }
+.cs-spacing-relaxed .cs-row { margin-bottom: 0.75rem; }
+.cs-spacing-relaxed .cs-row.cs-row-section-start { margin-top: 1.5rem; }
+
+.status {
+    font-size: 0.82rem;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.55rem;
+    border-radius: 6px;
+    background: var(--ss-accent-soft);
+    color: var(--ss-accent);
+}
+.status.err { background: rgba(239,68,68,0.15); color: #fca5a5; }
+
+.prefs-row .pref-tab-only[hidden] { display: none; }
+.prefs-row label { font-size: 0.75rem; color: var(--ss-muted); }
+
+/* ── Estilos de barras (chordsheet.com/manual/style) ── */
+
+/* Sem linhas — progressões retas, um acorde por compasso */
+.cs-bl-style-none .cs-barline { display: none !important; }
+
+/* Grille — grade (jazz manouche, AABA 32 compassos; use 8/linha) */
+.cs-bl-style-grille .cs-barline { display: none !important; }
+.cs-bl-style-grille .cs-row-bars {
+    border: 1.5px solid var(--rb-ink);
+}
+.cs-bl-style-grille .cs-bar {
+    border-right: 1px solid var(--rb-ink);
+}
+.cs-bl-style-grille .cs-bar:not(.cs-bar-phantom):last-of-type { border-right: none; }
+
+/* Track line — linha contínua sob os acordes */
+.cs-bl-style-trackline .cs-barline { display: none !important; }
+.cs-bl-style-trackline .cs-row-bars {
+    position: relative;
+    padding: 0.2rem 0 0.45rem;
+}
+.cs-bl-style-trackline .cs-row-bars::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 62%;
+    height: 1px;
+    background: var(--rb-ink);
+    pointer-events: none;
+    z-index: 0;
+}
+.cs-bl-style-trackline .cs-bar {
+    position: relative;
+    z-index: 1;
+}
+
+/* TAB lines — pauta para escrever voicings à mão */
+.cs-bl-style-tab .cs-row-bars {
+    position: relative;
+    min-height: calc(var(--cs-tab-lines, 6) * 0.62rem + 1.2rem);
+    padding: 0.2rem 0 0.35rem;
+}
+.cs-bl-style-tab .cs-row-bars::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0.45rem;
+    bottom: 0.35rem;
+    background: repeating-linear-gradient(
+        to bottom,
+        var(--rb-ink) 0,
+        var(--rb-ink) 1px,
+        transparent 1px,
+        transparent calc(100% / var(--cs-tab-lines, 6))
+    );
+    opacity: 0.28;
+    pointer-events: none;
+    z-index: 0;
+}
+.cs-bl-style-tab .cs-bar {
+    position: relative;
+    z-index: 1;
+}
+.cs-bl-style-tab.cs-tab-no-barlines .cs-barline { display: none !important; }
+
+.cs-running-header {
+    display: none;
+    font-family: var(--ui-font);
+    font-size: 0.68rem;
+    color: var(--ss-muted, #57534e);
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #d6d3d1;
+}
+.cs-running-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-style: italic;
+}
+.cs-running-title-row {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr 2.2rem;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.15rem;
+}
+.cs-running-title-row .cs-running-ts {
+    justify-self: start;
+}
+.cs-running-title {
+    justify-self: center;
+    text-align: center;
+    font-weight: 600;
+    color: var(--ss-chord);
+    line-height: 1.2;
+}
+.cs-running-bpm { font-style: italic; }
+.cs-running-ts {
+    font-family: var(--ui-font);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 8mm 10mm 18mm;
+    }
+    html, body {
+        background: #fff !important;
+        color: #1c1917 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .page {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+    .layout { display: block; }
+    .editor-panel,
+    .app-header,
+    .panel > h2,
+    .toolbar,
+    .prefs,
+    .status {
+        display: none !important;
+    }
+    .panel {
+        background: transparent;
+        border: none;
+        padding: 0;
+        border-radius: 0;
+    }
+    .preview-wrap {
+        border: none;
+        padding: 0;
+        background: #fff;
+        overflow: visible;
+        min-height: 0;
+    }
+    .cs-chart {
+        border: none;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        font-size: 0.84rem;
+    }
+    .cs-title { font-size: 1rem; margin: 0.12rem 0; }
+    .cs-meta-top { font-size: 0.65rem; }
+    .cs-header-ts { font-size: 0.72rem; }
+    .cs-ts-beam { margin: 0.08em 0; }
+    .cs-rule { margin: 0.25rem 0 0.35rem; }
+    .cs-bar { min-height: 1.65rem; }
+    .cs-row { margin-bottom: 0.12rem; }
+    .cs-chords { min-height: 1.45rem; padding: 0.05rem 0.25rem; gap: 0.4rem; }
+    .cs-annotation { margin: 0.05rem 0 0.1rem; font-size: 0.65rem; }
+    .cs-section { margin-bottom: 0.12rem; }
+    .cs-header { break-after: avoid; page-break-after: avoid; }
+    .cs-row {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .cs-row-full:has(.cs-annotation) {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+    .cs-row-full:has(.cs-annotation) + .cs-row {
+        break-before: avoid;
+        page-break-before: avoid;
+    }
+    .cs-section {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+    .cs-running-header {
+        display: block;
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+    .cs-footer { display: none !important; }
+    .cs-barline,
+    .cs-bl-bar,
+    .cs-bl-dots span {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/**
+ * Layout folha (cifra + Lead Sheet) — respeita tema claro/escuro do app.
+ */
+
+:root {
+  --ss-canvas: #e7e5e4;
+  --ss-bg: #ffffff;
+  --ss-fg: #1c1917;
+  --ss-chord: var(--chord-highlight, #c2410c);
+  --ss-lyric: #292524;
+  --ss-muted: #57534e;
+  --ss-border: #d6d3d1;
+  --ss-rule: #e7e5e4;
+  --ss-tab-bg: #fafaf9;
+  --ss-tab-border: #78716c;
+  --ss-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"],
+html[data-theme="light"] {
+  --ss-canvas: #f5f5f4;
+  --ss-bg: #ffffff;
+  --ss-fg: #1c1917;
+  --ss-chord: var(--chord-highlight, #c2410c);
+  --ss-lyric: #292524;
+  --ss-muted: #57534e;
+  --ss-border: #d6d3d1;
+  --ss-rule: #e7e5e4;
+  --ss-tab-bg: #fafaf9;
+  --ss-tab-border: #ea580c;
+}
+
+[data-theme="dark"],
+html[data-theme="dark"] {
+  --ss-canvas: #0b1220;
+  --ss-bg: #111827;
+  --ss-fg: #e7e5e4;
+  --ss-chord: var(--chord-highlight, #2dd4bf);
+  --ss-lyric: #f1f5f9;
+  --ss-muted: #94a3b8;
+  --ss-border: #334155;
+  --ss-rule: #1e293b;
+  --ss-tab-bg: #0f172a;
+  --ss-tab-border: #f59e0b;
+  --ss-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+/* Área ao redor da folha */
+#play-app #cifra-wrap:has(.cifra-sheet-paper),
+#play-app #cifra-scroll:has(.cifra-sheet-paper) {
+  background: var(--ss-canvas) !important;
+}
+
+#cifra-col:has(.cifra-sheet-paper) {
+  background: transparent;
+}
+
+/* Mesma tipografia na cifra e no Lead Sheet (ver cifra) */
+#cifra-col .cifra-container.cifra-sheet-paper,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-wrap {
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace) !important;
+  font-size: 1.05rem;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+
+/* ── Folha: cifra (ver cifra) ─────────────────────────────────────── */
+#cifra-col .cifra-container.cifra-sheet-paper,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper {
+  --ss-chord: var(--chord-highlight, #c2410c);
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper {
+  background: var(--ss-bg) !important;
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+  padding: 1.35rem 1.6rem 1.5rem;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow);
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper.cifra-two-cols {
+  column-gap: 2.25rem;
+  column-rule: 1px solid var(--ss-rule);
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .chord,
+#cifra-col .cifra-container.cifra-sheet-paper .sp-chord,
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-chords {
+  color: var(--ss-chord) !important;
+  font-weight: 700;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1em;
+  line-height: 1.25;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-lyric,
+#cifra-col .cifra-container.cifra-sheet-paper .sp-word {
+  color: var(--ss-lyric) !important;
+  font-weight: 400;
+  font-family: var(--cifra-mono-font) !important;
+  line-height: 1.4;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .sp-line,
+.setlist-print-sheet.cifra-sheet-paper .sp-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 0.35rem;
+  row-gap: 0.15rem;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .sp-item,
+.setlist-print-sheet.cifra-sheet-paper .sp-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-right: 0.45rem;
+}
+
+.setlist-print-sheet.cifra-sheet-paper .sp-item {
+  padding-right: 0.55rem;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-tab-block {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-left: 3px solid var(--ss-tab-border) !important;
+  border-radius: 2px;
+  margin: 0.75rem 0;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-tab-title {
+  color: var(--ss-muted) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 0.72rem;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .cifra-tab-line {
+  color: var(--ss-lyric) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .tab-string {
+  color: var(--ss-tab-border) !important;
+}
+
+#cifra-col .cifra-container.cifra-sheet-paper .tab-tech {
+  color: var(--ss-muted) !important;
+}
+
+/* ── Folha: Lead Sheet (ver cifra) ──────────────────────────────── */
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper {
+  background: var(--ss-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow);
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-wrap {
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1.05rem !important;
+  padding: 1.1rem 1.35rem 1.25rem;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-header {
+  border-bottom: 1px solid var(--ss-rule) !important;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.55rem;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-title {
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ss-chord) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-meta {
+  color: var(--ss-muted) !important;
+  font-family: inherit !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-systems {
+  color: var(--ss-fg) !important;
+  font-family: inherit !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-bars {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-part-label {
+  color: var(--ss-muted) !important;
+  font-family: inherit !important;
+  font-weight: 600;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-bar {
+  border-left-color: var(--ss-muted) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-bar-col:first-child .staff-bar {
+  border-left-color: var(--ss-chord) !important;
+  border-left-width: 2px;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .staff-bar-col.staff-bar-last .staff-bar {
+  border-right: 2px solid var(--ss-chord) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-cell {
+  border-right-color: var(--ss-border) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-cell .chord-text {
+  color: var(--ss-chord) !important;
+  font-family: inherit !important;
+  font-weight: 700;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-empty {
+  color: var(--ss-muted) !important;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .accidental,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-quality {
+  color: inherit;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .leadsheet-play-empty {
+  color: var(--ss-muted) !important;
+}
+
+/* ── Folha: modo tocar ───────────────────────────────────────────── */
+#play-app .cifra-body.cifra-sheet-paper {
+  background: var(--ss-bg) !important;
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font) !important;
+  line-height: 1.45 !important;
+  white-space: pre-wrap;
+  max-width: min(1100px, 100%);
+  margin: clamp(0.5rem, 2vw, 1.25rem) auto;
+  padding: clamp(1rem, 3vw, 1.75rem) clamp(1rem, 4vw, 2.25rem) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow);
+  box-sizing: border-box;
+  min-height: calc(100% - 2rem);
+}
+
+#play-app .cifra-body.cifra-sheet-paper .chord,
+#play-app .cifra-body.cifra-sheet-paper .sp-chord {
+  color: var(--ss-chord) !important;
+  font-weight: 700;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 0.95em;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-chords {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--ss-chord) !important;
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace) !important;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-lyric,
+#play-app .cifra-body.cifra-sheet-paper .sp-word {
+  color: var(--ss-lyric) !important;
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace) !important;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .sp-line {
+  margin-bottom: 0.35rem;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-tab-block {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-left: 3px solid var(--ss-tab-border) !important;
+  border-radius: 2px;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-tab-title {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-tab-line {
+  color: var(--ss-lyric) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .tab-string {
+  color: var(--ss-tab-border) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .tab-tech {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.two-col {
+  column-rule: 1px solid var(--ss-rule) !important;
+  column-gap: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+/* Chord sheet legado JS (tecla G) — folha branca estilo PDF */
+#play-app .cifra-body.cifra-sheet-paper.grade-mode:not(:has(.setsync-cs-sheet)) {
+  background: #ffffff !important;
+  color: #1c1917 !important;
+  padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.4rem, 1.5vw, 1.1rem) !important;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode:not(:has(.setsync-cs-sheet)) .chord-sheet-play {
+  --ss-fg: #1c1917;
+  --ss-bg: #ffffff;
+  --ss-muted: #57534e;
+  --ss-border: #d6d3d1;
+  --ss-rule: #e7e5e4;
+}
+
+/* ── Chord Sheet (módulo chordsheet / .cs-chart) — tema SetSync ─── */
+
+.setsync-cs-sheet {
+  --rb-paper: var(--ss-bg);
+  --rb-ink: var(--ss-fg);
+  --rb-line: var(--ss-border);
+  --ss-chord: var(--chord-highlight, #c2410c);
+  --cs-chord-accent: var(--chord-highlight, #c2410c);
+  color: var(--ss-fg);
+  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .cs-view-embed.setsync-cs-sheet,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .setsync-cs-sheet {
+  padding: 1.1rem 1.35rem 1.25rem;
+  box-sizing: border-box;
+}
+
+#cifra-col .setsync-cs-sheet .cs-chart,
+#play-app .setsync-cs-sheet .cs-chart {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: var(--ss-fg) !important;
+  max-width: 100%;
+}
+
+.setsync-cs-sheet .cs-meta-top,
+.setsync-cs-sheet .cs-running-header,
+.setsync-cs-sheet .cs-running-top,
+.setsync-cs-sheet .cs-running-key,
+.setsync-cs-sheet .cs-running-bpm {
+  color: var(--ss-muted) !important;
+}
+
+.setsync-cs-sheet .cs-running-title {
+  color: var(--ss-chord) !important;
+}
+
+.setsync-cs-sheet .cs-sub,
+.setsync-cs-sheet .cs-artist,
+.setsync-cs-sheet .cs-annotation,
+.setsync-cs-sheet .cs-literal,
+.setsync-cs-sheet .cs-float-label,
+.setsync-cs-sheet .cs-volta,
+.setsync-cs-sheet .cs-paren,
+.setsync-cs-sheet .cs-chord-note {
+  color: var(--ss-muted) !important;
+}
+
+.setsync-cs-sheet .cs-rule,
+.setsync-cs-sheet .cs-running-header {
+  border-color: var(--ss-rule) !important;
+}
+
+.setsync-cs-sheet .cs-rule {
+  background: var(--ss-rule) !important;
+}
+
+.setsync-cs-sheet .cs-title,
+.setsync-cs-sheet .cs-chord,
+.setsync-cs-sheet .cs-chord .cs-root,
+.setsync-cs-sheet .cs-chord .cs-acc,
+.setsync-cs-sheet .cs-chord .cs-qual,
+.setsync-cs-sheet .cs-ts-stack,
+.setsync-cs-sheet .cs-running-title,
+.setsync-cs-sheet .cs-empty {
+  color: var(--cs-chord-accent, var(--ss-chord)) !important;
+}
+
+.setsync-cs-sheet .cs-ts-beam {
+  background: currentColor !important;
+}
+
+.setsync-cs-sheet .cs-section span {
+  border-color: var(--ss-fg) !important;
+  color: var(--ss-fg) !important;
+}
+
+.setsync-cs-sheet .cs-nav-marker {
+  color: var(--ss-fg) !important;
+}
+
+.setsync-cs-sheet .cs-barline-start.cs-bl-single,
+.setsync-cs-sheet .cs-bl-bar,
+.setsync-cs-sheet .cs-bl-dots span,
+.setsync-cs-sheet .cs-barline-start.cs-bl-double::before,
+.setsync-cs-sheet .cs-barline-start.cs-bl-double::after,
+.setsync-cs-sheet .cs-barline-end.cs-bl-double::before,
+.setsync-cs-sheet .cs-barline-end.cs-bl-double::after {
+  background-color: var(--ss-fg) !important;
+}
+
+.setsync-cs-sheet .cs-strokes {
+  color: var(--ss-fg) !important;
+}
+
+.setsync-cs-sheet .cs-footer {
+  color: var(--ss-muted) !important;
+  border-top-color: var(--ss-rule) !important;
+}
+
+.setsync-cs-sheet .cs-bl-style-grille .cs-row-bars {
+  border-color: var(--ss-fg) !important;
+}
+
+/* Modo tocar — chord sheet Python */
+#play-app #cifra-wrap:has(.setsync-cs-sheet) {
+  background: var(--ss-canvas) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode:has(.setsync-cs-sheet) {
+  background: transparent !important;
+  color: inherit !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: clamp(0.5rem, 2vw, 1.25rem) clamp(0.75rem, 3vw, 1.5rem) !important;
+}
+
+#play-app .setsync-cs-sheet.cs-play-embed {
+  background: var(--ss-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+  box-shadow: var(--ss-shadow);
+  max-width: min(1100px, 100%);
+  margin: clamp(0.5rem, 2vw, 1.25rem) auto;
+  padding: clamp(1rem, 3vw, 1.35rem) clamp(1rem, 4vw, 1.6rem) !important;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Lead sheet legado (staff detalhado) — não aplicar ao chord-sheet PDF */
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap {
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font) !important;
+  font-size: 1.05rem !important;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-body,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-systems,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-system,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .staff-line,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bars {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bars {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 2px;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-part-label {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bar {
+  border-left-color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bar-col:first-child .staff-bar {
+  border-left-color: var(--ss-chord) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .staff-bar-col.staff-bar-last .staff-bar {
+  border-right: 2px solid var(--ss-chord) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .pulse-cell {
+  border-right-color: var(--ss-border) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .pulse-cell .chord-text {
+  color: var(--ss-chord) !important;
+  font-family: inherit !important;
+  font-weight: 700;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .leadsheet-play-wrap .pulse-empty {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-chord-play {
+  color: var(--ss-chord) !important;
+  font-family: var(--cifra-mono-font) !important;
+}
+
+/* Chord sheet (tecla G) — folha estilo PDF / chordsheet.com */
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-play.chord-sheet-paper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: var(--ss-fg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-meta-strip {
+  color: var(--ss-muted) !important;
+  border-bottom-color: var(--ss-border) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-pdf-title-song,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-pdf-title-song {
+  color: var(--ss-fg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-pdf-title-artist,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-pdf-title-artist {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-section-text,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-section-text {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-section--boxed .chord-sheet-section-text,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-section--boxed .chord-sheet-section-text {
+  color: var(--ss-fg) !important;
+  border-color: var(--ss-fg) !important;
+  background: var(--ss-bg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-staff-bars,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-staff-bars {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid #1c1917 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-play .staff-bar,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-play .staff-bar {
+  border-left-color: var(--ss-fg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-sheet-play .staff-bar-col.staff-bar-last .staff-bar,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-sheet-play .staff-bar-col.staff-bar-last .staff-bar {
+  border-right-color: var(--ss-fg) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-cell .chord-text,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .chord-split-item .chord-text,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-cell .chord-text,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-split-item .chord-text {
+  color: var(--ss-fg) !important;
+  font-family: "Patrick Hand SC", cursive !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .pulse-empty,
+#cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-empty {
+  color: var(--ss-muted) !important;
+}
+
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-sep-play,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-repeat-play,
+#play-app .cifra-body.cifra-sheet-paper.grade-mode .grade-part-title-play {
+  color: var(--ss-muted) !important;
+}
+
+@media print {
+  html[data-theme="dark"],
+  html[data-theme="light"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: var(--ss-canvas) !important;
+  }
+
+  #cifra-col .cifra-container.cifra-sheet-paper,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper,
+  #play-app .cifra-body.cifra-sheet-paper,
+  .setlist-print-sheet.cifra-sheet-paper {
+    box-shadow: none !important;
+    break-inside: avoid;
+    background: var(--ss-bg) !important;
+    color: var(--ss-fg) !important;
+    border: 1px solid var(--ss-border) !important;
+  }
+
+  #normal-sidebar,
+  #normal-header,
+  .d-flex.gap-2.flex-wrap,
+  #play-app #play-bar,
+  #play-app #play-foot,
+  #play-app .tap-zone,
+  #speed-pill,
+  #scroll-badge,
+  #kbd-hint,
+  #play-drawer,
+  #drawer-overlay,
+  .navbar,
+  footer {
+    display: none !important;
+  }
+
+  #cifra-col {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #play-app #cifra-wrap:has(.cifra-sheet-paper) {
+    background: var(--ss-canvas) !important;
+    overflow: visible;
+  }
+
+  main.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Acordes em negrito na impressão (cifra, chord sheet e lead sheet) */
+  #cifra-col .cifra-container.cifra-sheet-paper .chord,
+  #cifra-col .cifra-container.cifra-sheet-paper .sp-chord,
+  #cifra-col .cifra-container.cifra-sheet-paper .cifra-chords,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .sp-chord,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .cifra-chords,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .pulse-cell .chord-text,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .chord-split-item .chord-text,
+  #cifra-col .leadsheet-view-panel.cifra-sheet-paper .grade-chord-play,
+  #play-app .cifra-body.cifra-sheet-paper .chord,
+  #play-app .cifra-body.cifra-sheet-paper .sp-chord,
+  #play-app .cifra-body.cifra-sheet-paper .cifra-chords,
+  #play-app .cifra-body.cifra-sheet-paper .grade-chord-play,
+  #play-app .cifra-body.cifra-sheet-paper .grade-visual-chord:not(.repeat),
+  #play-app .cifra-body.cifra-sheet-paper .pulse-cell .chord-text,
+  #play-app .cifra-body.cifra-sheet-paper .chord-split-item .chord-text,
+  .setlist-print-sheet.cifra-sheet-paper .chord,
+  .setlist-print-sheet.cifra-sheet-paper .sp-chord,
+  .setlist-print-sheet.cifra-sheet-paper .cifra-chords,
+  .chord-sheet-play .pulse-cell .chord-text,
+  .chord-sheet-play .chord-split-item .chord-text,
+  .chord-sheet-play .chord-text .chord-symbol,
+  .chord-sheet-play .chord-text .chord-quality,
+  .chord-sheet-play .chord-text .accidental,
+  .leadsheet-play-wrap .pulse-cell .chord-text,
+  .leadsheet-play-wrap .chord-split-item .chord-text,
+  .setlist-print-grade-line {
+    font-weight: 700 !important;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 1.5rem;
+  background: #0b1220;
+}
+.preview-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  background: #fff;
+  color: #1c1917;
+  padding: 1.25rem 1rem 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+}
+.setsync-cs-sheet .cs-chart {
+  --ss-chord: #0d9488;
+  --chord-highlight: #0d9488;
+  --rb-ink: #1c1917;
+}
+</style>
+</head>
+<body>
+<div class="preview-shell setsync-cs-sheet"><article class="cs-chart cs-size-m cs-spacing-normal cs-bl-style-tab" style="--cs-bars-per-row:4;--cs-tab-lines:6">
+        <style class="cs-print-margins">@media print {
+          @page {
+            @bottom-left {
+              content: "SetSync";
+              font-family: Inter, system-ui, sans-serif;
+              font-size: 7pt;
+              color: #a8a29e;
+            }
+            @bottom-center {
+              content: "página " counter(page) " de " counter(pages);
+              font-family: Inter, system-ui, sans-serif;
+              font-size: 7pt;
+              color: #a8a29e;
+            }
+            @bottom-right {
+              content: "editado em 12/06/2026";
+              font-family: Inter, system-ui, sans-serif;
+              font-size: 7pt;
+              color: #a8a29e;
+            }
+          }
+        }</style>
+    <header class="cs-header">
+      <div class="cs-meta-top">
+        <span class="cs-key">tom de F#</span>
+        <span class="cs-bpm">♩=120</span>
+      </div>
+      <div class="cs-title-row">
+        <span class="cs-ts-stack cs-header-ts" aria-label="Compasso 4/4"><span class="cs-ts-num">4</span><span class="cs-ts-beam" aria-hidden="true"></span><span class="cs-ts-den">4</span></span>
+        <h1 class="cs-title">Amor, Amor?</h1>
+        <div class="cs-artist">MASTRUZ COM LEITE</div>
+      </div>
+      
+      <div class="cs-rule"></div>
+    </header><div class="cs-body"><div class="cs-row cs-row-full"><div class="cs-section"><span>All Meta Characters</span></div></div><div class="cs-row"><div class="cs-section"><span>A</span></div><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-repeat-start" aria-hidden="true"><span class="cs-bl-bar cs-bl-thick"></span><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">B</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">D</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div><div class="cs-barline cs-barline-end cs-bl-repeat-end" aria-hidden="true"><span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-bar cs-bl-thick"></span></div><span class="cs-repeat-count" aria-label="Repetir 2 vezes">×2</span></div></div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">D</span></span></span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">E</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div><div class="cs-barline cs-barline-end cs-bl-double" aria-hidden="true"></div></div></div></div><div class="cs-row cs-row-section-start"><div class="cs-section"><span>B</span></div><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-repeat-start" aria-hidden="true"><span class="cs-bl-bar cs-bl-thick"></span><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">B</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"><span class="cs-volta">1.</span></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">D</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div></div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"><span class="cs-volta">2.</span></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">E</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">F</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div><div class="cs-barline cs-barline-end cs-bl-repeat-end" aria-hidden="true"><span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-bar cs-bl-thick"></span></div></div></div></div><div class="cs-row cs-row-full"><div class="cs-annotation">simile mark one bar</div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">B</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-align-center"><span class="cs-simile cs-simile--x1" style="grid-column:1/-1"><span class="cs-simile-slash">/</span><span class="cs-simile-dots" aria-hidden="true"><span></span><span></span></span></span></div></div></div></div><div class="cs-row cs-row-full"><div class="cs-annotation">simile mark two bars</div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">B</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" data-col-span="2" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-align-center"><span class="cs-simile cs-simile--x2" style="grid-column:1/-1"><span class="cs-simile-num">2</span><span class="cs-simile-slash">/</span><span class="cs-simile-dots" aria-hidden="true"><span></span><span></span></span></span></div><div class="cs-barline cs-barline-end cs-bl-double" aria-hidden="true"></div></div></div></div><div class="cs-page-break"></div><div class="cs-running-header"><div class="cs-running-top"><span class="cs-running-key">tom de F#</span><span class="cs-running-bpm">♩=120</span></div><div class="cs-running-title-row"><span class="cs-ts-stack cs-running-ts" aria-label="Compasso 4/4"><span class="cs-ts-num">4</span><span class="cs-ts-beam" aria-hidden="true"></span><span class="cs-ts-den">4</span></span><span class="cs-running-title">Amor, Amor?</span><span class="cs-running-artist-spacer" aria-hidden="true"></span></div></div><div class="cs-row cs-row-section-start"><div class="cs-section"><span>A second Page</span></div><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-repeat-start" aria-hidden="true"><span class="cs-bl-bar cs-bl-thick"></span><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">B</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-double" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">B</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div></div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">D</span></span></span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">E</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">F</span></span></span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">D</span></span></span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">E</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">F</span></span></span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div><div class="cs-barline cs-barline-end cs-bl-repeat-end" aria-hidden="true"><span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-bar cs-bl-thick"></span></div><span class="cs-repeat-count" aria-label="Repetir 3 vezes">×3</span></div></div></div><div class="cs-row cs-row-full"><div class="cs-annotation">4 bars repeat</div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-repeat-start" aria-hidden="true"><span class="cs-bl-bar cs-bl-thick"></span><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">E</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">F</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">G</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div></div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">E</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">F</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">G</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div><div class="cs-barline cs-barline-end cs-bl-repeat-end" aria-hidden="true"><span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-bar cs-bl-thick"></span></div></div></div></div><div class="cs-row cs-row-full"><div class="cs-annotation">empty bars</div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">D</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div></div></div><div class="cs-row cs-row-full"><div class="cs-annotation">optional chord</div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span><span class="cs-qual">m</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-slot"><span class="cs-paren">(</span><span class="cs-chord"><span class="cs-root">B</span></span><span class="cs-paren">)</span></span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div></div></div><div class="cs-row cs-row-full"><div class="cs-annotation">strokes</div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">G</span></span><span class="cs-strokes">,,,</span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span><span class="cs-qual">m,B</span></span><span class="cs-strokes">,</span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div></div></div><div class="cs-row cs-row-full"><div class="cs-annotation">blank bass</div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord cs-blank-bass">/G</span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div></div></div><div class="cs-row cs-row-full"><div class="cs-annotation">annotation</div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">E</span><span class="cs-qual">7</span></span><span class="cs-chord-note">rit.</span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:3"><span class="cs-volta-slot"></span><span class="cs-ts-stack cs-bar-ts" aria-label="Compasso 3/4"><span class="cs-ts-num">3</span><span class="cs-ts-beam" aria-hidden="true"></span><span class="cs-ts-den">4</span></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">C</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">A</span><span class="cs-qual">m</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">F</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div></div></div></div><div class="cs-row"><div class="cs-row-bars" style="--cs-bars-per-row:4"><div class="cs-bar" style="--cs-indent:0;--cs-beats:4"><span class="cs-volta-slot"></span><div class="cs-barline cs-barline-start cs-bl-single" aria-hidden="true"></div><div class="cs-chords cs-chords-beats"><span class="cs-beat" style="grid-column:1"><span class="cs-slot"><span class="cs-chord"><span class="cs-root">G</span></span></span></span><span class="cs-beat" style="grid-column:2"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:3"><span class="cs-empty">·</span></span><span class="cs-beat" style="grid-column:4"><span class="cs-empty">·</span></span></div><div class="cs-barline cs-barline-end cs-bl-final" aria-hidden="true"><span class="cs-bl-bar cs-bl-thin"></span><span class="cs-bl-bar cs-bl-thick"></span></div></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div><div class="cs-bar cs-bar-phantom" aria-hidden="true"><span class="cs-volta-slot"></span></div></div></div></div>
+        <footer class="cs-footer" aria-hidden="true">
+          <span class="cs-footer-brand">SetSync</span>
+          <span class="cs-page-count"></span>
+          <span class="cs-footer-date">editado em 12/06/2026</span>
+        </footer></article></div>
+</body>
+</html>

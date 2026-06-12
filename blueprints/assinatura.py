@@ -39,7 +39,7 @@ from mercadopago_client import (
     mp_config_status,
     mp_error_message,
 )
-from monetizacao import PLANOS, PLANO_PRO, PLANO_WORSHIP, planos_para_site
+from monetizacao import PLANOS, PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP, planos_para_site
 from mp_webhook import (
     ativar_assinatura_mp,
     extrair_topic_id,
@@ -90,7 +90,7 @@ def planos():
 @login_required
 def iniciar(plano):
     """Cria assinatura recorrente no MP e redireciona ao Checkout."""
-    if plano not in (PLANO_PRO, PLANO_WORSHIP):
+    if plano not in (PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP):
         flash('Plano inválido', 'danger')
         return redirect(url_for('assinatura_bp.planos'))
 
@@ -296,7 +296,7 @@ def admin_vouchers():
 @superadmin_required
 def admin_vouchers_criar():
     plano = request.form.get('plano', PLANO_PRO)
-    if plano not in (PLANO_PRO, PLANO_WORSHIP):
+    if plano not in (PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP):
         flash('Plano inválido', 'danger')
         return redirect(url_for('assinatura_bp.admin_vouchers'))
     eh_vitalicio = request.form.get('eh_vitalicio') in ('1', 'on', 'true')

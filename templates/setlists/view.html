@@ -27,18 +27,21 @@
         <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
             <i class="fas fa-play me-1"></i> Tocar
         </a>
-        <a href="{{ url_for('setlists.exportar_pdf', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm"
-           title="PDF com folha de palco e cifras (A4 retrato)">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-setlist-pdf"
+                title="PDF com seções escolhidas (A4 retrato)" data-bs-toggle="modal" data-bs-target="#setlistPdfModal">
             <i class="fas fa-file-pdf me-1"></i> PDF
-        </a>
+        </button>
         <a href="{{ url_for('setlists.imprimir', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener"
-           title="Visualizar e imprimir no navegador">
+           title="Visualizar e imprimir no navegador" id="btn-setlist-print">
             <i class="fas fa-print me-1"></i> Imprimir
         </a>
         {% endif %}
+        {% if can_edit %}
         <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-plus me-1"></i> Adicionar Música
         </a>
+        {% endif %}
+        {% if is_admin %}
         <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
               onsubmit="return confirm('Excluir esta setlist? Esta ação não pode ser desfeita.')">
             {% include 'partials/csrf_input.html' %}
@@ -46,10 +49,15 @@
                 <i class="fas fa-trash me-1"></i> Excluir
             </button>
         </form>
+        {% endif %}
     </div>
 </div>
 
 {% if cifras|length > 0 %}
+{% include 'setlists/_pdf_modal.html' %}
+{% endif %}
+
+{% if cifras|length > 0 and is_admin %}
 <details class="setlist-public-link-details mb-4">
     <summary class="setlist-public-link-summary">
         <span class="setlist-public-link-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
@@ -230,17 +238,21 @@
 {% endif %}
 
 {% if cifras %}
+{% if can_edit %}
 <div class="tip">
     <i class="fas fa-grip-vertical"></i>
     <span>Arraste pelo ícone à esquerda para reordenar. A ordem é salva automaticamente.</span>
 </div>
+{% endif %}
 
 <div class="row-card" id="setlist-card">
     <div id="sortable-cifras">
     {% for cifra in cifras %}
     <div class="row-item row-item--sortable row-item--numbered" data-cifra-id="{{ cifra.id }}">
         <div class="row-prefix">
+            {% if can_edit %}
             <span class="row-handle" title="Arraste para reordenar"><i class="fas fa-grip-vertical"></i></span>
+            {% endif %}
             <span class="row-num">{{ loop.index }}</span>
         </div>
         <div class="row-info">
@@ -253,11 +265,12 @@
         </div>
         {% if cifra.tom_original and vocalists %}
         <div class="row-meta">
-            {% if vocalists|length > 1 %}
-            <select class="row-vocalist-sel" data-cifra-id="{{ cifra.id }}" title="Cantora/cantor"
-                    aria-label="Cantora/cantor de {{ cifra.titulo }}">
+            {% if vocalists|length > 1 and can_edit %}
+            <select class="row-vocalist-sel" data-cifra-id="{{ cifra.id }}"
+                    data-saved-value="{{ cifra.row_vocalist_id }}"
+                    title="Cantora/cantor" aria-label="Cantora/cantor de {{ cifra.titulo }}">
                 {% for v in vocalists %}
-                <option value="{{ v.id }}" {% if v.id == cifra.row_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
+                <option value="{{ v.id }}" {% if v.id|string == cifra.row_vocalist_id|string %}selected{% endif %}>{{ v.name }}</option>
                 {% endfor %}
             </select>
             {% elif cifra.row_vocalist_name %}
@@ -276,6 +289,7 @@
                class="icon-btn" title="Tocar a partir desta">
                 <i class="fas fa-play"></i>
             </a>
+            {% if can_edit %}
             <form action="{{ url_for('setlists.remove_cifra', setlist_id=setlist.id, cifra_id=cifra.id) }}"
                   method="POST" class="d-inline"
                   onsubmit="return confirm('Remover da setlist?')">
@@ -284,12 +298,14 @@
                     <i class="fas fa-times"></i>
                 </button>
             </form>
+            {% endif %}
         </div>
     </div>
     {% endfor %}
     </div>
 </div>
 
+{% if can_edit %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script>
 (function () {
@@ -298,21 +314,67 @@
     var REORDER_URL = {{ url_for('setlists.reorder_ajax', setlist_id=setlist.id) | tojson }};
     var VOCALIST_ROW_URL = {{ url_for('setlists.set_cifra_vocalist', setlist_id=setlist.id, cifra_id='__CID__') | tojson }};
 
-    document.getElementById('setlist-card').addEventListener('change', function (e) {
-        var sel = e.target.closest('.row-vocalist-sel');
-        if (!sel) return;
+    var vocalistSaves = {};
+    var isDragging = false;
+
+    function saveVocalist(sel) {
         var cid = sel.getAttribute('data-cifra-id');
+        var value = sel.value;
+        var previous = sel.getAttribute('data-saved-value') || value;
+        if (value === previous) return;
+
+        var pending = vocalistSaves[cid];
+        if (pending && pending.controller) pending.controller.abort();
+
+        var controller = new AbortController();
+        var seq = (pending && pending.seq ? pending.seq : 0) + 1;
+        vocalistSaves[cid] = { seq: seq, controller: controller };
+
         var url = VOCALIST_ROW_URL.replace('__CID__', encodeURIComponent(cid));
         var row = sel.closest('.row-item');
         var tom = row ? row.querySelector('.row-meta .row-badge') : null;
-        fetch(url, {
+        var vox = row ? row.querySelector('.row-vocalist') : null;
+
+        sel.classList.add('is-saving');
+        sel.classList.remove('is-saved', 'is-error');
+        showStatus('Salvando cantor…');
+
+        var fetchFn = window.ssFetch || window.fetch;
+        fetchFn(url, {
             method: 'POST',
             credentials: 'same-origin',
+            signal: controller.signal,
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ vocalist_id: sel.value })
-        }).then(function (r) { return r.json(); }).then(function (data) {
-            if (data.ok && tom && data.display_key) tom.textContent = data.display_key;
-        }).catch(function () {});
+            body: JSON.stringify({ vocalist_id: value })
+        }).then(function (r) {
+            if (!r.ok) throw new Error('http-' + r.status);
+            return r.json();
+        }).then(function (data) {
+            if (!vocalistSaves[cid] || vocalistSaves[cid].seq !== seq) return;
+            if (!data.ok) throw new Error(data.error || 'fail');
+            sel.setAttribute('data-saved-value', value);
+            if (tom && data.display_key) tom.textContent = data.display_key;
+            if (vox && data.vocalist_name) vox.textContent = data.vocalist_name;
+            sel.classList.add('is-saved');
+            showStatus('Cantor salvo ✓', 'ok');
+        }).catch(function (err) {
+            if (err && err.name === 'AbortError') return;
+            if (!vocalistSaves[cid] || vocalistSaves[cid].seq !== seq) return;
+            sel.value = previous;
+            sel.classList.add('is-error');
+            showStatus('Erro ao salvar cantor — tente de novo', 'err');
+        }).finally(function () {
+            if (vocalistSaves[cid] && vocalistSaves[cid].seq === seq) {
+                sel.classList.remove('is-saving');
+            }
+        });
+    }
+
+    document.getElementById('setlist-card').addEventListener('change', function (e) {
+        if (isDragging) return;
+        var sel = e.target.closest('.row-vocalist-sel');
+        if (!sel) return;
+        saveVocalist(sel);
     });
 
     function showStatus(text, klass) {
@@ -355,10 +417,14 @@
     new Sortable(list, {
         animation: 160,
         handle: '.row-handle',
+        filter: '.row-vocalist-sel',
+        preventOnFilter: false,
         ghostClass: 'row-ghost',
         chosenClass: 'row-chosen',
         dragClass: 'row-drag',
+        onStart: function () { isDragging = true; },
         onEnd: function (evt) {
+            isDragging = false;
             if (evt.oldIndex === evt.newIndex) return;
             renumber();
             persistOrder();
@@ -366,6 +432,7 @@
     });
 })();
 </script>
+{% endif %}
 
 {% else %}
 <div class="empty">

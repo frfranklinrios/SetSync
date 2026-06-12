@@ -1,0 +1,86 @@
+{% extends "index.html" %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ canonical_url }}">
+<meta name="description" content="{{ meta_description }}">
+<meta name="keywords" content="{{ page.keywords }}, SetSync, cifras, setlist, banda, louvor, igreja">
+<meta property="og:title" content="{{ meta_title }}">
+<meta property="og:description" content="{{ meta_description }}">
+<meta property="og:url" content="{{ canonical_url }}">
+<meta property="og:type" content="article">
+<meta property="og:image" content="{{ site_og_image }}">
+<script type="application/ld+json">
+{{ {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": page.h1,
+  "description": meta_description,
+  "url": canonical_url,
+  "inLanguage": "pt-BR",
+  "publisher": {
+    "@type": "Organization",
+    "name": "SetSync",
+    "url": site_url
+  }
+}|tojson }}
+</script>
+{% include 'partials/seo_public.html' %}
+{% endblock %}
+
+{% block content %}
+<style>
+.guia-page h1 { font-size: 1.65rem; font-weight: 700; margin-bottom: 0.75rem; }
+.guia-page h2 { font-size: 1.15rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+.guia-page p, .guia-page li { line-height: 1.6; color: var(--text); }
+.guia-page ul, .guia-page ol { padding-left: 1.25rem; }
+.guia-cta {
+    margin: 2rem 0;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--chord-highlight-bg);
+}
+.guia-related { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.guia-related h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+.guia-related ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.guia-related a {
+    display: inline-block;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: inherit;
+}
+.guia-related a:hover { border-color: var(--accent); }
+</style>
+
+<article class="guia-page">
+    <p class="text-muted small mb-2"><a href="{{ url_for('guia.guia_index') }}">← Guia SetSync</a></p>
+    <h1>{{ page.h1 }}</h1>
+
+    {% for section in page.sections %}
+        {% if section.h2 %}<h2>{{ section.h2 }}</h2>{% endif %}
+        {{ section.html|safe }}
+    {% endfor %}
+
+    <div class="guia-cta">
+        <p class="mb-2"><strong>Pronto para {{ page.phrase }}?</strong></p>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary me-2">Começar grátis</a>
+        <a href="{{ url_for('ajuda.index') }}" class="btn btn-outline-secondary">Central de ajuda</a>
+    </div>
+
+    {% if page.related %}
+    <div class="guia-related">
+        <h2>Temas relacionados</h2>
+        <ul>
+            {% for r in page.related %}
+            <li><a href="{{ url_for('guia.guia_page', slug=r.slug) }}">{{ r.phrase|capitalize }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</article>
+{% endblock %}

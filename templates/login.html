@@ -1,6 +1,17 @@
 {% extends "index.html" %}
 
-{% block title %}Login - SetSync{% endblock %}
+{% block title %}Entrar — SetSync{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('auth.login') }}">
+<meta name="description" content="Acesse sua conta SetSync para ver cifras, setlists e o Modo Tocar da sua banda.">
+<meta property="og:title" content="Entrar — SetSync">
+<meta property="og:description" content="Acesse sua conta SetSync — cifras e setlists da sua banda.">
+<meta property="og:url" content="{{ external_url_for('auth.login') }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ site_og_image }}">
+{% include 'partials/seo_public.html' %}
+{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center py-4">

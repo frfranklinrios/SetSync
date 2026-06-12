@@ -1,0 +1,68 @@
+{% extends "index.html" %}
+
+{% block title %}Guia SetSync — Compartilhar cifras, gerenciar bandas e setlists{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('guia.guia_index') }}">
+<meta name="description" content="Guias do SetSync: compartilhar cifras, gerenciar bandas, montar setlists gospel, transpor acordes, Modo Tocar e app de cifras para igreja. Encontre o tema que você buscou.">
+<meta property="og:title" content="Guia SetSync — Compartilhar cifras, gerenciar bandas e setlists">
+<meta property="og:description" content="Guias do SetSync: compartilhar cifras, gerenciar bandas, montar setlists gospel, transpor acordes, Modo Tocar e app de cifras para igreja.">
+<meta property="og:url" content="{{ external_url_for('guia.guia_index') }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ site_og_image }}">
+{% include 'partials/seo_public.html' %}
+{% endblock %}
+
+{% block content %}
+<style>
+.guia-hero { margin-bottom: 1.5rem; }
+.guia-hero h1 { font-size: 1.65rem; font-weight: 700; margin-bottom: 0.5rem; }
+.guia-hero p { color: var(--muted); max-width: 42rem; line-height: 1.55; }
+.guia-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+.guia-link {
+    display: block;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    transition: border-color 0.15s, background 0.15s;
+}
+.guia-link:hover {
+    border-color: var(--accent);
+    background: var(--chord-highlight-bg);
+    color: inherit;
+}
+.guia-link strong { display: block; font-weight: 600; margin-bottom: 0.15rem; }
+.guia-link span { color: var(--muted); font-size: 0.82rem; }
+</style>
+
+<div class="guia-hero">
+    <h1>Guia SetSync</h1>
+    <p>
+        Encontre como <strong>compartilhar cifras</strong>, <strong>gerenciar bandas</strong>,
+        <strong>montar setlists</strong>, <strong>transpor acordes</strong> e usar o
+        <strong>Modo Tocar</strong> — tudo o que músicos e líderes de louvor buscam no Google.
+    </p>
+    <p class="mb-0">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm me-2">Criar conta grátis</a>
+        <a href="{{ url_for('blog.blog_index') }}" class="btn btn-outline-secondary btn-sm">Ver blog</a>
+    </p>
+</div>
+
+<div class="guia-grid">
+    {% for p in pages %}
+    <a class="guia-link" href="{{ url_for('guia.guia_page', slug=p.slug) }}">
+        <strong>{{ p.phrase|capitalize }}</strong>
+        <span>{{ p.meta_description[:90] }}{% if p.meta_description|length > 90 %}…{% endif %}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

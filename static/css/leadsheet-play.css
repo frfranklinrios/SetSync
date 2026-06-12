@@ -17,8 +17,8 @@
 }
 
 .chord-sheet-play.chord-sheet-paper {
-  background: var(--ss-bg, #111827);
-  color: var(--ss-fg, #e7e5e4);
+  background: var(--ss-bg, #ffffff);
+  color: var(--ss-fg, #1c1917);
   border: 1px solid var(--ss-border, #334155);
   border-radius: 2px;
   box-shadow: var(--ss-shadow, 0 2px 12px rgba(0, 0, 0, 0.25));

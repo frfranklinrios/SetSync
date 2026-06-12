@@ -62,6 +62,24 @@ config = {
 }
 
 
+def app_timezone_name() -> str:
+    """Fuso horário do app (padrão: Fortaleza, CE)."""
+    return (os.getenv('SETSYNC_TIMEZONE') or 'America/Fortaleza').strip()
+
+
+def app_now():
+    """Data/hora atual no fuso configurado (Fortaleza por padrão)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    return datetime.now(ZoneInfo(app_timezone_name()))
+
+
+def app_today_str() -> str:
+    """Data local YYYY-MM-DD (Fortaleza por padrão)."""
+    return app_now().strftime('%Y-%m-%d')
+
+
 def whatsapp_number() -> str:
     """Número WhatsApp (DDI+DDD+número, sem +). WHATSAPP_NUMBER ou SETSYNC_WHATSAPP."""
     return (

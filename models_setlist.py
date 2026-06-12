@@ -72,8 +72,12 @@ def add_cifra_to_setlist(setlist_id, cifra_id, position=None, vocalist_id=None):
     db = get_db()
     c = db.cursor()
     if position is None:
-        c.execute('SELECT COALESCE(MAX(position), 0) + 1 FROM setlist_cifras WHERE setlist_id = ?', (setlist_id,))
-        position = c.fetchone()[0]
+        c.execute(
+            'SELECT COALESCE(MAX(position), 0) + 1 AS next_pos FROM setlist_cifras WHERE setlist_id = ?',
+            (setlist_id,),
+        )
+        row = c.fetchone()
+        position = int((row['next_pos'] if row else 1) or 1)
     vid = vocalist_id or _default_vocalist_for_setlist(setlist_id)
     c.execute(
         'INSERT INTO setlist_cifras (setlist_id, cifra_id, position, vocalist_id) VALUES (?, ?, ?, ?)',
@@ -83,15 +87,18 @@ def add_cifra_to_setlist(setlist_id, cifra_id, position=None, vocalist_id=None):
     db.close()
 
 
-def set_setlist_cifra_vocalist(setlist_id, cifra_id, vocalist_id: str | None) -> None:
+def set_setlist_cifra_vocalist(setlist_id, cifra_id, vocalist_id: str | None) -> bool:
+    """Atualiza cantor da música na setlist. Retorna False se a linha não existir."""
     db = get_db()
     c = db.cursor()
     c.execute(
         'UPDATE setlist_cifras SET vocalist_id = ? WHERE setlist_id = ? AND cifra_id = ?',
-        (vocalist_id or None, setlist_id, cifra_id),
+        (vocalist_id or None, int(setlist_id), str(cifra_id)),
     )
+    updated = (c.rowcount or 0) > 0
     db.commit()
     db.close()
+    return updated
 
 def remove_cifra_from_setlist(setlist_id, cifra_id):
     db = get_db()

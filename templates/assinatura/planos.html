@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h3 mb-1">Planos SetSync</h1>
-        <p class="text-muted mb-0">Escolha o plano ideal para sua banda ou ministério.</p>
+        <p class="text-muted mb-0">Do músico solo à congregação — escolha o plano ideal.</p>
     </div>
     <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
 </div>
@@ -41,7 +41,7 @@
 {% endif %}
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-6 col-lg-3">
         <div class="card h-100">
             <div class="card-body">
                 <h2 class="h5">Grátis</h2>
@@ -55,12 +55,31 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-secondary">
+            <div class="card-body">
+                <h2 class="h5">Individual</h2>
+                <p class="display-6 fw-bold">R$ 15<small class="fs-6 text-muted">/mês</small></p>
+                <p class="small">Para quem toca sozinho · 1 integrante · PDF</p>
+                {% if banda_id %}
+                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='individual') }}">
+                    {% include 'partials/csrf_input.html' %}
+                    <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    <button type="submit" class="btn btn-outline-primary w-100"
+                            {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
+                        Assinar Individual
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
         <div class="card h-100 border-primary">
             <div class="card-body">
                 <h2 class="h5">Pro</h2>
                 <p class="display-6 fw-bold">R$ 29<small class="fs-6 text-muted">/mês</small></p>
-                <p class="small">Por banda · sem limites · exportar PDF</p>
+                <p class="small">Banda com vários integrantes · sem limites · PDF</p>
                 {% if banda_id %}
                 <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}">
                     {% include 'partials/csrf_input.html' %}
@@ -74,7 +93,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6 col-lg-3">
         <div class="card h-100">
             <div class="card-body">
                 <h2 class="h5">Worship</h2>

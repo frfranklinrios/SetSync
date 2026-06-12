@@ -4,8 +4,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from db import (create_user, get_user_by_username, get_user_by_login, get_user, verify_password,
                 get_user_by_google_id, create_google_user, get_user_by_email,
-                update_user_display_name, update_user_profile, is_superadmin, get_band,
-                touch_user_last_login, user_has_phone)
+                update_user_display_name, update_user_profile, update_user_password_by_email,
+                is_superadmin, get_band, touch_user_last_login, user_has_phone)
 from whatsapp_service import normalize_whatsapp_phone
 from band_invites import parse_band_invite_token, apply_band_invite
 import band_notifications as bn
@@ -113,63 +113,129 @@ def _redirect_after_auth(user, invite_token: str | None = None):
     return _auth_setup_redirect(url_for('dashboard'))
 
 
-def send_reset_email(email, token):
-    from email_service import send_email
-    link = external_url_for('auth.reset_senha', token=token)
-    body = (
-        f'Para redefinir sua senha, clique no link: {link}\n'
-        'O link expira em 1 hora. Se você não solicitou, ignore este e-mail.'
+def _recuperar_senha_ctx(**extra):
+    from email_service import is_configured as email_configured
+    from whatsapp_service import is_configured as whatsapp_configured
+    return dict(
+        mail_configured=email_configured(),
+        whatsapp_configured=whatsapp_configured(),
+        recovery_available=email_configured() or whatsapp_configured(),
+        **extra,
     )
-    html = (
-        '<p>Recebemos um pedido para redefinir sua senha no SetSync.</p>'
-        f'<p><a href="{link}" style="display:inline-block;padding:12px 24px;'
-        'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
-        'Redefinir minha senha</a></p>'
-        '<p>O link expira em 1 hora. Se você não solicitou, ignore este e-mail.</p>'
-    )
-    send_email([email], 'Recuperação de senha - SetSync', html, body)
+
 
 @auth_bp.route('/recuperar-senha', methods=['GET', 'POST'])
 def recuperar_senha():
     message = None
+    message_kind = 'info'
+    email_value = ''
+
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        user = get_user_by_email(email)
+        from auth_emails import send_password_reset_email, send_password_reset_whatsapp
+        from email_service import is_configured as email_configured
+        from whatsapp_service import is_configured as whatsapp_configured
+
+        email_value = request.form.get('email', '').strip()
+        if not email_value:
+            message = 'Informe o e-mail cadastrado na sua conta.'
+            message_kind = 'warning'
+            return render_template(
+                'recuperar_senha.html',
+                **_recuperar_senha_ctx(message=message, message_kind=message_kind, email=email_value),
+            )
+
+        rate_key = f'reset-pwd:{request.remote_addr}:{email_value.lower()}'
+        if not check_rate_limit(rate_key, max_attempts=5, window_sec=3600):
+            message = 'Muitas tentativas. Aguarde uma hora e tente novamente.'
+            message_kind = 'warning'
+            return render_template(
+                'recuperar_senha.html',
+                **_recuperar_senha_ctx(message=message, message_kind=message_kind, email=email_value),
+            )
+
+        if not email_configured() and not whatsapp_configured():
+            message = (
+                'Recuperação de senha está temporariamente indisponível. '
+                'Tente mais tarde ou fale com o suporte da banda.'
+            )
+            message_kind = 'warning'
+            return render_template(
+                'recuperar_senha.html',
+                **_recuperar_senha_ctx(message=message, message_kind=message_kind, email=email_value),
+            )
+
+        user = get_user_by_email(email_value)
         if user:
-            token = _password_reset_serializer().dumps(email)
-            send_reset_email(email, token)
-        message = 'Se o e-mail estiver cadastrado, um link de recuperação foi enviado.'
-        return render_template('recuperar_senha.html', message=message)
-    return render_template('recuperar_senha.html')
+            token = _password_reset_serializer().dumps(user['email'])
+            sent_email = send_password_reset_email(user['email'], token) if email_configured() else False
+            sent_wa = send_password_reset_whatsapp(user, token)
+            if not sent_email and not sent_wa:
+                current_app.logger.error(
+                    'Falha ao enviar recuperação de senha para %s (e-mail=%s, whatsapp=%s)',
+                    user['email'], sent_email, sent_wa,
+                )
+                message = (
+                    'Não foi possível enviar o link agora. '
+                    'Tente novamente em alguns minutos.'
+                )
+                message_kind = 'danger'
+                return render_template(
+                    'recuperar_senha.html',
+                    **_recuperar_senha_ctx(message=message, message_kind=message_kind, email=email_value),
+                )
+            if not sent_wa and user.get('phone'):
+                current_app.logger.warning(
+                    'Recuperação enviada por e-mail, mas WhatsApp falhou para %s', user['email'],
+                )
+
+        message = (
+            'Se o e-mail estiver cadastrado, enviamos um link de recuperação '
+            '(válido por 1 hora) — por e-mail e, se houver WhatsApp no perfil, também por lá.'
+        )
+        message_kind = 'success'
+        email_value = ''
+        return render_template(
+            'recuperar_senha.html',
+            **_recuperar_senha_ctx(message=message, message_kind=message_kind, email=email_value),
+        )
+
+    return render_template('recuperar_senha.html', **_recuperar_senha_ctx())
+
 
 @auth_bp.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_senha(token):
-    from werkzeug.security import generate_password_hash
     message = None
+    message_kind = 'info'
     s = _password_reset_serializer()
     try:
         email = s.loads(token, max_age=3600)
     except Exception:
         message = 'Link inválido ou expirado.'
-        return render_template('reset_senha.html', message=message)
+        message_kind = 'warning'
+        return render_template('reset_senha.html', message=message, message_kind=message_kind)
+
     if request.method == 'POST':
         password = request.form.get('password', '')
         confirm = request.form.get('confirm', '')
         if not password or not confirm:
             message = 'Preencha todos os campos.'
+            message_kind = 'warning'
         elif password != confirm:
             message = 'As senhas não conferem.'
+            message_kind = 'warning'
         elif len(password) < MIN_PASSWORD_LEN:
             message = f'A senha deve ter no mínimo {MIN_PASSWORD_LEN} caracteres.'
+            message_kind = 'warning'
+        elif not update_user_password_by_email(email, password):
+            message = 'Conta não encontrada. Solicite um novo link.'
+            message_kind = 'warning'
         else:
-            db = __import__('db').get_db()
-            c = db.cursor()
-            c.execute('UPDATE users SET password_hash = ? WHERE email = ?', (generate_password_hash(password), email))
-            db.commit()
-            db.close()
+            clear_rate_limit(f'reset-pwd:{request.remote_addr}:{email.lower()}')
             message = 'Senha redefinida com sucesso!'
-            return render_template('reset_senha.html', message=message)
-    return render_template('reset_senha.html', message=message)
+            message_kind = 'success'
+            return render_template('reset_senha.html', message=message, message_kind=message_kind)
+
+    return render_template('reset_senha.html', message=message, message_kind=message_kind, token=token)
 
 def login_required(f):
     """Decorator para rotas que requerem login"""
@@ -222,49 +288,63 @@ def register():
             return redirect(url_for('bands.view', band_id=band_id))
         return redirect(url_for('dashboard'))
 
-    def _register_ctx():
-        return dict(invite_token=invite_token, invite_band=invite_band)
+    def _register_ctx(**fields):
+        return dict(invite_token=invite_token, invite_band=invite_band, **fields)
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         display_name = request.form.get('display_name', '').strip()
         email = request.form.get('email', '').strip()
+        phone_raw = request.form.get('phone', '').strip()
+        whatsapp_notify = request.form.get('whatsapp_notify') == '1'
         password = request.form.get('password', '')
         confirm = request.form.get('confirm', '')
+        form_values = _register_ctx(
+            username=username,
+            display_name=display_name,
+            email=email,
+            phone=phone_raw,
+            whatsapp_notify=whatsapp_notify,
+        )
         
-        if not username or not display_name or not email or not password:
+        if not username or not display_name or not email or not phone_raw or not password:
             flash('Preencha todos os campos', 'danger')
-            return render_template('register.html', **_register_ctx())
+            return render_template('register.html', **form_values)
 
         if len(display_name) < 2:
             flash('Nome deve ter no mínimo 2 caracteres', 'danger')
-            return render_template('register.html', **_register_ctx())
+            return render_template('register.html', **form_values)
         if len(display_name) > 60:
             flash('Nome deve ter no máximo 60 caracteres', 'danger')
-            return render_template('register.html', **_register_ctx())
+            return render_template('register.html', **form_values)
+
+        if not normalize_whatsapp_phone(phone_raw):
+            flash('WhatsApp inválido. Use DDD + número (ex.: 85 99784-9547).', 'danger')
+            return render_template('register.html', **form_values)
         
         if password != confirm:
             flash('Senhas não conferem', 'danger')
-            return render_template('register.html', **_register_ctx())
+            return render_template('register.html', **form_values)
         
         if len(password) < MIN_PASSWORD_LEN:
             flash(f'Senha deve ter no mínimo {MIN_PASSWORD_LEN} caracteres', 'danger')
-            return render_template('register.html', **_register_ctx())
+            return render_template('register.html', **form_values)
         
         if get_user_by_username(username):
             flash('Usuário já existe', 'danger')
-            return render_template('register.html', **_register_ctx())
+            return render_template('register.html', **form_values)
         
         user_id = create_user(username, email, password, display_name=display_name)
         
         if not user_id:
             flash('Email já cadastrado', 'danger')
-            return render_template(
-                'register.html',
-                invite_token=invite_token,
-                invite_band=invite_band,
-            )
+            return render_template('register.html', **form_values)
 
+        update_user_profile(
+            user_id,
+            phone=phone_raw,
+            whatsapp_notify=whatsapp_notify,
+        )
         user = get_user(user_id)
         _login_user_session(user)
         from onboarding_emails import registrar_onboarding_usuario

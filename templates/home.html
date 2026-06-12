@@ -1,15 +1,19 @@
 {% extends "index.html" %}
 
-{% block title %}SetSync — Cifras para banda gospel, setlists e transposição online{% endblock %}
+{% block title %}SetSync — Compartilhar cifras, gerenciar bandas e setlists online{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('index') }}">
-<meta name="description" content="Organize cifras, monte setlists e toque no Modo Tocar com transposição de acordes. Plano grátis para começar — feito para bandas e ministérios de louvor.">
-<meta property="og:title" content="SetSync — Cifras para banda gospel, setlists e transposição online">
-<meta property="og:description" content="Organize cifras, monte setlists e toque no Modo Tocar com transposição de acordes. Plano grátis para começar — feito para bandas e ministérios de louvor.">
+<meta name="description" content="Compartilhe cifras com a banda, gerencie ministérios de louvor, monte setlists gospel e transponha acordes no Modo Tocar. App de cifras grátis para igreja e banda.">
+<meta name="keywords" content="compartilhar cifras, gerenciar bandas, setlist online, cifras gospel, app cifras banda, transpor cifras, ministério louvor, modo tocar, SetSync">
+<meta property="og:title" content="SetSync — Compartilhar cifras, gerenciar bandas e setlists online">
+<meta property="og:description" content="Compartilhe cifras com a banda, gerencie ministérios de louvor, monte setlists gospel e transponha acordes no Modo Tocar. App de cifras grátis para igreja e banda.">
 <meta property="og:url" content="{{ external_url_for('index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
+{% include 'partials/seo_public.html' %}
+{% include 'partials/seo_home_jsonld.html' %}
+{% include 'partials/seo_faq_home.html' %}
 {% endblock %}
 
 {% block main_class %}home-page{% endblock %}
@@ -294,6 +298,40 @@
 .home-cta-band h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
 .home-cta-band p { color: var(--muted); margin-bottom: 1.25rem; }
 
+.home-faq details {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background: var(--bg);
+}
+.home-faq summary {
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+.home-faq details p {
+    margin: 0.65rem 0 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.55;
+}
+.home-seo-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+}
+.home-seo-links a {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--muted);
+}
+.home-seo-links a:hover { border-color: var(--accent); color: var(--accent); }
+
 .home-stats {
     background: var(--bg);
     border-bottom: 1px solid var(--border);
@@ -351,13 +389,13 @@
         <div class="row align-items-center g-4">
             <div class="col-lg-7">
                 <span class="home-badge"><i class="fas fa-music"></i> Comece grátis · upgrade quando precisar</span>
-                <h1>Cifras e setlists sincronizados com sua banda</h1>
+                <h1>Compartilhe cifras e gerencie bandas em um só lugar</h1>
                 <p class="home-lead">
-                    O <strong>SetSync</strong> organiza o repertório, agenda ensaios e cultos com
-                    <strong>calendário e escalação</strong>, transponhe no tom de cada cantora/cantor
-                    e leva você ao palco com o <strong>Modo Tocar</strong>. Use o plano
-                    <strong>Grátis</strong> ou evolua para <strong>Pro</strong> e <strong>Worship</strong>
-                    com recursos ilimitados.
+                    O <strong>SetSync</strong> é o app para <strong>compartilhar cifras</strong>,
+                    <strong>gerenciar bandas</strong> e <strong>montar setlists</strong> gospel —
+                    com transposição no tom de cada cantor, agenda de ensaios e
+                    <strong>Modo Tocar</strong> no palco. Plano <strong>Grátis</strong> ou
+                    <strong>Pro</strong> e <strong>Worship</strong> para igrejas.
                 </p>
                 <div class="home-cta">
                     <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
@@ -508,6 +546,22 @@
             <span>Abra o Modo Tocar no evento ou na setlist — upgrade em Planos se precisar.</span>
         </div>
     </div>
+</section>
+
+<section class="home-section home-faq" id="faq">
+    <h2>Perguntas frequentes</h2>
+    <p class="section-sub">O que músicos e líderes de louvor buscam sobre cifras, bandas e setlists.</p>
+    {% for item in faq_entries %}
+    <details>
+        <summary>{{ item.q }}</summary>
+        <p>{{ item.a }}</p>
+    </details>
+    {% endfor %}
+    <p class="mt-3 mb-1">
+        <a href="{{ url_for('guia.guia_index') }}">Ver todos os guias de busca →</a>
+        · <a href="{{ url_for('blog.blog_index') }}">Blog</a>
+        · <a href="{{ url_for('ajuda.index') }}">Ajuda</a>
+    </p>
 </section>
 
 <section class="home-cta-band">
