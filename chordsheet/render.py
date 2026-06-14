@@ -418,6 +418,7 @@ def render_chart_html(chart: Chart) -> str:
     rows_html: list[str] = []
     last_volta_col: int | None = None
     section_starts = _section_start_indices(chart.sections)
+    line_break_starts = set(chart.line_breaks)
     i = 0
     while i < len(chart.bars):
         if i in chart.page_breaks:
@@ -440,6 +441,8 @@ def render_chart_html(chart: Chart) -> str:
         while i < len(chart.bars):
             b = chart.bars[i]
             if b.is_full_width:
+                break
+            if chunk and i in line_break_starts:
                 break
             if chunk and i in section_starts:
                 break

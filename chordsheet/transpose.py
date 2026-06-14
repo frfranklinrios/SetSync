@@ -61,6 +61,7 @@ def transpose_chart(chart: Chart, semitones: int) -> Chart:
         prefs=chart.prefs,
         sections=list(chart.sections),
         page_breaks=list(chart.page_breaks),
+        line_breaks=list(chart.line_breaks),
         bars=[],
     )
     if out.meta.key:

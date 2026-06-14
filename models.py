@@ -11,7 +11,7 @@ band_members = db.Table(
     'band_members',
     db.Column('user_id', db.String(36), db.ForeignKey('user.id'), primary_key=True),
     db.Column('band_id', db.String(36), db.ForeignKey('band.id'), primary_key=True),
-    db.Column('role', db.String(20), default='member'),  # admin, member
+    db.Column('role', db.String(20), default='member'),  # member, editor, admin, owner
     db.Column('joined_at', db.DateTime, default=datetime.utcnow)
 )
 

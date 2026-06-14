@@ -10,7 +10,7 @@ from models_setlist import (
     add_cifra_to_setlist, remove_cifra_from_setlist, reorder_setlist, get_setlist_cifras,
     set_setlist_vocalist, set_setlist_cifra_vocalist,
 )
-from db import get_band, is_band_admin, is_band_member, get_band_cifras, get_cifra
+from db import (get_band, is_band_admin, is_band_editor, is_band_member, get_band_cifras, get_cifra)
 from blueprints.auth import login_required
 import band_notifications as bn
 
@@ -266,7 +266,7 @@ def reorder_ajax(setlist_id):
     if not setlist:
         return jsonify({'error': 'Setlist não encontrada'}), 404
     user_id = session['user_id']
-    if not is_band_member(setlist['band_id'], user_id):
+    if not is_band_editor(setlist['band_id'], user_id):
         return jsonify({'error': 'Sem permissão'}), 403
     data = request.get_json(silent=True) or {}
     ordered_ids = data.get('cifra_ids') or []
@@ -285,6 +285,9 @@ def add_cifra(setlist_id):
     if not ok:
         flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
+    if not is_band_editor(band['id'], user_id):
+        flash('Sem permissão', 'danger')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
     if request.method == 'POST':
         cifra_id = request.form.get('cifra_id')
         if cifra_id:
@@ -308,10 +311,12 @@ def add_cifra(setlist_id):
 def remove_cifra(setlist_id, cifra_id):
     user_id = session['user_id']
     setlist = get_setlist(setlist_id)
-    ok, _ = _require_setlist_access(setlist, user_id)
-    if not ok:
-        flash('Sem permissão', 'danger')
+    if not setlist:
+        flash('Setlist não encontrada', 'danger')
         return redirect(url_for('dashboard'))
+    if not is_band_editor(setlist['band_id'], user_id):
+        flash('Sem permissão', 'danger')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
     cifra = get_cifra(cifra_id)
     song = (cifra or {}).get('titulo') or 'Música'
     remove_cifra_from_setlist(setlist_id, cifra_id)
@@ -330,7 +335,7 @@ def delete(setlist_id):
     if not setlist:
         flash('Setlist não encontrada', 'danger')
         return redirect(url_for('dashboard'))
-    if not is_band_admin(setlist['band_id'], user_id):
+    if not is_band_editor(setlist['band_id'], user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('setlists.view', setlist_id=setlist_id))
     band_id = setlist['band_id']
@@ -349,6 +354,7 @@ def list_setlists(band_id):
     if not band or not is_band_member(band_id, user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('bands.view', band_id=band_id))
+    can_edit = is_band_editor(band_id, user_id)
     setlists = []
     for s in get_band_setlists(band_id):
         s = dict(s)
@@ -358,7 +364,7 @@ def list_setlists(band_id):
         'setlists/list.html',
         band=band,
         setlists=setlists,
-        can_edit=True,
+        can_edit=can_edit,
         is_admin=is_band_admin(band_id, user_id),
     )
 
@@ -367,7 +373,7 @@ def list_setlists(band_id):
 def create(band_id):
     user_id = session['user_id']
     band = get_band(band_id)
-    if not band or not is_band_member(band_id, user_id):
+    if not band or not is_band_editor(band_id, user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('bands.view', band_id=band_id))
     if request.method == 'POST':
@@ -397,6 +403,8 @@ def set_cifra_vocalist(setlist_id, cifra_id):
     ok, band = _require_setlist_access(setlist, session['user_id'])
     if not ok:
         return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not is_band_editor(band['id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     data = request.get_json(silent=True) or {}
     vid = (data.get('vocalist_id') or '').strip()
     if vid and not band_vocalist_belongs_to_band(vid, band['id']):
@@ -419,6 +427,8 @@ def set_vocalist(setlist_id):
     ok, band = _require_setlist_access(setlist, session['user_id'])
     if not ok:
         return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not is_band_editor(band['id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     data = request.get_json(silent=True) or {}
     vid = (data.get('vocalist_id') or request.form.get('vocalist_id') or '').strip()
     if vid and not band_vocalist_belongs_to_band(vid, band['id']):
@@ -480,7 +490,7 @@ def view(setlist_id):
         vocalists=vocalists,
         public_share_enabled=share_on,
         public_letras_url=public_letras_url,
-        can_edit=True,
+        can_edit=is_band_editor(band['id'], user_id),
         is_admin=is_band_admin(band['id'], user_id),
     )
 

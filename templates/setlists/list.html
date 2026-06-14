@@ -30,7 +30,7 @@
 {% if setlists %}
 <div class="row-card">
     {% for setlist in setlists %}
-    {{ setlist_row(setlist, band, is_admin=is_admin) }}
+    {{ setlist_row(setlist, band, can_edit=can_edit) }}
     {% endfor %}
 </div>
 {% else %}

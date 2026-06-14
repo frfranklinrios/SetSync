@@ -104,7 +104,13 @@
         .navbar {
             background: #fff !important;
             border-bottom: 1px solid var(--border);
-            padding: 0.6rem 0;
+            padding-top: calc(0.6rem + env(safe-area-inset-top, 0px));
+            padding-bottom: 0.6rem;
+        }
+
+        .navbar > .container-fluid {
+            padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+            padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
         }
 
         .navbar-brand img {

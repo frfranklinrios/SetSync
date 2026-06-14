@@ -18,7 +18,7 @@ from leadsheet.converter import (
 )
 from blueprints.auth import login_required
 from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra,
-                delete_cifra, is_band_member, is_band_admin,
+                delete_cifra, is_band_member, is_band_admin, is_band_editor,
                 set_cifra_transpose_semitones, get_band_vocalists, get_band_vocalist,
                 get_cifra_vocalist_transpose, get_cifra_transpose_by_vocalists,
                 band_vocalist_belongs_to_band, vocalists_summary_label,
@@ -596,6 +596,7 @@ def list_by_band(band_id):
         band=band,
         cifras=cifras,
         is_member=True,
+        can_edit=is_band_editor(band_id, user_id),
         is_admin=is_band_admin(band_id, user_id),
     )
 
@@ -683,7 +684,8 @@ def view(cifra_id):
                            vocalist_name=vocalist_name,
                            vocalist_linked=vocalist_linked,
                            is_admin=is_band_admin(cifra['band_id'], user_id),
-                           is_member=is_band_member(cifra['band_id'], user_id))
+                           is_member=is_band_member(cifra['band_id'], user_id),
+                           can_edit=is_band_editor(cifra['band_id'], user_id))
 
 def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None):
     """Renderiza o modo tocar (mesmo layout para banda e setlist)."""
@@ -746,7 +748,7 @@ def add(band_id):
     user_id = session['user_id']
     band = get_band(band_id)
     
-    if not band or not is_band_member(band_id, user_id):
+    if not band or not is_band_editor(band_id, user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
     
@@ -824,7 +826,7 @@ def edit(cifra_id):
     
     band = get_band(cifra['band_id'])
     
-    if not is_band_member(cifra['band_id'], user_id):
+    if not is_band_editor(cifra['band_id'], user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
     
@@ -897,7 +899,7 @@ def delete(cifra_id):
     
     band = get_band(cifra['band_id'])
     
-    if not is_band_admin(cifra['band_id'], user_id):
+    if not is_band_editor(cifra['band_id'], user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
     
@@ -1042,7 +1044,7 @@ def leadsheet_editor(cifra_id):
     if not cifra:
         flash('Cifra não encontrada', 'danger')
         return redirect(url_for('dashboard'))
-    if not is_band_member(cifra['band_id'], user_id):
+    if not is_band_editor(cifra['band_id'], user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
     return redirect(url_for('cifras.edit', cifra_id=cifra_id, tab='chordsheet'))
@@ -1089,8 +1091,8 @@ def chordsheet_api_transpose(cifra_id):
     from util import key_at_transpose, normalize_tom_label, normalize_transpose_semitones
 
     cifra = get_cifra(cifra_id)
-    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
-        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not cifra or not is_band_editor(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     data = request.get_json(force=True) or {}
     semitones = normalize_transpose_semitones(int(data.get('semitones', 0)))
     try:
@@ -1121,8 +1123,8 @@ def chordsheet_api_save(cifra_id):
     from chordsheet_bridge import persist_chordsheet_payload
 
     cifra = get_cifra(cifra_id)
-    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
-        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not cifra or not is_band_editor(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     data = request.get_json(force=True) or {}
     try:
         persist_chordsheet_payload(cifra_id, data)
@@ -1145,8 +1147,8 @@ def chordsheet_api_save(cifra_id):
 @login_required
 def leadsheet_api_gerar(cifra_id):
     cifra = get_cifra(cifra_id)
-    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
-        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not cifra or not is_band_editor(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     try:
         data = request.form.to_dict()
         if not data.get('song_title'):
@@ -1165,8 +1167,8 @@ def leadsheet_api_gerar(cifra_id):
 @login_required
 def leadsheet_api_salvar(cifra_id):
     cifra = get_cifra(cifra_id)
-    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
-        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not cifra or not is_band_editor(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     try:
         data = request.form.to_dict()
         if not data.get('song_title'):
@@ -1196,8 +1198,8 @@ def leadsheet_api_salvar(cifra_id):
 @login_required
 def leadsheet_api_analisar(cifra_id):
     cifra = get_cifra(cifra_id)
-    if not cifra or not is_band_member(cifra['band_id'], session['user_id']):
-        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not cifra or not is_band_editor(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     try:
         if 'audio_file' not in request.files:
             raise ValueError("Envie um arquivo de áudio.")

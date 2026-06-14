@@ -1688,9 +1688,9 @@ def remove_band_member(band_id, user_id):
 
 
 def update_band_member_role(band_id: str, user_id: str, role: str) -> bool:
-    """Atualiza papel do membro na banda (member | admin). Não altera owner."""
+    """Atualiza papel do membro na banda (member | editor | admin). Não altera owner."""
     role = (role or 'member').strip().lower()
-    if role not in ('member', 'admin'):
+    if role not in ('member', 'editor', 'admin'):
         role = 'member'
     db = get_db()
     c = db.cursor()
@@ -1702,6 +1702,26 @@ def update_band_member_role(band_id: str, user_id: str, role: str) -> bool:
     db.commit()
     db.close()
     return ok
+
+
+def get_band_member_role(band_id: str, user_id: str) -> str | None:
+    """Papel na banda: owner, admin, editor, member ou None se não for membro."""
+    band = get_band(band_id)
+    if not band or not user_id:
+        return None
+    if band['owner_id'] == user_id:
+        return 'owner'
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT role FROM band_members WHERE band_id = ? AND user_id = ?',
+        (band_id, user_id),
+    )
+    row = c.fetchone()
+    db.close()
+    if not row:
+        return None
+    return (row['role'] or 'member').strip().lower()
 
 
 def is_superadmin_env_only(user_id: str) -> bool:
@@ -1749,6 +1769,13 @@ def is_band_admin(band_id, user_id):
     result = c.fetchone() is not None
     db.close()
     return result
+
+
+def is_band_editor(band_id, user_id) -> bool:
+    """Pode criar/editar/excluir cifras, letras, chord sheets e setlists."""
+    if is_band_admin(band_id, user_id):
+        return True
+    return get_band_member_role(band_id, user_id) == 'editor'
 
 
 # ── Cifras ─────────────────────────────────────────────────────────────────

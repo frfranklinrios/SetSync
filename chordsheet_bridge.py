@@ -262,14 +262,18 @@ def render_cifra_chordsheet_html(
     tom_orig = normalize_tom_label(cifra.get("tom_original") or "")
     target_key = display_key or key_at_transpose(tom_orig, performance)
 
-    payload = cifra_chart_payload(cifra, grade_list=grade_list)
-    if not payload:
-        return None
-    chart = parse_chart(
-        payload["source"],
-        meta=payload.get("meta"),
-        prefs=payload.get("prefs"),
-    )
+    stored = load_stored_chordsheet(cifra)
+    if stored:
+        chart = payload_to_chart(stored)
+    else:
+        payload = cifra_chart_payload(cifra, grade_list=grade_list)
+        if not payload:
+            return None
+        chart = parse_chart(
+            payload["source"],
+            meta=payload.get("meta"),
+            prefs=payload.get("prefs"),
+        )
     source_key = normalize_tom_label(chart.meta.key or tom_orig)
     if grade_list is not None:
         # Grade já transposta pelo caller (legado) — só garante o rótulo do tom.

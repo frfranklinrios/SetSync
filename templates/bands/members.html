@@ -36,25 +36,27 @@
                 <span class="row-badge owner">Cantora/cantor</span>
                 {% elif member.role == 'admin' %}
                 <span class="row-badge owner">Admin da banda</span>
+                {% elif member.role == 'editor' %}
+                <span class="row-badge neutral">Editor</span>
                 {% else %}
                 <span class="row-badge neutral">Membro</span>
                 {% endif %}
-                {% if band.owner_id != member.id and band.owner_id == current_user.id %}
+                {% if band.owner_id != member.id %}
                 <div class="row-actions d-flex align-items-center gap-1">
+                    {% if is_owner or member.role != 'admin' %}
                     <form action="{{ url_for('bands.set_member_role', band_id=band.id, member_id=member.id) }}" method="POST" class="d-inline">
                         {% include 'partials/csrf_input.html' %}
-                        {% if member.role == 'admin' %}
-                        <input type="hidden" name="role" value="member">
-                        <button type="submit" class="btn btn-outline-secondary btn-sm" title="Remover admin da banda">
-                            <i class="fas fa-user-shield me-1"></i> Membro
-                        </button>
-                        {% else %}
-                        <input type="hidden" name="role" value="admin">
-                        <button type="submit" class="btn btn-outline-primary btn-sm" title="Tornar admin da banda">
-                            <i class="fas fa-user-shield me-1"></i> Admin
-                        </button>
-                        {% endif %}
+                        <select name="role" class="form-select form-select-sm" style="width:auto;min-width:7.5rem;font-size:0.78rem;"
+                                onchange="this.form.submit()" aria-label="Papel de {{ user_display_name(member) }}">
+                            <option value="member" {% if member.role not in ('admin', 'editor') %}selected{% endif %}>Membro</option>
+                            <option value="editor" {% if member.role == 'editor' %}selected{% endif %}>Editor</option>
+                            {% if is_owner %}
+                            <option value="admin" {% if member.role == 'admin' %}selected{% endif %}>Admin</option>
+                            {% endif %}
+                        </select>
                     </form>
+                    {% endif %}
+                    {% if is_owner or member.role != 'admin' %}
                     <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
                           method="POST" class="d-inline"
                           onsubmit="return confirm('Remover {{ user_display_name(member) }} da banda?')">
@@ -63,6 +65,7 @@
                             <i class="fas fa-user-minus"></i>
                         </button>
                     </form>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -91,9 +94,10 @@
             <div class="card-header">Papéis na banda</div>
             <div class="card-body">
                 <p class="text-muted mb-0" style="font-size:0.85rem;">
-                    <strong>Admin da banda</strong> gerencia membros e convites.
-                    <strong>Membros</strong> editam cifras e eventos da agenda.
-                    Isso é diferente do <strong>superadmin do app</strong> (painel Admin global).
+                    <strong>Membro</strong> — vê cifras, toca no palco e usa setlists.<br>
+                    <strong>Editor</strong> — cria, edita e exclui cifras, letras, chord sheets e setlists.<br>
+                    <strong>Admin</strong> — gerencia membros, convites e configurações da banda.<br>
+                    <strong>Proprietário</strong> — controle total, incluindo promover admins.
                 </p>
             </div>
         </div>

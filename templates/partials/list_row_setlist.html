@@ -1,5 +1,5 @@
 {# Linha de setlist — lista e aba da banda. #}
-{% macro setlist_row(setlist, band, is_admin=false) %}
+{% macro setlist_row(setlist, band, can_edit=false, is_admin=false) %}
 <div class="row-item">
     <div class="row-info">
         <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}">
@@ -16,7 +16,7 @@
         <a href="{{ url_for('setlists.tocar', setlist_id=setlist.id) }}" class="icon-btn" title="Tocar setlist">
             <i class="fas fa-play"></i>
         </a>
-        {% if is_admin %}
+        {% if can_edit %}
         <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
               onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
             {% include 'partials/csrf_input.html' %}
@@ -28,10 +28,10 @@
     </div>
     {% else %}
     <div class="row-actions">
+        {% if can_edit %}
         <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="icon-btn" title="Adicionar músicas">
             <i class="fas fa-plus"></i>
         </a>
-        {% if is_admin %}
         <form action="{{ url_for('setlists.delete', setlist_id=setlist.id) }}" method="POST" class="d-inline"
               onsubmit="return confirm('Excluir setlist {{ setlist.name }}?')">
             {% include 'partials/csrf_input.html' %}

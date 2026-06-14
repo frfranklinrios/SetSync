@@ -267,10 +267,10 @@
             <div class="d-flex gap-2 flex-wrap">
                 <a href="{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}"
                    class="btn btn-sm btn-primary" title="Tecla P">▶ Modo Tocar</a>
-                {% if is_member %}
+                {% if can_edit %}
                 <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
                 {% endif %}
-                {% if is_admin %}
+                {% if can_edit %}
                 <form action="{{ url_for('cifras.delete', cifra_id=cifra.id) }}" method="POST" class="d-inline">
                     {% include 'partials/csrf_input.html' %}
                     <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -323,7 +323,7 @@
                 <div class="leadsheet-view-panel cifra-sheet-paper">
                     <div id="leadsheet-view-mount"></div>
                 </div>
-                {% elif is_member %}
+                {% elif can_edit %}
                 <div class="chordsheet-empty-hint">
                     <p class="mb-2">Nenhum chord sheet cadastrado.</p>
                     <a href="{{ url_for('cifras.edit', cifra_id=cifra.id, tab='chordsheet') }}" class="btn btn-outline-info btn-sm">

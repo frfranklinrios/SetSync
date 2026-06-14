@@ -154,12 +154,14 @@ class Chart:
     prefs: Prefs = field(default_factory=Prefs)
     sections: list[tuple[int, str]] = field(default_factory=list)
     page_breaks: list[int] = field(default_factory=list)
+    line_breaks: list[int] = field(default_factory=list)
     bars: list[Bar] = field(default_factory=list)
 
     def to_source(self) -> str:
         lines: list[str] = []
         sec_at = {i: t for i, t in self.sections}
         pb_at = set(self.page_breaks)
+        line_break_starts = set(self.line_breaks)
         for i, bar in enumerate(self.bars):
             if i in pb_at:
                 lines.append("+")
@@ -172,7 +174,13 @@ class Chart:
                 lines.append(bar.nav)
                 continue
             token = _bar_to_token(bar)
-            if lines and not lines[-1].startswith(("=", "+", "-")) and lines[-1] not in NAV_MARKERS:
+            force_new_line = i in line_break_starts
+            if (
+                not force_new_line
+                and lines
+                and not lines[-1].startswith(("=", "+", "-"))
+                and lines[-1] not in NAV_MARKERS
+            ):
                 if lines[-1] and not lines[-1].startswith("="):
                     lines[-1] += f" {token}"
                     continue
@@ -623,6 +631,16 @@ def _try_nav_line(line: str) -> str | None:
     return None
 
 
+def _mark_source_line_break(chart: Chart) -> None:
+    """Marca início de nova linha do editor (índice do próximo compasso)."""
+    if not chart.bars:
+        return
+    idx = len(chart.bars)
+    if chart.line_breaks and chart.line_breaks[-1] == idx:
+        return
+    chart.line_breaks.append(idx)
+
+
 def parse_chart(
     source: str,
     meta: dict[str, Any] | None = None,
@@ -699,12 +717,14 @@ def parse_chart(
             pending_chord_line = line
             continue
 
+        _mark_source_line_break(chart)
         line_start = len(chart.bars)
         tokens = _tokenize_chord_line(line)
         bar_index = _parse_tokens_into_chart(tokens, chart, state, history, bar_index)
         _finalize_line_repeat(chart, line_start)
 
     if pending_chord_line:
+        _mark_source_line_break(chart)
         line_start = len(chart.bars)
         tokens = _tokenize_chord_line(pending_chord_line)
         bar_index = _parse_tokens_into_chart(tokens, chart, state, history, bar_index)

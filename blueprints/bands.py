@@ -5,9 +5,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from blueprints.auth import login_required
 from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_bands,
                 update_band, delete_band, get_band_members, add_band_member, remove_band_member,
-                is_band_member, is_band_admin, is_superadmin, can_delete_band,
+                is_band_member, is_band_admin, is_band_editor, is_superadmin, can_delete_band,
                 can_edit_band_settings, set_band_logo_filename, get_user,
-                update_band_member_role,
+                update_band_member_role, get_band_member_role,
                 enrich_bands_for_display, user_display_name)
 from band_invites import make_band_invite_token
 from security import external_url_for
@@ -95,6 +95,7 @@ def view(band_id):
         setlists.append(s)
     owner = get_user(band['owner_id'])
     admin = is_band_admin(band_id, user_id)
+    can_edit = is_band_editor(band_id, user_id)
     from blueprints.cifras import vocalist_label_for_band
     vocalist_name = vocalist_label_for_band(band_id)
 
@@ -140,6 +141,7 @@ def view(band_id):
         vocalist_name=vocalist_name,
         is_admin=admin,
         is_member=True,
+        can_edit=can_edit,
         is_superadmin=is_superadmin(user_id),
         band_has_logo=band_has_logo(band),
         band_logo_url=url_for('bands.band_logo', band_id=band_id) if band_has_logo(band) else None,
@@ -280,6 +282,7 @@ def members(band_id):
         band_members=band_members,
         vocalist_user_ids=vocalist_user_ids,
         invite_url=invite_url,
+        is_owner=(band['owner_id'] == user_id),
     )
 
 @bands_bp.route('/<band_id>/invite', methods=['POST'])
@@ -328,23 +331,35 @@ def set_member_role(band_id, member_id):
     user_id = session['user_id']
     band = get_band(band_id)
 
-    if not band or band['owner_id'] != user_id:
-        flash('Só o titular da banda pode alterar papéis de membros.', 'danger')
+    if not band or not is_band_admin(band_id, user_id):
+        flash('Só administradores da banda podem alterar papéis de membros.', 'danger')
         return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
 
     if member_id == band['owner_id']:
         flash('O titular da banda não pode ter o papel alterado.', 'warning')
         return redirect(url_for('bands.members', band_id=band_id))
 
+    current_role = get_band_member_role(band_id, member_id)
+    if current_role == 'admin' and band['owner_id'] != user_id:
+        flash('Só o titular pode alterar o papel de administradores.', 'warning')
+        return redirect(url_for('bands.members', band_id=band_id))
+
     role = (request.form.get('role') or 'member').strip().lower()
-    if role not in ('member', 'admin'):
+    if role not in ('member', 'editor', 'admin'):
         role = 'member'
+    if role == 'admin' and band['owner_id'] != user_id:
+        flash('Só o titular da banda pode promover administradores.', 'warning')
+        return redirect(url_for('bands.members', band_id=band_id))
 
     if update_band_member_role(band_id, member_id, role):
         target = get_user(member_id)
-        label = 'administrador da banda' if role == 'admin' else 'membro'
+        labels = {
+            'admin': 'administrador da banda',
+            'editor': 'editor',
+            'member': 'membro',
+        }
         flash(
-            f'{user_display_name(target)} agora é {label} em {band["name"]}.',
+            f'{user_display_name(target)} agora é {labels.get(role, role)} em {band["name"]}.',
             'success',
         )
     else:

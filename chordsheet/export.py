@@ -22,6 +22,7 @@ def chart_to_payload(chart: Chart) -> dict[str, Any]:
             {"bar_index": i, "title": t} for i, t in chart.sections
         ],
         "page_breaks": list(chart.page_breaks),
+        "line_breaks": list(chart.line_breaks),
         "bars": [
             {
                 "chords": list(b.chords) if b.chords else ["%"],
@@ -47,11 +48,15 @@ def payload_to_chart(data: dict[str, Any]) -> Chart:
     from chordsheet.prefs import Prefs
 
     if data.get("source"):
-        return parse_chart(
+        chart = parse_chart(
             data["source"],
             meta=data.get("meta"),
             prefs=data.get("prefs"),
         )
+        stored_breaks = [int(x) for x in (data.get("line_breaks") or [])]
+        if stored_breaks and not chart.line_breaks:
+            chart.line_breaks = stored_breaks
+        return chart
 
     chart = Chart(
         meta=ChartMeta.from_dict(data.get("meta")),
@@ -60,6 +65,7 @@ def payload_to_chart(data: dict[str, Any]) -> Chart:
     for s in data.get("sections") or []:
         chart.sections.append((int(s["bar_index"]), str(s["title"])))
     chart.page_breaks = [int(x) for x in (data.get("page_breaks") or [])]
+    chart.line_breaks = [int(x) for x in (data.get("line_breaks") or [])]
     from chordsheet.parser import _grid_to_chords, _parse_beat_segment
 
     for raw in data.get("bars") or []:

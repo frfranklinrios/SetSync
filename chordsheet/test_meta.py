@@ -110,6 +110,24 @@ class MetaCharactersTest(unittest.TestCase):
         flat = chart_to_grade_flat(chart)
         self.assertEqual(flat[0]["acordes"], ["C", "D"])
 
+    def test_source_line_breaks_render_on_new_row(self):
+        chart = parse_chart("C Am F G\nD Em Am G", meta={"title": "T"})
+        self.assertEqual(chart.line_breaks, [4])
+        html = render_chart_html(chart)
+        self.assertEqual(html.count("cs-row-bars"), 2)
+
+    def test_to_source_roundtrip_preserves_line_breaks(self):
+        from chordsheet.export import chart_to_payload, payload_to_chart
+
+        src = "C Am\nF G\nD Em"
+        chart = parse_chart(src, meta={"title": "T"})
+        self.assertEqual(chart.line_breaks, [2, 4])
+        payload = chart_to_payload(chart)
+        self.assertIn("\n", payload["source"])
+        restored = payload_to_chart(payload)
+        self.assertEqual(restored.line_breaks, [2, 4])
+        self.assertEqual(restored.to_source(), chart.to_source())
+
 
 if __name__ == "__main__":
     unittest.main()
