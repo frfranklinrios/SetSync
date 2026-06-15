@@ -230,7 +230,7 @@ body { overflow-x: hidden; }
 }
 
 .cifra-body {
-    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     line-height: 1.95;
     color: #e2e8f0;
     padding: 2rem 4vw;
@@ -277,7 +277,7 @@ body { overflow-x: hidden; }
 }
 .cifra-body .cifra-tab-line {
     display: block;
-    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     font-size: 0.82rem;
     line-height: 1.32;
     white-space: pre;
@@ -677,7 +677,7 @@ body.play-mode.edges-hint .tap-zone {
 }
 /* ── Chord Sheet (play mode) — detalhes em leadsheet-play.css ─────────── */
 .grade-bars-play {
-    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     font-size: 1.05em;
     line-height: 1.75;
     white-space: normal;
@@ -707,7 +707,7 @@ body.play-mode.edges-hint .tap-zone {
     padding: 0 0.15rem;
 }
 .grade-chord-play {
-    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     font-size: 1em;
     font-weight: 700;
     color: var(--chord-highlight);
@@ -722,12 +722,12 @@ body.play-mode.edges-hint .tap-zone {
 [data-theme="light"] .grade-part-title-play { color: #64748b; }
 /* Layout unificado com app Cifras */
 .grade-bars-play .grade-visual-root {
-    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     font-size: 1.05em;
     line-height: 1.75;
 }
 .grade-bars-play .grade-visual-chord {
-    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     font-size: 1em;
     color: var(--chord-highlight);
 }
@@ -735,10 +735,10 @@ body.play-mode.edges-hint .tap-zone {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand+SC&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=15">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=9">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=17">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=10">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=16">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=12">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=14">
 <style>
 #cifra-content.grade-mode .cs-play-embed.setsync-cs-sheet { padding: 0; }
 </style>

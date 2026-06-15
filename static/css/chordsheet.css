@@ -1,3 +1,12 @@
+/* Bravura — fonte SMuFL para folha de acordes (chord sheet) */
+@font-face {
+    font-family: 'Bravura';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400;
+    src: url('../fonts/bravura-latin-400-normal.woff2') format('woff2');
+}
+
 /* Variáveis compartilhadas (view/play/embed) — não sobrescrever --ss-bg do tema do app */
 :root {
     --rb-paper: #ffffff;
@@ -5,8 +14,8 @@
     --rb-line: #44403c;
     --ss-chord: var(--chord-highlight, #c2410c);
     --ui-font: "Inter", "Roboto", "SF Pro Text", system-ui, -apple-system, sans-serif;
-    --cifra-mono-font: "PT Mono", ui-monospace, "Courier New", Courier, monospace;
-    --sheet-font: var(--cifra-mono-font);
+    --cifra-mono-font: "JetBrains Mono", ui-monospace, "Courier New", Courier, monospace;
+    --sheet-font: "Bravura", "Times New Roman", Times, serif;
 }
 
 /* UI escura só na página standalone do editor */

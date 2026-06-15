@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-#conteudo { font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace); font-size: 0.88rem;
+#conteudo { font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace); font-size: 0.88rem;
             resize: vertical; min-height: 320px; }
 
 .cifra-edit-tabs .nav-link { font-size: 0.875rem; font-weight: 500; }
@@ -69,7 +69,7 @@
 .chordsheet-embed textarea#source {
     width: 100%;
     min-height: 280px;
-    font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     font-size: 0.84rem;
     resize: vertical;
     background: var(--card-bg);
@@ -234,8 +234,8 @@
     </div>
 </form>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=15">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=12">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=17">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=14">
 <script src="{{ url_for('static', filename='js/csrf.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=3"></script>

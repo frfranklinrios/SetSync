@@ -1,5 +1,5 @@
 /* Lead sheet — layout alinhado ao app Cifras */
-.grade-visual-root { font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace); font-size: 0.82rem; }
+.grade-visual-root { font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace); font-size: 0.82rem; }
 .grade-visual-header { color: var(--muted, #94a3b8); font-size: 0.75rem; margin-bottom: 0.65rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--border, #334155); }
 .grade-visual-parte { margin-bottom: 1.1rem; }
 .grade-visual-parte-nome {

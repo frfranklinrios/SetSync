@@ -1,5 +1,5 @@
 /**
- * Modo tocar — tipografia PT Mono (cifra normal).
+ * Modo tocar — tipografia JetBrains Mono (cifra normal).
  * Chord sheet (tecla G) usa Patrick Hand SC via leadsheet-play.css.
  */
 
@@ -33,7 +33,7 @@
 #play-app #cifra-content .leadsheet-play-wrap .accidental,
 #play-app #cifra-content .leadsheet-play-wrap .chord-quality,
 #play-app #cifra-content .grade-empty-play {
-  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, "Courier New", Courier, monospace) !important;
+  font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, "Courier New", Courier, monospace) !important;
   font-variant-ligatures: none !important;
   font-feature-settings: "liga" 0 !important;
 }

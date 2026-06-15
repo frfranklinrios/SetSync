@@ -278,7 +278,7 @@ html.setlist-print-root.pdfgen .setlist-print-song + .setlist-print-song {
   font-size: clamp(1.1rem, 3vw, 1.45rem);
   font-weight: 800;
   color: var(--ss-chord, #c2410c);
-  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+  font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
 }
 
 .palco-key-orig {
@@ -464,7 +464,7 @@ html.setlist-print-root.palco-compact .palco-song-artist {
 /* Cifras — mesmo layout e tipografia do modo tocar */
 .setlist-print-sheet.cifra-container,
 .setlist-print-sheet.cifra-sheet-paper {
-  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, "Courier New", Courier, monospace) !important;
+  font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, "Courier New", Courier, monospace) !important;
   font-size: 1.05rem;
   line-height: 1.45;
   font-variant-ligatures: none;
@@ -614,7 +614,7 @@ html.setlist-print-root.palco-compact .palco-song-artist {
 
 .setlist-print-grade-line {
   margin: 0 0 0.35rem;
-  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+  font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
   color: var(--ss-chord, #c2410c);
   font-weight: 600;
 }

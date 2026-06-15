@@ -381,7 +381,7 @@
 }
 
 .leadsheet-play-wrap {
-  font-family: var(--cifra-mono-font, "PT Mono", ui-monospace, monospace);
+  font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
   font-size: clamp(0.95rem, 2.8vw, 1.12rem);
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0;

@@ -1,10 +1,10 @@
 /**
  * SetSync — tipografia unificada (UI + cifras).
- * Sans: Inter · Mono: PT Mono (acordes, cifras, código).
+ * Sans: Inter · Mono: JetBrains Mono (acordes, cifras, código).
  */
 :root {
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'PT Mono', ui-monospace, 'Courier New', Courier, monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Courier New', Courier, monospace;
   --cifra-mono-font: var(--font-mono);
 }
 
