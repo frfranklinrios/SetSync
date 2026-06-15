@@ -332,6 +332,15 @@
           <li>Para quem já está no SetSync, também dá para adicionar pelo <strong>e-mail cadastrado</strong> na mesma tela.</li>
         </ul>
 
+        <h3>Papéis na banda</h3>
+        <table class="help-table">
+          <tr><th>Membro</th><td>Vê cifras, chord sheets, setlists e usa o Modo Tocar.</td></tr>
+          <tr><th>Editor</th><td>Tudo do membro, mais criar, editar e excluir <strong>cifras</strong>, <strong>letras</strong>, <strong>chord sheets</strong> e <strong>setlists</strong>.</td></tr>
+          <tr><th>Admin</th><td>Tudo do editor, mais convites, membros e configurações da banda.</td></tr>
+          <tr><th>Proprietário</th><td>Controle total da banda, inclusive promover admins.</td></tr>
+        </table>
+        <p class="mb-0">Admins e proprietários promovem editores em <span class="code">Membros</span> — útil para quem monta cifras sem gerenciar a banda.</p>
+
         <h3>Cantoras/cantores</h3>
         <ul>
           <li>Em <span class="code">Configurações → Cantoras/cantores</span>, cadastre nomes (ex.: Ana, Dani).</li>
@@ -377,9 +386,10 @@
 
         <h3>Chord sheet (progressão harmônica)</h3>
         <ul>
-          <li>Além da cifra com letra, você pode configurar um <strong>Chord sheet</strong> — folha só com acordes e compassos.</li>
-          <li>Na visualização da cifra, use as abas <strong>Cifra</strong>, <strong>Chord Sheet</strong> e <strong>Letra</strong>. Para cadastrar o chord sheet, vá em <strong>Editar</strong> → aba <strong>Chord Sheet</strong>.</li>
-          <li>Músicas que já tinham grade antiga são convertidas automaticamente na primeira abertura do editor.</li>
+          <li>Além da cifra com letra, configure um <strong>Chord sheet</strong> — folha só com acordes e compassos (sem letra).</li>
+          <li>Na visualização: abas <strong>Cifra</strong>, <strong>Chord Sheet</strong> e <strong>Letra</strong>. Para editar: <strong>Editar</strong> → aba <strong>Chord Sheet</strong> (requer papel <strong>Editor</strong> ou admin).</li>
+          <li>Músicas com grade antiga são convertidas na primeira abertura do editor — revise e salve.</li>
+          <li>Detalhes de sintaxe, pulsos e notação: seção <a href="#chord-sheet">Chord sheet</a> abaixo.</li>
         </ul>
       </div>
     </section>
@@ -413,7 +423,7 @@
           <li>O visitante vê um <strong>menu de músicas</strong> e a letra de cada uma, <strong>sem login</strong>; a página atualiza quando você altera a setlist.</li>
           <li>Copie o link ou use o <strong>QR Code</strong> para projetor, equipe de som ou congregação.</li>
           <li><strong>Gerar novo link</strong> invalida o anterior — use se o link vazou.</li>
-          <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio).</li>
+          <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio), com opção de incluir <strong>cifras</strong>, <strong>letras</strong> e <strong>chord sheets</strong> por música.</li>
         </ul>
       </div>
     </section>
@@ -468,8 +478,11 @@
       <div class="card-header">Alertas (e-mail e WhatsApp)</div>
       <div class="card-body">
         <ul>
-          <li>Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>, cadastre <strong>WhatsApp</strong> e ative alertas por e-mail e WhatsApp.</li>
-          <li>Você recebe avisos sobre mudanças na banda: cifras, setlists, convites, eventos na agenda e quando for <strong>escalado</strong>.</li>
+          <li>Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>, cadastre seu <strong>WhatsApp</strong> (com DDD; o país 55 é assumido se omitir) e marque os alertas desejados.</li>
+          <li><strong>E-mail</strong> — notificações da banda e lembretes de agenda (padrão ligado).</li>
+          <li><strong>WhatsApp</strong> — mesmos avisos por mensagem; só funciona com número salvo no perfil.</li>
+          <li>Você recebe avisos sobre: cifras novas ou alteradas, setlists, convites, eventos na agenda e quando for <strong>escalado</strong>.</li>
+          <li>Lembretes de evento saem cerca de <strong>24 horas antes</strong> para quem está na escalação.</li>
           <li>E-mails saem de <span class="code">contato@setsync.com.br</span>.</li>
           <li>Contas <span class="code">@setsync.com.br</span> também podem usar o webmail interno (superadmin).</li>
         </ul>
@@ -492,6 +505,14 @@
           <li><span class="kbd">L</span> ou o ícone de lista abre o menu lateral com todas as músicas do setlist (toque para pular direto).</li>
         </ul>
 
+        <h3>Visualização: cifra, chord sheet ou letra</h3>
+        <ul>
+          <li>No menu superior, escolha <strong>Cifra</strong>, <strong>Chord sheet</strong> ou <strong>Letra</strong> (quando disponíveis na música).</li>
+          <li>Tecla <span class="kbd">G</span> alterna entre os modos na ordem: cifra → chord sheet → letra.</li>
+          <li>O <strong>chord sheet</strong> usa a mesma transposição da cifra (cantora/cantor e tom do palco).</li>
+          <li>Se o chord sheet parecer desatualizado após editar, force atualização (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>) — o palco guarda cache do HTML renderizado.</li>
+        </ul>
+
         <h3>Acordes no palco</h3>
         <ul>
           <li><strong>Toque em um acorde</strong> na cifra para ver o diagrama (violão/cavaco), como nas outras telas.</li>
@@ -503,7 +524,7 @@
           <tr><th><span class="kbd">+</span> / <span class="kbd">−</span></th><td>Aumenta / diminui fonte</td></tr>
           <tr><th><span class="kbd">C</span></th><td>Duas colunas</td></tr>
           <tr><th><span class="kbd">A</span></th><td>Caber na tela (ajuste automático)</td></tr>
-          <tr><th><span class="kbd">G</span></th><td>Alterna cifra com letra ↔ chord sheet (quando configurado)</td></tr>
+          <tr><th><span class="kbd">G</span></th><td>Alterna cifra → chord sheet → letra (quando houver)</td></tr>
           <tr><th><span class="kbd">F</span></th><td>Tela cheia</td></tr>
           <tr><th><span class="kbd">T</span></th><td>Tema claro / escuro</td></tr>
           <tr><th><span class="kbd">Esc</span></th><td>Fecha lista ou sai do modo tocar</td></tr>
@@ -521,7 +542,8 @@
         <p>
           O <strong>Chord sheet</strong> é uma folha só com acordes e compassos — sem letra — no formato do
           <a href="https://www.chordsheet.com/manual/" target="_blank" rel="noopener">Chord Sheet Maker</a>
-          (chordsheet.com): grade com 4 compassos por linha (ajustável), barras verticais, seções, repetições e navegação (D.C., coda, voltas).
+          (chordsheet.com): grade com barras verticais, seções, repetições e navegação (D.C., coda, voltas).
+          O padrão do SetSync é <strong>4 compassos por linha</strong> (ajustável de 1 a 8).
         </p>
         <p>
           A visualização usa o <strong>mesmo layout de folha</strong> do restante do app e respeita o <strong>tema claro ou escuro</strong>
@@ -530,42 +552,71 @@
 
         <h3>Editor Chord Sheet</h3>
         <ul>
-          <li>Abra <strong>Editar música</strong> → aba <strong>Chord Sheet</strong> (título, artista, tom e BPM ficam no topo da página, uma vez só).</li>
-          <li>À esquerda: compasso, capo e o <strong>texto-fonte</strong> no formato chordsheet.com.</li>
+          <li>Abra <strong>Editar música</strong> → aba <strong>Chord Sheet</strong> (requer papel <strong>Editor</strong>, admin ou proprietário).</li>
+          <li>Título, artista, tom e BPM ficam nos campos do topo da página — uma vez só para cifra e chord sheet.</li>
+          <li>À esquerda: compasso (<span class="code">4/4</span>, <span class="code">3/4</span>…), capo e o <strong>texto-fonte</strong>.</li>
           <li>À direita: <strong>prévia ao vivo</strong> — atualiza enquanto você digita.</li>
-          <li>Use o menu <strong>Exemplos</strong> para carregar modelos (simile, seções, ritornello, navegação).</li>
-          <li>Botões <strong>♭ −1</strong> e <strong>♯ +1</strong> transpoem o texto-fonte; <strong>Salvar na cifra</strong> grava título, tom e progressão.</li>
-          <li>O rascunho fica no navegador até você salvar; ao salvar, volta para a visualização da cifra.</li>
+          <li>Menu <strong>Exemplos</strong> carrega modelos (simile, seções, semi-pulsos, navegação).</li>
+          <li><strong>♭ −1</strong> / <strong>♯ +1</strong> transpoem o texto-fonte; <strong>Salvar chord sheet</strong> grava título, tom e progressão.</li>
+          <li>O rascunho fica no navegador até salvar; ao salvar, volta para a visualização da cifra.</li>
+          <li><strong>Enter</strong> no texto-fonte inicia uma <strong>nova linha</strong> na folha (mesmo com menos de 4 compassos na linha anterior).</li>
+        </ul>
+
+        <h3>Compassos, pulsos e semi-pulsos</h3>
+        <p>A distinção mais importante no texto-fonte:</p>
+        <table class="help-table">
+          <tr><th><span class="code">C Am F G</span></th><td><strong>Espaço</strong> = um compasso por acorde (4 compassos).</td></tr>
+          <tr><th><span class="code">C_D</span></th><td><strong>Underscore <span class="code">_</span></strong> = vários <strong>pulsos</strong> no <em>mesmo</em> compasso.</td></tr>
+          <tr><th><span class="code">C&D</span></th><td><strong>Ampersand <span class="code">&amp;</span></strong> = dois acordes no <em>mesmo tempo</em> (semi-pulsos).</td></tr>
+          <tr><th><span class="code">C_*_D</span></th><td><span class="code">*</span> dentro do compasso = pulso vazio (na folha aparece como <span class="code">.</span>).</td></tr>
+        </table>
+        <ul>
+          <li>Na <strong>prévia</strong>, todo compasso mostra <strong>todos os pulsos</strong> do compasso (ex.: 4 em 4/4).</li>
+          <li>Se houver <strong>só um acorde</strong> no compasso, ele vai no <strong>primeiro pulso</strong> e os demais aparecem com <span class="code">.</span></li>
+          <li>Exemplo visual em 4/4: compasso <span class="code">C</span> → <span class="code">C . . .</span>; compasso <span class="code">F_G</span> → <span class="code">F G . .</span></li>
+          <li>Compasso inteiro vazio: token <span class="code">*</span> sozinho.</li>
         </ul>
 
         <h3>Sintaxe básica (texto-fonte)</h3>
         <ul>
-          <li>Uma <strong>linha</strong> = uma fileira de compassos (espaços separam compassos): <span class="code">C Am F G</span></li>
           <li><strong>Seção</strong> com barra dupla: <span class="code">= Refrão</span> — só rótulo: <span class="code">: Intro</span></li>
-          <li><strong>Simile</strong> (repetir compasso): <span class="code">%</span> (1 compasso), <span class="code">%%</span> (2), <span class="code">%2</span> (N compassos)</li>
-          <li><strong>Dois compassos</strong>: <span class="code">C Am</span> (espaço entre tokens)</li>
-          <li><strong>Vários pulsos no mesmo compasso</strong>: <span class="code">C_Am</span> (underscore <span class="code">_</span>)</li>
-          <li><strong>Semi-pulsos</strong> (dois acordes no mesmo tempo): <span class="code">C&amp;Am</span> (extensão SetSync)</li>
+          <li><strong>Rótulo acima da pauta</strong>: <span class="code">- Verso: texto…</span></li>
+          <li><strong>Simile</strong>: <span class="code">%</span> (1 compasso), <span class="code">%%</span> (2), <span class="code">%2</span>…<span class="code">%4</span> (N compassos)</li>
           <li><strong>Ritornello</strong>: <span class="code">|: C Am F G :|</span></li>
-          <li><strong>Voltas</strong>: <span class="code">1. C Am</span> na linha seguinte <span class="code">X 2. Dm G</span></li>
-          <li><strong>Comentários</strong> (não aparecem na folha): linhas começando com <span class="code">#</span></li>
-          <li><strong>Quebra de página</strong>: <span class="code">+</span> ou <span class="code">+ Verso 2</span></li>
+          <li><strong>Voltas</strong>: <span class="code">1. C Am</span> na linha seguinte <span class="code">X 2. Dm G</span> (<span class="code">X</span> alinha a 2ª volta)</li>
+          <li><strong>Comentários</strong> (não imprimem): linhas com <span class="code">#</span></li>
+          <li><strong>Quebra de página</strong> (impressão): <span class="code">+</span> ou <span class="code">+ Verso 2</span></li>
+          <li><strong>Acorde opcional</strong>: <span class="code">Am?</span> — <strong>batidas</strong>: <span class="code">G,,,</span></li>
+          <li><strong>Repetição de grupo</strong>: <span class="code">(A B C D)x2</span> — não duplica compassos no texto; marca <span class="code">|:</span> … <span class="code">:|</span></li>
+        </ul>
+
+        <h3>Estilo de notação (preferências)</h3>
+        <p>Em <strong>Preferências de layout → Notação</strong>:</p>
+        <table class="help-table">
+          <tr><th>Brasil</th><td>Padrão. Ex.: <span class="code">C7+</span>, <span class="code">G°</span>, <span class="code">Cm7b5</span>, <span class="code">Am</span>. Fonte monoespaçada (JetBrains Mono).</td></tr>
+          <tr><th>Internacional</th><td>Jazz: <span class="code">CΔ7</span>, <span class="code">Cø7</span>, símbolos musicais (fonte Bravura).</td></tr>
+          <tr><th>Americana</th><td><span class="code">Cmaj7</span>, <span class="code">Gdim</span> — convenção EUA, fonte monoespaçada.</td></tr>
+        </table>
+        <ul>
+          <li>Cifras importadas com <span class="code">A-</span> (menor com hífen) são normalizadas para <span class="code">Am</span> no estilo Brasil.</li>
+          <li>As opções Maj7 / Dim / ½dim nas preferências aparecem ao escolher <strong>Internacional</strong>.</li>
+        </ul>
+
+        <h3>Preferências de layout (editor)</h3>
+        <ul>
+          <li><strong>Compassos por linha</strong> (1–8), tamanho da fonte, espaçamento e alinhamento dos acordes.</li>
+          <li><strong>Estilo de barra</strong>: o padrão SetSync é <strong>Tab</strong> (pauta horizontal). <strong>Regular</strong> é o mais próximo do PDF clássico do chordsheet.com.</li>
+          <li><strong>Rodapé</strong> com marca SetSync e data (pode desligar na impressão).</li>
         </ul>
 
         <h3>Onde ver no app</h3>
         <ul>
           <li><strong>Visualização da cifra</strong> — abas <strong>Cifra</strong>, <strong>Chord Sheet</strong> e <strong>Letra</strong>, já transpostas conforme o tom escolhido.</li>
-          <li><strong>Modo Tocar</strong> — menu <strong>Cifra / Chord sheet / Letra</strong> ou tecla <span class="kbd">G</span> para alternar a visualização.</li>
-          <li>A <strong>transposição</strong> do Modo Tocar e da visualização também vale para o chord sheet.</li>
+          <li><strong>Modo Tocar</strong> — menu <strong>Cifra / Chord sheet / Letra</strong> ou tecla <span class="kbd">G</span>.</li>
+          <li><strong>PDF da setlist</strong> (Pro/Worship) — seção opcional de chord sheets por música.</li>
         </ul>
 
-        <h3>Preferências de layout (editor)</h3>
-        <ul>
-          <li><strong>Compassos por linha</strong> (1–8), tamanho da fonte, espaçamento e estilo de barra (Regular, Grille, Tab, etc.).</li>
-          <li>O padrão do SetSync é <strong>Tab</strong> (linhas horizontais). <strong>Regular</strong> é o mais próximo do PDF clássico do chordsheet.com.</li>
-        </ul>
-
-        <h3>O que o SetSync segue do manual</h3>
+        <h3>Manual chordsheet.com</h3>
         <ul>
           <li><a href="https://www.chordsheet.com/manual/grid" target="_blank" rel="noopener">Grid system</a> — compassos por linha e alinhamento vertical.</li>
           <li><a href="https://www.chordsheet.com/manual/style" target="_blank" rel="noopener">Bar line style</a> — divisórias, simile e estilos de pauta.</li>
@@ -574,9 +625,9 @@
         </ul>
 
         <div class="help-callout">
-          Manual chordsheet.com: <a href="https://www.chordsheet.com/manual/quickstart" target="_blank" rel="noopener">Quickstart</a>.
-          Especificação SetSync (IA / integração): <code>docs/chordsheet-formato.md</code> e prompt em <code>docs/chordsheet-prompt-ia.md</code>.
-          Músicas antigas com grade já salva abrem no editor com a progressão convertida para texto — revise e salve para fixar no novo formato.
+          Quickstart chordsheet.com: <a href="https://www.chordsheet.com/manual/quickstart" target="_blank" rel="noopener">manual oficial</a>.
+          Especificação técnica SetSync (IA / integração): <code>docs/chordsheet-formato.md</code>.
+          Músicas antigas com grade salva abrem no editor com a progressão convertida — revise pulsos, notação e salve para fixar no novo formato.
         </div>
       </div>
     </section>
@@ -655,11 +706,19 @@
           <li>Use <strong>Modo Tocar</strong> em tela cheia (<span class="kbd">F</span>) para ler cifras no palco.</li>
         </ul>
 
+        <h3>Chord sheet não renderiza ou notação estranha</h3>
+        <ul>
+          <li>Recarregue com <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span> (cache do navegador ou do Modo Tocar).</li>
+          <li>Confira <strong>Preferências → Notação</strong>: o padrão é <strong>Brasil</strong>. Use <strong>Internacional</strong> só se quiser símbolos jazz (Δ, ø).</li>
+          <li>Acordes com hífen (<span class="code">A-</span>) de cifras antigas viram <span class="code">Am</span> no estilo Brasil após salvar de novo.</li>
+          <li>Se aparecer erro de sessão, volte à cifra e entre de novo em <strong>Editar → Chord Sheet</strong>.</li>
+          <li>Confira se há texto na área <strong>Fonte</strong> e se os compassos estão separados por <strong>espaço</strong> (um compasso por token).</li>
+        </ul>
+
         <h3>Chord sheet não renderiza no editor</h3>
         <ul>
-          <li>Recarregue a página do editor com <span class="kbd">Ctrl</span>+<span class="kbd">F5</span> (cache antigo do navegador).</li>
-          <li>Se aparecer erro de sessão, volte à cifra, entre de novo em <strong>Configurar Chord Sheet</strong>.</li>
-          <li>Confira se há texto na área <strong>Fonte</strong> e se os compassos estão separados por espaços.</li>
+          <li>Recarregue a página do editor com <span class="kbd">Ctrl</span>+<span class="kbd">F5</span>.</li>
+          <li>Sem permissão? Só <strong>Editor</strong>, admin ou proprietário podem salvar chord sheets.</li>
         </ul>
       </div>
     </section>

@@ -44,9 +44,10 @@ Baseado no [Chord Sheet Maker](https://www.chordsheet.com/) (meta caracteres e e
 
 ```
 C D       →  | C | D |           dois compassos
+C       →  | C . . . |         um compasso, 4/4 — acorde no 1º pulso
 C_D       →  | C   D · · |       um compasso, 4/4
-C&D       →  | C | D |             um compasso, metade cada
-C&D_E     →  | C|D  E |           semi-pulso no 1º tempo + E no 2º
+C&D       →  | C|D . . . |       semi-pulsos no 1º pulso + pontos
+C&D_E     →  | C|D  E . |           semi-pulso no 1º tempo + E no 2º
 ```
 
 ### Linhas especiais
@@ -108,6 +109,7 @@ Estrutura **obrigatória** para agentes de IA, API e persistência:
     "font_size": "M",
     "line_spacing": "normal",
     "align_chords": "auto",
+    "notation_style": "br",
     "maj7_style": "delta",
     "dim_style": "circle",
     "half_dim_style": "oslash",
@@ -158,7 +160,7 @@ O parser classifica cada linha nesta ordem:
 C Am F G
 ```
 
-→ 4 compassos; em 4/4 cada um mostra o acorde **centralizado**.
+→ 4 compassos. Em 4/4, cada compasso com **um acorde** exibe o acorde no **primeiro pulso** e os demais pulsos com `.` (ex.: `C` → `C . . .`).
 
 ### 4.2 Vários pulsos no mesmo compasso — `_`
 
@@ -166,9 +168,10 @@ O **`_`** une segmentos no **mesmo compasso**, um acorde por **pulso inteiro**.
 
 | Fonte (4/4) | `pulse_grid` | Prévia |
 |-------------|--------------|--------|
-| `C_D` | `[["C"], ["D"]]` | Colunas: C · · · / D ocupa 1º e 2º tempo; 3º e 4º = `·` |
+| `C` | `[["C"]]` | `C . . .` (4 colunas; 3 pontos) |
+| `C_D` | `[["C"], ["D"]]` | `C D . .` |
 | `C_D_E_F` | 4 pulsos | 4 colunas preenchidas |
-| `C_*_*_D` | C, vazio, vazio, D | `*` dentro do segmento = pulso vazio |
+| `C_*_*_D` | C, vazio, vazio, D | `C . . D` |
 
 > `C D` (espaço) = **dois compassos**. `C_D` = **um compasso**.
 
@@ -176,10 +179,10 @@ O **`_`** une segmentos no **mesmo compasso**, um acorde por **pulso inteiro**.
 
 O **`&`** divide um **único pulso** em semi-pulsos.
 
-| Fonte | `pulse_grid` | Prévia |
-|-------|--------------|--------|
-| `C&D` | `[["C", "D"]]` | Compasso dividido 50% + 50% |
-| `C&D_E` | `[["C","D"], ["E"]]` | 1º tempo dividido + 2º tempo com E |
+| Fonte | `pulse_grid` | Prévia (4/4) |
+|-------|--------------|--------------|
+| `C&D` | `[["C", "D"]]` | 1º pulso dividido (C\|D) + `. . .` |
+| `C&D_E` | `[["C","D"], ["E"]]` | 1º tempo dividido + E no 2º + `. .` |
 | `C&D_E&F_G` | 4 segmentos | Combina `&` e `_` |
 | `C&*_D` | C + vazio no 1º tempo; D no 2º | |
 
@@ -313,12 +316,20 @@ Parser: `chordsheet/chord_token.py`.
 
 ### 5.3 Grafia visual (`prefs`)
 
+| `notation_style` | Exemplo | Fonte acordes |
+|------------------|---------|---------------|
+| `br` (padrão) | `C7+`, `G°`, `Cm7b5`, `Am` | JetBrains Mono |
+| `intl` | `CΔ7`, `Cø7` | Bravura Text (SMuFL) |
+| `us` | `Cmaj7`, `Gdim` | JetBrains Mono |
+
+Detalhes por estilo (`effective_quality_prefs`):
+
 | Pref | Valores | Exemplo |
 |------|---------|---------|
-| `maj7_style` | `delta`, `MA7`, `maj7` | `Cmaj7` → `CΔ7` |
+| `maj7_style` | `delta`, `MA7`, `maj7` | `Cmaj7` → `CΔ7` (intl) |
 | `dim_style` | `circle`, `dim` | `Cdim` → `C°` |
-| `half_dim_style` | `oslash`, `m7b5` | `Cm7b5` → `Cø7` |
-| (automático) | — | `aug` → `+` |
+| `half_dim_style` | `oslash`, `m7b5` | `Cm7b5` → `Cø7` (intl) ou `Cm7b5` (br) |
+| (automático) | — | `aug` → `+`; `A-` → `Am` (br) |
 
 O SetSync também aplica grafia do tom da cifra (`apply_chart_cifra_spelling`).
 
@@ -344,6 +355,7 @@ Compasso local por compasso: `3:4` imediatamente antes do token.
 
 | Campo | Valores | Padrão | Descrição |
 |-------|---------|--------|-----------|
+| `notation_style` | `br`, `intl`, `us` | **`br`** | Preset de notação (Brasil, Internacional, Americana) |
 | `bars_per_row` | 1–8 | `4` | Compassos por linha |
 | `font_size` | `M`, `S`, `XS` | `M` | Tamanho |
 | `line_spacing` | `compact`, `normal`, `relaxed` | `normal` | Espaçamento |
@@ -376,12 +388,14 @@ Comportamento em **4/4** (ajuste mental para outros compassos via `time_signatur
 
 | `source` | Layout na prévia |
 |----------|------------------|
-| `C` | Acorde centralizado |
-| `C_D` | Grade 4 colunas; pulsos vazios = `·` |
-| `C&D` | 2 colunas 50% + 50% no compasso |
-| `C&D_E` | Grade compacta (só colunas com conteúdo) |
+| `C` | Grade 4 colunas: `C . . .` |
+| `C_D` | Grade 4 colunas: `C D . .` |
+| `C&D` | 1º pulso dividido + pontos nos demais |
+| `C&D_E` | Semi-pulso + E + pontos até completar o compasso |
 | `%` / `%%` | Símbolo simile centralizado |
-| `*` | Compasso vazio |
+| `*` | Compasso vazio (todos os pulsos `.`) |
+
+Todo compasso preenche **todos os pulsos** do compasso (`time_signature`); faltantes viram `.`.
 
 ### Anotações
 
