@@ -1,0 +1,175 @@
+{# Seção scroll: palco escurece + mockup Modo Tocar #}
+<section class="home-play-scroll" id="modo-tocar" aria-labelledby="play-scroll-title">
+    <div class="home-play-scroll-sticky">
+        <div class="home-play-scroll-inner">
+            <div class="home-play-scroll-copy">
+                <span class="home-play-kicker"><i class="fas fa-guitar me-1"></i> Modo Tocar</span>
+                <h2 id="play-scroll-title">Palco escuro, cifra legível, mãos livres</h2>
+                <p class="home-play-lead">
+                    Tela cheia, tema escuro, auto-scroll e transposição na hora —
+                    pensado para o culto e o show, sem distrações.
+                </p>
+                <ul class="home-play-features">
+                    <li><i class="fas fa-moon"></i> Tema escuro automático no palco</li>
+                    <li><i class="fas fa-arrows-alt-v"></i> Auto-scroll com <kbd>Espaço</kbd></li>
+                    <li><i class="fas fa-music"></i> Cifra, chord sheet ou letra com <kbd>G</kbd></li>
+                    <li><i class="fas fa-sliders-h"></i> Fonte, colunas e tom por cantor</li>
+                </ul>
+            </div>
+            <figure class="home-play-device" aria-label="Demonstração do Modo Tocar em tablet">
+                <div class="home-play-device-frame">
+                    <div class="home-play-device-bar">
+                        <span></span><span></span><span></span>
+                        <em>Modo Tocar · SetSync</em>
+                    </div>
+                    <div class="home-play-device-screen">
+                        <img src="{{ url_for('static', filename='screenshots/modo-tocar-mobile.png') }}"
+                             alt="Cantor utilizando o Modo Tocar do SetSync — cifra evangélica em tela cheia com transposição no palco"
+                             width="540" height="1170"
+                             loading="lazy"
+                             decoding="async">
+                        <div class="home-play-scroll-indicator" aria-hidden="true">
+                            <span class="home-play-scroll-line"></span>
+                            <span class="home-play-scroll-cursor"><i class="fas fa-caret-down"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </figure>
+        </div>
+    </div>
+</section>
+<style>
+.home-play-scroll {
+    position: relative;
+    min-height: 140vh;
+    background: linear-gradient(180deg, var(--bg) 0%, #0b1422 35%, #050a12 100%);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+[data-theme="light"] .home-play-scroll {
+    background: linear-gradient(180deg, #fff 0%, #1e293b 40%, #0b1422 100%);
+}
+.home-play-scroll-sticky {
+    position: sticky;
+    top: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 2rem 1.5rem;
+}
+.home-play-scroll-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr minmax(220px, 340px);
+    gap: 2.5rem;
+    align-items: center;
+}
+.home-play-kicker {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #5eead4;
+    margin-bottom: 0.75rem;
+}
+.home-play-scroll-copy h2 {
+    font-size: clamp(1.35rem, 3vw, 1.85rem);
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+}
+.home-play-lead {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin-bottom: 1.25rem;
+    max-width: 34rem;
+}
+.home-play-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+}
+.home-play-features li {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0.5rem;
+}
+.home-play-features i { color: #2ab5a0; width: 1.1rem; text-align: center; }
+.home-play-features kbd {
+    font-size: 0.75em;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    background: #1e293b;
+    border: 1px solid #334155;
+}
+.home-play-device { margin: 0; }
+.home-play-device-frame {
+    padding: 12px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, #1e293b, #0b1422);
+    border: 1px solid #334155;
+    box-shadow: 0 32px 64px rgba(0,0,0,0.45), 0 0 0 1px rgba(42,181,160,0.15);
+}
+.home-play-device-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 4px 8px;
+    font-size: 0.65rem;
+    color: #64748b;
+}
+.home-play-device-bar span {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #334155;
+}
+.home-play-device-bar em { margin-left: auto; font-style: normal; }
+.home-play-device-screen {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #1e293b;
+}
+.home-play-device-screen img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.home-play-scroll-indicator {
+    position: absolute;
+    left: 50%;
+    bottom: 12%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.85;
+    animation: playScrollPulse 2s ease-in-out infinite;
+}
+.home-play-scroll-line {
+    width: 2px;
+    height: 48px;
+    background: linear-gradient(180deg, transparent, #2ab5a0);
+    border-radius: 2px;
+}
+.home-play-scroll-cursor { color: #2ab5a0; font-size: 0.85rem; }
+@keyframes playScrollPulse {
+    0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+    50% { opacity: 1; transform: translateX(-50%) translateY(6px); }
+}
+@media (max-width: 768px) {
+    .home-play-scroll { min-height: auto; }
+    .home-play-scroll-sticky { position: relative; min-height: auto; }
+    .home-play-scroll-inner { grid-template-columns: 1fr; text-align: center; }
+    .home-play-features { text-align: left; max-width: 20rem; margin: 0 auto; }
+    .home-play-device { max-width: 280px; margin: 0 auto; }
+}
+</style>

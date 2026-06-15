@@ -215,6 +215,19 @@ for _csrf_json_endpoint in (
         csrf.exempt(_view)
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    if _wants_json_response():
+        return jsonify({'ok': False, 'error': 'Não encontrado'}), 404
+    return render_template('errors/404.html'), 404
+
+
+@app.route('/login')
+def login_redirect():
+    """Atalho legado — /auth/login é a rota canônica."""
+    return redirect(url_for('auth.login', **request.args))
+
+
 @app.route('/health')
 def health():
     return 'ok', 200

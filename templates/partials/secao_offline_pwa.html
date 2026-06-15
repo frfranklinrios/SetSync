@@ -1,0 +1,157 @@
+{# Seção offline PWA — animação Wi-Fi caindo #}
+<section class="home-offline" id="offline-pwa" aria-labelledby="offline-title">
+    <div class="home-offline-inner">
+        <div class="home-offline-visual" aria-hidden="true">
+            <div class="home-offline-signal" id="offline-signal">
+                <div class="signal-icon signal-wifi"><i class="fas fa-wifi"></i></div>
+                <div class="signal-icon signal-4g"><i class="fas fa-signal"></i> 4G</div>
+                <div class="signal-fade"></div>
+                <div class="signal-ok" id="offline-ok">
+                    <i class="fas fa-circle-check"></i>
+                    <span>Pronto no palco</span>
+                </div>
+            </div>
+            <img src="{{ url_for('static', filename='logoSetSync.png') }}"
+                 alt="Logo SetSync Cifras e Setlists para ministério de louvor"
+                 class="home-offline-logo"
+                 width="120" height="120"
+                 loading="lazy">
+        </div>
+        <div class="home-offline-copy">
+            <h2 id="offline-title">Funciona offline quando a internet falha</h2>
+            <p>
+                Instale o <strong>SetSync</strong> na tela inicial (PWA). Páginas já visitadas —
+                setlists e cifras — continuam acessíveis no culto, mesmo com Wi-Fi instável no templo.
+            </p>
+            <ul class="home-offline-list">
+                <li><i class="fas fa-shield-halved"></i> Segurança no palco: sem depender do grupo do WhatsApp</li>
+                <li><i class="fas fa-download"></i> Um toque para instalar no Android ou iPhone (Safari)</li>
+                <li><i class="fas fa-sync"></i> Sincroniza de novo quando a conexão voltar</li>
+            </ul>
+            <button type="button" class="btn btn-primary"
+                    onclick="typeof installPWA === 'function' && installPWA()">
+                <i class="fas fa-mobile-screen-button me-1"></i> Instalar app grátis
+            </button>
+        </div>
+    </div>
+</section>
+<style>
+.home-offline {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 3.5rem 1.5rem;
+}
+.home-offline-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 2.5rem;
+    align-items: center;
+}
+.home-offline-visual {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+}
+.home-offline-signal {
+    position: relative;
+    width: 160px;
+    height: 120px;
+    margin-bottom: 1rem;
+}
+.signal-icon {
+    position: absolute;
+    font-size: 2rem;
+    color: var(--muted);
+    transition: opacity 0.6s, transform 0.6s;
+}
+.signal-wifi { top: 0; left: 20%; }
+.signal-4g {
+    top: 0; right: 10%;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.signal-ok {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    color: #22c55e;
+    font-weight: 700;
+    font-size: 0.9rem;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.5s, transform 0.5s;
+}
+.signal-ok i { font-size: 2.5rem; }
+.home-offline-logo {
+    width: 72px;
+    height: auto;
+    opacity: 0.9;
+    filter: drop-shadow(0 8px 20px rgba(42,181,160,0.25));
+}
+.home-offline.is-ready .signal-wifi,
+.home-offline.is-ready .signal-4g {
+    opacity: 0;
+    transform: translateY(-12px);
+}
+.home-offline.is-ready .signal-ok {
+    opacity: 1;
+    transform: scale(1);
+}
+.home-offline-copy h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.65rem;
+}
+.home-offline-copy p {
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin-bottom: 1rem;
+}
+.home-offline-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+    font-size: 0.88rem;
+    color: var(--muted);
+}
+.home-offline-list li {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    line-height: 1.45;
+}
+.home-offline-list i { color: var(--accent); margin-top: 0.15rem; }
+[data-theme="dark"] .home-offline-list i { color: #2ab5a0; }
+@media (max-width: 768px) {
+    .home-offline-inner { grid-template-columns: 1fr; text-align: center; }
+    .home-offline-list { text-align: left; max-width: 22rem; margin-left: auto; margin-right: auto; }
+}
+</style>
+<script>
+(function () {
+    var sec = document.querySelector('.home-offline');
+    if (!sec || !('IntersectionObserver' in window)) return;
+    var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+            if (e.isIntersecting) {
+                setTimeout(function () { sec.classList.add('is-ready'); }, 800);
+                obs.unobserve(sec);
+            }
+        });
+    }, { threshold: 0.4 });
+    obs.observe(sec);
+})();
+</script>

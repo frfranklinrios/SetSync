@@ -1,13 +1,13 @@
 {% extends "index.html" %}
 
-{% block title %}SetSync — Compartilhar cifras, gerenciar bandas e setlists online{% endblock %}
+{% block title %}SetSync Cifras e Setlists — App de cifras evangélicas para bandas e igrejas do Brasil{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('index') }}">
-<meta name="description" content="Compartilhe cifras com a banda, gerencie ministérios de louvor, monte setlists gospel e transponha acordes no Modo Tocar. App de cifras grátis para igreja e banda.">
-<meta name="keywords" content="compartilhar cifras, gerenciar bandas, setlist online, cifras gospel, app cifras banda, transpor cifras, ministério louvor, modo tocar, SetSync">
-<meta property="og:title" content="SetSync — Compartilhar cifras, gerenciar bandas e setlists online">
-<meta property="og:description" content="Compartilhe cifras com a banda, gerencie ministérios de louvor, monte setlists gospel e transponha acordes no Modo Tocar. App de cifras grátis para igreja e banda.">
+<meta name="description" content="SetSync Cifras e Setlists: compartilhe cifras evangélicas com a banda, gerencie ministérios de louvor, monte setlists gospel e transponha no Modo Tocar offline. App brasileiro para igrejas e músicos.">
+<meta name="keywords" content="SetSync cifras, setlist gospel, cifras evangélicas, app cifras igreja, ministério de louvor Brasil, transpor cifras, modo tocar offline, gerenciar bandas">
+<meta property="og:title" content="SetSync Cifras e Setlists — Cifras evangélicas para bandas e igrejas">
+<meta property="og:description" content="Elimine PDFs desatualizados e prints no WhatsApp. Cifras, setlists e Modo Tocar offline para ministérios de louvor no Brasil.">
 <meta property="og:url" content="{{ external_url_for('index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -27,9 +27,107 @@
 .home-hero {
     position: relative;
     overflow: hidden;
-    padding: 3.5rem 1.5rem 4rem;
+    padding: 3rem 1.5rem 3.5rem;
     background: linear-gradient(165deg, #fff7ed 0%, #fff 45%, #f0fdfa 100%);
     border-bottom: 1px solid var(--border);
+}
+.hero-split {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+.hero-pain, .hero-solution { min-width: 0; }
+.hero-side-label {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.85rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+}
+.hero-pain .hero-side-label {
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.hero-solution .hero-side-label {
+    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+    border: 1px solid var(--chord-highlight-border);
+}
+[data-theme="dark"] .hero-solution .hero-side-label { color: #5eead4; }
+.hero-pain-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    font-size: 0.88rem;
+    color: var(--muted);
+}
+.hero-pain-list li {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    line-height: 1.45;
+}
+.hero-pain-list i { color: #ef4444; margin-top: 0.2rem; font-size: 0.8rem; }
+.chaos-stack {
+    position: relative;
+    height: 200px;
+    margin-top: 0.5rem;
+}
+.chaos-card {
+    position: absolute;
+    width: 88%;
+    padding: 0.75rem 0.9rem;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    border: 1px solid var(--border);
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    color: var(--muted);
+}
+[data-theme="dark"] .chaos-card {
+    background: #1e293b;
+    border-color: #475569;
+}
+.chaos-card--wa {
+    top: 0; left: 0; transform: rotate(-4deg);
+    border-left: 3px solid #25d366;
+}
+.chaos-card--pdf {
+    top: 28%; right: 0; transform: rotate(3deg);
+    border-left: 3px solid #dc2626;
+}
+.chaos-card--tom {
+    bottom: 0; left: 8%; transform: rotate(-1deg);
+    border-left: 3px solid #f59e0b;
+}
+.chaos-card strong { color: var(--text); display: block; margin-bottom: 0.2rem; font-size: 0.82rem; }
+.hero-solution h1 {
+    font-size: clamp(1.5rem, 3.5vw, 2.35rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.85rem;
+}
+.hero-mock-clean {
+    margin-top: 1.25rem;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--chord-highlight-border);
+    box-shadow: 0 16px 40px rgba(42, 181, 160, 0.15);
+}
+.hero-mock-clean img { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) {
+    .hero-split { grid-template-columns: 1fr; }
+    .chaos-stack { height: 180px; max-width: 340px; margin-left: auto; margin-right: auto; }
 }
 [data-theme="dark"] .home-hero {
     background: linear-gradient(165deg, #0b1422 0%, #0f172a 50%, #134e4a22 100%);
@@ -182,11 +280,41 @@
     text-align: center;
     margin-top: 1.25rem;
 }
+.home-hero h1 {
+    font-size: clamp(1.85rem, 4.5vw, 2.75rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    max-width: 20ch;
+}
 .planos-publicos-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 1.25rem;
-    align-items: stretch;
+    align-items: center;
+}
+.plano-publico-card--destaque {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent), 0 24px 48px rgba(234, 88, 12, 0.18);
+    transform: scale(1.06);
+    z-index: 2;
+    padding: 1.75rem 1.5rem 1.5rem;
+}
+[data-theme="dark"] .plano-publico-card--destaque {
+    border-color: #2ab5a0;
+    box-shadow: 0 0 0 2px #2ab5a0, 0 24px 48px rgba(42, 181, 160, 0.22);
+}
+@media (max-width: 900px) {
+    .plano-publico-card--destaque { transform: none; }
+}
+.plano-publico-card--destaque.toggle-anual-pop {
+    animation: planoPop 0.45s ease;
+}
+@keyframes planoPop {
+    0% { transform: scale(1.06); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1.06); }
 }
 .plano-publico-card {
     position: relative;
@@ -196,18 +324,11 @@
     background: #fff;
     display: flex;
     flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 [data-theme="dark"] .plano-publico-card {
     background: #0b1422;
     border-color: #334155;
-}
-.plano-publico-card--destaque {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent), 0 12px 32px rgba(234, 88, 12, 0.12);
-}
-[data-theme="dark"] .plano-publico-card--destaque {
-    border-color: #2ab5a0;
-    box-shadow: 0 0 0 1px #2ab5a0, 0 12px 32px rgba(42, 181, 160, 0.15);
 }
 .plano-publico-badge {
     position: absolute;
@@ -385,33 +506,48 @@
 
 {% block content %}
 <section class="home-hero">
-    <div class="home-hero-inner">
-        <div class="row align-items-center g-4">
-            <div class="col-lg-7">
-                <span class="home-badge"><i class="fas fa-music"></i> Comece grátis · upgrade quando precisar</span>
-                <h1>Compartilhe cifras e gerencie bandas em um só lugar</h1>
-                <p class="home-lead">
-                    O <strong>SetSync</strong> é o app para <strong>compartilhar cifras</strong>,
-                    <strong>gerenciar bandas</strong> e <strong>montar setlists</strong> gospel —
-                    com transposição no tom de cada cantor, agenda de ensaios e
-                    <strong>Modo Tocar</strong> no palco. Plano <strong>Grátis</strong> ou
-                    <strong>Pro</strong> e <strong>Worship</strong> para igrejas.
-                </p>
-                <div class="home-cta">
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
-                        Criar conta grátis
-                    </a>
-                    <a href="#planos" class="btn btn-outline-secondary btn-lg">
-                        Ver planos
-                    </a>
-                    <a href="{{ url_for('auth.login') }}" class="text-muted ms-1" style="font-size:0.9rem;text-decoration:none;">
-                        Já tenho conta
-                    </a>
+    <div class="hero-split">
+        <div class="hero-pain">
+            <span class="hero-side-label">A dor de hoje</span>
+            <ul class="hero-pain-list">
+                <li><i class="fas fa-times-circle" aria-hidden="true"></i> Print de cifra no WhatsApp — versão errada no culto</li>
+                <li><i class="fas fa-times-circle" aria-hidden="true"></i> PDF rasurado e desatualizado na pasta da banda</li>
+                <li><i class="fas fa-times-circle" aria-hidden="true"></i> Tom errado porque cada cantor canta em uma tonalidade</li>
+            </ul>
+            <div class="chaos-stack" aria-hidden="true">
+                <div class="chaos-card chaos-card--wa">
+                    <strong>Grupo WhatsApp · 47 msgs</strong>
+                    "Alguém manda a cifra de novo?? A do PDF tá em Bb..."
+                </div>
+                <div class="chaos-card chaos-card--pdf">
+                    <strong>setlist_culto_FINAL_v3.pdf</strong>
+                    Rabiscos, páginas faltando, acorde apagado
+                </div>
+                <div class="chaos-card chaos-card--tom">
+                    <strong>Tom do louvor</strong>
+                    Ana canta em G · Dani em A · ninguém sincronizado
                 </div>
             </div>
-            <div class="col-lg-5 text-center text-lg-end">
-                <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync" class="home-hero-img">
+        </div>
+        <div class="hero-solution">
+            <span class="hero-side-label"><i class="fas fa-music me-1"></i> A solução SetSync</span>
+            <h1>SetSync Cifras e Setlists — sempre no tom certo</h1>
+            <p class="home-lead">
+                App brasileiro de <strong>cifras evangélicas</strong> para bandas e
+                <strong>ministérios de louvor</strong>: um repertório vivo, setlists compartilhadas,
+                transposição por cantor e <strong>Modo Tocar offline</strong> no palco.
+            </p>
+            <div class="home-cta">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
+                <a href="#modo-tocar" class="btn btn-outline-secondary btn-lg">Ver Modo Tocar</a>
             </div>
+            <figure class="hero-mock-clean">
+                <img src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
+                     alt="Interface do SetSync Cifras e Setlists — painel de setlist gospel para ministério de louvor"
+                     width="1389" height="822"
+                     loading="eager"
+                     decoding="async">
+            </figure>
         </div>
     </div>
 </section>
@@ -437,21 +573,27 @@
 
 <section class="home-planos" id="planos">
     <div class="home-planos-inner">
-        <h2 class="text-center mb-1">Planos e preços</h2>
+        <h2 class="text-center mb-1">Planos SetSync Cifras e Setlists</h2>
         <p class="section-sub text-center mx-auto" style="max-width: 36rem;">
-            Todos começam no Grátis. Assine Pro por banda ou Worship para toda a congregação.
+            Comece grátis. Upgrade para Pro quando a banda crescer — Worship para igrejas com várias equipes.
         </p>
+        {% set plano_worship = planos_site | selectattr('id', 'equalto', 'worship') | first %}
+        {% set planos_grid = planos_site | rejectattr('id', 'equalto', 'worship') | list %}
         {% include 'partials/planos_publicos.html' %}
         <p class="home-planos-note">
-            Ministério de louvor com várias equipes?
-            <a href="{{ url_for('assinatura_bp.igrejas') }}">Conheça o SetSync para igrejas</a>.
             Após criar a conta, gerencie a assinatura em <strong>Planos</strong> no app.
         </p>
     </div>
 </section>
 
+{% include 'partials/secao_worship_plano.html' %}
+
+{% include 'partials/secao_modo_tocar_scroll.html' %}
+
+{% include 'partials/secao_offline_pwa.html' %}
+
 <section class="home-section">
-    <h2>Tudo que a banda precisa no ensaio e no show</h2>
+    <h2>Recursos para bandas e louvor evangélico no Brasil</h2>
     <p class="section-sub">Do cadastro da música à execução ao vivo, em um só lugar.</p>
     <div class="home-features">
         <article class="home-card">

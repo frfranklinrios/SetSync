@@ -1,0 +1,97 @@
+{% extends "index.html" %}
+{% block title %}Página não encontrada — SetSync Cifras e Setlists{% endblock %}
+{% block seo %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+{% block main_class %}error-404-page{% endblock %}
+{% block extra_head %}
+<style>
+.error-404-page { padding: 0; max-width: none; }
+.err404-wrap {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    background: linear-gradient(165deg, #0b1422 0%, #134e4a33 50%, #0f172a 100%);
+    text-align: center;
+}
+.err404-inner { max-width: 32rem; }
+.err404-code {
+    font-size: clamp(4rem, 12vw, 6rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #2ab5a0, #ea580c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 0.5rem;
+}
+.err404-icon {
+    font-size: 2.5rem;
+    color: #2ab5a0;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+.err404-wrap h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+}
+.err404-wrap p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+}
+.err404-quotes {
+    font-style: italic;
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin-bottom: 1.75rem;
+    min-height: 1.4em;
+}
+.err404-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; justify-content: center; }
+</style>
+{% endblock %}
+{% block content %}
+<section class="err404-wrap" aria-labelledby="err404-title">
+    <div class="err404-inner">
+        <div class="err404-icon" aria-hidden="true"><i class="fas fa-plug-circle-xmark"></i></div>
+        <div class="err404-code" aria-hidden="true">404</div>
+        <h1 id="err404-title">Desafinou!</h1>
+        <p class="err404-quotes" id="err404-quote" aria-live="polite"></p>
+        <p>A página que você procura não existe ou foi movida. Volte ao início e continue sincronizando suas cifras.</p>
+        <div class="err404-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-home me-1"></i> Ir para o início
+            </a>
+            <a href="{{ url_for('ajuda.index') }}" class="btn btn-outline-secondary">
+                Central de ajuda
+            </a>
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">Entrar</a>
+            {% else %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Painel</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+    var quotes = [
+        'Parece que o baixista pisou no cabo e perdemos a conexão!',
+        'Essa página saiu de tom — voltemos ao repertório.',
+        'Compasso perdido: não achamos essa rota no setlist.',
+        'Silêncio no palco… este link não toca mais.',
+        'O metrônomo parou aqui — página não encontrada.'
+    ];
+    var el = document.getElementById('err404-quote');
+    if (el) el.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{# Plano Worship — seção full-width abaixo da grade principal #}
+{% if plano_worship %}
+<section class="home-worship-breakout" id="plano-worship" aria-labelledby="worship-title">
+    <div class="home-worship-bg" aria-hidden="true"></div>
+    <div class="home-worship-inner">
+        <div class="home-worship-copy">
+            <span class="home-worship-kicker"><i class="fas fa-church me-1"></i> Para megaigrejas e grandes ministérios</span>
+            <h2 id="worship-title">Plano Worship — gestão avançada de louvor</h2>
+            <p>
+                Várias bandas e equipes na mesma congregação, sem limites de músicas ou integrantes.
+                Ideal para igrejas do Brasil que precisam centralizar cifras evangélicas, setlists e agenda
+                de todos os ministérios de louvor.
+            </p>
+            <ul class="home-worship-features">
+                {% for feat in plano_worship.features %}
+                <li><i class="fas fa-check" aria-hidden="true"></i>{{ feat }}</li>
+                {% endfor %}
+            </ul>
+            <div class="home-worship-cta">
+                <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-light btn-lg">
+                    Conhecer Worship para igrejas
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light">
+                    Começar grátis
+                </a>
+            </div>
+        </div>
+        <div class="home-worship-price-card">
+            <h3 class="home-worship-plan-name">{{ plano_worship.nome }}</h3>
+            <p class="home-worship-preco">
+                {{ plano_worship.preco_label }}<small>{{ plano_worship.sufixo }}</small>
+            </p>
+            {% if plano_worship.cobrado_anual_label %}
+            <p class="home-worship-anual small opacity-75">{{ plano_worship.cobrado_anual_label }}</p>
+            {% endif %}
+            <p class="home-worship-tagline">Congregação inteira · múltiplas bandas · PDF e Modo Tocar</p>
+        </div>
+    </div>
+</section>
+<style>
+.home-worship-breakout {
+    position: relative;
+    margin: 0 calc(50% - 50vw);
+    width: 100vw;
+    overflow: hidden;
+    padding: 3.5rem 1.5rem;
+    color: #f8fafc;
+}
+.home-worship-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(135deg, rgba(11, 20, 34, 0.92) 0%, rgba(19, 78, 74, 0.88) 100%),
+        url("{{ url_for('static', filename='screenshots/setlist-desktop.png') }}") center/cover no-repeat;
+    z-index: 0;
+}
+.home-worship-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr minmax(240px, 320px);
+    gap: 2.5rem;
+    align-items: center;
+}
+.home-worship-kicker {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #5eead4;
+    margin-bottom: 0.65rem;
+}
+.home-worship-copy h2 {
+    font-size: clamp(1.35rem, 3vw, 1.9rem);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+}
+.home-worship-copy > p {
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: #cbd5e1;
+    margin-bottom: 1.25rem;
+    max-width: 36rem;
+}
+.home-worship-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    font-size: 0.9rem;
+}
+.home-worship-features li {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    color: #e2e8f0;
+}
+.home-worship-features i { color: #2ab5a0; margin-top: 0.2rem; font-size: 0.75rem; }
+.home-worship-cta { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+.home-worship-price-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    padding: 1.75rem 1.5rem;
+    backdrop-filter: blur(8px);
+    text-align: center;
+}
+.home-worship-plan-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.home-worship-preco {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+}
+.home-worship-preco small {
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.85;
+}
+.home-worship-tagline {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin: 0.75rem 0 0;
+}
+@media (max-width: 768px) {
+    .home-worship-inner { grid-template-columns: 1fr; }
+    .home-worship-price-card { order: -1; }
+}
+</style>
+{% endif %}

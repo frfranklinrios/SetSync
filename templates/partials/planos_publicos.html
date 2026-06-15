@@ -1,5 +1,6 @@
-{# planos_site: list[PlanoSite] de monetizacao.planos_para_site() #}
-{% set desconto_anual_max = (planos_site | map(attribute='desconto_anual_pct') | max) or 0 %}
+{# planos_site ou planos_grid (home sem Worship) #}
+{% set _planos = planos_grid if planos_grid is defined else planos_site %}
+{% set desconto_anual_max = (_planos | map(attribute='desconto_anual_pct') | max) or 0 %}
 <div class="toggle-periodo text-center mb-4">
     <span class="me-2">Mensal</span>
     <label class="switch d-inline-flex align-items-center mx-1">
@@ -20,7 +21,7 @@
 .badge-economia { font-size: 0.72rem; font-weight: 600; vertical-align: middle; }
 </style>
 <div class="planos-publicos-grid" id="planos-publicos-grid">
-    {% for p in planos_site %}
+    {% for p in _planos %}
     <article class="plano-publico-card{% if p.destaque %} plano-publico-card--destaque{% endif %}"
              data-plano-id="{{ p.id }}"
              data-preco-mensal="{{ p.preco_label }}{% if p.sufixo %}<small>{{ p.sufixo }}</small>{% endif %}"
@@ -67,6 +68,12 @@
         });
         var badge = document.getElementById('badge-economia');
         if (badge) badge.hidden = !anual;
+        if (anual) {
+            document.querySelectorAll('.plano-publico-card--destaque').forEach(function (c) {
+                c.classList.add('toggle-anual-pop');
+                setTimeout(function () { c.classList.remove('toggle-anual-pop'); }, 500);
+            });
+        }
     }
     toggle.addEventListener('change', function () { apply(toggle.checked); });
 })();
