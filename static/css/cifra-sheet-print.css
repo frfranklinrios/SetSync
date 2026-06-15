@@ -421,6 +421,14 @@ html[data-theme="dark"] {
   font-weight: 400 !important;
 }
 
+.setsync-cs-sheet.cs-notation-br .cs-chord,
+.setsync-cs-sheet.cs-notation-us .cs-chord,
+.setsync-cs-sheet .cs-chart.cs-notation-br .cs-chord,
+.setsync-cs-sheet .cs-chart.cs-notation-us .cs-chord {
+  font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace) !important;
+  font-weight: 600 !important;
+}
+
 .setsync-cs-sheet .cs-ts-beam {
   background: currentColor !important;
 }
@@ -480,6 +488,12 @@ html[data-theme="dark"] {
   padding: clamp(1rem, 3vw, 1.35rem) clamp(1rem, 4vw, 1.6rem) !important;
   box-sizing: border-box;
   width: 100%;
+}
+
+/* Modo tocar: barra superior já mostra título, artista e tom */
+#play-app .setsync-cs-sheet.cs-play-embed .cs-header,
+#play-app .setsync-cs-sheet.cs-play-embed .cs-footer {
+  display: none !important;
 }
 
 /* Lead sheet legado (staff detalhado) — não aplicar ao chord-sheet PDF */

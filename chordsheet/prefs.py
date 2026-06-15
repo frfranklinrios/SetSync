@@ -53,4 +53,5 @@ class Prefs:
         }.get(self.line_spacing, "cs-spacing-normal")
         bl = f"cs-bl-style-{self.bar_line_style}"
         extra = " cs-tab-no-barlines" if self.bar_line_style == "tab" and not self.tab_show_barlines else ""
-        return f"cs-chart {size} {spacing} {bl}{extra}"
+        ns = self.notation_style if self.notation_style in NOTATION_STYLES else "br"
+        return f"cs-chart {size} {spacing} {bl}{extra} cs-notation-{ns}"

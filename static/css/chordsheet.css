@@ -460,6 +460,21 @@ textarea#source:focus, input:focus, select:focus {
     font-variant-ligatures: none;
     font-feature-settings: "liga" 0;
 }
+
+/* Brasil / Americana: acordes em JetBrains Mono (não Bravura) */
+.cs-chart.cs-notation-br .cs-chord,
+.cs-chart.cs-notation-us .cs-chord,
+.cs-chart.cs-notation-br .cs-title,
+.cs-chart.cs-notation-us .cs-title,
+.cs-chart.cs-notation-br .cs-ts-stack,
+.cs-chart.cs-notation-us .cs-ts-stack {
+    font-family: var(--cifra-mono-font);
+    font-weight: 600;
+}
+.cs-chart.cs-notation-br .cs-chord.cs-smufl,
+.cs-chart.cs-notation-us .cs-chord.cs-smufl {
+    font-weight: 600;
+}
 .cs-qual { font-size: 0.72em; vertical-align: super; }
 .cs-acc { font-size: 0.85em; }
 .cs-simile {
