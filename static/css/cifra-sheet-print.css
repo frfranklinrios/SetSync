@@ -406,6 +406,7 @@ html[data-theme="dark"] {
 
 .setsync-cs-sheet .cs-title,
 .setsync-cs-sheet .cs-chord,
+.setsync-cs-sheet .cs-chord.cs-smufl,
 .setsync-cs-sheet .cs-chord .cs-root,
 .setsync-cs-sheet .cs-chord .cs-acc,
 .setsync-cs-sheet .cs-chord .cs-qual,
@@ -413,6 +414,11 @@ html[data-theme="dark"] {
 .setsync-cs-sheet .cs-running-title,
 .setsync-cs-sheet .cs-empty {
   color: var(--cs-chord-accent, var(--ss-chord)) !important;
+}
+
+.setsync-cs-sheet .cs-chord.cs-smufl {
+  font-family: "Bravura Text", "Bravura", var(--sheet-font) !important;
+  font-weight: 400 !important;
 }
 
 .setsync-cs-sheet .cs-ts-beam {

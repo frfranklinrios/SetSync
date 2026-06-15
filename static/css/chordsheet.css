@@ -454,6 +454,12 @@ textarea#source:focus, input:focus, select:focus {
     color: var(--ss-chord);
     font-family: var(--sheet-font);
 }
+.cs-chord.cs-smufl {
+    font-family: "Bravura Text", "Bravura", var(--sheet-font);
+    font-weight: 400;
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0;
+}
 .cs-qual { font-size: 0.72em; vertical-align: super; }
 .cs-acc { font-size: 0.85em; }
 .cs-simile {

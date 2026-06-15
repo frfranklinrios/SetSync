@@ -7,6 +7,7 @@ import re
 
 from chordsheet.chord_token import parse_chord_token
 from chordsheet.prefs import Prefs
+from chordsheet.smufl_chord import display_to_smufl
 
 ROOT = re.compile(
     r"^([A-G])([#b]?)(.*)$",
@@ -73,22 +74,11 @@ def chord_to_html(chord: str, prefs: Prefs) -> str:
 
     m = ROOT.match(display)
     if not m:
-        inner = f'<span class="cs-chord">{html.escape(display)}</span>'
+        inner = f'<span class="cs-chord cs-smufl">{html.escape(display)}</span>'
         return _wrap_chord(inner, parsed)
 
-    root, acc, qual = m.group(1), m.group(2), m.group(3)
-    acc_html = ""
-    if acc == "#":
-        acc_html = '<span class="cs-acc">♯</span>'
-    elif acc == "b":
-        acc_html = '<span class="cs-acc">♭</span>'
-
-    qual_html = f'<span class="cs-qual">{html.escape(qual)}</span>' if qual else ""
-    inner = (
-        f'<span class="cs-chord">'
-        f'<span class="cs-root">{root}</span>{acc_html}{qual_html}'
-        f"</span>"
-    )
+    smufl = display_to_smufl(display)
+    inner = f'<span class="cs-chord cs-smufl">{smufl}</span>'
     return _wrap_chord(inner, parsed)
 
 

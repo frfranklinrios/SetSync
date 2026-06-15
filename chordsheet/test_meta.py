@@ -128,6 +128,25 @@ class MetaCharactersTest(unittest.TestCase):
         self.assertEqual(restored.line_breaks, [2, 4])
         self.assertEqual(restored.to_source(), chart.to_source())
 
+    def test_smufl_chord_glyphs_in_render(self):
+        from chordsheet.format_chord import chord_to_html
+        from chordsheet.prefs import Prefs
+        from chordsheet.smufl_chord import (
+            CSYM_ACCIDENTAL_SHARP,
+            CSYM_MAJOR_SEVENTH,
+            CSYM_MINOR,
+        )
+
+        prefs = Prefs()
+        self.assertIn(CSYM_ACCIDENTAL_SHARP, chord_to_html("F#m7", prefs))
+        self.assertIn(CSYM_MINOR, chord_to_html("Am7", prefs))
+        self.assertIn(CSYM_MAJOR_SEVENTH, chord_to_html("Cmaj7", prefs))
+        html_out = render_chart_html(
+            parse_chart("F#m7 Cmaj7 Am/E", meta={"title": "T", "key": "C"}),
+        )
+        self.assertIn("cs-smufl", html_out)
+        self.assertIn(CSYM_ACCIDENTAL_SHARP, html_out)
+
 
 if __name__ == "__main__":
     unittest.main()
