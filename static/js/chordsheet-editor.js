@@ -47,6 +47,7 @@
             line_spacing: $("pref-line-spacing").value || "normal",
             align_chords: $("pref-align-chords").value || "auto",
             notation_style: $("pref-notation-style").value || "br",
+            notation_style_chosen: true,
             maj7_style: $("pref-maj7").value || "delta",
             dim_style: $("pref-dim").value || "circle",
             half_dim_style: $("pref-half-dim").value || "oslash",
@@ -100,7 +101,9 @@
         if (prefs.line_spacing && $("pref-line-spacing")) $("pref-line-spacing").value = prefs.line_spacing;
         if (prefs.align_chords && $("pref-align-chords")) $("pref-align-chords").value = prefs.align_chords;
         if ($("pref-notation-style")) {
-            $("pref-notation-style").value = prefs.notation_style || "br";
+            var ns = prefs.notation_style || "br";
+            if (ns === "intl" && !prefs.notation_style_chosen) ns = "br";
+            $("pref-notation-style").value = ns;
         }
         if (prefs.maj7_style && $("pref-maj7")) $("pref-maj7").value = prefs.maj7_style;
         if (prefs.dim_style && $("pref-dim")) $("pref-dim").value = prefs.dim_style;

@@ -16,6 +16,19 @@ ROOT = re.compile(
     re.IGNORECASE,
 )
 
+# Cifra BR com hífen: A- → Am, G-7 → Gm7 (comum em cifras importadas)
+_MINUS_MINOR = re.compile(r"^([A-G][#b]?)-(\d*)(.*)$", re.IGNORECASE)
+
+
+def _br_minus_minor_to_m(chord: str) -> str:
+    m = _MINUS_MINOR.match((chord or "").strip())
+    if not m:
+        return chord
+    root, digits, tail = m.group(1), m.group(2), m.group(3)
+    if tail and not tail.startswith("/"):
+        return chord
+    return f"{root}m{digits}{tail}"
+
 
 def format_chord_display(chord: str, prefs: Prefs) -> str:
     parsed = parse_chord_token(chord)
@@ -29,7 +42,14 @@ def format_chord_display(chord: str, prefs: Prefs) -> str:
         return raw if raw.startswith("/") else f"/{raw.lstrip('/')}"
 
     if prefs.notation_style == "br":
-        return to_brazilian_chord_notation(raw)
+        out = to_brazilian_chord_notation(raw)
+        out = re.sub(r"ø7", "m7b5", out, flags=re.I)
+        out = re.sub(r"Δ(\d*)", lambda m: f"{m.group(1) or '7'}+", out)
+        slash = out.find("/")
+        if slash >= 0:
+            head, tail = out[:slash], out[slash:]
+            return _br_minus_minor_to_m(head) + tail
+        return _br_minus_minor_to_m(out)
 
     slash = raw.find("/")
     head = raw[:slash] if slash >= 0 else raw

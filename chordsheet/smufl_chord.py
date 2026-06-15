@@ -55,6 +55,13 @@ def _qual_to_smufl(qual: str) -> str:
     )
     q = re.sub(r"(?i)maj7", CSYM_MAJOR_SEVENTH + "7", q)
 
+    # Menor com hífen (cifra BR no estilo internacional): A- → símbolo menor
+    if re.match(r"(?i)^-$", q):
+        return CSYM_MINOR
+    m_minus = re.match(r"(?i)^-(\d+)$", q)
+    if m_minus:
+        return CSYM_MINOR + m_minus.group(1)
+
     # Menor (símbolo SMuFL no lugar do "m" inicial)
     if re.match(r"(?i)^m(\d|$)", q):
         q = CSYM_MINOR + q[1:]

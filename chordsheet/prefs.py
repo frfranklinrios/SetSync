@@ -33,11 +33,11 @@ class Prefs:
         for key in base.__dataclass_fields__:
             if key in raw and raw[key] is not None:
                 setattr(base, key, raw[key])
-        if raw and "notation_style" not in raw:
-            if raw.get("half_dim_style") == "oslash" or raw.get("maj7_style") == "delta":
-                base.notation_style = "intl"
         base.bars_per_row = max(1, min(8, int(base.bars_per_row)))
         if base.notation_style not in NOTATION_STYLES:
+            base.notation_style = "br"
+        # Folhas que ganharam intl só pela migração automática (sem escolha no editor)
+        if base.notation_style == "intl" and not raw.get("notation_style_chosen"):
             base.notation_style = "br"
         if base.bar_line_style not in BAR_LINE_STYLES:
             base.bar_line_style = "tab"

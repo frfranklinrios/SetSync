@@ -158,9 +158,34 @@ class MetaCharactersTest(unittest.TestCase):
         prefs = Prefs(notation_style="br")
         self.assertEqual(format_chord_display("Cmaj7", prefs), "C7+")
         self.assertEqual(format_chord_display("Gdim", prefs), "G°")
+        self.assertEqual(format_chord_display("A-", prefs), "Am")
+        self.assertEqual(format_chord_display("D-7", prefs), "Dm7")
+        self.assertEqual(format_chord_display("Cm7b5", prefs), "Cm7b5")
+        self.assertEqual(format_chord_display("C#ø7", prefs), "C#m7b5")
         html = chord_to_html("Cmaj7", prefs)
         self.assertIn("C7+", html)
         self.assertNotIn("cs-smufl", html)
+
+    def test_default_notation_is_brasil_without_explicit_style(self):
+        from chordsheet.prefs import Prefs
+
+        prefs = Prefs.from_dict({"maj7_style": "delta", "half_dim_style": "oslash"})
+        self.assertEqual(prefs.notation_style, "br")
+
+    def test_intl_reverted_without_explicit_choice(self):
+        from chordsheet.prefs import Prefs
+
+        prefs = Prefs.from_dict(
+            {"notation_style": "intl", "maj7_style": "delta", "half_dim_style": "oslash"}
+        )
+        self.assertEqual(prefs.notation_style, "br")
+        kept = Prefs.from_dict(
+            {
+                "notation_style": "intl",
+                "notation_style_chosen": True,
+            }
+        )
+        self.assertEqual(kept.notation_style, "intl")
 
     def test_notation_style_americana(self):
         from chordsheet.format_chord import chord_to_html, format_chord_display
