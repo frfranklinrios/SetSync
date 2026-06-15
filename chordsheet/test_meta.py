@@ -137,15 +137,40 @@ class MetaCharactersTest(unittest.TestCase):
             CSYM_MINOR,
         )
 
-        prefs = Prefs()
+        prefs = Prefs(notation_style="intl")
         self.assertIn(CSYM_ACCIDENTAL_SHARP, chord_to_html("F#m7", prefs))
         self.assertIn(CSYM_MINOR, chord_to_html("Am7", prefs))
         self.assertIn(CSYM_MAJOR_SEVENTH, chord_to_html("Cmaj7", prefs))
         html_out = render_chart_html(
-            parse_chart("F#m7 Cmaj7 Am/E", meta={"title": "T", "key": "C"}),
+            parse_chart(
+                "F#m7 Cmaj7 Am/E",
+                meta={"title": "T", "key": "C"},
+                prefs={"notation_style": "intl"},
+            ),
         )
         self.assertIn("cs-smufl", html_out)
         self.assertIn(CSYM_ACCIDENTAL_SHARP, html_out)
+
+    def test_notation_style_brasil(self):
+        from chordsheet.format_chord import chord_to_html, format_chord_display
+        from chordsheet.prefs import Prefs
+
+        prefs = Prefs(notation_style="br")
+        self.assertEqual(format_chord_display("Cmaj7", prefs), "C7+")
+        self.assertEqual(format_chord_display("Gdim", prefs), "G°")
+        html = chord_to_html("Cmaj7", prefs)
+        self.assertIn("C7+", html)
+        self.assertNotIn("cs-smufl", html)
+
+    def test_notation_style_americana(self):
+        from chordsheet.format_chord import chord_to_html, format_chord_display
+        from chordsheet.prefs import Prefs
+
+        prefs = Prefs(notation_style="us")
+        self.assertEqual(format_chord_display("Cmaj7", prefs), "Cmaj7")
+        html = chord_to_html("Cm7b5", prefs)
+        self.assertIn("m7b5", html)
+        self.assertNotIn("cs-smufl", html)
 
 
 if __name__ == "__main__":

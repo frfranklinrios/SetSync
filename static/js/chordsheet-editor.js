@@ -46,6 +46,7 @@
             font_size: $("pref-font-size").value || "M",
             line_spacing: $("pref-line-spacing").value || "normal",
             align_chords: $("pref-align-chords").value || "auto",
+            notation_style: $("pref-notation-style").value || "br",
             maj7_style: $("pref-maj7").value || "delta",
             dim_style: $("pref-dim").value || "circle",
             half_dim_style: $("pref-half-dim").value || "oslash",
@@ -98,6 +99,9 @@
         if (prefs.font_size && $("pref-font-size")) $("pref-font-size").value = prefs.font_size;
         if (prefs.line_spacing && $("pref-line-spacing")) $("pref-line-spacing").value = prefs.line_spacing;
         if (prefs.align_chords && $("pref-align-chords")) $("pref-align-chords").value = prefs.align_chords;
+        if ($("pref-notation-style")) {
+            $("pref-notation-style").value = prefs.notation_style || "br";
+        }
         if (prefs.maj7_style && $("pref-maj7")) $("pref-maj7").value = prefs.maj7_style;
         if (prefs.dim_style && $("pref-dim")) $("pref-dim").value = prefs.dim_style;
         if (prefs.half_dim_style && $("pref-half-dim")) $("pref-half-dim").value = prefs.half_dim_style;
@@ -108,6 +112,14 @@
         if (prefs.tab_lines && $("pref-tab-lines")) $("pref-tab-lines").value = String(prefs.tab_lines);
         if ($("pref-tab-barlines")) $("pref-tab-barlines").checked = prefs.tab_show_barlines !== false;
         syncTabPrefsVisibility();
+        syncNotationPrefsVisibility();
+    }
+
+    function syncNotationPrefsVisibility() {
+        var intl = $("pref-notation-style") && $("pref-notation-style").value === "intl";
+        document.querySelectorAll(".pref-notation-detail").forEach(function (el) {
+            el.hidden = !intl;
+        });
     }
 
     function syncTabPrefsVisibility() {
@@ -264,13 +276,14 @@
                 }
             });
         }
-        ["pref-bars-per-row", "pref-font-size", "pref-line-spacing", "pref-align-chords",
+        ["pref-notation-style", "pref-bars-per-row", "pref-font-size", "pref-line-spacing", "pref-align-chords",
             "pref-maj7", "pref-dim", "pref-half-dim", "pref-bar-line-style",
             "pref-tab-lines", "pref-show-footer", "pref-tab-barlines"].forEach(function (id) {
             var el = $(id);
             if (el) {
                 el.addEventListener("change", function () {
                     syncTabPrefsVisibility();
+                    syncNotationPrefsVisibility();
                     scheduleRender();
                 });
             }

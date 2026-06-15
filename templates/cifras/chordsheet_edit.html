@@ -153,6 +153,13 @@
             <details class="prefs">
                 <summary>Preferências de layout</summary>
                 <div class="prefs-row">
+                    <label>Notação
+                        <select id="pref-notation-style" title="Estilo de escrita dos acordes">
+                            <option value="br" selected>Brasil (C7+, °, m7b5)</option>
+                            <option value="intl">Internacional (Δ, ø, Bravura)</option>
+                            <option value="us">Americana (maj7, dim)</option>
+                        </select>
+                    </label>
                     <label>Compassos/linha
                         <select id="pref-bars-per-row">
                             {% for n in range(1, 9) %}
@@ -181,20 +188,20 @@
                             <option value="center">Centro</option>
                         </select>
                     </label>
-                    <label>Maj7
+                    <label class="pref-notation-detail">Maj7
                         <select id="pref-maj7">
                             <option value="delta">Δ</option>
                             <option value="MA7">MA7</option>
                             <option value="maj7">maj7</option>
                         </select>
                     </label>
-                    <label>Dim
+                    <label class="pref-notation-detail">Dim
                         <select id="pref-dim">
                             <option value="circle">°</option>
                             <option value="dim">dim</option>
                         </select>
                     </label>
-                    <label>½dim
+                    <label class="pref-notation-detail">½dim
                         <select id="pref-half-dim">
                             <option value="oslash">ø</option>
                             <option value="m7b5">m7b5</option>
@@ -262,6 +269,6 @@ window.CHORDSHEET_EDITOR = {
     draftKey: "setsync.chordsheet.draft:{{ cifra.id }}"
 };
 </script>
-<script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=8"></script>
+<script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=9"></script>
 </body>
 </html>

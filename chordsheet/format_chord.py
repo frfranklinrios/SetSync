@@ -6,8 +6,10 @@ import html
 import re
 
 from chordsheet.chord_token import parse_chord_token
+from chordsheet.notation_style import effective_quality_prefs, uses_smufl
 from chordsheet.prefs import Prefs
 from chordsheet.smufl_chord import display_to_smufl
+from util import to_brazilian_chord_notation
 
 ROOT = re.compile(
     r"^([A-G])([#b]?)(.*)$",
@@ -26,6 +28,9 @@ def format_chord_display(chord: str, prefs: Prefs) -> str:
     if parsed.blank_head:
         return raw if raw.startswith("/") else f"/{raw.lstrip('/')}"
 
+    if prefs.notation_style == "br":
+        return to_brazilian_chord_notation(raw)
+
     slash = raw.find("/")
     head = raw[:slash] if slash >= 0 else raw
     tail = raw[slash:] if slash >= 0 else ""
@@ -35,24 +40,25 @@ def format_chord_display(chord: str, prefs: Prefs) -> str:
 
 
 def _apply_quality_styles(head: str, prefs: Prefs) -> str:
+    maj7_style, dim_style, half_dim_style = effective_quality_prefs(prefs)
     h = head
-    if prefs.maj7_style == "delta":
+    if maj7_style == "delta":
         h = re.sub(r"maj13", "Δ13", h, flags=re.I)
         h = re.sub(r"maj9", "Δ9", h, flags=re.I)
         h = re.sub(r"maj7", "Δ7", h, flags=re.I)
         h = re.sub(r"MA7", "Δ7", h, flags=re.I)
-    elif prefs.maj7_style == "MA7":
+    elif maj7_style == "MA7":
         h = re.sub(r"maj7", "MA7", h, flags=re.I)
 
-    if prefs.dim_style == "circle":
+    if dim_style == "circle":
         h = re.sub(r"dim7", "°7", h, flags=re.I)
         h = re.sub(r"dim", "°", h, flags=re.I)
-    elif prefs.dim_style == "dim":
+    elif dim_style == "dim":
         h = re.sub(r"dim7", "dim7", h, flags=re.I)
 
-    if prefs.half_dim_style == "oslash":
+    if half_dim_style == "oslash":
         h = re.sub(r"m7b5", "ø7", h, flags=re.I)
-    elif prefs.half_dim_style == "m7b5":
+    elif half_dim_style == "m7b5":
         h = re.sub(r"m7b5", "m7b5", h, flags=re.I)
 
     h = re.sub(r"aug", "+", h, flags=re.I)
@@ -74,11 +80,14 @@ def chord_to_html(chord: str, prefs: Prefs) -> str:
 
     m = ROOT.match(display)
     if not m:
-        inner = f'<span class="cs-chord cs-smufl">{html.escape(display)}</span>'
+        css = "cs-chord cs-smufl" if uses_smufl(prefs) else "cs-chord"
+        inner = f'<span class="{css}">{html.escape(display)}</span>'
         return _wrap_chord(inner, parsed)
 
-    smufl = display_to_smufl(display)
-    inner = f'<span class="cs-chord cs-smufl">{smufl}</span>'
+    if uses_smufl(prefs):
+        inner = f'<span class="cs-chord cs-smufl">{display_to_smufl(display)}</span>'
+    else:
+        inner = f'<span class="cs-chord">{html.escape(display)}</span>'
     return _wrap_chord(inner, parsed)
 
 
