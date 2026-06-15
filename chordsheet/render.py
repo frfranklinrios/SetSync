@@ -112,26 +112,12 @@ def _beat_count(chart: Chart, bar: Bar) -> int:
         return 4
 
 
-def _semi_pulse_slot_html(chord: str, prefs) -> str:
-    if chord in ("*", "", "%"):
-        return '<span class="cs-semi"><span class="cs-empty">·</span></span>'
-    ch = chord_to_html(chord, prefs)
-    if not ch:
-        return '<span class="cs-semi"><span class="cs-empty">·</span></span>'
-    return f'<span class="cs-semi"><span class="cs-slot">{ch}</span></span>'
-
-
-def _render_full_semi_pulse_bar(semi_chords: list[str], prefs) -> tuple[str, str]:
-    """Compasso só com semi-pulsos (ex.: C&D) — metade do compasso por acorde."""
-    inner = "".join(_semi_pulse_slot_html(c, prefs) for c in semi_chords)
-    return inner, "cs-chords-semi-bar"
-
-
-def _last_active_beat(grid: list[list[str]]) -> int:
-    for i in range(len(grid) - 1, -1, -1):
-        if any(c not in ("*", "", "%") for c in grid[i]):
-            return i + 1
-    return 0
+def _pad_pulse_grid(grid: list[list[str]], beats: int) -> list[list[str]]:
+    """Garante um slot por pulso do compasso; faltantes viram ·."""
+    out = [list(beat) for beat in grid]
+    while len(out) < beats:
+        out.append(["*"])
+    return out[:beats]
 
 
 def _render_beat_cell(col: int, beat_chords: list[str], prefs) -> str:
@@ -139,22 +125,22 @@ def _render_beat_cell(col: int, beat_chords: list[str], prefs) -> str:
     if len(beat_chords) == 1:
         c = beat_chords[0]
         if c in ("*", "", "%"):
-            inner = '<span class="cs-empty">·</span>'
+            inner = '<span class="cs-empty">.</span>'
         else:
             ch = chord_to_html(c, prefs)
-            inner = f'<span class="cs-slot">{ch}</span>' if ch else '<span class="cs-empty">·</span>'
+            inner = f'<span class="cs-slot">{ch}</span>' if ch else '<span class="cs-empty">.</span>'
         return f'<span class="cs-beat" style="grid-column:{col}">{inner}</span>'
 
     subs: list[str] = []
     for c in beat_chords:
         if c in ("*", "", "%"):
-            subs.append('<span class="cs-sub"><span class="cs-empty">·</span></span>')
+            subs.append('<span class="cs-sub"><span class="cs-empty">.</span></span>')
         else:
             ch = chord_to_html(c, prefs)
             if ch:
                 subs.append(f'<span class="cs-sub"><span class="cs-slot">{ch}</span></span>')
             else:
-                subs.append('<span class="cs-sub"><span class="cs-empty">·</span></span>')
+                subs.append('<span class="cs-sub"><span class="cs-empty">.</span></span>')
     return (
         f'<span class="cs-beat cs-beat--split" style="grid-column:{col}">'
         f'{"".join(subs)}</span>'
@@ -163,21 +149,10 @@ def _render_beat_cell(col: int, beat_chords: list[str], prefs) -> str:
 
 def _render_beat_grid(beats: int, grid: list[list[str]], prefs) -> str:
     """Distribui pulsos (e semi-pulsos) nas colunas do compasso."""
-    has_semi = any(len(b) > 1 for b in grid)
-    if has_semi:
-        display_beats = max(_last_active_beat(grid), 1)
-    else:
-        display_beats = beats
+    grid = _pad_pulse_grid(grid, beats)
     parts = []
-    for j in range(1, display_beats + 1):
-        beat_idx = j - 1
-        if beat_idx < len(grid):
-            parts.append(_render_beat_cell(j, grid[beat_idx], prefs))
-        else:
-            parts.append(
-                f'<span class="cs-beat" style="grid-column:{j}">'
-                f'<span class="cs-empty">·</span></span>'
-            )
+    for j in range(1, beats + 1):
+        parts.append(_render_beat_cell(j, grid[j - 1], prefs))
     return "".join(parts), "cs-chords-beats"
 
 
@@ -187,7 +162,7 @@ def _render_chords_content(bar: Bar, chart: Chart) -> tuple[str, str]:
 
     if bar.is_empty:
         inner = "".join(
-            f'<span class="cs-beat" style="grid-column:{j}"><span class="cs-empty">·</span></span>'
+            f'<span class="cs-beat" style="grid-column:{j}"><span class="cs-empty">.</span></span>'
             for j in range(1, beats + 1)
         )
         return inner, "cs-chords-beats"
@@ -209,22 +184,20 @@ def _render_chords_content(bar: Bar, chart: Chart) -> tuple[str, str]:
         )
 
     grid = bar.get_pulse_grid()
-    if len(grid) == 1 and len(grid[0]) > 1:
-        return _render_full_semi_pulse_bar(grid[0], chart.prefs)
     multi_beat = len(grid) > 1 or any(len(b) > 1 for b in grid)
     if multi_beat:
         return _render_beat_grid(beats, grid, chart.prefs)
 
-    ch = chord_to_html(bar.chords[0] if bar.chords else "", chart.prefs)
-    if not ch:
+    chord = bar.chords[0] if bar.chords else ""
+    if not chord or chord in ("%", "*", ""):
         inner = "".join(
-            f'<span class="cs-beat" style="grid-column:{j}"><span class="cs-empty">·</span></span>'
+            f'<span class="cs-beat" style="grid-column:{j}"><span class="cs-empty">.</span></span>'
             for j in range(1, beats + 1)
         )
         return inner, "cs-chords-beats"
 
-    # Um acorde por compasso: centralizado, sem pontos de pulso vazios
-    return ch, "cs-align-center"
+    # Um acorde: primeiro pulso com acorde, demais com ·
+    return _render_beat_grid(beats, [[chord]], chart.prefs)
 
 
 def _align_class(bar: Bar, prefs) -> str:

@@ -43,8 +43,17 @@ class MetaCharactersTest(unittest.TestCase):
         self.assertEqual(chart.bars[0].get_pulse_grid(), [["C", "D"]])
         self.assertEqual(chart.bars[0].chords, ["C&D"])
         html = render_chart_html(chart)
-        self.assertIn("cs-chords-semi-bar", html)
-        self.assertNotIn("cs-beat--split", html)
+        self.assertIn("cs-chords-beats", html)
+        self.assertIn("cs-beat--split", html)
+        self.assertNotIn("cs-chords-semi-bar", html)
+        self.assertEqual(html.count("cs-empty"), 3)
+
+    def test_single_chord_shows_all_pulses(self):
+        chart = parse_chart("C", meta={"title": "T", "time_signature": "4/4"})
+        html = render_chart_html(chart)
+        self.assertIn("cs-chords-beats", html)
+        self.assertEqual(html.count('class="cs-beat"'), 4)
+        self.assertEqual(html.count("cs-empty"), 3)
 
     def test_semi_pulse_with_underscore(self):
         chart = parse_chart("C&D_E_F", meta={"title": "T", "key": "C"})
@@ -145,7 +154,7 @@ class MetaCharactersTest(unittest.TestCase):
             parse_chart(
                 "F#m7 Cmaj7 Am/E",
                 meta={"title": "T", "key": "C"},
-                prefs={"notation_style": "intl"},
+                prefs={"notation_style": "intl", "notation_style_chosen": True},
             ),
         )
         self.assertIn("cs-smufl", html_out)
