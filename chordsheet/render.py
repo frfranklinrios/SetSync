@@ -266,6 +266,12 @@ def _annotation_is_section_label(text: str) -> bool:
 def _render_annotation(bar: Bar) -> str:
     if bar.blank_spacer:
         return '<div class="cs-blank-spacer" aria-hidden="true"></div>'
+    if bar.private_note:
+        text = html.escape(bar.annotation)
+        return (
+            f'<div class="cs-annotation cs-private-note" aria-label="Nota privada">'
+            f'<span class="cs-private-badge">priv.</span> {text}</div>'
+        )
     if bar.annotation_literal:
         text = html.escape(bar.annotation)
         return f'<div class="cs-literal">{text}</div>'

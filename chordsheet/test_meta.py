@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import unittest
 
 from chordsheet.examples import EXAMPLES
@@ -77,6 +78,57 @@ class MetaCharactersTest(unittest.TestCase):
         chart = parse_chart("# comentário\nC Am", meta={"title": "T"})
         self.assertEqual(len(chart.bars), 2)
 
+    def test_private_note_parses_and_renders(self):
+        chart = parse_chart("C Am\n! só eu vejo\nF G", meta={"title": "T"})
+        private = [b for b in chart.bars if b.private_note]
+        self.assertEqual(len(private), 1)
+        self.assertEqual(private[0].annotation, "só eu vejo")
+        html = render_chart_html(chart)
+        self.assertIn("cs-private-note", html)
+        self.assertIn("só eu vejo", html)
+        self.assertIn("! só eu vejo", chart.to_source())
+
+    def test_private_notes_split_and_merge(self):
+        from chordsheet.private_notes import (
+            extract_and_store_private_notes,
+            merge_private_notes,
+            split_private_notes,
+        )
+
+        src = "C Am\n! lembrar\nF G"
+        shared, notes = split_private_notes(src)
+        self.assertEqual(shared, "C Am\nF G")
+        self.assertEqual(notes, [{"line": 1, "text": "lembrar"}])
+        merged = merge_private_notes(shared, notes)
+        self.assertEqual(merged, src)
+        stored = extract_and_store_private_notes(
+            {"source": src, "private_notes": {"u2": [{"line": 0, "text": "outro"}]}},
+            "u1",
+        )
+        self.assertEqual(stored["source"], "C Am\nF G")
+        self.assertEqual(stored["private_notes"]["u1"][0]["text"], "lembrar")
+        self.assertEqual(stored["private_notes"]["u2"][0]["text"], "outro")
+
+    def test_private_notes_only_for_owner_in_render_bridge(self):
+        from chordsheet_bridge import render_cifra_chordsheet_html
+
+        cifra = {
+            "tom_original": "C",
+            "leadsheet_json": json.dumps({
+                "module": "setsync.chordsheet",
+                "version": "1.0.0",
+                "source": "C Am F G",
+                "meta": {"title": "T", "key": "C"},
+                "private_notes": {
+                    "user-a": [{"line": 1, "text": "minha dica"}],
+                },
+            }),
+        }
+        html_owner = render_cifra_chordsheet_html(cifra, viewer_user_id="user-a")
+        html_other = render_cifra_chordsheet_html(cifra, viewer_user_id="user-b")
+        self.assertIn("minha dica", html_owner or "")
+        self.assertNotIn("minha dica", html_other or "")
+
     def test_text_and_section_lines(self):
         chart = parse_chart("- Cabeçalho\n= A\nC D", meta={"title": "T"})
         self.assertEqual(chart.bars[0].annotation, "Cabeçalho")
@@ -90,6 +142,30 @@ class MetaCharactersTest(unittest.TestCase):
         chords = [c for b in chart.bars for c in b.chords if c not in ("%", "")]
         self.assertIn("F", chords)
         self.assertNotIn("E#", chords)
+
+    def test_transpose_c_to_eb_uses_flats(self):
+        from chordsheet.transpose import transpose_chart
+
+        chart = parse_chart("C F G", meta={"title": "T", "key": "C"})
+        transposed = transpose_chart(chart, 3, source_key="C")
+        chords = [c for b in transposed.bars for c in b.chords]
+        self.assertEqual(transposed.meta.key, "Eb")
+        self.assertEqual(chords, ["Eb", "Ab", "Bb"])
+
+    def test_transpose_em_to_f_sharp_minor(self):
+        from chordsheet.transpose import transpose_chart
+
+        chart = parse_chart("Em Am", meta={"title": "T", "key": "Em"})
+        transposed = transpose_chart(chart, 2, source_key="Em")
+        chords = [c for b in transposed.bars for c in b.chords]
+        self.assertEqual(transposed.meta.key, "F#m")
+        self.assertEqual(chords, ["F#m", "Bm"])
+
+    def test_transpose_slash_chord_spelling(self):
+        from chordsheet.transpose import transpose_chord
+
+        self.assertEqual(transpose_chord("C/E", 2, "C"), "D/F#")
+        self.assertEqual(transpose_chord("G/B", 3, "C"), "Bb/D")
 
     def test_manual_meta_example_parses(self):
         ex = EXAMPLES["manual_meta"]

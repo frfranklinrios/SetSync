@@ -348,9 +348,11 @@ def admin_vouchers_usos(codigo):
 def igrejas():
     """Landing page para igrejas."""
     from config import whatsapp_number, whatsapp_message
+    from monetizacao import plano_worship_para_site
+
     return render_template(
         'igrejas.html',
-        planos_site=planos_para_site(),
+        plano_worship=plano_worship_para_site(),
         whatsapp=whatsapp_number(),
         whatsapp_message=whatsapp_message(),
     )

@@ -51,9 +51,15 @@
         <strong>montar setlists</strong>, <strong>transpor acordes</strong> e usar o
         <strong>Modo Tocar</strong> — tudo o que músicos e líderes de louvor buscam no Google.
     </p>
+    <p class="text-muted small" style="max-width: 42rem;">
+        Para o passo a passo completo do app (chord sheet, autosave, notas privadas, planos e palco),
+        use a <a href="{{ url_for('ajuda.index') }}">central de ajuda</a>.
+        Igrejas com vários ministérios: <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a>.
+    </p>
     <p class="mb-0">
         <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm me-2">Criar conta grátis</a>
-        <a href="{{ url_for('blog.blog_index') }}" class="btn btn-outline-secondary btn-sm">Ver blog</a>
+        <a href="{{ url_for('ajuda.index') }}" class="btn btn-outline-secondary btn-sm me-2">Ajuda</a>
+        <a href="{{ url_for('blog.blog_index') }}" class="btn btn-outline-secondary btn-sm">Blog</a>
     </p>
 </div>
 

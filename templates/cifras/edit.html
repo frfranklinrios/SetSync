@@ -115,8 +115,25 @@
     background: rgba(45, 212, 191, 0.12);
     color: var(--text);
 }
-.chordsheet-embed .status.err { background: rgba(239,68,68,0.12); color: #dc2626; }
-[data-theme="dark"] .chordsheet-embed .status.err { color: #fca5a5; }
+.chordsheet-embed .toolbar .btn-undo:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.chordsheet-embed .status.pending {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+}
+.chordsheet-embed .status.saved {
+    background: rgba(13, 148, 136, 0.12);
+    color: #0d9488;
+}
+.chordsheet-embed .status.saving {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+}
+[data-theme="dark"] .chordsheet-embed .status.pending { color: #fbbf24; }
+[data-theme="dark"] .chordsheet-embed .status.saved { color: #5eead4; }
+[data-theme="dark"] .chordsheet-embed .status.saving { color: #93c5fd; }
 </style>
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
@@ -256,7 +273,7 @@ window.CHORDSHEET_EDITOR = {
     draftKey: "setsync.chordsheet.draft:{{ cifra.id }}"
 };
 </script>
-<script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=10"></script>
+<script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=11"></script>
 
 <script>
 const CHORD_TOKEN = /^[A-G][#b]?(?:(?:maj7?|min|m7b5|m7|M7?|m|dim7?|aug|sus[24]?|add9?|\d+|[+\-°º]|[b#]\d))*(?:\/[A-G][#b]?)?$/;

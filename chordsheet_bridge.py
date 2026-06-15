@@ -7,6 +7,12 @@ from typing import Any
 
 from chordsheet.export import MODULE_ID, chart_to_payload, payload_to_chart
 from chordsheet.parser import Chart, parse_chart
+from chordsheet.private_notes import (
+    apply_private_notes_to_payload,
+    extract_and_store_private_notes,
+    merge_private_notes,
+    split_private_notes,
+)
 from chordsheet.render import render_chart_html
 from chordsheet.transpose import transpose_chart
 from leadsheet.converter import is_leadsheet_document, resolve_to_grade_flat
@@ -70,7 +76,7 @@ def chart_to_grade_flat(chart: Chart) -> list[dict]:
     result: list[dict] = []
     bar_num = 0
     for i, bar in enumerate(chart.bars):
-        if bar.blank_spacer:
+        if bar.blank_spacer or bar.private_note:
             continue
         if bar.nav:
             continue
@@ -84,15 +90,20 @@ def chart_to_grade_flat(chart: Chart) -> list[dict]:
     return result
 
 
-def load_editor_initial(cifra: dict) -> dict[str, Any]:
+def load_editor_initial(cifra: dict, user_id: str | None = None) -> dict[str, Any]:
     """Estado inicial do editor Chord Sheet para uma cifra."""
+    saved_at = cifra.get("updated_at")
     stored = load_stored_chordsheet(cifra)
     if stored:
-        return {
-            "source": stored.get("source") or "",
-            "meta": stored.get("meta") or {},
-            "prefs": stored.get("prefs") or {},
+        view = apply_private_notes_to_payload(stored, user_id)
+        out = {
+            "source": view.get("source") or "",
+            "meta": view.get("meta") or {},
+            "prefs": view.get("prefs") or {},
         }
+        if saved_at:
+            out["saved_at"] = str(saved_at)
+        return out
 
     flat = resolve_to_grade_flat(cifra)
     bpm = cifra.get("bpm")
@@ -109,6 +120,7 @@ def load_editor_initial(cifra: dict) -> dict[str, Any]:
         "source": grade_flat_to_source(flat) if flat else "",
         "meta": meta,
         "prefs": {},
+        **({"saved_at": str(saved_at)} if saved_at else {}),
     }
 
 
@@ -254,6 +266,7 @@ def render_cifra_chordsheet_html(
     semitones: int = 0,
     display_key: str | None = None,
     grade_list: list[dict] | None = None,
+    viewer_user_id: str | None = None,
 ) -> str | None:
     """Renderiza HTML do chord sheet no mesmo tom da cifra (tom_original + transposição)."""
     from util import key_at_transpose, normalize_tom_label, normalize_transpose_semitones
@@ -264,7 +277,8 @@ def render_cifra_chordsheet_html(
 
     stored = load_stored_chordsheet(cifra)
     if stored:
-        chart = payload_to_chart(stored)
+        view = apply_private_notes_to_payload(stored, viewer_user_id)
+        chart = payload_to_chart(view)
     else:
         payload = cifra_chart_payload(cifra, grade_list=grade_list)
         if not payload:
@@ -283,13 +297,18 @@ def render_cifra_chordsheet_html(
             cifra, performance, chart_source_key=source_key
         )
         if chart_semi:
-            chart = transpose_chart(chart, chart_semi)
+            chart = transpose_chart(chart, chart_semi, source_key=source_key)
         chart.meta.key = target_key
     apply_chart_cifra_spelling(chart, target_key)
     return render_chart_html(chart)
 
 
-def persist_chordsheet_payload(cifra_id: str, data: dict[str, Any]) -> dict[str, Any]:
+def persist_chordsheet_payload(
+    cifra_id: str,
+    data: dict[str, Any],
+    *,
+    user_id: str,
+) -> dict[str, Any]:
     """Salva payload chordsheet e sincroniza grade_json."""
     from db import get_cifra, update_cifra
 
@@ -297,8 +316,13 @@ def persist_chordsheet_payload(cifra_id: str, data: dict[str, Any]) -> dict[str,
     if not cifra:
         raise ValueError("Cifra não encontrada")
 
-    chart = payload_to_chart(data)
-    payload = chart_to_payload(chart)
+    stored = load_stored_chordsheet(cifra) or {}
+    existing_pn = dict(stored.get("private_notes") or {})
+    cleaned = extract_and_store_private_notes(data, user_id)
+    private_notes = {**existing_pn, **(cleaned.get("private_notes") or {})}
+
+    chart = payload_to_chart(cleaned)
+    payload = chart_to_payload(chart, private_notes=private_notes)
     flat = chart_to_grade_flat(chart)
     meta = payload.get("meta") or {}
 

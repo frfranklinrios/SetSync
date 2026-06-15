@@ -11,13 +11,21 @@ MODULE_ID = "setsync.chordsheet"
 MODULE_VERSION = "1.0.0"
 
 
-def chart_to_payload(chart: Chart) -> dict[str, Any]:
-    return {
+def chart_to_payload(
+    chart: Chart,
+    *,
+    private_notes: dict[str, list[dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    from chordsheet.private_notes import split_private_notes
+
+    full_source = chart.to_source()
+    shared_source, _ = split_private_notes(full_source)
+    payload: dict[str, Any] = {
         "module": MODULE_ID,
         "version": MODULE_VERSION,
         "meta": asdict(chart.meta),
         "prefs": asdict(chart.prefs),
-        "source": chart.to_source(),
+        "source": shared_source,
         "sections": [
             {"bar_index": i, "title": t} for i, t in chart.sections
         ],
@@ -33,6 +41,7 @@ def chart_to_payload(chart: Chart) -> dict[str, Any]:
                 "repeat_times": b.repeat_times,
                 "nav": b.nav,
                 "annotation": b.annotation,
+                "private_note": b.private_note,
                 "volta": b.volta,
                 "line_left": b.line_left,
                 "line_right": b.line_right,
@@ -41,6 +50,9 @@ def chart_to_payload(chart: Chart) -> dict[str, Any]:
             for b in chart.bars
         ],
     }
+    if private_notes:
+        payload["private_notes"] = private_notes
+    return payload
 
 
 def payload_to_chart(data: dict[str, Any]) -> Chart:
@@ -84,6 +96,7 @@ def payload_to_chart(data: dict[str, Any]) -> Chart:
             repeat_times=int(raw.get("repeat_times") or 0),
             nav=str(raw.get("nav") or ""),
             annotation=str(raw.get("annotation") or ""),
+            private_note=bool(raw.get("private_note")),
             volta=str(raw.get("volta") or ""),
             line_left=str(raw.get("line_left") or "single"),
             line_right=str(raw.get("line_right") or "single"),

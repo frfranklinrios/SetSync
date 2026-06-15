@@ -62,9 +62,10 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
                 '<li><strong>Repertório único</strong> — cifras, letras e chord sheet na mesma música.</li>'
                 '<li><strong>Convites por link</strong> — integre guitarristas, tecladistas, bateristas e vocalistas.</li>'
                 '<li><strong>Setlists</strong> — ordem do culto ou show, tom por cantor, navegação no Modo Tocar.</li>'
-                '<li><strong>Transposição</strong> — cada vocalista com o tom certo sem reescrever acordes.</li>'
+                '<li><strong>Transposição</strong> — cada vocalista com o tom certo; sustenidos e bemóis pela armadura do tom.</li>'
+                '<li><strong>Chord sheet</strong> — editor com salvamento automático, notação brasileira e semi-pulsos.</li>'
                 '<li><strong>Agenda</strong> — ensaios e cultos com setlist vinculada e escalação (planos Pro/Worship).</li>'
-                '<li><strong>Plano grátis</strong> — comece sem cartão; evolua para Pro ou Worship quando precisar.</li>'
+                '<li><strong>Plano grátis</strong> — comece sem cartão; evolua para Individual, Pro ou Worship.</li>'
                 '</ul>'
             ),
         },
@@ -84,14 +85,28 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
         {
             'h2': 'Para igrejas com várias equipes',
             'html': (
-                '<p>No plano <strong>Worship</strong>, uma conta gerencia várias bandas de louvor — '
-                'cada ministério com repertório e setlists próprios. Ideal para igrejas com equipe '
-                'de domingo, jovens e vigília sem misturar cifras.</p>'
-                '<p>Veja também o <a href="/igrejas">SetSync para igrejas</a> e artigos no '
-                '<a href="/blog">blog</a>.</p>'
+                '<p>No plano <strong>Worship</strong>, uma conta gerencia <strong>todas as bandas de louvor</strong> '
+                'da congregação — jovem, casal, gospel, infantil — cada uma com repertório e setlists próprios, '
+                'sem pagar o Pro separado para cada ministério.</p>'
+                '<p>Comece no plano grátis com uma banda e faça upgrade quando a igreja crescer. '
+                'Veja detalhes e preços em <a href="/igrejas">SetSync para igrejas</a> ou a '
+                '<a href="/ajuda#planos">central de ajuda</a>.</p>'
             ),
         },
     ]
+
+    if 'igreja' in obj or 'worship' in obj or 'múltiplas bandas' in obj:
+        blocks.insert(1, {
+            'h2': 'Plano Worship: uma assinatura, vários ministérios',
+            'html': (
+                '<p>Em vez de contratar o Pro para cada equipe (jovem, casal, gospel), o '
+                '<strong>Worship</strong> cobre todas as bandas da congregação na mesma conta. '
+                'Cada ministério mantém repertório, setlists e integrantes separados — a liderança '
+                'do louvor centraliza tudo.</p>'
+                '<p>Comece grátis com uma banda e evolua quando precisar. '
+                '<a href="/igrejas">Conheça o SetSync para igrejas</a>.</p>'
+            ),
+        })
 
     if 'cifra' in obj or 'acorde' in obj or 'transpor' in verb:
         blocks.insert(1, {
@@ -99,7 +114,18 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'html': (
                 '<p>Cadastre cada vocalista e a transposição preferida. Na setlist, escolha quem canta '
                 'cada música — a cifra abre no tom certo automaticamente, inclusive no chord sheet. '
+                'O SetSync grafia sustenidos e bemóis conforme a armadura do tom (ex.: C→Eb gera Eb, Ab, Bb). '
                 'Acabou o "espera, deixa eu subir meio tom no papel".</p>'
+            ),
+        })
+
+    if 'chord sheet' in obj or 'chord-sheet' in obj:
+        blocks.insert(1, {
+            'h2': 'Chord sheet profissional',
+            'html': (
+                '<p>Além da cifra com letra, monte a progressão harmônica no editor chordsheet.com integrado: '
+                'compassos, simile, seções e semi-pulsos. Salvamento automático, notação brasileira (C7+, °, m7b5) '
+                'e notas privadas com <code>!</code> só para quem escreveu. No palco, alterne cifra, chord sheet e letra.</p>'
             ),
         })
 
@@ -232,6 +258,7 @@ _STANDALONE_TOPICS: list[str] = [
     'louvor igreja app',
     'transposição automática cantor',
     'múltiplas bandas igreja',
+    'plano worship igreja',
     'cifras offline celular',
     'pwa cifras banda',
     'pdf setlist banda',
@@ -315,7 +342,11 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Como gerenciar várias bandas de louvor?',
-            'a': 'No plano Worship, uma conta administra múltiplas bandas — cada ministério com repertório e setlists próprios. Convites e permissões por equipe.',
+            'a': 'No plano Worship, uma conta administra múltiplas bandas na mesma congregação — jovem, casal, gospel etc. — cada uma com repertório e setlists próprios. Veja setsync.com.br/igrejas.',
+        },
+        {
+            'q': 'Qual a diferença entre Pro e Worship?',
+            'a': 'O Pro cobre uma banda com integrantes ilimitados. O Worship cobre várias bandas na mesma conta — ideal para igrejas. Músico solo pode usar o plano Individual.',
         },
         {
             'q': 'Posso montar setlist para culto gospel online?',
@@ -323,11 +354,11 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'O SetSync transpor cifras automaticamente?',
-            'a': 'Cadastre vocalistas com transposição preferida. Ao montar a setlist, escolha quem canta — a cifra abre no tom certo, inclusive chord sheet.',
+            'a': 'Cadastre vocalistas com transposição preferida. Ao montar a setlist, escolha quem canta — a cifra abre no tom certo, com sustenidos e bemóis pela armadura (Eb, Bb etc.), inclusive no chord sheet.',
         },
         {
             'q': 'Existe app de cifras para banda grátis?',
-            'a': 'O SetSync tem plano grátis para começar: repertório, bandas, setlists e Modo Tocar. Planos Pro e Worship liberam mais recursos.',
+            'a': 'O SetSync tem plano grátis para começar: repertório, bandas, setlists e Modo Tocar. Planos Individual (solo), Pro (uma banda) e Worship (várias bandas) ampliam recursos.',
         },
         {
             'q': 'Como convidar músicos para a banda?',
@@ -355,7 +386,7 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Tem chord sheet além da cifra tradicional?',
-            'a': 'Cada música pode ter cifra, chord sheet e letra. A transposição e a grafia dos acordes ficam alinhadas entre os formatos.',
+            'a': 'Cada música pode ter cifra, chord sheet e letra. O editor salva automaticamente, transponde com grafia correta e permite notas privadas (!) visíveis só para quem escreveu.',
         },
         {
             'q': 'Como organizar ensaios da banda?',

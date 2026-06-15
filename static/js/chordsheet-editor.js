@@ -1,5 +1,6 @@
 /**
  * Editor Chord Sheet (formato chordsheet.com) — integrado ao SetSync.
+ * Salvamento automático no servidor + desfazer para o último estado salvo.
  */
 (function () {
     "use strict";
@@ -7,14 +8,33 @@
     var CFG = window.CHORDSHEET_EDITOR;
     if (!CFG) return;
 
+    var RENDER_DEBOUNCE_MS = 280;
+    var AUTOSAVE_DEBOUNCE_MS = 2500;
+    var AUTOSAVE_RETRY_MS = 12000;
+
     var debounceTimer = null;
+    var autosaveTimer = null;
+    var autosaveRetryTimer = null;
     var busy = false;
+    var saving = false;
+    var savedBaseline = null;
+    var dirty = false;
+    var saveFailed = false;
 
     function $(id) { return document.getElementById(id); }
+
+    function clonePayload(data) {
+        return JSON.parse(JSON.stringify(data || {}));
+    }
 
     function mainMetaField(name) {
         var el = document.querySelector('[name="' + name + '"]');
         return el ? String(el.value || "").trim() : "";
+    }
+
+    function setMainMetaField(name, value) {
+        var el = document.querySelector('[name="' + name + '"]');
+        if (el) el.value = value || "";
     }
 
     function metaFromForm() {
@@ -59,30 +79,65 @@
     }
 
     function payloadFromForm() {
-        var payload = {
+        return {
             source: ($("source") && $("source").value) || "",
             meta: metaFromForm(),
             prefs: prefsFromForm()
         };
-        if (CFG.embedMode) payload.redirect_to = "edit";
-        return payload;
     }
 
-    function setStatus(msg, isErr) {
+    function payloadSignature(payload) {
+        var p = payload || {};
+        return JSON.stringify({
+            source: p.source || "",
+            meta: p.meta || {},
+            prefs: p.prefs || {}
+        });
+    }
+
+    function isDirtyAgainstBaseline() {
+        if (!savedBaseline) return false;
+        return payloadSignature(payloadFromForm()) !== payloadSignature(savedBaseline);
+    }
+
+    function updateDirtyState() {
+        dirty = isDirtyAgainstBaseline();
+        updateUndoButton();
+        if (dirty) {
+            if (!saving && !saveFailed) {
+                setStatus("Alterações pendentes…", false, "pending");
+            }
+        } else if (!saving && !saveFailed) {
+            setStatus("Salvo", false, "saved");
+        }
+    }
+
+    function updateUndoButton() {
+        var disabled = !dirty || busy || saving;
+        ["btn-undo", "btn-undo-top"].forEach(function (id) {
+            var btn = $(id);
+            if (btn) btn.disabled = disabled;
+        });
+    }
+
+    function setStatus(msg, isErr, kind) {
         var el = $("status");
         if (!el) return;
         if (!msg) {
             el.hidden = true;
             el.textContent = "";
-            el.classList.remove("err");
+            el.classList.remove("err", "pending", "saved", "saving");
             return;
         }
         el.hidden = false;
         el.textContent = msg;
         el.classList.toggle("err", !!isErr);
+        el.classList.remove("pending", "saved", "saving");
+        if (kind) el.classList.add(kind);
     }
 
-    function applyInitial(data) {
+    function applyInitial(data, options) {
+        options = options || {};
         if (!data) return;
         var meta = data.meta || {};
         if (!CFG.embedMode) {
@@ -90,6 +145,11 @@
             if ($("meta-artist")) $("meta-artist").value = meta.artist || "";
             if ($("meta-key")) $("meta-key").value = meta.key || "";
             if ($("meta-bpm")) $("meta-bpm").value = meta.bpm || "";
+        } else if (options.syncEmbedMeta) {
+            setMainMetaField("titulo", meta.title || "");
+            setMainMetaField("artista", meta.artist || "");
+            setMainMetaField("tom_original", meta.key || "");
+            setMainMetaField("bpm", meta.bpm || "");
         }
         if ($("meta-ts")) $("meta-ts").value = meta.time_signature || "4/4";
         if ($("meta-capo")) $("meta-capo").value = meta.capo || "";
@@ -132,13 +192,16 @@
         });
     }
 
-    function saveDraft() {
+    function saveDraftLocal() {
         try {
-            localStorage.setItem(CFG.draftKey, JSON.stringify(payloadFromForm()));
+            var payload = payloadFromForm();
+            payload._draftAt = Date.now();
+            payload._serverSavedAt = (savedBaseline && savedBaseline.saved_at) || (CFG.initial && CFG.initial.saved_at) || "";
+            localStorage.setItem(CFG.draftKey, JSON.stringify(payload));
         } catch (e) { /* ignore */ }
     }
 
-    function loadDraft() {
+    function loadDraftLocal() {
         try {
             var raw = localStorage.getItem(CFG.draftKey);
             if (raw) return JSON.parse(raw);
@@ -146,8 +209,19 @@
         return null;
     }
 
-    function clearDraft() {
+    function clearDraftLocal() {
         try { localStorage.removeItem(CFG.draftKey); } catch (e) { /* ignore */ }
+    }
+
+    function shouldRestoreLocalDraft(draft, baseline) {
+        if (!draft) return false;
+        if (payloadSignature(draft) === payloadSignature(baseline)) return false;
+        var serverAt = String(baseline.saved_at || "");
+        var draftServerAt = String(draft._serverSavedAt || "");
+        if (serverAt && draftServerAt && serverAt !== draftServerAt) {
+            return true;
+        }
+        return true;
     }
 
     function apiFetch(url, body) {
@@ -175,35 +249,131 @@
     function renderPreview() {
         if (busy) return;
         busy = true;
-        setStatus("Renderizando…", false);
+        updateUndoButton();
         apiFetch(CFG.urls.render, payloadFromForm())
             .then(function (res) {
                 busy = false;
                 if (res.ok && res.data && res.data.ok) {
                     $("preview").innerHTML = res.data.html || "";
-                    setStatus(res.data.bar_count ? res.data.bar_count + " compassos" : "OK", false);
-                    saveDraft();
+                    if (!saving && !saveFailed) {
+                        if (dirty) {
+                            setStatus("Alterações pendentes…", false, "pending");
+                        } else {
+                            var extra = res.data.bar_count ? res.data.bar_count + " compassos · " : "";
+                            setStatus(extra + "Salvo", false, "saved");
+                        }
+                    }
+                    saveDraftLocal();
                 } else if (res.status === 302 || res.status === 401 || res.status === 403) {
-                    setStatus("Sessão expirada — recarregue a página e tente de novo", true);
+                    setStatus("Sessão expirada — recarregue a página", true);
                 } else {
-                    setStatus((res.data && res.data.error) || "Erro ao renderizar", true);
+                    setStatus((res.data && res.data.error) || "Erro na prévia", true);
                 }
+                updateUndoButton();
             })
             .catch(function () {
                 busy = false;
-                setStatus("Falha de rede ao renderizar", true);
+                setStatus("Falha de rede na prévia", true);
+                updateUndoButton();
             });
     }
 
     function scheduleRender() {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(renderPreview, 280);
+        debounceTimer = setTimeout(renderPreview, RENDER_DEBOUNCE_MS);
+    }
+
+    function scheduleAutosave() {
+        updateDirtyState();
+        if (!dirty) {
+            clearTimeout(autosaveTimer);
+            return;
+        }
+        saveDraftLocal();
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(function () {
+            saveToServer(true);
+        }, AUTOSAVE_DEBOUNCE_MS);
+    }
+
+    function scheduleAutosaveRetry() {
+        clearTimeout(autosaveRetryTimer);
+        if (!dirty && !saveFailed) return;
+        autosaveRetryTimer = setTimeout(function () {
+            if (dirty || saveFailed) saveToServer(true);
+        }, AUTOSAVE_RETRY_MS);
+    }
+
+    function onEditorChange() {
+        scheduleRender();
+        scheduleAutosave();
+    }
+
+    function saveToServer(isAutosave) {
+        if (saving) return;
+        if (!isAutosave && !dirty) return;
+        if (isAutosave && !dirty) return;
+
+        saving = true;
+        saveFailed = false;
+        updateUndoButton();
+        setStatus("Salvando…", false, "saving");
+
+        var body = payloadFromForm();
+        body.autosave = true;
+        if (CFG.embedMode) body.redirect_to = "edit";
+
+        apiFetch(CFG.urls.save, body)
+            .then(function (res) {
+                saving = false;
+                if (res.ok && res.data && res.data.ok) {
+                    var current = payloadFromForm();
+                    savedBaseline = clonePayload(current);
+                    if (res.data.saved_at) savedBaseline.saved_at = res.data.saved_at;
+                    clearDraftLocal();
+                    dirty = false;
+                    saveFailed = false;
+                    clearTimeout(autosaveRetryTimer);
+                    setStatus("Salvo", false, "saved");
+                } else if (res.status === 302 || res.status === 401 || res.status === 403) {
+                    saveFailed = true;
+                    setStatus("Sessão expirada — recarregue a página", true);
+                    scheduleAutosaveRetry();
+                } else {
+                    saveFailed = true;
+                    setStatus((res.data && res.data.error) || "Erro ao salvar — tentando de novo…", true);
+                    scheduleAutosaveRetry();
+                }
+                updateUndoButton();
+            })
+            .catch(function () {
+                saving = false;
+                saveFailed = true;
+                setStatus("Sem conexão — tentando salvar de novo…", true);
+                scheduleAutosaveRetry();
+                updateUndoButton();
+            });
+    }
+
+    function undoChanges() {
+        if (!savedBaseline || !dirty) return;
+        if (!window.confirm("Descartar alterações e voltar ao último estado salvo?")) return;
+        applyInitial(clonePayload(savedBaseline), { syncEmbedMeta: true });
+        dirty = false;
+        saveFailed = false;
+        clearDraftLocal();
+        clearTimeout(autosaveTimer);
+        clearTimeout(autosaveRetryTimer);
+        setStatus("Alterações desfeitas", false, "saved");
+        updateUndoButton();
+        scheduleRender();
     }
 
     function transpose(delta) {
-        if (busy) return;
+        if (busy || saving) return;
         busy = true;
-        setStatus("Transpondo…", false);
+        updateUndoButton();
+        setStatus("Transpondo…", false, "saving");
         var body = payloadFromForm();
         body.semitones = delta;
         apiFetch(CFG.urls.transpose, body)
@@ -213,38 +383,18 @@
                     if ($("source")) $("source").value = res.data.source || "";
                     if (res.data.meta) {
                         if ($("meta-key") && res.data.meta.key) $("meta-key").value = res.data.meta.key;
+                        if (CFG.embedMode) setMainMetaField("tom_original", res.data.meta.key || "");
                     }
-                    scheduleRender();
+                    onEditorChange();
                 } else {
                     setStatus((res.data && res.data.error) || "Erro ao transpor", true);
                 }
+                updateUndoButton();
             })
             .catch(function () {
                 busy = false;
                 setStatus("Falha de rede ao transpor", true);
-            });
-    }
-
-    function saveChart() {
-        if (busy) return;
-        busy = true;
-        setStatus("Salvando…", false);
-        apiFetch(CFG.urls.save, payloadFromForm())
-            .then(function (res) {
-                busy = false;
-                if (res.ok && res.data && res.data.ok) {
-                    clearDraft();
-                    setStatus("Salvo!", false);
-                    if (res.data.redirect) {
-                        window.location.href = res.data.redirect;
-                    }
-                } else {
-                    setStatus((res.data && res.data.error) || "Erro ao salvar", true);
-                }
-            })
-            .catch(function () {
-                busy = false;
-                setStatus("Falha de rede ao salvar", true);
+                updateUndoButton();
             });
     }
 
@@ -256,7 +406,7 @@
             meta: ex.meta || {},
             prefs: payloadFromForm().prefs
         });
-        scheduleRender();
+        onEditorChange();
     }
 
     function bindEvents() {
@@ -266,16 +416,16 @@
         metaIds.forEach(function (id) {
             var el = $(id);
             if (el) {
-                el.addEventListener("input", scheduleRender);
-                el.addEventListener("change", scheduleRender);
+                el.addEventListener("input", onEditorChange);
+                el.addEventListener("change", onEditorChange);
             }
         });
         if (CFG.embedMode) {
             ["titulo", "artista", "tom_original", "bpm"].forEach(function (name) {
                 var el = document.querySelector('[name="' + name + '"]');
                 if (el) {
-                    el.addEventListener("input", scheduleRender);
-                    el.addEventListener("change", scheduleRender);
+                    el.addEventListener("input", onEditorChange);
+                    el.addEventListener("change", onEditorChange);
                 }
             });
         }
@@ -287,16 +437,15 @@
                 el.addEventListener("change", function () {
                     syncTabPrefsVisibility();
                     syncNotationPrefsVisibility();
-                    scheduleRender();
+                    onEditorChange();
                 });
             }
         });
 
-        if ($("btn-render")) $("btn-render").addEventListener("click", renderPreview);
+        if ($("btn-undo")) $("btn-undo").addEventListener("click", undoChanges);
+        if ($("btn-undo-top")) $("btn-undo-top").addEventListener("click", undoChanges);
         if ($("btn-transpose-down")) $("btn-transpose-down").addEventListener("click", function () { transpose(-1); });
         if ($("btn-transpose-up")) $("btn-transpose-up").addEventListener("click", function () { transpose(1); });
-        if ($("btn-save")) $("btn-save").addEventListener("click", saveChart);
-        if ($("btn-save-top")) $("btn-save-top").addEventListener("click", saveChart);
         if ($("btn-print")) $("btn-print").addEventListener("click", function () { window.print(); });
         if ($("btn-print-top")) $("btn-print-top").addEventListener("click", function () { window.print(); });
         if ($("examples")) {
@@ -305,15 +454,37 @@
                 this.value = "";
             });
         }
+
+        window.addEventListener("beforeunload", function (e) {
+            if (dirty || saving) {
+                e.preventDefault();
+                e.returnValue = "";
+            }
+        });
     }
 
     function initWhenVisible() {
         if (CFG._inited) return;
         CFG._inited = true;
-        var draft = loadDraft();
-        applyInitial(draft || CFG.initial || {});
+
+        var baseline = clonePayload(CFG.initial || {});
+        savedBaseline = clonePayload(baseline);
+        var draft = loadDraftLocal();
+        if (shouldRestoreLocalDraft(draft, baseline)) {
+            applyInitial(draft);
+            dirty = true;
+            setStatus("Rascunho local restaurado — salvando…", false, "pending");
+            scheduleAutosave();
+        } else {
+            applyInitial(baseline);
+            dirty = false;
+            setStatus("Salvo", false, "saved");
+        }
+
         bindEvents();
+        updateUndoButton();
         scheduleRender();
+        if (dirty) scheduleAutosave();
     }
 
     function init() {

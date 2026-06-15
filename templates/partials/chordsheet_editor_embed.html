@@ -35,9 +35,9 @@
         <div class="toolbar">
             <button type="button" id="btn-transpose-down" title="Transpor -1 semitom">♭ −1</button>
             <button type="button" id="btn-transpose-up" title="Transpor +1 semitom">♯ +1</button>
-            <button type="button" id="btn-render">Atualizar</button>
-            <button type="button" class="btn-primary" id="btn-save">Salvar chord sheet</button>
+            <button type="button" id="btn-undo" title="Voltar ao último estado salvo no servidor" disabled>↩ Desfazer alterações</button>
         </div>
+        <p class="hint" style="margin-top:0.35rem;">Salvamento automático a cada poucos segundos. O status abaixo indica se está salvo.</p>
 
         <details class="prefs">
             <summary>Preferências de layout</summary>
@@ -127,6 +127,7 @@
             <ul class="hint" style="font-size:0.72rem;line-height:1.45;margin:0.35rem 0 0;padding-left:1.1rem;">
                 <li><code>- texto</code> — rótulo acima da pauta</li>
                 <li><code># texto</code> — comentário (não imprime)</li>
+                <li><code>! texto</code> — nota privada (só você vê na banda)</li>
                 <li><strong>Enter</strong> no texto-fonte — nova linha na folha (menos de 4 compassos por linha)</li>
                 <li><code>+ texto</code> — quebra de página (impressão)</li>
                 <li><code>= A</code> — seção em caixa</li>

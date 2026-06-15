@@ -210,7 +210,7 @@
       </a>
       <a class="list-group-item" href="#planos">
         <strong>Planos</strong>
-        <div class="text-muted" style="font-size:0.8rem;">Grátis, Pro, Worship</div>
+        <div class="text-muted" style="font-size:0.8rem;">Grátis, Individual, Pro, Worship</div>
       </a>
       <a class="list-group-item" href="#bandas">
         <strong>Bandas e membros</strong>
@@ -300,17 +300,19 @@
         </p>
         <table class="help-table">
           <tr><th>Grátis</th><td>Até 30 músicas, 5 integrantes, 10 setlists e 1 banda por conta.</td></tr>
-          <tr><th>Pro</th><td>Músicas, integrantes e setlists ilimitados na banda; exportação em PDF.</td></tr>
-          <tr><th>Worship</th><td>Tudo do Pro em várias bandas do mesmo dono (ideal para igrejas).</td></tr>
+          <tr><th>Individual</th><td>Para quem toca sozinho: 1 banda, só você no elenco, repertório ilimitado e PDF.</td></tr>
+          <tr><th>Pro</th><td>Músicas, integrantes e setlists ilimitados <em>na banda</em>; exportação em PDF.</td></tr>
+          <tr><th>Worship</th><td>Tudo do Pro em <strong>várias bandas</strong> da mesma conta — ideal para igrejas com jovem, casal, gospel etc.</td></tr>
         </table>
         <ul>
           <li>Ao atingir um limite do plano grátis, o app avisa e oferece upgrade.</li>
           <li><strong>Vouchers</strong> promocionais liberam Pro por tempo determinado (código enviado pela equipe SetSync).</li>
-          <li>No plano grátis podem aparecer <strong>anúncios</strong> em algumas telas; contas Pro/Worship não exibem anúncios.</li>
+          <li>No plano grátis podem aparecer <strong>anúncios</strong> em algumas telas; contas pagas não exibem anúncios.</li>
         </ul>
         <div class="help-callout">
-          Ministérios com várias bandas: confira a página
-          <a href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a> (plano Worship).
+          Igrejas com mais de um ministério: veja a página
+          <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a> (plano Worship, uma assinatura para a congregação).
+          Bandas únicas costumam usar o <strong>Pro</strong>; músico solo, o <strong>Individual</strong>.
         </div>
       </div>
     </section>
@@ -400,6 +402,8 @@
         <ul>
           <li>O tom exibido pode ser alterado <strong>sem mudar o arquivo original</strong> da cifra.</li>
           <li>Tons <strong>menores</strong> (ex.: <span class="code">Bm</span>, <span class="code">Am</span>) são tratados corretamente na lista de transposição — não confundem com a relativa maior.</li>
+          <li><strong>Sustenidos e bemóis</strong> seguem a armadura do tom de destino (ex.: transpor de Dó para Mi♭ gera <span class="code">Eb</span>, <span class="code">Ab</span>, <span class="code">Bb</span> — não <span class="code">D#</span>).</li>
+          <li>A mesma regra vale no <strong>Chord sheet</strong> e na cifra ChordPro.</li>
           <li>Com <strong>várias cantoras/cantores</strong>, o SetSync guarda a transposição de cada pessoa por música.</li>
           <li>No Modo Tocar, escolha a cantora/cantor no topo para ver o tom certo; a mudança pode ser salva na banda.</li>
           <li>Na <strong>setlist</strong>, cada linha pode ter cantora/cantor e tom próprios para aquele show.</li>
@@ -557,8 +561,10 @@
           <li>À esquerda: compasso (<span class="code">4/4</span>, <span class="code">3/4</span>…), capo e o <strong>texto-fonte</strong>.</li>
           <li>À direita: <strong>prévia ao vivo</strong> — atualiza enquanto você digita.</li>
           <li>Menu <strong>Exemplos</strong> carrega modelos (simile, seções, semi-pulsos, navegação).</li>
-          <li><strong>♭ −1</strong> / <strong>♯ +1</strong> transpoem o texto-fonte; <strong>Salvar chord sheet</strong> grava título, tom e progressão.</li>
-          <li>O rascunho fica no navegador até salvar; ao salvar, volta para a visualização da cifra.</li>
+          <li><strong>♭ −1</strong> / <strong>♯ +1</strong> transpoem o texto-fonte com grafia correta para o tom de destino.</li>
+          <li><strong>Salvamento automático</strong> no servidor alguns segundos após cada alteração — o status mostra <em>Salvo</em>, <em>Alterações pendentes…</em> ou <em>Salvando…</em>.</li>
+          <li><strong>↩ Desfazer alterações</strong> volta ao último estado salvo no servidor (com confirmação).</li>
+          <li>Se a aba fechar antes de salvar, um <strong>rascunho local</strong> pode ser restaurado na próxima abertura.</li>
           <li><strong>Enter</strong> no texto-fonte inicia uma <strong>nova linha</strong> na folha (mesmo com menos de 4 compassos na linha anterior).</li>
         </ul>
 
@@ -580,11 +586,12 @@
         <h3>Sintaxe básica (texto-fonte)</h3>
         <ul>
           <li><strong>Seção</strong> com barra dupla: <span class="code">= Refrão</span> — só rótulo: <span class="code">: Intro</span></li>
-          <li><strong>Rótulo acima da pauta</strong>: <span class="code">- Verso: texto…</span></li>
+          <li><strong>Rótulo acima da pauta</strong> (toda a banda vê): <span class="code">- Verso: texto…</span></li>
+          <li><strong>Comentário de edição</strong> (ninguém vê na folha): linhas com <span class="code">#</span></li>
+          <li><strong>Nota privada</strong> (só você vê): <span class="code">! lembrar de subir tom aqui</span></li>
           <li><strong>Simile</strong>: <span class="code">%</span> (1 compasso), <span class="code">%%</span> (2), <span class="code">%2</span>…<span class="code">%4</span> (N compassos)</li>
           <li><strong>Ritornello</strong>: <span class="code">|: C Am F G :|</span></li>
           <li><strong>Voltas</strong>: <span class="code">1. C Am</span> na linha seguinte <span class="code">X 2. Dm G</span> (<span class="code">X</span> alinha a 2ª volta)</li>
-          <li><strong>Comentários</strong> (não imprimem): linhas com <span class="code">#</span></li>
           <li><strong>Quebra de página</strong> (impressão): <span class="code">+</span> ou <span class="code">+ Verso 2</span></li>
           <li><strong>Acorde opcional</strong>: <span class="code">Am?</span> — <strong>batidas</strong>: <span class="code">G,,,</span></li>
           <li><strong>Repetição de grupo</strong>: <span class="code">(A B C D)x2</span> — não duplica compassos no texto; marca <span class="code">|:</span> … <span class="code">:|</span></li>
@@ -682,6 +689,7 @@
         <ul>
           <li>Confira o <strong>tom original</strong> no cadastro da música (ex.: <span class="code">Bm</span> para menor).</li>
           <li>No Modo Tocar, verifique a <strong>cantora/cantor</strong> selecionada no topo.</li>
+          <li>Acordes com bemóis (ex.: <span class="code">Bb</span>) devem permanecer bemóis após transpor para tons como Mi♭ — se algo parecer errado, force atualização da página.</li>
         </ul>
 
         <h3>Link público de letras</h3>
@@ -718,7 +726,9 @@
         <h3>Chord sheet não renderiza no editor</h3>
         <ul>
           <li>Recarregue a página do editor com <span class="kbd">Ctrl</span>+<span class="kbd">F5</span>.</li>
-          <li>Sem permissão? Só <strong>Editor</strong>, admin ou proprietário podem salvar chord sheets.</li>
+          <li>Sem permissão? Só <strong>Editor</strong>, admin ou proprietário podem editar chord sheets.</li>
+          <li>Alterações não aparecem para a banda? O salvamento é automático — aguarde o status <em>Salvo</em> ou use <strong>Desfazer alterações</strong> se quiser voltar ao estado anterior.</li>
+          <li>Notas com <span class="code">!</span> são privadas: só quem escreveu as vê na prévia e no palco.</li>
         </ul>
       </div>
     </section>

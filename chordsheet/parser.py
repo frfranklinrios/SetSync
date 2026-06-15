@@ -14,6 +14,7 @@ SECTION = re.compile(r"^=\s*(.+)$")
 COLON_SECTION = re.compile(r"^:\s*(.+)$")
 PAGE_BREAK = re.compile(r"^\+\s*(.*)$")
 TEXT_LINE = re.compile(r"^-\s+(.+)$")
+PRIVATE_LINE = re.compile(r"^!\s+(.+)$")
 BLANK_LINE = re.compile(r"^-\s*$")
 LITERAL_LINE = re.compile(r"^;(.*)$")
 FLOAT_LABEL = re.compile(r"^<=\s*(.+)$")
@@ -70,6 +71,7 @@ class Bar:
     nav: str = ""
     annotation: str = ""
     annotation_literal: bool = False
+    private_note: bool = False
     blank_spacer: bool = False
     floating_label: str = ""
     bar_time_signature: str = ""
@@ -99,6 +101,7 @@ class Bar:
             self.nav,
             self.annotation,
             self.annotation_literal,
+            self.private_note,
             self.blank_spacer,
             self.floating_label,
             self.bar_time_signature,
@@ -167,6 +170,9 @@ class Chart:
                 lines.append("+")
             if i in sec_at:
                 lines.append(f"= {sec_at[i]}")
+            if bar.private_note:
+                lines.append(f"! {bar.annotation}")
+                continue
             if bar.annotation:
                 lines.append(f"- {bar.annotation}")
                 continue
@@ -681,6 +687,12 @@ def parse_chart(
         fn = FLOAT_NUM.match(line)
         if fn:
             state.pending_float = fn.group(1).strip()
+            continue
+
+        pm = PRIVATE_LINE.match(line)
+        if pm:
+            bar = Bar([], annotation=pm.group(1).strip(), private_note=True)
+            bar_index = _append_bar(chart, state, bar, history, bar_index)
             continue
 
         tm = TEXT_LINE.match(line)

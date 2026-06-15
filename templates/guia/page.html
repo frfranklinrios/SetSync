@@ -69,7 +69,10 @@
     <div class="guia-cta">
         <p class="mb-2"><strong>Pronto para {{ page.phrase }}?</strong></p>
         <a href="{{ url_for('auth.register') }}" class="btn btn-primary me-2">Começar grátis</a>
-        <a href="{{ url_for('ajuda.index') }}" class="btn btn-outline-secondary">Central de ajuda</a>
+        <a href="{{ url_for('ajuda.index') }}" class="btn btn-outline-secondary me-2">Central de ajuda</a>
+        {% if 'igreja' in page.phrase or 'louvor' in page.phrase or 'worship' in page.phrase %}
+        <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-outline-secondary">Para igrejas</a>
+        {% endif %}
     </div>
 
     {% if page.related %}

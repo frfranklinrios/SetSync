@@ -75,11 +75,13 @@
             cursor: pointer;
         }
         .setsync-topbar a:hover, .setsync-topbar button:hover { border-color: var(--ss-accent); }
-        .setsync-topbar .btn-save-top {
-            background: #0d9488;
-            border-color: #0d9488;
-            color: #fff;
+        .setsync-topbar .btn-undo-top:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
+        .status.pending { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+        .status.saved { background: rgba(13, 148, 136, 0.12); color: #0d9488; }
+        .status.saving { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
     </style>
 </head>
 <body class="chordsheet-editor-page">
@@ -91,7 +93,7 @@
         <div class="setsync-topbar">
             <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">← Voltar à cifra</a>
             <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}">Editar cifra</a>
-            <button type="button" class="btn-save-top" id="btn-save-top">Salvar</button>
+            <button type="button" id="btn-undo-top" class="btn-undo-top" disabled>↩ Desfazer alterações</button>
             <button type="button" id="btn-print-top">Imprimir prévia</button>
         </div>
     </header>
@@ -145,10 +147,10 @@
             <div class="toolbar">
                 <button type="button" id="btn-transpose-down" title="Transpor -1 semitom">♭ −1</button>
                 <button type="button" id="btn-transpose-up" title="Transpor +1 semitom">♯ +1</button>
-                <button type="button" id="btn-render">Atualizar</button>
+                <button type="button" id="btn-undo" title="Voltar ao último estado salvo no servidor" disabled>↩ Desfazer alterações</button>
                 <button type="button" id="btn-print">Imprimir</button>
-                <button type="button" class="btn-primary" id="btn-save">Salvar na cifra</button>
             </div>
+            <p class="hint" style="margin-top:0.35rem;">Salvamento automático no servidor. Use desfazer para voltar ao último estado salvo.</p>
 
             <details class="prefs">
                 <summary>Preferências de layout</summary>
@@ -236,7 +238,7 @@
             <details class="prefs" style="margin-top:0.5rem;">
                 <summary style="font-size:0.8rem;cursor:pointer;">Meta caracteres (sintaxe)</summary>
                 <ul class="hint" style="font-size:0.72rem;line-height:1.45;margin:0.35rem 0 0;padding-left:1.1rem;">
-                    <li><code>- texto</code> — rótulo; <code>#</code> — comentário; <code>+</code> — nova página</li>
+                    <li><code>- texto</code> — rótulo; <code>#</code> — comentário; <code>!</code> — nota privada; <code>+</code> — nova página</li>
                     <li><code>= A</code> — seção; <code>A_B</code> — acordes no mesmo compasso; <code>*</code> — vazio</li>
                     <li><code>(A B C D)x2</code> — repetição; <code>1.</code> <code>2.</code> — voltas</li>
                     <li><code>%</code> <code>%%</code> — simile; <code>%1</code> — repete compasso anterior</li>
@@ -269,6 +271,6 @@ window.CHORDSHEET_EDITOR = {
     draftKey: "setsync.chordsheet.draft:{{ cifra.id }}"
 };
 </script>
-<script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=10"></script>
+<script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=11"></script>
 </body>
 </html>

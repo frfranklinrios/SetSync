@@ -220,6 +220,14 @@ def planos_para_site() -> list[PlanoSite]:
     ]
 
 
+def plano_worship_para_site() -> PlanoSite | None:
+    """Plano Worship formatado para landings de igrejas."""
+    for plano in planos_para_site():
+        if plano.id == PLANO_WORSHIP:
+            return plano
+    return None
+
+
 class Assinatura:
     """Assinatura de uma banda (wrapper sobre registro do banco)."""
 

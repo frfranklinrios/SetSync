@@ -1,0 +1,234 @@
+{# Preço Worship — landing igrejas (sem outros planos) #}
+{% if plano_worship %}
+<section class="igrejas-worship" id="plano-worship" aria-labelledby="igrejas-worship-title">
+    <div class="igrejas-worship-bg" aria-hidden="true"></div>
+    <div class="igrejas-worship-inner">
+        <div class="igrejas-worship-copy">
+            <span class="igrejas-worship-kicker"><i class="fas fa-church me-1"></i> Plano Worship</span>
+            <h2 id="igrejas-worship-title">Uma assinatura para toda a congregação</h2>
+            <p>
+                Em vez de pagar o Pro banda por banda, o Worship cobre <strong>todos os ministérios de louvor</strong>
+                da igreja — jovem, casal, gospel, infantil — com cifras, setlists e agenda centralizados.
+            </p>
+            <ul class="igrejas-worship-features">
+                <li><i class="fas fa-check" aria-hidden="true"></i>Múltiplas bandas na mesma conta pastoral</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Músicas, integrantes e setlists ilimitados</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Transposição por cantor e Modo Tocar no culto</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>PDF das setlists, agenda e escalação por evento</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>PWA offline — funciona com Wi-Fi instável no templo</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Sem anúncios em nenhum ministério</li>
+            </ul>
+            <div class="igrejas-worship-cta">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">Começar grátis</a>
+                {% if whatsapp %}
+                <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
+                   class="btn btn-outline-light btn-lg" target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp me-1"></i> Falar com a equipe
+                </a>
+                {% endif %}
+            </div>
+            <p class="igrejas-worship-note">
+                Teste com uma banda no <strong>plano Grátis</strong>. Quando crescer, um upgrade Worship cobre a igreja inteira.
+                <a href="{{ url_for('assinatura_bp.planos') }}" class="igrejas-link-muted">Músico solo ou banda única? Ver planos Pro</a>
+            </p>
+        </div>
+        <div class="igrejas-worship-price-card"
+             data-preco-mensal="{{ plano_worship.preco_label }}{% if plano_worship.sufixo %}<small>{{ plano_worship.sufixo }}</small>{% endif %}"
+             data-preco-anual="{{ plano_worship.preco_mensal_equivalente_label or '' }}"
+             data-cobrado-anual="{{ plano_worship.cobrado_anual_label or '' }}">
+            <span class="igrejas-worship-badge">Recomendado para igrejas</span>
+            <h3 class="igrejas-worship-plan-name">{{ plano_worship.nome }}</h3>
+            <div class="igrejas-toggle-periodo">
+                <span class="js-periodo-mensal active">Mensal</span>
+                <label class="switch d-inline-flex align-items-center mx-2">
+                    <input type="checkbox" id="igrejas-toggle-anual" aria-label="Ver preço anual">
+                    <span class="slider"></span>
+                </label>
+                <span class="js-periodo-anual">Anual{% if plano_worship.desconto_anual_pct > 0 %}
+                    <span class="badge bg-success ms-1" id="igrejas-badge-economia" hidden>-{{ plano_worship.desconto_anual_pct }}%</span>
+                {% endif %}</span>
+            </div>
+            <p class="igrejas-worship-preco js-igrejas-preco">
+                {{ plano_worship.preco_label }}{% if plano_worship.sufixo %}<small>{{ plano_worship.sufixo }}</small>{% endif %}
+            </p>
+            {% if plano_worship.cobrado_anual_label %}
+            <p class="igrejas-worship-anual small js-igrejas-cobrado" hidden>{{ plano_worship.cobrado_anual_label }}</p>
+            {% endif %}
+            {% if plano_worship.economia_anual %}
+            <p class="igrejas-worship-economia small js-igrejas-economia" hidden">{{ plano_worship.economia_anual }}</p>
+            {% endif %}
+            <p class="igrejas-worship-tagline">Congregação inteira · cancele quando quiser</p>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-light w-100 mt-3">Criar conta da igreja</a>
+        </div>
+    </div>
+</section>
+<style>
+.igrejas-worship {
+    position: relative;
+    margin: 0 calc(50% - 50vw);
+    width: 100vw;
+    overflow: hidden;
+    padding: 3.5rem 1.5rem;
+    color: #f8fafc;
+}
+.igrejas-worship-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(135deg, rgba(11, 20, 34, 0.94) 0%, rgba(19, 78, 74, 0.9) 100%),
+        url("{{ url_for('static', filename='screenshots/setlist-desktop.png') }}") center/cover no-repeat;
+    z-index: 0;
+}
+.igrejas-worship-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.15fr minmax(260px, 340px);
+    gap: 2.5rem;
+    align-items: start;
+}
+.igrejas-worship-kicker {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #5eead4;
+    margin-bottom: 0.65rem;
+}
+.igrejas-worship-copy h2 {
+    font-size: clamp(1.4rem, 3.2vw, 2rem);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+}
+.igrejas-worship-copy > p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #cbd5e1;
+    margin-bottom: 1.25rem;
+    max-width: 38rem;
+}
+.igrejas-worship-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    font-size: 0.9rem;
+}
+.igrejas-worship-features li {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: #e2e8f0;
+}
+.igrejas-worship-features i { color: #2ab5a0; margin-top: 0.2rem; font-size: 0.75rem; }
+.igrejas-worship-cta { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-bottom: 1rem; }
+.igrejas-worship-note {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin: 0;
+    max-width: 34rem;
+    line-height: 1.5;
+}
+.igrejas-link-muted { color: #5eead4; display: inline-block; margin-top: 0.35rem; }
+.igrejas-worship-price-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 1.75rem 1.5rem;
+    backdrop-filter: blur(8px);
+    text-align: center;
+}
+.igrejas-worship-badge {
+    position: absolute;
+    top: -0.7rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    background: #2ab5a0;
+    color: #fff;
+    white-space: nowrap;
+}
+.igrejas-worship-plan-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0.75rem;
+}
+.igrejas-toggle-periodo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-bottom: 0.75rem;
+}
+.igrejas-toggle-periodo .active { color: #f8fafc; font-weight: 600; }
+.igrejas-worship-preco {
+    font-size: 2.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.35rem;
+}
+.igrejas-worship-preco small {
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.85;
+}
+.igrejas-worship-anual, .igrejas-worship-economia { color: #cbd5e1; margin-bottom: 0.25rem; }
+.igrejas-worship-tagline {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin: 0.75rem 0 0;
+}
+.igrejas-worship .switch { position: relative; width: 48px; height: 26px; }
+.igrejas-worship .switch input { opacity: 0; width: 0; height: 0; }
+.igrejas-worship .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: rgba(255,255,255,0.25); border-radius: 999px; transition: 0.2s;
+}
+.igrejas-worship .slider:before {
+    position: absolute; content: ""; height: 20px; width: 20px;
+    left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s;
+}
+.igrejas-worship .switch input:checked + .slider { background: #2ab5a0; }
+.igrejas-worship .switch input:checked + .slider:before { transform: translateX(22px); }
+@media (max-width: 768px) {
+    .igrejas-worship-inner { grid-template-columns: 1fr; }
+    .igrejas-worship-price-card { order: -1; }
+}
+</style>
+<script>
+(function () {
+    var toggle = document.getElementById('igrejas-toggle-anual');
+    var card = document.querySelector('.igrejas-worship-price-card');
+    if (!toggle || !card) return;
+    var precoEl = card.querySelector('.js-igrejas-preco');
+    var cobradoEl = card.querySelector('.js-igrejas-cobrado');
+    var economiaEl = card.querySelector('.js-igrejas-economia');
+    var badge = document.getElementById('igrejas-badge-economia');
+    var lblMensal = document.querySelector('.js-periodo-mensal');
+    var lblAnual = document.querySelector('.js-periodo-anual');
+    function apply(anual) {
+        if (anual && card.dataset.precoAnual) {
+            precoEl.innerHTML = card.dataset.precoAnual;
+            if (cobradoEl) cobradoEl.hidden = false;
+            if (economiaEl) economiaEl.hidden = false;
+        } else {
+            precoEl.innerHTML = card.dataset.precoMensal;
+            if (cobradoEl) cobradoEl.hidden = true;
+            if (economiaEl) economiaEl.hidden = true;
+        }
+        if (badge) badge.hidden = !anual;
+        if (lblMensal) lblMensal.classList.toggle('active', !anual);
+        if (lblAnual) lblAnual.classList.toggle('active', anual);
+    }
+    toggle.addEventListener('change', function () { apply(toggle.checked); });
+})();
+</script>
+{% endif %}

@@ -79,6 +79,7 @@ def build_setlist_print_payload(
     cols: str | None = None,
     compact: bool | None = None,
     sections: dict[str, bool] | None = None,
+    viewer_user_id: str | None = None,
 ):
     """Monta setlist, band e sheets para impressão. Retorna dict ou None se setlist inexistente."""
     from datetime import datetime
@@ -108,7 +109,7 @@ def build_setlist_print_payload(
     for i, c in enumerate(cifras_raw, start=1):
         vid = c.get('setlist_vocalist_id') or default_vid
         semi = cifra_transpose_semitones(c, vocalist_id=vid)
-        sheet = prepare_cifra_sheet(c, semi)
+        sheet = prepare_cifra_sheet(c, semi, viewer_user_id=viewer_user_id)
         v = get_band_vocalist(vid) if vid else None
         vname = vocalist_entry_display_name(v) if v else ''
         sheet['index'] = i
@@ -153,7 +154,7 @@ def _prepare_setlist_print_data(setlist_id, user_id):
     ok, _band = _require_setlist_access(setlist, user_id)
     if not ok:
         return None
-    return build_setlist_print_payload(setlist_id)
+    return build_setlist_print_payload(setlist_id, viewer_user_id=user_id)
 
 
 @setlists_bp.route('/<setlist_id>/imprimir')

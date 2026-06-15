@@ -572,6 +572,29 @@ textarea#source:focus, input:focus, select:focus {
     margin: 0.15rem 0 0.25rem;
     padding-left: 0.15rem;
 }
+.cs-private-note {
+    font-style: normal;
+    color: var(--ss-text, #44403c);
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 2px dashed rgba(245, 158, 11, 0.55);
+    padding: 0.2rem 0.35rem 0.2rem 0.45rem;
+    border-radius: 0 4px 4px 0;
+}
+.cs-private-badge {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #b45309;
+    margin-right: 0.2rem;
+}
+[data-theme="dark"] .cs-private-note {
+    color: var(--ss-text, #e7e5e4);
+    background: rgba(245, 158, 11, 0.14);
+}
+[data-theme="dark"] .cs-private-badge {
+    color: #fbbf24;
+}
 .cs-literal {
     font-family: var(--ui-font);
     font-size: 0.72rem;

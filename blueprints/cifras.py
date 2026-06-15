@@ -460,7 +460,7 @@ def _grade_flat_to_print_html(grade_list):
     return ''.join(parts)
 
 
-def prepare_cifra_sheet(cifra, semitones=0):
+def prepare_cifra_sheet(cifra, semitones=0, viewer_user_id=None):
     """Monta cifra transposta para exibição/impressão (mesma lógica da página ver cifra)."""
     semi = int(semitones or 0)
     tom_orig = normalize_tom_label(cifra.get('tom_original') or '')
@@ -496,7 +496,8 @@ def prepare_cifra_sheet(cifra, semitones=0):
 
     if cifra_has_chordsheet(cifra):
         chordsheet_html = render_cifra_chordsheet_html(
-            cifra, semitones=semi, display_key=display_key
+            cifra, semitones=semi, display_key=display_key,
+            viewer_user_id=viewer_user_id,
         )
 
     return {
@@ -787,7 +788,7 @@ def add(band_id):
 
     return render_template('cifras/add.html', band=band)
 
-def _edit_page_context(cifra, band, active_tab=None):
+def _edit_page_context(cifra, band, active_tab=None, user_id=None):
     from chordsheet.examples import EXAMPLES
     from chordsheet_bridge import load_editor_initial
     from setlist_public import lyrics_from_cifra
@@ -795,7 +796,7 @@ def _edit_page_context(cifra, band, active_tab=None):
     tab = (active_tab or request.args.get('tab') or 'cifra').strip().lower()
     if tab not in ('cifra', 'chordsheet', 'letra'):
         tab = 'cifra'
-    initial = load_editor_initial(cifra)
+    initial = load_editor_initial(cifra, user_id=user_id)
     examples_public = {
         key: {
             'title': ex.get('title', key),
@@ -841,11 +842,11 @@ def edit(cifra_id):
             cifra['artista'] = artista
             cifra['tom_original'] = tom_original
             cifra['conteudo'] = conteudo
-            return render_template('cifras/edit.html', **_edit_page_context(cifra, band))
+            return render_template('cifras/edit.html', **_edit_page_context(cifra, band, user_id=user_id))
 
         cifra_json_new, grade_json_new, bpm, duracao_seg = _parse_extra_fields(request.form)
         if cifra_json_new is False or grade_json_new is False:
-            return render_template('cifras/edit.html', **_edit_page_context(cifra, band))
+            return render_template('cifras/edit.html', **_edit_page_context(cifra, band, user_id=user_id))
 
         # Mantém valores existentes se nada novo foi enviado
         cifra_json = cifra_json_new if cifra_json_new is not None else cifra.get('cifra_json')
@@ -885,7 +886,7 @@ def edit(cifra_id):
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
-    return render_template('cifras/edit.html', **_edit_page_context(cifra, band))
+    return render_template('cifras/edit.html', **_edit_page_context(cifra, band, user_id=user_id))
 
 @cifras_bp.route('/<cifra_id>/delete', methods=['POST'])
 @login_required
@@ -1013,6 +1014,7 @@ def chordsheet_render(cifra_id):
         cifra,
         semitones=semitones,
         display_key=display_key,
+        viewer_user_id=user_id,
     )
     if not html:
         return jsonify({'ok': False, 'error': 'Chord sheet indisponível'}), 404
@@ -1086,6 +1088,7 @@ def chordsheet_api_transpose(cifra_id):
     from dataclasses import asdict
 
     from chordsheet.parser import parse_chart
+    from chordsheet.private_notes import merge_private_notes, split_private_notes
     from chordsheet.transpose import transpose_chart
     from chordsheet_bridge import apply_chart_cifra_spelling
     from util import key_at_transpose, normalize_tom_label, normalize_transpose_semitones
@@ -1098,19 +1101,19 @@ def chordsheet_api_transpose(cifra_id):
     try:
         meta = data.get('meta') or {}
         tom = normalize_tom_label(meta.get('key') or cifra.get('tom_original') or '')
+        shared_source, private_notes = split_private_notes(data.get('source', ''))
         chart = parse_chart(
-            data.get('source', ''),
+            shared_source,
             meta=meta,
             prefs=data.get('prefs') or {},
         )
-        transposed = transpose_chart(chart, semitones)
-        if tom:
-            apply_chart_cifra_spelling(
-                transposed, key_at_transpose(tom, semitones)
-            )
+        target_key = key_at_transpose(tom, semitones) if tom else ""
+        transposed = transpose_chart(chart, semitones, source_key=tom or None)
+        if target_key:
+            apply_chart_cifra_spelling(transposed, target_key)
         return jsonify({
             'ok': True,
-            'source': transposed.to_source(),
+            'source': merge_private_notes(transposed.to_source(), private_notes),
             'meta': asdict(transposed.meta),
         })
     except Exception as exc:
@@ -1126,18 +1129,17 @@ def chordsheet_api_save(cifra_id):
     if not cifra or not is_band_editor(cifra['band_id'], session['user_id']):
         return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     data = request.get_json(force=True) or {}
+    autosave = bool(data.get("autosave"))
     try:
-        persist_chordsheet_payload(cifra_id, data)
-        titulo = (data.get('meta') or {}).get('title') or cifra.get('titulo') or 'Cifra'
-        bn.cifra_updated(cifra['band_id'], session['user_id'], cifra_id, titulo)
-        redirect_to = (data.get('redirect_to') or '').strip()
-        if redirect_to == 'edit':
-            redirect_url = url_for('cifras.edit', cifra_id=cifra_id, tab='chordsheet')
-        else:
-            redirect_url = url_for('cifras.view', cifra_id=cifra_id, tab='chordsheet')
+        persist_chordsheet_payload(cifra_id, data, user_id=session["user_id"])
+        if not autosave:
+            titulo = (data.get("meta") or {}).get("title") or cifra.get("titulo") or "Cifra"
+            bn.cifra_updated(cifra["band_id"], session["user_id"], cifra_id, titulo)
+        cifra = get_cifra(cifra_id)
         return jsonify({
-            'ok': True,
-            'redirect': redirect_url,
+            "ok": True,
+            "autosave": autosave,
+            "saved_at": str(cifra.get("updated_at") or "") if cifra else "",
         })
     except Exception as exc:
         return jsonify({'ok': False, 'error': str(exc)}), 400
