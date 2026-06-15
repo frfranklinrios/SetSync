@@ -350,7 +350,7 @@ html[data-theme="dark"] {
   --ss-chord: var(--chord-highlight, #c2410c);
   --cs-chord-accent: var(--chord-highlight, #c2410c);
   color: var(--ss-fg);
-  font-family: var(--sheet-font, "Bravura", "Times New Roman", Times, serif);
+  font-family: var(--sheet-font, "Bravura Text", "Bravura", "Times New Roman", Times, serif);
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0;
 }
