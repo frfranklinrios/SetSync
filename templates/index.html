@@ -450,8 +450,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=2">
     {% block extra_head %}{% endblock %}
+    {% include 'partials/google_ads_head.html' %}
 </head>
 <body>
+    {% include 'partials/google_ads_body.html' %}
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-4">
             <a class="navbar-brand" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}">
@@ -668,6 +670,7 @@
     <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=1"></script>
+    {% include 'partials/google_ads_signup_event.html' %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

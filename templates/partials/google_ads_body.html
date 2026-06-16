@@ -1,0 +1,5 @@
+{# GTM noscript — imediatamente após <body> #}
+{% if google_ads_ativo and google_ads.use_gtm %}
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ google_ads.gtm_id }}"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+{% endif %}

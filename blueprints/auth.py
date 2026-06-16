@@ -33,6 +33,7 @@ _SETUP_PROMPT_EXEMPT = frozenset({
     'auth.google',
     'auth.google_callback',
     'auth.convite',
+    'auth.cadastro_concluido',
 })
 
 
@@ -94,8 +95,8 @@ def _should_prompt_phone() -> bool:
     return bool(user and not user_has_phone(user))
 
 
-def _redirect_after_auth(user, invite_token: str | None = None):
-    """Redireciona após login/cadastro; aplica convite de banda se houver."""
+def _auth_destination_path(user, invite_token: str | None = None) -> str:
+    """Destino final após login/cadastro (sem página de conversão)."""
     band_id = parse_band_invite_token(invite_token)
     if band_id:
         result = apply_band_invite(user['id'], band_id)
@@ -105,12 +106,24 @@ def _redirect_after_auth(user, invite_token: str | None = None):
             if result == 'added':
                 bn.member_joined_via_invite(band_id, user['id'])
                 flash(f'Você entrou na banda {name}!', 'success')
-            return _auth_setup_redirect(url_for('bands.view', band_id=band_id))
+            return url_for('bands.view', band_id=band_id)
 
     next_page = request.args.get('next')
     if next_page and safe_redirect_path(next_page):
-        return _auth_setup_redirect(next_page)
-    return _auth_setup_redirect(url_for('dashboard'))
+        return next_page
+    return url_for('dashboard')
+
+
+def _redirect_after_auth(user, invite_token: str | None = None):
+    """Redireciona após login; aplica convite de banda se houver."""
+    return _auth_setup_redirect(_auth_destination_path(user, invite_token))
+
+
+def _redirect_after_signup(user, invite_token: str | None = None):
+    """Redireciona após cadastro novo — passa pela URL de conversão do Google Ads."""
+    dest = _auth_destination_path(user, invite_token)
+    signup_page = url_for('auth.cadastro_concluido', next=dest)
+    return _auth_setup_redirect(signup_page)
 
 
 def _recuperar_senha_ctx(**extra):
@@ -347,6 +360,8 @@ def register():
         )
         user = get_user(user_id)
         _login_user_session(user)
+        from google_ads import mark_signup_conversion_pending
+        mark_signup_conversion_pending()
         from onboarding_emails import registrar_onboarding_usuario
         registrar_onboarding_usuario(user_id)
         import admin_notifications as an
@@ -355,12 +370,34 @@ def register():
             flash(f'Conta criada! Você já está na banda {invite_band["name"]}.', 'success')
         else:
             flash('Conta criada com sucesso!', 'success')
-        return _redirect_after_auth(user, invite_token)
+        return _redirect_after_signup(user, invite_token)
 
     return render_template(
         'register.html',
         invite_token=invite_token,
         invite_band=invite_band,
+    )
+
+
+@auth_bp.route('/cadastro-concluido')
+@login_required
+def cadastro_concluido():
+    """
+    Página de conversão Google Ads (inscrição).
+    Só renderiza após cadastro novo; acessos diretos redirecionam sem contar conversão.
+    """
+    next_path = request.args.get('next', '')
+    if not safe_redirect_path(next_path):
+        next_path = url_for('dashboard')
+
+    fire_signup = bool(session.pop('google_ads_signup_pending', None))
+    if not fire_signup:
+        return redirect(next_path)
+
+    return render_template(
+        'cadastro_concluido.html',
+        next_url=next_path,
+        google_ads_fire_signup=True,
     )
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -452,7 +489,8 @@ def google_callback():
     
     # Verificar se usuário já existe
     user = get_user_by_google_id(userinfo['id'])
-    
+    new_signup = False
+
     if not user:
         # Verificar se email já está cadastrado (migração de usuário normal)
         existing_user = get_user_by_email(userinfo['email'])
@@ -479,10 +517,16 @@ def google_callback():
             registrar_onboarding_usuario(user_id)
             import admin_notifications as an
             an.user_registered(user_id)
-    
+            new_signup = True
+
     _login_user_session(user)
+    if new_signup:
+        from google_ads import mark_signup_conversion_pending
+        mark_signup_conversion_pending()
     flash(f'Bem-vindo, {session.get("display_name") or user["username"]}!', 'success')
     pending = session.pop('pending_band_invite', None)
+    if new_signup:
+        return _redirect_after_signup(user, pending)
     return _redirect_after_auth(user, pending)
 
 

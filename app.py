@@ -443,6 +443,17 @@ _SEO_PUBLIC_ENDPOINTS = frozenset({
 
 
 @app.context_processor
+def inject_google_ads():
+    from google_ads import get_google_ads_config, google_ads_ativo
+
+    return dict(
+        google_ads=get_google_ads_config(),
+        google_ads_ativo=google_ads_ativo(),
+        google_ads_fire_signup=False,
+    )
+
+
+@app.context_processor
 def inject_site_config():
     from config import whatsapp_number, whatsapp_message
     from db import is_superadmin as _is_superadmin

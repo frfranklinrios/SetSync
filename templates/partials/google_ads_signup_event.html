@@ -1,0 +1,23 @@
+{# Conversão de inscrição — dispara uma vez após cadastro bem-sucedido #}
+{% if google_ads_fire_signup %}
+{% if google_ads.use_gtm %}
+<script>
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push({
+  event: 'setsync_signup',
+  conversion_value: {{ google_ads.conversion_value }},
+  conversion_currency: '{{ google_ads.conversion_currency }}'
+});
+{% if google_ads.debug %}console.info('[SetSync] GTM event: setsync_signup');{% endif %}
+</script>
+{% elif google_ads.track_signup_direct %}
+<script>
+gtag('event', 'conversion', {
+  'send_to': '{{ google_ads.signup_send_to }}',
+  'value': {{ google_ads.conversion_value }},
+  'currency': '{{ google_ads.conversion_currency }}'
+});
+{% if google_ads.debug %}console.info('[SetSync] Google Ads signup conversion', '{{ google_ads.signup_send_to }}');{% endif %}
+</script>
+{% endif %}
+{% endif %}

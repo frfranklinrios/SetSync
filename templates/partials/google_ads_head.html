@@ -1,0 +1,23 @@
+{# Tag global Google Ads / GA4 / GTM — só em produção com IDs configurados #}
+{% if google_ads_ativo %}
+{% if google_ads.use_gtm %}
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','{{ google_ads.gtm_id }}');</script>
+<!-- End Google Tag Manager -->
+{% else %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ google_ads.aw_id }}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '{{ google_ads.aw_id }}');
+{% if google_ads.ga_id %}
+gtag('config', '{{ google_ads.ga_id }}');
+{% endif %}
+</script>
+{% endif %}
+{% endif %}
