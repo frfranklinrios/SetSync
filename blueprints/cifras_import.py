@@ -19,6 +19,11 @@ from cifras_tool.pipeline_cifras import (
     executar_apenas_cifra,
     validar_url_cifra,
 )
+from cifras_tool.api_cifras_client import (
+    ApiCifrasError,
+    get_cifra_setsync,
+    search_songs,
+)
 from cifras_tool.setsync_export import partes_para_grade_ui
 from security import check_rate_limit
 
@@ -126,6 +131,96 @@ def api_processar_cifra():
         return jsonify({"detail": f"Falha no processamento: {erro}"}), 500
 
     return _resposta_processamento(resultado, job_id, embed=embed)
+
+
+def _resposta_api_cifras(pacote: dict) -> dict:
+    return {
+        "titulo": pacote.get("titulo"),
+        "artista": pacote.get("artista"),
+        "tom_original": pacote.get("tom_original"),
+        "tom": pacote.get("tom_original"),
+        "conteudo": pacote.get("conteudo"),
+        "cifra_json": pacote.get("cifra_json"),
+        "grade_json": pacote.get("grade_json"),
+        "grade_partes": pacote.get("grade_partes"),
+        "bpm": pacote.get("bpm"),
+        "duracao_seg": pacote.get("duracao_seg"),
+        "url_cifra": pacote.get("url_cifra"),
+        "artist_slug": pacote.get("artist_slug"),
+        "song_slug": pacote.get("song_slug"),
+        "cached": bool(pacote.get("cached")),
+        "modo": "api-cifras",
+    }
+
+
+@cifras_import_bp.route("/api/buscar")
+@login_required
+def api_buscar_cifras():
+    user_id = session["user_id"]
+    rate_key = f'api-cifras-search:{user_id}'
+    if not check_rate_limit(rate_key, max_attempts=120, window_sec=3600):
+        return jsonify({"detail": "Limite de buscas por hora atingido. Tente mais tarde."}), 429
+
+    q = (request.args.get("q") or "").strip()
+    try:
+        limit = int(request.args.get("limit", 20))
+    except ValueError:
+        limit = 20
+
+    try:
+        payload = search_songs(q, limit=limit)
+    except ApiCifrasError as erro:
+        status = 503 if erro.status_code is None else 400
+        return jsonify({"detail": str(erro)}), status
+
+    return jsonify(payload)
+
+
+@cifras_import_bp.route("/api/api-cifras/<artist_slug>/<song_slug>")
+@login_required
+def api_import_api_cifras(artist_slug: str, song_slug: str):
+    """Importa cifra do cache local (api-cifras) ou busca online se solicitado."""
+    user_id = session["user_id"]
+    rate_key = f'import:{user_id}'
+    if not check_rate_limit(rate_key, max_attempts=30, window_sec=3600):
+        return jsonify({"detail": "Limite de importações por hora atingido. Tente mais tarde."}), 429
+
+    scrape = request.args.get("scrape", "1").lower() in ("1", "true", "yes")
+
+    try:
+        pacote = get_cifra_setsync(artist_slug, song_slug)
+        return jsonify(pacote)
+    except ApiCifrasError as erro:
+        if erro.status_code != 404 or not scrape:
+            status = 404 if erro.status_code == 404 else 503
+            return jsonify({"detail": str(erro)}), status
+
+    url_cifra = (
+        f"https://www.cifraclub.com.br/{artist_slug.strip('/')}/"
+        f"{song_slug.strip('/')}/"
+    )
+    job_id = str(uuid.uuid4())
+    pasta_job = _exports_dir() / job_id
+    try:
+        validar_url_cifra(url_cifra)
+        resultado = executar_apenas_cifra(url_cifra, pasta_saida=pasta_job)
+        (pasta_job / OWNER_FILE).write_text(user_id, encoding="utf-8")
+        setsync = resultado.setsync
+        resp = _resposta_api_cifras(setsync)
+        resp["grade_partes"] = partes_para_grade_ui(resultado.partes_grade)
+        resp["artist_slug"] = artist_slug.strip("/")
+        resp["song_slug"] = song_slug.strip("/")
+        resp["cached"] = False
+        resp["url_cifra"] = url_cifra
+        return jsonify(resp)
+    except ValueError as erro:
+        if pasta_job.exists():
+            shutil.rmtree(pasta_job, ignore_errors=True)
+        return jsonify({"detail": str(erro)}), 400
+    except Exception as erro:
+        if pasta_job.exists():
+            shutil.rmtree(pasta_job, ignore_errors=True)
+        return jsonify({"detail": f"Falha ao importar: {erro}"}), 500
 
 
 @cifras_import_bp.route("/api/download/<job_id>/<nome_arquivo>")

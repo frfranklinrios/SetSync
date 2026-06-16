@@ -100,6 +100,13 @@
     margin: 0.35rem 0 0.45rem;
 }
 .cifra-tab-title:first-child { margin-top: 0; }
+.cifra-tab-chord {
+    display: inline-block;
+    color: var(--chord-highlight);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    margin: 0 0 0.35rem 0.15rem;
+}
 .cifra-tab-meta {
     display: block;
     color: #94a3b8;
@@ -280,6 +287,8 @@
             </div>
         </div>
 
+        {% include 'cifras/_cifra_referencia_banner.html' %}
+
         <ul class="nav nav-tabs cifra-content-tabs" id="cifraViewTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link{% if active_tab == 'cifra' %} active{% endif %}" id="tab-cifra-btn"
@@ -292,7 +301,7 @@
                 <button class="nav-link{% if active_tab == 'chordsheet' %} active{% endif %}" id="tab-chordsheet-btn"
                         data-bs-toggle="tab" data-bs-target="#tab-chordsheet" type="button" role="tab"
                         aria-controls="tab-chordsheet" aria-selected="{{ 'true' if active_tab == 'chordsheet' else 'false' }}">
-                    Chord Sheet
+                    Grade harmônica
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -307,7 +316,9 @@
         <div class="tab-content" id="cifraViewTabContent">
             <div class="tab-pane fade{% if active_tab == 'cifra' %} show active{% endif %}" id="tab-cifra" role="tabpanel" aria-labelledby="tab-cifra-btn">
                 <div class="cifra-container cifra-sheet-paper{% if conteudo_html or grouped_cifra %} play-layout{% endif %}" id="cifra-body">
-                    {% if grouped_cifra and grouped_cifra|length > 0 %}
+                    {% if conteudo_html %}
+                        {{ conteudo_html | safe }}
+                    {% elif grouped_cifra and grouped_cifra|length > 0 %}
                         {% set sheet = {'grouped_cifra': grouped_cifra} %}
                         {% include 'partials/cifra_sheet_body.html' %}
                     {% elif conteudo_html %}
@@ -325,14 +336,14 @@
                 </div>
                 {% elif can_edit %}
                 <div class="chordsheet-empty-hint">
-                    <p class="mb-2">Nenhum chord sheet cadastrado.</p>
+                    <p class="mb-2">Nenhuma grade harmônica cadastrada.</p>
                     <a href="{{ url_for('cifras.edit', cifra_id=cifra.id, tab='chordsheet') }}" class="btn btn-outline-info btn-sm">
-                        Configurar Chord Sheet
+                        Configurar grade harmônica
                     </a>
                 </div>
                 {% else %}
                 <div class="chordsheet-empty-hint">
-                    <p class="mb-0">Chord sheet não disponível.</p>
+                    <p class="mb-0">Grade harmônica não disponível.</p>
                 </div>
                 {% endif %}
             </div>

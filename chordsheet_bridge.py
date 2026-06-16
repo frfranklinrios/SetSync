@@ -124,6 +124,50 @@ def load_editor_initial(cifra: dict, user_id: str | None = None) -> dict[str, An
     }
 
 
+def _beats_per_bar_for_grade(acordes: list, default: int = 4) -> int:
+    n = len(acordes or [])
+    if n in (2, 3, 4, 6, 8, 12):
+        return n
+    return default
+
+
+def _grade_acordes_to_source_line(acordes: list, *, beats_per_bar: int | None = None) -> str:
+    """
+    Converte acordes de um compasso legado → token chordsheet.
+
+    Espaço = compasso; underscore = pulso no mesmo compasso (ver docs/chordsheet-formato.md).
+    Ex.: ['Cm','%','%','%'] → 'Cm' (figura 1: acorde no 1º pulso).
+    Ex.: ['C','Am','F','G'] → 'C_Am_F_G' (um compasso, quatro pulsos).
+    """
+    if not acordes:
+        return "*"
+    bpb = beats_per_bar or _beats_per_bar_for_grade(acordes)
+    slots = [str(a).strip() or "%" for a in acordes]
+    while len(slots) < bpb:
+        slots.append("%")
+    slots = slots[:bpb]
+
+    if all(s in ("%", "*", "") for s in slots):
+        return "%"
+
+    # Um acorde no primeiro pulso; demais % → só o acorde (render preenche com ·)
+    if slots[0] not in ("%", "*", "") and all(
+        s in ("%", "*", "") for s in slots[1:]
+    ):
+        return slots[0]
+
+    parts: list[str] = []
+    for s in slots:
+        parts.append("*" if s in ("%", "*", "") else s)
+    while len(parts) > 1 and parts[-1] == "*":
+        parts.pop()
+    if not parts or all(p == "*" for p in parts):
+        return "*"
+    if len(parts) == 1:
+        return parts[0]
+    return "_".join(parts)
+
+
 def grade_flat_to_source(grade_list: list[dict]) -> str:
     """Converte grade plana (LeadSheet) em texto estilo chordsheet.com."""
     lines: list[str] = []
@@ -138,11 +182,7 @@ def grade_flat_to_source(grade_list: list[dict]) -> str:
         acordes = item.get("acordes") or ["%"]
         if not isinstance(acordes, list):
             acordes = ["%"]
-        tokens: list[str] = []
-        for ch in acordes:
-            token = str(ch or "").strip() or "%"
-            tokens.append(token)
-        lines.append(" ".join(tokens))
+        lines.append(_grade_acordes_to_source_line(acordes))
     return "\n".join(lines).strip()
 
 
@@ -267,6 +307,7 @@ def render_cifra_chordsheet_html(
     display_key: str | None = None,
     grade_list: list[dict] | None = None,
     viewer_user_id: str | None = None,
+    nashville: bool = False,
 ) -> str | None:
     """Renderiza HTML do chord sheet no mesmo tom da cifra (tom_original + transposição)."""
     from util import key_at_transpose, normalize_tom_label, normalize_transpose_semitones
@@ -300,7 +341,32 @@ def render_cifra_chordsheet_html(
             chart = transpose_chart(chart, chart_semi, source_key=source_key)
         chart.meta.key = target_key
     apply_chart_cifra_spelling(chart, target_key)
+    if nashville:
+        _apply_nashville_to_chart(chart)
     return render_chart_html(chart)
+
+
+def _apply_nashville_to_chart(chart) -> None:
+    from chordsheet.nashville import chord_to_nashville
+
+    key = (chart.meta.key or "").strip()
+    if not key:
+        return
+    for bar in chart.bars:
+        if bar.nav or bar.blank_spacer or bar.private_note:
+            continue
+        grid = bar.get_pulse_grid()
+        bar.set_pulse_grid(
+            [
+                [
+                    chord_to_nashville(str(c), key)
+                    if str(c or "").strip() not in ("", "%", "*", ".")
+                    else c
+                    for c in beat
+                ]
+                for beat in grid
+            ]
+        )
 
 
 def persist_chordsheet_payload(
@@ -347,3 +413,80 @@ def persist_chordsheet_payload(
         cifra.get("duracao_seg"),
     )
     return payload
+
+
+def extract_chordsheet_source_from_cifra_text(
+    cifra_text: str,
+    *,
+    time_signature: str = "4/4",
+) -> str:
+    """Monta texto-fonte da grade harmônica a partir de uma cifra com [acordes]."""
+    from cifras_tool.calibracao import compassos_com_secoes_da_cifra
+    from cifras_tool.compasso import compasso_padrao, parsear_compasso
+
+    text = (cifra_text or "").strip()
+    if not text:
+        return ""
+    info = compasso_padrao()
+    if time_signature:
+        try:
+            parsed = parsear_compasso(time_signature)
+            if parsed:
+                info = parsed
+        except (TypeError, ValueError):
+            pass
+    compassos = compassos_com_secoes_da_cifra(text, info)
+    if not compassos:
+        return ""
+
+    lines: list[str] = []
+    last_sec: str | None = None
+    for comp in compassos:
+        sec = (comp.secao or "").strip()
+        if sec and sec != last_sec:
+            lines.append(f"= {sec}")
+            last_sec = sec
+        acs = comp.acordes or []
+        chord = next(
+            (str(a).strip() for a in acs if a and str(a).strip() not in ("%", "")),
+            None,
+        )
+        lines.append(chord if chord else "*")
+    return "\n".join(lines)
+
+
+def extract_chordsheet_from_cifra(cifra: dict, *, time_signature: str = "4/4") -> str:
+    """Extrai grade harmônica do conteúdo salvo da cifra."""
+    text = _cifra_plain_text_for_extraction(cifra)
+    return extract_chordsheet_source_from_cifra_text(text, time_signature=time_signature)
+
+
+def _cifra_plain_text_for_extraction(cifra: dict) -> str:
+    text = (cifra.get("conteudo") or "").strip()
+    if text:
+        return text
+    raw = cifra.get("cifra_json")
+    if not raw:
+        return ""
+    try:
+        items = json.loads(raw) if isinstance(raw, str) else raw
+    except (json.JSONDecodeError, TypeError):
+        return ""
+    if not isinstance(items, list):
+        return ""
+    lines: list[str] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        acorde = (item.get("acorde") or "").strip()
+        letra = (item.get("texto_letra") or "").strip()
+        sec = (item.get("section") or "").strip()
+        if sec and (not lines or not lines[-1].startswith("[")):
+            lines.append(sec)
+        if acorde and letra:
+            lines.append(f"[{acorde}]{letra}")
+        elif letra:
+            lines.append(letra)
+        elif acorde:
+            lines.append(f"[{acorde}]")
+    return "\n".join(lines)

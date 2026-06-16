@@ -149,6 +149,9 @@
     <input type="hidden" name="cifra_json" id="cifra_json_hidden">
     <input type="hidden" name="grade_json" id="grade_json_hidden">
     <input type="hidden" name="duracao_seg" id="duracao_seg_hidden" value="{{ cifra.duracao_seg or '' }}">
+    <input type="hidden" name="referencia_json" id="referencia_json_hidden" value="">
+
+    {% include 'cifras/_cifra_referencia_banner.html' %}
 
     <div class="card mb-3">
         <div class="card-header">Informações da música</div>
@@ -186,7 +189,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link{% if active_tab == 'chordsheet' %} active{% endif %}" id="tab-chordsheet-btn"
-                    data-bs-toggle="tab" data-bs-target="#tab-chordsheet" type="button" role="tab">Chord Sheet</button>
+                    data-bs-toggle="tab" data-bs-target="#tab-chordsheet" type="button" role="tab">Grade harmônica</button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link{% if active_tab == 'letra' %} active{% endif %}" id="tab-letra-btn"
@@ -196,6 +199,7 @@
 
     <div class="tab-content mb-3" id="cifraEditTabContent">
         <div class="tab-pane fade{% if active_tab == 'cifra' %} show active{% endif %}" id="tab-cifra" role="tabpanel">
+            {% include 'cifras/_api_cifras_search.html' %}
             <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
                 <label class="form-label mb-0">
                     Cifra <small class="text-muted">(colar de um site ou editar; salva em ChordPro)</small>
@@ -225,7 +229,7 @@
                         </div>
                     </div>
                     <div class="col-md-8">
-                        <label class="form-label small fw-semibold">Chord Sheet JSON</label>
+                        <label class="form-label small fw-semibold">Grade harmônica (JSON)</label>
                         <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
                     </div>
                 </div>
@@ -256,6 +260,8 @@
 <script src="{{ url_for('static', filename='js/csrf.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/cifra-line-parse.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/api-cifras-search.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
 <script>
 window.CHORDSHEET_EDITOR = {
@@ -268,6 +274,7 @@ window.CHORDSHEET_EDITOR = {
         render: {{ url_for('cifras.chordsheet_api_render', cifra_id=cifra.id) | tojson }},
         transpose: {{ url_for('cifras.chordsheet_api_transpose', cifra_id=cifra.id) | tojson }},
         save: {{ url_for('cifras.chordsheet_api_save', cifra_id=cifra.id) | tojson }},
+        extract: {{ url_for('cifras.chordsheet_api_extract_from_cifra', cifra_id=cifra.id) | tojson }},
         view: {{ url_for('cifras.view', cifra_id=cifra.id) | tojson }}
     },
     draftKey: "setsync.chordsheet.draft:{{ cifra.id }}"
@@ -276,60 +283,10 @@ window.CHORDSHEET_EDITOR = {
 <script src="{{ url_for('static', filename='js/chordsheet-editor.js') }}?v=11"></script>
 
 <script>
-const CHORD_TOKEN = /^[A-G][#b]?(?:(?:maj7?|min|m7b5|m7|M7?|m|dim7?|aug|sus[24]?|add9?|\d+|[+\-°º]|[b#]\d))*(?:\/[A-G][#b]?)?$/;
-
-function isChord(token) { return CHORD_TOKEN.test(token.replace(/[()]/g, '')); }
-function isChordLine(line) {
-    const tokens = line.trim().split(/\s+/).filter(t => t.length > 0);
-    return tokens.length > 0 && tokens.every(isChord);
-}
-
 function parseConteudo(text) {
-    if (window.SetSyncCifraClubPaste && SetSyncCifraClubPaste.normalizarColagem) {
-        text = SetSyncCifraClubPaste.normalizarColagem(text);
-    }
-    const lines = text.split('\n');
-    const result = [];
-    let seq = 0, group = 0, i = 0;
-    while (i < lines.length) {
-        const line = lines[i];
-        if (line.trim() === '') { group++; i++; continue; }
-
-        if (/\[([^\]]+)\]/.test(line)) {
-            const re = /\[([^\]]+)\]([^\[]*)/g;
-            let m;
-            let lastIndex = 0;
-            while ((m = re.exec(line)) !== null) {
-                if (m.index > lastIndex) {
-                    result.push({ segundo: seq++, texto_letra: line.slice(lastIndex, m.index), acorde: '', group });
-                }
-                result.push({ segundo: seq++, texto_letra: String(m[2] || ''), acorde: m[1].trim(), group });
-                lastIndex = re.lastIndex;
-            }
-            if (lastIndex < line.length) {
-                result.push({ segundo: seq++, texto_letra: line.slice(lastIndex), acorde: '', group });
-            }
-            group++; i++; continue;
-        }
-
-        const next = lines[i + 1];
-        if (isChordLine(line) && next !== undefined && !isChordLine(next) && next.trim() !== '') {
-            const chordRe = /\S+/g;
-            let cm;
-            const chords = [];
-            while ((cm = chordRe.exec(line)) !== null) chords.push({ chord: cm[0], pos: cm.index });
-            for (let j = 0; j < chords.length; j++) {
-                const start = chords[j].pos;
-                const end = j + 1 < chords.length ? chords[j + 1].pos : next.length;
-                result.push({ segundo: seq++, texto_letra: next.slice(start, end).trim(), acorde: chords[j].chord, group });
-            }
-            group++; i += 2; continue;
-        }
-
-        result.push({ segundo: seq++, texto_letra: line.trim(), acorde: '', group });
-        group++; i++;
-    }
-    return result;
+    return window.SetSyncCifraLineParse
+        ? SetSyncCifraLineParse.parseConteudo(text)
+        : [];
 }
 
 function buildEditableTextFromCifraJson(data) {

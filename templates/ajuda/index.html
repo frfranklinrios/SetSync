@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('ajuda.index') }}">
-<meta name="description" content="Ajuda SetSync: compartilhar cifras com a banda, gerenciar membros, montar setlists, transpor acordes, Modo Tocar, agenda e convites. Passo a passo para sua equipe.">
-<meta property="og:title" content="Ajuda SetSync — Compartilhar cifras, gerenciar bandas e setlists">
-<meta property="og:description" content="Ajuda SetSync: compartilhar cifras com a banda, gerenciar membros, montar setlists, transpor acordes, Modo Tocar, agenda e convites.">
+<meta name="description" content="Ajuda SetSync: cifras, grade harmônica, setlists, agenda com escalação por link, Modo Tocar (Nashville, auto-scroll) e convites. Passo a passo para sua equipe.">
+<meta property="og:title" content="Ajuda SetSync — Cifras, grade harmônica e escalação">
+<meta property="og:description" content="Ajuda SetSync: cifras, grade harmônica, setlists, agenda com confirmação por link, Modo Tocar e convites para bandas.">
 <meta property="og:url" content="{{ external_url_for('ajuda.index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -187,7 +187,7 @@
   <div>
     <h2>Ajuda</h2>
     <p class="help-muted mb-0">
-      Guia do SetSync em <strong>setsync.com.br</strong> — bandas, cifras, setlists, agenda e modo palco.
+      Guia do SetSync em <strong>setsync.com.br</strong> — bandas, cifras, <strong>grade harmônica</strong>, setlists, agenda com escalação e Modo Tocar.
     </p>
   </div>
   <a class="btn btn-outline-secondary btn-sm"
@@ -218,7 +218,7 @@
       </a>
       <a class="list-group-item" href="#cifras">
         <strong>Cifras</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">ChordPro, colar cifra, diagramas</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">ChordPro, colar cifra, grade harmônica</div>
       </a>
       <a class="list-group-item" href="#transposicao">
         <strong>Transposição</strong>
@@ -241,8 +241,8 @@
         <div class="text-muted" style="font-size: var(--text-sm);">Rolagem, atalhos, lista lateral</div>
       </a>
       <a class="list-group-item" href="#chord-sheet">
-        <strong>Chord sheet</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Editor chordsheet.com e palco</div>
+        <strong>Grade harmônica</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Progressão por compassos, extrair da cifra, palco</div>
       </a>
       <a class="list-group-item" href="#importador">
         <strong>Importar cifra</strong>
@@ -280,12 +280,14 @@
           <li>Em <span class="code">Bandas</span>, crie uma banda (ex.: nome do grupo ou projeto).</li>
           <li>Em <strong>Configurações da banda</strong>, cadastre <strong>cantoras/cantores</strong> se mais de uma pessoa canta em tons diferentes.</li>
           <li>Adicione <strong>cifras</strong> (manual ou pelo importador <span class="code">Cifra → SetSync</span>).</li>
+          <li>Na aba <strong>Grade harmônica</strong>, use <strong>Extrair da cifra</strong> para montar a progressão a partir dos acordes — ou edite à mão.</li>
           <li>Monte um <strong>setlist</strong> com a ordem do show ou ensaio.</li>
           <li>Na aba <strong>Agenda</strong>, registre ensaios e apresentações e, se quiser, <strong>escale</strong> quem participa.</li>
           <li>Toque em <strong>Tocar</strong> (na setlist ou no evento) para abrir o <strong>Modo Tocar</strong> em tela cheia.</li>
         </ol>
         <div class="help-callout">
-          No palco: use <strong>2 colunas</strong> (<span class="kbd">C</span>) ou <strong>caber na tela</strong> (<span class="kbd">A</span>) em cifras longas, e o <strong>auto-scroll</strong> (<span class="kbd">Espaço</span>) para rolar sozinho até o fim da música.
+          No palco: use <strong>2 colunas</strong> (<span class="kbd">C</span>) ou <strong>caber na tela</strong> (<span class="kbd">A</span>) em cifras longas.
+          O <strong>auto-scroll</strong> (<span class="kbd">Espaço</span>) funciona na cifra e na <strong>grade harmônica</strong> — na grade, a velocidade inicial segue o <strong>BPM</strong> da música quando cadastrado.
         </div>
       </div>
     </section>
@@ -338,12 +340,18 @@
 
         <h3>Papéis na banda</h3>
         <table class="help-table">
-          <tr><th>Membro</th><td>Vê cifras, chord sheets, setlists e usa o Modo Tocar.</td></tr>
-          <tr><th>Editor</th><td>Tudo do membro, mais criar, editar e excluir <strong>cifras</strong>, <strong>letras</strong>, <strong>chord sheets</strong> e <strong>setlists</strong>.</td></tr>
+          <tr><th>Membro</th><td>Vê cifras, grades harmônicas, setlists e usa o Modo Tocar.</td></tr>
+          <tr><th>Editor</th><td>Tudo do membro, mais criar, editar e excluir <strong>cifras</strong>, <strong>letras</strong>, <strong>grades harmônicas</strong> e <strong>setlists</strong>.</td></tr>
           <tr><th>Admin</th><td>Tudo do editor, mais convites, membros e configurações da banda.</td></tr>
           <tr><th>Proprietário</th><td>Controle total da banda, inclusive promover admins.</td></tr>
         </table>
         <p class="mb-0">Admins e proprietários promovem editores em <span class="code">Membros</span> — útil para quem monta cifras sem gerenciar a banda.</p>
+
+        <h3>Equipe e escalação (configuração)</h3>
+        <ul>
+          <li>Em <span class="code">Configurações → Gerenciar equipe</span>, defina <strong>funções</strong> (Vocal, Bateria…), <strong>formações salvas</strong> e <strong>lista de reserva</strong> por função.</li>
+          <li>Na tela de escalação do evento, aplique uma formação ou use <strong>Sugerir escala</strong> com base no último ensaio similar.</li>
+        </ul>
 
         <h3>Cantoras/cantores</h3>
         <ul>
@@ -388,12 +396,13 @@
           <li>Linhas com <span class="code">e|</span>, <span class="code">B|</span>, etc. são tratadas como tablatura e mantidas alinhadas em fonte monoespaçada.</li>
         </ul>
 
-        <h3>Chord sheet (progressão harmônica)</h3>
+        <h3>Grade harmônica (progressão por compassos)</h3>
         <ul>
-          <li>Além da cifra com letra, configure um <strong>Chord sheet</strong> — folha só com acordes e compassos (sem letra).</li>
-          <li>Na visualização: abas <strong>Cifra</strong>, <strong>Chord Sheet</strong> e <strong>Letra</strong>. Para editar: <strong>Editar</strong> → aba <strong>Chord Sheet</strong> (requer papel <strong>Editor</strong> ou admin).</li>
+          <li>Além da cifra com letra, configure uma <strong>grade harmônica</strong> — folha só com acordes e compassos (sem letra).</li>
+          <li>Na visualização: abas <strong>Cifra</strong>, <strong>Grade harmônica</strong> e <strong>Letra</strong>. Para editar: <strong>Editar</strong> → aba <strong>Grade harmônica</strong> (requer papel <strong>Editor</strong> ou admin).</li>
+          <li>Use <strong>Extrair da cifra</strong> no editor para gerar um rascunho a partir dos acordes — revise compassos e salve.</li>
           <li>Músicas com grade antiga são convertidas na primeira abertura do editor — revise e salve.</li>
-          <li>Detalhes de sintaxe, pulsos e notação: seção <a href="#chord-sheet">Chord sheet</a> abaixo.</li>
+          <li>Detalhes de sintaxe, pulsos e notação: seção <a href="#chord-sheet">Grade harmônica</a> abaixo.</li>
         </ul>
       </div>
     </section>
@@ -405,7 +414,7 @@
           <li>O tom exibido pode ser alterado <strong>sem mudar o arquivo original</strong> da cifra.</li>
           <li>Tons <strong>menores</strong> (ex.: <span class="code">Bm</span>, <span class="code">Am</span>) são tratados corretamente na lista de transposição — não confundem com a relativa maior.</li>
           <li><strong>Sustenidos e bemóis</strong> seguem a armadura do tom de destino (ex.: transpor de Dó para Mi♭ gera <span class="code">Eb</span>, <span class="code">Ab</span>, <span class="code">Bb</span> — não <span class="code">D#</span>).</li>
-          <li>A mesma regra vale no <strong>Chord sheet</strong> e na cifra ChordPro.</li>
+          <li>A mesma regra vale na <strong>grade harmônica</strong> e na cifra ChordPro.</li>
           <li>Com <strong>várias cantoras/cantores</strong>, o SetSync guarda a transposição de cada pessoa por música.</li>
           <li>No Modo Tocar, escolha a cantora/cantor no topo para ver o tom certo; a mudança pode ser salva na banda.</li>
           <li>Na <strong>setlist</strong>, cada linha pode ter cantora/cantor e tom próprios para aquele show.</li>
@@ -429,7 +438,7 @@
           <li>O visitante vê um <strong>menu de músicas</strong> e a letra de cada uma, <strong>sem login</strong>; a página atualiza quando você altera a setlist.</li>
           <li>Copie o link ou use o <strong>QR Code</strong> para projetor, equipe de som ou público.</li>
           <li><strong>Gerar novo link</strong> invalida o anterior — use se o link vazou.</li>
-          <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio), com opção de incluir <strong>cifras</strong>, <strong>letras</strong> e <strong>chord sheets</strong> por música.</li>
+          <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio), com opção de incluir <strong>cifras</strong>, <strong>letras</strong> e <strong>grades harmônicas</strong> por música.</li>
         </ul>
       </div>
     </section>
@@ -459,17 +468,22 @@
           <li>Toque em um evento no calendário ou na lista abaixo para ver detalhes.</li>
         </ul>
 
-        <h3>Escalação (bandas grandes)</h3>
+        <h3>Escalação e confirmação</h3>
         <ul>
-          <li>Em cada evento, admins abrem <strong>Escalação</strong> e marcam quem participa.</li>
-          <li>Campo <strong>Função</strong> é opcional (ex.: Vocal, Bateria, Teclado).</li>
-          <li>Use <strong>Buscar</strong>, <strong>Marcar todos</strong> ou <strong>Limpar</strong> para agilizar.</li>
+          <li>Em cada evento, admins abrem <strong>Escalação</strong> e marcam quem participa por <strong>função</strong> (Vocal, Bateria, Teclado…).</li>
+          <li>Status: <strong>Pendente</strong>, <strong>Confirmado</strong> ou <strong>Recusado</strong>. O músico responde pelo <strong>link no e-mail ou WhatsApp</strong> (aceitar ou recusar em um toque).</li>
+          <li>Convide <strong>convidados externos</strong> (não membros) com nome e função — também recebem link de confirmação.</li>
+          <li>Use <strong>formações salvas</strong> (em Configurações → Gerenciar equipe) ou <strong>Sugerir escala</strong> para preencher mais rápido.</li>
+          <li>Campo <strong>Buscar</strong>, <strong>Marcar todos</strong> ou <strong>Limpar</strong> agilizam listas grandes.</li>
           <li>Se <strong>nenhuma escala</strong> for definida, todos os membros da banda são considerados no evento.</li>
-          <li>Integrantes <strong>recém-escalados</strong> recebem notificação (e e-mail/WhatsApp, se ativados no perfil).</li>
+          <li>No <strong>dashboard</strong>, o card <strong>Escalações pendentes</strong> mostra quem ainda não confirmou.</li>
+          <li>Em <strong>Meu perfil → Indisponibilidade</strong>, marque datas em que você não pode — quem escala vê o aviso ao montar o evento.</li>
+          <li>Integrantes <strong>recém-escalados</strong> recebem notificação imediata (e e-mail/WhatsApp, se ativados no perfil).</li>
         </ul>
 
-        <h3>Lembretes</h3>
+        <h3>Calendário e lembretes</h3>
         <ul>
+          <li>Exporte o evento em <strong>.ics</strong> ou adicione ao <strong>Google Agenda</strong> pelo link na página do evento.</li>
           <li><strong>24 horas antes</strong> do evento, quem está na escala (ou todos, se não houver escala) recebe lembrete por notificação, e-mail e WhatsApp.</li>
         </ul>
 
@@ -487,7 +501,7 @@
           <li>Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>, cadastre seu <strong>WhatsApp</strong> (com DDD; o país 55 é assumido se omitir) e marque os alertas desejados.</li>
           <li><strong>E-mail</strong> — notificações da banda e lembretes de agenda (padrão ligado).</li>
           <li><strong>WhatsApp</strong> — mesmos avisos por mensagem; só funciona com número salvo no perfil.</li>
-          <li>Você recebe avisos sobre: cifras novas ou alteradas, setlists, convites, eventos na agenda e quando for <strong>escalado</strong>.</li>
+          <li>Você recebe avisos sobre: cifras novas ou alteradas, setlists, convites, eventos na agenda e quando for <strong>escalado</strong> (com link para confirmar ou recusar).</li>
           <li>Lembretes de evento saem cerca de <strong>24 horas antes</strong> para quem está na escalação.</li>
           <li>E-mails saem de <span class="code">contato@setsync.com.br</span>.</li>
           <li>Contas <span class="code">@setsync.com.br</span> também podem usar o webmail interno (superadmin).</li>
@@ -511,17 +525,20 @@
           <li><span class="kbd">L</span> ou o ícone de lista abre o menu lateral com todas as músicas do setlist (toque para pular direto).</li>
         </ul>
 
-        <h3>Visualização: cifra, chord sheet ou letra</h3>
+        <h3>Visualização: cifra, grade harmônica ou letra</h3>
         <ul>
-          <li>No menu superior, escolha <strong>Cifra</strong>, <strong>Chord sheet</strong> ou <strong>Letra</strong> (quando disponíveis na música).</li>
-          <li>Tecla <span class="kbd">G</span> alterna entre os modos na ordem: cifra → chord sheet → letra.</li>
-          <li>O <strong>chord sheet</strong> usa a mesma transposição da cifra (cantora/cantor e tom do palco).</li>
-          <li>Se o chord sheet parecer desatualizado após editar, force atualização (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>) — o palco guarda cache do HTML renderizado.</li>
+          <li>No menu superior, escolha <strong>Cifra</strong>, <strong>Grade harmônica</strong> ou <strong>Letra</strong> (quando disponíveis na música).</li>
+          <li>Tecla <span class="kbd">G</span> alterna entre os modos na ordem: cifra → grade → letra.</li>
+          <li>Tecla <span class="kbd">N</span> liga o modo <strong>Nashville</strong> (números 1–7) na grade harmônica.</li>
+          <li>A <strong>grade</strong> usa a mesma transposição da cifra (cantora/cantor e tom do palco).</li>
+          <li><strong>Auto-scroll</strong> funciona na cifra e na grade; na grade, a velocidade inicial segue o <strong>BPM</strong> da música quando cadastrado.</li>
+          <li>Se a grade parecer desatualizada após editar, force atualização (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>) — o palco guarda cache do HTML renderizado.</li>
         </ul>
 
         <h3>Acordes no palco</h3>
         <ul>
-          <li><strong>Toque em um acorde</strong> na cifra para ver o diagrama (violão/cavaco), como nas outras telas.</li>
+          <li><strong>Toque em um acorde</strong> na cifra ou na grade para ver o diagrama (violão/cavaco/teclado).</li>
+          <li><strong>Capo</strong> cadastrado na música aparece na faixa de metadados no Modo Tocar.</li>
         </ul>
 
         <h3>Atalhos úteis</h3>
@@ -530,7 +547,8 @@
           <tr><th><span class="kbd">+</span> / <span class="kbd">−</span></th><td>Aumenta / diminui fonte</td></tr>
           <tr><th><span class="kbd">C</span></th><td>Duas colunas</td></tr>
           <tr><th><span class="kbd">A</span></th><td>Caber na tela (ajuste automático)</td></tr>
-          <tr><th><span class="kbd">G</span></th><td>Alterna cifra → chord sheet → letra (quando houver)</td></tr>
+          <tr><th><span class="kbd">G</span></th><td>Alterna cifra → grade harmônica → letra (quando houver)</td></tr>
+          <tr><th><span class="kbd">N</span></th><td>Nashville (1–7) na grade harmônica</td></tr>
           <tr><th><span class="kbd">F</span></th><td>Tela cheia</td></tr>
           <tr><th><span class="kbd">T</span></th><td>Tema claro / escuro</td></tr>
           <tr><th><span class="kbd">Esc</span></th><td>Fecha lista ou sai do modo tocar</td></tr>
@@ -543,10 +561,10 @@
     </section>
 
     <section class="card help-section" id="chord-sheet">
-      <div class="card-header">Chord sheet (progressão harmônica)</div>
+      <div class="card-header">Grade harmônica (progressão por compassos)</div>
       <div class="card-body">
         <p>
-          O <strong>Chord sheet</strong> é uma folha só com acordes e compassos — sem letra — no formato do
+          A <strong>grade harmônica</strong> é uma folha só com acordes e compassos — sem letra — no formato do
           <a href="https://www.chordsheet.com/manual/" target="_blank" rel="noopener">Chord Sheet Maker</a>
           (chordsheet.com): grade com barras verticais, seções, repetições e navegação (D.C., coda, voltas).
           O padrão do SetSync é <strong>4 compassos por linha</strong> (ajustável de 1 a 8).
@@ -556,10 +574,11 @@
           (botão de tema na barra ou tecla <span class="kbd">T</span> no Modo Tocar).
         </p>
 
-        <h3>Editor Chord Sheet</h3>
+        <h3>Editor da grade harmônica</h3>
         <ul>
-          <li>Abra <strong>Editar música</strong> → aba <strong>Chord Sheet</strong> (requer papel <strong>Editor</strong>, admin ou proprietário).</li>
-          <li>Título, artista, tom e BPM ficam nos campos do topo da página — uma vez só para cifra e chord sheet.</li>
+          <li>Abra <strong>Editar música</strong> → aba <strong>Grade harmônica</strong> (requer papel <strong>Editor</strong>, admin ou proprietário).</li>
+          <li>Título, artista, tom e BPM ficam nos campos do topo da página — uma vez só para cifra e grade.</li>
+          <li>Botão <strong>Extrair da cifra</strong> monta um rascunho a partir dos acordes da cifra ChordPro — sempre revise antes de confiar no palco.</li>
           <li>À esquerda: compasso (<span class="code">4/4</span>, <span class="code">3/4</span>…), capo e o <strong>texto-fonte</strong>.</li>
           <li>À direita: <strong>prévia ao vivo</strong> — atualiza enquanto você digita.</li>
           <li>Menu <strong>Exemplos</strong> carrega modelos (simile, seções, semi-pulsos, navegação).</li>
@@ -620,9 +639,9 @@
 
         <h3>Onde ver no app</h3>
         <ul>
-          <li><strong>Visualização da cifra</strong> — abas <strong>Cifra</strong>, <strong>Chord Sheet</strong> e <strong>Letra</strong>, já transpostas conforme o tom escolhido.</li>
-          <li><strong>Modo Tocar</strong> — menu <strong>Cifra / Chord sheet / Letra</strong> ou tecla <span class="kbd">G</span>.</li>
-          <li><strong>PDF da setlist</strong> (Pro/Worship) — seção opcional de chord sheets por música.</li>
+          <li><strong>Visualização da cifra</strong> — abas <strong>Cifra</strong>, <strong>Grade harmônica</strong> e <strong>Letra</strong>, já transpostas conforme o tom escolhido.</li>
+          <li><strong>Modo Tocar</strong> — menu <strong>Cifra / Grade / Letra</strong> ou tecla <span class="kbd">G</span>; <span class="kbd">N</span> para Nashville na grade.</li>
+          <li><strong>PDF da setlist</strong> (Pro/Worship) — seção opcional de grades harmônicas por música.</li>
         </ul>
 
         <h3>Manual chordsheet.com</h3>
@@ -651,7 +670,7 @@
         <h3>Modos da ferramenta</h3>
         <ul>
           <li><strong>Somente cifra</strong> — cole a URL da página da música em um site de cifras compatível.</li>
-          <li><strong>Enviar áudio</strong> — MP3/WAV para gerar cifra/chord sheet (quando disponível no servidor).</li>
+          <li><strong>Enviar áudio</strong> — MP3/WAV para gerar cifra ou grade (quando disponível no servidor).</li>
         </ul>
         <div class="help-callout">
           Para a maioria das músicas, <strong>colar o texto</strong> no formulário da cifra é o caminho mais rápido.
@@ -716,19 +735,25 @@
           <li>Use <strong>Modo Tocar</strong> em tela cheia (<span class="kbd">F</span>) para ler cifras no palco.</li>
         </ul>
 
-        <h3>Chord sheet não renderiza ou notação estranha</h3>
+        <h3>Erro inesperado no servidor</h3>
+        <ul>
+          <li>Se algo falhar no servidor, você verá uma página amigável com dicas e botões para <strong>tentar de novo</strong>, voltar ao <strong>início</strong> ou abrir a <strong>ajuda</strong>.</li>
+          <li>Se o problema persistir, atualize a página ou tente de outro navegador; em último caso, contate o suporte.</li>
+        </ul>
+
+        <h3>Grade harmônica não renderiza ou notação estranha</h3>
         <ul>
           <li>Recarregue com <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span> (cache do navegador ou do Modo Tocar).</li>
           <li>Confira <strong>Preferências → Notação</strong>: o padrão é <strong>Brasil</strong>. Use <strong>Internacional</strong> só se quiser símbolos jazz (Δ, ø).</li>
           <li>Acordes com hífen (<span class="code">A-</span>) de cifras antigas viram <span class="code">Am</span> no estilo Brasil após salvar de novo.</li>
-          <li>Se aparecer erro de sessão, volte à cifra e entre de novo em <strong>Editar → Chord Sheet</strong>.</li>
+          <li>Se aparecer erro de sessão, volte à cifra e entre de novo em <strong>Editar → Grade harmônica</strong>.</li>
           <li>Confira se há texto na área <strong>Fonte</strong> e se os compassos estão separados por <strong>espaço</strong> (um compasso por token).</li>
         </ul>
 
-        <h3>Chord sheet não renderiza no editor</h3>
+        <h3>Grade harmônica não renderiza no editor</h3>
         <ul>
           <li>Recarregue a página do editor com <span class="kbd">Ctrl</span>+<span class="kbd">F5</span>.</li>
-          <li>Sem permissão? Só <strong>Editor</strong>, admin ou proprietário podem editar chord sheets.</li>
+          <li>Sem permissão? Só <strong>Editor</strong>, admin ou proprietário podem editar grades harmônicas.</li>
           <li>Alterações não aparecem para a banda? O salvamento é automático — aguarde o status <em>Salvo</em> ou use <strong>Desfazer alterações</strong> se quiser voltar ao estado anterior.</li>
           <li>Notas com <span class="code">!</span> são privadas: só quem escreveu as vê na prévia e no palco.</li>
         </ul>

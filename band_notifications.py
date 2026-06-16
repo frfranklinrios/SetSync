@@ -376,24 +376,25 @@ def event_scale_assigned(
     title: str,
     user_ids: list[str] | set[str],
 ):
-    """Notifica integrantes recém-escalados para um evento."""
+    """Notifica integrantes recém-escalados (in-app, e-mail e WhatsApp com links one-tap)."""
+    from models_agenda import get_band_event
+    from scale_service import send_scale_assignment_channels
+    from agenda_util import format_event_datetime
+
+    event = get_band_event(event_id)
+    if not event:
+        return 0
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
-    count = 0
-    for uid in user_ids or []:
-        if not uid or uid == actor_user_id:
-            continue
-        create_notification(
-            uid,
-            band_id=band_id,
-            actor_user_id=actor_user_id,
-            type='event_scale_assigned',
-            title=f'{band} — você está na escala',
-            body=f'{actor} te escalou para «{title}».',
-            url_path=f'/agenda/{event_id}',
-        )
-        count += 1
-    return count
+    return send_scale_assignment_channels(
+        band_id=band_id,
+        actor_user_id=actor_user_id,
+        event=event,
+        user_ids=user_ids,
+        band_name=band,
+        actor_name=actor,
+        when=format_event_datetime(event.get('starts_at')),
+    )
 
 
 def event_deleted(band_id: str, actor_user_id: str, title: str, event_type: str | None):

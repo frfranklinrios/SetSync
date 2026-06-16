@@ -22,7 +22,8 @@ from db import (get_band, get_cifra, get_band_cifras, count_band_cifras, create_
                 set_cifra_transpose_semitones, get_band_vocalists, get_band_vocalist,
                 get_cifra_vocalist_transpose, get_cifra_transpose_by_vocalists,
                 band_vocalist_belongs_to_band, vocalists_summary_label,
-                vocalist_entry_display_name)
+                vocalist_entry_display_name, update_cifra_referencia,
+                restore_cifra_from_referencia)
 import band_notifications as bn
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   pychord_highlight_chords, highlight_chords_html,
@@ -32,7 +33,7 @@ from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   build_transpose_map, parse_tom_root, normalize_transpose_semitones,
                   normalize_tom_label,
                   sanitize_tab_html_artifacts, content_has_tablatura,
-                  highlight_chords_play_html,
+                  highlight_chords_play_html, render_grouped_cifra_html,
                   _is_tab_line, _is_tab_header, _is_tab_meta_line, _TAB_ARTIFACT_RE)
 
 cifras_bp = Blueprint('cifras', __name__, url_prefix='/cifras')
@@ -185,6 +186,64 @@ def _parse_extra_fields(form):
     duracao_seg = int(float(duracao_seg_raw)) if duracao_seg_raw else None
 
     return cifra_json, grade_json, bpm, duracao_seg
+
+
+def _finalize_referencia_json(form, *, titulo, artista, tom_original):
+    """Normaliza snapshot da biblioteca enviado pelo formulário (import api-cifras)."""
+    raw = (form.get('referencia_json') or '').strip()
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        flash('Referência da biblioteca inválida — importe a cifra novamente.', 'warning')
+        return None
+    if not isinstance(data, dict):
+        return None
+
+    from cifra_referencia import build_referencia_snapshot
+
+    ref_titulo = (data.get('titulo') or titulo or '').strip()
+    ref_artista = (data.get('artista') or artista or '').strip()
+    ref_tom = (data.get('tom_original') or tom_original or 'C').strip()
+    cifra_json_raw = data.get('cifra_json')
+    if isinstance(cifra_json_raw, (list, dict)):
+        cifra_json_raw = json.dumps(cifra_json_raw, ensure_ascii=False)
+
+    conteudo_ref, cifra_json_ref = _prepare_conteudo_for_save(
+        data.get('conteudo') or '',
+        titulo=ref_titulo,
+        artista=ref_artista,
+        tom_original=ref_tom,
+        cifra_json_raw=cifra_json_raw,
+    )
+    grade_json = data.get('grade_json')
+    if isinstance(grade_json, (list, dict)):
+        grade_json = json.dumps(grade_json, ensure_ascii=False)
+
+    meta = data.get('meta') if isinstance(data.get('meta'), dict) else {}
+    source = (data.get('source') or 'api-cifras').strip() or 'api-cifras'
+    return build_referencia_snapshot(
+        source=source,
+        titulo=ref_titulo,
+        artista=ref_artista,
+        tom_original=ref_tom,
+        conteudo=conteudo_ref,
+        cifra_json=cifra_json_ref,
+        grade_json=grade_json,
+        meta=meta,
+    )
+
+
+def _referencia_context(cifra: dict | None) -> dict:
+    from cifra_referencia import parse_referencia, referencia_diverged, referencia_label
+
+    ref = parse_referencia(cifra)
+    return {
+        'cifra_referencia': ref,
+        'cifra_referencia_label': referencia_label(cifra),
+        'cifra_referencia_diverged': referencia_diverged(cifra) if ref else False,
+    }
 
 
 def _group_cifra_data(data):
@@ -553,13 +612,13 @@ def enrich_cifra_for_tocar(cifra, setlist_id=None):
     c['tom_original'] = normalize_tom_label(c.get('tom_original') or '')
     raw = sanitize_tab_html_artifacts(c.get('conteudo') or '')
     has_tab = content_has_tablatura(raw)
-    # Layout de palco unificado (sp-line / TAB); structured é preferido no JS quando existir.
-    if has_tab:
-        c['cifra_structured'] = None
+    structured = _load_best_structured_cifra(c, 0)
+    c['cifra_structured'] = structured if structured else None
+    grouped = _group_cifra_data(structured) if structured else None
+    if grouped:
+        c['html'] = render_grouped_cifra_html(grouped)
     else:
-        structured = _load_best_structured_cifra(c, 0)
-        c['cifra_structured'] = structured if structured else None
-    c['html'] = highlight_chords_play_html(raw)
+        c['html'] = highlight_chords_play_html(raw)
     c['tom_root'] = parse_tom_root(c.get('tom_original'))
     c['transpose_map'] = build_transpose_map(c.get('tom_original'))
     if band_id:
@@ -637,11 +696,9 @@ def view(cifra_id):
     grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
     has_tab = content_has_tablatura(conteudo)
     conteudo_html = None
-    if has_tab:
-        grouped_cifra = None
-        conteudo_html = highlight_chords_play_html(conteudo)
-    elif not grouped_cifra and (conteudo or '').strip():
-        # Mesmo layout do modo tocar (sp-line), não o highlight_chords legado
+    if grouped_cifra:
+        conteudo_html = render_grouped_cifra_html(grouped_cifra)
+    elif (conteudo or '').strip():
         conteudo_html = highlight_chords_play_html(conteudo)
     setlist = get_band_cifras(cifra['band_id'])
     cifra_index = next((i for i, c in enumerate(setlist) if c['id'] == cifra_id), 0)
@@ -686,7 +743,8 @@ def view(cifra_id):
                            vocalist_linked=vocalist_linked,
                            is_admin=is_band_admin(cifra['band_id'], user_id),
                            is_member=is_band_member(cifra['band_id'], user_id),
-                           can_edit=is_band_editor(cifra['band_id'], user_id))
+                           can_edit=is_band_editor(cifra['band_id'], user_id),
+                           **_referencia_context(cifra))
 
 def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None):
     """Renderiza o modo tocar (mesmo layout para banda e setlist)."""
@@ -769,6 +827,7 @@ def add(band_id):
                 return resp
 
         cifras_antes = count_band_cifras(band_id)
+        cifra_json, grade_json, bpm, duracao_seg = _parse_extra_fields(request.form)
         if cifra_json is False or grade_json is False:
             return render_template('cifras/add.html', band=band)
 
@@ -780,8 +839,16 @@ def add(band_id):
             cifra_json_raw=cifra_json,
         )
 
+        referencia_json = _finalize_referencia_json(
+            request.form,
+            titulo=titulo,
+            artista=artista,
+            tom_original=tom_original,
+        )
+
         cifra_id = create_cifra(titulo, artista, tom_original, conteudo or '',
-                                band_id, cifra_json, grade_json, bpm, duracao_seg)
+                                band_id, cifra_json, grade_json, None, bpm, duracao_seg,
+                                referencia_json=referencia_json)
         if cifras_antes == 0:
             from google_ads import mark_funnel_event
             mark_funnel_event('primeira_cifra')
@@ -815,6 +882,7 @@ def _edit_page_context(cifra, band, active_tab=None, user_id=None):
         'lyrics_plain': lyrics_from_cifra(cifra),
         'chordsheet_initial': initial,
         'chordsheet_examples': examples_public,
+        **_referencia_context(cifra),
     }
 
 
@@ -885,11 +953,48 @@ def edit(cifra_id):
 
         update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
                      cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
+
+        referencia_json = _finalize_referencia_json(
+            request.form,
+            titulo=titulo,
+            artista=artista,
+            tom_original=tom_original,
+        )
+        if referencia_json:
+            update_cifra_referencia(cifra_id, referencia_json)
+
         bn.cifra_updated(cifra['band_id'], user_id, cifra_id, titulo)
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
     return render_template('cifras/edit.html', **_edit_page_context(cifra, band, user_id=user_id))
+
+
+@cifras_bp.route('/<cifra_id>/restaurar-referencia', methods=['POST'])
+@login_required
+def restaurar_referencia(cifra_id):
+    user_id = session['user_id']
+    cifra = get_cifra(cifra_id)
+    if not cifra:
+        flash('Cifra não encontrada', 'danger')
+        return redirect(url_for('dashboard'))
+    if not is_band_editor(cifra['band_id'], user_id):
+        flash('Sem permissão', 'danger')
+        return redirect(url_for('dashboard'))
+
+    from cifra_referencia import parse_referencia
+    if not parse_referencia(cifra):
+        flash('Esta cifra não tem versão de referência salva.', 'warning')
+        return redirect(url_for('cifras.edit', cifra_id=cifra_id))
+
+    if not restore_cifra_from_referencia(cifra_id):
+        flash('Não foi possível restaurar a cifra de referência.', 'danger')
+        return redirect(url_for('cifras.edit', cifra_id=cifra_id))
+
+    bn.cifra_updated(cifra['band_id'], user_id, cifra_id, cifra['titulo'])
+    flash('Cifra restaurada para a versão da biblioteca. As alterações da banda foram descartadas.', 'success')
+    return redirect(url_for('cifras.edit', cifra_id=cifra_id, tab='cifra'))
+
 
 @cifras_bp.route('/<cifra_id>/delete', methods=['POST'])
 @login_required
@@ -977,8 +1082,12 @@ def get_transposed(cifra_id):
         'display_key': key_at_transpose(cifra['tom_original'], semitones),
     }
     if want_html:
-        # Modo tocar sempre usa layout de palco (sp-line / TAB).
-        payload['html'] = highlight_chords_play_html(transposed)
+        structured_data = _load_best_structured_cifra(cifra, semitones)
+        grouped = _group_cifra_data(structured_data) if structured_data else None
+        if grouped:
+            payload['html'] = render_grouped_cifra_html(grouped)
+        else:
+            payload['html'] = highlight_chords_play_html(transposed)
     else:
         payload['conteudo'] = transposed
 
@@ -1013,14 +1122,16 @@ def chordsheet_render(cifra_id):
         request.args.get('semitones', 0, type=int)
     )
     display_key = key_at_transpose(cifra['tom_original'], semitones)
+    nashville = request.args.get('nashville', '').lower() in ('1', 'true', 'yes')
     html = render_cifra_chordsheet_html(
         cifra,
         semitones=semitones,
         display_key=display_key,
         viewer_user_id=user_id,
+        nashville=nashville,
     )
     if not html:
-        return jsonify({'ok': False, 'error': 'Chord sheet indisponível'}), 404
+        return jsonify({'ok': False, 'error': 'Grade harmônica indisponível'}), 404
     return jsonify({'ok': True, 'html': html, 'display_key': display_key})
 
 
@@ -1146,6 +1257,36 @@ def chordsheet_api_save(cifra_id):
         })
     except Exception as exc:
         return jsonify({'ok': False, 'error': str(exc)}), 400
+
+
+@cifras_bp.route('/<cifra_id>/chordsheet/api/extract-from-cifra', methods=['POST'])
+@login_required
+def chordsheet_api_extract_from_cifra(cifra_id):
+    """Gera texto-fonte da grade harmônica a partir dos acordes da cifra."""
+    from chordsheet_bridge import extract_chordsheet_from_cifra
+
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_editor(cifra['band_id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
+    data = request.get_json(force=True, silent=True) or {}
+    ts = (data.get('time_signature') or '4/4').strip() or '4/4'
+    source = extract_chordsheet_from_cifra(cifra, time_signature=ts)
+    if not source:
+        return jsonify({
+            'ok': False,
+            'error': 'Não encontramos acordes na cifra. Use [G]… na letra ou importe uma cifra primeiro.',
+        }), 400
+    return jsonify({
+        'ok': True,
+        'source': source,
+        'meta': {
+            'title': (cifra.get('titulo') or '').strip(),
+            'artist': (cifra.get('artista') or '').strip(),
+            'key': (cifra.get('tom_original') or '').strip(),
+            'bpm': str(int(cifra['bpm'])) if cifra.get('bpm') else '',
+            'time_signature': ts,
+        },
+    })
 
 
 @cifras_bp.route('/<cifra_id>/leadsheet/api/gerar', methods=['POST'])

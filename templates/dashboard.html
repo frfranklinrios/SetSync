@@ -227,6 +227,23 @@
     padding: 0.5rem 0.85rem;
     margin-bottom: 0;
 }
+.api-cifras-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--text-sm);
+    color: var(--muted);
+    margin-top: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+}
+.api-cifras-stat strong {
+    color: var(--accent);
+    font-weight: 700;
+}
+[data-theme="dark"] .api-cifras-stat { background: #0f172a; }
 @media (min-width: 992px) {
     .dashboard-compact-alert { font-size: var(--text-base); }
 }
@@ -239,6 +256,12 @@
             <p class="lead">
                 {% if is_superadmin %}Administrador do sistema — todas as bandas{% else %}Suas bandas, cifras e setlists{% endif %}
             </p>
+            {% if api_cifras_stats and api_cifras_stats.available %}
+            <p class="api-cifras-stat mb-0" title="Cifras na biblioteca local para importar ao adicionar música">
+                <i class="fas fa-book-open" aria-hidden="true"></i>
+                <span><strong>{{ api_cifras_stats.songs_cached_fmt }}</strong> cifras na biblioteca</span>
+            </p>
+            {% endif %}
         </div>
         <div class="d-flex gap-2 flex-wrap">
             {% if is_superadmin %}
@@ -258,6 +281,8 @@
     <div class="dashboard-grid">
         <div class="dashboard-primary d-flex flex-column gap-3">
             {% include 'partials/pending_band_invites.html' %}
+            {% include 'partials/pending_scale.html' %}
+            {% include 'partials/pending_scale_admin.html' %}
             {% include 'partials/onboarding_checklist.html' %}
 
             {% if trial_ui and trial_ui.ativo %}

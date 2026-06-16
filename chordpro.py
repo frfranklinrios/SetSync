@@ -11,6 +11,7 @@ from util import (
     _is_tab_line,
     _is_tab_meta_line,
     format_text_chords_br,
+    is_bracket_chord_name,
     to_brazilian_chord_notation,
 )
 
@@ -209,15 +210,27 @@ def parse_conteudo_to_cifra_data(conteudo: str) -> list[dict[str, Any]]:
             continue
 
         if _is_tab_line(stripped) or _is_tab_header(stripped) or _is_tab_meta_line(stripped):
-            result.append({
-                'segundo': seq,
-                'texto_letra': line.rstrip(),
-                'acorde': '',
-                'group': group,
-            })
-            seq += 1
+            while i < len(lines):
+                tab_line = lines[i]
+                tab_stripped = tab_line.strip()
+                if not (
+                    tab_stripped
+                    and (
+                        _is_tab_line(tab_stripped)
+                        or _is_tab_header(tab_stripped)
+                        or _is_tab_meta_line(tab_stripped)
+                    )
+                ):
+                    break
+                result.append({
+                    'segundo': seq,
+                    'texto_letra': tab_line.rstrip(),
+                    'acorde': '',
+                    'group': group,
+                })
+                seq += 1
+                i += 1
             group += 1
-            i += 1
             continue
 
         if re.fullmatch(r'spa', stripped, flags=re.I):
@@ -245,12 +258,25 @@ def parse_conteudo_to_cifra_data(conteudo: str) -> list[dict[str, Any]]:
                             'group': group,
                         })
                         seq += 1
-                result.append({
-                    'segundo': seq,
-                    'texto_letra': m.group(2) or '',
-                    'acorde': _format_chord_token(m.group(1)),
-                    'group': group,
-                })
+                token = m.group(1).strip()
+                texto_apos = m.group(2) or ''
+                if is_bracket_chord_name(token):
+                    result.append({
+                        'segundo': seq,
+                        'texto_letra': texto_apos,
+                        'acorde': _format_chord_token(token),
+                        'group': group,
+                    })
+                else:
+                    label = token
+                    extra = texto_apos.strip()
+                    result.append({
+                        'segundo': seq,
+                        'texto_letra': f'[{label}]' + (extra if extra else ''),
+                        'acorde': '',
+                        'group': group,
+                        'section': label,
+                    })
                 seq += 1
                 last = m.end()
             if matched and last < len(line):

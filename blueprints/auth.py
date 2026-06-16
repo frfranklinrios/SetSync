@@ -638,6 +638,24 @@ def perfil():
         phone_raw = (request.form.get('phone') or '').strip()
         whatsapp_notify = request.form.get('whatsapp_notify') == '1'
         email_notify = request.form.get('email_notify') == '1'
+        blockout_action = (request.form.get('blockout_action') or '').strip()
+
+        if blockout_action == 'add':
+            from models_band_team import add_user_blockout
+            bd = (request.form.get('block_date') or '').strip()
+            note = (request.form.get('block_note') or '').strip()
+            if add_user_blockout(session['user_id'], bd, note):
+                flash('Data de indisponibilidade registrada.', 'success')
+            else:
+                flash('Data inválida ou já cadastrada.', 'warning')
+            return redirect(url_for('auth.perfil'))
+        if blockout_action == 'remove':
+            from models_band_team import remove_user_blockout
+            bd = (request.form.get('block_date') or '').strip()
+            if bd:
+                remove_user_blockout(session['user_id'], bd)
+                flash('Indisponibilidade removida.', 'info')
+            return redirect(url_for('auth.perfil'))
 
         if len(nome) < 2:
             flash('Digite um nome com pelo menos 2 caracteres.', 'warning')
@@ -661,5 +679,7 @@ def perfil():
         flash('Perfil atualizado.', 'success')
         return redirect(url_for('auth.perfil'))
 
+    from models_band_team import list_user_blockouts
+    perfil_ctx['blockouts'] = list_user_blockouts(session['user_id'])
     return render_template('perfil.html', **perfil_ctx)
 

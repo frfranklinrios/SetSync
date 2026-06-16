@@ -1,0 +1,57 @@
+{% if pending_scale_admin %}
+<div class="card mb-3">
+    <details class="pending-scale-admin-details">
+        <summary class="card-body py-3 pending-scale-admin-summary">
+            <span class="pending-scale-admin-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+            <span class="h6 mb-0">
+                <i class="fas fa-clipboard-check me-1"></i>
+                Escalações aguardando resposta
+                <span class="badge bg-secondary ms-1">{{ pending_scale_admin|length }}</span>
+            </span>
+        </summary>
+        <div class="card-body pt-0 pb-3">
+            {% for ev in pending_scale_admin %}
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 py-2 border-bottom border-secondary-subtle">
+                <div style="font-size: var(--text-sm);">
+                    <strong>{{ ev.title }}</strong> · {{ ev.band_name }}<br>
+                    <span class="text-muted">{{ ev.starts_at | format_event_datetime }}</span>
+                    <span class="ms-2">
+                        <span class="badge text-bg-success">{{ ev.accepted_count }} ✓</span>
+                        <span class="badge text-bg-danger">{{ ev.declined_count }} ✗</span>
+                        <span class="badge text-bg-warning text-dark">{{ ev.pending_count }} ?</span>
+                    </span>
+                </div>
+                <a href="{{ url_for('agenda.escala', event_id=ev.id) }}" class="btn btn-outline-primary btn-sm">
+                    Ver painel
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+</div>
+<style>
+.pending-scale-admin-details > summary {
+    list-style: none;
+    cursor: pointer;
+}
+.pending-scale-admin-summary::-webkit-details-marker { display: none; }
+.pending-scale-admin-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.pending-scale-admin-chevron {
+    color: var(--muted);
+    font-size: 0.75rem;
+    width: 1rem;
+    flex-shrink: 0;
+}
+.pending-scale-admin-chevron i {
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+.pending-scale-admin-details[open] .pending-scale-admin-chevron i {
+    transform: rotate(90deg);
+}
+</style>
+{% endif %}

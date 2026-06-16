@@ -680,6 +680,7 @@
     var parts = [];
     if (meta.timeSignature) parts.push(escapeHtml(meta.timeSignature));
     if (meta.bpm) parts.push(escapeHtml(meta.bpm) + " BPM");
+    if (meta.capo) parts.push("Capo " + escapeHtml(String(meta.capo)));
     var key = (opts.songKey || meta.key || "").trim();
     if (key) parts.push("Tom " + escapeHtml(key));
     var artist = (opts.artist || meta.artist || "").trim();

@@ -309,25 +309,51 @@ def set_event_assignments(
     assignments: list[dict],
     *,
     assigned_by: str | None = None,
-) -> None:
+) -> list[str]:
+    """Atualiza escala preservando respostas de quem permanece. Retorna IDs recém-adicionados."""
     now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-    db = get_db()
-    c = db.cursor()
-    c.execute('DELETE FROM band_event_assignments WHERE event_id = ?', (event_id,))
+    existing = {a['user_id']: a for a in get_event_assignments(event_id)}
+    new_map: dict[str, dict] = {}
     for item in assignments:
         uid = item.get('user_id')
         if not uid:
             continue
+        new_map[str(uid)] = item
+
+    db = get_db()
+    c = db.cursor()
+    added: list[str] = []
+
+    for uid in existing:
+        if uid not in new_map:
+            c.execute(
+                'DELETE FROM band_event_assignments WHERE event_id = ? AND user_id = ?',
+                (event_id, uid),
+            )
+
+    for uid, item in new_map.items():
         role = (item.get('role_label') or '').strip() or None
-        c.execute(
-            '''INSERT INTO band_event_assignments
-               (event_id, user_id, role_label, assigned_by, assigned_at,
-                response_status, response_note, responded_at)
-               VALUES (?, ?, ?, ?, ?, 'pending', NULL, NULL)''',
-            (event_id, uid, role, assigned_by, now),
-        )
+        if uid in existing:
+            prev = existing[uid]
+            c.execute(
+                '''UPDATE band_event_assignments
+                   SET role_label = ?, assigned_by = COALESCE(?, assigned_by)
+                   WHERE event_id = ? AND user_id = ?''',
+                (role, assigned_by, event_id, uid),
+            )
+        else:
+            c.execute(
+                '''INSERT INTO band_event_assignments
+                   (event_id, user_id, role_label, assigned_by, assigned_at,
+                    response_status, response_note, responded_at)
+                   VALUES (?, ?, ?, ?, ?, 'pending', NULL, NULL)''',
+                (event_id, uid, role, assigned_by, now),
+            )
+            added.append(uid)
+
     db.commit()
     db.close()
+    return added
 
 
 def get_user_event_assignment(event_id: str, user_id: str) -> dict | None:

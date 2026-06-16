@@ -275,6 +275,13 @@ body { overflow-x: hidden; }
     text-transform: uppercase;
     margin: 0.35rem 0 0.45rem;
 }
+.cifra-body .cifra-tab-chord {
+    display: inline-block;
+    color: var(--chord-highlight) !important;
+    font-weight: 700;
+    font-size: var(--text-sm);
+    margin: 0 0 0.35rem 0.15rem;
+}
 .cifra-body .cifra-tab-line {
     display: block;
     font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
@@ -821,10 +828,13 @@ body.play-mode.edges-hint .tap-zone {
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" id="view-mode-menu">
                     <li><button type="button" class="dropdown-item active" data-view-mode="cifra">Cifra</button></li>
-                    <li><button type="button" class="dropdown-item" data-view-mode="chordsheet">Chord sheet</button></li>
+                    <li><button type="button" class="dropdown-item" data-view-mode="chordsheet">Grade harmônica</button></li>
                     <li><button type="button" class="dropdown-item" data-view-mode="letra">Letra</button></li>
                 </ul>
             </div>
+            <button class="pb-btn" id="nashville-btn" onclick="toggleNashville()" title="Numeração Nashville (N)" aria-label="Nashville">
+                <i class="fas fa-hashtag"></i><span class="pb-label-text">&nbsp;1-7</span>
+            </button>
             <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
                 <i class="fas fa-angle-double-down"></i><span class="pb-label-text">&nbsp;Scroll</span>
             </button>
@@ -879,7 +889,7 @@ body.play-mode.edges-hint .tap-zone {
 
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=16"></script>
 <script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"lyrics_plain":{{ cifra.lyrics_plain | default('') | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
+[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"lyrics_plain":{{ cifra.lyrics_plain | default('') | tojson }},"bpm":{{ cifra.bpm | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
 </script>
 
 <script>
@@ -928,7 +938,7 @@ body.play-mode.edges-hint .tap-zone {
     var chordSheetHtmlCache = {}; // (cifra_id + ':' + semitones) -> HTML do módulo chordsheet
     var lyricsCache = {};         // (cifra_id + ':' + semitones) -> letra plain
     var CHORDSHEET_RENDER_URL = '{{ url_for("cifras.chordsheet_render", cifra_id="__ID__") }}';
-    var VIEW_MODE_LABELS = { cifra: 'Cifra', chordsheet: 'Chord sheet', letra: 'Letra' };
+    var VIEW_MODE_LABELS = { cifra: 'Cifra', chordsheet: 'Grade', letra: 'Letra' };
     var VIEW_MODE_CYCLE = ['cifra', 'chordsheet', 'letra'];
 
     // Pre-cache the original (semitones=0) html
@@ -968,6 +978,7 @@ body.play-mode.edges-hint .tap-zone {
     var speedIdx = parseInt(sessionStorage.getItem('play.speedIdx') || '1', 10);
     if (speedIdx < 0 || speedIdx >= SPEED_PRESETS.length) speedIdx = 1;
     var viewMode = sessionStorage.getItem('play.viewMode') || 'cifra';
+    var nashvilleMode = sessionStorage.getItem('play.nashville') === '1';
     if (VIEW_MODE_CYCLE.indexOf(viewMode) === -1) viewMode = 'cifra';
 
     // ── Render ──────────────────────────────
@@ -1093,15 +1104,16 @@ body.play-mode.edges-hint .tap-zone {
 
     function playModeEmptyChordSheetMessage() {
         return '<div class="grade-empty-play" style="padding:2rem 4vw;color:#475569;font-size: var(--text-base);">' +
-            'Chord sheet não disponível para esta música. Configure no editor Chord Sheet da cifra.' +
+            'Grade harmônica não disponível. Edite a música e use <strong>Extrair da cifra</strong> na aba Grade harmônica.' +
             '</div>';
     }
 
     function fetchChordSheetHtml(id, semitones, cb) {
-        var key = id + ':' + semitones;
+        var key = id + ':' + semitones + ':' + (nashvilleMode ? 'n' : 'l');
         if (chordSheetHtmlCache[key]) { cb(chordSheetHtmlCache[key]); return; }
         var url = CHORDSHEET_RENDER_URL.replace('__ID__', encodeURIComponent(id))
-            + '?semitones=' + encodeURIComponent(semitones);
+            + '?semitones=' + encodeURIComponent(semitones)
+            + (nashvilleMode ? '&nashville=1' : '');
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -1404,21 +1416,10 @@ body.play-mode.edges-hint .tap-zone {
             });
         } else {
             if (twoColActive) el.classList.add('two-col');
-            var sd0 = structuredCache[c.id + ':0'] || null;
-            if (sd0 && sd0.length && !c.has_tablatura) {
+            if (c.has_tablatura || (structuredCache[c.id + ':0'] && structuredCache[c.id + ':0'].length)) {
                 el.classList.add('structured-mode');
-                fetchStructured(c.id, t, function (sd) {
-                    if (sd && sd.length) {
-                        renderHtml(buildStructuredHtml(sd));
-                    } else {
-                        el.classList.remove('structured-mode');
-                        fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
-                    }
-                });
-            } else {
-                if (c.has_tablatura) el.classList.add('structured-mode');
-                fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
             }
+            fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
         }
     }
 
@@ -1720,8 +1721,30 @@ body.play-mode.edges-hint .tap-zone {
         viewMode = mode;
         sessionStorage.setItem('play.viewMode', viewMode);
         updateViewModeUi();
-        if (viewMode !== 'cifra' && isScrolling) stopScroll();
+        if (viewMode === 'letra' && isScrolling) stopScroll();
         render();
+    }
+
+    function updateNashvilleUi() {
+        var btn = document.getElementById('nashville-btn');
+        if (btn) btn.classList.toggle('pb-on', nashvilleMode);
+    }
+
+    function toggleNashville() {
+        nashvilleMode = !nashvilleMode;
+        sessionStorage.setItem('play.nashville', nashvilleMode ? '1' : '0');
+        chordSheetHtmlCache = {};
+        updateNashvilleUi();
+        if (viewMode === 'chordsheet') render();
+    }
+
+    function speedIndexForBpm(bpm) {
+        var n = parseFloat(bpm);
+        if (!n || isNaN(n)) return speedIdx;
+        if (n < 72) return 0;
+        if (n < 96) return 1;
+        if (n < 120) return 2;
+        return 3;
     }
 
     function cycleViewMode() {
@@ -1757,6 +1780,10 @@ body.play-mode.edges-hint .tap-zone {
     }
     function startScroll() {
         if (isScrolling) return;
+        if (viewMode === 'chordsheet') {
+            var c = getCurrent();
+            if (c && c.bpm) speedIdx = speedIndexForBpm(c.bpm);
+        }
         isScrolling = true; lastTs = null; scrollAcc = 0;
         document.getElementById('scroll-btn').classList.add('pb-on');
         document.getElementById('scroll-badge').style.display = 'block';
@@ -1911,6 +1938,7 @@ body.play-mode.edges-hint .tap-zone {
             case 'f': case 'F': toggleFullscreen(); break;
             case 't': case 'T': if (typeof toggleTheme === 'function') toggleTheme(); break;
             case 'g': case 'G': cycleViewMode(); break;
+            case 'n': case 'N': toggleNashville(); break;
             case ' ': e.preventDefault(); toggleScroll(); break;
             case 'PageDown': e.preventDefault(); tapScrollDown(); break;
             case 'PageUp': e.preventDefault(); tapScrollUp(); break;
@@ -1991,6 +2019,7 @@ body.play-mode.edges-hint .tap-zone {
     window.toggleFit = toggleFit;
     window.setViewMode = setViewMode;
     window.cycleViewMode = cycleViewMode;
+    window.toggleNashville = toggleNashville;
 
     document.querySelectorAll('#view-mode-menu [data-view-mode]').forEach(function (item) {
         item.addEventListener('click', function () {
@@ -2000,6 +2029,7 @@ body.play-mode.edges-hint .tap-zone {
 
     // ── Init ────────────────────────────────
     updateViewModeUi();
+    updateNashvilleUi();
     applyTwoCols();
     document.getElementById('fit-btn').classList.toggle('pb-on', fitMode);
     buildDots();

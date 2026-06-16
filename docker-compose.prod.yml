@@ -2,6 +2,17 @@
 # Uso: docker compose -f docker-compose.prod.yml up -d --build
 
 services:
+  api-cifras:
+    build:
+      context: ..
+      dockerfile: api-cifras/Dockerfile
+    container_name: setsync-api-cifras
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    networks:
+      - default
+
   postgres:
     image: postgres:16-alpine
     env_file:
@@ -85,6 +96,7 @@ services:
       MAIL_DATABASE_PATH: /app/data/mail/emails.db
       SMTP_CONNECT_HOST: mail
       EVOLUTION_API_URL: http://evolution-api:8080
+      API_CIFRAS_URL: ${API_CIFRAS_URL:-http://api-cifras:8000}
     ports:
       - "127.0.0.1:5001:5000"
     volumes:
@@ -95,6 +107,8 @@ services:
       mail:
         condition: service_started
       evolution-api:
+        condition: service_started
+      api-cifras:
         condition: service_started
     restart: unless-stopped
     healthcheck:

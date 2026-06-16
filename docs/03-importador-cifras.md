@@ -16,6 +16,7 @@ O SetSync possui uma ferramenta integrada em `/cifras/import/tool` que:
 
 - UI do iframe: `templates/cifras_tool/embed.html` + `static/cifras-tool/embed.js`
 - Endpoint de processamento: `POST /cifras/import/api/processar-cifra`
+- Busca na biblioteca local: `GET /cifras/import/api/buscar?q=...` e `GET /cifras/import/api/api-cifras/<artista>/<musica>`
 - Download de artefatos: `GET /cifras/import/api/download/<job_id>/<arquivo>`
 
 ## Observações

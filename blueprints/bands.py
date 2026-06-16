@@ -417,6 +417,114 @@ def remove_member(band_id, user_id_to_remove):
     return redirect(url_for('bands.members', band_id=band_id))
 
 
+@bands_bp.route('/<band_id>/equipe', methods=['GET', 'POST'])
+@login_required
+def equipe(band_id):
+    """Funções, formações salvas e lista de reserva por função."""
+    user_id = session['user_id']
+    band = get_band(band_id)
+    if not band or not can_edit_band_settings(band_id, user_id):
+        flash('Sem permissão para gerenciar a equipe desta banda.', 'danger')
+        return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
+
+    from models_band_team import (
+        add_band_role,
+        create_lineup,
+        delete_band_role,
+        delete_lineup,
+        ensure_default_band_roles,
+        get_lineup,
+        get_lineup_members,
+        list_band_lineups,
+        list_band_roles,
+        list_role_substitutes,
+        set_role_substitutes,
+        update_lineup,
+    )
+
+    ensure_default_band_roles(band_id)
+    band_members = get_band_members(band_id)
+    roles = list_band_roles(band_id)
+    lineups = list_band_lineups(band_id)
+    substitutes = list_role_substitutes(band_id)
+
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+
+        if action == 'add_role':
+            label = (request.form.get('role_label') or '').strip()
+            if add_band_role(band_id, label):
+                flash(f'Função «{label}» adicionada.', 'success')
+            else:
+                flash('Função já existe ou nome inválido.', 'warning')
+
+        elif action == 'delete_role':
+            label = (request.form.get('role_label') or '').strip()
+            if label:
+                delete_band_role(band_id, label)
+                flash('Função removida.', 'info')
+
+        elif action == 'save_substitutes':
+            role_label = (request.form.get('role_label') or '').strip()
+            user_ids = request.form.getlist('substitute_ids')
+            set_role_substitutes(band_id, role_label, user_ids)
+            flash(f'Reservas para {role_label} atualizadas.', 'success')
+
+        elif action == 'create_lineup':
+            name = (request.form.get('lineup_name') or '').strip()
+            if not name:
+                flash('Informe o nome da formação.', 'warning')
+            else:
+                members = []
+                for uid in request.form.getlist('lineup_member_ids'):
+                    role = (request.form.get(f'lineup_role_{uid}') or '').strip() or None
+                    members.append({'user_id': uid, 'role_label': role})
+                create_lineup(band_id, name, members)
+                flash(f'Formação «{name}» criada.', 'success')
+
+        elif action == 'delete_lineup':
+            lineup_id = (request.form.get('lineup_id') or '').strip()
+            lu = get_lineup(lineup_id) if lineup_id else None
+            if lu and lu.get('band_id') == band_id:
+                delete_lineup(lineup_id)
+                flash('Formação removida.', 'info')
+
+        elif action == 'update_lineup':
+            lineup_id = (request.form.get('lineup_id') or '').strip()
+            lu = get_lineup(lineup_id) if lineup_id else None
+            if not lu or lu.get('band_id') != band_id:
+                flash('Formação inválida.', 'danger')
+            else:
+                name = (request.form.get('lineup_name') or '').strip() or lu['name']
+                members = []
+                for uid in request.form.getlist('lineup_member_ids'):
+                    role = (request.form.get(f'lineup_role_{uid}') or '').strip() or None
+                    members.append({'user_id': uid, 'role_label': role})
+                update_lineup(lineup_id, name, members)
+                flash('Formação atualizada.', 'success')
+
+        return redirect(url_for('bands.equipe', band_id=band_id))
+
+    lineup_details = {}
+    for lu in lineups:
+        lineup_details[lu['id']] = get_lineup_members(lu['id'])
+
+    subs_by_role: dict[str, list[str]] = {}
+    for s in substitutes:
+        subs_by_role.setdefault(s['role_label'], []).append(s['user_id'])
+
+    return render_template(
+        'bands/equipe.html',
+        band=band,
+        band_members=band_members,
+        roles=roles,
+        lineups=lineups,
+        lineup_details=lineup_details,
+        substitutes_by_role=subs_by_role,
+        user_display_name=user_display_name,
+    )
+
+
 @bands_bp.route('/<band_id>/delete', methods=['POST'])
 @login_required
 def delete(band_id):

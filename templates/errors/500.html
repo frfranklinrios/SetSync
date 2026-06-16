@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ops — SetSync</title>
+  <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon">
+  <style>
+    :root {
+      --bg: #0c0a09;
+      --card: #1c1917;
+      --text: #fafaf9;
+      --muted: #a8a29e;
+      --accent: #ea580c;
+      --accent-hover: #c2410c;
+      --border: rgba(255,255,255,.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(234,88,12,.12), transparent),
+                  var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .wrap {
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 1.25rem;
+      border-radius: 50%;
+      background: rgba(234,88,12,.12);
+      border: 1px solid rgba(234,88,12,.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0 0 .65rem;
+      letter-spacing: -.02em;
+    }
+    .lead {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.55;
+      margin: 0 0 1rem;
+    }
+    .tips {
+      text-align: left;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.15rem;
+      margin-bottom: 1.5rem;
+      font-size: .9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .tips strong { color: var(--text); font-weight: 600; }
+    .tips ul { margin: .5rem 0 0; padding-left: 1.2rem; }
+    .tips li { margin-bottom: .35rem; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+      padding: .65rem 1.25rem;
+      border-radius: 10px;
+      font-size: .95rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,.18); }
+    .foot {
+      margin-top: 1.75rem;
+      font-size: .8rem;
+      color: #78716c;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="icon" aria-hidden="true">🎸</div>
+    <h1>Ops, algo não saiu como esperado</h1>
+    <p class="lead">
+      Não foi culpa sua — tivemos um problema ao processar essa página.
+      Seus dados costumam estar seguros; vale tentar de novo.
+    </p>
+    <div class="tips">
+      <strong>O que você pode fazer:</strong>
+      <ul>
+        <li>Atualize a página ou volte e tente outra vez</li>
+        <li>Se estava salvando uma cifra ou grade, abra o editor de novo — o rascunho local pode ter sido guardado</li>
+        <li>Problema persistente? Fale com quem administra a banda ou acesse a central de ajuda</li>
+      </ul>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" onclick="location.reload()">Tentar novamente</button>
+      <a href="/" class="btn btn-ghost">Ir para o início</a>
+      <a href="/ajuda" class="btn btn-ghost">Central de ajuda</a>
+    </div>
+    <p class="foot">SetSync · gerenciador de cifras e setlists para bandas</p>
+  </div>
+</body>
+</html>

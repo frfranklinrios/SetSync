@@ -57,11 +57,52 @@
     <p class="text-muted mb-0" style="font-size: var(--text-base);">
         <strong>{{ event.title }}</strong> · {{ format_event_datetime(event.starts_at) }}
     </p>
-    <p class="text-muted mb-0 mt-2" style="font-size: var(--text-sm);">
-        Selecione quem participa deste ensaio ou show. Integrantes escalados recebem lembrete e notificação.
-        Se ninguém for selecionado, todos os membros são considerados.
+    {% if scale_stats and scale_stats.total %}
+    <p class="mb-0 mt-2" style="font-size: var(--text-sm);">
+        <span class="badge text-bg-success">{{ scale_stats.accepted }} confirmados</span>
+        <span class="badge text-bg-danger">{{ scale_stats.declined }} recusados</span>
+        <span class="badge text-bg-warning text-dark">{{ scale_stats.pending }} pendentes</span>
     </p>
+    {% endif %}
+    <p class="text-muted mb-0 mt-2" style="font-size: var(--text-sm);">
+        Integrantes escalados recebem notificação imediata por e-mail e WhatsApp com link para aceitar ou recusar.
+    </p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        {% if lineups %}
+        <form method="POST" class="d-inline">
+            {% include 'partials/csrf_input.html' %}
+            <input type="hidden" name="action" value="apply_lineup">
+            <div class="input-group input-group-sm" style="max-width:320px;">
+                <select name="lineup_id" class="form-select" required>
+                    <option value="">Aplicar formação…</option>
+                    {% for lu in lineups %}
+                    <option value="{{ lu.id }}">{{ lu.name }} ({{ lu.member_count }})</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Aplicar</button>
+            </div>
+        </form>
+        {% endif %}
+        {% if suggestions %}
+        <form method="POST" class="d-inline" onsubmit="return confirm('Aplicar sugestão automática de escala?')">
+            {% include 'partials/csrf_input.html' %}
+            <input type="hidden" name="action" value="apply_suggestions">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-magic me-1"></i> Sugerir escala
+            </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('bands.equipe', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-users-cog me-1"></i> Funções e formações
+        </a>
+    </div>
 </div>
+
+<datalist id="band-roles">
+    {% for r in band_roles %}
+    <option value="{{ r.label }}">
+    {% endfor %}
+</datalist>
 
 <div class="card">
     <div class="card-body">
@@ -86,7 +127,12 @@
                                id="member-{{ mid }}"{% if sel %} checked{% endif %}>
                     </div>
                     <label class="escala-member-info mb-0" for="member-{{ mid }}" style="cursor:pointer;">
-                        <div class="escala-member-name">{{ user_display_name(m) }}</div>
+                        <div class="escala-member-name">
+                            {{ user_display_name(m) }}
+                            {% if mid in blocked_ids %}
+                            <span class="badge text-bg-warning text-dark ms-1" style="font-size:var(--text-xs);">Indisponível</span>
+                            {% endif %}
+                        </div>
                         {% if m.email %}
                         <div class="escala-member-email">{{ m.email }}</div>
                         {% endif %}
@@ -94,7 +140,7 @@
                     <div class="escala-member-role">
                         <input type="text" class="form-control form-control-sm" name="role_{{ mid }}"
                                value="{{ sel.role_label if sel and sel.role_label else '' }}"
-                               placeholder="Função" maxlength="40"
+                               placeholder="Função" maxlength="40" list="band-roles"
                                title="Ex.: Vocal, Bateria, Teclado">
                     </div>
                 </div>

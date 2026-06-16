@@ -49,6 +49,29 @@
 .pv-empty { color: #475569; font-style: italic; }
 [data-theme="light"] .preview-box .sp-word { color: #1e293b; }
 
+.preview-box .sp-section {
+    display: block;
+    width: 100%;
+    color: var(--chord-highlight);
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+}
+.preview-box .sp-tab-block,
+.preview-box .sp-tab-line {
+    margin: 0 0 0.5rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.35;
+    white-space: pre;
+    overflow-x: auto;
+}
+[data-theme="light"] .preview-box .sp-tab-block,
+[data-theme="light"] .preview-box .sp-tab-line { color: #475569; }
+
 .badge-count { background: var(--accent); color: #fff;
     font-size: var(--text-xs); border-radius: 999px;
     padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
@@ -69,6 +92,7 @@
     <input type="hidden" name="cifra_json" id="cifra_json_hidden">
     <input type="hidden" name="grade_json" id="grade_json_hidden">
     <input type="hidden" name="duracao_seg" id="duracao_seg_hidden">
+    <input type="hidden" name="referencia_json" id="referencia_json_hidden" value="">
 
     <div class="row g-3 mb-3">
         <div class="col-md-5">
@@ -93,6 +117,8 @@
         </div>
     </div>
 
+    {% include 'cifras/_api_cifras_search.html' %}
+
     <div class="editor-grid mb-3">
         <!-- Coluna esquerda: textarea de entrada -->
         <div>
@@ -111,7 +137,7 @@
         <div>
             <label class="form-label">
                 Preview estruturado
-                <span class="badge-count" id="pv-count">0 entradas</span>
+                <span class="badge-count" id="pv-count">0 blocos</span>
             </label>
             <div class="preview-box" id="preview-box">
                 <span class="pv-empty">Digite a cifra ao lado…</span>
@@ -159,143 +185,24 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/grade-visual.css') }}">
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/cifra-line-parse.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/api-cifras-search.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
 
 <script>
-// ── Regex para detectar token de acorde ─────────────────────────────────
-const CHORD_TOKEN = /^[A-G][#b]?(?:(?:maj7?|min|m7b5|m7|M7?|m|dim7?|aug|sus[24]?|add9?|\d+|[+\-°º]|[b#]\d))*(?:\/[A-G][#b]?)?$/;
-
-function isChord(token) {
-    return CHORD_TOKEN.test(token.replace(/[()]/g, ''));
-}
-
-function isChordLine(line) {
-    const tokens = line.trim().split(/\s+/).filter(t => t.length > 0);
-    return tokens.length > 0 && tokens.every(isChord);
-}
-
-/** Converte conteúdo do textarea para array cifra_json */
 function parseConteudo(text) {
-    if (window.SetSyncCifraClubPaste && SetSyncCifraClubPaste.normalizarColagem) {
-        text = SetSyncCifraClubPaste.normalizarColagem(text);
-    }
-    const lines = text.split('\n');
-    const result = [];
-    let seq = 0, group = 0;
-    let i = 0;
-
-    while (i < lines.length) {
-        const line = lines[i];
-
-        // Linha vazia — separa grupos/seções
-        if (line.trim() === '') { group++; i++; continue; }
-
-        // ── Formato colchetes: [Acorde] letra [Acorde2] letra ──
-        if (/\[([^\]]+)\]/.test(line)) {
-            const re = /\[([^\]]+)\]([^\[]*)/g;
-            let m;
-            let lastIndex = 0;
-
-            while ((m = re.exec(line)) !== null) {
-                // Preserva texto livre que venha antes do acorde.
-                if (m.index > lastIndex) {
-                    const prefixo = line.slice(lastIndex, m.index);
-                    if (prefixo.length) {
-                        result.push({ segundo: seq++, texto_letra: prefixo, acorde: '', group });
-                    }
-                }
-
-                const acorde = m[1].trim();
-                const texto = String(m[2] || '');
-                result.push({ segundo: seq++, texto_letra: texto, acorde, group });
-                lastIndex = re.lastIndex;
-            }
-
-            // Se sobrou texto apos o ultimo acorde, preserva como letra sem acorde.
-            if (lastIndex < line.length) {
-                const sufixo = line.slice(lastIndex);
-                if (sufixo.length) {
-                    result.push({ segundo: seq++, texto_letra: sufixo, acorde: '', group });
-                }
-            }
-
-            group++; i++; continue;
-        }
-
-        // ── Formato duas linhas: linha de acordes + linha de letra ──
-        const next = lines[i + 1];
-        if (isChordLine(line) && next !== undefined && !isChordLine(next) && next.trim() !== '') {
-            const chordRe = /\S+/g;
-            let cm;
-            const chords = [];
-            while ((cm = chordRe.exec(line)) !== null) {
-                chords.push({ chord: cm[0], pos: cm.index });
-            }
-            for (let j = 0; j < chords.length; j++) {
-                const start = chords[j].pos;
-                const end = j + 1 < chords.length ? chords[j + 1].pos : next.length;
-                const texto = next.slice(start, end).trim();
-                result.push({ segundo: seq++, texto_letra: texto, acorde: chords[j].chord, group });
-            }
-            group++; i += 2; continue;
-        }
-
-        // ── Linha de letra pura (sem acorde associado) ──
-        result.push({ segundo: seq++, texto_letra: line.trim(), acorde: '', group });
-        group++; i++;
-    }
-    return result;
+    return window.SetSyncCifraLineParse
+        ? SetSyncCifraLineParse.parseConteudo(text)
+        : [];
 }
 
-/** Renderiza preview no painel direito */
 function renderPreview(data) {
-    const box = document.getElementById('preview-box');
-    const countEl = document.getElementById('pv-count');
-    if (!data.length) {
-        box.innerHTML = '<span class="pv-empty">Digite a cifra ao lado…</span>';
-        countEl.textContent = '0 entradas';
-        return;
-    }
-    countEl.textContent = data.length + ' entr' + (data.length === 1 ? 'ada' : 'adas');
-    const hasGroup = data.some(item => item && item.group != null);
-    const groups = {};
-    const order = [];
-
-    data.forEach((item, idx) => {
-        const key = (hasGroup && item && item.group != null) ? String(item.group) : String(idx);
-        if (!groups[key]) {
-            groups[key] = [];
-            order.push(key);
-        }
-        groups[key].push(item || {});
-    });
-
-    box.innerHTML = order.map(key => {
-        const items = groups[key];
-        const line = items.map((item, idx) => {
-            const next = idx + 1 < items.length ? items[idx + 1] : null;
-            const chord = item.acorde ? escHtml(item.acorde) : '';
-            const lyric = (item.texto_letra != null && String(item.texto_letra).length)
-                ? escHtml(String(item.texto_letra))
-                : '&nbsp;';
-            let noGap = false;
-            if (next) {
-                const thisLyric = String(item.texto_letra || '');
-                const nextLyric = String(next.texto_letra || '');
-                const thisEndsWithSpace = /\s$/.test(thisLyric);
-                const nextStartsWithSpace = /^\s/.test(nextLyric);
-                if (thisLyric && nextLyric && !thisEndsWithSpace && !nextStartsWithSpace) noGap = true;
-            }
-            return `<span class="sp-item${noGap ? ' sp-no-gap' : ''}"><span class="sp-chord">${chord || '&nbsp;'}</span><span class="sp-word">${lyric}</span></span>`;
-        }).join('');
-        return `<div class="sp-line">${line}</div>`;
-    }).join('');
-}
-
-function escHtml(s) {
-    return String(s)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    if (!window.SetSyncCifraLineParse) return;
+    SetSyncCifraLineParse.renderPreview(
+        data,
+        document.getElementById('preview-box'),
+        document.getElementById('pv-count')
+    );
 }
 
 function buildEditableTextFromCifraJson(data) {

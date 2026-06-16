@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-import librosa
-import numpy as np
+if TYPE_CHECKING:
+    import numpy as np
 
 
 @dataclass(frozen=True)
@@ -81,6 +82,9 @@ def detectar_compasso(
     Estima compasso a partir da ênfase rítmica nos pulsos (downbeats mais fortes).
     Testa 2/4, 3/4, 4/4 e 6/8 (2 pulsos fortes por compasso).
     """
+    import librosa
+    import numpy as np
+
     if len(beat_frames) < 8:
         return compasso_padrao()
 
@@ -125,6 +129,8 @@ def detectar_compasso(
 def _pontuar_compasso(
     strengths: np.ndarray, beats_per_bar: int, offset: int
 ) -> float:
+    import numpy as np
+
     downbeats: list[float] = []
     outros: list[float] = []
     for indice, valor in enumerate(strengths):
@@ -140,6 +146,9 @@ def _pontuar_compasso(
 def _sugere_composto(y: np.ndarray, sr: int) -> bool:
     """Heurística leve para 6/8: subdivisão ternária mais clara que binária."""
     try:
+        import librosa
+        import numpy as np
+
         onset_env = librosa.onset.onset_strength(y=y, sr=sr)
         ac = librosa.autocorrelate(onset_env, max_size=3 * sr // 512)
         if len(ac) < 12:

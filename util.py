@@ -639,6 +639,16 @@ def _is_chord_token(token):
     return bool(CHORD_TOKEN_RE.match(t))
 
 
+def is_bracket_chord_name(token: str) -> bool:
+    """True se o texto entre colchetes for acorde (e não rótulo de seção como Intro)."""
+    t = (token or '').strip()
+    if not t:
+        return False
+    if t in ('%', '%%') or re.fullmatch(r'%?\d+', t):
+        return True
+    return _is_chord_token(t)
+
+
 def _is_chord_line(line):
     """Retorna True se a linha for predominantemente acordes"""
     if _is_tab_line(line) or _is_tab_header(line) or _is_tab_meta_line(line):
@@ -721,6 +731,117 @@ def content_has_tablatura(text: str) -> bool:
     return False
 
 
+def _parse_tab_header_line(line: str) -> tuple[str, str | None]:
+    """Separa `[Tab - Intro]` do acorde opcional na mesma linha (`[G]`)."""
+    s = (line or '').strip()
+    m = re.match(r'^(\[(?:Tab|TAB)[^\]]*\])(.*)$', s, re.I)
+    if not m:
+        return s, None
+    title = m.group(1).strip()
+    rest = (m.group(2) or '').strip()
+    chord = None
+    cm = re.match(r'^\[([^\]]+)\]$', rest)
+    if cm and is_bracket_chord_name(cm.group(1)):
+        chord = cm.group(1).strip()
+    return title, chord
+
+
+def _is_tab_related_text(text: str) -> bool:
+    s = (text or '').strip()
+    if not s:
+        return False
+    return _is_tab_line(s) or _is_tab_header(s) or _is_tab_meta_line(s)
+
+
+def _is_section_only_group(group: list[dict]) -> bool:
+    if len(group) != 1:
+        return False
+    item = group[0] or {}
+    if (item.get('acorde') or '').strip():
+        return False
+    if item.get('section'):
+        return True
+    texto = (item.get('texto_letra') or '').strip()
+    if texto.startswith('[') and texto.endswith(']'):
+        token = texto[1:-1].strip()
+        return token and not is_bracket_chord_name(token)
+    return False
+
+
+def _section_label_from_group(group: list[dict]) -> str:
+    item = group[0] or {}
+    if item.get('section'):
+        return str(item['section']).strip()
+    texto = (item.get('texto_letra') or '').strip()
+    if texto.startswith('[') and texto.endswith(']'):
+        return texto[1:-1].strip()
+    return texto
+
+
+def _is_tab_only_group(group: list[dict]) -> bool:
+    if not group:
+        return False
+    return all(_is_tab_related_text(str(item.get('texto_letra') or '')) for item in group)
+
+
+def _sp_item_html(item: dict, next_item: dict | None = None) -> str:
+    chord = html_lib.escape((item.get('acorde') or '').strip())
+    lyric_raw = item.get('texto_letra')
+    lyric = html_lib.escape(str(lyric_raw)) if lyric_raw is not None and str(lyric_raw) else '&nbsp;'
+    no_gap = False
+    if next_item is not None:
+        this_lyric = str(item.get('texto_letra') or '')
+        next_lyric = str(next_item.get('texto_letra') or '')
+        if this_lyric and next_lyric and not this_lyric.endswith(' ') and not next_lyric.startswith(' '):
+            no_gap = True
+    gap_cls = ' sp-no-gap' if no_gap else ''
+    return (
+        f'<span class="sp-item{gap_cls}">'
+        f'<span class="sp-chord">{chord or "&nbsp;"}</span>'
+        f'<span class="sp-word">{lyric}</span>'
+        '</span>'
+    )
+
+
+def render_grouped_cifra_html(groups: list[list[dict]]) -> str:
+    """Renderiza cifra_json agrupado: seções, blocos de tab e acordes sobre letra."""
+    if not groups:
+        return ''
+
+    parts: list[str] = []
+    for group in groups:
+        if not group:
+            continue
+
+        if _is_section_only_group(group):
+            label = html_lib.escape(_section_label_from_group(group))
+            parts.append(f'<p class="cifra-section sp-section">{label}</p>')
+            continue
+
+        if _is_tab_only_group(group):
+            parts.append(_render_tab_block([str(item.get('texto_letra') or '') for item in group]))
+            continue
+
+        line_bits: list[str] = []
+        for idx, item in enumerate(group):
+            next_item = group[idx + 1] if idx + 1 < len(group) else None
+            if item.get('section') and not (item.get('acorde') or '').strip():
+                line_bits.append(
+                    f'<span class="sp-section">{html_lib.escape(str(item["section"]))}</span>'
+                )
+                continue
+            texto = str(item.get('texto_letra') or '')
+            if _is_tab_related_text(texto):
+                line_bits.append(_highlight_tab_line_html(texto.strip()))
+                continue
+            line_bits.append(_sp_item_html(item, next_item))
+
+        if line_bits:
+            parts.append(f'<div class="sp-line">{"".join(line_bits)}</div>')
+
+    return '\n'.join(parts)
+
+
 def _highlight_tab_line_html(line: str) -> str:
     """Destaca cordas e números/técnicas em uma linha de tablatura."""
     s = line.rstrip()
@@ -751,11 +872,24 @@ def _render_tab_block(lines: list[str]) -> str:
             continue
         s = line.strip()
         if _is_tab_header(s):
-            parts.append(f'<span class="cifra-tab-title">{html_lib.escape(s)}</span>')
+            title, chord = _parse_tab_header_line(s)
+            parts.append(f'<span class="cifra-tab-title">{html_lib.escape(title)}</span>')
+            if chord:
+                parts.append(
+                    f'<span class="cifra-tab-chord">{html_lib.escape(chord)}</span>'
+                )
         elif _is_tab_meta_line(s):
             parts.append(f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>')
         elif _is_tab_line(s):
             parts.append(_highlight_tab_line_html(s))
+        elif re.fullmatch(r'\[([^\]]+)\]', s):
+            token = s[1:-1].strip()
+            if is_bracket_chord_name(token):
+                parts.append(
+                    f'<span class="cifra-tab-chord">{html_lib.escape(token)}</span>'
+                )
+            else:
+                parts.append(f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>')
         else:
             parts.append(f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>')
     parts.append('</div>')
@@ -919,48 +1053,57 @@ def highlight_chords_play_html(text):
             result.append(_render_tab_block(block))
             continue
 
-        if re.search(r'\[[A-G][^\]]{0,10}\]', line):
+        if re.search(r'\[[^\]]+\]', line):
             parts = ['<div class="sp-line">']
             last = 0
-            found = False
+            matched = False
             for m in re_br.finditer(line):
-                found = True
-                # Preserva texto antes do primeiro acorde (ou entre matches)
+                matched = True
                 if m.start() > last:
                     prefix = line[last:m.start()]
-                    if prefix:
+                    if prefix.strip():
                         parts.append(
                             '<span class="sp-item">'
                             '<span class="sp-chord"></span>'
                             f'<span class="sp-word">{html_lib.escape(prefix)}</span>'
                             '</span>'
                         )
-
-                chord = html_lib.escape(m.group(1).strip())
-                lyric = html_lib.escape(m.group(2) or '')
-                parts.append(
-                    '<span class="sp-item">'
-                    f'<span class="sp-chord">{chord}</span>'
-                    f'<span class="sp-word">{lyric}</span>'
-                    '</span>'
-                )
-                last = m.end()
-
-            # Sufixo sem acorde no fim da linha
-            if found and last < len(line):
-                suffix = line[last:]
-                if suffix:
+                token = (m.group(1) or '').strip()
+                lyric = m.group(2) or ''
+                if is_bracket_chord_name(token):
                     parts.append(
                         '<span class="sp-item">'
-                        '<span class="sp-chord"></span>'
-                        f'<span class="sp-word">{html_lib.escape(suffix)}</span>'
+                        f'<span class="sp-chord">{html_lib.escape(token)}</span>'
+                        f'<span class="sp-word">{html_lib.escape(lyric)}</span>'
                         '</span>'
                     )
+                else:
+                    parts.append(
+                        f'<span class="sp-section">{html_lib.escape(token)}</span>'
+                    )
+                    if lyric.strip():
+                        parts.append(
+                            '<span class="sp-item">'
+                            '<span class="sp-chord"></span>'
+                            f'<span class="sp-word">{html_lib.escape(lyric)}</span>'
+                            '</span>'
+                        )
+                last = m.end()
 
-            parts.append('</div>')
-            result.append(''.join(parts))
-            i += 1
-            continue
+            if matched:
+                if last < len(line):
+                    suffix = line[last:]
+                    if suffix.strip():
+                        parts.append(
+                            '<span class="sp-item">'
+                            '<span class="sp-chord"></span>'
+                            f'<span class="sp-word">{html_lib.escape(suffix)}</span>'
+                            '</span>'
+                        )
+                parts.append('</div>')
+                result.append(''.join(parts))
+                i += 1
+                continue
 
         if _is_chord_line(line):
             escaped = html_lib.escape(line)

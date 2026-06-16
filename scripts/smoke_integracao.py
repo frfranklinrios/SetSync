@@ -120,6 +120,7 @@ def main() -> int:
     expected_routes = [
         ("/cifras/import/tool", "cifras_import.embed_tool"),
         ("/cifras/import/api/processar-cifra", "cifras_import.api_processar_cifra"),
+        ("/cifras/import/api/buscar", "cifras_import.api_buscar_cifras"),
     ]
     for path, endpoint in expected_routes:
         check(rules.get(path) == endpoint, f"{path} -> {endpoint}")

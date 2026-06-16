@@ -1,0 +1,39 @@
+{% extends "index.html" %}
+{% block title %}Resposta à escalação · SetSync{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h5 mb-2">Escalação — {{ band.name }}</h2>
+        <p class="mb-1"><strong>{{ event.title }}</strong></p>
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+          {{ format_event_datetime(event.starts_at) }}
+          {% if assignment.role_label %} · {{ assignment.role_label }}{% endif %}
+        </p>
+
+        {% if already_responded %}
+        {% set st = assignment.response_status or 'pending' %}
+        {% if st == 'accepted' %}
+        <p class="text-success mb-3"><i class="fas fa-check-circle me-1"></i> Você já confirmou presença.</p>
+        {% elif st == 'declined' %}
+        <p class="text-danger mb-3"><i class="fas fa-times-circle me-1"></i> Você já recusou esta escalação.</p>
+        {% endif %}
+        <a href="{{ url_for('agenda.view', event_id=event.id) }}" class="btn btn-primary btn-sm">Ver evento no app</a>
+        {% else %}
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+          Confirme ou recuse sem precisar fazer login.
+        </p>
+        <form method="POST" action="{{ url_for('agenda.respond_scale_token', token=token) }}" class="d-inline">
+          {% include 'partials/csrf_input.html' %}
+          <input type="hidden" name="action" value="accept">
+          <button type="submit" class="btn btn-success me-2"><i class="fas fa-check me-1"></i> Aceitar</button>
+        </form>
+        <a href="{{ url_for('agenda.respond_scale_token', token=token, action='decline') }}"
+           class="btn btn-outline-danger"><i class="fas fa-times me-1"></i> Recusar</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

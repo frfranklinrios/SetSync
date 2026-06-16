@@ -25,19 +25,23 @@
 {% include 'partials/seo_public.html' %}
 {% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/blog.css') }}?v=1">
+{% endblock %}
+
 {% block content %}
-<article class="container py-4" style="max-width:760px;">
-    <p class="text-muted small mb-2">
+<article class="blog-article">
+    <p class="blog-post-meta mb-0">
         <a href="{{ url_for('blog.blog_index') }}">← Blog</a>
         · {{ post.publicado_em|date_short }}
         {% if post.autor %}· {{ post.autor }}{% endif %}
     </p>
-    <h1 class="mb-3" style="font-size:clamp(1.5rem,4vw,2rem);font-weight:700;">{{ post.titulo }}</h1>
-    <div class="blog-conteudo" style="line-height:1.7;">
+    <h1>{{ post.titulo }}</h1>
+    <div class="blog-conteudo">
         {{ conteudo_html|safe }}
     </div>
     {% if post.tags %}
-    <p class="mt-4 small text-muted">Tags: {{ post.tags }}</p>
+    <p class="blog-tags mb-0">Tags: {{ post.tags }}</p>
     {% endif %}
 </article>
 {% endblock %}

@@ -1,0 +1,24 @@
+{% if pending_scale %}
+<div class="card mb-3 border-warning">
+    <div class="card-body py-3">
+        <h3 class="h6 mb-2">
+            <i class="fas fa-user-clock me-1 text-warning"></i>
+            Confirmações de escalação pendentes
+            <span class="badge bg-warning text-dark ms-1">{{ pending_scale|length }}</span>
+        </h3>
+        {% for p in pending_scale %}
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 py-2 border-bottom border-secondary-subtle">
+            <div style="font-size: var(--text-sm);">
+                <strong>{{ p.title }}</strong>
+                <span class="text-muted"> · {{ p.band_name }}</span>
+                {% if p.role_label %}<span class="text-muted"> · {{ p.role_label }}</span>{% endif %}
+                <br><span class="text-muted">{{ p.starts_at | format_event_datetime }}</span>
+            </div>
+            <a href="{{ url_for('agenda.view', event_id=p.event_id) }}" class="btn btn-success btn-sm">
+                Responder
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

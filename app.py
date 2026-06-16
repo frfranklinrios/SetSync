@@ -101,8 +101,12 @@ def handle_unexpected_error(e):
     )
     if _wants_json_response():
         return jsonify({'ok': False, 'error': 'Erro ao processar. Tente novamente.'}), 500
-    # HTML inline (sem template/context processors) para não depender do banco,
-    # que pode ser justamente a origem do erro.
+    try:
+        err_path = os.path.join(app.root_path, 'templates', 'errors', '500.html')
+        with open(err_path, encoding='utf-8') as f:
+            return f.read(), 500
+    except OSError:
+        pass
     html = (
         '<!doctype html><html lang="pt-br"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -400,6 +404,9 @@ def dashboard():
 
     from onboarding import get_onboarding_progress
     from band_member_invites import list_pending_invites_for_user
+    from cifras_tool.api_cifras_client import get_api_cifras_public_stats
+
+    api_cifras_stats = get_api_cifras_public_stats()
 
     user_id = session['user_id']
     onboarding = get_onboarding_progress(user_id)
@@ -421,6 +428,13 @@ def dashboard():
         get_events_where_user_assigned,
         get_upcoming_events_for_user,
     )
+    from models_band_team import (
+        list_events_pending_responses_for_editor,
+        list_pending_assignments_for_user,
+    )
+
+    pending_scale = list_pending_assignments_for_user(user_id)
+    pending_scale_admin = list_events_pending_responses_for_editor(user_id)
 
     def _enrich_upcoming(events):
         ids = [e['id'] for e in events]
@@ -448,9 +462,10 @@ def dashboard():
             trial_ui=_trial_ctx(owned_bands),
             onboarding=onboarding,
             pending_band_invites=pending_band_invites,
+            pending_scale=pending_scale,
+            pending_scale_admin=pending_scale_admin,
+            api_cifras_stats=api_cifras_stats,
         )
-
-    bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
     owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
     upcoming_events = _enrich_upcoming(get_upcoming_events_for_user(user_id, limit=8))
     return render_template(
@@ -463,6 +478,9 @@ def dashboard():
         trial_ui=_trial_ctx(owned_bands),
         onboarding=onboarding,
         pending_band_invites=pending_band_invites,
+        pending_scale=pending_scale,
+        pending_scale_admin=pending_scale_admin,
+        api_cifras_stats=api_cifras_stats,
     )
 
 

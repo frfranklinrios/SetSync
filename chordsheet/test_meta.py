@@ -195,6 +195,28 @@ class MetaCharactersTest(unittest.TestCase):
         flat = chart_to_grade_flat(chart)
         self.assertEqual(flat[0]["acordes"], ["C", "D"])
 
+    def test_grade_flat_to_source_one_measure_not_four(self):
+        from chordsheet_bridge import grade_flat_to_source
+
+        src = grade_flat_to_source([{"compasso": 1, "acordes": ["Cm", "%", "%", "%"]}])
+        self.assertEqual(src, "Cm")
+        chart = parse_chart(src, meta={"title": "T", "time_signature": "4/4"})
+        self.assertEqual(len(chart.bars), 1)
+        html = render_chart_html(chart)
+        self.assertEqual(html.count('class="cs-beat"'), 4)
+        self.assertEqual(html.count("cs-empty"), 3)
+
+    def test_grade_flat_to_source_multi_pulse_uses_underscore(self):
+        from chordsheet_bridge import grade_flat_to_source
+
+        src = grade_flat_to_source(
+            [{"compasso": 1, "acordes": ["C", "Am", "F", "G"]}]
+        )
+        self.assertEqual(src, "C_Am_F_G")
+        chart = parse_chart(src, meta={"title": "T", "time_signature": "4/4"})
+        self.assertEqual(len(chart.bars), 1)
+        self.assertEqual(chart.bars[0].get_pulse_grid(), [["C"], ["Am"], ["F"], ["G"]])
+
     def test_source_line_breaks_render_on_new_row(self):
         chart = parse_chart("C Am F G\nD Em Am G", meta={"title": "T"})
         self.assertEqual(chart.line_breaks, [4])

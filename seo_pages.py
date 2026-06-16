@@ -59,12 +59,12 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'h2': 'Como o SetSync ajuda na prática',
             'html': (
                 '<ul>'
-                '<li><strong>Repertório único</strong> — cifras, letras e chord sheet na mesma música.</li>'
+                '<li><strong>Repertório único</strong> — cifras, letras e grade harmônica na mesma música.</li>'
                 '<li><strong>Convites por link</strong> — integre guitarristas, tecladistas, bateristas e vocalistas.</li>'
                 '<li><strong>Setlists</strong> — ordem do show ou ensaio, tom por cantor, navegação no Modo Tocar.</li>'
                 '<li><strong>Transposição</strong> — cada vocalista com o tom certo; sustenidos e bemóis pela armadura do tom.</li>'
-                '<li><strong>Chord sheet</strong> — editor com salvamento automático, notação brasileira e semi-pulsos.</li>'
-                '<li><strong>Agenda</strong> — ensaios e shows com setlist vinculada e escalação (planos Pro/Worship).</li>'
+                '<li><strong>Grade harmônica</strong> — editor com salvamento automático, extrair da cifra, notação brasileira e semi-pulsos.</li>'
+                '<li><strong>Agenda</strong> — ensaios e shows com setlist vinculada, escalação com confirmação por link e lembretes.</li>'
                 '<li><strong>Plano grátis</strong> — comece sem cartão; evolua para Individual, Pro ou Worship.</li>'
                 '</ul>'
             ),
@@ -117,19 +117,20 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'h2': 'Transposição e tom do cantor',
             'html': (
                 '<p>Cadastre cada vocalista e a transposição preferida. Na setlist, escolha quem canta '
-                'cada música — a cifra abre no tom certo automaticamente, inclusive no chord sheet. '
+                'cada música — a cifra abre no tom certo automaticamente, inclusive na grade harmônica. '
                 'O SetSync grafia sustenidos e bemóis conforme a armadura do tom (ex.: C→Eb gera Eb, Ab, Bb). '
                 'Acabou o "espera, deixa eu subir meio tom no papel".</p>'
             ),
         })
 
-    if 'chord sheet' in obj or 'chord-sheet' in obj:
+    if 'chord sheet' in obj or 'chord-sheet' in obj or 'grade harmônica' in obj or 'grade harmonica' in obj:
         blocks.insert(1, {
-            'h2': 'Chord sheet profissional',
+            'h2': 'Grade harmônica profissional',
             'html': (
-                '<p>Além da cifra com letra, monte a progressão harmônica no editor chordsheet.com integrado: '
-                'compassos, simile, seções e semi-pulsos. Salvamento automático, notação brasileira (C7+, °, m7b5) '
-                'e notas privadas com <code>!</code> só para quem escreveu. No palco, alterne cifra, chord sheet e letra.</p>'
+                '<p>Além da cifra com letra, monte a progressão no editor chordsheet.com integrado: '
+                'compassos, simile, seções e semi-pulsos. Use <strong>Extrair da cifra</strong> para gerar um rascunho, '
+                'salvamento automático, notação brasileira (C7+, °, m7b5) e notas privadas com <code>!</code>. '
+                'No palco, alterne cifra, grade harmônica e letra — com Nashville (1–7), auto-scroll e diagramas ao tocar acordes.</p>'
             ),
         })
 
@@ -158,8 +159,9 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'h2': 'Agenda, ensaios e escalação',
             'html': (
                 '<p>Marque ensaios e shows no calendário, vincule a setlist do evento e escale '
-                'quem participa. Lembretes por e-mail e WhatsApp ajudam a equipe a não esquecer. '
-                'Local com busca no Google Maps facilita chegar no lugar certo.</p>'
+                'quem participa por função. Confirmação em um toque por link no e-mail ou WhatsApp, '
+                'formações salvas, sugestão de escala e painel de pendentes no dashboard. '
+                'Lembretes automáticos e exportação para Google Agenda ou arquivo .ics.</p>'
             ),
         })
 
@@ -167,7 +169,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
         blocks.insert(1, {
             'h2': 'Exportar PDF para ensaio',
             'html': (
-                '<p>No plano Pro, exporte setlists formatadas com índice, cifras, letras e chord sheet '
+                '<p>No plano Pro, exporte setlists formatadas com índice, cifras, letras e grade harmônica '
                 '— escolha o que incluir. Útil para quem prefere papel de backup ou arquivo para arquivo.</p>'
             ),
         })
@@ -176,7 +178,8 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
         blocks.insert(1, {
             'h2': 'Modo Tocar e app no celular',
             'html': (
-                '<p>Tela cheia para o palco: fonte grande, auto-scroll, duas colunas e tema claro ou escuro. '
+                '<p>Tela cheia para o palco: fonte grande, auto-scroll na cifra e na grade harmônica, '
+                'modo Nashville, duas colunas e tema claro ou escuro. '
                 'Instale como PWA na tela inicial e use offline quando precisar — ideal no palco ou no ensaio.</p>'
             ),
         })
@@ -192,6 +195,7 @@ _KEYWORD_PAIRS: list[tuple[str, str]] = [
     ('compartilhar', 'letras'),
     ('compartilhar', 'repertório'),
     ('compartilhar', 'chord sheet'),
+    ('compartilhar', 'grade harmônica'),
     ('compartilhar', 'link público'),
     # gerenciar
     ('gerenciar', 'bandas'),
@@ -212,6 +216,7 @@ _KEYWORD_PAIRS: list[tuple[str, str]] = [
     ('montar', 'setlist gospel'),
     ('montar', 'setlist culto'),
     ('montar', 'repertório'),
+    ('montar', 'grade harmônica'),
     # transpor
     ('transpor', 'cifras'),
     ('transpor', 'acordes'),
@@ -254,6 +259,7 @@ _STANDALONE_TOPICS: list[str] = [
     'agenda banda louvor',
     'agenda ensaio culto',
     'chord sheet cifra',
+    'grade harmônica cifra',
     'repertório musical banda',
     'biblioteca cifras igreja',
     'planilha cifras alternativa',
@@ -289,6 +295,7 @@ _PREMIUM_SLUGS = frozenset({
     'plano-worship-igreja',
     'multiplas-bandas-igreja',
     'chord-sheet-cifra',
+    'grade-harmonica-cifra',
     'convidar-musicos',
 })
 
@@ -451,7 +458,7 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'O SetSync transpor cifras automaticamente?',
-            'a': 'Cadastre vocalistas com transposição preferida. Ao montar a setlist, escolha quem canta — a cifra abre no tom certo, com sustenidos e bemóis pela armadura (Eb, Bb etc.), inclusive no chord sheet.',
+            'a': 'Cadastre vocalistas com transposição preferida. Ao montar a setlist, escolha quem canta — a cifra abre no tom certo, com sustenidos e bemóis pela armadura (Eb, Bb etc.), inclusive na grade harmônica.',
         },
         {
             'q': 'Existe app de cifras para banda grátis?',
@@ -471,23 +478,23 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'O que é o Modo Tocar?',
-            'a': 'Tela cheia para o palco: cifra legível à distância, auto-scroll, navegação entre músicas da setlist e tema escuro para ambientes com pouca luz.',
+            'a': 'Tela cheia para o palco: cifra legível à distância, auto-scroll na cifra e na grade harmônica, modo Nashville, navegação entre músicas da setlist e tema escuro para ambientes com pouca luz.',
         },
         {
             'q': 'Posso exportar setlist em PDF?',
-            'a': 'No plano Pro, exporte setlists com índice, cifras, letras e chord sheet — você escolhe quais seções incluir.',
+            'a': 'No plano Pro, exporte setlists com índice, cifras, letras e grade harmônica — você escolhe quais seções incluir.',
         },
         {
             'q': 'SetSync substitui planilha de cifras?',
             'a': 'Sim, para bandas que precisam de versão única, transposição e setlist. Acaba o problema de "qual arquivo é o certo?" no grupo do WhatsApp.',
         },
         {
-            'q': 'Tem chord sheet além da cifra tradicional?',
-            'a': 'Cada música pode ter cifra, chord sheet e letra. O editor salva automaticamente, transponde com grafia correta e permite notas privadas (!) visíveis só para quem escreveu.',
+            'q': 'Tem grade harmônica além da cifra tradicional?',
+            'a': 'Cada música pode ter cifra, grade harmônica e letra. O editor salva automaticamente, permite extrair acordes da cifra, transpor com grafia correta e notas privadas (!) visíveis só para quem escreveu.',
         },
         {
             'q': 'Como organizar ensaios da banda?',
-            'a': 'Use a Agenda: marque ensaio ou show, vincule a setlist, escale quem participa e envie lembretes automáticos à equipe.',
+            'a': 'Use a Agenda: marque ensaio ou show, vincule a setlist, escale por função e envie confirmação por link no e-mail ou WhatsApp. Lembretes automáticos ajudam a equipe a não esquecer.',
         },
         {
             'q': 'Quantas músicas posso cadastrar?',

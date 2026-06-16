@@ -83,6 +83,7 @@ def _init_postgres_schema(c) -> None:
             bpm REAL,
             duracao_seg INTEGER,
             transpose_semitones INTEGER DEFAULT 0,
+            referencia_json TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (band_id) REFERENCES bands(id)
@@ -274,6 +275,8 @@ def init_db():
         _migrate_content_schema(c)
         _migrate_agenda_schema(c)
         _migrate_band_member_invites_schema(c)
+        _migrate_band_team_schema(c)
+        add_column_if_missing(c, 'cifras', 'referencia_json', 'TEXT')
         _ensure_perf_indexes(c)
         db.commit()
         db.close()
@@ -356,6 +359,7 @@ def init_db():
         add_column_if_missing(c, 'cifras', col, typedef)
     add_column_if_missing(c, 'cifras', 'leadsheet_json', 'TEXT')
     add_column_if_missing(c, 'cifras', 'transpose_semitones', 'INTEGER DEFAULT 0')
+    add_column_if_missing(c, 'cifras', 'referencia_json', 'TEXT')
     add_column_if_missing(c, 'bands', 'vocalist_user_id', 'TEXT')
     add_column_if_missing(c, 'bands', 'vocalist_name', 'TEXT')
     add_column_if_missing(c, 'bands', 'logo_filename', 'TEXT')
@@ -402,10 +406,79 @@ def init_db():
     _migrate_content_schema(c)
     _migrate_agenda_schema(c)
     _migrate_band_member_invites_schema(c)
+    _migrate_band_team_schema(c)
     _ensure_perf_indexes(c)
     db.commit()
 
     db.close()
+
+
+def _migrate_band_team_schema(c) -> None:
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_roles (
+            band_id TEXT NOT NULL,
+            label TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (band_id, label),
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_lineups (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_lineup_members (
+            lineup_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            role_label TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (lineup_id, user_id),
+            FOREIGN KEY (lineup_id) REFERENCES band_lineups(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_role_substitutes (
+            band_id TEXT NOT NULL,
+            role_label TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (band_id, role_label, user_id),
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS user_availability_blockouts (
+            user_id TEXT NOT NULL,
+            block_date TEXT NOT NULL,
+            note TEXT,
+            PRIMARY KEY (user_id, block_date),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_event_guests (
+            id TEXT PRIMARY KEY,
+            event_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            phone TEXT,
+            role_label TEXT,
+            invited_by TEXT,
+            response_status TEXT DEFAULT 'pending',
+            response_note TEXT,
+            responded_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE CASCADE,
+            FOREIGN KEY (invited_by) REFERENCES users(id)
+        )
+    ''')
 
 
 def _migrate_band_member_invites_schema(c) -> None:
@@ -1828,17 +1901,17 @@ def is_band_editor(band_id, user_id) -> bool:
 
 def create_cifra(titulo, artista, tom_original, conteudo, band_id,
                  cifra_json=None, grade_json=None, leadsheet_json=None,
-                 bpm=None, duracao_seg=None):
+                 bpm=None, duracao_seg=None, referencia_json=None):
     db = get_db()
     c = db.cursor()
     cifra_id = str(uuid.uuid4())
     c.execute(
         '''INSERT INTO cifras
            (id, titulo, artista, tom_original, conteudo, band_id,
-            cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, referencia_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (cifra_id, titulo, artista, tom_original, conteudo or '', band_id,
-         cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
+         cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, referencia_json)
     )
     db.commit()
     db.close()
@@ -1861,6 +1934,45 @@ def get_band_cifras(band_id):
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
+
+
+def update_cifra_referencia(cifra_id, referencia_json):
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE cifras SET referencia_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?''',
+        (referencia_json, cifra_id),
+    )
+    db.commit()
+    db.close()
+
+
+def restore_cifra_from_referencia(cifra_id) -> bool:
+    cifra = get_cifra(cifra_id)
+    if not cifra:
+        return False
+    from cifra_referencia import parse_referencia, restore_fields_from_referencia
+
+    ref = parse_referencia(cifra)
+    if not ref:
+        return False
+    fields = restore_fields_from_referencia(ref)
+    if not fields.get('titulo') or not fields.get('artista'):
+        fields['titulo'] = cifra.get('titulo') or fields.get('titulo')
+        fields['artista'] = cifra.get('artista') or fields.get('artista')
+    update_cifra(
+        cifra_id,
+        fields['titulo'],
+        fields['artista'],
+        fields['tom_original'],
+        fields['conteudo'],
+        cifra_json=fields.get('cifra_json'),
+        grade_json=fields.get('grade_json'),
+        leadsheet_json=fields.get('leadsheet_json'),
+        bpm=cifra.get('bpm'),
+        duracao_seg=cifra.get('duracao_seg'),
+    )
+    return True
 
 
 def update_cifra(cifra_id, titulo, artista, tom_original, conteudo,

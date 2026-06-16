@@ -1,0 +1,136 @@
+{% extends "index.html" %}
+{% block title %}Equipe — {{ band.name }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.settings', band_id=band.id) }}">Configurações</a></li>
+        <li class="breadcrumb-item active">Equipe</li>
+    </ol>
+</nav>
+
+<h2 class="mb-4">Equipe e escalação</h2>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Funções da banda</div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    {% for r in roles %}
+                    <span class="badge border d-inline-flex align-items-center gap-1" style="font-size:var(--text-sm); font-weight:500;">
+                        {{ r.label }}
+                        <form method="POST" class="d-inline">
+                            {% include 'partials/csrf_input.html' %}
+                            <input type="hidden" name="action" value="delete_role">
+                            <input type="hidden" name="role_label" value="{{ r.label }}">
+                            <button type="submit" class="btn btn-link btn-sm p-0 text-danger" title="Remover">&times;</button>
+                        </form>
+                    </span>
+                    {% endfor %}
+                </div>
+                <form method="POST" class="d-flex gap-2">
+                    {% include 'partials/csrf_input.html' %}
+                    <input type="hidden" name="action" value="add_role">
+                    <input type="text" name="role_label" class="form-control form-control-sm" placeholder="Nova função" maxlength="40" required>
+                    <button type="submit" class="btn btn-outline-primary btn-sm">Adicionar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Lista de reserva por função</div>
+            <div class="card-body">
+                {% for r in roles %}
+                <form method="POST" class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                    {% include 'partials/csrf_input.html' %}
+                    <input type="hidden" name="action" value="save_substitutes">
+                    <input type="hidden" name="role_label" value="{{ r.label }}">
+                    <label class="form-label fw-semibold mb-2">{{ r.label }}</label>
+                    <select name="substitute_ids" class="form-select form-select-sm" multiple size="3">
+                        {% for m in band_members %}
+                        <option value="{{ m.id }}"
+                            {% if m.id in substitutes_by_role.get(r.label, []) %}selected{% endif %}>
+                            {{ user_display_name(m) }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm mt-2">Salvar reservas</button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">Formações salvas</div>
+            <div class="card-body">
+                {% for lu in lineups %}
+                <details class="mb-3 border rounded p-3">
+                    <summary class="fw-semibold" style="cursor:pointer;">{{ lu.name }} ({{ lu.member_count }} integrantes)</summary>
+                    <form method="POST" class="mt-3">
+                        {% include 'partials/csrf_input.html' %}
+                        <input type="hidden" name="action" value="update_lineup">
+                        <input type="hidden" name="lineup_id" value="{{ lu.id }}">
+                        <div class="mb-2">
+                            <input type="text" name="lineup_name" class="form-control form-control-sm" value="{{ lu.name }}" required>
+                        </div>
+                        {% set members_in = lineup_details.get(lu.id, []) %}
+                        {% set selected_ids = members_in | map(attribute='user_id') | list %}
+                        {% for m in band_members %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="lineup_member_ids" value="{{ m.id }}"
+                                   id="lu-{{ lu.id }}-{{ m.id }}"
+                                   {% if m.id in selected_ids %}checked{% endif %}>
+                            <label class="form-check-label d-flex gap-2 align-items-center" for="lu-{{ lu.id }}-{{ m.id }}">
+                                {{ user_display_name(m) }}
+                                <input type="text" name="lineup_role_{{ m.id }}" class="form-control form-control-sm" style="max-width:120px;"
+                                       placeholder="Função" maxlength="40"
+                                       value="{% for lm in members_in %}{% if lm.user_id == m.id %}{{ lm.role_label or '' }}{% endif %}{% endfor %}">
+                            </label>
+                        </div>
+                        {% endfor %}
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="submit" class="btn btn-primary btn-sm">Atualizar</button>
+                        </div>
+                    </form>
+                    <form method="POST" class="mt-2" onsubmit="return confirm('Remover esta formação?')">
+                        {% include 'partials/csrf_input.html' %}
+                        <input type="hidden" name="action" value="delete_lineup">
+                        <input type="hidden" name="lineup_id" value="{{ lu.id }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Excluir formação</button>
+                    </form>
+                </details>
+                {% else %}
+                <p class="text-muted mb-3" style="font-size: var(--text-sm);">Nenhuma formação salva ainda.</p>
+                {% endfor %}
+
+                <hr>
+                <h4 class="h6">Nova formação</h4>
+                <form method="POST">
+                    {% include 'partials/csrf_input.html' %}
+                    <input type="hidden" name="action" value="create_lineup">
+                    <div class="mb-2">
+                        <input type="text" name="lineup_name" class="form-control" placeholder="Nome da formação" maxlength="80" required>
+                    </div>
+                    {% for m in band_members %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="lineup_member_ids" value="{{ m.id }}" id="new-lu-{{ m.id }}">
+                        <label class="form-check-label d-flex gap-2 align-items-center" for="new-lu-{{ m.id }}">
+                            {{ user_display_name(m) }}
+                            <input type="text" name="lineup_role_{{ m.id }}" class="form-control form-control-sm" style="max-width:120px;"
+                                   placeholder="Função" maxlength="40">
+                        </label>
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary btn-sm mt-2">Criar formação</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

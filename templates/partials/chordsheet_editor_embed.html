@@ -1,4 +1,4 @@
-{# Editor Chord Sheet embutido na edição da cifra — metadados vêm do form principal #}
+{# Editor da grade harmônica embutido na edição da cifra — metadados vêm do form principal #}
 <div class="chordsheet-embed layout">
     <div class="panel editor-panel">
         <h2>Fonte</h2>
@@ -33,6 +33,9 @@
         <textarea id="source" spellcheck="false" placeholder="= Intro&#10;C Am F G&#10;= Verso&#10;C Am F G"></textarea>
 
         <div class="toolbar">
+            <button type="button" id="btn-extract-from-cifra" class="btn-primary" title="Montar grade a partir dos acordes da cifra">
+                ✨ Extrair da cifra
+            </button>
             <button type="button" id="btn-transpose-down" title="Transpor -1 semitom">♭ −1</button>
             <button type="button" id="btn-transpose-up" title="Transpor +1 semitom">♯ +1</button>
             <button type="button" id="btn-undo" title="Voltar ao último estado salvo no servidor" disabled>↩ Desfazer alterações</button>

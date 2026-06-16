@@ -398,6 +398,51 @@
             });
     }
 
+    function extractFromCifra() {
+        if (!CFG.urls || !CFG.urls.extract) return;
+        var tsEl = $("meta-ts");
+        var ts = tsEl ? tsEl.value : "4/4";
+        var btn = $("btn-extract-from-cifra");
+        if (btn) btn.disabled = true;
+        setStatus("Extraindo acordes da cifra…", true, "saving");
+        fetch(CFG.urls.extract, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-CSRFToken": window.csrfToken || ""
+            },
+            body: JSON.stringify({ time_signature: ts })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.ok) {
+                    throw new Error((data && data.error) || "Não foi possível extrair a grade.");
+                }
+                var src = $("source");
+                if (src) src.value = data.source || "";
+                if (data.meta) {
+                    if (CFG.embedMode) {
+                        if (data.meta.key) setMainMetaField("tom_original", data.meta.key);
+                        if (data.meta.bpm) setMainMetaField("bpm", data.meta.bpm);
+                    }
+                    if (data.meta.time_signature && tsEl) {
+                        tsEl.value = data.meta.time_signature;
+                    }
+                }
+                onEditorChange();
+                setStatus("Grade extraída da cifra — revise e salve", false, "pending");
+                scheduleAutosave();
+            })
+            .catch(function (err) {
+                setStatus(err.message || "Falha ao extrair", false, "pending");
+            })
+            .finally(function () {
+                if (btn) btn.disabled = false;
+            });
+    }
+
     function loadExample(key) {
         if (!key || !CFG.examples || !CFG.examples[key]) return;
         var ex = CFG.examples[key];
@@ -446,6 +491,9 @@
         if ($("btn-undo-top")) $("btn-undo-top").addEventListener("click", undoChanges);
         if ($("btn-transpose-down")) $("btn-transpose-down").addEventListener("click", function () { transpose(-1); });
         if ($("btn-transpose-up")) $("btn-transpose-up").addEventListener("click", function () { transpose(1); });
+        if ($("btn-extract-from-cifra")) {
+            $("btn-extract-from-cifra").addEventListener("click", extractFromCifra);
+        }
         if ($("btn-print")) $("btn-print").addEventListener("click", function () { window.print(); });
         if ($("btn-print-top")) $("btn-print-top").addEventListener("click", function () { window.print(); });
         if ($("examples")) {

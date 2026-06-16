@@ -1,0 +1,26 @@
+{% extends "index.html" %}
+{% block title %}Recusar escalação · SetSync{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h5 mb-2">Recusar escalação</h2>
+        <p class="mb-1"><strong>{{ event.title }}</strong> — {{ band.name }}</p>
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">{{ format_event_datetime(event.starts_at) }}</p>
+        <form method="POST" action="{{ url_for('agenda.respond_scale_token', token=token) }}">
+          {% include 'partials/csrf_input.html' %}
+          <input type="hidden" name="action" value="decline">
+          <div class="mb-3">
+            <label class="form-label" for="note">Motivo (opcional)</label>
+            <input type="text" class="form-control" id="note" name="note" maxlength="500"
+                   placeholder="Ex.: compromisso no mesmo horário">
+          </div>
+          <button type="submit" class="btn btn-outline-danger">Confirmar recusa</button>
+          <a href="{{ url_for('agenda.respond_scale_token', token=token) }}" class="btn btn-outline-secondary ms-2">Voltar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

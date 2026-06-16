@@ -30,16 +30,31 @@ from models_agenda import (
     create_band_event,
     delete_band_event,
     get_band_event,
-    get_event_assignment_user_ids,
     get_event_assignments,
     get_events_scale_summaries,
     get_user_agenda_events,
     get_user_event_assignment,
-    respond_event_assignment,
     set_event_assignments,
     update_band_event,
 )
+from models_band_team import (
+    add_event_guest,
+    ensure_default_band_roles,
+    get_assignment_response_stats,
+    get_lineup,
+    lineup_assignments,
+    list_band_lineups,
+    list_band_roles,
+    list_event_guests,
+    remove_event_guest,
+    suggest_scale_assignments,
+    users_blocked_on_date,
+)
 from models_setlist import get_band_setlists, get_setlist
+from event_calendar import google_calendar_url, ics_content
+from event_scale_tokens import verify_scale_response_token
+from scale_service import process_scale_response, scale_token_url
+from security import build_canonical_url, external_url_for
 
 agenda_bp = Blueprint('agenda', __name__, url_prefix='/agenda')
 
@@ -236,6 +251,9 @@ def view(event_id):
         setlist_cifras = get_setlist_cifras(int(event['setlist_id']))
     assignments = get_event_assignments(event_id)
     user_assignment = get_user_event_assignment(event_id, user_id)
+    guests = list_event_guests(event_id)
+    scale_stats = get_assignment_response_stats(event_id)
+    gcal_url = google_calendar_url(event, band_name=band.get('name') or '')
     return render_template(
         'agenda/view.html',
         event=event,
@@ -243,14 +261,74 @@ def view(event_id):
         is_admin=is_band_admin(band['id'], user_id),
         can_edit=True,
         assignments=assignments,
+        guests=guests,
+        scale_stats=scale_stats,
         user_assignment=user_assignment,
         user_is_scaled=user_assignment is not None,
         setlist_cifras=setlist_cifras,
         event_type_label=event_type_label(event.get('event_type')),
         format_event_datetime=format_event_datetime,
         user_display_name=user_display_name,
+        google_calendar_url=gcal_url,
+        ics_url=url_for('agenda.event_ics', event_id=event_id),
         **event_maps_context(event),
     )
+
+
+@agenda_bp.route('/<event_id>/pacote')
+@login_required
+def event_package(event_id):
+    """Visão focada no músico escalado — confirmação, setlist e mapa."""
+    return redirect(url_for('agenda.view', event_id=event_id))
+
+
+@agenda_bp.route('/<event_id>/calendar.ics')
+@login_required
+def event_ics(event_id):
+    event, band, user_id = _require_event_access(event_id)
+    if not event:
+        abort(404)
+    content = ics_content(
+        event,
+        band_name=band.get('name') or '',
+        app_url=build_canonical_url(f'/agenda/{event_id}'),
+    )
+    if not content:
+        abort(404)
+    from flask import Response
+    return Response(
+        content,
+        mimetype='text/calendar; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename="evento-{event_id[:8]}.ics"'},
+    )
+
+
+@agenda_bp.route('/<event_id>/convidado', methods=['POST'])
+@login_required
+def add_guest(event_id):
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_editor(band['id'], user_id):
+        abort(404)
+    name = (request.form.get('guest_name') or '').strip()
+    phone = (request.form.get('guest_phone') or '').strip() or None
+    role = (request.form.get('guest_role') or '').strip() or None
+    if not name:
+        flash('Informe o nome do convidado.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
+    add_event_guest(event_id, name=name, phone=phone, role_label=role, invited_by=user_id)
+    flash('Convidado adicionado à escalação.', 'success')
+    return redirect(url_for('agenda.view', event_id=event_id))
+
+
+@agenda_bp.route('/<event_id>/convidado/<guest_id>/remover', methods=['POST'])
+@login_required
+def remove_guest(event_id, guest_id):
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_editor(band['id'], user_id):
+        abort(404)
+    remove_event_guest(guest_id)
+    flash('Convidado removido.', 'info')
+    return redirect(url_for('agenda.view', event_id=event_id))
 
 
 @agenda_bp.route('/<event_id>/edit', methods=['GET', 'POST'])
@@ -317,15 +395,42 @@ def escala(event_id):
     current = {a['user_id']: a for a in get_event_assignments(event_id)}
 
     if request.method == 'POST':
+        action = (request.form.get('action') or '').strip()
+        if action == 'apply_lineup':
+            lineup_id = (request.form.get('lineup_id') or '').strip()
+            lineup = get_lineup(lineup_id) if lineup_id else None
+            if not lineup or lineup.get('band_id') != band['id']:
+                flash('Formação inválida.', 'warning')
+                return redirect(url_for('agenda.escala', event_id=event_id))
+            assignments = lineup_assignments(lineup_id)
+            added = set_event_assignments(event_id, assignments, assigned_by=user_id)
+            if added:
+                bn.event_scale_assigned(
+                    band['id'], user_id, event_id, event['title'], added,
+                )
+            flash(f'Formação «{lineup["name"]}» aplicada.', 'success')
+            return redirect(url_for('agenda.escala', event_id=event_id))
+
+        if action == 'apply_suggestions':
+            suggestions = suggest_scale_assignments(band['id'], event_id)
+            assignments = [
+                {'user_id': s['user_id'], 'role_label': s.get('role_label')}
+                for s in suggestions if not s.get('blocked')
+            ]
+            added = set_event_assignments(event_id, assignments, assigned_by=user_id)
+            if added:
+                bn.event_scale_assigned(
+                    band['id'], user_id, event_id, event['title'], added,
+                )
+            flash('Sugestão de escala aplicada.', 'success')
+            return redirect(url_for('agenda.escala', event_id=event_id))
+
         assignments = _read_scale_form(band['id'])
         if assignments is None:
             flash('Seleção de integrantes inválida.', 'warning')
             return redirect(url_for('agenda.escala', event_id=event_id))
 
-        old_ids = set(get_event_assignment_user_ids(event_id))
-        set_event_assignments(event_id, assignments, assigned_by=user_id)
-        new_ids = {a['user_id'] for a in assignments}
-        added = new_ids - old_ids
+        added = set_event_assignments(event_id, assignments, assigned_by=user_id)
         if added:
             bn.event_scale_assigned(
                 band['id'], user_id, event_id, event['title'], added,
@@ -333,12 +438,24 @@ def escala(event_id):
         flash('Escalação salva.', 'success')
         return redirect(url_for('agenda.view', event_id=event_id))
 
+    ensure_default_band_roles(band['id'])
+    event_date = str(event.get('starts_at') or '')[:10]
+    member_ids = [m['id'] for m in members]
+    blocked_ids = users_blocked_on_date(member_ids, event_date) if event_date else set()
+    scale_stats = get_assignment_response_stats(event_id)
+    suggestions = suggest_scale_assignments(band['id'], event_id)
+
     return render_template(
         'agenda/escala.html',
         event=event,
         band=band,
         members=members,
         current=current,
+        band_roles=list_band_roles(band['id']),
+        lineups=list_band_lineups(band['id']),
+        blocked_ids=blocked_ids,
+        scale_stats=scale_stats,
+        suggestions=suggestions,
         format_event_datetime=format_event_datetime,
         user_display_name=user_display_name,
     )
@@ -361,7 +478,7 @@ def respond_scale(event_id):
         return redirect(url_for('agenda.view', event_id=event_id))
 
     note = (request.form.get('note') or '').strip()
-    updated = respond_event_assignment(
+    updated = process_scale_response(
         event_id,
         user_id,
         accepted=(action == 'accept'),
@@ -371,20 +488,85 @@ def respond_scale(event_id):
         flash('Não foi possível registrar sua resposta.', 'danger')
         return redirect(url_for('agenda.view', event_id=event_id))
 
-    bn.event_scale_response(
-        band['id'],
-        user_id,
-        event_id,
-        event['title'],
-        accepted=(action == 'accept'),
-        note=note,
-        assigned_by=assignment.get('assigned_by'),
-    )
     if action == 'accept':
         flash('Presença confirmada na escalação.', 'success')
     else:
         flash('Recusa registrada. Quem te escalou foi notificado.', 'info')
     return redirect(url_for('agenda.view', event_id=event_id))
+
+
+@agenda_bp.route('/escala/responder/<token>', methods=['GET', 'POST'])
+def respond_scale_token(token):
+    """Aceitar ou recusar escalação via link (sem login)."""
+    parsed = verify_scale_response_token(token)
+    if not parsed:
+        return render_template('agenda/scale_token_invalid.html'), 400
+    event_id, user_id = parsed
+    event = get_band_event(event_id)
+    if not event:
+        return render_template('agenda/scale_token_invalid.html'), 404
+    band = get_band(event['band_id'])
+    assignment = get_user_event_assignment(event_id, user_id)
+    if not assignment:
+        return render_template('agenda/scale_token_invalid.html'), 404
+
+    if request.method == 'GET':
+        action = (request.args.get('action') or '').strip().lower()
+        if action == 'accept':
+            updated = process_scale_response(event_id, user_id, accepted=True)
+            if updated:
+                return render_template(
+                    'agenda/scale_token_result.html',
+                    event=event,
+                    band=band,
+                    accepted=True,
+                    assignment=updated,
+                    format_event_datetime=format_event_datetime,
+                )
+        elif action == 'decline':
+            return render_template(
+                'agenda/scale_token_decline.html',
+                event=event,
+                band=band,
+                token=token,
+                assignment=assignment,
+                format_event_datetime=format_event_datetime,
+            )
+
+    if request.method == 'POST':
+        action = (request.form.get('action') or '').strip().lower()
+        note = (request.form.get('note') or '').strip()
+        if action not in ('accept', 'decline'):
+            flash('Resposta inválida.', 'warning')
+            return redirect(scale_token_url(event_id, user_id))
+        updated = process_scale_response(
+            event_id,
+            user_id,
+            accepted=(action == 'accept'),
+            note=note,
+        )
+        if not updated:
+            return render_template('agenda/scale_token_invalid.html'), 400
+        return render_template(
+            'agenda/scale_token_result.html',
+            event=event,
+            band=band,
+            accepted=(action == 'accept'),
+            assignment=updated,
+            format_event_datetime=format_event_datetime,
+        )
+
+    st = (assignment.get('response_status') or 'pending').lower()
+    return render_template(
+        'agenda/scale_token.html',
+        event=event,
+        band=band,
+        assignment=assignment,
+        token=token,
+        already_responded=st != 'pending',
+        format_event_datetime=format_event_datetime,
+        user_display_name=user_display_name,
+    )
 
 
 @agenda_bp.route('/<event_id>/delete', methods=['POST'])

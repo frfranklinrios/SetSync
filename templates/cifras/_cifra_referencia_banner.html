@@ -1,0 +1,20 @@
+{% if cifra_referencia and cifra_referencia_diverged %}
+<div class="alert alert-secondary py-2 px-3 mb-3 d-flex flex-wrap align-items-center gap-2 justify-content-between">
+    <div style="font-size: var(--text-sm);">
+        <i class="fas fa-bookmark me-1 text-muted"></i>
+        <strong>Cifra editada pela banda</strong>
+        <span class="text-muted d-block d-md-inline ms-md-2">Existe uma versão original da biblioteca para restaurar.</span>
+        <span class="badge text-bg-warning text-dark ms-1">Alterada</span>
+    </div>
+    {% if can_edit|default(true) %}
+    <form method="POST" action="{{ url_for('cifras.restaurar_referencia', cifra_id=cifra.id) }}"
+          class="mb-0"
+          onsubmit="return confirm('Restaurar a cifra original da biblioteca? As alterações da banda serão descartadas.');">
+        {% include 'partials/csrf_input.html' %}
+        <button type="submit" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-rotate-left me-1"></i> Restaurar cifra original
+        </button>
+    </form>
+    {% endif %}
+</div>
+{% endif %}

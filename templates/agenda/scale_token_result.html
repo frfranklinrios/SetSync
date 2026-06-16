@@ -1,0 +1,25 @@
+{% extends "index.html" %}
+{% block title %}Escalação confirmada · SetSync{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body text-center">
+        {% if accepted %}
+        <p class="text-success mb-2" style="font-size: 2rem;"><i class="fas fa-check-circle"></i></p>
+        <h2 class="h5 mb-2">Presença confirmada!</h2>
+        {% else %}
+        <p class="text-muted mb-2" style="font-size: 2rem;"><i class="fas fa-times-circle"></i></p>
+        <h2 class="h5 mb-2">Recusa registrada</h2>
+        {% endif %}
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+          {{ event.title }} · {{ band.name }}<br>
+          {{ format_event_datetime(event.starts_at) }}
+        </p>
+        <a href="{{ url_for('agenda.view', event_id=event.id) }}" class="btn btn-primary btn-sm">Abrir evento</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm ms-2">Entrar no SetSync</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

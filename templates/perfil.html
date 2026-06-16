@@ -60,6 +60,46 @@
         </form>
       </div>
     </div>
+    <div class="card mt-3">
+      <div class="card-body">
+        <h3 class="h6 mb-3">Indisponibilidade</h3>
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+          Marque dias em que você não pode tocar. Quem escala vê o aviso na lista de integrantes.
+        </p>
+        {% if blockouts %}
+        <ul class="list-group list-group-flush mb-3">
+          {% for b in blockouts %}
+          <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+            <span>{{ b.block_date }}{% if b.note %} — {{ b.note }}{% endif %}</span>
+            <form method="POST" class="d-inline">
+              {% include 'partials/csrf_input.html' %}
+              <input type="hidden" name="blockout_action" value="remove">
+              <input type="hidden" name="block_date" value="{{ b.block_date }}">
+              <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-times"></i></button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">Nenhuma data bloqueada.</p>
+        {% endif %}
+        <form method="POST" class="row g-2 align-items-end">
+          {% include 'partials/csrf_input.html' %}
+          <input type="hidden" name="blockout_action" value="add">
+          <div class="col-sm-4">
+            <label class="form-label mb-1" for="block_date">Data</label>
+            <input type="date" class="form-control" id="block_date" name="block_date" required>
+          </div>
+          <div class="col-sm-5">
+            <label class="form-label mb-1" for="block_note">Observação (opcional)</label>
+            <input type="text" class="form-control" id="block_note" name="block_note" maxlength="200">
+          </div>
+          <div class="col-sm-3">
+            <button type="submit" class="btn btn-outline-primary w-100">Adicionar</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 <script>
