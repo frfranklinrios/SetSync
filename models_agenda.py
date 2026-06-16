@@ -180,6 +180,33 @@ def get_upcoming_events_for_user(
     return rows
 
 
+def get_user_agenda_events(user_id: str, *, all_bands: bool = False) -> list[dict]:
+    """Eventos de todas as bandas do usuário (para calendário pessoal)."""
+    db = get_db()
+    c = db.cursor()
+    if all_bands:
+        c.execute(
+            '''SELECT e.*, b.name AS band_name, s.name AS setlist_name
+               FROM band_events e
+               JOIN bands b ON b.id = e.band_id
+               LEFT JOIN setlists s ON s.id = e.setlist_id
+               ORDER BY e.starts_at ASC''',
+        )
+    else:
+        c.execute(
+            '''SELECT e.*, b.name AS band_name, s.name AS setlist_name
+               FROM band_events e
+               JOIN bands b ON b.id = e.band_id
+               JOIN band_members bm ON bm.band_id = e.band_id AND bm.user_id = ?
+               LEFT JOIN setlists s ON s.id = e.setlist_id
+               ORDER BY e.starts_at ASC''',
+            (user_id,),
+        )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
 def list_events_in_time_window(window_start: str, window_end: str) -> list[dict]:
     """Eventos com starts_at dentro do intervalo [window_start, window_end)."""
     db = get_db()

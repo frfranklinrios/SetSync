@@ -1,0 +1,163 @@
+/**
+ * Layout amplo para páginas do app no desktop (dashboard, listas, bandas).
+ */
+.app-page,
+.dashboard-page {
+  padding-top: 0.75rem !important;
+  padding-bottom: 1.5rem !important;
+  background: transparent;
+}
+@media (min-width: 992px) {
+  .app-page,
+  .dashboard-page {
+    padding-left: 1.75rem !important;
+    padding-right: 1.75rem !important;
+  }
+}
+
+.app-inner,
+.dashboard-inner {
+  max-width: 1520px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.app-page-head,
+.dashboard-header {
+  margin-bottom: 1rem;
+}
+.app-page-head h1,
+.app-page-head h2,
+.dashboard-header h1 {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+.app-page-head .lead,
+.dashboard-header .lead {
+  font-size: var(--text-base);
+  color: var(--muted);
+  margin: 0;
+}
+@media (min-width: 992px) {
+  .app-page-head h1,
+  .app-page-head h2,
+  .dashboard-header h1 {
+    font-size: var(--text-xl);
+  }
+  .app-page-head .lead,
+  .dashboard-header .lead {
+    font-size: var(--text-md);
+  }
+  .app-page-head .btn-sm,
+  .dashboard-header .dashboard-action-btn.btn-sm {
+    font-size: var(--text-base);
+    padding: 0.5rem 1rem;
+  }
+}
+
+.page-head {
+  margin-bottom: 1rem !important;
+}
+.page-head h2 {
+  font-size: var(--text-lg) !important;
+  font-weight: 700;
+}
+.page-head .text-muted {
+  font-size: var(--text-base) !important;
+}
+@media (min-width: 992px) {
+  .page-head h2 {
+    font-size: var(--text-xl) !important;
+  }
+  .page-head .text-muted {
+    font-size: var(--text-md) !important;
+  }
+  .page-head .btn-sm {
+    font-size: var(--text-base);
+    padding: 0.5rem 1rem;
+  }
+}
+
+.bands-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+@media (min-width: 992px) {
+  .bands-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.85rem;
+  }
+}
+@media (min-width: 1400px) {
+  .bands-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
+.app-section-title,
+.section-title {
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 1rem 0 0.5rem;
+}
+.app-section-title:first-child,
+.section-title:first-child {
+  margin-top: 0;
+}
+@media (min-width: 992px) {
+  .app-section-title,
+  .section-title {
+    font-size: var(--text-base);
+    margin: 1.15rem 0 0.55rem;
+  }
+}
+
+/* Listas (cifras / setlists): duas colunas em telas largas */
+@media (min-width: 1200px) {
+  .app-list-wide .row-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+    border: none;
+    background: transparent;
+    overflow: visible;
+  }
+  .app-list-wide .row-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+  }
+  [data-theme="dark"] .app-list-wide .row-item {
+    background: #0b1422;
+  }
+  .app-list-wide .row-item:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+@media (min-width: 992px) {
+  .app-list-wide .row-title {
+    font-size: var(--text-md);
+  }
+  .app-list-wide .row-sub {
+    font-size: var(--text-base);
+  }
+  .app-list-wide .row-item {
+    padding: 0.85rem 1.1rem;
+  }
+  .app-list-wide .row-badge,
+  .app-list-wide .row-vocalist,
+  .app-list-wide .row-vocalist-sel {
+    font-size: var(--text-base);
+  }
+  .app-list-wide .icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: var(--text-base);
+  }
+}

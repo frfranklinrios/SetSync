@@ -100,6 +100,7 @@ def vocalist_removed(band_id: str, actor_user_id: str, vocalist_name: str):
 
 
 def member_added_by_admin(band_id: str, actor_user_id: str, new_user_id: str):
+    """Legado: adição direta (link público ainda usa member_joined)."""
     actor = _actor_name(actor_user_id)
     newcomer = user_display_name(get_user(new_user_id))
     band = _band_label(band_id)
@@ -121,6 +122,51 @@ def member_added_by_admin(band_id: str, actor_user_id: str, new_user_id: str):
             body=f'{actor} adicionou você à banda {band}.',
             url_path=f'/bands/{band_id}',
         )
+
+
+def band_invite_sent(band_id: str, actor_user_id: str, invited_user_id: str):
+    actor = _actor_name(actor_user_id)
+    band = _band_label(band_id)
+    create_notification(
+        invited_user_id,
+        band_id=band_id,
+        actor_user_id=actor_user_id,
+        type='band_invite',
+        title=f'Convite para {band}',
+        body=f'{actor} convidou você para entrar na banda {band}. Aceite para participar.',
+        url_path='/convites',
+    )
+
+
+def member_accepted_invite(band_id: str, actor_user_id: str | None, new_user_id: str):
+    newcomer = user_display_name(get_user(new_user_id))
+    band = _band_label(band_id)
+    _notify_members(
+        band_id,
+        new_user_id,
+        'member_joined',
+        f'{band} — novo membro',
+        f'{newcomer} aceitou o convite e entrou na banda.',
+        url_path=f'/bands/{band_id}/members',
+        also_notify=[actor_user_id] if actor_user_id else None,
+    )
+
+
+def band_invite_declined(band_id: str, actor_user_id: str | None, user_id: str):
+    if not actor_user_id:
+        return 0
+    decliner = user_display_name(get_user(user_id))
+    band = _band_label(band_id)
+    create_notification(
+        actor_user_id,
+        band_id=band_id,
+        actor_user_id=user_id,
+        type='band_invite_declined',
+        title=f'{band} — convite recusado',
+        body=f'{decliner} recusou o convite para entrar na banda.',
+        url_path=f'/bands/{band_id}/members',
+    )
+    return 1
 
 
 def member_joined_via_invite(band_id: str, new_user_id: str):

@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('ajuda.index') }}">
-<meta name="description" content="Ajuda SetSync: compartilhar cifras com a banda, gerenciar membros, montar setlist gospel, transpor acordes, Modo Tocar, agenda e convites. Passo a passo para sua equipe.">
+<meta name="description" content="Ajuda SetSync: compartilhar cifras com a banda, gerenciar membros, montar setlists, transpor acordes, Modo Tocar, agenda e convites. Passo a passo para sua equipe.">
 <meta property="og:title" content="Ajuda SetSync — Compartilhar cifras, gerenciar bandas e setlists">
-<meta property="og:description" content="Ajuda SetSync: compartilhar cifras com a banda, gerenciar membros, montar setlist gospel, transpor acordes, Modo Tocar, agenda e convites.">
+<meta property="og:description" content="Ajuda SetSync: compartilhar cifras com a banda, gerenciar membros, montar setlists, transpor acordes, Modo Tocar, agenda e convites.">
 <meta property="og:url" content="{{ external_url_for('ajuda.index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -277,11 +277,11 @@
       <div class="card-body">
         <ol>
           <li>Acesse o SetSync e <strong>entre</strong> ou <strong>crie sua conta</strong>.</li>
-          <li>Em <span class="code">Bandas</span>, crie uma banda (ex.: nome do grupo ou ministério).</li>
+          <li>Em <span class="code">Bandas</span>, crie uma banda (ex.: nome do grupo ou projeto).</li>
           <li>Em <strong>Configurações da banda</strong>, cadastre <strong>cantoras/cantores</strong> se mais de uma pessoa canta em tons diferentes.</li>
           <li>Adicione <strong>cifras</strong> (manual ou pelo importador <span class="code">Cifra → SetSync</span>).</li>
-          <li>Monte um <strong>setlist</strong> com a ordem do culto ou show.</li>
-          <li>Na aba <strong>Agenda</strong>, registre ensaios e cultos e, se quiser, <strong>escale</strong> quem participa.</li>
+          <li>Monte um <strong>setlist</strong> com a ordem do show ou ensaio.</li>
+          <li>Na aba <strong>Agenda</strong>, registre ensaios e apresentações e, se quiser, <strong>escale</strong> quem participa.</li>
           <li>Toque em <strong>Tocar</strong> (na setlist ou no evento) para abrir o <strong>Modo Tocar</strong> em tela cheia.</li>
         </ol>
         <div class="help-callout">
@@ -302,7 +302,7 @@
           <tr><th>Grátis</th><td>Até 30 músicas, 5 integrantes, 10 setlists e 1 banda por conta.</td></tr>
           <tr><th>Individual</th><td>Para quem toca sozinho: 1 banda, só você no elenco, repertório ilimitado e PDF.</td></tr>
           <tr><th>Pro</th><td>Músicas, integrantes e setlists ilimitados <em>na banda</em>; exportação em PDF.</td></tr>
-          <tr><th>Worship</th><td>Tudo do Pro em <strong>várias bandas</strong> da mesma conta — ideal para igrejas com jovem, casal, gospel etc.</td></tr>
+          <tr><th>Worship</th><td>Tudo do Pro em <strong>várias bandas</strong> da mesma conta — para quem administra mais de um grupo.</td></tr>
         </table>
         <ul>
           <li>Ao atingir um limite do plano grátis, o app avisa e oferece upgrade.</li>
@@ -310,8 +310,10 @@
           <li>No plano grátis podem aparecer <strong>anúncios</strong> em algumas telas; contas pagas não exibem anúncios.</li>
         </ul>
         <div class="help-callout">
-          Igrejas com mais de um ministério: veja a página
-          <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a> (plano Worship, uma assinatura para a congregação).
+          Precisa de várias bandas na mesma conta? Veja o plano <strong>Worship</strong> em
+          <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a>.
+          Para igrejas e ministérios de louvor, há uma página dedicada:
+          <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a>.
           Bandas únicas costumam usar o <strong>Pro</strong>; músico solo, o <strong>Individual</strong>.
         </div>
       </div>
@@ -331,7 +333,7 @@
           <li>Em <span class="code">Membros</span>, copie o <strong>link de convite</strong> e envie no WhatsApp ou e-mail.</li>
           <li>Quem <strong>ainda não tem conta</strong> se cadastra pelo link e já entra na banda.</li>
           <li>Quem <strong>já tem conta</strong> pode abrir o mesmo link logado ou usar “Já tenho conta” no cadastro.</li>
-          <li>Para quem já está no SetSync, também dá para adicionar pelo <strong>e-mail cadastrado</strong> na mesma tela.</li>
+          <li>Para quem já está no SetSync, envie um <strong>convite pelo e-mail cadastrado</strong> na mesma tela — a pessoa precisa <strong>aceitar</strong> no painel ou em <span class="code">Convites</span> antes de entrar na banda.</li>
         </ul>
 
         <h3>Papéis na banda</h3>
@@ -415,7 +417,7 @@
       <div class="card-header">Setlists</div>
       <div class="card-body">
         <ul>
-          <li>O setlist define a <strong>ordem das músicas</strong> no culto ou ensaio.</li>
+          <li>O setlist define a <strong>ordem das músicas</strong> no show ou ensaio.</li>
           <li>Na tela da setlist, <strong>arraste pelo ícone</strong> à esquerda para reordenar; a ordem é salva automaticamente.</li>
           <li>Em cada música da lista você pode escolher a <strong>cantora/cantor</strong> e ver o <strong>tom</strong> daquela faixa.</li>
           <li>Use <strong>Tocar</strong> no topo para abrir o Modo Tocar com todas as músicas do setlist.</li>
@@ -425,7 +427,7 @@
         <ul>
           <li>Na setlist, abra <strong>Link público</strong> e toque em <strong>Ativar link</strong> (admins da banda).</li>
           <li>O visitante vê um <strong>menu de músicas</strong> e a letra de cada uma, <strong>sem login</strong>; a página atualiza quando você altera a setlist.</li>
-          <li>Copie o link ou use o <strong>QR Code</strong> para projetor, equipe de som ou congregação.</li>
+          <li>Copie o link ou use o <strong>QR Code</strong> para projetor, equipe de som ou público.</li>
           <li><strong>Gerar novo link</strong> invalida o anterior — use se o link vazou.</li>
           <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio), com opção de incluir <strong>cifras</strong>, <strong>letras</strong> e <strong>chord sheets</strong> por música.</li>
         </ul>
@@ -436,16 +438,16 @@
       <div class="card-header">Agenda e escalação</div>
       <div class="card-body">
         <p>
-          Cada banda tem uma <strong>Agenda</strong> para organizar ensaios e shows (cultos, apresentações).
+          Cada banda tem uma <strong>Agenda</strong> para organizar ensaios e shows.
           Abra a banda → aba <span class="code">Agenda</span>.
         </p>
 
         <h3>Eventos</h3>
         <ul>
           <li>Admins criam eventos com <strong>título</strong>, <strong>tipo</strong> (ensaio ou show), <strong>data/hora</strong>, local e observações.</li>
-          <li>No campo <strong>Local</strong>, busque igreja ou endereço com sugestões do <strong>Google Maps</strong> (quando configurado no servidor).</li>
+          <li>No campo <strong>Local</strong>, busque o endereço com sugestões do <strong>Google Maps</strong> (quando configurado no servidor).</li>
           <li>No detalhe do evento, o local abre no Google Maps e pode exibir mapa embutido.</li>
-          <li>É possível vincular uma <strong>setlist</strong> ao evento — o roteiro daquele culto ou ensaio.</li>
+          <li>É possível vincular uma <strong>setlist</strong> ao evento — o roteiro daquele show ou ensaio.</li>
           <li>No detalhe do evento, use <strong>Tocar setlist</strong> para ir direto ao Modo Tocar.</li>
           <li>O <strong>painel inicial</strong> mostra os próximos eventos das suas bandas.</li>
         </ul>
@@ -457,7 +459,7 @@
           <li>Toque em um evento no calendário ou na lista abaixo para ver detalhes.</li>
         </ul>
 
-        <h3>Escalação (ministérios e bandas grandes)</h3>
+        <h3>Escalação (bandas grandes)</h3>
         <ul>
           <li>Em cada evento, admins abrem <strong>Escalação</strong> e marcam quem participa.</li>
           <li>Campo <strong>Função</strong> é opcional (ex.: Vocal, Bateria, Teclado).</li>

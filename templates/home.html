@@ -1,13 +1,13 @@
 {% extends "index.html" %}
 
-{% block title %}SetSync Cifras e Setlists — App de cifras evangélicas para bandas e igrejas do Brasil{% endblock %}
+{% block title %}SetSync Cifras e Setlists — App de cifras e setlists para bandas do Brasil{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('index') }}">
-<meta name="description" content="SetSync Cifras e Setlists: compartilhe cifras evangélicas com a banda, gerencie ministérios de louvor, monte setlists gospel e transponha no Modo Tocar offline. App brasileiro para igrejas e músicos.">
-<meta name="keywords" content="SetSync cifras, setlist gospel, cifras evangélicas, app cifras igreja, ministério de louvor Brasil, transpor cifras, modo tocar offline, gerenciar bandas">
-<meta property="og:title" content="SetSync Cifras e Setlists — Cifras evangélicas para bandas e igrejas">
-<meta property="og:description" content="Elimine PDFs desatualizados e prints no WhatsApp. Cifras, setlists e Modo Tocar offline para ministérios de louvor no Brasil.">
+<meta name="description" content="SetSync Cifras e Setlists: compartilhe cifras com a banda, monte setlists, transponha acordes e use o Modo Tocar offline. App brasileiro para músicos, grupos e equipes.">
+<meta name="keywords" content="SetSync cifras, setlist online, app cifras banda, transpor cifras, modo tocar offline, gerenciar bandas, repertório compartilhado">
+<meta property="og:title" content="SetSync Cifras e Setlists — Cifras e setlists para sua banda">
+<meta property="og:description" content="Elimine PDFs desatualizados e prints no WhatsApp. Cifras, setlists e Modo Tocar offline para bandas e músicos no Brasil.">
 <meta property="og:url" content="{{ external_url_for('index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -512,7 +512,7 @@
         <div class="hero-pain">
             <span class="hero-side-label">A dor de hoje</span>
             <ul class="hero-pain-list">
-                <li><i class="fas fa-times-circle" aria-hidden="true"></i> Print de cifra no WhatsApp — versão errada no culto</li>
+                <li><i class="fas fa-times-circle" aria-hidden="true"></i> Print de cifra no WhatsApp — versão errada no show</li>
                 <li><i class="fas fa-times-circle" aria-hidden="true"></i> PDF rasurado e desatualizado na pasta da banda</li>
                 <li><i class="fas fa-times-circle" aria-hidden="true"></i> Tom errado porque cada cantor canta em uma tonalidade</li>
             </ul>
@@ -522,11 +522,11 @@
                     "Alguém manda a cifra de novo?? A do PDF tá em Bb..."
                 </div>
                 <div class="chaos-card chaos-card--pdf">
-                    <strong>setlist_culto_FINAL_v3.pdf</strong>
+                    <strong>setlist_FINAL_v3.pdf</strong>
                     Rabiscos, páginas faltando, acorde apagado
                 </div>
                 <div class="chaos-card chaos-card--tom">
-                    <strong>Tom do louvor</strong>
+                    <strong>Tom errado</strong>
                     Ana canta em G · Dani em A · ninguém sincronizado
                 </div>
             </div>
@@ -535,9 +535,9 @@
             <span class="hero-side-label"><i class="fas fa-music me-1"></i> A solução SetSync</span>
             <h1>SetSync Cifras e Setlists — sempre no tom certo</h1>
             <p class="home-lead">
-                App brasileiro de <strong>cifras evangélicas</strong> para bandas e
-                <strong>ministérios de louvor</strong>: um repertório vivo, setlists compartilhadas,
-                transposição por cantor e <strong>Modo Tocar offline</strong> no palco.
+                App brasileiro de <strong>cifras e setlists</strong> para bandas e músicos:
+                repertório compartilhado, transposição por cantor e
+                <strong>Modo Tocar offline</strong> no palco.
             </p>
             <div class="home-cta">
                 <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
@@ -545,7 +545,7 @@
             </div>
             <figure class="hero-mock-clean">
                 <img src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
-                     alt="Interface do SetSync Cifras e Setlists — painel de setlist gospel para ministério de louvor"
+                     alt="Interface do SetSync — painel de setlist com tom por cantor"
                      width="1389" height="822"
                      loading="eager"
                      decoding="async">
@@ -577,7 +577,7 @@
     <div class="home-planos-inner">
         <h2 class="text-center mb-1">Planos SetSync Cifras e Setlists</h2>
         <p class="section-sub text-center mx-auto" style="max-width: 36rem;">
-            Comece grátis. Upgrade para Pro quando a banda crescer — Worship para igrejas com várias equipes.
+            Comece grátis. Upgrade para Pro quando a banda crescer — Worship para quem administra várias bandas.
         </p>
         {% set plano_worship = planos_site | selectattr('id', 'equalto', 'worship') | first %}
         {% set planos_grid = planos_site | rejectattr('id', 'equalto', 'worship') | list %}
@@ -595,7 +595,7 @@
 {% include 'partials/secao_offline_pwa.html' %}
 
 <section class="home-section">
-    <h2>Recursos para bandas e louvor evangélico no Brasil</h2>
+    <h2>Recursos para bandas e músicos no Brasil</h2>
     <p class="section-sub">Do cadastro da música à execução ao vivo, em um só lugar.</p>
     <div class="home-features">
         <article class="home-card">
@@ -621,7 +621,7 @@
         <article class="home-card">
             <div class="home-card-icon"><i class="fas fa-user-check"></i></div>
             <h3>Escalação por evento</h3>
-            <p>Ministérios grandes: escale só quem participa de cada culto ou ensaio, com função opcional.</p>
+            <p>Bandas grandes: escale só quem participa de cada show ou ensaio, com função opcional.</p>
         </article>
         <article class="home-card">
             <div class="home-card-icon"><i class="fas fa-bell"></i></div>
@@ -641,7 +641,7 @@
         <article class="home-card">
             <div class="home-card-icon"><i class="fas fa-mobile-screen"></i></div>
             <h3>App no celular</h3>
-            <p>Instale na tela inicial (PWA) e use offline quando precisar — ideal no culto ou no bar.</p>
+            <p>Instale na tela inicial (PWA) e use offline quando precisar — ideal no palco ou no ensaio.</p>
         </article>
     </div>
 </section>
@@ -649,7 +649,7 @@
 {% if testimonials %}
 <section class="home-section home-testimonials">
     <h2>Quem usa recomenda</h2>
-    <p class="section-sub">Bandas e ministérios que já sincronizaram o repertório no SetSync.</p>
+    <p class="section-sub">Bandas e músicos que já sincronizaram o repertório no SetSync.</p>
     <div class="testimonials-grid">
         {% for t in testimonials[:3] %}
         <article class="testimonial-card">
@@ -682,7 +682,7 @@
         <div class="home-step">
             <div class="home-step-num">3</div>
             <strong>Agende e escale</strong>
-            <span>Marque ensaios e cultos na Agenda, vincule a setlist e escale a equipe.</span>
+            <span>Marque ensaios e shows na Agenda, vincule a setlist e escale a equipe.</span>
         </div>
         <div class="home-step">
             <div class="home-step-num">4</div>
@@ -694,7 +694,7 @@
 
 <section class="home-section home-faq" id="faq">
     <h2>Perguntas frequentes</h2>
-    <p class="section-sub">O que músicos e líderes de louvor buscam sobre cifras, bandas e setlists.</p>
+    <p class="section-sub">O que músicos e líderes de banda buscam sobre cifras, setlists e palco.</p>
     {% for item in faq_entries %}
     <details>
         <summary>{{ item.q }}</summary>

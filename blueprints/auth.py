@@ -34,6 +34,9 @@ _SETUP_PROMPT_EXEMPT = frozenset({
     'auth.google_callback',
     'auth.convite',
     'auth.cadastro_concluido',
+    'convites.index',
+    'convites.aceitar',
+    'convites.recusar',
 })
 
 

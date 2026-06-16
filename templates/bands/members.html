@@ -23,6 +23,27 @@
 
 <div class="row g-3">
     <div class="col-lg-8">
+        {% if pending_invites %}
+        <div class="alert alert-info py-2 mb-3" style="font-size: var(--text-sm);">
+            <strong>{{ pending_invites|length }} convite{{ '' if pending_invites|length == 1 else 's' }} pendente{{ '' if pending_invites|length == 1 else 's' }}</strong>
+            — aguardando aceite do usuário.
+        </div>
+        <div class="row-card mb-3">
+            {% for inv in pending_invites %}
+            <div class="row-item">
+                <div class="row-info">
+                    <div class="row-title">{{ user_display_name({'display_name': inv.user_display_name, 'username': inv.user_username}) }}</div>
+                    <div class="row-sub">{{ inv.user_email }} · aguardando aceite</div>
+                </div>
+                <form action="{{ url_for('bands.cancel_invite', band_id=band.id, invite_id=inv.id) }}" method="POST"
+                      onsubmit="return confirm('Cancelar convite para {{ user_display_name({'display_name': inv.user_display_name, 'username': inv.user_username}) }}?')">
+                    {% include 'partials/csrf_input.html' %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Cancelar convite</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         <div class="row-card">
             {% for member in band_members %}
             <div class="row-item">
@@ -110,10 +131,10 @@
                         <label for="email" class="form-label">Email</label>
                         <input type="email" class="form-control" id="email" name="email" required
                                placeholder="usuario@email.com" autocomplete="off">
-                        <small class="text-muted">Só para quem já tem conta no SetSync.</small>
+                        <small class="text-muted">A pessoa recebe um convite e precisa aceitar para entrar na banda.</small>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-user-plus me-1"></i> Adicionar
+                        <i class="fas fa-paper-plane me-1"></i> Enviar convite
                     </button>
                 </form>
             </div>

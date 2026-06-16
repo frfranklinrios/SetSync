@@ -282,12 +282,15 @@ def members(band_id):
     }
     token = make_band_invite_token(band_id)
     invite_url = external_url_for('auth.convite', token=token)
+    from band_member_invites import list_pending_invites_for_band
+
     return render_template(
         'bands/members.html',
         band=band,
         band_members=band_members,
         vocalist_user_ids=vocalist_user_ids,
         invite_url=invite_url,
+        pending_invites=list_pending_invites_for_band(band_id),
         is_owner=(band['owner_id'] == user_id),
     )
 
@@ -310,7 +313,7 @@ def invite(band_id):
     db.close()
     
     if not row:
-        flash('Se o e-mail estiver cadastrado, o usuário será adicionado à banda.', 'info')
+        flash('Se o e-mail estiver cadastrado, a pessoa receberá um convite para aceitar.', 'info')
         return redirect(url_for('bands.members', band_id=band_id))
     
     invited_user_id = row['id']
@@ -319,17 +322,38 @@ def invite(band_id):
         flash('Usuário já é membro', 'danger')
         return redirect(url_for('bands.members', band_id=band_id))
 
-    from monetizacao import check_limite, resposta_limite_plano, LIMITES_GRATIS
-    if not check_limite(band, 'integrante'):
-        resp = resposta_limite_plano('integrantes', LIMITES_GRATIS['integrante'])
-        if resp:
-            return resp
-    
-    add_band_member(band_id, invited_user_id)
+    from band_member_invites import create_band_member_invite
+
+    result = create_band_member_invite(band_id, invited_user_id, user_id)
+    if result == 'already_pending':
+        flash('Já existe um convite pendente para este usuário.', 'info')
+        return redirect(url_for('bands.members', band_id=band_id))
+    if result == 'already_member':
+        flash('Usuário já é membro', 'danger')
+        return redirect(url_for('bands.members', band_id=band_id))
+
     user = get_user(invited_user_id)
-    bn.member_added_by_admin(band_id, user_id, invited_user_id)
-    flash(f'{user_display_name(user)} adicionado à banda', 'success')
+    bn.band_invite_sent(band_id, user_id, invited_user_id)
+    flash(f'Convite enviado para {user_display_name(user)}. A pessoa precisa aceitar para entrar na banda.', 'success')
     return redirect(url_for('bands.members', band_id=band_id))
+
+@bands_bp.route('/<band_id>/invite/cancel/<invite_id>', methods=['POST'])
+@login_required
+def cancel_invite(band_id, invite_id):
+    user_id = session['user_id']
+    band = get_band(band_id)
+    if not band or not is_band_admin(band_id, user_id):
+        flash('Sem permissão', 'danger')
+        return redirect(url_for('bands.members', band_id=band_id) if band else url_for('dashboard'))
+
+    from band_member_invites import cancel_band_member_invite
+
+    if cancel_band_member_invite(invite_id, band_id):
+        flash('Convite cancelado.', 'info')
+    else:
+        flash('Convite não encontrado.', 'warning')
+    return redirect(url_for('bands.members', band_id=band_id))
+
 
 @bands_bp.route('/<band_id>/members/<member_id>/role', methods=['POST'])
 @login_required

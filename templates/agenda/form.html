@@ -27,7 +27,7 @@
                         <label class="form-label" for="title">Título</label>
                         <input type="text" class="form-control" id="title" name="title" required maxlength="120"
                                value="{{ event.title if event else '' }}"
-                               placeholder="Ex.: Ensaio geral, Culto domingo">
+                               placeholder="Ex.: Ensaio geral, Show sábado">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="event_type">Tipo</label>
@@ -62,7 +62,7 @@
                         <label class="form-label" for="location">Local</label>
                         <input type="text" class="form-control" id="location" name="location" maxlength="300"
                                value="{{ event.location if event and event.location else '' }}"
-                               placeholder="{% if google_maps_api_key %}Busque igreja, estúdio ou endereço…{% else %}Ex.: Igreja, estúdio, endereço{% endif %}"
+                               placeholder="{% if google_maps_api_key %}Busque estúdio, bar ou endereço…{% else %}Ex.: Estúdio, bar, endereço{% endif %}"
                                autocomplete="off">
                         <input type="hidden" name="location_lat" id="location_lat"
                                value="{{ event.location_lat if event and event.location_lat is not none else '' }}">

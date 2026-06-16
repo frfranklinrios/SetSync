@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('guia.guia_index') }}">
-<meta name="description" content="Guias do SetSync: compartilhar cifras, gerenciar bandas, montar setlists gospel, transpor acordes, Modo Tocar e app de cifras para igreja. Encontre o tema que você buscou.">
+<meta name="description" content="Guias do SetSync: compartilhar cifras, gerenciar bandas, montar setlists, transpor acordes, Modo Tocar e app de cifras para bandas. Encontre o tema que você buscou.">
 <meta property="og:title" content="Guia SetSync — Compartilhar cifras, gerenciar bandas e setlists">
-<meta property="og:description" content="Guias do SetSync: compartilhar cifras, gerenciar bandas, montar setlists gospel, transpor acordes, Modo Tocar e app de cifras para igreja.">
+<meta property="og:description" content="Guias do SetSync: compartilhar cifras, gerenciar bandas, montar setlists, transpor acordes, Modo Tocar e app de cifras para bandas.">
 <meta property="og:url" content="{{ external_url_for('guia.guia_index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -49,12 +49,12 @@
     <p>
         Encontre como <strong>compartilhar cifras</strong>, <strong>gerenciar bandas</strong>,
         <strong>montar setlists</strong>, <strong>transpor acordes</strong> e usar o
-        <strong>Modo Tocar</strong> — tudo o que músicos e líderes de louvor buscam no Google.
+        <strong>Modo Tocar</strong> — tudo o que músicos e bandas buscam no Google.
     </p>
     <p class="text-muted small" style="max-width: 42rem;">
         Para o passo a passo completo do app (chord sheet, autosave, notas privadas, planos e palco),
         use a <a href="{{ url_for('ajuda.index') }}">central de ajuda</a>.
-        Igrejas com vários ministérios: <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a>.
+        Igrejas e ministérios de louvor: <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a>.
     </p>
     <p class="mb-0">
         <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm me-2">Criar conta grátis</a>

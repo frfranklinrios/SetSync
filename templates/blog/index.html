@@ -1,11 +1,11 @@
 {% extends "index.html" %}
-{% block title %}Blog SetSync — Cifras para banda gospel e organização de louvor{% endblock %}
+{% block title %}Blog SetSync — Cifras, setlists e organização de bandas{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('blog.blog_index') }}">
-<meta name="description" content="Artigos sobre transposição de acordes online, montagem de setlists gospel, apps de cifras e organização do ministério de louvor. Dicas práticas do SetSync.">
-<meta property="og:title" content="Blog SetSync — Cifras para banda gospel e organização de louvor">
-<meta property="og:description" content="Artigos sobre transposição de acordes online, montagem de setlists gospel, apps de cifras e organização do ministério de louvor. Dicas práticas do SetSync.">
+<meta name="description" content="Artigos sobre transposição de acordes online, montagem de setlists, apps de cifras e organização de bandas. Dicas práticas do SetSync.">
+<meta property="og:title" content="Blog SetSync — Cifras, setlists e organização de bandas">
+<meta property="og:description" content="Artigos sobre transposição de acordes online, montagem de setlists, apps de cifras e organização de bandas. Dicas práticas do SetSync.">
 <meta property="og:url" content="{{ external_url_for('blog.blog_index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -21,7 +21,7 @@
 </p>
 <div class="container py-4" style="max-width:900px;">
     <h1 class="mb-1" style="font-size:1.75rem;font-weight:700;">Blog SetSync</h1>
-    <p class="text-muted mb-4">Dicas de cifras, setlists e ministério de louvor.</p>
+    <p class="text-muted mb-4">Dicas de cifras, setlists e rotina de banda.</p>
     <div class="row g-3">
         {% for post in posts %}
         <div class="col-12">

@@ -128,6 +128,7 @@
             html += '<strong>' + escapeHtml(ev.title) + '</strong>';
             html += ' <span class="meta">· ' + tipo;
             if (time) html += ' às ' + time;
+            if (ev.band_name) html += ' · ' + escapeHtml(ev.band_name);
             if (ev.location) html += ' · ' + escapeHtml(ev.location);
             if (ev.scale_preview) html += ' · ' + escapeHtml(ev.scale_preview);
             html += '</span></a></li>';
@@ -185,7 +186,8 @@
             visible.forEach(function (ev) {
                 var typeCls = ev.event_type === 'show' ? 'type-show' : 'type-ensaio';
                 var time = formatTime(ev.starts_at);
-                var label = (time ? time + ' ' : '') + ev.title;
+                var prefix = ev.band_name ? ev.band_name + ': ' : '';
+                var label = (time ? time + ' ' : '') + prefix + ev.title;
                 var tip = label;
                 if (ev.scale_preview) tip += ' — ' + ev.scale_preview;
                 evHtml += '<a class="agenda-cal-event ' + typeCls + '" href="' + ev.url + '" title="' + escapeAttr(tip) + '">' + escapeHtml(label) + '</a>';

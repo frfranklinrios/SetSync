@@ -3,52 +3,55 @@
 
 {% block title %}Cifras - {{ band.name }}{% endblock %}
 
+{% block main_class %}container-fluid app-page{% endblock %}
+
 {% block content %}
+<div class="app-inner app-list-wide">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-0" style="font-size: var(--text-sm);">
+            <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+            <li class="breadcrumb-item active">Cifras</li>
+        </ol>
+    </nav>
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size: var(--text-sm);">
-        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
-        <li class="breadcrumb-item active">Cifras</li>
-    </ol>
-</nav>
-
-<div class="page-head">
-    <div>
-        <h2 class="mb-0" style="font-size: var(--text-xl);">Cifras</h2>
-        <p class="text-muted mb-0" style="font-size: var(--text-sm);">
-            {{ cifras|length }} cifra{{ '' if cifras|length == 1 else 's' }} em {{ band.name }}
-        </p>
+    <div class="page-head">
+        <div>
+            <h2 class="mb-0">Cifras</h2>
+            <p class="text-muted mb-0">
+                {{ cifras|length }} cifra{{ '' if cifras|length == 1 else 's' }} em {{ band.name }}
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            {% if cifras %}
+            <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-play me-1"></i> Tocar todas
+            </a>
+            {% endif %}
+            {% if can_edit %}
+            <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Nova Cifra
+            </a>
+            {% endif %}
+        </div>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-        {% if cifras %}
-        <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-play me-1"></i> Tocar todas
-        </a>
-        {% endif %}
+
+    {% if cifras %}
+    <div class="row-card">
+        {% for cifra in cifras %}
+        {{ cifra_row(cifra, band, show_edit=can_edit, show_delete=can_edit) }}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        <i class="fas fa-music"></i>
+        <p class="mb-3" style="font-size: var(--text-base);">Nenhuma cifra cadastrada ainda.</p>
         {% if can_edit %}
-        <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus me-1"></i> Nova Cifra
+        <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra
         </a>
         {% endif %}
     </div>
-</div>
-
-{% if cifras %}
-<div class="row-card">
-    {% for cifra in cifras %}
-    {{ cifra_row(cifra, band, show_edit=can_edit, show_delete=can_edit) }}
-    {% endfor %}
-</div>
-{% else %}
-<div class="empty">
-    <i class="fas fa-music"></i>
-    <p class="mb-3" style="font-size: var(--text-base);">Nenhuma cifra cadastrada ainda.</p>
-    {% if can_edit %}
-    <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra
-    </a>
     {% endif %}
 </div>
-{% endif %}
 {% endblock %}

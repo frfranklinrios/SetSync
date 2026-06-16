@@ -1,5 +1,5 @@
 {# Checklist de ativação pós-cadastro #}
-{% if onboarding and not onboarding.complete %}
+{% if onboarding %}
 <div class="onboarding-card mb-4">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
         <div>
@@ -17,7 +17,7 @@
     <div class="progress mb-3" style="height:6px;">
         <div class="progress-bar bg-primary" style="width:{{ onboarding.percent }}%"></div>
     </div>
-    <ul class="onboarding-steps list-unstyled mb-0">
+    <ul class="onboarding-steps list-unstyled mb-3">
         {% for step in onboarding.steps %}
         <li class="onboarding-step{% if step.done %} done{% endif %}">
             {% if step.done %}
@@ -30,6 +30,12 @@
         </li>
         {% endfor %}
     </ul>
+    <form method="post" action="{{ url_for('dismiss_onboarding_checklist') }}" class="onboarding-dismiss-form mb-0">
+        {% include 'partials/csrf_input.html' %}
+        <button type="submit" class="btn btn-link btn-sm text-muted p-0 onboarding-dismiss-btn">
+            Não mostrar mais
+        </button>
+    </form>
 </div>
 <style>
 .onboarding-card {
@@ -49,5 +55,10 @@
 .onboarding-step a { font-weight: 600; text-decoration: none; color: var(--accent); }
 .onboarding-step.done { color: var(--muted); }
 .onboarding-step.done span { text-decoration: line-through; }
+.onboarding-dismiss-btn {
+    font-size: var(--text-sm);
+    text-decoration: none;
+}
+.onboarding-dismiss-btn:hover { text-decoration: underline; color: var(--muted) !important; }
 </style>
 {% endif %}

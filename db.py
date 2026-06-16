@@ -46,6 +46,7 @@ def _init_postgres_schema(c) -> None:
             whatsapp_notify INTEGER NOT NULL DEFAULT 1,
             email_notify INTEGER NOT NULL DEFAULT 1,
             last_login_at TIMESTAMP,
+            onboarding_checklist_dismissed INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )''',
         '''CREATE TABLE IF NOT EXISTS bands (
@@ -264,6 +265,7 @@ def init_db():
         add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
         add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
         add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
+        add_column_if_missing(c, 'users', 'onboarding_checklist_dismissed', 'INTEGER NOT NULL DEFAULT 0')
         add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
         add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
         add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
@@ -271,6 +273,7 @@ def init_db():
         _migrate_notifications_schema(c)
         _migrate_content_schema(c)
         _migrate_agenda_schema(c)
+        _migrate_band_member_invites_schema(c)
         _ensure_perf_indexes(c)
         db.commit()
         db.close()
@@ -392,15 +395,40 @@ def init_db():
     add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
+    add_column_if_missing(c, 'users', 'onboarding_checklist_dismissed', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
     add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
     _migrate_content_schema(c)
     _migrate_agenda_schema(c)
+    _migrate_band_member_invites_schema(c)
     _ensure_perf_indexes(c)
     db.commit()
 
     db.close()
+
+
+def _migrate_band_member_invites_schema(c) -> None:
+    c.execute(
+        '''CREATE TABLE IF NOT EXISTS band_member_invites (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            invited_by TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'member',
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            responded_at TIMESTAMP,
+            UNIQUE (band_id, user_id),
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (invited_by) REFERENCES users(id) ON DELETE SET NULL
+        )'''
+    )
+    c.execute(
+        '''CREATE INDEX IF NOT EXISTS idx_band_member_invites_user_pending
+           ON band_member_invites(user_id, status)'''
+    )
 
 
 def _migrate_agenda_schema(c) -> None:
@@ -641,6 +669,24 @@ def touch_user_last_login(user_id: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute('UPDATE users SET last_login_at = ? WHERE id = ?', (now, user_id))
+    db.commit()
+    db.close()
+
+
+def user_onboarding_checklist_dismissed(user_id: str) -> bool:
+    user = get_user(user_id)
+    if not user:
+        return False
+    return bool(user.get('onboarding_checklist_dismissed'))
+
+
+def dismiss_onboarding_checklist(user_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE users SET onboarding_checklist_dismissed = 1 WHERE id = ?',
+        (user_id,),
+    )
     db.commit()
     db.close()
 

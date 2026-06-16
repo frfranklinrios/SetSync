@@ -5,7 +5,7 @@
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('comece') }}">
 <meta name="robots" content="noindex, follow">
-<meta name="description" content="Crie sua conta grátis no SetSync: cifras, setlists e Modo Tocar para sua banda ou ministério de louvor.">
+<meta name="description" content="Crie sua conta grátis no SetSync: cifras, setlists e Modo Tocar para sua banda ou projeto musical.">
 {% endblock %}
 
 {% block extra_head %}
@@ -32,7 +32,7 @@
 <ul class="comece-bullets">
     <li><i class="fas fa-check"></i> Repertório compartilhado com a equipe</li>
     <li><i class="fas fa-check"></i> Setlist com tom por cantor</li>
-    <li><i class="fas fa-check"></i> Modo Tocar offline no culto</li>
+    <li><i class="fas fa-check"></i> Modo Tocar offline no palco</li>
 </ul>
 <a href="{{ url_for('auth.register', plano=plano_intent) if plano_intent else url_for('auth.register') }}"
    class="btn btn-primary btn-lg w-100 mb-2">Criar conta grátis</a>

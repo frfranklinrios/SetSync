@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('auth.register') }}">
-<meta name="description" content="Cadastre-se grátis no SetSync: organize cifras, monte setlists e use transposição de acordes no Modo Tocar. Para bandas e ministérios de louvor.">
+<meta name="description" content="Cadastre-se grátis no SetSync: organize cifras, monte setlists e use transposição de acordes no Modo Tocar. Para bandas e músicos.">
 <meta property="og:title" content="Criar conta grátis — SetSync">
-<meta property="og:description" content="Cadastre-se grátis no SetSync: cifras, setlists e transposição online para sua banda ou ministério.">
+<meta property="og:description" content="Cadastre-se grátis no SetSync: cifras, setlists e transposição online para sua banda.">
 <meta property="og:url" content="{{ external_url_for('auth.register') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -30,7 +30,8 @@
 
         {% if plano_intent == 'worship' %}
         <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
-            Você está criando conta para o <strong>plano Worship</strong> (igrejas com vários ministérios).
+            Você está criando conta para o <strong>plano Worship</strong> (várias bandas na mesma conta).
+            <a href="{{ url_for('assinatura_bp.igrejas') }}">Saiba mais para igrejas</a>.
         </div>
         {% endif %}
 

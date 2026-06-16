@@ -1,5 +1,5 @@
 {# Linha de evento na agenda da banda #}
-{% macro event_row(event, band, can_edit=false, is_admin=false) %}
+{% macro event_row(event, band, can_edit=false, is_admin=false, show_band=false) %}
 <div class="row-item">
     <div class="row-info">
         <a href="{{ url_for('agenda.view', event_id=event.id) }}">
@@ -12,6 +12,7 @@
                 {{ event.title }}
             </div>
             <div class="row-sub">
+                {% if show_band and event.band_name %}<strong>{{ event.band_name }}</strong> · {% endif %}
                 {{ event.starts_at | format_event_datetime }}
                 {% if event.location %} · {{ event.location }}{% endif %}
                 {% if event.setlist_name %} · Setlist: {{ event.setlist_name }}{% endif %}

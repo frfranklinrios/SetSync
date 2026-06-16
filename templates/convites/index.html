@@ -1,0 +1,54 @@
+{% extends "index.html" %}
+
+{% block title %}Convites de banda — SetSync{% endblock %}
+
+{% block main_class %}container-fluid app-page{% endblock %}
+
+{% block content %}
+<div class="app-inner">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-0" style="font-size: var(--text-sm);">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Início</a></li>
+            <li class="breadcrumb-item active">Convites</li>
+        </ol>
+    </nav>
+
+    <div class="page-head">
+        <div>
+            <h2 class="mb-0">Convites de banda</h2>
+            <p class="text-muted mb-0">Aceite para entrar na equipe ou recuse se não puder participar.</p>
+        </div>
+    </div>
+
+    {% if invites %}
+    <div class="row-card">
+        {% for inv in invites %}
+        <div class="row-item flex-wrap">
+            <div class="row-info flex-grow-1">
+                <div class="row-title">{{ inv.band_name }}</div>
+                <div class="row-sub">
+                    Convidado por {{ inviter_display_name(inv) }}
+                    {% if inv.role == 'editor' %} · como editor{% elif inv.role == 'admin' %} · como admin{% endif %}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <form method="post" action="{{ url_for('convites.aceitar', invite_id=inv.id) }}">
+                    {% include 'partials/csrf_input.html' %}
+                    <button type="submit" class="btn btn-primary btn-sm">Aceitar</button>
+                </form>
+                <form method="post" action="{{ url_for('convites.recusar', invite_id=inv.id) }}">
+                    {% include 'partials/csrf_input.html' %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Recusar</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        <i class="fas fa-envelope-open"></i>
+        <p class="mb-0" style="font-size: var(--text-base);">Nenhum convite pendente no momento.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

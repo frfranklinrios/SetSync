@@ -1,15 +1,14 @@
-{# Plano Worship — seção full-width abaixo da grade principal #}
+{# Plano Worship — teaser genérico; detalhes para igrejas em /igrejas #}
 {% if plano_worship %}
 <section class="home-worship-breakout" id="plano-worship" aria-labelledby="worship-title">
     <div class="home-worship-bg" aria-hidden="true"></div>
     <div class="home-worship-inner">
         <div class="home-worship-copy">
-            <span class="home-worship-kicker"><i class="fas fa-church me-1"></i> Para megaigrejas e grandes ministérios</span>
-            <h2 id="worship-title">Plano Worship — gestão avançada de louvor</h2>
+            <span class="home-worship-kicker"><i class="fas fa-layer-group me-1"></i> Plano Worship</span>
+            <h2 id="worship-title">Várias bandas em uma conta</h2>
             <p>
-                Várias bandas e equipes na mesma congregação, sem limites de músicas ou integrantes.
-                Ideal para igrejas do Brasil que precisam centralizar cifras evangélicas, setlists e agenda
-                de todos os ministérios de louvor.
+                Administre múltiplas bandas ou equipes sem limites de músicas ou integrantes por grupo.
+                Ideal para quem coordena mais de um projeto musical na mesma conta.
             </p>
             <ul class="home-worship-features">
                 {% for feat in plano_worship.features %}
@@ -17,11 +16,11 @@
                 {% endfor %}
             </ul>
             <div class="home-worship-cta">
-                <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-light btn-lg">
-                    Conhecer Worship para igrejas
+                <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-light btn-lg">
+                    Começar com Worship
                 </a>
-                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light">
-                    Começar grátis
+                <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-outline-light">
+                    SetSync para igrejas
                 </a>
             </div>
         </div>
@@ -33,7 +32,7 @@
             {% if plano_worship.cobrado_anual_label %}
             <p class="home-worship-anual small opacity-75">{{ plano_worship.cobrado_anual_label }}</p>
             {% endif %}
-            <p class="home-worship-tagline">Congregação inteira · múltiplas bandas · PDF e Modo Tocar</p>
+            <p class="home-worship-tagline">Múltiplas bandas · PDF e Modo Tocar</p>
         </div>
     </div>
 </section>

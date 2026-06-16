@@ -202,12 +202,12 @@ def planos_para_site() -> list[PlanoSite]:
             id=PLANO_WORSHIP,
             nome=worship.nome,
             preco_label=_preco_label(worship.preco_mensal),
-            sufixo='/congregação/mês',
+            sufixo='/conta/mês',
             destaque=False,
             features=(
                 'Múltiplas bandas na mesma conta',
-                'Sem limites em todos os ministérios',
-                'Para igrejas e equipes de louvor',
+                'Sem limites por banda',
+                'Agenda, PDF e Modo Tocar em todos os grupos',
             ),
             cta='Criar conta',
             cta_outline=True,
@@ -221,11 +221,30 @@ def planos_para_site() -> list[PlanoSite]:
 
 
 def plano_worship_para_site() -> PlanoSite | None:
-    """Plano Worship formatado para landings de igrejas."""
-    for plano in planos_para_site():
-        if plano.id == PLANO_WORSHIP:
-            return plano
-    return None
+    """Plano Worship formatado para landings de igrejas (texto voltado à congregação)."""
+    base = next((p for p in planos_para_site() if p.id == PLANO_WORSHIP), None)
+    if not base:
+        return None
+    return PlanoSite(
+        id=base.id,
+        nome=base.nome,
+        preco_label=base.preco_label,
+        sufixo='/congregação/mês',
+        destaque=base.destaque,
+        features=(
+            'Múltiplas bandas na mesma conta',
+            'Sem limites em todos os ministérios',
+            'Para igrejas e equipes de louvor',
+        ),
+        cta=base.cta,
+        cta_outline=base.cta_outline,
+        preco_anual_label=base.preco_anual_label,
+        sufixo_anual=base.sufixo_anual,
+        economia_anual=base.economia_anual,
+        preco_mensal_equivalente_label=base.preco_mensal_equivalente_label,
+        cobrado_anual_label=base.cobrado_anual_label,
+        desconto_anual_pct=base.desconto_anual_pct,
+    )
 
 
 class Assinatura:

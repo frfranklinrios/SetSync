@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
-from db import count_band_cifras, count_band_setlists, get_owned_bands, get_user_bands
+from db import (
+    count_band_cifras,
+    count_band_setlists,
+    get_owned_bands,
+    get_user_bands,
+    user_onboarding_checklist_dismissed,
+)
 from flask import url_for
 
 
-def get_onboarding_progress(user_id: str) -> dict:
-    """Checklist de ativação para o dashboard."""
+def get_onboarding_progress(user_id: str) -> dict | None:
+    """Checklist de ativação para o dashboard. None se oculto ou concluído."""
+    if user_onboarding_checklist_dismissed(user_id):
+        return None
+
     owned = get_owned_bands(user_id)
     member_bands = get_owned_bands(user_id) or get_user_bands(user_id)
     bands = owned or member_bands
@@ -57,19 +66,26 @@ def get_onboarding_progress(user_id: str) -> dict:
             'label': 'Testar o Modo Tocar',
             'done': total_cifras > 0 and total_setlists > 0,
             'url': (
-                url_for('cifras.tocar', cifra_id=first_cifra_id)
-                if first_cifra_id
-                else (url_for('cifras.add', band_id=first_band_id) if first_band_id else url_for('bands.create'))
+                url_for('cifras.tocar_band', band_id=first_band_id, start=first_cifra_id)
+                if first_band_id and first_cifra_id
+                else (
+                    url_for('cifras.tocar_band', band_id=first_band_id)
+                    if first_band_id and total_cifras
+                    else (url_for('cifras.add', band_id=first_band_id) if first_band_id else url_for('bands.create'))
+                )
             ),
         },
     ]
 
     done_count = sum(1 for s in steps if s['done'])
+    if done_count == len(steps):
+        return None
+
     return {
         'steps': steps,
         'done_count': done_count,
         'total': len(steps),
         'percent': round(100 * done_count / len(steps)) if steps else 0,
-        'complete': done_count == len(steps),
+        'complete': False,
         'activated': has_band and total_cifras > 0,
     }

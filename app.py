@@ -15,6 +15,7 @@ from blueprints.guia import guia_bp
 from blueprints.mail_web import mail_web_bp
 from blueprints.whatsapp_admin import whatsapp_admin_bp
 from blueprints.agenda import agenda_bp
+from blueprints.convites import convites_bp
 from agenda_util import event_relative_label, format_event_datetime
 from db import init_db
 from extensions import init_scheduler
@@ -196,6 +197,7 @@ app.register_blueprint(guia_bp)
 app.register_blueprint(mail_web_bp)
 app.register_blueprint(whatsapp_admin_bp)
 app.register_blueprint(agenda_bp)
+app.register_blueprint(convites_bp)
 init_scheduler(app)
 
 # Webhook Mercado Pago: POST externo sem CSRF de formulário
@@ -378,6 +380,15 @@ def comece():
     return render_template('comece.html', plano_intent=plano or None)
 
 
+@app.route('/dashboard/onboarding/dismiss', methods=['POST'])
+@login_required
+def dismiss_onboarding_checklist():
+    from db import dismiss_onboarding_checklist as _dismiss
+
+    _dismiss(session['user_id'])
+    return redirect(url_for('dashboard'))
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -388,9 +399,11 @@ def dashboard():
     from monetizacao import enrich_bands_plano, resumo_planos_usuario, dias_restantes_trial, get_assinatura_banda
 
     from onboarding import get_onboarding_progress
+    from band_member_invites import list_pending_invites_for_user
 
     user_id = session['user_id']
     onboarding = get_onboarding_progress(user_id)
+    pending_band_invites = list_pending_invites_for_user(user_id)
     sa = is_superadmin(user_id)
 
     def _trial_ctx(bands_list):
@@ -434,6 +447,7 @@ def dashboard():
             planos_resumo=resumo_planos_usuario(owned_bands),
             trial_ui=_trial_ctx(owned_bands),
             onboarding=onboarding,
+            pending_band_invites=pending_band_invites,
         )
 
     bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
@@ -448,6 +462,7 @@ def dashboard():
         planos_resumo=resumo_planos_usuario(owned_bands),
         trial_ui=_trial_ctx(owned_bands),
         onboarding=onboarding,
+        pending_band_invites=pending_band_invites,
     )
 
 
@@ -538,11 +553,13 @@ def inject_user():
     except RuntimeError:
         cifras_import_tool_url = '/cifras/import/tool'
     from db import is_superadmin as _is_superadmin, count_unread_notifications, user_display_name
+    from band_member_invites import inviter_display_name as _inviter_display_name
     from blueprints.cifras import cifra_display_key
     unread = count_unread_notifications(user_id) if user_id else 0
     return dict(
         cifra_display_key=cifra_display_key,
         user_display_name=user_display_name,
+        inviter_display_name=_inviter_display_name,
         notifications_unread=unread,
         current_user={
             'id': user_id, 'username': username, 'display_name': display_name,

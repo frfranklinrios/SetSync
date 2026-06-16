@@ -134,6 +134,12 @@
 
         /* ── Layout ── */
         main { flex: 1; padding: 2rem 0; }
+        main.dashboard-page,
+        main.app-page {
+            padding-top: 0.75rem;
+            padding-bottom: 1.5rem;
+            background: transparent;
+        }
 
         .container {
             background: #fff;
@@ -444,6 +450,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/setsync-theme.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/list-rows.css') }}?v=4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app-wide-layout.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=20">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=2">
@@ -599,7 +606,7 @@
     </main>
 
     <footer>
-        <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync Cifras e Setlists — app de cifras evangélicas para ministério de louvor">
+        <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync Cifras e Setlists — app de cifras e setlists para bandas">
         &copy; 2026 SetSync
         {% if not current_user.is_authenticated %}
         · <a href="{{ url_for('guia.guia_index') }}" class="text-muted">Guia</a>

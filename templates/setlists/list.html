@@ -3,45 +3,48 @@
 
 {% block title %}Setlists - {{ band.name }}{% endblock %}
 
+{% block main_class %}container-fluid app-page{% endblock %}
+
 {% block content %}
+<div class="app-inner app-list-wide">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-0" style="font-size: var(--text-sm);">
+            <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+            <li class="breadcrumb-item active">Setlists</li>
+        </ol>
+    </nav>
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size: var(--text-sm);">
-        <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
-        <li class="breadcrumb-item active">Setlists</li>
-    </ol>
-</nav>
-
-<div class="page-head">
-    <div>
-        <h2 class="mb-0" style="font-size: var(--text-xl);">Setlists</h2>
-        <p class="text-muted mb-0" style="font-size: var(--text-sm);">
-            {{ setlists|length }} setlist{{ '' if setlists|length == 1 else 's' }} em {{ band.name }}
-        </p>
+    <div class="page-head">
+        <div>
+            <h2 class="mb-0">Setlists</h2>
+            <p class="text-muted mb-0">
+                {{ setlists|length }} setlist{{ '' if setlists|length == 1 else 's' }} em {{ band.name }}
+            </p>
+        </div>
+        {% if can_edit %}
+        <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i> Nova Setlist
+        </a>
+        {% endif %}
     </div>
-    {% if can_edit %}
-    <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i> Nova Setlist
-    </a>
-    {% endif %}
-</div>
 
-{% if setlists %}
-<div class="row-card">
-    {% for setlist in setlists %}
-    {{ setlist_row(setlist, band, can_edit=can_edit) }}
-    {% endfor %}
-</div>
-{% else %}
-<div class="empty">
-    <i class="fas fa-list"></i>
-    <p class="mb-3" style="font-size: var(--text-base);">Nenhuma setlist criada ainda.</p>
-    {% if can_edit %}
-    <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i> Criar Primeira Setlist
-    </a>
+    {% if setlists %}
+    <div class="row-card">
+        {% for setlist in setlists %}
+        {{ setlist_row(setlist, band, can_edit=can_edit) }}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        <i class="fas fa-list"></i>
+        <p class="mb-3" style="font-size: var(--text-base);">Nenhuma setlist criada ainda.</p>
+        {% if can_edit %}
+        <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Criar Primeira Setlist
+        </a>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
-{% endif %}
 {% endblock %}

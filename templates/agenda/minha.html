@@ -1,0 +1,70 @@
+{% extends "index.html" %}
+{% from 'partials/list_row_event.html' import event_row with context %}
+
+{% block title %}Minha agenda — SetSync{% endblock %}
+
+{% block main_class %}container-fluid app-page{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/band-agenda-calendar.css') }}?v=1">
+
+<div class="app-inner">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-0" style="font-size: var(--text-sm);">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Início</a></li>
+            <li class="breadcrumb-item active">Minha agenda</li>
+        </ol>
+    </nav>
+
+    <div class="page-head">
+        <div>
+            <h2 class="mb-0">Minha agenda</h2>
+            <p class="text-muted mb-0">
+                {% if is_superadmin %}
+                Ensaios e shows de todas as bandas do sistema
+                {% else %}
+                Ensaios e shows de todas as suas bandas
+                {% endif %}
+            </p>
+        </div>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Voltar ao início
+        </a>
+    </div>
+
+    <div id="band-agenda-calendar" class="agenda-cal-wrap mb-3" aria-label="Calendário de eventos"></div>
+    <script type="application/json" id="band-agenda-events-json">{{ events_calendar | tojson }}</script>
+
+    {% if events_upcoming or events_past %}
+    <p class="agenda-list-title mt-1">Lista de eventos</p>
+    {% if events_upcoming %}
+    <h3 class="h6 text-muted mb-2">Próximos</h3>
+    <div class="row-card mb-4 app-list-wide">
+        {% for event in events_upcoming %}
+        {% set band = {'id': event.band_id, 'name': event.band_name} %}
+        {{ event_row(event, band, can_edit=event.can_edit, is_admin=event.is_admin, show_band=true) }}
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if events_past %}
+    <h3 class="h6 text-muted mb-2">Anteriores</h3>
+    <div class="row-card app-list-wide">
+        {% for event in events_past %}
+        {% set band = {'id': event.band_id, 'name': event.band_name} %}
+        {{ event_row(event, band, can_edit=event.can_edit, is_admin=event.is_admin, show_band=true) }}
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty">
+        <i class="fas fa-calendar-alt"></i>
+        <p class="mb-3" style="font-size: var(--text-base);">Nenhum ensaio ou show nas suas bandas.</p>
+        <a href="{{ url_for('bands.list_bands') }}" class="btn btn-primary">
+            <i class="fas fa-users me-1"></i> Ir para bandas
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/band-agenda-calendar.js') }}?v=2"></script>
+{% endblock %}

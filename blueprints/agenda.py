@@ -22,7 +22,7 @@ from agenda_util import (
     split_event_datetime,
 )
 from blueprints.auth import login_required
-from db import get_band, get_band_members, is_band_admin, is_band_member, user_display_name
+from db import get_band, get_band_members, is_band_admin, is_band_editor, is_band_member, is_superadmin, user_display_name
 from models_agenda import (
     EVENT_ENSAIO,
     EVENT_SHOW,
@@ -32,6 +32,8 @@ from models_agenda import (
     get_band_event,
     get_event_assignment_user_ids,
     get_event_assignments,
+    get_events_scale_summaries,
+    get_user_agenda_events,
     get_user_event_assignment,
     respond_event_assignment,
     set_event_assignments,
@@ -171,6 +173,53 @@ def create(band_id):
             event_types=EVENT_TYPES,
             split_event_datetime=split_event_datetime,
         ),
+    )
+
+
+@agenda_bp.route('/minha')
+@login_required
+def minha_agenda():
+    """Calendário com eventos de todas as bandas do usuário."""
+    from datetime import datetime
+
+    user_id = session['user_id']
+    sa = is_superadmin(user_id)
+    all_events = get_user_agenda_events(user_id, all_bands=sa)
+
+    scale_summaries = get_events_scale_summaries([e['id'] for e in all_events])
+    for e in all_events:
+        summary = scale_summaries.get(e['id'], {})
+        e['scale_count'] = summary.get('count', 0)
+        e['scale_preview'] = summary.get('preview', '')
+        e['can_edit'] = is_band_editor(e['band_id'], user_id)
+        e['is_admin'] = is_band_admin(e['band_id'], user_id)
+
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    events_upcoming = [e for e in all_events if str(e.get('starts_at') or '') >= now]
+    events_past = [e for e in all_events if str(e.get('starts_at') or '') < now]
+    events_past.reverse()
+
+    events_calendar = [
+        {
+            'id': e['id'],
+            'title': e.get('title') or '',
+            'event_type': e.get('event_type') or 'ensaio',
+            'starts_at': str(e.get('starts_at') or '')[:19],
+            'location': e.get('location') or '',
+            'band_name': e.get('band_name') or '',
+            'scale_preview': e.get('scale_preview') or '',
+            'url': url_for('agenda.view', event_id=e['id']),
+        }
+        for e in all_events
+    ]
+
+    return render_template(
+        'agenda/minha.html',
+        events_upcoming=events_upcoming,
+        events_past=events_past,
+        events_calendar=events_calendar,
+        is_superadmin=sa,
+        format_event_datetime=format_event_datetime,
     )
 
 
