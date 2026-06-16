@@ -15,7 +15,7 @@
                 {{ event.starts_at | format_event_datetime }}
                 {% if event.location %} · {{ event.location }}{% endif %}
                 {% if event.setlist_name %} · Setlist: {{ event.setlist_name }}{% endif %}
-                {% if event.scale_count %} · <i class="fas fa-user-check" style="font-size:0.72rem;"></i> {{ event.scale_preview or (event.scale_count ~ ' na escala') }}{% endif %}
+                {% if event.scale_count %} · <i class="fas fa-user-check" style="font-size: var(--text-sm);"></i> {{ event.scale_preview or (event.scale_count ~ ' na escala') }}{% endif %}
             </div>
         </a>
     </div>

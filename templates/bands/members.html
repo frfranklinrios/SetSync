@@ -5,7 +5,7 @@
 {% block content %}
 
 <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size:0.82rem;">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
         <li class="breadcrumb-item active">Membros</li>
@@ -14,8 +14,8 @@
 
 <div class="page-head">
     <div>
-        <h2 class="mb-0" style="font-size:1.4rem;">Membros</h2>
-        <p class="text-muted mb-0" style="font-size:0.85rem;">
+        <h2 class="mb-0" style="font-size: var(--text-xl);">Membros</h2>
+        <p class="text-muted mb-0" style="font-size: var(--text-sm);">
             {{ band_members|length }} membro{{ '' if band_members|length == 1 else 's' }} em {{ band.name }}
         </p>
     </div>
@@ -46,7 +46,7 @@
                     {% if is_owner or member.role != 'admin' %}
                     <form action="{{ url_for('bands.set_member_role', band_id=band.id, member_id=member.id) }}" method="POST" class="d-inline">
                         {% include 'partials/csrf_input.html' %}
-                        <select name="role" class="form-select form-select-sm" style="width:auto;min-width:7.5rem;font-size:0.78rem;"
+                        <select name="role" class="form-select form-select-sm" style="width:auto;min-width:7.5rem;font-size: var(--text-sm);"
                                 onchange="this.form.submit()" aria-label="Papel de {{ user_display_name(member) }}">
                             <option value="member" {% if member.role not in ('admin', 'editor') %}selected{% endif %}>Membro</option>
                             <option value="editor" {% if member.role == 'editor' %}selected{% endif %}>Editor</option>
@@ -77,7 +77,7 @@
         <div class="card">
             <div class="card-header">Link de convite</div>
             <div class="card-body">
-                <p class="text-muted mb-3" style="font-size:0.85rem;">
+                <p class="text-muted mb-3" style="font-size: var(--text-sm);">
                     Quem se cadastrar por este link entra direto na banda — não precisa já ter conta.
                 </p>
                 <label for="invite-link" class="form-label">Copiar link</label>
@@ -93,7 +93,7 @@
         <div class="card">
             <div class="card-header">Papéis na banda</div>
             <div class="card-body">
-                <p class="text-muted mb-0" style="font-size:0.85rem;">
+                <p class="text-muted mb-0" style="font-size: var(--text-sm);">
                     <strong>Membro</strong> — vê cifras, toca no palco e usa setlists.<br>
                     <strong>Editor</strong> — cria, edita e exclui cifras, letras, chord sheets e setlists.<br>
                     <strong>Admin</strong> — gerencia membros, convites e configurações da banda.<br>

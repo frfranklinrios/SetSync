@@ -16,7 +16,7 @@
 {% block content %}
 <style>
 .guia-hero { margin-bottom: 1.5rem; }
-.guia-hero h1 { font-size: 1.65rem; font-weight: 700; margin-bottom: 0.5rem; }
+.guia-hero h1 { font-size: var(--text-xl); font-weight: 700; margin-bottom: 0.5rem; }
 .guia-hero p { color: var(--muted); max-width: 42rem; line-height: 1.55; }
 .guia-grid {
     display: grid;
@@ -31,7 +31,7 @@
     border-radius: 10px;
     text-decoration: none;
     color: inherit;
-    font-size: 0.92rem;
+    font-size: var(--text-base);
     line-height: 1.4;
     transition: border-color 0.15s, background 0.15s;
 }
@@ -41,7 +41,7 @@
     color: inherit;
 }
 .guia-link strong { display: block; font-weight: 600; margin-bottom: 0.15rem; }
-.guia-link span { color: var(--muted); font-size: 0.82rem; }
+.guia-link span { color: var(--muted); font-size: var(--text-sm); }
 </style>
 
 <div class="guia-hero">

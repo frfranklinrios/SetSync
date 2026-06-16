@@ -95,8 +95,6 @@
             min-height: 100vh;
             background: #fff;
             font-family: var(--font-sans);
-            font-size: 0.9375rem;
-            line-height: 1.5;
             color: var(--text);
         }
 
@@ -120,7 +118,7 @@
 
         .nav-link {
             color: var(--muted) !important;
-            font-size: 0.875rem;
+            font-size: var(--text-sm);
             font-weight: 500;
             padding: 0.4rem 0.75rem !important;
         }
@@ -131,7 +129,7 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            font-size: 0.875rem;
+            font-size: var(--text-sm);
         }
 
         /* ── Layout ── */
@@ -150,7 +148,7 @@
                 padding-right: max(0.75rem, env(safe-area-inset-right));
             }
             .breadcrumb {
-                font-size: 0.78rem !important;
+                font-size: var(--text-sm) !important;
                 flex-wrap: wrap;
             }
         }
@@ -166,7 +164,7 @@
             background: var(--bg);
             border-bottom: 1px solid var(--border);
             font-weight: 600;
-            font-size: 0.875rem;
+            font-size: var(--text-sm);
             color: var(--muted);
             text-transform: uppercase;
             letter-spacing: 0.4px;
@@ -178,7 +176,7 @@
         /* ── Buttons ── */
         .btn {
             border-radius: 7px;
-            font-size: 0.875rem;
+            font-size: var(--text-sm);
             font-weight: 500;
             padding: 0.45rem 1rem;
         }
@@ -209,7 +207,7 @@
         .form-control, .form-select {
             border: 1px solid var(--border);
             border-radius: 7px;
-            font-size: 0.9rem;
+            font-size: var(--text-base);
             padding: 0.55rem 0.9rem;
             box-shadow: none;
         }
@@ -220,7 +218,7 @@
         }
 
         .form-label {
-            font-size: 0.8rem;
+            font-size: var(--text-sm);
             font-weight: 600;
             color: var(--muted);
             text-transform: uppercase;
@@ -232,7 +230,7 @@
         .alert {
             border-radius: 8px;
             border: 1px solid;
-            font-size: 0.875rem;
+            font-size: var(--text-sm);
             padding: 0.75rem 1rem;
         }
 
@@ -247,7 +245,7 @@
             border-bottom: 1px solid var(--border);
             padding: 1rem 1.25rem;
             background: #fff;
-            font-size: 0.9rem;
+            font-size: var(--text-base);
         }
 
         .list-group-item:last-child { border-bottom: none; }
@@ -260,7 +258,7 @@
             padding: 1.25rem;
             border-radius: 8px;
             border-left: 3px solid var(--accent);
-            font-size: 0.875rem;
+            font-size: var(--text-sm);
             color: var(--text);
             overflow-x: auto;
         }
@@ -268,7 +266,7 @@
         /* ── Badges ── */
         .badge {
             border-radius: 5px;
-            font-size: 0.75rem;
+            font-size: var(--text-xs);
             font-weight: 600;
             padding: 0.3em 0.6em;
         }
@@ -281,7 +279,7 @@
             border-top: 1px solid var(--border);
             padding: 1.5rem 0;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: var(--text-sm);
             color: var(--muted);
         }
 
@@ -406,7 +404,7 @@
             color: var(--muted);
             border-radius: 7px;
             width: 32px; height: 32px;
-            font-size: 0.875rem;
+            font-size: var(--text-sm);
             cursor: pointer;
             transition: all 0.15s;
             display: flex; align-items: center; justify-content: center;
@@ -425,7 +423,7 @@
             border: 1px solid var(--chord-highlight-border);
             color: var(--chord-highlight);
             border-radius: 7px;
-            font-size: 0.78rem;
+            font-size: var(--text-sm);
             font-weight: 600;
             padding: 0.32rem 0.7rem;
             cursor: pointer;
@@ -443,7 +441,7 @@
         [data-theme="dark"] #install-btn:hover { background: var(--chord-highlight-ghost-strong); }
 
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}?v=2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/setsync-theme.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/list-rows.css') }}?v=4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=20">
@@ -522,10 +520,10 @@
                                 {{ current_user.name }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li class="dropdown-header text-muted" style="font-size:0.78rem;">
+                                <li class="dropdown-header text-muted" style="font-size:var(--text-sm);">
                                     @{{ current_user.username }}
                                     {% if current_user.is_superadmin %}
-                                    <span class="badge bg-primary ms-1" style="font-size:0.65rem;">sistema</span>
+                                    <span class="badge bg-primary ms-1" style="font-size:var(--text-xs);">sistema</span>
                                     {% endif %}
                                 </li>
                                 <li><hr class="dropdown-divider my-1"></li>

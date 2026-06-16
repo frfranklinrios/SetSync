@@ -34,8 +34,8 @@
 
 {% block content %}
 <style>
-.guia-page h1 { font-size: 1.65rem; font-weight: 700; margin-bottom: 0.75rem; }
-.guia-page h2 { font-size: 1.15rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+.guia-page h1 { font-size: var(--text-xl); font-weight: 700; margin-bottom: 0.75rem; }
+.guia-page h2 { font-size: var(--text-lg); font-weight: 700; margin: 1.5rem 0 0.5rem; }
 .guia-page p, .guia-page li { line-height: 1.6; color: var(--text); }
 .guia-page ul, .guia-page ol { padding-left: 1.25rem; }
 .guia-cta {
@@ -46,14 +46,14 @@
     background: var(--chord-highlight-bg);
 }
 .guia-related { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
-.guia-related h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+.guia-related h2 { font-size: var(--text-base); margin-bottom: 0.75rem; }
 .guia-related ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .guia-related a {
     display: inline-block;
     padding: 0.35rem 0.65rem;
     border: 1px solid var(--border);
     border-radius: 999px;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     text-decoration: none;
     color: inherit;
 }

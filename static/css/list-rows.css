@@ -90,7 +90,7 @@
 }
 
 .row-num {
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   min-width: 1.35rem;
   text-align: right;
@@ -117,14 +117,14 @@
 .row-title {
   font-weight: 600;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .row-sub {
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   margin-top: 2px;
   overflow: hidden;
@@ -133,7 +133,7 @@
 }
 
 .row-badge {
-  font-size: 0.72rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--accent);
   background: rgba(42, 181, 160, 0.1);
@@ -164,7 +164,7 @@
   flex-shrink: 0;
 }
 .row-vocalist {
-  font-size: 0.72rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--hint);
   max-width: 8rem;
@@ -186,7 +186,7 @@
   outline-offset: 1px;
 }
 .row-vocalist-sel {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text);
   background: var(--bg);
@@ -218,7 +218,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   text-decoration: none;
   transition: border-color 0.12s, color 0.12s;
@@ -260,7 +260,7 @@
 
 .page-tip,
 .tip {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   margin: 0 0 0.75rem;
   display: flex;
@@ -287,7 +287,7 @@
 }
 
 #order-status {
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   margin-left: 0.5rem;
   transition: opacity 0.3s;
@@ -404,7 +404,7 @@
 
   .page-tip,
   .tip {
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     padding: 0 0.1rem;
   }
 }

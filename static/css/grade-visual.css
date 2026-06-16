@@ -1,16 +1,16 @@
 /* Lead sheet — layout alinhado ao app Cifras */
-.grade-visual-root { font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace); font-size: 0.82rem; }
-.grade-visual-header { color: var(--muted, #94a3b8); font-size: 0.75rem; margin-bottom: 0.65rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--border, #334155); }
+.grade-visual-root { font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace); font-size: var(--text-sm); }
+.grade-visual-header { color: var(--muted, #94a3b8); font-size: var(--text-xs); margin-bottom: 0.65rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--border, #334155); }
 .grade-visual-parte { margin-bottom: 1.1rem; }
 .grade-visual-parte-nome {
-  display: inline-block; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.06em;
+  display: inline-block; font-weight: 700; font-size: var(--text-sm); letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--chord-highlight, var(--accent, #c2410c));
   background: var(--chord-highlight-bg, rgba(234, 88, 12, 0.1));
   border: 1px solid var(--chord-highlight-border, rgba(234, 88, 12, 0.35));
   border-radius: 6px; padding: 0.18rem 0.5rem; margin-bottom: 0.45rem;
 }
 .grade-visual-secao {
-  font-size: 0.78rem; font-weight: 600; color: #fbbf24; margin: 0.45rem 0 0.3rem 0.2rem;
+  font-size: var(--text-sm); font-weight: 600; color: #fbbf24; margin: 0.45rem 0 0.3rem 0.2rem;
   font-family: var(--font-sans); font-style: italic;
 }
 .grade-visual-secao::before { content: "▸ "; }
@@ -30,7 +30,7 @@
   font-weight: 700; color: var(--chord-highlight-soft, var(--chord-highlight, #ea580c));
 }
 .grade-visual-chord.repeat { color: var(--muted, #94a3b8); font-weight: 400; min-width: 0.9rem; }
-.grade-visual-sep { color: var(--muted, #64748b); align-self: center; font-size: 0.7rem; }
+.grade-visual-sep { color: var(--muted, #64748b); align-self: center; font-size: var(--text-xs); }
 [data-theme="light"] .grade-visual-secao { color: #b45309; }
 [data-theme="light"] .grade-visual-bloco { background: rgba(241, 245, 249, 0.8); }
 

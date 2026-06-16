@@ -51,7 +51,7 @@ body { overflow-x: hidden; }
     min-width: 0;
 }
 #play-bar .pb-title {
-    font-size: 0.95rem;
+    font-size: var(--text-base);
     font-weight: 700;
     color: #f1f5f9;
     overflow: hidden;
@@ -60,7 +60,7 @@ body { overflow-x: hidden; }
 }
 [data-theme="light"] #play-bar .pb-title { color: #1e293b; }
 #play-bar .pb-meta {
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     color: #64748b;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -78,7 +78,7 @@ body { overflow-x: hidden; }
     color: var(--chord-highlight);
     border-radius: 6px;
     padding: 0.35rem 0.7rem;
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     font-family: inherit;
     cursor: pointer;
     white-space: nowrap;
@@ -119,7 +119,7 @@ body { overflow-x: hidden; }
 .pb-view-dropdown .dropdown-toggle::after { margin-left: 0.35rem; }
 .pb-view-dropdown .dropdown-menu {
     min-width: 10.5rem;
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     border-radius: 8px;
     padding: 0.25rem;
 }
@@ -152,7 +152,7 @@ body { overflow-x: hidden; }
 }
 .font-ctrl button:hover { background: rgba(255,255,255,0.16); }
 .font-ctrl span {
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     color: #64748b;
     min-width: 2.4rem;
     text-align: center;
@@ -184,7 +184,7 @@ body { overflow-x: hidden; }
     color: var(--chord-highlight);
     padding: 0.32rem 0.55rem;
     cursor: pointer;
-    font-size: 1.05rem;
+    font-size: var(--text-md);
     line-height: 1;
     font-family: inherit;
 }
@@ -194,7 +194,7 @@ body { overflow-x: hidden; }
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     padding: 0.32rem 0.4rem;
     min-width: 2.4rem;
     color: var(--chord-highlight);
@@ -270,7 +270,7 @@ body { overflow-x: hidden; }
     display: block;
     color: #fbbf24;
     font-weight: 700;
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     margin: 0.35rem 0 0.45rem;
@@ -278,7 +278,7 @@ body { overflow-x: hidden; }
 .cifra-body .cifra-tab-line {
     display: block;
     font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     line-height: 1.32;
     white-space: pre;
     color: #e2e8f0;
@@ -360,7 +360,7 @@ body { overflow-x: hidden; }
 .cifra-body .letra-play-empty {
     color: #64748b;
     font-style: italic;
-    font-size: 0.9rem;
+    font-size: var(--text-base);
 }
 .cifra-body.two-col .cifra-chords,
 .cifra-body.two-col .cifra-lyric {
@@ -416,7 +416,7 @@ body { overflow-x: hidden; }
 [data-theme="light"] .prog-dot { background: rgba(100,116,139,0.35); }
 [data-theme="light"] .prog-dot.active { background: var(--accent); }
 .prog-text {
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     color: #64748b;
 }
 
@@ -471,7 +471,7 @@ body { overflow-x: hidden; }
     background: var(--chord-highlight-bg);
     border: 1px solid var(--chord-highlight-border);
     color: var(--chord-highlight);
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     padding: 0.32rem 0.8rem;
     border-radius: 20px;
     z-index: 1200;
@@ -490,7 +490,7 @@ body { overflow-x: hidden; }
     bottom: 4.2rem;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     color: #94a3b8;
     background: rgba(0,0,0,0.55);
     border: 1px solid var(--chord-highlight-border);
@@ -530,7 +530,7 @@ body { overflow-x: hidden; }
     }
     .pb-btn {
         padding: 0.5rem 0.9rem;
-        font-size: 0.88rem;
+        font-size: var(--text-sm);
         min-height: 40px;
     }
     .font-ctrl button {
@@ -538,7 +538,7 @@ body { overflow-x: hidden; }
         font-size: 1.15rem;
     }
     .transpose-mini {
-        font-size: 0.85rem;
+        font-size: var(--text-sm);
         padding: 0.4rem 0.7rem;
         min-height: 40px;
     }
@@ -602,7 +602,7 @@ body.play-mode.chrome-hidden #kbd-hint {
     align-items: center;
     justify-content: center;
     color: transparent;
-    font-size: 1.35rem;
+    font-size: var(--text-lg);
     pointer-events: auto;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -639,7 +639,7 @@ body.play-mode.edges-hint .tap-zone {
     z-index: 1100;
     align-items: center;
     gap: 0.35rem;
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     color: var(--chord-highlight);
     user-select: none;
 }
@@ -650,7 +650,7 @@ body.play-mode.edges-hint .tap-zone {
     border: none;
     background: var(--chord-highlight-bg);
     color: var(--chord-highlight);
-    font-size: 0.95rem;
+    font-size: var(--text-base);
     font-family: inherit;
     line-height: 1;
     cursor: pointer;
@@ -672,8 +672,8 @@ body.play-mode.edges-hint .tap-zone {
     color: var(--chord-highlight);
 }
 @media (min-width: 768px) {
-    #speed-pill { bottom: 4.6rem; padding: 0.4rem 0.65rem; font-size: 0.85rem; }
-    #speed-pill button { width: 34px; height: 34px; font-size: 1.05rem; }
+    #speed-pill { bottom: 4.6rem; padding: 0.4rem 0.65rem; font-size: var(--text-sm); }
+    #speed-pill button { width: 34px; height: 34px; font-size: var(--text-md); }
 }
 /* ── Chord Sheet (play mode) — detalhes em leadsheet-play.css ─────────── */
 .grade-bars-play {
@@ -1092,7 +1092,7 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     function playModeEmptyChordSheetMessage() {
-        return '<div class="grade-empty-play" style="padding:2rem 4vw;color:#475569;font-size:0.9rem;">' +
+        return '<div class="grade-empty-play" style="padding:2rem 4vw;color:#475569;font-size: var(--text-base);">' +
             'Chord sheet não disponível para esta música. Configure no editor Chord Sheet da cifra.' +
             '</div>';
     }

@@ -12,7 +12,7 @@
 }
 .nav-tabs .nav-link {
     color: var(--muted);
-    font-size: 0.875rem;
+    font-size: var(--text-sm);
     border: none;
     padding: 0.65rem 1rem;
     border-bottom: 2px solid transparent;
@@ -34,12 +34,12 @@
     flex-wrap: wrap;
 }
 .tab-count {
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     color: var(--muted);
     margin: 0;
 }
 .agenda-list-title {
-    font-size: 0.7rem;
+    font-size: var(--text-xs);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 700;
@@ -47,7 +47,7 @@
     margin: 0 0 0.6rem;
 }
 .event-escala-btn {
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     padding: 0.28rem 0.55rem;
     white-space: nowrap;
 }
@@ -59,7 +59,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/band-agenda-calendar.css') }}?v=1">
 
 <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size:0.82rem;">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
         <li class="breadcrumb-item active">{{ band.name }}</li>
     </ol>
@@ -72,12 +72,12 @@
              style="max-height:64px; max-width:180px; object-fit:contain; flex-shrink:0;">
         {% endif %}
     <div>
-        <h1 class="mb-1" style="font-size:1.5rem; font-weight:700;">{{ band.name }}</h1>
+        <h1 class="mb-1" style="font-size: var(--text-lg); font-weight:700;">{{ band.name }}</h1>
         {% if band.description %}
-        <p class="text-muted mb-0" style="font-size:0.9rem;">{{ band.description }}</p>
+        <p class="text-muted mb-0" style="font-size: var(--text-base);">{{ band.description }}</p>
         {% endif %}
         {% if vocalist_name %}
-        <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">
+        <p class="text-muted mb-0 mt-1" style="font-size: var(--text-sm);">
             <i class="fas fa-microphone me-1"></i> Cantoras/cantores: <strong>{{ vocalist_name }}</strong>
         </p>
         {% endif %}
@@ -94,25 +94,25 @@
     <li class="nav-item">
         <a class="nav-link active" data-bs-toggle="tab" href="#tab-cifras">
             <i class="fas fa-music me-1"></i> Cifras
-            <span class="badge bg-light text-muted border ms-1" style="font-size:0.7rem;">{{ cifras|length }}</span>
+            <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ cifras|length }}</span>
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" data-bs-toggle="tab" href="#tab-setlists">
             <i class="fas fa-list me-1"></i> Setlists
-            <span class="badge bg-light text-muted border ms-1" style="font-size:0.7rem;">{{ setlists|length }}</span>
+            <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ setlists|length }}</span>
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" data-bs-toggle="tab" href="#tab-agenda">
             <i class="fas fa-calendar-alt me-1"></i> Agenda
-            <span class="badge bg-light text-muted border ms-1" style="font-size:0.7rem;">{{ events_upcoming|length + events_past|length }}</span>
+            <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ events_upcoming|length + events_past|length }}</span>
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" data-bs-toggle="tab" href="#tab-membros">
             <i class="fas fa-users me-1"></i> Membros
-            <span class="badge bg-light text-muted border ms-1" style="font-size:0.7rem;">{{ members|length }}</span>
+            <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ members|length }}</span>
         </a>
     </li>
 </ul>
@@ -145,7 +145,7 @@
         {% else %}
         <div class="empty">
             <i class="fas fa-music"></i>
-            <p class="mb-3" style="font-size:0.9rem;">Nenhuma cifra cadastrada ainda.</p>
+            <p class="mb-3" style="font-size: var(--text-base);">Nenhuma cifra cadastrada ainda.</p>
             {% if can_edit %}
             <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra
@@ -175,7 +175,7 @@
         {% else %}
         <div class="empty">
             <i class="fas fa-list"></i>
-            <p class="mb-3" style="font-size:0.9rem;">Nenhuma setlist criada ainda.</p>
+            <p class="mb-3" style="font-size: var(--text-base);">Nenhuma setlist criada ainda.</p>
             {% if can_edit %}
             <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Criar Primeira Setlist
@@ -223,7 +223,7 @@
         <p class="agenda-list-title">Lista de eventos</p>
         <div class="empty">
             <i class="fas fa-calendar-alt"></i>
-            <p class="mb-3" style="font-size:0.9rem;">Nenhum ensaio ou show na agenda.</p>
+            <p class="mb-3" style="font-size: var(--text-base);">Nenhum ensaio ou show na agenda.</p>
             <a href="{{ url_for('agenda.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Registrar primeiro evento
             </a>

@@ -7,7 +7,7 @@
 
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size:0.82rem;">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
         <li class="breadcrumb-item active">{% if event %}Editar{% else %}Novo evento{% endif %}</li>
@@ -16,7 +16,7 @@
 
 <div class="row justify-content-center">
     <div class="col-lg-7">
-        <h2 class="mb-3" style="font-size:1.35rem;">
+        <h2 class="mb-3" style="font-size: var(--text-lg);">
             {% if event %}Editar evento{% else %}Registrar ensaio ou show{% endif %}
         </h2>
         <div class="card">

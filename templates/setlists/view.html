@@ -3,7 +3,7 @@
 {% block content %}
 
 <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size:0.82rem;">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}">Setlists</a></li>
@@ -13,11 +13,11 @@
 
 <div class="page-head">
     <div>
-        <h2 class="mb-0" style="font-size:1.6rem;">{{ setlist.name }}</h2>
+        <h2 class="mb-0" style="font-size: var(--text-xl);">{{ setlist.name }}</h2>
         {% if setlist.description %}
-        <p class="text-muted mb-0" style="font-size:0.9rem;">{{ setlist.description }}</p>
+        <p class="text-muted mb-0" style="font-size: var(--text-base);">{{ setlist.description }}</p>
         {% endif %}
-        <p class="text-muted mb-0" style="font-size:0.8rem; margin-top:0.4rem;">
+        <p class="text-muted mb-0" style="font-size: var(--text-sm); margin-top:0.4rem;">
             {{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }}
             <span id="order-status"></span>
         </p>
@@ -73,12 +73,12 @@
     </summary>
 
     <div class="setlist-public-link-body">
-        <p class="text-muted mb-3" style="font-size:0.82rem;">
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
             O link de letras abre uma página com <strong>menu de músicas</strong> e letra de cada uma, atualizada em tempo real.
         </p>
 
         {% if public_share_enabled and public_letras_url %}
-        <p class="fw-semibold mb-2" style="font-size:0.84rem;"><i class="fas fa-align-left me-1"></i> Letras (tempo real)</p>
+        <p class="fw-semibold mb-2" style="font-size: var(--text-sm);"><i class="fas fa-align-left me-1"></i> Letras (tempo real)</p>
         <div class="public-letras-share-row mb-3">
             <div class="public-letras-qr-wrap">
                 <img src="{{ url_for('setlists.public_share_qr', setlist_id=setlist.id, dest='letras') }}"
@@ -162,15 +162,15 @@
 }
 .setlist-public-link-title {
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: var(--text-base);
     color: var(--text);
 }
 .setlist-public-link-sub {
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
 }
 .setlist-public-link-chevron {
     color: var(--muted);
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     transition: transform 0.15s ease;
     flex-shrink: 0;
 }
@@ -437,7 +437,7 @@
 {% else %}
 <div class="empty">
     <i class="fas fa-music"></i>
-    <p class="mb-3" style="font-size:0.9rem;">Nenhuma música na setlist ainda.</p>
+    <p class="mb-3" style="font-size: var(--text-base);">Nenhuma música na setlist ainda.</p>
     <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i> Adicionar Primeira Música
     </a>

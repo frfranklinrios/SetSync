@@ -11,17 +11,17 @@
 
         {% if message_kind == 'warning' and message and 'Link' in message %}
         <h1 class="h4 text-center mb-3">Link expirado</h1>
-        <div class="alert alert-warning" style="font-size:0.875rem;">{{ message }}</div>
+        <div class="alert alert-warning" style="font-size: var(--text-sm);">{{ message }}</div>
         <a href="{{ url_for('auth.recuperar_senha') }}" class="btn btn-primary w-100">Solicitar novo link</a>
 
         {% elif message_kind == 'success' and message %}
         <h1 class="h4 text-center mb-3">Pronto!</h1>
-        <div class="alert alert-success" style="font-size:0.875rem;">{{ message }}</div>
+        <div class="alert alert-success" style="font-size: var(--text-sm);">{{ message }}</div>
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">Entrar</a>
 
         {% else %}
         <h1 class="h4 text-center mb-1">Definir nova senha</h1>
-        <p class="text-muted text-center mb-4" style="font-size:0.875rem;">
+        <p class="text-muted text-center mb-4" style="font-size: var(--text-sm);">
             Escolha uma senha com no mínimo 10 caracteres.
         </p>
         <form method="POST">
@@ -39,12 +39,12 @@
             <button type="submit" class="btn btn-primary w-100">Redefinir senha</button>
         </form>
         {% if message and message_kind != 'success' %}
-        <div class="alert alert-{{ message_kind or 'info' }} mt-3 mb-0" style="font-size:0.875rem;">{{ message }}</div>
+        <div class="alert alert-{{ message_kind or 'info' }} mt-3 mb-0" style="font-size: var(--text-sm);">{{ message }}</div>
         {% endif %}
         {% endif %}
 
         {% if message_kind != 'success' %}
-        <p class="text-center mt-4 mb-0" style="font-size:0.875rem;">
+        <p class="text-center mt-4 mb-0" style="font-size: var(--text-sm);">
             <a href="{{ url_for('auth.login') }}" style="color:var(--accent);text-decoration:none;">Voltar ao login</a>
         </p>
         {% endif %}

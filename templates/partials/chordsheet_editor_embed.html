@@ -18,11 +18,11 @@
                 <input id="meta-capo" type="text" autocomplete="off" />
             </div>
         </div>
-        <p class="form-text mb-2" style="font-size:0.78rem;">
+        <p class="form-text mb-2" style="font-size: var(--text-sm);">
             Título, artista, tom e BPM usam os campos do topo da página.
         </p>
 
-        <label for="examples" style="font-size:0.75rem;color:var(--ss-muted, var(--muted));display:block;margin-bottom:0.2rem;">Exemplos</label>
+        <label for="examples" style="font-size: var(--text-xs);color:var(--ss-muted, var(--muted));display:block;margin-bottom:0.2rem;">Exemplos</label>
         <select id="examples" style="width:100%;margin-bottom:0.5rem;">
             <option value="">— carregar exemplo —</option>
             {% for key, ex in chordsheet_examples.items() %}
@@ -123,8 +123,8 @@
 
         <div class="status" id="status" hidden></div>
         <details class="prefs" style="margin-top:0.5rem;">
-            <summary style="font-size:0.8rem;cursor:pointer;">Meta caracteres (sintaxe)</summary>
-            <ul class="hint" style="font-size:0.72rem;line-height:1.45;margin:0.35rem 0 0;padding-left:1.1rem;">
+            <summary style="font-size: var(--text-sm);cursor:pointer;">Meta caracteres (sintaxe)</summary>
+            <ul class="hint" style="font-size: var(--text-sm);line-height:1.45;margin:0.35rem 0 0;padding-left:1.1rem;">
                 <li><code>- texto</code> — rótulo acima da pauta</li>
                 <li><code># texto</code> — comentário (não imprime)</li>
                 <li><code>! texto</code> — nota privada (só você vê na banda)</li>
@@ -152,7 +152,7 @@
     <div class="panel">
         <h2>Prévia</h2>
         <div class="preview-wrap setsync-cs-sheet" id="preview">
-            <p style="color:#78716c;font-size:0.85rem;">Digite a fonte ou carregue um exemplo…</p>
+            <p style="color:#78716c;font-size: var(--text-sm);">Digite a fonte ou carregue um exemplo…</p>
         </div>
     </div>
 </div>

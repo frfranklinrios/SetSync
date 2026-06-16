@@ -35,7 +35,7 @@
 
 .agenda-cal-nav .btn {
     padding: 0.25rem 0.55rem;
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     line-height: 1.2;
 }
 
@@ -92,7 +92,7 @@
 }
 
 .agenda-cal-daynum {
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     font-weight: 600;
     color: var(--muted);
     line-height: 1.1;
@@ -163,7 +163,7 @@
     gap: 1rem;
     flex-wrap: wrap;
     margin-top: 0.75rem;
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     color: var(--muted);
 }
 
@@ -199,7 +199,7 @@
 }
 
 .agenda-cal-day-detail h4 {
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     font-weight: 600;
     margin: 0 0 0.5rem;
     color: var(--text);
@@ -216,7 +216,7 @@
 }
 
 .agenda-cal-day-detail a {
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     text-decoration: none;
     color: var(--text);
 }
@@ -225,7 +225,7 @@
 }
 
 .agenda-cal-day-detail .meta {
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     color: var(--muted);
 }
 

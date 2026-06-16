@@ -4,7 +4,7 @@
 
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb" style="font-size:0.82rem;">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
         <li class="breadcrumb-item active">Configurações</li>
@@ -14,7 +14,7 @@
 <div class="row justify-content-center">
     <div class="col-lg-7">
         <h2 class="mb-1">Configurações</h2>
-        <p class="text-muted mb-4" style="font-size:0.875rem;">{{ band.name }}</p>
+        <p class="text-muted mb-4" style="font-size: var(--text-sm);">{{ band.name }}</p>
 
         <div class="card mb-4">
             <div class="card-header">Informações da Banda</div>
@@ -57,7 +57,7 @@
                     </form>
                 </div>
                 {% else %}
-                <p class="text-muted mb-3" style="font-size:0.85rem;">Nenhum logo enviado.</p>
+                <p class="text-muted mb-3" style="font-size: var(--text-sm);">Nenhum logo enviado.</p>
                 {% endif %}
                 <form method="POST" enctype="multipart/form-data" class="{% if band_has_logo %}border-top pt-3{% endif %}">
                     {% include 'partials/csrf_input.html' %}
@@ -91,7 +91,7 @@
                         <div>
                             <strong>{{ v.name }}</strong>
                             {% if v.user_id %}
-                            <span class="text-muted" style="font-size:0.8rem;"> · @{{ v.username or 'conta' }}</span>
+                            <span class="text-muted" style="font-size: var(--text-sm);"> · @{{ v.username or 'conta' }}</span>
                             {% endif %}
                         </div>
                         <form method="POST" class="d-inline"
@@ -107,7 +107,7 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-muted mb-3" style="font-size:0.85rem;">Nenhuma cantora/cantor cadastrada. O tom fica único para toda a banda.</p>
+                <p class="text-muted mb-3" style="font-size: var(--text-sm);">Nenhuma cantora/cantor cadastrada. O tom fica único para toda a banda.</p>
                 {% endif %}
 
                 <form method="POST" class="border-top pt-3">
@@ -153,8 +153,8 @@
                 <i class="fas fa-exclamation-triangle me-1"></i> Zona de Perigo
             </div>
             <div class="card-body">
-                <p class="mb-1 fw-semibold text-danger" style="font-size:0.875rem;">Excluir esta banda</p>
-                <p class="text-muted mb-3" style="font-size:0.82rem;">Esta ação é irreversível. Todas as cifras e setlists serão removidas permanentemente.</p>
+                <p class="mb-1 fw-semibold text-danger" style="font-size: var(--text-sm);">Excluir esta banda</p>
+                <p class="text-muted mb-3" style="font-size: var(--text-sm);">Esta ação é irreversível. Todas as cifras e setlists serão removidas permanentemente.</p>
                 <button type="button" class="btn btn-outline-danger btn-sm"
                         data-bs-toggle="modal" data-bs-target="#deleteModal">
                     <i class="fas fa-trash me-1"></i> Excluir Banda
@@ -183,7 +183,7 @@
             </div>
             <div class="modal-body">
                 <p>Tem certeza que deseja excluir <strong>{{ band.name }}</strong>?</p>
-                <p class="text-muted" style="font-size:0.82rem;">Todas as cifras e setlists serão removidas permanentemente.</p>
+                <p class="text-muted" style="font-size: var(--text-sm);">Todas as cifras e setlists serão removidas permanentemente.</p>
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>

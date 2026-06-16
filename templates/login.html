@@ -22,7 +22,7 @@
         </div>
 
         {% if invite_band %}
-        <div class="alert alert-info mb-4" style="font-size:0.9rem;">
+        <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
             Convite para a banda <strong>{{ invite_band.name }}</strong>.
             Após entrar, você será adicionado à banda.
         </div>
@@ -46,19 +46,19 @@
                 <label for="password" class="form-label">Senha</label>
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
-            <p class="text-muted mb-4" style="font-size:0.8rem;">Sessão válida por 2 dias neste dispositivo (renovada enquanto você usa o app).</p>
+            <p class="text-muted mb-4" style="font-size: var(--text-sm);">Sessão válida por 2 dias neste dispositivo (renovada enquanto você usa o app).</p>
             <button type="submit" class="btn btn-primary w-100">Entrar</button>
         </form>
 
         {% if google_oauth_enabled %}
         <div class="d-flex align-items-center my-4">
-            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size:0.75rem;">OU</span><hr class="flex-grow-1">
+            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size: var(--text-xs);">OU</span><hr class="flex-grow-1">
         </div>
 
         <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Entrar com Google</a>
         {% endif %}
 
-        <p class="text-center text-muted mt-4" style="font-size:0.875rem;">
+        <p class="text-center text-muted mt-4" style="font-size: var(--text-sm);">
             Novo por aqui?
             <a href="{{ url_for('auth.register', convite=invite_token) if invite_token else url_for('auth.register') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Crie sua conta</a>
         </p>

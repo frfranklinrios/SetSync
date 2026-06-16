@@ -6,7 +6,7 @@
 {% block content %}
 
 <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size:0.82rem;">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
         <li class="breadcrumb-item active">Cifras</li>
@@ -15,8 +15,8 @@
 
 <div class="page-head">
     <div>
-        <h2 class="mb-0" style="font-size:1.4rem;">Cifras</h2>
-        <p class="text-muted mb-0" style="font-size:0.85rem;">
+        <h2 class="mb-0" style="font-size: var(--text-xl);">Cifras</h2>
+        <p class="text-muted mb-0" style="font-size: var(--text-sm);">
             {{ cifras|length }} cifra{{ '' if cifras|length == 1 else 's' }} em {{ band.name }}
         </p>
     </div>
@@ -43,7 +43,7 @@
 {% else %}
 <div class="empty">
     <i class="fas fa-music"></i>
-    <p class="mb-3" style="font-size:0.9rem;">Nenhuma cifra cadastrada ainda.</p>
+    <p class="mb-3" style="font-size: var(--text-base);">Nenhuma cifra cadastrada ainda.</p>
     {% if can_edit %}
     <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra

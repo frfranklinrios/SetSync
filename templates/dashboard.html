@@ -44,10 +44,10 @@
 [data-theme="dark"] .band-tile-logo { background: #0f172a; }
 .band-tile-text { min-width: 0; flex: 1; }
 .band-tile h6 { font-weight: 700; margin-bottom: 0.1rem; font-size: 1rem; color: var(--text); }
-.band-desc { font-size: 0.82rem; color: var(--muted); margin: 0; min-height: 1.2em; }
+.band-desc { font-size: var(--text-sm); color: var(--muted); margin: 0; min-height: 1.2em; }
 .band-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .tile-badge {
-    font-size: 0.7rem;
+    font-size: var(--text-sm);
     color: var(--muted);
     background: var(--bg);
     border: 1px solid var(--border);
@@ -68,10 +68,10 @@
     margin-bottom: 1.25rem;
 }
 [data-theme="dark"] .planos-resumo-card { background: #0f172a; }
-.planos-resumo-card .plano-linha { font-size: 0.88rem; }
+.planos-resumo-card .plano-linha { font-size: var(--text-sm); }
 
 .section-title {
-    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px;
+    font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.6px;
     font-weight: 700; color: var(--muted); margin: 1.5rem 0 0.6rem;
 }
 .section-title:first-child { margin-top: 0; }
@@ -103,10 +103,10 @@
 .upcoming-event-item:last-child { border-bottom: none; padding-bottom: 0; }
 .upcoming-event-item:first-of-type { padding-top: 0; }
 .upcoming-event-item:hover .upcoming-event-title { color: var(--accent); }
-.upcoming-event-title { font-weight: 600; font-size: 0.92rem; margin-bottom: 0.15rem; }
-.upcoming-event-meta { font-size: 0.8rem; color: var(--muted); }
+.upcoming-event-title { font-weight: 600; font-size: var(--text-base); margin-bottom: 0.15rem; }
+.upcoming-event-meta { font-size: var(--text-sm); color: var(--muted); }
 .upcoming-event-when {
-    font-size: 0.72rem;
+    font-size: var(--text-sm);
     font-weight: 600;
     color: var(--accent);
     white-space: nowrap;
@@ -119,8 +119,8 @@
 
 <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
     <div>
-        <h1 class="mb-1" style="font-size:1.5rem; font-weight:700;">Olá, {{ current_user.name }}</h1>
-        <p class="text-muted mb-0" style="font-size:0.9rem;">
+        <h1 class="mb-1" style="font-size: var(--text-lg); font-weight:700;">Olá, {{ current_user.name }}</h1>
+        <p class="text-muted mb-0" style="font-size: var(--text-base);">
             {% if is_superadmin %}Administrador do sistema — todas as bandas{% else %}Suas bandas, cifras e setlists{% endif %}
         </p>
     </div>
@@ -139,13 +139,13 @@
 {% include 'partials/onboarding_checklist.html' %}
 
 {% if trial_ui and trial_ui.ativo %}
-<div class="alert alert-success py-2 mb-3" style="font-size:0.9rem;">
+<div class="alert alert-success py-2 mb-3" style="font-size: var(--text-base);">
     🎸 <strong>Trial Pro</strong> — {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %} restante{% if trial_ui.dias != 1 %}s{% endif %}
     na banda <strong>{{ trial_ui.band_name }}</strong>.
     <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Conheça o Pro</a>
 </div>
 {% elif trial_ui and trial_ui.expirado %}
-<div class="alert alert-warning py-2 mb-3" style="font-size:0.9rem;">
+<div class="alert alert-warning py-2 mb-3" style="font-size: var(--text-base);">
     Seu trial Pro em <strong>{{ trial_ui.band_name }}</strong> terminou.
     <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Assine para continuar sem limites</a>
 </div>
@@ -153,7 +153,7 @@
 
 {% if planos_resumo and planos_resumo.tem_banda and not is_superadmin %}
 <div class="planos-resumo-card">
-    <div class="fw-semibold mb-3" style="font-size:0.9rem;">
+    <div class="fw-semibold mb-3" style="font-size: var(--text-base);">
         <i class="fas fa-chart-line me-1 text-muted"></i>
         {% if planos_resumo.multiplas %}Acompanhamento dos planos{% else %}Seu plano{% endif %}
     </div>
@@ -166,19 +166,19 @@
 {% if upcoming_events %}
 <div class="upcoming-events-card">
     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-        <div class="fw-semibold" style="font-size:0.9rem;">
+        <div class="fw-semibold" style="font-size: var(--text-base);">
             <i class="fas fa-calendar-alt me-1 text-muted"></i> Próximos eventos
         </div>
-        <span class="text-muted" style="font-size:0.78rem;">Ensaios e shows nas suas bandas</span>
+        <span class="text-muted" style="font-size: var(--text-sm);">Ensaios e shows nas suas bandas</span>
     </div>
     {% for event in upcoming_events %}
     <a href="{{ url_for('agenda.view', event_id=event.id) }}" class="upcoming-event-item">
         <div class="min-width-0">
             <div class="upcoming-event-title">
                 {% if event.event_type == 'show' %}
-                <i class="fas fa-star text-warning me-1" style="font-size:0.8rem;"></i>
+                <i class="fas fa-star text-warning me-1" style="font-size: var(--text-sm);"></i>
                 {% else %}
-                <i class="fas fa-drum text-muted me-1" style="font-size:0.8rem;"></i>
+                <i class="fas fa-drum text-muted me-1" style="font-size: var(--text-sm);"></i>
                 {% endif %}
                 {{ event.title }}
             </div>
@@ -200,7 +200,7 @@
 {% endif %}
 
 {% if is_superadmin %}
-<div class="alert alert-info py-2 mb-3" style="font-size:0.88rem;">
+<div class="alert alert-info py-2 mb-3" style="font-size: var(--text-sm);">
     Você tem acesso de <strong>administrador</strong> a todas as bandas e cifras. Pode editar, excluir e gerenciar como admin de cada banda.
 </div>
 <p class="section-title">Todas as bandas ({{ bands|length }})</p>
@@ -271,7 +271,7 @@
 {% if not owned_bands and not member_only %}
 <div class="empty">
     <i class="fas fa-guitar"></i>
-    <p class="mb-3" style="font-size:0.95rem;">Você ainda não está em nenhuma banda.</p>
+    <p class="mb-3" style="font-size: var(--text-base);">Você ainda não está em nenhuma banda.</p>
     <a href="{{ url_for('bands.create') }}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i> Criar Primeira Banda
     </a>

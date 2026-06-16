@@ -44,7 +44,7 @@
 .cifra-container .sp-section {
     display: block;
     font-weight: 700;
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--chord-highlight, #c2410c);
@@ -94,7 +94,7 @@
     display: block;
     color: #fbbf24;
     font-weight: 700;
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     margin: 0.35rem 0 0.45rem;
@@ -103,14 +103,14 @@
 .cifra-tab-meta {
     display: block;
     color: #94a3b8;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     font-style: italic;
     margin-bottom: 0.25rem;
 }
 .cifra-tab-line {
     display: block;
     font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     line-height: 1.32;
     white-space: pre;
     color: #cbd5e1;
@@ -149,7 +149,7 @@
     color: var(--chord-highlight);
     padding: 0.5rem 0.85rem;
     cursor: pointer;
-    font-size: 1.15rem;
+    font-size: var(--text-lg);
     line-height: 1;
     font-family: inherit;
 }
@@ -160,7 +160,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.875rem;
+    font-size: var(--text-sm);
     font-weight: 600;
     color: var(--chord-highlight);
     border-left: 1px solid var(--chord-highlight);
@@ -171,7 +171,7 @@
     display: flex; align-items: center; gap: 0.5rem;
     padding: 0.55rem 0.75rem; text-decoration: none;
     border-left: 3px solid transparent;
-    font-size: 0.82rem; color: #374151;
+    font-size: var(--text-sm); color: #374151;
     border-bottom: 1px solid var(--border);
     transition: background 0.1s;
 }
@@ -183,8 +183,8 @@
     background: var(--chord-highlight-bg);
     font-weight: 600;
 }
-.sl-num { font-size: 0.7rem; color: #9ca3af; min-width: 1.4rem; }
-.sl-key { font-size: 0.7rem; color: #9ca3af; margin-left: auto; }
+.sl-num { font-size: var(--text-xs); color: #9ca3af; min-width: 1.4rem; }
+.sl-key { font-size: var(--text-xs); color: #9ca3af; margin-left: auto; }
 
 [data-theme="light"] .cifra-tab-block {
     background: rgba(245, 158, 11, 0.08);
@@ -216,12 +216,12 @@
     color: #292524 !important;
 }
 
-.cifra-content-tabs .nav-link { font-size: 0.875rem; font-weight: 500; }
+.cifra-content-tabs .nav-link { font-size: var(--text-sm); font-weight: 500; }
 .cifra-content-tabs .tab-pane { padding-top: 0.75rem; }
 .letra-pane {
     white-space: pre-wrap;
     font-family: var(--font-sans);
-    font-size: 0.95rem;
+    font-size: var(--text-base);
     line-height: 1.65;
     padding: 1.35rem 1.6rem;
     border: 1px solid var(--ss-border, var(--border));
@@ -245,7 +245,7 @@
     padding: 2rem 1rem;
     text-align: center;
     color: var(--muted);
-    font-size: 0.9rem;
+    font-size: var(--text-base);
 }
 </style>
 
@@ -257,11 +257,11 @@
     <div id="cifra-col" class="col-lg-8">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
             <div>
-                <h2 class="fw-bold mb-0" style="font-size:1.4rem;">{{ cifra.titulo }}</h2>
-                <p class="text-muted mb-0" style="font-size:0.875rem;">
+                <h2 class="fw-bold mb-0" style="font-size: var(--text-xl);">{{ cifra.titulo }}</h2>
+                <p class="text-muted mb-0" style="font-size: var(--text-sm);">
                     {{ cifra.artista }} · Tom: <strong>{{ display_key }}</strong>
-                    {% if current_transpose != 0 %}&nbsp;<span style="color:var(--muted);font-size:0.78rem;">(cadastro: {{ cifra.tom_original|normalize_tom }})</span>{% endif %}
-                    <span class="text-muted ms-2" style="font-size:0.78rem;">{{ cifra_index + 1 }}/{{ setlist|length }}</span>
+                    {% if current_transpose != 0 %}&nbsp;<span style="color:var(--muted);font-size: var(--text-sm);">(cadastro: {{ cifra.tom_original|normalize_tom }})</span>{% endif %}
+                    <span class="text-muted ms-2" style="font-size: var(--text-sm);">{{ cifra_index + 1 }}/{{ setlist|length }}</span>
                 </p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
@@ -364,11 +364,11 @@
         <div class="card mb-3">
             <div class="card-header">Transpor</div>
             <div class="card-body">
-                <p class="text-muted mb-2" style="font-size:0.8rem;">
+                <p class="text-muted mb-2" style="font-size: var(--text-sm);">
                     Tom cadastrado: <strong>{{ cifra.tom_original|normalize_tom }}</strong>
                 </p>
                 {% if vocalists|length > 1 %}
-                <label class="form-label mb-1" style="font-size:0.75rem;">Cantora/cantor</label>
+                <label class="form-label mb-1" style="font-size: var(--text-xs);">Cantora/cantor</label>
                 <select class="form-select form-select-sm mb-2"
                         onchange="location.href=CIFRA_BASE+'?vocalist='+encodeURIComponent(this.value)">
                     {% for v in vocalists %}
@@ -378,11 +378,11 @@
                     {% endfor %}
                 </select>
                 {% elif vocalists|length == 1 %}
-                <p class="text-muted mb-2" style="font-size:0.75rem;">
+                <p class="text-muted mb-2" style="font-size: var(--text-xs);">
                     Tom para <strong>{{ vocalists[0].name }}</strong>{% if vocalists[0].user_id %} — conta vinculada{% endif %}.
                 </p>
                 {% else %}
-                <p class="text-muted mb-2" style="font-size:0.75rem;">
+                <p class="text-muted mb-2" style="font-size: var(--text-xs);">
                     <a href="{{ url_for('bands.settings', band_id=band.id) }}">Cadastre cantoras/cantores</a>
                     para um tom por voz. Enquanto isso, o tom vale para toda a banda.
                 </p>
@@ -403,7 +403,7 @@
         <div class="card mb-3">
             <div class="card-header">
                 Cifras da Banda
-                <span class="text-muted" style="font-size:0.75rem;">({{ setlist|length }})</span>
+                <span class="text-muted" style="font-size: var(--text-xs);">({{ setlist|length }})</span>
             </div>
             <div class="card-body p-0">
                 {% for s in setlist %}
@@ -424,7 +424,7 @@
                 <p class="mb-1 text-muted">Tom</p>
                 <p class="fw-bold mb-3" style="color:var(--accent);">{{ display_key }}</p>
                 {% if current_transpose != 0 %}
-                <p class="mb-3 text-muted" style="font-size:0.78rem;">Cadastro: {{ cifra.tom_original|normalize_tom }}</p>
+                <p class="mb-3 text-muted" style="font-size: var(--text-sm);">Cadastro: {{ cifra.tom_original|normalize_tom }}</p>
                 {% endif %}
                 <p class="mb-1 text-muted">Banda</p>
                 <p class="fw-semibold mb-3">{{ band.name }}</p>

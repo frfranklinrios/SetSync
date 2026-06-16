@@ -31,12 +31,12 @@
 }
 .igrejas-hero-inner { max-width: 1100px; margin: 0 auto; }
 .igrejas-hero h1 {
-    font-size: clamp(1.9rem, 4.5vw, 2.85rem);
+    font-size: var(--text-2xl);
     font-weight: 700;
     max-width: 20ch;
     line-height: 1.15;
 }
-.igrejas-lead { color: var(--muted); max-width: 44rem; line-height: 1.65; font-size: 1.05rem; }
+.igrejas-lead { color: var(--muted); max-width: 44rem; line-height: 1.65; font-size: var(--text-md); }
 .igrejas-hero-points {
     display: flex;
     flex-wrap: wrap;
@@ -44,11 +44,11 @@
     margin: 1.25rem 0 0;
     padding: 0;
     list-style: none;
-    font-size: 0.88rem;
+    font-size: var(--text-sm);
     color: var(--muted);
 }
 .igrejas-hero-points li { display: flex; align-items: center; gap: 0.4rem; }
-.igrejas-hero-points i { color: var(--accent); font-size: 0.8rem; }
+.igrejas-hero-points i { color: var(--accent); font-size: var(--text-sm); }
 .igrejas-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
 
 .igrejas-section {
@@ -57,7 +57,7 @@
     padding: 3rem 1.5rem;
 }
 .igrejas-section h2 {
-    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    font-size: var(--text-xl);
     font-weight: 700;
     margin-bottom: 0.5rem;
 }
@@ -87,9 +87,9 @@
     align-items: center;
     gap: 0.45rem;
 }
-.igrejas-pain-card p { font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.5; }
-.igrejas-pain-card .fa-circle-xmark { color: #dc2626; font-size: 0.9rem; }
-.igrejas-solution-card .fa-circle-check { color: #0d9488; font-size: 0.9rem; }
+.igrejas-pain-card p { font-size: var(--text-sm); color: var(--muted); margin: 0; line-height: 1.5; }
+.igrejas-pain-card .fa-circle-xmark { color: #dc2626; font-size: var(--text-base); }
+.igrejas-solution-card .fa-circle-check { color: #0d9488; font-size: var(--text-base); }
 
 .igrejas-compare {
     background: var(--bg);
@@ -100,7 +100,7 @@
 .igrejas-compare-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    font-size: var(--text-base);
 }
 .igrejas-compare-table th,
 .igrejas-compare-table td {
@@ -115,7 +115,7 @@
     font-weight: 600;
 }
 [data-theme="dark"] .igrejas-compare-table .col-worship { background: rgba(45, 212, 191, 0.1); }
-.igrejas-compare-table .muted { color: var(--muted); font-size: 0.82rem; }
+.igrejas-compare-table .muted { color: var(--muted); font-size: var(--text-sm); }
 
 .igrejas-features {
     display: grid;
@@ -130,7 +130,7 @@
 }
 [data-theme="dark"] .igrejas-feature-card { background: #0b1422; border-color: #334155; }
 .igrejas-feature-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.35rem; }
-.igrejas-feature-card p { font-size: 0.86rem; color: var(--muted); margin: 0; line-height: 1.5; }
+.igrejas-feature-card p { font-size: var(--text-sm); color: var(--muted); margin: 0; line-height: 1.5; }
 
 .igrejas-faq details {
     border: 1px solid var(--border);
@@ -141,14 +141,14 @@
 }
 [data-theme="dark"] .igrejas-faq details { background: #0b1422; border-color: #334155; }
 .igrejas-faq summary { font-weight: 600; cursor: pointer; }
-.igrejas-faq p { margin: 0.65rem 0 0; font-size: 0.88rem; color: var(--muted); line-height: 1.55; }
+.igrejas-faq p { margin: 0.65rem 0 0; font-size: var(--text-sm); color: var(--muted); line-height: 1.55; }
 
 .igrejas-final-cta {
     text-align: center;
     padding: 3.5rem 1.5rem 4rem;
     border-top: 1px solid var(--border);
 }
-.igrejas-final-cta h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+.igrejas-final-cta h2 { font-size: var(--text-lg); font-weight: 700; margin-bottom: 0.5rem; }
 .igrejas-final-cta p { color: var(--muted); max-width: 32rem; margin: 0 auto 1.25rem; }
 </style>
 {% endblock %}

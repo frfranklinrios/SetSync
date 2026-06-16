@@ -18,7 +18,7 @@
 .slider:before { position:absolute; content:""; height:20px; width:20px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; }
 .switch input:checked + .slider { background:var(--accent,#ea580c); }
 .switch input:checked + .slider:before { transform:translateX(22px); }
-.badge-economia { font-size: 0.72rem; font-weight: 600; vertical-align: middle; }
+.badge-economia { font-size: var(--text-sm); font-weight: 600; vertical-align: middle; }
 </style>
 <div class="planos-publicos-grid" id="planos-publicos-grid">
     {% for p in _planos %}

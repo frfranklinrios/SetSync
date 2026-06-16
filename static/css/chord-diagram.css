@@ -30,7 +30,7 @@
   background: transparent;
   color: var(--muted);
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   padding: 0.28rem 0.85rem;
   cursor: pointer;
@@ -84,7 +84,7 @@
   background: transparent;
   color: var(--muted);
   border-radius: 7px;
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   padding: 0.3rem 0.65rem;
   cursor: pointer;
 }
@@ -182,7 +182,7 @@
 }
 
 .diagram-scale-name {
-  font-size: 1.45rem;
+  font-size: var(--text-xl);
 }
 
 .diagram-scale-dot {
@@ -304,7 +304,7 @@
 
 .chord-notes {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   margin-bottom: 0.5rem;
 }
 

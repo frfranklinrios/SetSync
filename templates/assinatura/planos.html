@@ -33,7 +33,7 @@
 
 {% if plano_ui and banda_id %}
 <div class="planos-resumo-card mb-4" style="border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;background:var(--bg);">
-    <div class="fw-semibold mb-2" style="font-size:0.9rem;"><i class="fas fa-tag me-1 text-muted"></i> Plano atual</div>
+    <div class="fw-semibold mb-2" style="font-size: var(--text-base);"><i class="fas fa-tag me-1 text-muted"></i> Plano atual</div>
     {% with item=plano_ui, hide_action=true %}
     {% include 'partials/plano_periodo_card.html' %}
     {% endwith %}

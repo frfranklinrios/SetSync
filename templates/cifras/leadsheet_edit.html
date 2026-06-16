@@ -67,7 +67,7 @@
         }
         .leadsheet-preview-empty {
             color: #94a3b8;
-            font-size: 0.9rem;
+            font-size: var(--text-base);
             padding: 0.5rem 0.25rem;
             font-family: var(--font-sans);
         }
@@ -192,9 +192,9 @@
             font-family: var(--cifra-mono-font);
             color: var(--chord-highlight, #c2410c);
         }
-        .pulse-cell .chord-text.chord-sm { font-size: 0.72rem; }
-        .pulse-cell .chord-text.chord-md { font-size: 0.82rem; }
-        .pulse-cell .chord-text.chord-lg { font-size: 0.92rem; }
+        .pulse-cell .chord-text.chord-sm { font-size: var(--text-sm); }
+        .pulse-cell .chord-text.chord-md { font-size: var(--text-sm); }
+        .pulse-cell .chord-text.chord-lg { font-size: var(--text-base); }
         .pulse-empty {
             font-size: 1rem;
             color: rgba(148, 163, 184, 0.55);
@@ -272,13 +272,13 @@
             background: #0b1422;
         }
         .play-sheet-title {
-            font-size: 0.95rem;
+            font-size: var(--text-base);
             font-weight: 700;
             line-height: 1.25;
             color: #f1f5f9;
         }
         .play-sheet-meta {
-            font-size: 0.72rem;
+            font-size: var(--text-sm);
             color: #64748b;
             margin-top: 0.2rem;
         }
@@ -288,7 +288,7 @@
         }
         .play-sheet-body.is-empty {
             font-family: var(--font-sans);
-            font-size: 0.9rem;
+            font-size: var(--text-base);
             color: #94a3b8;
             padding: 1.25rem 1rem;
         }
@@ -452,7 +452,7 @@
             </div>
         </div>
 
-        <div id="status" class="mt-2 mb-3 text-muted" style="font-size:0.9rem;"></div>
+        <div id="status" class="mt-2 mb-3 text-muted" style="font-size: var(--text-base);"></div>
     </form>
 </div>
 

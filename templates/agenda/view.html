@@ -3,7 +3,7 @@
 
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size:0.82rem;">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}#tab-agenda">Agenda</a></li>
@@ -20,15 +20,15 @@
             <span class="badge text-bg-secondary"><i class="fas fa-drum me-1"></i> Ensaio</span>
             {% endif %}
         </div>
-        <h2 class="mb-1" style="font-size:1.6rem;">{{ event.title }}</h2>
-        <p class="text-muted mb-0" style="font-size:0.9rem;">
+        <h2 class="mb-1" style="font-size: var(--text-xl);">{{ event.title }}</h2>
+        <p class="text-muted mb-0" style="font-size: var(--text-base);">
             <i class="far fa-calendar me-1"></i> {{ format_event_datetime(event.starts_at) }}
             {% if event.ends_at %}
             <span class="text-muted"> — {{ format_event_datetime(event.ends_at) }}</span>
             {% endif %}
         </p>
         {% if event.location %}
-        <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">
+        <p class="text-muted mb-0 mt-1" style="font-size: var(--text-sm);">
             <i class="fas fa-map-marker-alt me-1"></i>
             {% if maps_open_url %}
             <a href="{{ maps_open_url }}" target="_blank" rel="noopener noreferrer" class="text-muted">
@@ -75,17 +75,17 @@
         <h3 class="h6 mb-2"><i class="fas fa-bell me-1"></i> Você está na escalação</h3>
         {% set st = user_assignment.response_status or 'pending' %}
         {% if st == 'accepted' %}
-        <p class="text-success mb-2" style="font-size:0.9rem;">
+        <p class="text-success mb-2" style="font-size: var(--text-base);">
             <i class="fas fa-check-circle me-1"></i> Presença confirmada
             {% if user_assignment.responded_at %} · {{ user_assignment.responded_at | format_event_datetime }}{% endif %}
         </p>
         {% elif st == 'declined' %}
-        <p class="text-danger mb-2" style="font-size:0.9rem;">
+        <p class="text-danger mb-2" style="font-size: var(--text-base);">
             <i class="fas fa-times-circle me-1"></i> Você recusou esta escalação
             {% if user_assignment.response_note %} — {{ user_assignment.response_note }}{% endif %}
         </p>
         {% else %}
-        <p class="text-muted mb-3" style="font-size:0.88rem;">
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
             Confirme ou recuse para avisar quem te convocou.
         </p>
         <form action="{{ url_for('agenda.respond_scale', event_id=event.id) }}" method="POST" class="mb-2">
@@ -99,7 +99,7 @@
             {% include 'partials/csrf_input.html' %}
             <input type="hidden" name="action" value="decline">
             <div class="flex-grow-1" style="min-width:180px;">
-                <label class="form-label mb-1" style="font-size:0.8rem;">Motivo (opcional)</label>
+                <label class="form-label mb-1" style="font-size: var(--text-sm);">Motivo (opcional)</label>
                 <input type="text" name="note" class="form-control form-control-sm" maxlength="500"
                        placeholder="Ex.: compromisso no mesmo horário">
             </div>
@@ -118,7 +118,7 @@
             <h3 class="h6 mb-0">
                 <i class="fas fa-user-check me-1"></i> Escalação
                 {% if user_is_scaled and assignments %}
-                <span class="badge text-bg-success ms-1" style="font-size:0.7rem;">Você</span>
+                <span class="badge text-bg-success ms-1" style="font-size: var(--text-xs);">Você</span>
                 {% endif %}
             </h3>
         </div>
@@ -127,14 +127,14 @@
             {% for a in assignments %}
             {% set st = a.response_status or 'pending' %}
             <span class="badge rounded-pill border {% if st == 'accepted' %}text-bg-success{% elif st == 'declined' %}text-bg-danger{% else %}text-bg-light{% endif %}"
-                  style="font-size:0.8rem; font-weight:500;{% if st == 'pending' %} color:var(--text);{% endif %}">
+                  style="font-size: var(--text-sm); font-weight:500;{% if st == 'pending' %} color:var(--text);{% endif %}">
                 {{ user_display_name(a) }}{% if a.role_label %} · {{ a.role_label }}{% endif %}
                 {% if st == 'accepted' %} ✓{% elif st == 'declined' %} ✗{% else %} ?{% endif %}
             </span>
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-muted mb-3" style="font-size:0.88rem;">
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
             Nenhuma escala definida — todos os integrantes da banda são considerados para este evento.
         </p>
         {% endif %}
@@ -163,7 +163,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <h3 class="h6 text-muted mb-2">Observações</h3>
-        <p class="mb-0" style="white-space:pre-wrap; font-size:0.9rem;">{{ event.notes }}</p>
+        <p class="mb-0" style="white-space:pre-wrap; font-size: var(--text-base);">{{ event.notes }}</p>
     </div>
 </div>
 {% endif %}
@@ -182,20 +182,20 @@
             {% endif %}
         </div>
         {% if setlist_cifras %}
-        <ol class="mb-0 ps-3" style="font-size:0.9rem;">
+        <ol class="mb-0 ps-3" style="font-size: var(--text-base);">
             {% for item in setlist_cifras %}
             <li class="mb-1">{{ item.titulo }}{% if item.artista %} — {{ item.artista }}{% endif %}</li>
             {% endfor %}
         </ol>
         {% else %}
-        <p class="text-muted mb-0" style="font-size:0.88rem;">Setlist vinculada, mas sem músicas cadastradas.</p>
+        <p class="text-muted mb-0" style="font-size: var(--text-sm);">Setlist vinculada, mas sem músicas cadastradas.</p>
         {% endif %}
     </div>
 </div>
 {% else %}
 <div class="empty" style="margin-top:1rem;">
     <i class="fas fa-list"></i>
-    <p class="mb-0" style="font-size:0.9rem;">Nenhuma setlist vinculada a este evento.</p>
+    <p class="mb-0" style="font-size: var(--text-base);">Nenhuma setlist vinculada a este evento.</p>
     {% if can_edit %}
     <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="btn btn-outline-primary btn-sm mt-3">
         Vincular setlist
@@ -205,7 +205,7 @@
 {% endif %}
 
 <p class="mt-4">
-    <a href="{{ url_for('bands.view', band_id=band.id) }}#tab-agenda" class="text-muted" style="font-size:0.85rem;">
+    <a href="{{ url_for('bands.view', band_id=band.id) }}#tab-agenda" class="text-muted" style="font-size: var(--text-sm);">
         <i class="fas fa-arrow-left me-1"></i> Voltar à agenda
     </a>
 </p>

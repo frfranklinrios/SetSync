@@ -11,11 +11,11 @@
     height: 100%;
 }
 .admin-stat .num { font-size: 1.75rem; font-weight: 700; color: var(--chord-highlight, var(--accent)); }
-.admin-stat .lbl { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.admin-table { font-size: 0.88rem; }
-.admin-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.admin-stat .lbl { font-size: var(--text-sm); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.admin-table { font-size: var(--text-sm); }
+.admin-table th { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .admin-badge-sa {
-    font-size: 0.68rem;
+    font-size: var(--text-xs);
     font-weight: 700;
     color: var(--chord-highlight, var(--accent));
     border: 1px solid var(--chord-highlight-border, rgba(42,181,160,0.35));
@@ -27,11 +27,11 @@
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
-        <h1 class="mb-1" style="font-size:1.45rem; font-weight:700;">
+        <h1 class="mb-1" style="font-size: var(--text-xl); font-weight:700;">
             <i class="fas fa-shield-halved me-2" style="color:var(--chord-highlight,var(--accent));"></i>
             Administração
         </h1>
-        <p class="text-muted mb-0" style="font-size:0.9rem;">
+        <p class="text-muted mb-0" style="font-size: var(--text-base);">
             Todas as bandas, cifras e usuários do sistema
         </p>
     </div>
@@ -144,7 +144,7 @@
     </div>
 
     <div class="tab-pane fade" id="tab-users">
-        <div class="alert alert-warning py-2 mb-3" style="font-size:0.85rem;">
+        <div class="alert alert-warning py-2 mb-3" style="font-size: var(--text-sm);">
             <strong>Superadmin do app</strong> — vê todas as bandas e o painel Admin.
             Não confundir com <strong>admin de banda</strong> (titular promove em Membros da banda).
             Superadmin via <code>SETSYNC_SUPERADMIN_*</code> no servidor ou coluna <code>is_superadmin</code> no banco.
@@ -167,7 +167,7 @@
                         <tr>
                             <td>
                                 <strong>{{ user_display_name(u) }}</strong>
-                                <span class="text-muted" style="font-size:0.78rem;">@{{ u.username }}</span>
+                                <span class="text-muted" style="font-size: var(--text-sm);">@{{ u.username }}</span>
                             </td>
                             <td>{{ u.email }}</td>
                             <td>
@@ -177,9 +177,9 @@
                                     <i class="fab fa-whatsapp text-success me-1"></i>{{ u.phone|whatsapp_display }}
                                 </a>
                                 {% if u.whatsapp_notify %}
-                                <span class="text-muted" style="font-size:0.72rem;" title="Alertas WhatsApp ativos">· alertas</span>
+                                <span class="text-muted" style="font-size: var(--text-sm);" title="Alertas WhatsApp ativos">· alertas</span>
                                 {% else %}
-                                <span class="text-muted" style="font-size:0.72rem;" title="Sem opt-in de alertas">· sem alertas</span>
+                                <span class="text-muted" style="font-size: var(--text-sm);" title="Sem opt-in de alertas">· sem alertas</span>
                                 {% endif %}
                                 {% else %}
                                 <span class="text-muted">—</span>
@@ -190,9 +190,9 @@
                                 {% if u.is_env_admin %}
                                 <span class="admin-badge-sa">Sim</span>
                                 {% if u.is_superadmin_env %}
-                                <span class="text-muted" style="font-size:0.75rem;"> (.env)</span>
+                                <span class="text-muted" style="font-size: var(--text-xs);"> (.env)</span>
                                 {% elif u.is_superadmin_db %}
-                                <span class="text-muted" style="font-size:0.75rem;"> (banco)</span>
+                                <span class="text-muted" style="font-size: var(--text-xs);"> (banco)</span>
                                 {% endif %}
                                 {% else %}
                                 <span class="text-muted">Não</span>
@@ -206,7 +206,7 @@
                                     <button type="submit" class="btn btn-sm btn-outline-warning">Revogar superadmin</button>
                                 </form>
                                 {% elif u.is_superadmin_env %}
-                                <span class="text-muted" style="font-size:0.8rem;">Definido no .env</span>
+                                <span class="text-muted" style="font-size: var(--text-sm);">Definido no .env</span>
                                 {% else %}
                                 <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
                                     {% include 'partials/csrf_input.html' %}

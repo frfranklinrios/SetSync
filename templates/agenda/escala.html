@@ -33,18 +33,18 @@
 }
 .escala-member-check { flex-shrink: 0; }
 .escala-member-info { flex: 1; min-width: 0; }
-.escala-member-name { font-weight: 600; font-size: 0.9rem; }
-.escala-member-email { font-size: 0.78rem; color: var(--muted); }
+.escala-member-name { font-weight: 600; font-size: var(--text-base); }
+.escala-member-email { font-size: var(--text-sm); color: var(--muted); }
 .escala-member-role { width: 140px; flex-shrink: 0; }
-.escala-member-role input { font-size: 0.82rem; }
+.escala-member-role input { font-size: var(--text-sm); }
 .escala-count {
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     color: var(--muted);
 }
 </style>
 
 <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb" style="font-size:0.82rem;">
+    <ol class="breadcrumb" style="font-size: var(--text-sm);">
         <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('agenda.view', event_id=event.id) }}">{{ event.title }}</a></li>
@@ -53,11 +53,11 @@
 </nav>
 
 <div class="escala-head">
-    <h2 class="mb-1" style="font-size:1.35rem;">Escalação do evento</h2>
-    <p class="text-muted mb-0" style="font-size:0.9rem;">
+    <h2 class="mb-1" style="font-size: var(--text-lg);">Escalação do evento</h2>
+    <p class="text-muted mb-0" style="font-size: var(--text-base);">
         <strong>{{ event.title }}</strong> · {{ format_event_datetime(event.starts_at) }}
     </p>
-    <p class="text-muted mb-0 mt-2" style="font-size:0.85rem;">
+    <p class="text-muted mb-0 mt-2" style="font-size: var(--text-sm);">
         Selecione quem participa deste ensaio ou culto. Integrantes escalados recebem lembrete e notificação.
         Se ninguém for selecionado, todos os membros são considerados.
     </p>

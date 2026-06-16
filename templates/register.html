@@ -22,19 +22,19 @@
         </div>
 
         {% if invite_band %}
-        <div class="alert alert-info mb-4" style="font-size:0.9rem;">
+        <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
             Convite para entrar na banda <strong>{{ invite_band.name }}</strong>.
             Ao criar sua conta, você já entra na banda automaticamente.
         </div>
         {% endif %}
 
         {% if plano_intent == 'worship' %}
-        <div class="alert alert-info mb-4" style="font-size:0.9rem;">
+        <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
             Você está criando conta para o <strong>plano Worship</strong> (igrejas com vários ministérios).
         </div>
         {% endif %}
 
-        <div class="alert alert-success mb-4" style="font-size:0.9rem;">
+        <div class="alert alert-success mb-4" style="font-size: var(--text-base);">
             <strong>🎸 Experimente o Pro grátis por 14 dias</strong> — sem cartão.
             Ao criar sua primeira banda, o trial é ativado automaticamente.
         </div>
@@ -92,17 +92,17 @@
 
         {% if google_oauth_enabled %}
         <div class="d-flex align-items-center my-4">
-            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size:0.75rem;">OU</span><hr class="flex-grow-1">
+            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size: var(--text-xs);">OU</span><hr class="flex-grow-1">
         </div>
 
         <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Registrar com Google</a>
         {% endif %}
 
-        <p class="text-center text-muted mt-4 mb-1" style="font-size:0.875rem;">
+        <p class="text-center text-muted mt-4 mb-1" style="font-size: var(--text-sm);">
             Já tem conta?
             <a href="{{ url_for('auth.login', convite=invite_token) if invite_token else url_for('auth.login') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Faça login</a>
         </p>
-        <p class="text-center text-muted mb-0" style="font-size:0.8rem;">
+        <p class="text-center text-muted mb-0" style="font-size: var(--text-sm);">
             <a href="{{ url_for('auth.recuperar_senha') }}" style="color:var(--muted);text-decoration:none;">Esqueceu sua senha?</a>
         </p>
     </div>

@@ -77,7 +77,7 @@
     gap: 0.5rem;
     padding: 0.65rem 0.85rem;
     border-bottom: 1px solid var(--border);
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     font-weight: 700;
     color: var(--text);
     background: var(--surface-elevated);
@@ -126,7 +126,7 @@
     border: none;
     background: none;
     color: var(--accent);
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     font-weight: 600;
     padding: 0;
     cursor: pointer;
@@ -172,14 +172,14 @@
 }
 
 .ss-notif-item-title {
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     font-weight: 700;
     margin-bottom: 0.15rem;
     color: var(--text);
 }
 
 .ss-notif-item-body {
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     color: var(--muted);
     line-height: 1.35;
     margin: 0;
@@ -195,7 +195,7 @@
     padding: 1.5rem 1rem;
     text-align: center;
     color: var(--muted);
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     background: var(--card-bg);
 }
 

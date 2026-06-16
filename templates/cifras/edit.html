@@ -4,16 +4,16 @@
 
 {% block content %}
 <style>
-#conteudo { font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace); font-size: 0.88rem;
+#conteudo { font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace); font-size: var(--text-sm);
             resize: vertical; min-height: 320px; }
 
-.cifra-edit-tabs .nav-link { font-size: 0.875rem; font-weight: 500; }
+.cifra-edit-tabs .nav-link { font-size: var(--text-sm); font-weight: 500; }
 .cifra-edit-tabs .tab-pane { padding-top: 0.75rem; }
 
 .letra-edit-pane {
     white-space: pre-wrap;
     font-family: var(--font-sans);
-    font-size: 0.95rem;
+    font-size: var(--text-base);
     line-height: 1.65;
     padding: 1rem 1.1rem;
     border: 1px solid var(--border);
@@ -48,7 +48,7 @@
     padding: 0.85rem;
 }
 .chordsheet-embed .panel h2 {
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--muted);
@@ -61,7 +61,7 @@
     margin-bottom: 0.65rem;
 }
 .chordsheet-embed .meta-grid label {
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     color: var(--muted);
     display: block;
     margin-bottom: 0.15rem;
@@ -70,7 +70,7 @@
     width: 100%;
     min-height: 280px;
     font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
-    font-size: 0.84rem;
+    font-size: var(--text-sm);
     resize: vertical;
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -85,7 +85,7 @@
     margin: 0.5rem 0;
 }
 .chordsheet-embed .toolbar button {
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     padding: 0.3rem 0.55rem;
     border-radius: 6px;
     border: 1px solid var(--border);
@@ -106,9 +106,9 @@
     overflow: auto;
     min-height: 320px;
 }
-.chordsheet-embed .hint { font-size: 0.78rem; color: var(--muted); margin: 0.35rem 0 0; }
+.chordsheet-embed .hint { font-size: var(--text-sm); color: var(--muted); margin: 0.35rem 0 0; }
 .chordsheet-embed .status {
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     margin-top: 0.35rem;
     padding: 0.35rem 0.5rem;
     border-radius: 6px;

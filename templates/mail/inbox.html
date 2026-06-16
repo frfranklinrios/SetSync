@@ -16,16 +16,16 @@
                         {% if not e.is_read and folder == 'inbox' %}
                         <span class="badge bg-primary" style="font-size:0.6rem;">novo</span>
                         {% endif %}
-                        <strong class="text-truncate" style="font-size:0.92rem;">
+                        <strong class="text-truncate" style="font-size: var(--text-base);">
                             {% if folder == 'sent' %}{{ e.recipients }}{% else %}{{ e.sender }}{% endif %}
                         </strong>
                     </div>
-                    <div class="text-truncate" style="font-size:0.88rem;">{{ e.subject or '(sem assunto)' }}</div>
-                    <div class="text-muted text-truncate" style="font-size:0.78rem;">
+                    <div class="text-truncate" style="font-size: var(--text-sm);">{{ e.subject or '(sem assunto)' }}</div>
+                    <div class="text-muted text-truncate" style="font-size: var(--text-sm);">
                         {{ (e.body_text or '')[:120] }}
                     </div>
                 </div>
-                <small class="text-muted text-nowrap" style="font-size:0.72rem;">
+                <small class="text-muted text-nowrap" style="font-size: var(--text-sm);">
                     {{ e.created_at|date_short }}
                 </small>
             </a>

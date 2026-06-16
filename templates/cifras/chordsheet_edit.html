@@ -65,7 +65,7 @@
         }
         .setsync-topbar a, .setsync-topbar button {
             font-family: var(--ui-font);
-            font-size: 0.82rem;
+            font-size: var(--text-sm);
             border-radius: 6px;
             padding: 0.35rem 0.65rem;
             border: 1px solid #334155;
@@ -134,7 +134,7 @@
                 </div>
             </div>
 
-            <label for="examples" style="font-size:0.75rem;color:var(--ss-muted);display:block;margin-bottom:0.2rem;">Exemplos</label>
+            <label for="examples" style="font-size: var(--text-xs);color:var(--ss-muted);display:block;margin-bottom:0.2rem;">Exemplos</label>
             <select id="examples" style="width:100%;margin-bottom:0.5rem;">
                 <option value="">— carregar exemplo —</option>
                 {% for key, ex in examples.items() %}
@@ -236,8 +236,8 @@
 
             <div class="status" id="status" hidden></div>
             <details class="prefs" style="margin-top:0.5rem;">
-                <summary style="font-size:0.8rem;cursor:pointer;">Meta caracteres (sintaxe)</summary>
-                <ul class="hint" style="font-size:0.72rem;line-height:1.45;margin:0.35rem 0 0;padding-left:1.1rem;">
+                <summary style="font-size: var(--text-sm);cursor:pointer;">Meta caracteres (sintaxe)</summary>
+                <ul class="hint" style="font-size: var(--text-sm);line-height:1.45;margin:0.35rem 0 0;padding-left:1.1rem;">
                     <li><code>- texto</code> — rótulo; <code>#</code> — comentário; <code>!</code> — nota privada; <code>+</code> — nova página</li>
                     <li><code>= A</code> — seção; <code>A_B</code> — acordes no mesmo compasso; <code>*</code> — vazio</li>
                     <li><code>(A B C D)x2</code> — repetição; <code>1.</code> <code>2.</code> — voltas</li>
@@ -250,7 +250,7 @@
         <div class="panel">
             <h2>Prévia</h2>
             <div class="preview-wrap setsync-cs-sheet" id="preview">
-                <p style="color:#78716c;font-size:0.85rem;">Digite a fonte ou carregue um exemplo…</p>
+                <p style="color:#78716c;font-size: var(--text-sm);">Digite a fonte ou carregue um exemplo…</p>
             </div>
         </div>
     </div>
