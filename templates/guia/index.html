@@ -63,6 +63,18 @@
     </p>
 </div>
 
+<h2 class="h5 mt-4 mb-2">Comparativos</h2>
+<div class="guia-grid mb-4">
+    <a class="guia-link" href="{{ url_for('guia.comparativo', slug='cifra-club') }}">
+        <strong>SetSync vs Cifra Club</strong>
+        <span>Banda colaborativa vs biblioteca pessoal</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('guia.comparativo', slug='ipraise') }}">
+        <strong>SetSync vs iPraise</strong>
+        <span>Cifras no palco vs gestão de escalas</span>
+    </a>
+</div>
+
 <div class="guia-grid">
     {% for p in pages %}
     <a class="guia-link" href="{{ url_for('guia.guia_page', slug=p.slug) }}">

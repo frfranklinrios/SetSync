@@ -16,6 +16,8 @@
 {% include 'partials/seo_faq_home.html' %}
 {% endblock %}
 
+{% block chord_diagram %}{% endblock %}
+
 {% block main_class %}home-page{% endblock %}
 
 {% block extra_head %}
@@ -709,7 +711,7 @@
 <section class="home-cta-band">
     <h2>Pronto para sincronizar o set?</h2>
     <p>Junte a banda no SetSync e deixe as cifras sempre no tom certo.</p>
-    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2">Começar grátis</a>
+    <a href="{{ url_for('comece') }}" class="btn btn-primary btn-lg me-2">Começar grátis</a>
     <a href="#planos" class="btn btn-outline-secondary btn-lg me-2">Ver preços</a>
     <button type="button" class="btn btn-outline-secondary btn-lg" onclick="typeof installPWA === 'function' && installPWA()">
         <i class="fas fa-download me-1"></i> Instalar app

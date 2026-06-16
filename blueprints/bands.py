@@ -53,8 +53,14 @@ def create():
                 return resp
         
         band_id = create_band(name, description, user_id)
+        from db import get_owned_bands
         from monetizacao import iniciar_trial_banda
+        from google_ads import mark_funnel_event
+
+        if len(get_owned_bands(user_id)) == 1:
+            mark_funnel_event('primeira_banda')
         if iniciar_trial_banda(band_id):
+            mark_funnel_event('trial_iniciado')
             flash(
                 'Trial Pro de 14 dias ativado nesta banda — sem cartão. '
                 'Aproveite recursos ilimitados!',

@@ -1,0 +1,92 @@
+{# Calculadora Pro × N vs Worship — landing igrejas #}
+<section class="calc-worship" aria-labelledby="calc-worship-titulo">
+    <h2 id="calc-worship-titulo">Quanto sua igreja economiza com o Worship?</h2>
+    <p class="calc-worship-sub">Compare pagar o Pro para cada ministério versus uma assinatura Worship.</p>
+    <div class="calc-worship-inner">
+        <label for="calc-ministerios" class="form-label fw-semibold">Quantos ministérios de louvor?</label>
+        <input type="range" id="calc-ministerios" min="2" max="8" value="3" class="form-range">
+        <div class="calc-worship-value"><span id="calc-ministerios-label">3</span> ministérios</div>
+        <div class="calc-worship-grid">
+            <div class="calc-box">
+                <div class="calc-box-title">{{ plano_pro.nome }} × <span class="js-calc-n">3</span></div>
+                <div class="calc-box-price js-calc-pro-total">R$ 87/mês</div>
+                <div class="calc-box-note text-muted small">uma assinatura Pro por equipe</div>
+            </div>
+            <div class="calc-box calc-box--highlight">
+                <div class="calc-box-title">{{ plano_worship.nome }}</div>
+                <div class="calc-box-price">{{ plano_worship.preco_label }}<small>{{ plano_worship.sufixo }}</small></div>
+                <div class="calc-box-note text-muted small">todas as bandas na mesma conta</div>
+            </div>
+        </div>
+        <p class="calc-worship-save mb-3">
+            Economia estimada: <strong class="js-calc-economia">R$ 18/mês</strong>
+            <span class="text-muted">(<span class="js-calc-pct">21</span>%)</span>
+        </p>
+        <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-primary btn-lg">Criar conta da igreja</a>
+    </div>
+</section>
+<style>
+.calc-worship {
+    max-width: 720px;
+    margin: 0 auto 3rem;
+    padding: 0 1.5rem;
+    text-align: center;
+}
+.calc-worship-sub { color: var(--muted); margin-bottom: 1.5rem; }
+.calc-worship-inner {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    background: #fff;
+    text-align: left;
+}
+[data-theme="dark"] .calc-worship-inner { background: #0b1422; }
+.calc-worship-value { font-weight: 700; margin-bottom: 1rem; color: var(--accent); }
+.calc-worship-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+@media (max-width: 576px) { .calc-worship-grid { grid-template-columns: 1fr; } }
+.calc-box {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+}
+.calc-box--highlight {
+    border-color: var(--accent);
+    background: rgba(234, 88, 12, 0.06);
+}
+.calc-box-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; }
+.calc-box-price { font-size: 1.35rem; font-weight: 800; }
+.calc-box-price small { font-size: 0.75rem; font-weight: 500; }
+.calc-worship-save { font-size: 0.95rem; }
+</style>
+<script>
+(function () {
+    var proMensal = {{ plano_pro.preco_mensal | default(29) }};
+    var worshipMensal = {{ worship_mensal | default(69) }};
+    var range = document.getElementById('calc-ministerios');
+    if (!range) return;
+    function fmt(v) {
+        return 'R$ ' + v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+    function update() {
+        var n = parseInt(range.value, 10) || 2;
+        document.getElementById('calc-ministerios-label').textContent = n;
+        document.querySelectorAll('.js-calc-n').forEach(function (el) { el.textContent = n; });
+        var proTotal = proMensal * n;
+        var economia = Math.max(0, proTotal - worshipMensal);
+        var pct = proTotal > 0 ? Math.round((economia / proTotal) * 100) : 0;
+        var proEl = document.querySelector('.js-calc-pro-total');
+        if (proEl) proEl.textContent = fmt(proTotal) + '/mês';
+        var ecoEl = document.querySelector('.js-calc-economia');
+        if (ecoEl) ecoEl.textContent = fmt(economia) + '/mês';
+        var pctEl = document.querySelector('.js-calc-pct');
+        if (pctEl) pctEl.textContent = pct;
+    }
+    range.addEventListener('input', update);
+    update();
+})();
+</script>

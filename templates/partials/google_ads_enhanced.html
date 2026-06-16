@@ -1,0 +1,11 @@
+{# Enhanced Conversions — dados hasheados no servidor #}
+{% if google_ads_enhanced_data and google_ads.enhanced_conversions %}
+<script>
+(function () {
+  var ud = {{ google_ads_enhanced_data | tojson }};
+  if (typeof gtag !== 'function' || !ud || !Object.keys(ud).length) return;
+  gtag('set', 'user_data', ud);
+  {% if google_ads.debug %}console.info('[SetSync] Enhanced conversions user_data');{% endif %}
+})();
+</script>
+{% endif %}

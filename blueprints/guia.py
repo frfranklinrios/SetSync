@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, abort, render_template
 
 from security import external_url_for
-from seo_pages import get_seo_page, list_seo_pages
+from seo_pages import get_seo_page, get_comparison_page, list_seo_pages, list_comparison_pages
 
 guia_bp = Blueprint('guia', __name__, url_prefix='/guia')
 
@@ -14,6 +14,21 @@ guia_bp = Blueprint('guia', __name__, url_prefix='/guia')
 def guia_index():
     pages = list_seo_pages()
     return render_template('guia/index.html', pages=pages)
+
+
+@guia_bp.route('/comparativo/<slug>')
+def comparativo(slug: str):
+    page = get_comparison_page(slug)
+    if not page:
+        abort(404)
+    canonical = external_url_for('guia.comparativo', slug=slug)
+    return render_template(
+        'guia/comparativo.html',
+        page=page,
+        canonical_url=canonical,
+        meta_title=page['meta_title'],
+        meta_description=page['meta_description'],
+    )
 
 
 @guia_bp.route('/<slug>')

@@ -136,6 +136,8 @@
     </div>
 </div>
 
+{% include 'partials/onboarding_checklist.html' %}
+
 {% if trial_ui and trial_ui.ativo %}
 <div class="alert alert-success py-2 mb-3" style="font-size:0.9rem;">
     🎸 <strong>Trial Pro</strong> — {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %} restante{% if trial_ui.dias != 1 %}s{% endif %}

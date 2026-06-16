@@ -233,7 +233,6 @@ _KEYWORD_PAIRS: list[tuple[str, str]] = [
     ('sincronizar', 'cifras'),
 ]
 
-# termos compostos (sem verbo)
 _STANDALONE_TOPICS: list[str] = [
     'cifras gospel',
     'cifras gospel banda',
@@ -269,12 +268,103 @@ _STANDALONE_TOPICS: list[str] = [
 ]
 
 
+_PREMIUM_SLUGS = frozenset({
+    'compartilhar-cifras',
+    'compartilhar-setlists',
+    'gerenciar-ministerio-de-louvor',
+    'gerenciar-bandas',
+    'montar-setlist',
+    'organizar-repertorio',
+    'transpor-cifras',
+    'usar-modo-tocar',
+    'app-cifras-banda',
+    'app-cifras-igreja',
+    'setlist-culto-gospel',
+    'cifras-gospel-banda',
+    'cifras-offline-celular',
+    'plano-worship-igreja',
+    'multiplas-bandas-igreja',
+    'chord-sheet-cifra',
+    'convidar-musicos',
+})
+
+
+def _premium_faq_block(phrase: str) -> dict[str, Any]:
+    return {
+        'h2': 'Perguntas frequentes',
+        'html': (
+            '<p><strong>O SetSync é grátis?</strong> Sim, para começar com banda, repertório e Modo Tocar.</p>'
+            f'<p><strong>Preciso instalar app?</strong> Funciona no navegador; instale como PWA para usar offline no culto.</p>'
+        ),
+    }
+
+
+_COMPARISON_PAGES: dict[str, dict[str, Any]] = {
+    'cifra-club': {
+        'slug': 'cifra-club',
+        'h1': 'SetSync vs Cifra Club — qual usar na banda?',
+        'meta_title': 'SetSync vs Cifra Club para bandas e igrejas',
+        'meta_description': (
+            'Compare SetSync e Cifra Club: CC para estudo solo; SetSync para repertório '
+            'compartilhado, setlists e transposição por cantor.'
+        ),
+        'sections': [
+            {'html': (
+                '<p>O <strong>Cifra Club</strong> é a maior biblioteca de cifras do Brasil. O '
+                '<strong>SetSync</strong> foca em <strong>banda colaborativa</strong>: versão única da '
+                'música, setlist do culto e Modo Tocar com a equipe.</p>'
+            )},
+            {'h2': 'Comparativo', 'html': (
+                '<table><thead><tr><th></th><th>Cifra Club</th><th>SetSync</th></tr></thead><tbody>'
+                '<tr><td>Público</td><td>Músico solo</td><td>Banda / ministério</td></tr>'
+                '<tr><td>Repertório compartilhado</td><td>Listas pessoais</td><td>Por banda</td></tr>'
+                '<tr><td>Setlist culto</td><td>Limitado</td><td>Tom por cantor</td></tr>'
+                '<tr><td>Modo palco</td><td>Scroll PRO</td><td>Modo Tocar + offline</td></tr>'
+                '<tr><td>Plano igreja</td><td>Não</td><td>Worship</td></tr>'
+                '</tbody></table>'
+            )},
+        ],
+    },
+    'ipraise': {
+        'slug': 'ipraise',
+        'h1': 'SetSync vs iPraise',
+        'meta_title': 'SetSync vs iPraise para ministérios',
+        'meta_description': 'iPraise para escalas; SetSync para cifras, setlists e Modo Tocar com plano Worship.',
+        'sections': [
+            {'html': (
+                '<p><strong>iPraise</strong> — escalas e chat. <strong>SetSync</strong> — cifras, '
+                'setlists e palco, com agenda nos planos pagos.</p>'
+            )},
+            {'h2': 'Comparativo', 'html': (
+                '<table><thead><tr><th></th><th>iPraise</th><th>SetSync</th></tr></thead><tbody>'
+                '<tr><td>Escalas</td><td>Forte</td><td>Agenda Pro/Worship</td></tr>'
+                '<tr><td>Modo Tocar</td><td>Básico</td><td>Tela cheia + offline</td></tr>'
+                '<tr><td>Import Cifra Club</td><td>Não</td><td>Sim</td></tr>'
+                '</tbody></table>'
+            )},
+        ],
+    },
+}
+
+
+def get_comparison_page(slug: str) -> dict[str, Any] | None:
+    return _COMPARISON_PAGES.get(slug)
+
+
+def list_comparison_pages() -> list[dict[str, Any]]:
+    return list(_COMPARISON_PAGES.values())
+
+
 def _build_page(verb: str, obj: str) -> dict[str, Any]:
     if verb:
         slug = slugify(f'{verb}-{obj}')
     else:
         slug = slugify(obj)
     phrase = _phrase(verb, obj)
+    sections = _sections(verb, obj)
+    if slug in _PREMIUM_SLUGS:
+        sections = sections + [_premium_faq_block(phrase)]
+    plano_cta = 'worship' if any(x in slug for x in ('igreja', 'worship', 'ministerio', 'louvor')) else None
     return {
         'slug': slug,
         'verb': verb,
@@ -283,8 +373,11 @@ def _build_page(verb: str, obj: str) -> dict[str, Any]:
         'h1': f'{phrase.capitalize()} com o SetSync',
         'meta_title': _title_page(verb, obj),
         'meta_description': _meta_desc(verb, obj),
-        'sections': _sections(verb, obj),
+        'sections': sections,
         'keywords': phrase,
+        'noindex': slug not in _PREMIUM_SLUGS,
+        'premium': slug in _PREMIUM_SLUGS,
+        'plano_cta': plano_cta,
     }
 
 

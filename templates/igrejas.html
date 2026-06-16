@@ -12,6 +12,8 @@
 {% include 'partials/seo_public.html' %}
 {% endblock %}
 
+{% block chord_diagram %}{% endblock %}
+
 {% block main_class %}home-page{% endblock %}
 
 {% block extra_head %}
@@ -256,6 +258,25 @@
         </table>
     </div>
 </section>
+
+{% include 'partials/calculadora_worship.html' %}
+
+{% include 'partials/secao_screenshots.html' %}
+
+{% if testimonials %}
+<section class="igrejas-section home-testimonials">
+    <h2>Igrejas e ministérios que organizam o louvor</h2>
+    <div class="testimonials-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:1rem;">
+        {% for t in testimonials[:3] %}
+        <article class="testimonial-card" style="border:1px solid var(--border);border-radius:10px;padding:1rem;">
+            <div class="fw-bold">{{ t.nome }}</div>
+            <div class="text-muted small">{{ t.descricao }}{% if t.cidade %} · {{ t.cidade }}{% endif %}</div>
+            <p class="mb-0 mt-2"><em>"{{ t.texto }}"</em></p>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 
 {% include 'partials/secao_preco_worship_igrejas.html' %}
 

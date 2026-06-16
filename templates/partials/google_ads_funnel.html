@@ -1,0 +1,14 @@
+{# Dispara conversões/funil pendentes (uma vez por evento) #}
+{% if google_ads_funnel_events %}
+<script>
+window.__setsyncGoogleAds = {
+  events: {{ google_ads_funnel_events | tojson }},
+  funnelLabels: {{ google_ads.funnel_labels | tojson }},
+  funnelValues: {{ google_ads.funnel_values | tojson }},
+  currency: {{ google_ads.conversion_currency | tojson }},
+  useGtm: {{ google_ads.use_gtm | tojson }},
+  debug: {{ google_ads.debug | tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/google-ads-funnel.js') }}?v=1"></script>
+{% endif %}

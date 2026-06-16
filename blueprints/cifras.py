@@ -17,7 +17,7 @@ from leadsheet.converter import (
     resolve_to_grade_flat,
 )
 from blueprints.auth import login_required
-from db import (get_band, get_cifra, get_band_cifras, create_cifra, update_cifra,
+from db import (get_band, get_cifra, get_band_cifras, count_band_cifras, create_cifra, update_cifra,
                 delete_cifra, is_band_member, is_band_admin, is_band_editor,
                 set_cifra_transpose_semitones, get_band_vocalists, get_band_vocalist,
                 get_cifra_vocalist_transpose, get_cifra_transpose_by_vocalists,
@@ -768,7 +768,7 @@ def add(band_id):
             if resp:
                 return resp
 
-        cifra_json, grade_json, bpm, duracao_seg = _parse_extra_fields(request.form)
+        cifras_antes = count_band_cifras(band_id)
         if cifra_json is False or grade_json is False:
             return render_template('cifras/add.html', band=band)
 
@@ -782,6 +782,9 @@ def add(band_id):
 
         cifra_id = create_cifra(titulo, artista, tom_original, conteudo or '',
                                 band_id, cifra_json, grade_json, bpm, duracao_seg)
+        if cifras_antes == 0:
+            from google_ads import mark_funnel_event
+            mark_funnel_event('primeira_cifra')
         bn.cifra_created(band_id, user_id, cifra_id, titulo)
         flash(f'Cifra "{titulo}" adicionada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))

@@ -42,7 +42,7 @@
             <li><i class="fas fa-check" aria-hidden="true"></i>{{ feat }}</li>
             {% endfor %}
         </ul>
-        <a href="{{ url_for('auth.register') }}"
+        <a href="{{ url_for('auth.register', plano=p.id, convite=invite_token) if invite_token is defined and invite_token else url_for('auth.register', plano=p.id) }}"
            class="btn w-100 {% if p.cta_outline %}btn-outline-primary{% else %}btn-primary{% endif %}">
             {{ p.cta }}
         </a>

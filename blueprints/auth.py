@@ -295,6 +295,12 @@ def register():
     invite_token = _invite_token_from_request()
     band_id = parse_band_invite_token(invite_token)
     invite_band = get_band(band_id) if band_id else None
+    plano_intent = (request.args.get('plano') or request.form.get('plano') or '').strip().lower()
+    if plano_intent in ('worship', 'pro', 'individual'):
+        session['register_plano_intent'] = plano_intent
+        session.modified = True
+    elif not plano_intent:
+        plano_intent = (session.get('register_plano_intent') or '').strip().lower()
 
     if 'user_id' in session:
         if band_id and apply_band_invite(session['user_id'], band_id):
@@ -302,7 +308,12 @@ def register():
         return redirect(url_for('dashboard'))
 
     def _register_ctx(**fields):
-        return dict(invite_token=invite_token, invite_band=invite_band, **fields)
+        return dict(
+            invite_token=invite_token,
+            invite_band=invite_band,
+            plano_intent=plano_intent,
+            **fields,
+        )
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -320,8 +331,8 @@ def register():
             whatsapp_notify=whatsapp_notify,
         )
         
-        if not username or not display_name or not email or not phone_raw or not password:
-            flash('Preencha todos os campos', 'danger')
+        if not username or not display_name or not email or not password:
+            flash('Preencha usuário, nome, e-mail e senha', 'danger')
             return render_template('register.html', **form_values)
 
         if len(display_name) < 2:
@@ -331,7 +342,7 @@ def register():
             flash('Nome deve ter no máximo 60 caracteres', 'danger')
             return render_template('register.html', **form_values)
 
-        if not normalize_whatsapp_phone(phone_raw):
+        if phone_raw and not normalize_whatsapp_phone(phone_raw):
             flash('WhatsApp inválido. Use DDD + número (ex.: 85 99784-9547).', 'danger')
             return render_template('register.html', **form_values)
         
@@ -355,8 +366,8 @@ def register():
 
         update_user_profile(
             user_id,
-            phone=phone_raw,
-            whatsapp_notify=whatsapp_notify,
+            phone=phone_raw or None,
+            whatsapp_notify=whatsapp_notify if phone_raw else False,
         )
         user = get_user(user_id)
         _login_user_session(user)
@@ -376,6 +387,7 @@ def register():
         'register.html',
         invite_token=invite_token,
         invite_band=invite_band,
+        plano_intent=plano_intent,
     )
 
 
@@ -390,14 +402,17 @@ def cadastro_concluido():
     if not safe_redirect_path(next_path):
         next_path = url_for('dashboard')
 
-    fire_signup = bool(session.pop('google_ads_signup_pending', None))
-    if not fire_signup:
+    if not session.get('google_ads_funnel_pending'):
         return redirect(next_path)
 
+    from db import get_user
+    from google_ads import enhanced_user_data
+
+    user = get_user(session.get('user_id'))
     return render_template(
         'cadastro_concluido.html',
         next_url=next_path,
-        google_ads_fire_signup=True,
+        google_ads_enhanced_data=enhanced_user_data(user),
     )
 
 @auth_bp.route('/login', methods=['GET', 'POST'])

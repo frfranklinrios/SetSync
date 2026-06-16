@@ -1,0 +1,44 @@
+{% extends "index.html" %}
+
+{% block title %}Comece grátis — SetSync Cifras e Setlists{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('comece') }}">
+<meta name="robots" content="noindex, follow">
+<meta name="description" content="Crie sua conta grátis no SetSync: cifras, setlists e Modo Tocar para sua banda ou ministério de louvor.">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.comece-page .navbar, .comece-page footer { display: none !important; }
+.comece-page main { max-width: 520px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+.comece-hero { text-align: center; margin-bottom: 1.5rem; }
+.comece-hero img { height: 56px; margin-bottom: 1rem; }
+.comece-hero h1 { font-size: 1.45rem; font-weight: 800; margin-bottom: 0.5rem; }
+.comece-bullets { text-align: left; font-size: 0.9rem; margin: 1.25rem 0 1.5rem; padding-left: 0; list-style: none; }
+.comece-bullets li { padding: 0.35rem 0; }
+.comece-bullets i { color: var(--accent); width: 1.25rem; }
+</style>
+{% endblock %}
+
+{% block main_class %}comece-page{% endblock %}
+
+{% block content %}
+<div class="comece-hero">
+    <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync">
+    <h1>{% if plano_intent == 'worship' %}Organize o louvor da sua igreja{% else %}Cifras e setlists para sua banda{% endif %}</h1>
+    <p class="text-muted mb-0">14 dias de Pro grátis na primeira banda — sem cartão.</p>
+</div>
+<ul class="comece-bullets">
+    <li><i class="fas fa-check"></i> Repertório compartilhado com a equipe</li>
+    <li><i class="fas fa-check"></i> Setlist com tom por cantor</li>
+    <li><i class="fas fa-check"></i> Modo Tocar offline no culto</li>
+</ul>
+<a href="{{ url_for('auth.register', plano=plano_intent) if plano_intent else url_for('auth.register') }}"
+   class="btn btn-primary btn-lg w-100 mb-2">Criar conta grátis</a>
+<p class="text-center text-muted small mb-0">
+    Já tem conta? <a href="{{ url_for('auth.login') }}">Entrar</a>
+</p>
+{% endblock %}
+
+{% block chord_diagram %}{% endblock %}

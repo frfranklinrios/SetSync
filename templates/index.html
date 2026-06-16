@@ -660,6 +660,7 @@
     <script src="{{ url_for('static', filename='js/notifications.js') }}?v=3"></script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    {% block chord_diagram %}
     <script src="{{ url_for('static', filename='js/chord-diagram/constants.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/shapes.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/real-shapes.js') }}?v=1"></script>
@@ -670,7 +671,9 @@
     <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=1"></script>
+    {% endblock %}
     {% include 'partials/google_ads_signup_event.html' %}
+    {% include 'partials/google_ads_funnel.html' %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

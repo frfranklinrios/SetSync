@@ -1,0 +1,38 @@
+{% extends "index.html" %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ canonical_url }}">
+<meta name="description" content="{{ meta_description }}">
+<meta property="og:title" content="{{ meta_title }}">
+<meta property="og:description" content="{{ meta_description }}">
+<meta property="og:url" content="{{ canonical_url }}">
+<meta property="og:type" content="article">
+<meta property="og:image" content="{{ site_og_image }}">
+{% include 'partials/seo_public.html' %}
+{% endblock %}
+
+{% block chord_diagram %}{% endblock %}
+
+{% block content %}
+<style>
+.guia-page h1 { font-size: 1.65rem; font-weight: 700; margin-bottom: 0.75rem; }
+.guia-page h2 { font-size: 1.15rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+.guia-page table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 1rem 0; }
+.guia-page th, .guia-page td { border: 1px solid var(--border); padding: 0.55rem 0.65rem; text-align: left; }
+.guia-page th { background: var(--bg); }
+</style>
+<article class="guia-page">
+    <p class="text-muted small mb-2"><a href="{{ url_for('guia.guia_index') }}">← Guia SetSync</a></p>
+    <h1>{{ page.h1 }}</h1>
+    {% for section in page.sections %}
+        {% if section.h2 %}<h2>{{ section.h2 }}</h2>{% endif %}
+        {{ section.html|safe }}
+    {% endfor %}
+    <div class="mt-4">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary me-2">Experimentar SetSync grátis</a>
+        <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-outline-secondary">Para igrejas</a>
+    </div>
+</article>
+{% endblock %}

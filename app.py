@@ -325,22 +325,31 @@ def sitemap():
     from db import list_blog_posts
     from security import external_url_for
 
-    from seo_pages import list_seo_pages
+    from seo_pages import list_comparison_pages, list_seo_pages
 
     pages = [
         {'loc': external_url_for('index'), 'changefreq': 'weekly', 'priority': '1.0'},
         {'loc': external_url_for('guia.guia_index'), 'changefreq': 'weekly', 'priority': '0.92'},
         {'loc': external_url_for('assinatura_bp.igrejas'), 'changefreq': 'monthly', 'priority': '0.85'},
+        {'loc': external_url_for('comece'), 'changefreq': 'monthly', 'priority': '0.88'},
         {'loc': external_url_for('blog.blog_index'), 'changefreq': 'daily', 'priority': '0.9'},
         {'loc': external_url_for('ajuda.index'), 'changefreq': 'monthly', 'priority': '0.75'},
         {'loc': external_url_for('auth.register'), 'changefreq': 'monthly', 'priority': '0.8'},
         {'loc': external_url_for('auth.login'), 'changefreq': 'yearly', 'priority': '0.4'},
     ]
+    for page in list_comparison_pages():
+        pages.append({
+            'loc': external_url_for('guia.comparativo', slug=page['slug']),
+            'changefreq': 'monthly',
+            'priority': '0.78',
+        })
     for page in list_seo_pages():
+        if page.get('noindex'):
+            continue
         pages.append({
             'loc': external_url_for('guia.guia_page', slug=page['slug']),
             'changefreq': 'monthly',
-            'priority': '0.65',
+            'priority': '0.72' if page.get('premium') else '0.65',
         })
     for post in list_blog_posts(published_only=True):
         from util import format_date_short
@@ -358,6 +367,17 @@ def sitemap():
     return resp
 
 
+@app.route('/comece')
+def comece():
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    plano = (request.args.get('plano') or '').strip().lower()
+    if plano in ('worship', 'pro', 'individual'):
+        session['register_plano_intent'] = plano
+        session.modified = True
+    return render_template('comece.html', plano_intent=plano or None)
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -367,7 +387,10 @@ def dashboard():
     )
     from monetizacao import enrich_bands_plano, resumo_planos_usuario, dias_restantes_trial, get_assinatura_banda
 
+    from onboarding import get_onboarding_progress
+
     user_id = session['user_id']
+    onboarding = get_onboarding_progress(user_id)
     sa = is_superadmin(user_id)
 
     def _trial_ctx(bands_list):
@@ -410,6 +433,7 @@ def dashboard():
             is_superadmin=True,
             planos_resumo=resumo_planos_usuario(owned_bands),
             trial_ui=_trial_ctx(owned_bands),
+            onboarding=onboarding,
         )
 
     bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
@@ -423,6 +447,7 @@ def dashboard():
         is_superadmin=False,
         planos_resumo=resumo_planos_usuario(owned_bands),
         trial_ui=_trial_ctx(owned_bands),
+        onboarding=onboarding,
     )
 
 
@@ -430,6 +455,8 @@ _SEO_PUBLIC_ENDPOINTS = frozenset({
     'index',
     'guia.guia_index',
     'guia.guia_page',
+    'comece',
+    'guia.comparativo',
     'blog.blog_index',
     'blog.blog_post',
     'ajuda.index',
@@ -444,12 +471,26 @@ _SEO_PUBLIC_ENDPOINTS = frozenset({
 
 @app.context_processor
 def inject_google_ads():
-    from google_ads import get_google_ads_config, google_ads_ativo
+    from flask import request as _req
+    from google_ads import consume_funnel_events, get_google_ads_config, google_ads_ativo
+
+    ativo = google_ads_ativo()
+    funnel_events: list[str] = []
+    _fire = frozenset({
+        'auth.cadastro_concluido',
+        'dashboard',
+        'bands.view',
+        'cifras.view',
+    })
+    if ativo and _req.endpoint in _fire:
+        funnel_events = consume_funnel_events()
 
     return dict(
         google_ads=get_google_ads_config(),
-        google_ads_ativo=google_ads_ativo(),
-        google_ads_fire_signup=False,
+        google_ads_ativo=ativo,
+        google_ads_fire_signup='signup' in funnel_events,
+        google_ads_funnel_events=funnel_events,
+        google_ads_enhanced_data={},
     )
 
 

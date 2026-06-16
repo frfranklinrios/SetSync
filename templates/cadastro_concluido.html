@@ -13,6 +13,7 @@
 {% endblock %}
 
 {% block scripts %}
+{% include 'partials/google_ads_enhanced.html' %}
 <script>
 (function () {
     var dest = {{ next_url|tojson }};
