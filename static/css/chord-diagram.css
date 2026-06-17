@@ -25,6 +25,89 @@
   margin-bottom: 0.75rem;
 }
 
+.diagram-display-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.diagram-display-label {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.diagram-left-handed-toggle {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.diagram-capo-hint {
+  font-size: var(--text-sm);
+  color: var(--accent);
+  margin-bottom: 0.35rem;
+}
+
+.diagram-fret-side,
+.diagram-fret-capo {
+  fill: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  text-anchor: end;
+  dominant-baseline: middle;
+}
+
+.diagram-fret-capo {
+  font-size: 12px;
+  font-weight: 800;
+  fill: var(--text);
+}
+
+.diagram-scale-chord-tone {
+  fill: #e67e22;
+  opacity: 1;
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.diagram-scale-note-label {
+  fill: var(--bg);
+  font-size: 7px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.diagram-legend-chord-tone {
+  color: #e67e22;
+  font-weight: 700;
+}
+
+.diagram-loading .spinner-border {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.chord-modal .modal-dialog {
+  max-width: 640px;
+}
+
+@media (max-width: 576px) {
+  .chord-diagram-wrap {
+    padding: 0.4rem;
+  }
+  .diagram-chord-name {
+    font-size: 1.6rem;
+  }
+}
+
 .diagram-view-btn {
   border: 1px solid var(--border);
   background: transparent;
@@ -326,7 +409,10 @@
 .sp-chord,
 .grade-chord,
 .grade-chord-play,
-.grade-visual-chord {
+.grade-visual-chord,
+.chord-text,
+.chord-sheet-chord,
+.cs-chord {
   color: var(--chord-highlight);
   font-weight: 700;
   cursor: pointer;

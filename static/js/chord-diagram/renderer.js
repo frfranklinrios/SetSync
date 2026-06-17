@@ -3,18 +3,19 @@
   var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});
   var LAYOUT = CD.LAYOUT;
 
-  function escText(s) {
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  function dotLabel(fingers, stringIdx, tuning, frets, chord, labelMode) {
+    var finger = fingers && fingers[stringIdx];
+    if (labelMode === 'dedos' && finger && finger > 0) return String(finger);
+    var note = CD.noteAt(tuning, stringIdx, frets[stringIdx]);
+    if (!note) return '';
+    if (labelMode === 'intervalos' && chord && chord.notes && chord.notes.length) {
+      return CD.intervalLabel(chord.notes[0], note) || note;
+    }
+    if (labelMode === 'notas' || labelMode === 'intervalos') return note;
+    if (finger && finger > 0) return String(finger);
+    return note;
   }
 
-  /**
-   * Gera SVG do diagrama de acordes.
-   * @param {object} opts - { instrument, chord, frets, sourceLabel }
-   */
   function renderChordDiagramSvg(opts) {
     var inst = opts.instrument;
     var chord = opts.chord || {};
@@ -22,71 +23,51 @@
     var frets = opts.frets || tuning.map(function () { return 'x'; });
     var fingers = opts.fingers || null;
     var notes = chord.notes || [];
-    var played = frets.filter(function (f) { return typeof f === 'number' && f > 0; });
-    var startFret = played.length ? Math.min.apply(null, played) : 1;
-    if (startFret < 1) startFret = 1;
+    var labelMode = opts.labelMode || 'dedos';
+    var leftHanded = !!opts.leftHanded;
+    var win = CD.computeWindow(frets, LAYOUT.rows);
+    var startFret = win.startFret;
+    var rows = win.rows;
+    var topMarkerY = LAYOUT.marginY - 14;
 
-    var rows = LAYOUT.rows;
-    var colGap = LAYOUT.colGap;
-    var rowGap = LAYOUT.rowGap;
-    var marginX = LAYOUT.marginX;
-    var marginY = LAYOUT.marginY;
-    var topMarkerY = marginY - 14;
-    var boardW = (tuning.length - 1) * colGap;
-    var boardH = rows * rowGap;
-    var svgW = marginX * 2 + boardW;
-    var svgH = marginY + boardH + 28;
+    var grid = CD.renderFretboardGrid({
+      tuning: tuning,
+      rows: rows,
+      startFret: startFret,
+      leftHanded: leftHanded,
+    });
+
     var rootStr = notes.length ? CD.rootStringIndex(tuning, frets, notes[0]) : -1;
     var barres = CD.detectBarres(frets);
-    var noteLabels = opts.showNoteLabels && CD.noteLabelsForFrets
-      ? CD.noteLabelsForFrets(tuning, frets) : null;
-    var chordName = escText(chord.display || chord.input || '');
-    var sourceLabel = escText(opts.sourceLabel || 'Shape sugerido');
+    var chordName = CD.escText(chord.display || chord.input || '');
+    var sourceLabel = CD.escText(opts.sourceLabel || 'Shape sugerido');
+    var capoHint = opts.capoHint ? '<div class="diagram-capo-hint"><i class="fas fa-ring me-1"></i>' + CD.escText(opts.capoHint) + '</div>' : '';
 
     var parts = [];
     parts.push(
       '<div class="text-muted mb-2" style="font-size:0.75rem;">' + sourceLabel + '</div>',
+      capoHint,
       '<div class="diagram-chord-name">' + chordName + '</div>',
       '<div class="chord-diagram-wrap">',
       '<svg class="diagram-svg" role="img" aria-label="Diagrama do acorde ' + chordName + '" ',
-      'width="' + svgW + '" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '">'
+      'width="' + grid.svgW + '" height="' + grid.svgH + '" viewBox="0 0 ' + grid.svgW + ' ' + grid.svgH + '">',
+      grid.html
     );
 
-    for (var rr = 0; rr <= rows; rr++) {
-      var y = marginY + (rr * rowGap);
-      var cls = (rr === 0 && startFret === 1) ? 'diagram-nut' : 'diagram-grid';
-      parts.push(
-        '<line class="' + cls + '" x1="' + marginX + '" y1="' + y + '" x2="' + (marginX + boardW) + '" y2="' + y + '"></line>'
-      );
-    }
-
-    for (var ss = 0; ss < tuning.length; ss++) {
-      var x = marginX + (ss * colGap);
-      parts.push(
-        '<line class="diagram-grid" x1="' + x + '" y1="' + marginY + '" x2="' + x + '" y2="' + (marginY + boardH) + '"></line>'
-      );
-    }
-
-    if (startFret > 1) {
-      parts.push(
-        '<text class="diagram-fret-text" x="' + (marginX - 8) + '" y="' + (marginY + rowGap / 2) + '">' + startFret + 'fr</text>'
-      );
-    }
-
     for (var tt = 0; tt < frets.length; tt++) {
-      var fx = marginX + (tt * colGap);
+      var fx = CD.stringX(grid.marginX, grid.colGap, tt, tuning.length, leftHanded);
       if (frets[tt] === 'x') {
-        parts.push('<text class="diagram-mute" x="' + fx + '" y="' + topMarkerY + '">X</text>');
-      } else if (frets[tt] === 0) {
-        parts.push('<text class="diagram-open" x="' + fx + '" y="' + topMarkerY + '">O</text>');
+        parts.push('<text class="diagram-mute" x="' + fx + '" y="' + topMarkerY + '">×</text>');
+      } else if (frets[tt] === 0 && startFret === 0) {
+        parts.push('<text class="diagram-open" x="' + fx + '" y="' + topMarkerY + '">○</text>');
       }
     }
 
     barres.forEach(function (bar) {
-      var yBar = marginY + ((bar.fret - startFret + 0.5) * rowGap);
-      if (yBar < marginY || yBar > marginY + boardH) return;
-      var x1 = marginX + (bar.from * colGap);
-      var x2 = marginX + (bar.to * colGap);
+      var yBar = CD.fretY(grid.marginY, grid.rowGap, bar.fret, startFret);
+      if (yBar < grid.marginY - 5 || yBar > grid.marginY + grid.boardH + 5) return;
+      var x1 = CD.stringX(grid.marginX, grid.colGap, bar.from, tuning.length, leftHanded);
+      var x2 = CD.stringX(grid.marginX, grid.colGap, bar.to, tuning.length, leftHanded);
       parts.push(
         '<line class="diagram-barre" x1="' + x1 + '" y1="' + yBar + '" x2="' + x2 + '" y2="' + yBar + '"></line>'
       );
@@ -94,55 +75,56 @@
 
     for (var dd = 0; dd < frets.length; dd++) {
       var fval = frets[dd];
-      if (typeof fval !== 'number' || fval <= 0) continue;
-      var fy = marginY + ((fval - startFret + 0.5) * rowGap);
-      if (fy < marginY || fy > marginY + boardH) continue;
-      var dx = marginX + (dd * colGap);
-      var dotCls = dd === rootStr ? 'diagram-dot diagram-dot-root' : 'diagram-dot';
-      var r = dd === rootStr ? LAYOUT.rootDotR : LAYOUT.dotR;
+      if (fval === 'x') continue;
+      var fy;
+      if (fval === 0 && startFret === 0) {
+        fy = topMarkerY + 2;
+      } else if (typeof fval === 'number' && fval > 0) {
+        fy = CD.fretY(grid.marginY, grid.rowGap, fval, startFret);
+        if (fy < grid.marginY || fy > grid.marginY + grid.boardH) continue;
+      } else {
+        continue;
+      }
+      var dx = CD.stringX(grid.marginX, grid.colGap, dd, tuning.length, leftHanded);
+      var isRoot = dd === rootStr;
+      var dotCls = isRoot ? 'diagram-dot diagram-dot-root' : 'diagram-dot';
+      var r = isRoot ? LAYOUT.rootDotR : LAYOUT.dotR;
+      if (fval === 0) r = 6;
       parts.push('<circle class="' + dotCls + '" cx="' + dx + '" cy="' + fy + '" r="' + r + '"></circle>');
-      var finger = fingers && fingers[dd];
-      var labelText = '';
-      if (finger && typeof finger === 'number' && finger > 0) {
-        labelText = String(finger);
-      } else if (noteLabels && noteLabels[dd]) {
-        labelText = escText(noteLabels[dd]);
-      }
-      if (labelText) {
-        parts.push(
-          '<text class="diagram-finger-num' + (finger ? '' : ' diagram-note-label') + '" x="' + dx + '" y="' + fy + '">' + labelText + '</text>'
-        );
+      var text = dotLabel(fingers, dd, tuning, frets, chord, labelMode);
+      if (text) {
+        var cls = 'diagram-finger-num' + (labelMode === 'notas' ? ' diagram-note-label' : '');
+        parts.push('<text class="' + cls + '" x="' + dx + '" y="' + fy + '">' + CD.escText(text) + '</text>');
       }
     }
 
-    var tuningY = marginY + boardH + 14;
-    for (var tu = 0; tu < tuning.length; tu++) {
-      var tx = marginX + (tu * colGap);
-      parts.push(
-        '<text class="diagram-tuning" x="' + tx + '" y="' + tuningY + '">' + escText(tuning[tu]) + '</text>'
-      );
-    }
-
+    parts.push(CD.renderTuningLabels(tuning, grid, leftHanded));
     parts.push('</svg></div>');
     return parts.join('');
   }
 
-  function renderChordDiagram(inst, chord, shapeOption) {
+  function renderChordDiagram(inst, chord, shapeOption, renderOpts) {
+    renderOpts = renderOpts || {};
     var tuning = CD.TUNINGS[inst];
     var frets = shapeOption && shapeOption.frets
       ? shapeOption.frets
       : CD.buildAutoShape(tuning, chord.notes || []);
+    var capoHint = '';
+    if (shapeOption && shapeOption.label && /casa|pestana/i.test(shapeOption.label)) {
+      capoHint = shapeOption.label;
+    }
     return renderChordDiagramSvg({
       instrument: inst,
       chord: chord,
       frets: frets,
       fingers: shapeOption && shapeOption.fingers,
       sourceLabel: (shapeOption && shapeOption.source) || 'Cifra clássica',
-      showNoteLabels: shapeOption && shapeOption.source === 'Algoritmo de voicings',
+      labelMode: renderOpts.labelMode || 'dedos',
+      leftHanded: renderOpts.leftHanded,
+      capoHint: capoHint,
     });
   }
 
-  CD.escText = escText;
   CD.renderChordDiagramSvg = renderChordDiagramSvg;
   CD.renderChordDiagram = renderChordDiagram;
 })(typeof window !== 'undefined' ? window : globalThis);

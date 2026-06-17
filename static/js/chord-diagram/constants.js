@@ -51,4 +51,12 @@
     { id: 'inv2', label: '2ª inversão' },
     { id: 'inv3', label: '3ª inversão' },
   ];
+
+  CD.escText = function escText(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,25 +1,59 @@
-/** Modal de diagramas — acordes reais e escalas */
+/** Modal de diagramas — acordes, escalas e preferências */
 (function (global) {
   var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});
+  var PREFS_KEY = 'setsync_diagram_prefs';
+
+  function loadPrefs() {
+    try {
+      return JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function savePrefs(state) {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({
+        instrument: state.instrument,
+        labelMode: state.labelMode,
+        leftHanded: state.leftHanded,
+        bassType: state.bassType,
+      }));
+    } catch (e) { /* ignore */ }
+  }
 
   function initChordDiagramModal() {
     var modalEl = document.getElementById('chordModal');
     if (!modalEl || typeof bootstrap === 'undefined') return null;
 
     var modal = new bootstrap.Modal(modalEl);
+    var prefs = loadPrefs();
     var state = {
-      instrument: 'violao',
+      instrument: prefs.instrument || 'violao',
       viewMode: 'chord',
+      labelMode: prefs.labelMode || 'dedos',
+      leftHanded: !!prefs.leftHanded,
       rawSymbol: '',
       chords: [],
       selectedChord: 0,
-      bassType: '4',
+      bassType: prefs.bassType || '4',
       shapeOptions: [],
       selectedShape: 0,
       scaleOptions: [],
       selectedScale: 0,
+      scaleStart: 0,
       arpPatternBass: 'root',
     };
+
+    function renderOpts() {
+      return {
+        labelMode: state.labelMode,
+        leftHanded: state.leftHanded,
+        scaleStart: state.scaleStart,
+        scaleRows: 12,
+        chordTones: CD.chordToneSet(currentChord()),
+      };
+    }
 
     function currentBassTuning() {
       if (state.bassType === '6') return CD.TUNINGS.baixo6;
@@ -44,6 +78,18 @@
     function updateScaleOptions(chord) {
       state.scaleOptions = CD.suggestScalesForChord(chord);
       if (state.selectedScale >= state.scaleOptions.length) state.selectedScale = 0;
+      var sc = state.scaleOptions[state.selectedScale];
+      if (sc) {
+        state.scaleStart = CD.defaultScaleStart(CD.TUNINGS[state.instrument] || [], sc.root);
+      }
+    }
+
+    function syncDisplayToggles() {
+      document.querySelectorAll('[data-label-mode]').forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-label-mode') === state.labelMode);
+      });
+      var lh = document.getElementById('diagram-left-handed');
+      if (lh) lh.checked = state.leftHanded;
     }
 
     function renderViewTabs() {
@@ -53,6 +99,18 @@
         btn.classList.toggle('active', btn.getAttribute('data-view') === state.viewMode);
       });
       tabs.style.display = state.instrument === 'baixo' ? 'none' : 'flex';
+    }
+
+    function renderScaleNav() {
+      var row = document.getElementById('scale-nav-row');
+      var label = document.getElementById('scale-nav-label');
+      if (!row) return;
+      if (state.viewMode !== 'scale' || state.instrument === 'baixo') {
+        row.classList.remove('show');
+        return;
+      }
+      row.classList.add('show');
+      if (label) label.textContent = 'Casa ' + state.scaleStart + ' – ' + (state.scaleStart + 12);
     }
 
     function renderChordChips() {
@@ -74,18 +132,17 @@
       var row = document.getElementById('shape-options-row');
       var el = document.getElementById('shape-options');
       if (!row || !el) return;
-
       if (state.viewMode !== 'chord' || state.instrument === 'baixo' || !state.shapeOptions.length) {
         row.classList.remove('show');
         el.innerHTML = '';
         return;
       }
-
       row.classList.add('show');
       el.innerHTML = state.shapeOptions.map(function (opt, idx) {
         var cls = 'chord-chip' + (idx === state.selectedShape ? ' active' : '');
-        return '<button type="button" class="' + cls + '" data-shape="' + idx + '">' +
-          CD.escText(opt.label) + ' · ' + CD.fretsLabel(opt.frets) + '</button>';
+        return '<button type="button" class="' + cls + '" data-shape="' + idx + '" title="' +
+          CD.escText(opt.source || '') + '">' +
+          CD.escText(opt.label) + '</button>';
       }).join('');
     }
 
@@ -93,13 +150,11 @@
       var row = document.getElementById('scale-options-row');
       var el = document.getElementById('scale-options');
       if (!row || !el) return;
-
       if (state.viewMode !== 'scale' || state.instrument === 'baixo' || !state.scaleOptions.length) {
         row.classList.remove('show');
         el.innerHTML = '';
         return;
       }
-
       row.classList.add('show');
       el.innerHTML = state.scaleOptions.map(function (sc, idx) {
         var cls = 'chord-chip' + (idx === state.selectedScale ? ' active' : '');
@@ -110,26 +165,26 @@
     function renderArpOptions() {
       var row = document.getElementById('arp-options-row');
       var el = document.getElementById('arp-options');
-      var title = row ? row.querySelector('.modal-option-title') : null;
-      var chord = currentChord();
       if (!row || !el) return;
-
       if (state.instrument !== 'baixo' || state.viewMode !== 'chord') {
         row.classList.remove('show');
         el.innerHTML = '';
         return;
       }
-
       row.classList.add('show');
-      var list = CD.availableBassPatterns(chord);
+      var list = CD.availableBassPatterns(currentChord());
       if (!list.some(function (p) { return p.id === state.arpPatternBass; })) {
         state.arpPatternBass = 'root';
       }
-      if (title) title.textContent = 'Arpejo e inversões';
       el.innerHTML = list.map(function (p) {
         var cls = 'chord-chip' + (p.id === state.arpPatternBass ? ' active' : '');
         return '<button type="button" class="' + cls + '" data-arp="' + p.id + '">' + p.label + '</button>';
       }).join('');
+    }
+
+    function showBodyMessage(html) {
+      var body = document.getElementById('chord-modal-body-content');
+      if (body) body.innerHTML = html;
     }
 
     function renderModalBody() {
@@ -139,17 +194,20 @@
       updateShapeOptions(chord);
       updateScaleOptions(chord);
       renderViewTabs();
+      syncDisplayToggles();
 
       var titleEl = document.getElementById('chordModalTitle');
       var notesEl = document.getElementById('chord-notes');
       var body = document.getElementById('chord-modal-body-content');
+      var opts = renderOpts();
 
       if (state.viewMode === 'scale' && state.instrument !== 'baixo') {
         titleEl.textContent = 'Escalas: ' + chord.display;
         var sc = state.scaleOptions[state.selectedScale];
         if (sc) {
-          notesEl.textContent = 'Tônica: ' + sc.root + ' · Notas: ' + (sc.notes || []).join(' · ');
-          body.innerHTML = CD.renderScaleDiagram(state.instrument, sc.root, sc.id, sc);
+          notesEl.innerHTML = 'Tônica: <strong>' + CD.escText(sc.root) + '</strong> · ' +
+            'Notas do acorde em <span class="diagram-legend-chord-tone">●</span> destaque';
+          body.innerHTML = CD.renderScaleDiagram(state.instrument, sc.root, sc.id, sc, opts);
         } else {
           notesEl.textContent = '';
           body.innerHTML = '<div class="text-muted">Nenhuma escala sugerida.</div>';
@@ -162,13 +220,15 @@
         titleEl.textContent = 'Acorde: ' + chord.display;
         notesEl.textContent = 'Notas: ' + (chord.notes || []).join(' · ');
         var shape = state.shapeOptions[state.selectedShape];
-        body.innerHTML = CD.renderChordDiagram(state.instrument, chord, shape);
+        body.innerHTML = CD.renderChordDiagram(state.instrument, chord, shape, opts);
       }
 
       renderChordChips();
       renderShapeOptions();
       renderScaleOptions();
       renderArpOptions();
+      renderScaleNav();
+      savePrefs(state);
     }
 
     function setViewMode(mode) {
@@ -205,19 +265,29 @@
     function openChordModal(symbol) {
       var clean = CD.sanitizeChordText(symbol);
       if (!clean) return;
+
       state.rawSymbol = clean;
+      showBodyMessage('<div class="diagram-loading text-center py-4"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div><div class="text-muted mt-2" style="font-size:var(--text-sm)">Carregando acorde…</div></div>');
+      document.getElementById('chord-notes').textContent = '';
+      modal.show();
+
       fetchChordInfo(clean)
         .then(function (data) {
-          if (!data || !Array.isArray(data.chords) || !data.chords.length) return;
+          if (!data || data.error || !Array.isArray(data.chords) || !data.chords.length) {
+            showBodyMessage('<div class="alert alert-warning mb-0">Não foi possível analisar o acorde <strong>' +
+              CD.escText(clean) + '</strong>. Verifique a notação.</div>');
+            return;
+          }
           state.chords = data.chords;
           state.selectedChord = 0;
           state.selectedShape = 0;
           state.selectedScale = 0;
           state.viewMode = 'chord';
           setInstrument(state.instrument || 'violao');
-          modal.show();
         })
-        .catch(function () {});
+        .catch(function () {
+          showBodyMessage('<div class="alert alert-danger mb-0">Erro ao carregar o diagrama. Tente novamente.</div>');
+        });
     }
 
     document.addEventListener('click', function (ev) {
@@ -225,6 +295,29 @@
       if (target && target.textContent && target.textContent.trim()) {
         ev.preventDefault();
         openChordModal(target.textContent.trim());
+        return;
+      }
+
+      var labelBtn = ev.target.closest('[data-label-mode]');
+      if (labelBtn) {
+        ev.preventDefault();
+        state.labelMode = labelBtn.getAttribute('data-label-mode') || 'dedos';
+        renderModalBody();
+        return;
+      }
+
+      var scalePrev = ev.target.closest('[data-scale-nav="prev"]');
+      if (scalePrev) {
+        ev.preventDefault();
+        state.scaleStart = Math.max(0, state.scaleStart - 3);
+        renderModalBody();
+        return;
+      }
+      var scaleNext = ev.target.closest('[data-scale-nav="next"]');
+      if (scaleNext) {
+        ev.preventDefault();
+        state.scaleStart = Math.min(12, state.scaleStart + 3);
+        renderModalBody();
         return;
       }
 
@@ -264,6 +357,8 @@
       if (scaleBtn) {
         ev.preventDefault();
         state.selectedScale = parseInt(scaleBtn.getAttribute('data-scale'), 10) || 0;
+        var sc = state.scaleOptions[state.selectedScale];
+        if (sc) state.scaleStart = CD.defaultScaleStart(CD.TUNINGS[state.instrument] || [], sc.root);
         renderModalBody();
         return;
       }
@@ -281,6 +376,19 @@
         ev.preventDefault();
         setBassType(bassBtn.getAttribute('data-bass') || '4');
       }
+    });
+
+    var lhCheck = document.getElementById('diagram-left-handed');
+    if (lhCheck) {
+      lhCheck.checked = state.leftHanded;
+      lhCheck.addEventListener('change', function () {
+        state.leftHanded = lhCheck.checked;
+        renderModalBody();
+      });
+    }
+
+    document.querySelectorAll('.chord-inst-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-inst') === state.instrument);
     });
 
     return { openChordModal: openChordModal, state: state };

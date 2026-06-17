@@ -453,7 +453,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app-wide-layout.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=20">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=3">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=4">
     {% block extra_head %}{% endblock %}
     {% include 'partials/google_ads_head.html' %}
 </head>
@@ -628,6 +628,15 @@
                         <button type="button" class="diagram-view-btn active" data-view="chord">Acorde</button>
                         <button type="button" class="diagram-view-btn" data-view="scale">Escalas</button>
                     </div>
+                    <div class="diagram-display-row mb-2">
+                        <span class="diagram-display-label">Exibir:</span>
+                        <button type="button" class="diagram-view-btn active" data-label-mode="dedos">Dedos</button>
+                        <button type="button" class="diagram-view-btn" data-label-mode="notas">Notas</button>
+                        <button type="button" class="diagram-view-btn" data-label-mode="intervalos">Intervalos</button>
+                        <label class="diagram-left-handed-toggle ms-auto">
+                            <input type="checkbox" id="diagram-left-handed"> Canhoto
+                        </label>
+                    </div>
                     <div class="chord-instruments" id="chord-instruments">
                         <button class="chord-inst-btn active" data-inst="violao">Violão</button>
                         <button class="chord-inst-btn" data-inst="cavaco">Cavaco</button>
@@ -646,6 +655,14 @@
                     <div class="modal-option-row" id="scale-options-row">
                         <div class="modal-option-title">Tipo de escala</div>
                         <div class="chord-chips" id="scale-options"></div>
+                    </div>
+                    <div class="modal-option-row" id="scale-nav-row">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="modal-option-title mb-0">Posição no braço</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-scale-nav="prev">← Anterior</button>
+                            <span id="scale-nav-label" class="text-muted small"></span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-scale-nav="next">Próxima →</button>
+                        </div>
                     </div>
                     <div class="modal-option-row" id="arp-options-row">
                         <div class="modal-option-title">Opções de arpejo</div>
@@ -670,18 +687,19 @@
     <script src="{{ url_for('static', filename='js/push-notifications.js') }}?v=1"></script>
     {% endif %}
     {% block chord_diagram %}
-    <script src="{{ url_for('static', filename='js/chord-diagram/constants.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/constants.js') }}?v=3"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/shapes.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/real-shapes.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/chords-db-shapes.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/fretboard-core.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/voicing-engine.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/auto-finger.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/theory.js') }}?v=3"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/renderer.js') }}?v=3"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/scale-theory.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/scale-renderer.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/theory.js') }}?v=4"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/renderer.js') }}?v=4"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/scale-theory.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/scale-renderer.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio.js') }}?v=2"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=4"></script>
     <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=1"></script>
     {% endblock %}
     {% include 'partials/google_ads_signup_event.html' %}

@@ -246,15 +246,15 @@
       });
     }
 
-    var autos = buildAutoShapes(tuning, chord.notes || [], 3);
+    var autos = [];
     if (CD.discoverVoicings) {
-      var discovered = CD.discoverVoicings(tuning, chord.notes || [], 6);
-      discovered.forEach(function (v) {
-        var k = fretsKey(v.frets);
-        var dup = autos.some(function (f) { return fretsKey(f) === k; });
-        if (!dup) autos.push(v.frets);
-      });
+      var discovered = CD.discoverVoicings(tuning, chord.notes || [], 8);
+      discovered.forEach(function (v) { autos.push(v.frets); });
     }
+    buildAutoShapes(tuning, chord.notes || [], 3).forEach(function (f) {
+      var k = fretsKey(f);
+      if (!autos.some(function (x) { return fretsKey(x) === k; })) autos.push(f);
+    });
     if (autos.length) {
       return autos.slice(0, 6).map(function (f, idx) {
         var fingers = CD.assignAutoFingers ? CD.assignAutoFingers(f) : null;
