@@ -26,7 +26,6 @@
       rows: rows,
       startFret: startFret,
       leftHanded: leftHanded,
-      marginX: 32,
     });
 
     var title = CD.escText((scaleMeta && scaleMeta.label) || def.label);
@@ -49,7 +48,7 @@
       var dx = CD.stringX(grid.marginX, grid.colGap, pt.string, tuning.length, leftHanded);
       var fy;
       if (pt.fret === 0 && startFret === 0) {
-        fy = grid.marginY - 10;
+        fy = grid.marginY - 12;
       } else {
         fy = CD.fretY(grid.marginY, grid.rowGap, pt.fret, startFret);
         if (fy < grid.marginY || fy > grid.marginY + grid.boardH) return;

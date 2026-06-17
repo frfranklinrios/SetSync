@@ -54,8 +54,13 @@ def write_js(bank: dict, path: Path) -> None:
     )
 
 
+def build_bass_arpeggio_bank() -> dict:
+    """Gera banco completo a partir das formas canônicas do manual."""
+    return default_seed_bank()
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser(description='Gera JSON de arpejos de baixo a partir do PDF')
+    ap = argparse.ArgumentParser(description='Gera JSON de arpejos de baixo a partir do manual (PDF opcional)')
     ap.add_argument(
         'pdf',
         nargs='?',
@@ -75,13 +80,13 @@ def main() -> int:
             if patterns:
                 extracted = patterns_to_bank(patterns)
                 bank = _merge_banks(seed, extracted)
-                print(f'Extraídos {len(patterns)} padrões do PDF; mesclados com seed.')
+                print(f'Extraídos {len(patterns)} padrões do PDF; mesclados com formas canônicas.')
             else:
-                print('PDF sem diagramas reconhecidos; usando seed do livro.')
+                print('PDF sem diagramas reconhecidos; usando formas canônicas do manual.')
         except Exception as exc:
-            print(f'Aviso: falha na extração ({exc}); usando seed.')
+            print(f'Aviso: falha na extração ({exc}); usando formas canônicas.')
     else:
-        print(f'PDF não encontrado ou inválido em {pdf_path}; gravando seed do livro.')
+        print(f'PDF não encontrado ou inválido em {pdf_path}; gravando formas canônicas do manual.')
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(bank, ensure_ascii=False, indent=2), encoding='utf-8')

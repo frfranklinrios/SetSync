@@ -97,7 +97,7 @@
       startFret: startFret,
       leftHanded: leftHanded,
     });
-    var topMarkerY = grid.marginY - 13;
+    var topMarkerY = grid.marginY - 12;
 
     var barres = resolveBarres(frets, fingers, adapted.barres);
     var chordName = CD.escText(chord.display || chord.input || '');

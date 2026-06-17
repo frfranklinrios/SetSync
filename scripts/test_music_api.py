@@ -72,9 +72,21 @@ def main():
     arp = build_arpeggio_document('Am7', instrument='baixo')
     check(arp.get('type') == 'arpeggio' and arp.get('sequence'), 'arpeggio sequence')
     check(len(arp.get('fretboardSteps') or []) >= 4, 'arpeggio bank steps Am7')
+    am_steps = arp.get('fretboardSteps') or []
+    check(any(s.get('string') == 'A' and s.get('fret') == 0 for s in am_steps), 'Am7 forma m7 do manual')
 
     arp_c = build_arpeggio_document('Cmaj7', instrument='baixo')
     check(arp_c.get('arpeggioPattern', {}).get('label', '').startswith('C Major'), 'Cmaj7 do livro')
+    c_steps = arp_c.get('fretboardSteps') or []
+    check(c_steps[0].get('fret') == 3 and c_steps[0].get('note') == 'C', 'Cmaj7 casa 3 A corda')
+
+    arp_br = build_arpeggio_document('C7+', instrument='baixo')
+    check(len(arp_br.get('fretboardSteps') or []) >= 4, 'arpeggio C7+ notação BR')
+
+    arp_em = build_arpeggio_document('Em7', instrument='baixo')
+    em_steps = arp_em.get('fretboardSteps') or []
+    check(len(em_steps) >= 5, 'arpeggio Em7 passos do livro')
+    check(any(s.get('note') == 'E' and s.get('isRoot') for s in em_steps), 'Em7 tônica E')
 
     piano = build_chord_document('Cmaj9', instrument='piano')
     check('keyMappings' in piano and len(piano['keyMappings']) >= 4, 'piano Cmaj9')

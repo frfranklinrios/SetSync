@@ -65,13 +65,14 @@
     var rowGap = L.rowGap;
     var boardW = (tuning.length - 1) * colGap;
     var boardH = rows * rowGap;
-    var padX = 8;
-    var padY = 8;
+    var padX = L.boardPad || 8;
+    var padY = L.boardPad || 8;
+    var boardRadius = L.boardRadius || 10;
     var parts = [];
 
     parts.push(
       '<rect class="diagram-board" x="' + (marginX - padX) + '" y="' + (marginY - padY) + '" ',
-      'width="' + (boardW + padX * 2) + '" height="' + (boardH + padY * 2) + '" rx="10"></rect>'
+      'width="' + (boardW + padX * 2) + '" height="' + (boardH + padY * 2) + '" rx="' + boardRadius + '"></rect>'
     );
 
     for (var rr = 0; rr <= rows; rr++) {
@@ -107,8 +108,88 @@
       colGap: colGap,
       rowGap: rowGap,
       svgW: marginX * 2 + boardW,
-      svgH: marginY + boardH + 48,
+      svgH: marginY + boardH + (L.bottomPad || 48),
     };
+  }
+
+  /** Grade horizontal — arpejos de baixo (cordas em linhas, trastes em colunas). */
+  function renderHorizontalFretboardGrid(opts) {
+    var L = CD.LAYOUT;
+    var tuning = opts.tuning || [];
+    var rows = tuning.slice().reverse();
+    var cols = opts.cols || L.bassCols || 6;
+    var startFret = opts.startFret || 0;
+    var marginLeft = opts.marginLeft != null ? opts.marginLeft : L.marginX;
+    var marginTop = opts.marginTop != null ? opts.marginTop : L.marginY;
+    var colGap = L.colGap;
+    var rowGap = L.rowGap;
+    var boardW = cols * colGap;
+    var boardH = (rows.length - 1) * rowGap;
+    var padX = L.boardPad || 8;
+    var padY = L.boardPad || 8;
+    var boardRadius = L.boardRadius || 10;
+    var labelX = L.sideLabelX || 18;
+    var parts = [];
+
+    parts.push(
+      '<rect class="diagram-board" x="' + (marginLeft - padX) + '" y="' + (marginTop - padY) + '" ',
+      'width="' + (boardW + padX * 2) + '" height="' + (boardH + padY * 2) + '" rx="' + boardRadius + '"></rect>'
+    );
+
+    for (var r = 0; r < rows.length; r++) {
+      var y = marginTop + (r * rowGap);
+      parts.push(
+        '<line class="diagram-string" x1="' + marginLeft + '" y1="' + y + '" x2="' + (marginLeft + boardW) + '" y2="' + y + '"></line>',
+        '<text class="diagram-side-label diagram-string-side" x="' + labelX + '" y="' + y + '">' + CD.escText(rows[r]) + '</text>'
+      );
+    }
+
+    for (var c = 0; c <= cols; c++) {
+      var x = marginLeft + (c * colGap);
+      var isNut = c === 0 && startFret === 0;
+      parts.push(
+        '<line class="' + (isNut ? 'diagram-nut' : 'diagram-fret') + '" x1="' + x + '" y1="' + marginTop + '" x2="' + x + '" y2="' + (marginTop + boardH) + '"></line>'
+      );
+    }
+
+    var labelY = marginTop + boardH + 18;
+    for (var fc = 0; fc < cols; fc++) {
+      var fretNum = startFret + fc + 1;
+      parts.push(
+        '<text class="diagram-tuning diagram-fret-bottom" x="' + (marginLeft + fc * colGap + colGap / 2) + '" y="' + labelY + '">' + fretNum + '</text>'
+      );
+    }
+
+    return {
+      html: parts.join(''),
+      rows: rows,
+      rowIndex: rows.reduce(function (acc, s, i) { acc[s] = i; return acc; }, {}),
+      boardW: boardW,
+      boardH: boardH,
+      marginLeft: marginLeft,
+      marginTop: marginTop,
+      colGap: colGap,
+      rowGap: rowGap,
+      cols: cols,
+      startFret: startFret,
+      svgW: marginLeft + boardW + (L.marginX - padX),
+      svgH: marginTop + boardH + (L.bottomPad || 48),
+    };
+  }
+
+  function horizontalFretX(grid, fret) {
+    if (fret === 0) return grid.marginLeft - (CD.LAYOUT.openR || 7) - 6;
+    return grid.marginLeft + ((fret - grid.startFret - 0.5) * grid.colGap);
+  }
+
+  function horizontalStringY(grid, stringName) {
+    var idx = grid.rowIndex[stringName];
+    if (idx == null) return null;
+    return grid.marginTop + (idx * grid.rowGap);
+  }
+
+  function fretVisible(fret, startFret, cols) {
+    return fret > startFret && fret <= startFret + cols;
   }
 
   function renderTuningLabels(tuning, layout, leftHanded) {
@@ -147,6 +228,10 @@
   CD.stringX = stringX;
   CD.mirrorString = mirrorString;
   CD.renderFretboardGrid = renderFretboardGrid;
+  CD.renderHorizontalFretboardGrid = renderHorizontalFretboardGrid;
+  CD.horizontalFretX = horizontalFretX;
+  CD.horizontalStringY = horizontalStringY;
+  CD.fretVisible = fretVisible;
   CD.renderTuningLabels = renderTuningLabels;
   CD.intervalLabel = intervalLabel;
   CD.noteAt = noteAt;

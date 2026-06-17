@@ -3,7 +3,7 @@
   var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});
   CD.BASS_ARPEGGIO_BANK = {
   "meta": {
-    "source": "The Bass Guitar Resource Book (Dan Hawkins / Online Bass Courses)",
+    "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
     "instrument": "baixo4",
     "tuning": [
       "E",
@@ -11,70 +11,314 @@
       "D",
       "G"
     ],
-    "strings": 4
+    "strings": 4,
+    "templateRoot": "C",
+    "qualities": [
+      "maj7",
+      "maj",
+      "7",
+      "m7",
+      "m",
+      "m7b5",
+      "dim",
+      "aug"
+    ]
+  },
+  "qualityTemplates": {
+    "maj7": [
+      {
+        "string": "A",
+        "fret": 3,
+        "finger": 1,
+        "interval": "1",
+        "note": "C",
+        "isRoot": true
+      },
+      {
+        "string": "D",
+        "fret": 2,
+        "finger": 1,
+        "interval": "3",
+        "note": "E"
+      },
+      {
+        "string": "D",
+        "fret": 5,
+        "finger": 4,
+        "interval": "5",
+        "note": "G"
+      },
+      {
+        "string": "G",
+        "fret": 4,
+        "finger": 3,
+        "interval": "7",
+        "note": "B"
+      },
+      {
+        "string": "G",
+        "fret": 5,
+        "finger": 4,
+        "interval": "8",
+        "note": "C",
+        "isRoot": true
+      }
+    ],
+    "maj": [
+      {
+        "string": "A",
+        "fret": 3,
+        "finger": 1,
+        "interval": "1",
+        "note": "C",
+        "isRoot": true
+      },
+      {
+        "string": "D",
+        "fret": 2,
+        "finger": 1,
+        "interval": "3",
+        "note": "E"
+      },
+      {
+        "string": "D",
+        "fret": 5,
+        "finger": 4,
+        "interval": "5",
+        "note": "G"
+      },
+      {
+        "string": "G",
+        "fret": 5,
+        "finger": 4,
+        "interval": "8",
+        "note": "C",
+        "isRoot": true
+      }
+    ],
+    "7": [
+      {
+        "string": "A",
+        "fret": 3,
+        "finger": 1,
+        "interval": "1",
+        "note": "C",
+        "isRoot": true
+      },
+      {
+        "string": "D",
+        "fret": 2,
+        "finger": 1,
+        "interval": "3",
+        "note": "E"
+      },
+      {
+        "string": "D",
+        "fret": 5,
+        "finger": 4,
+        "interval": "5",
+        "note": "G"
+      },
+      {
+        "string": "G",
+        "fret": 3,
+        "finger": 2,
+        "interval": "b7",
+        "note": "Bb"
+      },
+      {
+        "string": "G",
+        "fret": 5,
+        "finger": 4,
+        "interval": "8",
+        "note": "C",
+        "isRoot": true
+      }
+    ],
+    "m7": [
+      {
+        "string": "A",
+        "fret": 3,
+        "finger": 1,
+        "interval": "1",
+        "note": "C",
+        "isRoot": true
+      },
+      {
+        "string": "D",
+        "fret": 3,
+        "finger": 2,
+        "interval": "b3",
+        "note": "Eb"
+      },
+      {
+        "string": "G",
+        "fret": 0,
+        "finger": 0,
+        "interval": "5",
+        "note": "G"
+      },
+      {
+        "string": "G",
+        "fret": 4,
+        "finger": 3,
+        "interval": "b7",
+        "note": "Bb"
+      },
+      {
+        "string": "G",
+        "fret": 5,
+        "finger": 4,
+        "interval": "8",
+        "note": "C",
+        "isRoot": true
+      }
+    ],
+    "m": [
+      {
+        "string": "A",
+        "fret": 3,
+        "finger": 1,
+        "interval": "1",
+        "note": "C",
+        "isRoot": true
+      },
+      {
+        "string": "D",
+        "fret": 3,
+        "finger": 2,
+        "interval": "b3",
+        "note": "Eb"
+      },
+      {
+        "string": "G",
+        "fret": 0,
+        "finger": 0,
+        "interval": "5",
+        "note": "G"
+      },
+      {
+        "string": "G",
+        "fret": 5,
+        "finger": 4,
+        "interval": "8",
+        "note": "C",
+        "isRoot": true
+      }
+    ],
+    "m7b5": [
+      {
+        "string": "A",
+        "fret": 2,
+        "finger": 1,
+        "interval": "1",
+        "note": "B",
+        "isRoot": true
+      },
+      {
+        "string": "D",
+        "fret": 0,
+        "finger": 0,
+        "interval": "b3",
+        "note": "D"
+      },
+      {
+        "string": "D",
+        "fret": 3,
+        "finger": 3,
+        "interval": "b5",
+        "note": "F"
+      },
+      {
+        "string": "G",
+        "fret": 2,
+        "finger": 2,
+        "interval": "b7",
+        "note": "A"
+      },
+      {
+        "string": "A",
+        "fret": 2,
+        "finger": 1,
+        "interval": "8",
+        "note": "B",
+        "isRoot": true
+      }
+    ],
+    "dim": [
+      {
+        "string": "A",
+        "fret": 3,
+        "finger": 1,
+        "interval": "1",
+        "note": "C",
+        "isRoot": true
+      },
+      {
+        "string": "D",
+        "fret": 3,
+        "finger": 2,
+        "interval": "b3",
+        "note": "Eb"
+      },
+      {
+        "string": "D",
+        "fret": 6,
+        "finger": 4,
+        "interval": "b5",
+        "note": "Gb"
+      },
+      {
+        "string": "G",
+        "fret": 5,
+        "finger": 4,
+        "interval": "8",
+        "note": "C",
+        "isRoot": true
+      }
+    ],
+    "aug": [
+      {
+        "string": "A",
+        "fret": 3,
+        "finger": 1,
+        "interval": "1",
+        "note": "C",
+        "isRoot": true
+      },
+      {
+        "string": "D",
+        "fret": 2,
+        "finger": 1,
+        "interval": "3",
+        "note": "E"
+      },
+      {
+        "string": "G",
+        "fret": 1,
+        "finger": 1,
+        "interval": "#5",
+        "note": "G#"
+      },
+      {
+        "string": "G",
+        "fret": 5,
+        "finger": 4,
+        "interval": "8",
+        "note": "C",
+        "isRoot": true
+      }
+    ]
   },
   "patterns": {
     "C": [
       {
-        "id": "C_maj7_harm",
-        "label": "C Major 7 (I)",
-        "root": "C",
-        "quality": "maj7",
-        "pattern": "root",
-        "roman": "I",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "C",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "3",
-            "note": "E"
-          },
-          {
-            "string": "D",
-            "fret": 5,
-            "finger": 4,
-            "interval": "5",
-            "note": "G"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "7",
-            "note": "B"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "C",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "C",
-          "Cmaj7",
-          "CΔ7"
-        ]
-      },
-      {
-        "id": "C_maj_triad",
-        "label": "Major Triad",
+        "id": "C_maj",
+        "label": "C Major Triad",
         "root": "C",
         "quality": "maj",
         "pattern": "root",
-        "source": "The Bass Guitar Resource Book",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
         "steps": [
           {
             "string": "A",
@@ -89,14 +333,16 @@
             "fret": 2,
             "finger": 1,
             "interval": "3",
-            "note": "E"
+            "note": "E",
+            "isRoot": false
           },
           {
             "string": "D",
             "fret": 5,
             "finger": 4,
             "interval": "5",
-            "note": "G"
+            "note": "G",
+            "isRoot": false
           },
           {
             "string": "G",
@@ -108,20 +354,65 @@
           }
         ],
         "symbols": [
-          "C",
+          "C"
+        ]
+      }
+    ],
+    "Cmaj": [
+      {
+        "id": "C_maj",
+        "label": "C Major Triad",
+        "root": "C",
+        "quality": "maj",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 3,
+            "finger": 1,
+            "interval": "1",
+            "note": "C",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 2,
+            "finger": 1,
+            "interval": "3",
+            "note": "E",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 5,
+            "finger": 4,
+            "interval": "5",
+            "note": "G",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 5,
+            "finger": 4,
+            "interval": "8",
+            "note": "C",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
           "Cmaj"
         ]
       }
     ],
     "Cmaj7": [
       {
-        "id": "C_maj7_harm",
-        "label": "C Major 7 (I)",
+        "id": "C_maj7",
+        "label": "C Major 7",
         "root": "C",
         "quality": "maj7",
         "pattern": "root",
-        "roman": "I",
-        "source": "The Bass Guitar Resource Book",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
         "steps": [
           {
             "string": "A",
@@ -136,1056 +427,24 @@
             "fret": 2,
             "finger": 1,
             "interval": "3",
-            "note": "E"
-          },
-          {
-            "string": "D",
-            "fret": 5,
-            "finger": 4,
-            "interval": "5",
-            "note": "G"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "7",
-            "note": "B"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "C",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "C",
-          "Cmaj7",
-          "CΔ7"
-        ]
-      }
-    ],
-    "CΔ7": [
-      {
-        "id": "C_maj7_harm",
-        "label": "C Major 7 (I)",
-        "root": "C",
-        "quality": "maj7",
-        "pattern": "root",
-        "roman": "I",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "C",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "3",
-            "note": "E"
-          },
-          {
-            "string": "D",
-            "fret": 5,
-            "finger": 4,
-            "interval": "5",
-            "note": "G"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "7",
-            "note": "B"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "C",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "C",
-          "Cmaj7",
-          "CΔ7"
-        ]
-      }
-    ],
-    "Dm": [
-      {
-        "id": "D_m7_harm",
-        "label": "D Minor 7 (ii)",
-        "root": "D",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "ii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 5,
-            "finger": 1,
-            "interval": "1",
-            "note": "D",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 1,
-            "interval": "b3",
-            "note": "F"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "b7",
-            "note": "C"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "D",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Dm",
-          "Dm7",
-          "D-7"
-        ]
-      }
-    ],
-    "Dm7": [
-      {
-        "id": "D_m7_harm",
-        "label": "D Minor 7 (ii)",
-        "root": "D",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "ii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 5,
-            "finger": 1,
-            "interval": "1",
-            "note": "D",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 1,
-            "interval": "b3",
-            "note": "F"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "b7",
-            "note": "C"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "D",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Dm",
-          "Dm7",
-          "D-7"
-        ]
-      }
-    ],
-    "D-7": [
-      {
-        "id": "D_m7_harm",
-        "label": "D Minor 7 (ii)",
-        "root": "D",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "ii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 5,
-            "finger": 1,
-            "interval": "1",
-            "note": "D",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 1,
-            "interval": "b3",
-            "note": "F"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "b7",
-            "note": "C"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "D",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Dm",
-          "Dm7",
-          "D-7"
-        ]
-      }
-    ],
-    "Em": [
-      {
-        "id": "E_m7_harm",
-        "label": "E Minor 7 (iii)",
-        "root": "E",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "iii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 7,
-            "finger": 1,
-            "interval": "1",
             "note": "E",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "b3",
-            "note": "G"
-          },
-          {
-            "string": "D",
-            "fret": 4,
-            "finger": 3,
-            "interval": "5",
-            "note": "B"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "b7",
-            "note": "D"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "8",
-            "note": "E",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Em",
-          "Em7",
-          "E-7"
-        ]
-      }
-    ],
-    "Em7": [
-      {
-        "id": "E_m7_harm",
-        "label": "E Minor 7 (iii)",
-        "root": "E",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "iii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 7,
-            "finger": 1,
-            "interval": "1",
-            "note": "E",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "b3",
-            "note": "G"
-          },
-          {
-            "string": "D",
-            "fret": 4,
-            "finger": 3,
-            "interval": "5",
-            "note": "B"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "b7",
-            "note": "D"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "8",
-            "note": "E",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Em",
-          "Em7",
-          "E-7"
-        ]
-      }
-    ],
-    "E-7": [
-      {
-        "id": "E_m7_harm",
-        "label": "E Minor 7 (iii)",
-        "root": "E",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "iii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 7,
-            "finger": 1,
-            "interval": "1",
-            "note": "E",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "b3",
-            "note": "G"
-          },
-          {
-            "string": "D",
-            "fret": 4,
-            "finger": 3,
-            "interval": "5",
-            "note": "B"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "b7",
-            "note": "D"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "8",
-            "note": "E",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Em",
-          "Em7",
-          "E-7"
-        ]
-      }
-    ],
-    "F": [
-      {
-        "id": "F_maj7_harm",
-        "label": "F Major 7 (IV)",
-        "root": "F",
-        "quality": "maj7",
-        "pattern": "root",
-        "roman": "IV",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "F",
-            "isRoot": true
+            "isRoot": false
           },
           {
             "string": "D",
             "fret": 5,
-            "finger": 3,
-            "interval": "3",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "C"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "7",
-            "note": "E"
-          },
-          {
-            "string": "D",
-            "fret": 7,
             "finger": 4,
-            "interval": "8",
-            "note": "F",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "F",
-          "Fmaj7",
-          "FΔ7"
-        ]
-      }
-    ],
-    "Fmaj7": [
-      {
-        "id": "F_maj7_harm",
-        "label": "F Major 7 (IV)",
-        "root": "F",
-        "quality": "maj7",
-        "pattern": "root",
-        "roman": "IV",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "F",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 5,
-            "finger": 3,
-            "interval": "3",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
             "interval": "5",
-            "note": "C"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "7",
-            "note": "E"
-          },
-          {
-            "string": "D",
-            "fret": 7,
-            "finger": 4,
-            "interval": "8",
-            "note": "F",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "F",
-          "Fmaj7",
-          "FΔ7"
-        ]
-      }
-    ],
-    "FΔ7": [
-      {
-        "id": "F_maj7_harm",
-        "label": "F Major 7 (IV)",
-        "root": "F",
-        "quality": "maj7",
-        "pattern": "root",
-        "roman": "IV",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "F",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 5,
-            "finger": 3,
-            "interval": "3",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "C"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "7",
-            "note": "E"
-          },
-          {
-            "string": "D",
-            "fret": 7,
-            "finger": 4,
-            "interval": "8",
-            "note": "F",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "F",
-          "Fmaj7",
-          "FΔ7"
-        ]
-      }
-    ],
-    "G": [
-      {
-        "id": "G_7_harm",
-        "label": "G Dominant 7 (V)",
-        "root": "G",
-        "quality": "7",
-        "pattern": "root",
-        "roman": "V",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "G",
-            "fret": 0,
-            "finger": 0,
-            "interval": "1",
             "note": "G",
-            "isRoot": true
-          },
-          {
-            "string": "A",
-            "fret": 2,
-            "finger": 1,
-            "interval": "3",
-            "note": "B"
-          },
-          {
-            "string": "D",
-            "fret": 0,
-            "finger": 0,
-            "interval": "5",
-            "note": "D"
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 2,
-            "interval": "b7",
-            "note": "F"
+            "isRoot": false
           },
           {
             "string": "G",
-            "fret": 0,
-            "finger": 0,
-            "interval": "8",
-            "note": "G",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "G",
-          "G7"
-        ]
-      }
-    ],
-    "G7": [
-      {
-        "id": "G_7_harm",
-        "label": "G Dominant 7 (V)",
-        "root": "G",
-        "quality": "7",
-        "pattern": "root",
-        "roman": "V",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "G",
-            "fret": 0,
-            "finger": 0,
-            "interval": "1",
-            "note": "G",
-            "isRoot": true
-          },
-          {
-            "string": "A",
-            "fret": 2,
-            "finger": 1,
-            "interval": "3",
-            "note": "B"
-          },
-          {
-            "string": "D",
-            "fret": 0,
-            "finger": 0,
-            "interval": "5",
-            "note": "D"
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 2,
-            "interval": "b7",
-            "note": "F"
-          },
-          {
-            "string": "G",
-            "fret": 0,
-            "finger": 0,
-            "interval": "8",
-            "note": "G",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "G",
-          "G7"
-        ]
-      }
-    ],
-    "Am": [
-      {
-        "id": "A_m7_harm",
-        "label": "A Minor 7 (vi)",
-        "root": "A",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "vi",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "1",
-            "note": "A",
-            "isRoot": true
-          },
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 2,
-            "interval": "b3",
-            "note": "C"
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "E"
-          },
-          {
-            "string": "G",
-            "fret": 0,
-            "finger": 0,
-            "interval": "b7",
-            "note": "G"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "8",
-            "note": "A",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Am",
-          "Am7",
-          "A-7"
-        ]
-      }
-    ],
-    "Am7": [
-      {
-        "id": "A_m7_harm",
-        "label": "A Minor 7 (vi)",
-        "root": "A",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "vi",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "1",
-            "note": "A",
-            "isRoot": true
-          },
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 2,
-            "interval": "b3",
-            "note": "C"
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "E"
-          },
-          {
-            "string": "G",
-            "fret": 0,
-            "finger": 0,
-            "interval": "b7",
-            "note": "G"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "8",
-            "note": "A",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Am",
-          "Am7",
-          "A-7"
-        ]
-      }
-    ],
-    "A-7": [
-      {
-        "id": "A_m7_harm",
-        "label": "A Minor 7 (vi)",
-        "root": "A",
-        "quality": "m7",
-        "pattern": "root",
-        "roman": "vi",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "1",
-            "note": "A",
-            "isRoot": true
-          },
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 2,
-            "interval": "b3",
-            "note": "C"
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "E"
-          },
-          {
-            "string": "G",
-            "fret": 0,
-            "finger": 0,
-            "interval": "b7",
-            "note": "G"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "8",
-            "note": "A",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Am",
-          "Am7",
-          "A-7"
-        ]
-      }
-    ],
-    "Bm7b5": [
-      {
-        "id": "B_m7b5_harm",
-        "label": "B Minor 7 b5 (vii)",
-        "root": "B",
-        "quality": "m7b5",
-        "pattern": "root",
-        "roman": "vii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 2,
-            "finger": 1,
-            "interval": "1",
-            "note": "B",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 0,
-            "finger": 0,
-            "interval": "b3",
-            "note": "D"
-          },
-          {
-            "string": "D",
-            "fret": 3,
+            "fret": 4,
             "finger": 3,
-            "interval": "b5",
-            "note": "F"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 2,
-            "interval": "b7",
-            "note": "A"
-          },
-          {
-            "string": "A",
-            "fret": 2,
-            "finger": 1,
-            "interval": "8",
+            "interval": "7",
             "note": "B",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Bm7b5",
-          "Bø",
-          "Bm7(b5)"
-        ]
-      }
-    ],
-    "Bø": [
-      {
-        "id": "B_m7b5_harm",
-        "label": "B Minor 7 b5 (vii)",
-        "root": "B",
-        "quality": "m7b5",
-        "pattern": "root",
-        "roman": "vii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 2,
-            "finger": 1,
-            "interval": "1",
-            "note": "B",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 0,
-            "finger": 0,
-            "interval": "b3",
-            "note": "D"
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 3,
-            "interval": "b5",
-            "note": "F"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 2,
-            "interval": "b7",
-            "note": "A"
-          },
-          {
-            "string": "A",
-            "fret": 2,
-            "finger": 1,
-            "interval": "8",
-            "note": "B",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Bm7b5",
-          "Bø",
-          "Bm7(b5)"
-        ]
-      }
-    ],
-    "Bm7(b5)": [
-      {
-        "id": "B_m7b5_harm",
-        "label": "B Minor 7 b5 (vii)",
-        "root": "B",
-        "quality": "m7b5",
-        "pattern": "root",
-        "roman": "vii",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 2,
-            "finger": 1,
-            "interval": "1",
-            "note": "B",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 0,
-            "finger": 0,
-            "interval": "b3",
-            "note": "D"
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 3,
-            "interval": "b5",
-            "note": "F"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 2,
-            "interval": "b7",
-            "note": "A"
-          },
-          {
-            "string": "A",
-            "fret": 2,
-            "finger": 1,
-            "interval": "8",
-            "note": "B",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Bm7b5",
-          "Bø",
-          "Bm7(b5)"
-        ]
-      }
-    ],
-    "Cmaj": [
-      {
-        "id": "C_maj_triad",
-        "label": "Major Triad",
-        "root": "C",
-        "quality": "maj",
-        "pattern": "root",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "C",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 2,
-            "finger": 1,
-            "interval": "3",
-            "note": "E"
-          },
-          {
-            "string": "D",
-            "fret": 5,
-            "finger": 4,
-            "interval": "5",
-            "note": "G"
+            "isRoot": false
           },
           {
             "string": "G",
@@ -1197,160 +456,18 @@
           }
         ],
         "symbols": [
-          "C",
-          "Cmaj"
-        ]
-      }
-    ],
-    "Cm": [
-      {
-        "id": "C_min_triad",
-        "label": "Minor Triad",
-        "root": "C",
-        "quality": "m",
-        "pattern": "root",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "C",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 2,
-            "interval": "b3",
-            "note": "Eb"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "C",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Cm",
-          "Cmin",
-          "C-"
-        ]
-      }
-    ],
-    "Cmin": [
-      {
-        "id": "C_min_triad",
-        "label": "Minor Triad",
-        "root": "C",
-        "quality": "m",
-        "pattern": "root",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "C",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 2,
-            "interval": "b3",
-            "note": "Eb"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "C",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Cm",
-          "Cmin",
-          "C-"
-        ]
-      }
-    ],
-    "C-": [
-      {
-        "id": "C_min_triad",
-        "label": "Minor Triad",
-        "root": "C",
-        "quality": "m",
-        "pattern": "root",
-        "source": "The Bass Guitar Resource Book",
-        "steps": [
-          {
-            "string": "A",
-            "fret": 3,
-            "finger": 1,
-            "interval": "1",
-            "note": "C",
-            "isRoot": true
-          },
-          {
-            "string": "D",
-            "fret": 3,
-            "finger": 2,
-            "interval": "b3",
-            "note": "Eb"
-          },
-          {
-            "string": "G",
-            "fret": 2,
-            "finger": 1,
-            "interval": "5",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 5,
-            "finger": 4,
-            "interval": "8",
-            "note": "C",
-            "isRoot": true
-          }
-        ],
-        "symbols": [
-          "Cm",
-          "Cmin",
-          "C-"
+          "Cmaj7"
         ]
       }
     ],
     "C7": [
       {
-        "id": "C_7_dom",
-        "label": "Dominant 7",
+        "id": "C_7",
+        "label": "C Dominant 7",
         "root": "C",
         "quality": "7",
         "pattern": "root",
-        "source": "The Bass Guitar Resource Book",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
         "steps": [
           {
             "string": "A",
@@ -1365,21 +482,24 @@
             "fret": 2,
             "finger": 1,
             "interval": "3",
-            "note": "E"
+            "note": "E",
+            "isRoot": false
           },
           {
             "string": "D",
             "fret": 5,
             "finger": 4,
             "interval": "5",
-            "note": "G"
+            "note": "G",
+            "isRoot": false
           },
           {
             "string": "G",
             "fret": 3,
             "finger": 2,
             "interval": "b7",
-            "note": "Bb"
+            "note": "A#",
+            "isRoot": false
           },
           {
             "string": "G",
@@ -1395,14 +515,14 @@
         ]
       }
     ],
-    "Cm7": [
+    "Cm": [
       {
-        "id": "C_m7_qual",
-        "label": "Minor 7",
+        "id": "C_m",
+        "label": "C Minor Triad",
         "root": "C",
-        "quality": "m7",
+        "quality": "m",
         "pattern": "root",
-        "source": "The Bass Guitar Resource Book",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
         "steps": [
           {
             "string": "A",
@@ -1414,24 +534,19 @@
           },
           {
             "string": "D",
-            "fret": 3,
+            "fret": 1,
             "finger": 2,
             "interval": "b3",
-            "note": "Eb"
+            "note": "D#",
+            "isRoot": false
           },
           {
             "string": "G",
-            "fret": 2,
-            "finger": 1,
+            "fret": 0,
+            "finger": 0,
             "interval": "5",
-            "note": "A"
-          },
-          {
-            "string": "G",
-            "fret": 4,
-            "finger": 3,
-            "interval": "b7",
-            "note": "D"
+            "note": "G",
+            "isRoot": false
           },
           {
             "string": "G",
@@ -1443,19 +558,18 @@
           }
         ],
         "symbols": [
-          "Cm7",
-          "C-7"
+          "Cm"
         ]
       }
     ],
-    "C-7": [
+    "Cm7": [
       {
-        "id": "C_m7_qual",
-        "label": "Minor 7",
+        "id": "C_m7",
+        "label": "C Minor 7",
         "root": "C",
         "quality": "m7",
         "pattern": "root",
-        "source": "The Bass Guitar Resource Book",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
         "steps": [
           {
             "string": "A",
@@ -1467,24 +581,27 @@
           },
           {
             "string": "D",
-            "fret": 3,
+            "fret": 1,
             "finger": 2,
             "interval": "b3",
-            "note": "Eb"
+            "note": "D#",
+            "isRoot": false
           },
           {
             "string": "G",
-            "fret": 2,
-            "finger": 1,
+            "fret": 0,
+            "finger": 0,
             "interval": "5",
-            "note": "A"
+            "note": "G",
+            "isRoot": false
           },
           {
             "string": "G",
-            "fret": 4,
+            "fret": 3,
             "finger": 3,
             "interval": "b7",
-            "note": "D"
+            "note": "A#",
+            "isRoot": false
           },
           {
             "string": "G",
@@ -1496,8 +613,706 @@
           }
         ],
         "symbols": [
-          "Cm7",
-          "C-7"
+          "Cm7"
+        ]
+      }
+    ],
+    "Cdim": [
+      {
+        "id": "C_dim",
+        "label": "C Diminished Triad",
+        "root": "C",
+        "quality": "dim",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 3,
+            "finger": 1,
+            "interval": "1",
+            "note": "C",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 1,
+            "finger": 2,
+            "interval": "b3",
+            "note": "D#",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 4,
+            "finger": 4,
+            "interval": "b5",
+            "note": "F#",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 5,
+            "finger": 4,
+            "interval": "8",
+            "note": "C",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Cdim"
+        ]
+      }
+    ],
+    "Caug": [
+      {
+        "id": "C_aug",
+        "label": "C Augmented Triad",
+        "root": "C",
+        "quality": "aug",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 3,
+            "finger": 1,
+            "interval": "1",
+            "note": "C",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 2,
+            "finger": 1,
+            "interval": "3",
+            "note": "E",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 1,
+            "finger": 1,
+            "interval": "#5",
+            "note": "G#",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 5,
+            "finger": 4,
+            "interval": "8",
+            "note": "C",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Caug"
+        ]
+      }
+    ],
+    "Cm7b5": [
+      {
+        "id": "C_m7b5",
+        "label": "C Minor 7 b5",
+        "root": "C",
+        "quality": "m7b5",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 3,
+            "finger": 1,
+            "interval": "1",
+            "note": "C",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 1,
+            "finger": 0,
+            "interval": "b3",
+            "note": "D#",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 4,
+            "finger": 3,
+            "interval": "b5",
+            "note": "F#",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 3,
+            "finger": 2,
+            "interval": "b7",
+            "note": "A#",
+            "isRoot": false
+          },
+          {
+            "string": "A",
+            "fret": 3,
+            "finger": 1,
+            "interval": "8",
+            "note": "C",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Cm7b5"
+        ]
+      }
+    ],
+    "Am7": [
+      {
+        "id": "A_m7",
+        "label": "A Minor 7",
+        "root": "A",
+        "quality": "m7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 0,
+            "finger": 1,
+            "interval": "1",
+            "note": "A",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 10,
+            "finger": 2,
+            "interval": "b3",
+            "note": "C",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 9,
+            "finger": 0,
+            "interval": "5",
+            "note": "E",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 0,
+            "finger": 3,
+            "interval": "b7",
+            "note": "G",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 2,
+            "finger": 4,
+            "interval": "8",
+            "note": "A",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Am7"
+        ]
+      }
+    ],
+    "Dm7": [
+      {
+        "id": "D_m7",
+        "label": "D Minor 7",
+        "root": "D",
+        "quality": "m7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 5,
+            "finger": 1,
+            "interval": "1",
+            "note": "D",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 3,
+            "finger": 2,
+            "interval": "b3",
+            "note": "F",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 2,
+            "finger": 0,
+            "interval": "5",
+            "note": "A",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 5,
+            "finger": 3,
+            "interval": "b7",
+            "note": "C",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 7,
+            "finger": 4,
+            "interval": "8",
+            "note": "D",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Dm7"
+        ]
+      }
+    ],
+    "Em7": [
+      {
+        "id": "E_m7",
+        "label": "E Minor 7",
+        "root": "E",
+        "quality": "m7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 7,
+            "finger": 1,
+            "interval": "1",
+            "note": "E",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 5,
+            "finger": 2,
+            "interval": "b3",
+            "note": "G",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 4,
+            "finger": 0,
+            "interval": "5",
+            "note": "B",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 7,
+            "finger": 3,
+            "interval": "b7",
+            "note": "D",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 9,
+            "finger": 4,
+            "interval": "8",
+            "note": "E",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Em7"
+        ]
+      }
+    ],
+    "Fmaj7": [
+      {
+        "id": "F_maj7",
+        "label": "F Major 7",
+        "root": "F",
+        "quality": "maj7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 8,
+            "finger": 1,
+            "interval": "1",
+            "note": "F",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 7,
+            "finger": 1,
+            "interval": "3",
+            "note": "A",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 10,
+            "finger": 4,
+            "interval": "5",
+            "note": "C",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 9,
+            "finger": 3,
+            "interval": "7",
+            "note": "E",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 10,
+            "finger": 4,
+            "interval": "8",
+            "note": "F",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Fmaj7"
+        ]
+      }
+    ],
+    "G7": [
+      {
+        "id": "G_7",
+        "label": "G Dominant 7",
+        "root": "G",
+        "quality": "7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 10,
+            "finger": 1,
+            "interval": "1",
+            "note": "G",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 9,
+            "finger": 1,
+            "interval": "3",
+            "note": "B",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 0,
+            "finger": 4,
+            "interval": "5",
+            "note": "D",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 10,
+            "finger": 2,
+            "interval": "b7",
+            "note": "F",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 0,
+            "finger": 4,
+            "interval": "8",
+            "note": "G",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "G7"
+        ]
+      }
+    ],
+    "Bm7b5": [
+      {
+        "id": "B_m7b5",
+        "label": "B Minor 7 b5",
+        "root": "B",
+        "quality": "m7b5",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 2,
+            "finger": 1,
+            "interval": "1",
+            "note": "B",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 0,
+            "finger": 0,
+            "interval": "b3",
+            "note": "D",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 3,
+            "finger": 3,
+            "interval": "b5",
+            "note": "F",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 2,
+            "finger": 2,
+            "interval": "b7",
+            "note": "A",
+            "isRoot": false
+          },
+          {
+            "string": "A",
+            "fret": 2,
+            "finger": 1,
+            "interval": "8",
+            "note": "B",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Bm7b5"
+        ]
+      }
+    ],
+    "A7+": [
+      {
+        "id": "A_maj7",
+        "label": "A Major 7",
+        "root": "A",
+        "quality": "maj7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 0,
+            "finger": 1,
+            "interval": "1",
+            "note": "A",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 11,
+            "finger": 1,
+            "interval": "3",
+            "note": "C#",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 2,
+            "finger": 4,
+            "interval": "5",
+            "note": "E",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 1,
+            "finger": 3,
+            "interval": "7",
+            "note": "G#",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 2,
+            "finger": 4,
+            "interval": "8",
+            "note": "A",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "A7+"
+        ]
+      }
+    ],
+    "C7+": [
+      {
+        "id": "C_maj7",
+        "label": "C Major 7",
+        "root": "C",
+        "quality": "maj7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 3,
+            "finger": 1,
+            "interval": "1",
+            "note": "C",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 2,
+            "finger": 1,
+            "interval": "3",
+            "note": "E",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 5,
+            "finger": 4,
+            "interval": "5",
+            "note": "G",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 4,
+            "finger": 3,
+            "interval": "7",
+            "note": "B",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 5,
+            "finger": 4,
+            "interval": "8",
+            "note": "C",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "C7+"
+        ]
+      }
+    ],
+    "F7+": [
+      {
+        "id": "F_maj7",
+        "label": "F Major 7",
+        "root": "F",
+        "quality": "maj7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 8,
+            "finger": 1,
+            "interval": "1",
+            "note": "F",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 7,
+            "finger": 1,
+            "interval": "3",
+            "note": "A",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 10,
+            "finger": 4,
+            "interval": "5",
+            "note": "C",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 9,
+            "finger": 3,
+            "interval": "7",
+            "note": "E",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 10,
+            "finger": 4,
+            "interval": "8",
+            "note": "F",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "F7+"
+        ]
+      }
+    ],
+    "Bb7+": [
+      {
+        "id": "Bb_maj7",
+        "label": "Bb Major 7",
+        "root": "Bb",
+        "quality": "maj7",
+        "pattern": "root",
+        "source": "The Bass Guitar Resource Book (Dan Hawkins / TalkingBass Manual)",
+        "steps": [
+          {
+            "string": "A",
+            "fret": 1,
+            "finger": 1,
+            "interval": "1",
+            "note": "Bb",
+            "isRoot": true
+          },
+          {
+            "string": "D",
+            "fret": 0,
+            "finger": 1,
+            "interval": "3",
+            "note": "D",
+            "isRoot": false
+          },
+          {
+            "string": "D",
+            "fret": 3,
+            "finger": 4,
+            "interval": "5",
+            "note": "F",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 2,
+            "finger": 3,
+            "interval": "7",
+            "note": "A",
+            "isRoot": false
+          },
+          {
+            "string": "G",
+            "fret": 3,
+            "finger": 4,
+            "interval": "8",
+            "note": "Bb",
+            "isRoot": true
+          }
+        ],
+        "symbols": [
+          "Bb7+"
         ]
       }
     ]

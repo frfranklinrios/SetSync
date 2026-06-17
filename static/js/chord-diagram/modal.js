@@ -43,6 +43,7 @@
       selectedScale: 0,
       scaleStart: 0,
       arpPatternBass: 'root',
+      arpLoadToken: 0,
     };
 
     function renderOpts() {
@@ -179,14 +180,8 @@
         return;
       }
       row.classList.add('show');
-      var list = CD.availableBassPatterns(currentChord());
-      if (!list.some(function (p) { return p.id === state.arpPatternBass; })) {
-        state.arpPatternBass = 'root';
-      }
-      el.innerHTML = list.map(function (p) {
-        var cls = 'chord-chip' + (p.id === state.arpPatternBass ? ' active' : '');
-        return '<button type="button" class="' + cls + '" data-arp="' + p.id + '">' + p.label + '</button>';
-      }).join('');
+      state.arpPatternBass = 'root';
+      el.innerHTML = '<button type="button" class="chord-chip active" data-arp="root">Fundamental</button>';
     }
 
     function showBodyMessage(html) {
@@ -248,7 +243,25 @@
       } else if (state.instrument === 'baixo') {
         titleEl.textContent = 'Acorde: ' + chord.display;
         notesEl.textContent = 'Notas: ' + (chord.notes || []).join(' · ');
-        body.innerHTML = CD.renderArpeggio(chord, currentBassTuning(), state.arpPatternBass);
+        var arpToken = ++state.arpLoadToken;
+        var sym = chord.display || chord.input || state.rawSymbol;
+        var tuning = currentBassTuning();
+        var pattern = state.arpPatternBass;
+        body.innerHTML = CD.renderArpeggio(chord, tuning, pattern);
+        if (CD.fetchArpeggio) {
+          CD.fetchArpeggio(sym, 'baixo', pattern)
+            .then(function (data) {
+              if (arpToken !== state.arpLoadToken) return;
+              if (!data || data.error) return;
+              var apiSteps = data.fretboardSteps || [];
+              if (!apiSteps.length) return;
+              body.innerHTML = CD.renderArpeggio(chord, tuning, pattern, {
+                steps: apiSteps,
+                meta: data.arpeggioPattern,
+              });
+            })
+            .catch(function () { /* mantém renderização local */ });
+        }
       } else {
         titleEl.textContent = 'Acorde: ' + chord.display;
         notesEl.textContent = 'Notas: ' + (chord.notes || []).join(' · ');

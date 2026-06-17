@@ -55,12 +55,23 @@
 }
 
 .diagram-fret-side,
-.diagram-fret-capo {
+.diagram-fret-capo,
+.diagram-side-label {
   fill: var(--muted);
   font-size: 15px;
   font-weight: 600;
   text-anchor: end;
   dominant-baseline: middle;
+}
+
+.diagram-string-side {
+  font-weight: 700;
+  fill: var(--text);
+}
+
+.diagram-fret-bottom {
+  text-anchor: middle;
+  font-size: 14px;
 }
 
 .diagram-fret-capo {
@@ -346,73 +357,17 @@
 }
 
 .arpeggio-box {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.65rem;
+  margin-top: 0.25rem;
 }
 
-.bass-arp-wrap {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.6rem;
-  overflow-x: auto;
+.arpeggio-box .chord-diagram-wrap {
+  margin-bottom: 0.5rem;
 }
 
+/* Baixo reutiliza .diagram-* — estilos legados mantidos para cache antigo */
+.bass-arp-wrap,
 .bass-arp-svg {
-  display: block;
-  margin: 0 auto;
-}
-
-.bass-grid {
-  stroke: var(--text);
-  stroke-width: 1.8;
-  opacity: 0.95;
-}
-
-.bass-nut {
-  stroke: var(--text);
-  stroke-width: 8;
-}
-
-.bass-string-label,
-.bass-fret-label {
-  fill: var(--text);
-  font-size: 15px;
-  font-weight: 700;
-  text-anchor: middle;
-  dominant-baseline: middle;
-}
-
-.bass-fret-label {
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0.85;
-}
-
-.bass-dot-fill {
-  fill: var(--text);
-}
-
-.bass-dot-open {
-  fill: var(--bg);
-  stroke: var(--text);
-  stroke-width: 2.2;
-}
-
-.bass-step-num {
-  fill: var(--bg);
-  font-size: 13px;
-  font-weight: 700;
-  text-anchor: middle;
-  dominant-baseline: middle;
-}
-
-.bass-step-num-open {
-  fill: var(--text);
-  font-size: 13px;
-  font-weight: 700;
-  text-anchor: middle;
-  dominant-baseline: middle;
+  display: none;
 }
 
 .arp-steps {

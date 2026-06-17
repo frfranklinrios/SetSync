@@ -258,6 +258,9 @@ def build_arpeggio_document(
         voicings = discover_voicings(spec, notes, limit=4)
 
     bank_entry = get_arpeggio_pattern(symbol, pattern)
+    if not bank_entry:
+        display = (theory or {}).get('display') or symbol
+        bank_entry = get_arpeggio_pattern(display, pattern)
     fretboard_steps = pattern_steps_for_api(bank_entry) if bank_entry else []
 
     doc = {
