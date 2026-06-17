@@ -139,8 +139,7 @@ def _barre_allowed_on_string(frets: list, string_idx: int, barre_fret: int) -> b
     return True
 
 
-def detect_barres(frets: list) -> list[dict]:
-    """Detecta pestanas contíguas no mesmo traste (com regra de cordas graves)."""
+def _detect_barres_contiguous(frets: list) -> list[dict]:
     barres = []
     n = len(frets)
     i = 0
@@ -165,6 +164,58 @@ def detect_barres(frets: list) -> list[dict]:
             s = e
         i = j
     return barres
+
+
+def _detect_barres_from_fingers(frets: list, fingers: list[int] | None) -> list[dict]:
+    if not fingers:
+        return []
+    by_fret: dict[int, list[int]] = {}
+    for i, f in enumerate(frets):
+        if not isinstance(f, int) or f <= 0:
+            continue
+        if i >= len(fingers) or fingers[i] != 1:
+            continue
+        by_fret.setdefault(f, []).append(i)
+    barres: list[dict] = []
+    for fret, strings in by_fret.items():
+        if len(strings) < 2:
+            continue
+        start = min(strings)
+        end = max(strings)
+        valid = True
+        for s in range(start, end + 1):
+            fg = frets[s]
+            if fg in ('x', 'X'):
+                valid = False
+                break
+            if isinstance(fg, int) and 0 < fg < fret:
+                valid = False
+                break
+            if not _barre_allowed_on_string(frets, s, fret):
+                valid = False
+                break
+        if valid and end > start:
+            barres.append({'fret': fret, 'startString': start + 1, 'endString': end + 1})
+    barres.sort(key=lambda b: b['fret'])
+    return barres
+
+
+def detect_barres(frets: list, fingers: list[int] | None = None) -> list[dict]:
+    """Detecta pestanas — prioriza dedo 1 em múltiplas cordas no mesmo traste."""
+    from_fingers = _detect_barres_from_fingers(frets, fingers)
+    if from_fingers:
+        return from_fingers
+    return _detect_barres_contiguous(frets)
+
+
+def string_on_barre(string_idx: int, frets: list, barres: list[dict]) -> dict | None:
+    fval = frets[string_idx]
+    for bar in barres:
+        s0 = bar['startString'] - 1
+        s1 = bar['endString'] - 1
+        if s0 <= string_idx <= s1 and fval == bar['fret']:
+            return bar
+    return None
 
 
 def assign_fingers(frets: list, barres: list[dict]) -> list[int]:
@@ -205,5 +256,27 @@ def compute_base_fret(frets: list) -> int:
     nums = [f for f in frets if isinstance(f, int) and f > 0]
     if not nums:
         return 0
-    mn = min(nums)
-    return 1 if mn <= 1 else mn
+    return max(0, min(nums) - 1)
+
+
+# Cordas D G B E do violão → cavaco D G B D (aproximação chords-db)
+_GUITAR_TO_CAVACO_IDX = (2, 3, 4, 5)
+
+
+def adapt_guitar_voicing_to_four_strings(voicing: dict) -> dict:
+    """Reduz voicing de 6 cordas (violão) para 4 (cavaco/cavaquinho)."""
+    frets = list(voicing.get('frets') or [])
+    if len(frets) != 6:
+        return dict(voicing)
+    fingers = voicing.get('fingers')
+    new_frets = [frets[i] for i in _GUITAR_TO_CAVACO_IDX]
+    new_fingers = [fingers[i] for i in _GUITAR_TO_CAVACO_IDX] if fingers else None
+    new_barres = detect_barres(new_frets, new_fingers)
+    out = dict(voicing)
+    out['frets'] = new_frets
+    out['fingers'] = new_fingers
+    out['barres'] = [
+        {'fret': b['fret'], 'from': b['startString'] - 1, 'to': b['endString'] - 1}
+        for b in new_barres
+    ]
+    return out

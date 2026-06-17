@@ -22,8 +22,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
 # Copiar aplicação
 COPY . .
 
-# Posições clássicas para a API de diagramas (gerado de real-shapes.js)
-RUN python3 scripts/build_real_shapes.py
+# Posições chords-db (tombatossals) para a API de diagramas
+RUN python3 scripts/build_chords_db_json.py
 
 # Criar diretório de dados
 RUN mkdir -p data

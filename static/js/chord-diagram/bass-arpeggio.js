@@ -1,8 +1,52 @@
-/** Diagrama de arpejo para baixo */
+/** Diagrama de arpejo para baixo — padrões do Bass Guitar Resource Book */
 (function (global) {
   var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});
 
+  function normalizeSymbol(symbol) {
+    if (CD.normalizedChordKey) {
+      return CD.normalizedChordKey(symbol) || String(symbol || '').replace(/\s+/g, '');
+    }
+    return String(symbol || '').replace(/\s+/g, '');
+  }
+
+  function lookupBankPattern(chord, patternId) {
+    var bank = CD.BASS_ARPEGGIO_BANK;
+    if (!bank || !bank.patterns) return null;
+    var display = (chord && (chord.display || chord.input)) || '';
+    var keys = [display.replace(/\s+/g, ''), normalizeSymbol(display)];
+    var map = bank.patterns;
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (!k || !map[k]) continue;
+      var list = map[k];
+      for (var j = 0; j < list.length; j++) {
+        if (list[j].pattern === patternId) return list[j];
+      }
+      if (patternId === 'root' && list.length) return list[0];
+    }
+    return null;
+  }
+
+  function stepsFromBank(entry) {
+    return (entry.steps || []).map(function (s) {
+      return {
+        note: s.note,
+        string: s.string,
+        fret: s.fret,
+        finger: s.finger,
+        interval: s.interval,
+        isRoot: !!s.isRoot,
+        source: entry.source || 'The Bass Guitar Resource Book',
+      };
+    });
+  }
+
   function buildArpeggio(chord, tuning, patternId) {
+    var bankEntry = lookupBankPattern(chord, patternId || 'root');
+    if (bankEntry && bankEntry.steps && bankEntry.steps.length) {
+      return stepsFromBank(bankEntry);
+    }
+
     var notes = (chord.notes || []).slice();
     if (!notes.length) return [];
     var steps = [];
@@ -92,7 +136,7 @@
     if (positiveFrets.length) {
       var minF = Math.min.apply(null, positiveFrets);
       var maxF = Math.max.apply(null, positiveFrets);
-      startFret = maxF <= 4 ? 0 : Math.max(1, minF - 1);
+      startFret = maxF <= 4 ? 0 : Math.max(0, minF - 1);
       while (maxF > startFret + 5) startFret += 1;
     }
 
@@ -122,6 +166,8 @@
 
     if (startFret > 0) {
       html += '<text class="bass-fret-label" x="' + (marginLeft + colGap / 2) + '" y="' + (marginTop + boardH + 18) + '">' + (startFret + 1) + 'fr</text>';
+    } else if (positiveFrets.length && Math.min.apply(null, positiveFrets) === 1) {
+      html += '<text class="bass-fret-label" x="' + (marginLeft + colGap / 2) + '" y="' + (marginTop + boardH + 18) + '">1</text>';
     }
 
     for (var i = 0; i < steps.length; i++) {
@@ -132,14 +178,14 @@
 
       if (st.fret === 0) {
         var openX = marginLeft - 16;
-        html += '<circle class="bass-dot-open" cx="' + openX + '" cy="' + yPos + '" r="10"><title>' + st.note + ' (casa 0)</title></circle>';
+        html += '<circle class="bass-dot-open" cx="' + openX + '" cy="' + yPos + '" r="12"><title>' + st.note + ' (casa 0)</title></circle>';
         html += '<text class="bass-step-num-open" x="' + openX + '" y="' + yPos + '">' + (st.interval || '?') + '</text>';
         continue;
       }
 
       if (st.fret <= startFret || st.fret > startFret + cols) continue;
       var xPos = marginLeft + ((st.fret - startFret - 0.5) * colGap);
-      html += '<circle class="bass-dot-fill" cx="' + xPos + '" cy="' + yPos + '" r="11"><title>' + st.note + ' · ' + st.string + ' corda · casa ' + st.fret + '</title></circle>';
+      html += '<circle class="bass-dot-fill" cx="' + xPos + '" cy="' + yPos + '" r="13"><title>' + st.note + ' · ' + st.string + ' corda · casa ' + st.fret + '</title></circle>';
       html += '<text class="bass-step-num" x="' + xPos + '" y="' + yPos + '">' + (st.interval || '?') + '</text>';
     }
 
@@ -150,9 +196,12 @@
   function renderArpeggio(chord, tuning, patternId) {
     var steps = buildArpeggio(chord, tuning, patternId);
     if (!steps.length) return '<div class="text-muted">Não foi possível gerar arpejo.</div>';
+    var source = (steps[0] && steps[0].source) || 'fallback';
+    var bankEntry = lookupBankPattern(chord, patternId || 'root');
+    var label = bankEntry && bankEntry.label ? bankEntry.label : 'Arpejo sugerido';
     var html = '<div class="arpeggio-box">';
-    html += '<div class="text-muted mb-2" style="font-size:0.75rem;">Arpejo sugerido (intervalos dentro das bolinhas)</div>';
-    html += '<div class="text-muted mb-2" style="font-size:0.72rem;">' + tuning.slice().reverse().join(' · ') + '</div>';
+    html += '<div class="text-muted mb-2" style="font-size:0.85rem;">' + CD.escText(label) + ' · ' + CD.escText(source) + '</div>';
+    html += '<div class="text-muted mb-2" style="font-size:0.82rem;">' + tuning.slice().reverse().join(' · ') + '</div>';
     html += renderBassArpeggioDiagram(steps, tuning);
     html += '<div class="arp-steps mt-2">';
     steps.forEach(function (st) {
@@ -163,6 +212,7 @@
   }
 
   CD.buildArpeggio = buildArpeggio;
+  CD.lookupBankPattern = lookupBankPattern;
   CD.renderBassArpeggioDiagram = renderBassArpeggioDiagram;
   CD.renderArpeggio = renderArpeggio;
 })(typeof window !== 'undefined' ? window : globalThis);

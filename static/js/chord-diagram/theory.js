@@ -3,7 +3,6 @@
   var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});
   var NOTE_IDX = CD.NOTE_IDX;
   var ROOT_ALIAS = CD.ROOT_ALIAS;
-  var COMMON_SHAPES = CD.COMMON_SHAPES;
 
   function normalizeNote(n) {
     if (!n) return null;
@@ -70,23 +69,25 @@
   }
 
   function getChordPositions(inst, chordDisplay) {
-    var realBank = (CD.REAL_SHAPES && CD.REAL_SHAPES[inst]) || {};
-    var dbBank = (CD.CHORDS_DB_SHAPES && CD.CHORDS_DB_SHAPES[inst]) || {};
-    var legacyBank = (COMMON_SHAPES && COMMON_SHAPES[inst]) || {};
+    var bankInst = inst === 'cavaco' ? 'violao' : inst;
+    var dbBank = (CD.CHORDS_DB_SHAPES && CD.CHORDS_DB_SHAPES[bankInst]) || {};
     var keys = chordKeyCandidates(chordDisplay);
-    for (var i = 0; i < keys.length; i++) {
-      if (realBank[keys[i]] && realBank[keys[i]].length) {
-        return realBank[keys[i]].slice();
-      }
-    }
     for (var d = 0; d < keys.length; d++) {
       if (dbBank[keys[d]] && dbBank[keys[d]].length) {
-        return dbBank[keys[d]].slice();
-      }
-    }
-    for (var j = 0; j < keys.length; j++) {
-      if (legacyBank[keys[j]]) {
-        return [CD.migrateLegacyShape(legacyBank[keys[j]], 'Padrão')];
+        var list = dbBank[keys[d]].slice();
+        if (inst === 'cavaco') {
+          return list.map(function (pos) {
+            var a = adaptVoicingForStrings(pos.frets, pos.fingers, pos.barres, 4);
+            return {
+              label: pos.label,
+              frets: a.frets,
+              fingers: a.fingers,
+              barres: a.barres,
+              source: pos.source || 'chords-db',
+            };
+          });
+        }
+        return list;
       }
     }
     return [];
@@ -215,7 +216,7 @@
     return true;
   }
 
-  function detectBarres(frets) {
+  function detectBarresContiguous(frets) {
     var barres = [];
     var n = frets.length;
     var i = 0;
@@ -250,55 +251,163 @@
       }
       i = j;
     }
+    return barres;
+  }
+
+  function coerceFret(fval) {
+    if (fval === 'x' || fval === 'X') return null;
+    if (typeof fval === 'number') return fval > 0 ? fval : null;
+    if (typeof fval === 'string' && fval.trim() !== '') {
+      var n = parseInt(fval, 10);
+      return isNaN(n) || n <= 0 ? null : n;
+    }
+    return null;
+  }
+
+  function barreSpanFromFrets(frets, barreFret) {
+    if (!barreFret) return null;
+    var from = -1;
+    var to = -1;
+    for (var i = 0; i < frets.length; i++) {
+      var f = coerceFret(frets[i]);
+      if (f === null || f < barreFret) continue;
+      if (from < 0) from = i;
+      to = i;
+    }
+    if (from < 0 || to <= from) return null;
+    return { fret: barreFret, from: from, to: to };
+  }
+
+  function detectBarresFromFingers(frets, fingers) {
+    if (!fingers || !fingers.length) return [];
+    var byFret = {};
+    for (var i = 0; i < frets.length; i++) {
+      var f = coerceFret(frets[i]);
+      if (f === null) continue;
+      if (Number(fingers[i]) !== 1) continue;
+      if (!byFret[f]) byFret[f] = [];
+      byFret[f].push(i);
+    }
+    var barres = [];
+    Object.keys(byFret).forEach(function (key) {
+      var fret = parseInt(key, 10);
+      var span = barreSpanFromFrets(frets, fret);
+      if (!span) return;
+      var strings = byFret[fret];
+      if (strings.length < 2) return;
+      var valid = true;
+      for (var s = span.from; s <= span.to; s++) {
+        if (frets[s] === 'x' || frets[s] === 'X') continue;
+        var fs = coerceFret(frets[s]);
+        if (fs !== null && fs < fret) {
+          valid = false;
+          break;
+        }
+        if (!barreAllowedOnString(frets, s, fret)) {
+          valid = false;
+          break;
+        }
+      }
+      if (valid) barres.push(span);
+    });
     barres.sort(function (a, b) { return a.fret - b.fret; });
     return barres;
+  }
+
+  function detectBarres(frets, fingers, explicitBarres) {
+    var fromExplicit = normalizeShapeBarres(explicitBarres);
+    if (fromExplicit.length) return fromExplicit;
+    var fromFingers = detectBarresFromFingers(frets, fingers);
+    if (fromFingers.length) return fromFingers;
+    return detectBarresContiguous(frets);
+  }
+
+  function normalizeShapeBarres(barres) {
+    if (!barres || !barres.length) return [];
+    return barres.map(function (b) {
+      if (b.from != null && b.to != null) {
+        return { fret: b.fret, from: b.from, to: b.to };
+      }
+      return {
+        fret: b.fret,
+        from: (b.startString != null ? b.startString : 1) - 1,
+        to: (b.endString != null ? b.endString : 1) - 1,
+      };
+    }).filter(function (b) { return b.to > b.from; });
+  }
+
+  var GUITAR_TO_CAVACO_IDX = [2, 3, 4, 5];
+
+  function adaptVoicingForStrings(frets, fingers, barres, stringCount) {
+    if (!frets || frets.length <= stringCount) {
+      return {
+        frets: frets,
+        fingers: fingers,
+        barres: normalizeShapeBarres(barres),
+      };
+    }
+    if (frets.length === 6 && stringCount === 4) {
+      var nf = GUITAR_TO_CAVACO_IDX.map(function (i) { return frets[i]; });
+      var nfi = fingers ? GUITAR_TO_CAVACO_IDX.map(function (i) { return fingers[i]; }) : null;
+      return { frets: nf, fingers: nfi, barres: detectBarres(nf, nfi, []) };
+    }
+    var trimmed = frets.slice(0, stringCount);
+    var tf = fingers ? fingers.slice(0, stringCount) : null;
+    return {
+      frets: trimmed,
+      fingers: tf,
+      barres: detectBarres(trimmed, tf, normalizeShapeBarres(barres)),
+    };
+  }
+
+  function barreDrawRange(bar, frets, stringCount) {
+    var from = Math.max(0, bar.from);
+    var to = Math.min(bar.to, stringCount - 1);
+    while (from <= to && frets[from] === 'x') from += 1;
+    while (to >= from && frets[to] === 'x') to -= 1;
+    if (from >= to) return null;
+    return { from: from, to: to };
+  }
+
+  function barreFingerLabel(bar, frets, fingers) {
+    for (var s = bar.from; s <= bar.to; s++) {
+      if (frets[s] !== bar.fret) continue;
+      if (fingers && fingers[s] === 1) return '1';
+      if (fingers && fingers[s] > 0) return String(fingers[s]);
+    }
+    return '1';
+  }
+
+  function stringOnBarre(stringIdx, frets, barres) {
+    var fval = frets[stringIdx];
+    for (var b = 0; b < barres.length; b++) {
+      var bar = barres[b];
+      if (stringIdx >= bar.from && stringIdx <= bar.to && fval === bar.fret) {
+        return bar;
+      }
+    }
+    return null;
   }
 
   function buildShapeOptions(instrument, chord) {
     if (!chord || instrument === 'baixo') return [];
 
-    var tuning = CD.TUNINGS[instrument];
     var display = chord.display || chord.input || '';
-    var real = getChordPositions(instrument, display);
+    var positions = getChordPositions(instrument, display);
 
-    if (real.length) {
-      return real.map(function (pos) {
+    if (positions.length) {
+      return positions.map(function (pos) {
         return {
           frets: pos.frets,
           fingers: pos.fingers,
+          barres: pos.barres || [],
           label: pos.label || 'Padrão',
-          source: pos.source || 'Cifra clássica',
+          source: pos.source || 'chords-db',
         };
       });
     }
 
-    var autos = [];
-    if (CD.discoverVoicings) {
-      var discovered = CD.discoverVoicings(tuning, chord.notes || [], 8);
-      discovered.forEach(function (v) { autos.push(v.frets); });
-    }
-    buildAutoShapes(tuning, chord.notes || [], 3).forEach(function (f) {
-      var k = fretsKey(f);
-      if (!autos.some(function (x) { return fretsKey(x) === k; })) autos.push(f);
-    });
-    if (autos.length) {
-      return autos.slice(0, 6).map(function (f, idx) {
-        var fingers = CD.assignAutoFingers ? CD.assignAutoFingers(f) : null;
-        return {
-          frets: f,
-          fingers: fingers,
-          label: idx === 0 ? 'Sugerido' : 'Variação ' + (idx + 1),
-          source: 'Algoritmo de voicings',
-        };
-      });
-    }
-
-    return [{
-      frets: buildAutoShape(tuning, chord.notes || []),
-      fingers: CD.assignAutoFingers ? CD.assignAutoFingers(buildAutoShape(tuning, chord.notes || [])) : null,
-      label: 'Sugerido',
-      source: 'Algoritmo de voicings',
-    }];
+    return [];
   }
 
   CD.normalizeNote = normalizeNote;
@@ -317,5 +426,9 @@
   CD.availableBassPatterns = availableBassPatterns;
   CD.rootStringIndex = rootStringIndex;
   CD.detectBarres = detectBarres;
+  CD.stringOnBarre = stringOnBarre;
+  CD.adaptVoicingForStrings = adaptVoicingForStrings;
+  CD.barreDrawRange = barreDrawRange;
+  CD.barreFingerLabel = barreFingerLabel;
   CD.buildShapeOptions = buildShapeOptions;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -19,11 +19,11 @@
     }
     var minF = Math.min.apply(null, nums);
     var maxF = Math.max.apply(null, nums);
-    var start = hasOpen ? 0 : minF;
+    // Uma casa mais grave que a primeira nota (estilo Cifra Club)
+    var start = hasOpen ? 0 : Math.max(0, minF - 1);
     if (!hasOpen && maxF - start + 1 > rows) {
-      start = Math.max(1, maxF - rows + 1);
+      start = Math.max(0, maxF - rows + 1);
     }
-  if (!hasOpen && minF < start) start = minF;
     return {
       startFret: start,
       rows: rows,
@@ -34,17 +34,14 @@
 
   function fretY(marginY, rowGap, fret, startFret) {
     if (fret === 0 && startFret === 0) return marginY - 12;
-    return marginY + ((fret - startFret - 0.5) * rowGap);
+    if (startFret === 0) {
+      return marginY + ((fret - 0.5) * rowGap);
+    }
+    return marginY + ((fret - startFret + 0.5) * rowGap);
   }
 
   function renderDiagramDefs() {
-    return [
-      '<defs>',
-      '<filter id="diagram-dot-shadow" x="-40%" y="-40%" width="180%" height="180%">',
-      '<feDropShadow dx="0" dy="1.2" stdDeviation="1.1" flood-opacity="0.22"/>',
-      '</filter>',
-      '</defs>',
-    ].join('');
+    return '';
   }
 
   function stringX(marginX, colGap, stringIdx, stringCount, leftHanded) {
@@ -68,45 +65,35 @@
     var rowGap = L.rowGap;
     var boardW = (tuning.length - 1) * colGap;
     var boardH = rows * rowGap;
-    var padX = 10;
+    var padX = 8;
+    var padY = 8;
     var parts = [];
 
     parts.push(
-      '<rect class="diagram-board" x="' + (marginX - padX) + '" y="' + (marginY - 6) + '" ',
-      'width="' + (boardW + padX * 2) + '" height="' + (boardH + 12) + '" rx="6"></rect>'
+      '<rect class="diagram-board" x="' + (marginX - padX) + '" y="' + (marginY - padY) + '" ',
+      'width="' + (boardW + padX * 2) + '" height="' + (boardH + padY * 2) + '" rx="10"></rect>'
     );
 
     for (var rr = 0; rr <= rows; rr++) {
       var y = marginY + (rr * rowGap);
       var isNut = rr === 0 && startFret === 0;
       parts.push(
-        '<line class="' + (isNut ? 'diagram-nut' : 'diagram-fret') + '" x1="' + (marginX - padX + 2) + '" y1="' + y +
-        '" x2="' + (marginX + boardW + padX - 2) + '" y2="' + y + '"></line>'
+        '<line class="' + (isNut ? 'diagram-nut' : 'diagram-fret') + '" x1="' + (marginX - 2) + '" y1="' + y +
+        '" x2="' + (marginX + boardW + 2) + '" y2="' + y + '"></line>'
       );
     }
 
     for (var ss = 0; ss < tuning.length; ss++) {
       var x = stringX(marginX, colGap, ss, tuning.length, leftHanded);
-      var thick = 1 + (tuning.length - 1 - ss) * 0.22;
       parts.push(
-        '<line class="diagram-string" x1="' + x + '" y1="' + marginY + '" x2="' + x + '" y2="' + (marginY + boardH) + '" ',
-        'style="stroke-width:' + thick.toFixed(2) + '"></line>'
+        '<line class="diagram-string" x1="' + x + '" y1="' + marginY + '" x2="' + x + '" y2="' + (marginY + boardH) + '"></line>'
       );
     }
 
-    if (startFret > 0) {
+    for (var fr = 0; fr < rows; fr++) {
+      var fretNum = startFret === 0 ? fr + 1 : startFret + fr;
       parts.push(
-        '<text class="diagram-fret-text diagram-fret-capo" x="' + (marginX - 10) + '" y="' + (marginY + 8) + '">' +
-        startFret + '</text>'
-      );
-    }
-
-    for (var fr = 1; fr < rows; fr++) {
-      var fretNum = startFret + fr;
-      if (startFret === 0) fretNum = fr;
-      if (fretNum <= 0) continue;
-      parts.push(
-        '<text class="diagram-fret-side" x="' + (marginX - 10) + '" y="' + (marginY + fr * rowGap - rowGap / 2) + '">' +
+        '<text class="diagram-fret-side" x="' + (marginX - 18) + '" y="' + (marginY + fr * rowGap + rowGap / 2) + '">' +
         fretNum + '</text>'
       );
     }
@@ -120,13 +107,13 @@
       colGap: colGap,
       rowGap: rowGap,
       svgW: marginX * 2 + boardW,
-      svgH: marginY + boardH + 28,
+      svgH: marginY + boardH + 48,
     };
   }
 
   function renderTuningLabels(tuning, layout, leftHanded) {
     var parts = [];
-    var y = layout.marginY + layout.boardH + 14;
+    var y = layout.marginY + layout.boardH + 18;
     for (var tu = 0; tu < tuning.length; tu++) {
       var tx = stringX(layout.marginX, layout.colGap, tu, tuning.length, leftHanded);
       parts.push('<text class="diagram-tuning" x="' + tx + '" y="' + y + '">' + CD.escText(tuning[tu]) + '</text>');

@@ -12,11 +12,12 @@ from chord_diagram.cache import get_cached, set_cached
 from chord_diagram.fretboard import build_arpeggio_sequence, build_scale_fretboard_map
 from chord_diagram.instruments import get_instrument, list_instrument_meta
 from chord_diagram.piano import piano_key_mappings
-from chord_diagram.real_shapes import get_real_positions, real_to_voicing
+from chord_diagram.chords_db import barres_to_api, chords_db_to_voicing, get_chords_db_positions
 from chord_diagram.render_svg import render_fretboard_svg, render_piano_svg
 from chord_diagram.scales_db import list_scale_types, resolve_scale_type, scale_note_names
 from chord_diagram.theory.chord_parser import chord_theory_block
 from chord_diagram.voicing import (
+    adapt_guitar_voicing_to_four_strings,
     assign_fingers,
     compute_base_fret,
     detect_barres,
@@ -29,6 +30,7 @@ API_VERSION = '1.0.0'
 _INSTRUMENT_API_ALIAS = {
     'guitar': 'violao',
     'guitarra': 'guitarra',
+    'cavaco': 'cavaquinho',
 }
 
 
@@ -48,44 +50,34 @@ def _frets_key(frets: list) -> str:
 
 
 def _collect_voicings(spec, display: str, notes: list[str], *, max_positions: int) -> list[dict]:
-    """Combina posições clássicas + motor automático, sem duplicatas."""
+    """Posições apenas do banco tombatossals/chords-db."""
     merged: list[dict] = []
     seen: set[str] = set()
 
-    for pos in get_real_positions(spec.id, display):
-        v = real_to_voicing(pos)
-        key = _frets_key(v['frets'])
-        if key in seen:
-            continue
-        seen.add(key)
-        merged.append(v)
+    sources = [spec.id]
+    if spec.id in ('cavaquinho', 'cavaco', 'guitarra'):
+        sources.append('violao')
 
-    if spec.id == 'guitarra':
-        for pos in get_real_positions('violao', display):
-            v = real_to_voicing(pos)
+    for src in sources:
+        for pos in get_chords_db_positions(src, display):
+            v = chords_db_to_voicing(pos)
             key = _frets_key(v['frets'])
             if key in seen:
                 continue
             seen.add(key)
-            merged.append(v)
-
-    auto = discover_voicings(spec, notes, limit=max(max_positions, 8))
-    for v in auto:
-        key = _frets_key(v['frets'])
-        if key in seen:
-            continue
-        seen.add(key)
-        merged.append({
-            'frets': v['frets'],
-            'fingers': None,
-            'label': 'Sugerido' if len(merged) == 0 else f'Variação {len(merged) + 1}',
-            'source': 'Algoritmo de voicings',
-            'fromRealShapes': False,
-        })
+            merged.append(_maybe_adapt_voicing(spec, v))
+            if len(merged) >= max_positions:
+                break
         if len(merged) >= max_positions:
             break
 
     return merged[:max_positions]
+
+
+def _maybe_adapt_voicing(spec, voicing: dict) -> dict:
+    if spec.strings == 4 and spec.id in ('cavaquinho', 'cavaco') and len(voicing.get('frets') or []) == 6:
+        return adapt_guitar_voicing_to_four_strings(voicing)
+    return voicing
 
 
 def _voicings_to_positions(
@@ -100,8 +92,17 @@ def _voicings_to_positions(
     positions = []
     for i, v in enumerate(voicings):
         frets = v['frets']
-        barres = detect_barres(frets)
-        fingers = v.get('fingers') or assign_fingers(frets, barres)
+        fingers = v.get('fingers')
+        barres_raw = v.get('barres') or []
+        if barres_raw and isinstance(barres_raw[0], dict) and 'from' in barres_raw[0]:
+            barres = barres_to_api(barres_raw)
+        else:
+            barres = detect_barres(frets, fingers)
+        if not fingers:
+            fingers = assign_fingers(frets, [
+                {'fret': b['fret'], 'startString': b['startString'], 'endString': b['endString']}
+                for b in barres
+            ])
         pid = _position_id(spec.id, display, i + 1, frets)
         midi_pat = []
         for si, f in enumerate(frets):
@@ -240,6 +241,8 @@ def build_arpeggio_document(
     pattern: str = 'root',
     octaves: int = 2,
 ) -> dict:
+    from chord_diagram.bass_arpeggio_bank import get_arpeggio_pattern, pattern_steps_for_api
+
     cache_key = f'arp:{instrument}:{symbol}:{pattern}:{octaves}'
     cached = get_cached(cache_key)
     if cached:
@@ -253,12 +256,18 @@ def build_arpeggio_document(
     voicings = []
     if spec and spec.family == 'fretted':
         voicings = discover_voicings(spec, notes, limit=4)
+
+    bank_entry = get_arpeggio_pattern(symbol, pattern)
+    fretboard_steps = pattern_steps_for_api(bank_entry) if bank_entry else []
+
     doc = {
         'type': 'arpeggio',
         'symbol': symbol,
         'pattern': pattern,
         'theory': theory,
         'sequence': sequence,
+        'fretboardSteps': fretboard_steps,
+        'arpeggioPattern': bank_entry,
         'fretboardPositions': [
             {'frets': frets_to_api(v['frets']), 'baseFret': compute_base_fret(v['frets'])}
             for v in voicings

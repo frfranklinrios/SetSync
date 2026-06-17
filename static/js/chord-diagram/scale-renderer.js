@@ -35,7 +35,7 @@
 
     var parts = [];
     parts.push(
-      '<div class="text-muted mb-2" style="font-size:0.75rem;">Escala de ' + rootLabel + ' · ' + title + '</div>',
+      '<div class="text-muted mb-2" style="font-size:0.85rem;">Escala de ' + rootLabel + ' · ' + title + '</div>',
       '<div class="diagram-chord-name diagram-scale-name">' + title + '</div>',
       '<div class="chord-notes mb-2">Notas: ' + notesLine + '</div>',
       '<div class="chord-diagram-wrap">',
@@ -59,14 +59,14 @@
         var pi = CD.noteIndex(pt.note);
         isChordTone = pi != null && chordTones[pi];
       }
-      var cls = 'diagram-scale-dot';
-      if (pt.isRoot) cls += ' diagram-scale-root';
-      else if (isChordTone) cls += ' diagram-scale-chord-tone';
-      var r = pt.isRoot ? 8 : (isChordTone ? 7 : 5.5);
+      var cls = 'diagram-dot';
+      if (pt.isRoot) cls += ' diagram-dot-root';
+      var r = pt.isRoot ? LAYOUT.dotR : (isChordTone ? LAYOUT.dotR - 1 : LAYOUT.dotR - 2);
       parts.push('<circle class="' + cls + '" cx="' + dx + '" cy="' + fy + '" r="' + r + '"></circle>');
       if (showNotes) {
         parts.push(
-          '<text class="diagram-scale-note-label" x="' + dx + '" y="' + fy + '">' + CD.escText(pt.note) + '</text>'
+          '<text class="diagram-finger-num diagram-note-label" fill="#fff" x="' + dx + '" y="' + fy + '">' +
+          CD.escText(pt.note) + '</text>'
         );
       }
     });

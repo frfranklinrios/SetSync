@@ -75,7 +75,10 @@ def open_string_pcs(spec: InstrumentSpec) -> list[int]:
 
 
 def get_instrument(instrument_id: str) -> InstrumentSpec | None:
-    return INSTRUMENTS.get((instrument_id or '').strip().lower())
+    iid = (instrument_id or '').strip().lower()
+    if iid == 'cavaco':
+        iid = 'cavaquinho'
+    return INSTRUMENTS.get(iid)
 
 
 def list_instrument_meta() -> list[dict]:

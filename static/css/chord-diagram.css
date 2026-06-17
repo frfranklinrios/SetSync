@@ -57,36 +57,20 @@
 .diagram-fret-side,
 .diagram-fret-capo {
   fill: var(--muted);
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   text-anchor: end;
   dominant-baseline: middle;
 }
 
 .diagram-fret-capo {
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 800;
   fill: var(--text);
 }
 
-.diagram-scale-chord-tone {
-  fill: #e67e22;
-  opacity: 1;
-  stroke: var(--bg);
-  stroke-width: 1.5;
-}
-
-.diagram-scale-note-label {
-  fill: var(--bg);
-  font-size: 7px;
-  font-weight: 700;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  pointer-events: none;
-}
-
 .diagram-legend-chord-tone {
-  color: #e67e22;
+  color: var(--accent);
   font-weight: 700;
 }
 
@@ -104,7 +88,7 @@
     padding: 0.5rem 0.25rem;
   }
   .diagram-chord-name {
-    font-size: 1.6rem;
+    font-size: 2rem;
   }
 }
 
@@ -208,136 +192,137 @@
 
 .chord-diagram-wrap {
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.85rem 0.5rem 0.65rem;
+  border-radius: 14px;
+  padding: 1rem 0.75rem 0.75rem;
   overflow-x: auto;
-  background: linear-gradient(180deg, rgba(42, 181, 160, 0.04) 0%, transparent 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: var(--chord-highlight-ghost);
 }
 
 .diagram-chord-name {
   text-align: center;
-  font-size: 1.85rem;
-  font-weight: 700;
+  font-size: 2.2rem;
+  font-weight: 800;
   line-height: 1.1;
   margin-bottom: 0.5rem;
   color: var(--text);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
+  font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
 }
 
 .diagram-svg {
   display: block;
   margin: 0 auto;
-  --diagram-board: #f7f3ed;
-  --diagram-board-stroke: #e8e0d4;
-  --diagram-string: #8a7f72;
-  --diagram-fret: #c4b8a8;
-  --diagram-nut-color: #3d3832;
-  --diagram-dot: #2ab5a0;
-  --diagram-dot-root: #1f9a88;
-  --diagram-dot-label: #fff;
-  --diagram-barre: #3d3832;
-  --diagram-marker: #3d3832;
-}
-
-[data-theme="dark"] .diagram-svg {
-  --diagram-board: #1a2332;
-  --diagram-board-stroke: #2d3a4d;
-  --diagram-string: #7a8a9e;
-  --diagram-fret: #3d4f66;
-  --diagram-nut-color: #c8d4e4;
-  --diagram-dot: #3dd6bd;
-  --diagram-dot-root: #5eead4;
-  --diagram-dot-label: #0f172a;
-  --diagram-barre: #94a3b8;
-  --diagram-marker: #c8d4e4;
+  --diagram-string: var(--muted);
+  --diagram-fret: var(--border);
+  --diagram-nut-color: var(--text);
+  --diagram-dot: var(--accent);
+  --diagram-dot-root: var(--accent-dark);
+  --diagram-barre: var(--accent);
+  --diagram-marker: var(--text);
 }
 
 .diagram-board {
-  fill: var(--diagram-board);
-  stroke: var(--diagram-board-stroke);
+  fill: color-mix(in srgb, var(--card-bg, var(--bg)) 88%, var(--text) 12%);
+  stroke: var(--border);
   stroke-width: 1;
+}
+
+[data-theme="dark"] .diagram-board {
+  fill: rgba(255, 255, 255, 0.04);
 }
 
 .diagram-string {
   stroke: var(--diagram-string);
-  stroke-linecap: round;
-  opacity: 0.88;
+  stroke-width: 1.1;
+  stroke-linecap: square;
+  opacity: 0.9;
 }
 
 .diagram-fret {
   stroke: var(--diagram-fret);
-  stroke-width: 1.2;
-  stroke-linecap: round;
+  stroke-width: 1.1;
+  stroke-linecap: square;
+  opacity: 0.95;
 }
 
 .diagram-nut {
   stroke: var(--diagram-nut-color);
-  stroke-width: 4.5;
-  stroke-linecap: round;
+  stroke-width: 5;
+  stroke-linecap: square;
+  opacity: 1;
 }
 
 .diagram-barre {
   fill: var(--diagram-barre);
-  opacity: 0.82;
+  opacity: 1;
   stroke: none;
 }
 
 .diagram-dot {
   fill: var(--diagram-dot);
-  stroke: rgba(255, 255, 255, 0.35);
-  stroke-width: 1;
+  stroke: none;
 }
 
 .diagram-dot-root {
   fill: var(--diagram-dot-root);
-  stroke: #fff;
-  stroke-width: 2.2;
+  stroke: none;
 }
 
 .diagram-finger-num {
-  fill: var(--diagram-dot-label);
-  font-size: 9.5px;
+  fill: #fff !important;
+  font-size: 13px;
   font-weight: 700;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
   text-anchor: middle;
   dominant-baseline: middle;
   pointer-events: none;
 }
 
-.diagram-note-label {
-  font-size: 7.5px;
+.diagram-barre-num {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.diagram-finger-num.diagram-note-label {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.diagram-string-mark,
+.diagram-bottom-label {
+  fill: var(--diagram-marker);
+  font-size: 17px;
   font-weight: 700;
+  font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.diagram-bottom-label {
+  display: none;
+}
+
+.diagram-bottom-label.diagram-note-label {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--accent);
 }
 
 .diagram-tuning {
-  fill: var(--muted);
-  font-size: 9px;
+  fill: var(--text);
+  font-size: 14px;
   font-weight: 600;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
   text-anchor: middle;
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .diagram-scale-name {
-  font-size: var(--text-xl);
+  font-size: 2.2rem;
+  font-weight: 800;
 }
 
-.diagram-scale-dot {
-  fill: var(--accent);
-  opacity: 0.7;
-}
-
-.diagram-scale-root {
-  fill: var(--chord-highlight, var(--accent));
-  opacity: 1;
-  stroke: var(--bg);
-  stroke-width: 2;
-}
-
-.diagram-scale-open {
-  opacity: 0.9;
-}
+/* Bolinhas de escala reutilizam .diagram-dot / .diagram-dot-root */
 
 .diagram-open-mark {
   fill: none;
@@ -353,7 +338,7 @@
 
 .diagram-fret-text {
   fill: var(--text);
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 600;
   text-anchor: end;
   dominant-baseline: middle;
@@ -392,14 +377,14 @@
 .bass-string-label,
 .bass-fret-label {
   fill: var(--text);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   text-anchor: middle;
   dominant-baseline: middle;
 }
 
 .bass-fret-label {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   opacity: 0.85;
 }
@@ -416,7 +401,7 @@
 
 .bass-step-num {
   fill: var(--bg);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
   text-anchor: middle;
   dominant-baseline: middle;
@@ -424,7 +409,7 @@
 
 .bass-step-num-open {
   fill: var(--text);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
   text-anchor: middle;
   dominant-baseline: middle;
@@ -441,7 +426,7 @@
   background: rgba(42, 181, 160, 0.08);
   border-radius: 7px;
   padding: 0.2rem 0.5rem;
-  font-size: 0.76rem;
+  font-size: 0.85rem;
 }
 
 .chord-notes {

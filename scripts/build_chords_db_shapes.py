@@ -122,15 +122,48 @@ def build_bank(repo: Path, instrument: str, max_positions: int = 3) -> dict:
                     label = f'{barre}ª casa'
                 elif frets.count(0) >= 2:
                     label = 'Abertura'
+                barres_list = barres_from_position(frets, barre)
                 positions.append({
                     'label': label,
                     'frets': frets,
                     'fingers': fingers,
+                    'barres': barres_list,
                     'source': 'chords-db',
                 })
             if positions:
                 bank.setdefault(sym, []).extend(positions)
     return bank
+
+
+def barre_span(frets: list, barre_fret: int) -> dict | None:
+    if not barre_fret:
+        return None
+    from_i: int | None = None
+    to_i: int | None = None
+    for i, f in enumerate(frets):
+        if f == 'x':
+            continue
+        if isinstance(f, int) and f >= barre_fret:
+            if from_i is None:
+                from_i = i
+            to_i = i
+    if from_i is None or to_i is None or to_i <= from_i:
+        return None
+    return {'fret': barre_fret, 'from': from_i, 'to': to_i}
+
+
+def barres_from_position(frets: list, barre) -> list[dict]:
+    if not barre:
+        return []
+    if isinstance(barre, list):
+        out: list[dict] = []
+        for bf in barre:
+            span = barre_span(frets, int(bf))
+            if span:
+                out.append(span)
+        return out
+    span = barre_span(frets, int(barre))
+    return [span] if span else []
 
 
 def js_escape(s: str) -> str:
@@ -140,8 +173,10 @@ def js_escape(s: str) -> str:
 def emit_shape(pos: dict) -> str:
     frets = json.dumps(pos['frets'])
     fingers = json.dumps(pos['fingers']) if pos.get('fingers') else 'null'
+    barres = json.dumps(pos.get('barres') or [])
     return (
-        f"P('{js_escape(pos['label'])}', {frets}, {fingers}, '{js_escape(pos.get('source', 'chords-db'))}')"
+        f"P('{js_escape(pos['label'])}', {frets}, {fingers}, "
+        f"'{js_escape(pos.get('source', 'chords-db'))}', {barres})"
     )
 
 
@@ -156,8 +191,8 @@ def main() -> None:
         '/** Posições importadas de tombatossals/chords-db — gerado por scripts/build_chords_db_shapes.py */',
         '(function (global) {',
         '  var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});',
-        '  function P(label, frets, fingers, source) {',
-        "    return { label: label, frets: frets, fingers: fingers || null, source: source || 'chords-db' };",
+        '  function P(label, frets, fingers, source, barres) {',
+        "    return { label: label, frets: frets, fingers: fingers || null, source: source || 'chords-db', barres: barres || [] };",
         '  }',
         '  CD.CHORDS_DB_SHAPES = {',
     ]
@@ -178,6 +213,14 @@ def main() -> None:
     ])
     out.write_text('\n'.join(lines), encoding='utf-8')
     print(f'Gerado {out} ({out.stat().st_size // 1024} KB)')
+
+    json_out = Path(__file__).resolve().parent.parent / 'chord_diagram' / 'data' / 'chords_db_shapes.json'
+    json_out.parent.mkdir(parents=True, exist_ok=True)
+    json_bank = {inst_key: bank for inst_dir, inst_key in INSTRUMENT_DIRS.items()
+                 for bank in [build_bank(repo, inst_dir)]}
+    json_out.write_text(json.dumps(json_bank, ensure_ascii=False, indent=2), encoding='utf-8')
+    total = sum(len(v) for b in json_bank.values() for v in b.values())
+    print(f'Gerado {json_out} — {total} posições')
 
 
 if __name__ == '__main__':

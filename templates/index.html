@@ -453,7 +453,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app-wide-layout.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=20">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=3">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=14">
     {% block extra_head %}{% endblock %}
     {% include 'partials/google_ads_head.html' %}
 </head>
@@ -688,18 +688,17 @@
     <script src="{{ url_for('static', filename='js/push-notifications.js') }}?v=1"></script>
     {% endif %}
     {% block chord_diagram %}
-    <script src="{{ url_for('static', filename='js/chord-diagram/constants.js') }}?v=4"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/shapes.js') }}?v=2"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/real-shapes.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/chords-db-shapes.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/fretboard-core.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/constants.js') }}?v=10"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/chords-db-shapes.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/fretboard-core.js') }}?v=8"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/voicing-engine.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/auto-finger.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/theory.js') }}?v=4"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/renderer.js') }}?v=5"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/theory.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/renderer.js') }}?v=16"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/scale-theory.js') }}?v=2"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/scale-renderer.js') }}?v=3"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/scale-renderer.js') }}?v=5"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio-shapes.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio.js') }}?v=5"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/api-client.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=5"></script>
     <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=1"></script>
