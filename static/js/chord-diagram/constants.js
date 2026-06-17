@@ -36,13 +36,15 @@
 
   CD.LAYOUT = {
     rows: 5,
-    colGap: 36,
-    rowGap: 40,
-    marginX: 24,
-    marginY: 26,
-    dotR: 9,
-    rootDotR: 10,
-    barreWidth: 9,
+    colGap: 34,
+    rowGap: 36,
+    marginX: 28,
+    marginY: 30,
+    dotR: 8.5,
+    rootDotR: 9.5,
+    barreHeight: 10,
+    openR: 5.5,
+    muteSize: 5,
   };
 
   CD.ARP_PATTERNS_BASS = [

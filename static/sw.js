@@ -1,14 +1,18 @@
 // SetSync service worker — app-shell + offline fallback
 // Bump CACHE_VERSION whenever the app shell changes so old caches are evicted.
-const CACHE_VERSION = 'setsync-v11';
+const CACHE_VERSION = 'setsync-v12';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
+
+const NOTIF_ICON = new URL('/static/icons/icon-192.png', self.location.origin).href;
+const NOTIF_BADGE = new URL('/static/icons/notification-badge.png', self.location.origin).href;
 
 const APP_SHELL = [
     '/static/logoSetSync.png',
     '/static/icons/icon-192.png',
     '/static/icons/icon-512.png',
     '/static/icons/apple-touch-icon.png',
+    '/static/icons/notification-badge.png',
     '/static/js/theme.js',
     '/offline',
     '/manifest.webmanifest'
@@ -150,8 +154,8 @@ self.addEventListener('push', (event) => {
     const title = data.title || 'SetSync';
     const options = {
         body: data.body || '',
-        icon: '/static/icons/icon-192.png',
-        badge: '/static/icons/icon-192.png',
+        icon: data.icon || NOTIF_ICON,
+        badge: data.badge || NOTIF_BADGE,
         data: { url: data.url || '/' },
         tag: data.type || 'setsync',
         renotify: true,

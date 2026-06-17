@@ -41,6 +41,7 @@
       '<div class="chord-diagram-wrap">',
       '<svg class="diagram-svg diagram-scale-svg" role="img" aria-label="Escala ' + title + ' em ' + rootLabel + '" ',
       'width="' + grid.svgW + '" height="' + grid.svgH + '" viewBox="0 0 ' + grid.svgW + ' ' + grid.svgH + '">',
+      CD.renderDiagramDefs(),
       grid.html
     );
 

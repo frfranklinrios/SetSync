@@ -205,25 +205,51 @@
     return -1;
   }
 
+  function barreAllowedOnString(frets, stringIdx, barreFret) {
+    for (var g = 0; g < stringIdx; g++) {
+      var fg = frets[g];
+      if (typeof fg === 'number' && fg > 0 && fg < barreFret) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function detectBarres(frets) {
-    var groups = {};
-    frets.forEach(function (f, i) {
-      if (typeof f === 'number' && f > 0) {
-        if (!groups[f]) groups[f] = [];
-        groups[f].push(i);
-      }
-    });
     var barres = [];
-    Object.keys(groups).forEach(function (fretKey) {
-      var idxs = groups[fretKey];
-      if (idxs.length >= 2) {
-        barres.push({
-          fret: parseInt(fretKey, 10),
-          from: Math.min.apply(null, idxs),
-          to: Math.max.apply(null, idxs),
-        });
+    var n = frets.length;
+    var i = 0;
+    while (i < n) {
+      var f = frets[i];
+      if (typeof f !== 'number' || f <= 0) {
+        i += 1;
+        continue;
       }
-    });
+      var j = i + 1;
+      while (j < n && frets[j] === f) {
+        j += 1;
+      }
+      var s = i;
+      while (s < j) {
+        if (!barreAllowedOnString(frets, s, f)) {
+          s += 1;
+          continue;
+        }
+        var e = s + 1;
+        while (e < j && barreAllowedOnString(frets, e, f)) {
+          e += 1;
+        }
+        if (e - s >= 2) {
+          barres.push({
+            fret: f,
+            from: s,
+            to: e - 1,
+          });
+        }
+        s = e;
+      }
+      i = j;
+    }
     barres.sort(function (a, b) { return a.fret - b.fret; });
     return barres;
   }

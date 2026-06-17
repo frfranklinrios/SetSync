@@ -101,7 +101,7 @@
 
 @media (max-width: 576px) {
   .chord-diagram-wrap {
-    padding: 0.4rem;
+    padding: 0.5rem 0.25rem;
   }
   .diagram-chord-name {
     font-size: 1.6rem;
@@ -208,72 +208,115 @@
 
 .chord-diagram-wrap {
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.7rem;
+  border-radius: 12px;
+  padding: 0.85rem 0.5rem 0.65rem;
   overflow-x: auto;
+  background: linear-gradient(180deg, rgba(42, 181, 160, 0.04) 0%, transparent 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .diagram-chord-name {
   text-align: center;
-  font-size: 2rem;
+  font-size: 1.85rem;
   font-weight: 700;
   line-height: 1.1;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.5rem;
   color: var(--text);
+  letter-spacing: -0.02em;
 }
 
 .diagram-svg {
   display: block;
   margin: 0 auto;
+  --diagram-board: #f7f3ed;
+  --diagram-board-stroke: #e8e0d4;
+  --diagram-string: #8a7f72;
+  --diagram-fret: #c4b8a8;
+  --diagram-nut-color: #3d3832;
+  --diagram-dot: #2ab5a0;
+  --diagram-dot-root: #1f9a88;
+  --diagram-dot-label: #fff;
+  --diagram-barre: #3d3832;
+  --diagram-marker: #3d3832;
 }
 
-.diagram-grid {
-  stroke: var(--text);
-  stroke-width: 1.6;
-  opacity: 0.9;
+[data-theme="dark"] .diagram-svg {
+  --diagram-board: #1a2332;
+  --diagram-board-stroke: #2d3a4d;
+  --diagram-string: #7a8a9e;
+  --diagram-fret: #3d4f66;
+  --diagram-nut-color: #c8d4e4;
+  --diagram-dot: #3dd6bd;
+  --diagram-dot-root: #5eead4;
+  --diagram-dot-label: #0f172a;
+  --diagram-barre: #94a3b8;
+  --diagram-marker: #c8d4e4;
+}
+
+.diagram-board {
+  fill: var(--diagram-board);
+  stroke: var(--diagram-board-stroke);
+  stroke-width: 1;
+}
+
+.diagram-string {
+  stroke: var(--diagram-string);
+  stroke-linecap: round;
+  opacity: 0.88;
+}
+
+.diagram-fret {
+  stroke: var(--diagram-fret);
+  stroke-width: 1.2;
+  stroke-linecap: round;
 }
 
 .diagram-nut {
-  stroke: var(--text);
-  stroke-width: 5;
+  stroke: var(--diagram-nut-color);
+  stroke-width: 4.5;
+  stroke-linecap: round;
 }
 
 .diagram-barre {
-  stroke: var(--text);
-  stroke-width: 9;
-  stroke-linecap: round;
-  opacity: 0.92;
+  fill: var(--diagram-barre);
+  opacity: 0.82;
+  stroke: none;
 }
 
 .diagram-dot {
-  fill: var(--text);
+  fill: var(--diagram-dot);
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 1;
 }
 
 .diagram-dot-root {
-  fill: var(--text);
-  stroke: var(--bg);
-  stroke-width: 2.5;
+  fill: var(--diagram-dot-root);
+  stroke: #fff;
+  stroke-width: 2.2;
 }
 
 .diagram-finger-num {
-  fill: var(--bg);
-  font-size: 10px;
+  fill: var(--diagram-dot-label);
+  font-size: 9.5px;
   font-weight: 700;
+  font-family: system-ui, -apple-system, sans-serif;
   text-anchor: middle;
   dominant-baseline: middle;
   pointer-events: none;
 }
 
 .diagram-note-label {
-  font-size: 8px;
-  font-weight: 600;
+  font-size: 7.5px;
+  font-weight: 700;
 }
 
 .diagram-tuning {
   fill: var(--muted);
   font-size: 9px;
   font-weight: 600;
+  font-family: system-ui, -apple-system, sans-serif;
   text-anchor: middle;
+  opacity: 0.9;
 }
 
 .diagram-scale-name {
@@ -282,7 +325,7 @@
 
 .diagram-scale-dot {
   fill: var(--accent);
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .diagram-scale-root {
@@ -296,20 +339,24 @@
   opacity: 0.9;
 }
 
-.diagram-open,
-.diagram-mute,
-.diagram-fret-text {
-  fill: var(--text);
-  font-size: 12px;
-  font-weight: 700;
-  text-anchor: middle;
-  dominant-baseline: middle;
+.diagram-open-mark {
+  fill: none;
+  stroke: var(--diagram-marker);
+  stroke-width: 2;
+}
+
+.diagram-mute-mark line {
+  stroke: var(--diagram-marker);
+  stroke-width: 2.2;
+  stroke-linecap: round;
 }
 
 .diagram-fret-text {
-  text-anchor: end;
+  fill: var(--text);
   font-size: 11px;
   font-weight: 600;
+  text-anchor: end;
+  dominant-baseline: middle;
   opacity: 0.85;
 }
 

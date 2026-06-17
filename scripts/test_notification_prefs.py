@@ -44,9 +44,26 @@ def test_user_wants_channel_respects_global_and_category():
     assert user_wants_notification_channel(user, 'push', 'event_scale_assigned') is False
 
 
+def test_push_payload_includes_icons(monkeypatch=None):
+    import json
+    import os
+    from push_notification_service import _push_payload
+
+    os.environ['SETSYNC_CANONICAL_URL'] = 'https://setsync.com.br'
+    payload = json.loads(_push_payload(
+        title='Teste',
+        body='Corpo',
+        url_path='/bands/',
+        notification_type='event_scale_assigned',
+    ))
+    assert payload['icon'] == 'https://setsync.com.br/static/icons/icon-192.png'
+    assert payload['badge'] == 'https://setsync.com.br/static/icons/notification-badge.png'
+
+
 if __name__ == '__main__':
     test_notification_category_mapping()
     test_default_cifras_push_off()
     test_parse_merges_user_prefs()
     test_user_wants_channel_respects_global_and_category()
+    test_push_payload_includes_icons()
     print('ok')

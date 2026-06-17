@@ -38,6 +38,16 @@ def _notification_url(url_path: str | None) -> str:
     return f'{base}{url_path}' if base else url_path
 
 
+def _static_asset_url(path: str) -> str:
+    """URL absoluta para ícones de push (Android exige URL completa)."""
+    if path.startswith('http://') or path.startswith('https://'):
+        return path
+    base = (os.getenv('SETSYNC_CANONICAL_URL') or '').strip().rstrip('/')
+    if not path.startswith('/'):
+        path = '/' + path
+    return f'{base}{path}' if base else path
+
+
 def _push_payload(
     *,
     title: str,
@@ -50,6 +60,8 @@ def _push_payload(
         'body': body or '',
         'url': url_path or '/',
         'type': notification_type,
+        'icon': _static_asset_url('/static/icons/icon-192.png'),
+        'badge': _static_asset_url('/static/icons/notification-badge.png'),
     }, ensure_ascii=False)
 
 

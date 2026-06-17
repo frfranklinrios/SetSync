@@ -130,21 +130,40 @@ def discover_voicings(
     return raw[:limit]
 
 
+def _barre_allowed_on_string(frets: list, string_idx: int, barre_fret: int) -> bool:
+    """Pestana no traste F só é válida se cordas mais graves não tiverem nota em traste < F."""
+    for g in range(string_idx):
+        fg = frets[g]
+        if isinstance(fg, int) and 0 < fg < barre_fret:
+            return False
+    return True
+
+
 def detect_barres(frets: list) -> list[dict]:
-    """Detecta pestanas contíguas no mesmo traste."""
+    """Detecta pestanas contíguas no mesmo traste (com regra de cordas graves)."""
     barres = []
+    n = len(frets)
     i = 0
-    while i < len(frets):
+    while i < n:
         f = frets[i]
         if not isinstance(f, int) or f <= 0:
             i += 1
             continue
         j = i + 1
-        while j < len(frets) and frets[j] == f:
+        while j < n and frets[j] == f:
             j += 1
-        if j - i >= 2:
-            barres.append({'fret': f, 'startString': i + 1, 'endString': j})
-        i = j if j > i + 1 else i + 1
+        s = i
+        while s < j:
+            if not _barre_allowed_on_string(frets, s, f):
+                s += 1
+                continue
+            e = s + 1
+            while e < j and _barre_allowed_on_string(frets, e, f):
+                e += 1
+            if e - s >= 2:
+                barres.append({'fret': f, 'startString': s + 1, 'endString': e})
+            s = e
+        i = j
     return barres
 
 

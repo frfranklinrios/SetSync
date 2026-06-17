@@ -38,6 +38,15 @@ def main():
     from chord_diagram.cache import set_cached, get_cached
     set_cached('test_key', {'ok': True}, ttl=60)
     check(get_cached('test_key',) == {'ok': True}, 'memory cache')
+
+    from chord_diagram.voicing import detect_barres
+    bm = ['x', 2, 4, 4, 4, 2]
+    check(len(detect_barres(bm)) == 0, 'Bm sem pestana falsa no traste 4')
+    ok_barre = [2, 2, 2, 0, 0, 0]
+    b = detect_barres(ok_barre)
+    check(len(b) == 1 and b[0]['fret'] == 2, 'pestana válida trastes graves')
+    blocked = [2, 3, 3, 3, 0, 0]
+    check(len(detect_barres(blocked)) == 0, 'pestana bloqueada por corda grave em traste menor')
     check(doc['theory']['root'] == 'A', 'theory root A')
 
     doc_cav = build_chord_document('Gmaj7', instrument='cavaquinho')
