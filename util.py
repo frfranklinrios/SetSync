@@ -84,13 +84,15 @@ def format_text_chords_br(text, tom_original=None):
         return ''
     key_table = build_key_spelling(tom_original) if tom_original else None
 
-    def _fmt(match):
-        chord = match.group(1)
+    def format_token(chord):
         if key_table is not None:
             chord = _respell_chord_with_key(chord, key_table)
         return to_brazilian_chord_notation(chord)
 
-    return re.sub(_CHORD_REGEX_WB, _fmt, str(text))
+    stripped = str(text).strip()
+    if CHORD_TOKEN_RE.match(stripped):
+        return format_token(stripped)
+    return _bracket_chord_sub(str(text), format_token)
 
 def _normalize_chord_for_pychord(chord_str):
     """Converte notação brasileira para algo que o pychord entenda.
@@ -351,31 +353,31 @@ _CHORD_HEAD = _CHORD_ROOT
 CHORD_TOKEN_RE = re.compile(
     r'^' + _CHORD_ROOT + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r'$'
 )
-# Para uso em substituição inline dentro de uma linha
+# Para uso em substituição inline (legado — preferir colchetes [Acorde])
 CHORD_INLINE_RE = re.compile(
     r'(' + _CHORD_ROOT + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')'
 )
-# Texto livre: \b falha após "#" (ex.: "F#" vira "F" + "#" solto)
-_CHORD_REGEX_WB = (
-    r'(?<![A-Za-z])(' + _CHORD_ROOT + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')(?![A-Za-z0-9])'
-)
+# Acordes válidos apenas entre colchetes [Am], [G/B], etc.
+CHORD_BRACKET_RE = re.compile(r'\[([^\]]+)\]')
 
 
 def pychord_highlight_chords(text):
-    """Destaca acordes usando pychord para validação. Suporta º/° como diminuto."""
+    """Destaca acordes entre colchetes [Am] usando pychord para validação."""
     not_recognized = set()
 
-    def highlight(match):
-        chord_str = match.group(1)
-        normalized = _normalize_chord_for_pychord(chord_str)
+    def repl(match):
+        token = (match.group(1) or '').strip()
+        if not is_bracket_chord_name(token):
+            return match.group(0)
+        normalized = _normalize_chord_for_pychord(token)
         try:
             _ = Chord(normalized)
-            return f'<span class="chord">{chord_str}</span>'
+            return f'<span class="chord">[{token}]</span>'
         except Exception:
-            not_recognized.add(chord_str)
-            return chord_str
+            not_recognized.add(token)
+            return match.group(0)
 
-    result = re.sub(_CHORD_REGEX_WB, highlight, text)
+    result = CHORD_BRACKET_RE.sub(repl, text or '')
     if not_recognized:
         print("Acordes não reconhecidos pelo pychord:", not_recognized)
     return result
@@ -398,10 +400,10 @@ def pychord_transpose_text(text, semitones, tom_origem=None):
     if CHORD_TOKEN_RE.match(stripped):
         return pychord_transpose_chord(stripped, semitones, key_table)
 
-    def transp(match):
-        return pychord_transpose_chord(match.group(1), semitones, key_table)
+    def transpose_token(token):
+        return pychord_transpose_chord(token, semitones, key_table)
 
-    return re.sub(_CHORD_REGEX_WB, transp, text)
+    return _bracket_chord_sub(text, transpose_token)
 
 
 # Notas em ordem cromática
@@ -649,15 +651,28 @@ def is_bracket_chord_name(token: str) -> bool:
     return _is_chord_token(t)
 
 
-def _is_chord_line(line):
-    """Retorna True se a linha for predominantemente acordes"""
-    if _is_tab_line(line) or _is_tab_header(line) or _is_tab_meta_line(line):
-        return False
-    tokens = [t for t in line.split() if t.strip('()[]{} ')]
-    if not tokens:
-        return False
-    chord_count = sum(1 for t in tokens if _is_chord_token(t))
-    return chord_count >= max(1, len(tokens) * 0.7)
+def _bracket_chord_sub(text, repl_fn):
+    """Substitui apenas tokens entre colchetes que forem acordes válidos."""
+
+    def repl(match):
+        token = (match.group(1) or '').strip()
+        if not is_bracket_chord_name(token):
+            return match.group(0)
+        return f'[{repl_fn(token)}]'
+
+    return CHORD_BRACKET_RE.sub(repl, text or '')
+
+
+def _highlight_bracket_chords_escaped(escaped_line: str) -> str:
+    """Destaca [Acorde] em linha já escapada para HTML."""
+
+    def repl(match):
+        token = (match.group(1) or '').strip()
+        if is_bracket_chord_name(token):
+            return f'<span class="chord">[{html_lib.escape(token)}]</span>'
+        return match.group(0)
+
+    return CHORD_BRACKET_RE.sub(repl, escaped_line)
 
 
 _TAB_LINE_RE = re.compile(
@@ -899,9 +914,8 @@ def _render_tab_block(lines: list[str]) -> str:
 def highlight_chords_html(text):
     """
     Converte texto de cifra em HTML com acordes destacados.
-    - Linhas de acorde puro: fundo sutil + cada acorde em <span class="chord">
-    - Linhas com [Acorde] inline: destaca os colchetes
-    - Linhas de letra: texto normal
+    - Acordes entre colchetes [Am]: cada acorde em <span class="chord">
+    - Linhas de letra sem colchetes: texto normal
     Seguro contra XSS: o conteúdo do usuário é escapado antes de qualquer markup.
     """
     if text is None:
@@ -962,30 +976,14 @@ def highlight_chords_html(text):
             result.append(_render_tab_block(block))
             continue
 
-        # Formato inline [Am] palavra [G] palavra
-        if re.search(r'\[[A-G][^\]]{0,10}\]', line):
+        if CHORD_BRACKET_RE.search(line):
             escaped = html_lib.escape(line)
-            highlighted = re.sub(
-                r'\[([A-G][^\]]{0,10})\]',
-                r'<span class="chord">[\1]</span>',
-                escaped
+            result.append(
+                f'<span class="cifra-lyric">{_highlight_bracket_chords_escaped(escaped)}</span>'
             )
-            result.append(f'<span class="cifra-lyric">{highlighted}</span>')
             i += 1
             continue
 
-        # Linha só de acordes
-        if _is_chord_line(line):
-            escaped = html_lib.escape(line)
-            highlighted = CHORD_INLINE_RE.sub(
-                r'<span class="chord">\1</span>',
-                escaped
-            )
-            result.append(f'<span class="cifra-chords">{highlighted}</span>')
-            i += 1
-            continue
-
-        # Linha de letra
         result.append(f'<span class="cifra-lyric">{html_lib.escape(line)}</span>')
         i += 1
 
@@ -1104,16 +1102,6 @@ def highlight_chords_play_html(text):
                 result.append(''.join(parts))
                 i += 1
                 continue
-
-        if _is_chord_line(line):
-            escaped = html_lib.escape(line)
-            highlighted = CHORD_INLINE_RE.sub(
-                r'<span class="chord">\1</span>',
-                escaped,
-            )
-            result.append(f'<span class="cifra-chords">{highlighted}</span>')
-            i += 1
-            continue
 
         result.append(f'<span class="cifra-lyric">{html_lib.escape(line)}</span>')
         i += 1

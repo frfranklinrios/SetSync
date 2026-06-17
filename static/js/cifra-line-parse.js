@@ -154,34 +154,6 @@
         continue;
       }
 
-      var next = lines[i + 1];
-      if (
-        isChordLine(line) &&
-        next !== undefined &&
-        !isChordLine(next) &&
-        next.trim() !== ""
-      ) {
-        var chordRe = /\S+/g;
-        var cm;
-        var chords = [];
-        while ((cm = chordRe.exec(line)) !== null) {
-          chords.push({ chord: cm[0], pos: cm.index });
-        }
-        for (var j = 0; j < chords.length; j++) {
-          var start = chords[j].pos;
-          var end = j + 1 < chords.length ? chords[j + 1].pos : next.length;
-          result.push({
-            segundo: seq++,
-            texto_letra: next.slice(start, end).trim(),
-            acorde: chords[j].chord,
-            group: group,
-          });
-        }
-        group++;
-        i += 2;
-        continue;
-      }
-
       result.push({
         segundo: seq++,
         texto_letra: line.trim(),

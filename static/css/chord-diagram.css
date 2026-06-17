@@ -422,3 +422,18 @@
   color: var(--muted);
   font-weight: 400;
 }
+
+.notation-panel .diagram-svg-object {
+  max-width: 100%;
+  height: auto;
+  min-height: 180px;
+}
+
+.vextab-source {
+  background: var(--surface-2, #1c1917);
+  border-radius: 8px;
+  padding: 0.75rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

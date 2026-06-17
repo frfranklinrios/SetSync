@@ -22,3 +22,5 @@ playwright>=1.60.0
 qrcode[pil]>=7.4.2
 psycopg2-binary>=2.9.9
 pywebpush>=2.0.0
+# Opcional: cache da API musical (REDIS_URL=redis://localhost:6379/0)
+redis>=5.0.0

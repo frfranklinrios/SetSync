@@ -16,6 +16,7 @@ from blueprints.mail_web import mail_web_bp
 from blueprints.whatsapp_admin import whatsapp_admin_bp
 from blueprints.agenda import agenda_bp
 from blueprints.convites import convites_bp
+from blueprints.music_api import music_api_bp
 from agenda_util import event_relative_label, format_event_datetime
 from db import init_db
 from extensions import init_scheduler
@@ -202,10 +203,27 @@ app.register_blueprint(mail_web_bp)
 app.register_blueprint(whatsapp_admin_bp)
 app.register_blueprint(agenda_bp)
 app.register_blueprint(convites_bp)
+app.register_blueprint(music_api_bp)
 init_scheduler(app)
 
 # Webhook Mercado Pago: POST externo sem CSRF de formulário
 csrf.exempt(mp_webhook_view)
+
+# API musical v1 — JSON/SVG para clientes externos
+for _music_ep in (
+    'music_api.catalog',
+    'music_api.chords_index',
+    'music_api.chords_detail',
+    'music_api.scales_index',
+    'music_api.arpeggios_index',
+    'music_api.render_fretboard',
+    'music_api.render_piano',
+    'music_api.notation_vexflow',
+    'music_api.telemetry_ndjson',
+):
+    _mv = app.view_functions.get(_music_ep)
+    if _mv:
+        csrf.exempt(_mv)
 
 # APIs JSON autenticadas (login_required) — fetch do editor Chord Sheet / LeadSheet
 for _csrf_json_endpoint in (

@@ -320,7 +320,7 @@ def _normalize_grouped_sections(groups):
 
 
 def _parse_conteudo_to_cifra_data(conteudo):
-    """Parse ChordPro, colchetes ou duas linhas → estrutura cifra_json."""
+    """Parse ChordPro ou colchetes [Am] → estrutura cifra_json."""
     from chordpro import parse_conteudo_to_cifra_data
     return parse_conteudo_to_cifra_data(conteudo)
 
@@ -1138,11 +1138,13 @@ def chordsheet_render(cifra_id):
 @cifras_bp.route('/chord-info', methods=['GET'])
 @login_required
 def chord_info():
-    """Retorna notas/componentes de um acorde (ou progressão) para diagramas."""
-    from chord_diagram import chord_diagram_payload
+    """Retorna notas, posições e escalas para diagramas (API v1)."""
+    from chord_diagram.api_service import fetch_progression_for_modal
 
     symbol = request.args.get('symbol', '').strip()
-    payload = chord_diagram_payload(symbol)
+    instrument = request.args.get('instrument', 'violao')
+    key_ctx = request.args.get('key')
+    payload = fetch_progression_for_modal(symbol, instrument=instrument, key_context=key_ctx)
     if payload.get('error') and not payload.get('chords'):
         return jsonify(payload), 400
     return jsonify(payload)

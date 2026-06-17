@@ -6,7 +6,6 @@ from typing import Any
 
 from util import (
     _TAB_ARTIFACT_RE,
-    _is_chord_line,
     _is_tab_header,
     _is_tab_line,
     _is_tab_meta_line,
@@ -159,7 +158,7 @@ def _group_items_by_field(data: list[dict[str, Any]]) -> list[list[dict[str, Any
 
 def parse_conteudo_to_cifra_data(conteudo: str) -> list[dict[str, Any]]:
     """
-    Interpreta texto (ChordPro, colchetes ou duas linhas) → lista cifra_json.
+    Interpreta texto (ChordPro ou colchetes [Am]) → lista cifra_json.
     """
     from cifras_tool.scraper.comum import normalizar_colagem_cifraclub
 
@@ -293,30 +292,6 @@ def parse_conteudo_to_cifra_data(conteudo: str) -> list[dict[str, Any]]:
                 group += 1
                 i += 1
                 continue
-
-        next_line = lines[i + 1] if i + 1 < len(lines) else None
-        if (
-            next_line is not None
-            and _is_chord_line(stripped)
-            and not _is_chord_line(next_line.strip())
-            and next_line.strip()
-        ):
-            chord_re = re.compile(r'\S+')
-            chords = [(m.group(0), m.start()) for m in chord_re.finditer(line)]
-            lyric = next_line
-            for j, (chord, pos) in enumerate(chords):
-                end = chords[j + 1][1] if j + 1 < len(chords) else len(lyric)
-                texto = lyric[pos:end]
-                result.append({
-                    'segundo': seq,
-                    'texto_letra': texto,
-                    'acorde': _format_chord_token(chord),
-                    'group': group,
-                })
-                seq += 1
-            group += 1
-            i += 2
-            continue
 
         if is_comment_line(stripped):
             i += 1

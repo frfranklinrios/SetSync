@@ -71,7 +71,11 @@
         state.selectedShape = 0;
         return;
       }
-      state.shapeOptions = CD.buildShapeOptions(state.instrument, chord);
+      if (chord.positions && chord.positions.length) {
+        state.shapeOptions = CD.positionsToShapeOptions(chord.positions);
+      } else {
+        state.shapeOptions = CD.buildShapeOptions(state.instrument, chord);
+      }
       if (state.selectedShape >= state.shapeOptions.length) state.selectedShape = 0;
     }
 
@@ -99,6 +103,9 @@
         btn.classList.toggle('active', btn.getAttribute('data-view') === state.viewMode);
       });
       tabs.style.display = state.instrument === 'baixo' ? 'none' : 'flex';
+      tabs.querySelectorAll('[data-view="notation"]').forEach(function (btn) {
+        btn.style.display = state.instrument === 'baixo' ? 'none' : '';
+      });
     }
 
     function renderScaleNav() {
@@ -187,6 +194,30 @@
       if (body) body.innerHTML = html;
     }
 
+    function renderNotationView(chord, body, notesEl, titleEl) {
+      titleEl.textContent = 'Partitura: ' + chord.display;
+      notesEl.textContent = 'VexTab · posição ' + (state.selectedShape + 1);
+      body.innerHTML = '<div class="diagram-loading text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>';
+      var sym = chord.display || chord.input || state.rawSymbol;
+      CD.fetchVextab(sym, state.instrument, state.selectedShape)
+        .then(function (data) {
+          if (!data || !data.vextab) {
+            body.innerHTML = '<div class="text-muted">Partitura indisponível.</div>';
+            return;
+          }
+          var svgUrl = CD.renderServerSvg(sym, state.instrument, state.selectedShape);
+          body.innerHTML =
+            '<div class="notation-panel">' +
+            '<div class="notation-svg-wrap mb-3"><object type="image/svg+xml" data="' +
+            CD.escText(svgUrl) + '" class="diagram-svg-object" aria-label="Diagrama SVG"></object></div>' +
+            '<details class="vextab-details"><summary class="small text-muted">VexTab (VexFlow)</summary>' +
+            '<pre class="vextab-source small">' + CD.escText(data.vextab) + '</pre></details></div>';
+        })
+        .catch(function () {
+          body.innerHTML = '<div class="alert alert-warning mb-0">Não foi possível carregar a partitura.</div>';
+        });
+    }
+
     function renderModalBody() {
       var chord = currentChord();
       if (!chord) return;
@@ -201,7 +232,9 @@
       var body = document.getElementById('chord-modal-body-content');
       var opts = renderOpts();
 
-      if (state.viewMode === 'scale' && state.instrument !== 'baixo') {
+      if (state.viewMode === 'notation' && state.instrument !== 'baixo') {
+        renderNotationView(chord, body, notesEl, titleEl);
+      } else if (state.viewMode === 'scale' && state.instrument !== 'baixo') {
         titleEl.textContent = 'Escalas: ' + chord.display;
         var sc = state.scaleOptions[state.selectedScale];
         if (sc) {
@@ -232,8 +265,31 @@
     }
 
     function setViewMode(mode) {
-      state.viewMode = mode === 'scale' ? 'scale' : 'chord';
+      if (mode === 'scale') state.viewMode = 'scale';
+      else if (mode === 'notation') state.viewMode = 'notation';
+      else state.viewMode = 'chord';
       renderModalBody();
+    }
+
+    function loadChordsFromApi(symbol, instrument) {
+      var loader = CD.fetchModalChords || fetchChordInfoLegacy;
+      return loader(symbol, instrument).then(function (data) {
+        if (!data || data.error || !Array.isArray(data.chords) || !data.chords.length) {
+          return data;
+        }
+        state.chords = data.chords;
+        state.selectedChord = 0;
+        state.selectedShape = 0;
+        state.selectedScale = 0;
+        return data;
+      });
+    }
+
+    function fetchChordInfoLegacy(symbol) {
+      return fetch('/cifras/chord-info?symbol=' + encodeURIComponent(symbol), {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      }).then(function (r) { return r.json(); });
     }
 
     function setInstrument(inst) {
@@ -244,7 +300,20 @@
       });
       var bassOptions = document.getElementById('bass-options');
       if (bassOptions) bassOptions.classList.toggle('show', inst === 'baixo');
-      renderModalBody();
+      if (state.rawSymbol && CD.fetchModalChords) {
+        showBodyMessage('<div class="diagram-loading text-center py-4"><div class="spinner-border spinner-border-sm text-secondary"></div></div>');
+        loadChordsFromApi(state.rawSymbol, inst)
+          .then(function (data) {
+            if (!data || data.error) {
+              showBodyMessage('<div class="alert alert-warning mb-0">Instrumento indisponível para este acorde.</div>');
+              return;
+            }
+            renderModalBody();
+          })
+          .catch(function () { renderModalBody(); });
+      } else {
+        renderModalBody();
+      }
     }
 
     function setBassType(kind) {
@@ -256,10 +325,10 @@
     }
 
     function fetchChordInfo(symbol) {
-      return fetch('/cifras/chord-info?symbol=' + encodeURIComponent(symbol), {
-        credentials: 'same-origin',
-        headers: { Accept: 'application/json' },
-      }).then(function (r) { return r.json(); });
+      if (CD.fetchModalChords) {
+        return CD.fetchModalChords(symbol, state.instrument);
+      }
+      return fetchChordInfoLegacy(symbol);
     }
 
     function openChordModal(symbol) {
@@ -283,7 +352,10 @@
           state.selectedShape = 0;
           state.selectedScale = 0;
           state.viewMode = 'chord';
-          setInstrument(state.instrument || 'violao');
+          document.querySelectorAll('.chord-inst-btn').forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-inst') === state.instrument);
+          });
+          renderModalBody();
         })
         .catch(function () {
           showBodyMessage('<div class="alert alert-danger mb-0">Erro ao carregar o diagrama. Tente novamente.</div>');

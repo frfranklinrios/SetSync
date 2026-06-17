@@ -1,37 +1,27 @@
-"""Escalas sugeridas para diagramas (metadados; render no cliente)."""
+"""Escalas sugeridas para diagramas (compat — ver scales_db.py)."""
 
 from __future__ import annotations
 
-SCALE_TYPES = {
-    'major': {'id': 'major', 'label': 'Maior', 'intervals': [0, 2, 4, 5, 7, 9, 11]},
-    'minor': {'id': 'minor', 'label': 'Menor natural', 'intervals': [0, 2, 3, 5, 7, 8, 10]},
-    'pent_major': {'id': 'pent_major', 'label': 'Pentatônica maior', 'intervals': [0, 2, 4, 7, 9]},
-    'pent_minor': {'id': 'pent_minor', 'label': 'Pentatônica menor', 'intervals': [0, 3, 5, 7, 10]},
-    'blues': {'id': 'blues', 'label': 'Blues', 'intervals': [0, 3, 5, 6, 7, 10]},
-    'mixolydian': {'id': 'mixolydian', 'label': 'Mixolídio', 'intervals': [0, 2, 4, 5, 7, 9, 10]},
-    'dorian': {'id': 'dorian', 'label': 'Dórico', 'intervals': [0, 2, 3, 5, 7, 9, 10]},
-}
+from chord_diagram.scales_db import (
+    SCALE_TYPES,
+    list_scale_types,
+    resolve_scale_type,
+    scale_formula,
+    scale_note_names,
+)
 
-_CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-_NOTE_IDX = {n: i for i, n in enumerate(_CHROMATIC)}
-_NOTE_IDX.update({'Db': 1, 'Eb': 3, 'Gb': 6, 'Ab': 8, 'Bb': 10})
-
-
-def _note_index(note: str) -> int | None:
-    n = (note or '').strip().replace('♯', '#').replace('♭', 'b')
-    return _NOTE_IDX.get(n)
-
-
-def scale_note_names(root: str, scale_id: str) -> list[str]:
-    spec = SCALE_TYPES.get(scale_id)
-    ri = _note_index(root)
-    if not spec or ri is None:
-        return []
-    return [_CHROMATIC[(ri + iv) % 12] for iv in spec['intervals']]
+__all__ = [
+    'SCALE_TYPES',
+    'list_scale_types',
+    'resolve_scale_type',
+    'scale_formula',
+    'scale_note_names',
+    'suggest_scale_ids',
+    'suggest_scales_for_chord',
+]
 
 
 def suggest_scale_ids(chord_display: str) -> list[str]:
-    """IDs de escala sugeridas conforme a qualidade do acorde."""
     import re
 
     text = (chord_display or '').strip()

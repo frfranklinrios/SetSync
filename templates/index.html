@@ -627,6 +627,7 @@
                     <div class="diagram-view-tabs" id="diagram-view-tabs">
                         <button type="button" class="diagram-view-btn active" data-view="chord">Acorde</button>
                         <button type="button" class="diagram-view-btn" data-view="scale">Escalas</button>
+                        <button type="button" class="diagram-view-btn" data-view="notation">Partitura</button>
                     </div>
                     <div class="diagram-display-row mb-2">
                         <span class="diagram-display-label">Exibir:</span>
@@ -699,7 +700,8 @@
     <script src="{{ url_for('static', filename='js/chord-diagram/scale-theory.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/scale-renderer.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio.js') }}?v=2"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=4"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/api-client.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=5"></script>
     <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=1"></script>
     {% endblock %}
     {% include 'partials/google_ads_signup_event.html' %}

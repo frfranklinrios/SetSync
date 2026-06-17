@@ -22,6 +22,9 @@ RUN pip install --no-cache-dir -r requirements.txt \
 # Copiar aplicação
 COPY . .
 
+# Posições clássicas para a API de diagramas (gerado de real-shapes.js)
+RUN python3 scripts/build_real_shapes.py
+
 # Criar diretório de dados
 RUN mkdir -p data
 

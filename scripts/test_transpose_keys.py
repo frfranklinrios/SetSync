@@ -56,17 +56,21 @@ def main() -> int:
     check(pychord_transpose_text('Em', 2, 'C') == 'F#m', f"Em +2 -> {pychord_transpose_text('Em', 2, 'C')!r} (esperado F#m)")
     # Acorde com baixo invertido.
     check(pychord_transpose_text('C/E', 2, 'C') == 'D/F#', f"C/E +2 -> {pychord_transpose_text('C/E', 2, 'C')!r} (esperado D/F#)")
+    check(pychord_transpose_text('[Em] nome de Jesus', 2, 'C') == '[F#m] nome de Jesus',
+          f"[Em] em letra -> {pychord_transpose_text('[Em] nome de Jesus', 2, 'C')!r}")
+    check(pychord_transpose_text('Em nome de Jesus', 2, 'C') == 'Em nome de Jesus',
+          f"sem colchetes não transpõe -> {pychord_transpose_text('Em nome de Jesus', 2, 'C')!r}")
 
     print('\n=== format_text_chords_br (regrafa pela armadura) ===')
     # D# pertence à grafia de Mi♭ como Eb.
     check(format_text_chords_br('D#', 'Eb') == 'Eb', f"D# em Eb -> {format_text_chords_br('D#', 'Eb')!r} (esperado Eb)")
 
     print('\n=== fluxo completo (transpor + formatar) ===')
-    linha = 'C  Am  F  G'
+    linha = '[C]  [Am]  [F]  [G]'
     semi = 3
     out = pychord_transpose_text(linha, semi, 'C')
     out = format_text_chords_br(out, key_at_transpose('C', semi))
-    check(out == 'Eb  Cm  Ab  Bb', f"linha C->Eb -> {out!r} (esperado 'Eb  Cm  Ab  Bb')")
+    check(out == '[Eb]  [Cm]  [Ab]  [Bb]', f"linha C->Eb -> {out!r} (esperado '[Eb]  [Cm]  [Ab]  [Bb]')")
 
     print('\n=== B → Bb (Gostoso demais) ===')
     from util import pychord_transpose_chord, transpose_chord_display
