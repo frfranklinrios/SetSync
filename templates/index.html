@@ -666,16 +666,22 @@
     <script src="{{ url_for('static', filename='js/notifications.js') }}?v=3"></script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    {% if session.user_id %}
+    <script src="{{ url_for('static', filename='js/push-notifications.js') }}?v=1"></script>
+    {% endif %}
     {% block chord_diagram %}
     <script src="{{ url_for('static', filename='js/chord-diagram/constants.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/shapes.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/real-shapes.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/theory.js') }}?v=2"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/renderer.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/chords-db-shapes.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/voicing-engine.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/auto-finger.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/theory.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/renderer.js') }}?v=3"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/scale-theory.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/scale-renderer.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio.js') }}?v=2"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=3"></script>
     <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=1"></script>
     {% endblock %}
     {% include 'partials/google_ads_signup_event.html' %}

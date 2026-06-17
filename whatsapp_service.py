@@ -197,14 +197,15 @@ def dispatch_notification_whatsapp(
     title: str,
     body: str = '',
     url_path: str | None = None,
+    notification_type: str = '',
 ) -> bool:
     """Envia WhatsApp ao usuário se tiver telefone e opt-in ativo."""
     if not is_configured() or not user_id:
         return False
-    from db import get_user, user_wants_whatsapp_notifications
+    from db import get_user, user_wants_notification_channel
 
     user = get_user(user_id)
-    if not user or not user_wants_whatsapp_notifications(user):
+    if not user or not user_wants_notification_channel(user, 'whatsapp', notification_type):
         return False
     phone = user.get('phone') or ''
     if not phone:

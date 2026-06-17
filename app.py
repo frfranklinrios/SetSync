@@ -245,15 +245,21 @@ def index():
         return redirect(url_for('dashboard'))
     from monetizacao import planos_para_site
     from db import count_bands, count_cifras, count_setlists, list_testimonials
+    from cifras_tool.api_cifras_client import get_api_cifras_public_stats
+
+    stats = {
+        'bandas': count_bands(),
+        'musicas': count_cifras(),
+        'setlists': count_setlists(),
+    }
+    api_cifras_stats = get_api_cifras_public_stats()
+    if api_cifras_stats.get('available'):
+        stats['biblioteca'] = api_cifras_stats['songs_cached']
 
     return render_template(
         'home.html',
         planos_site=planos_para_site(),
-        stats={
-            'bandas': count_bands(),
-            'musicas': count_cifras(),
-            'setlists': count_setlists(),
-        },
+        stats=stats,
         testimonials=list_testimonials(active_only=True),
     )
 
@@ -467,6 +473,7 @@ def dashboard():
             api_cifras_stats=api_cifras_stats,
         )
     owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
+    bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
     upcoming_events = _enrich_upcoming(get_upcoming_events_for_user(user_id, limit=8))
     return render_template(
         'dashboard.html',

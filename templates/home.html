@@ -461,10 +461,10 @@
     padding: 2rem 1.5rem;
 }
 .home-stats-grid {
-    max-width: 900px;
+    max-width: 1100px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 1.5rem;
     text-align: center;
 }
@@ -569,6 +569,12 @@
             <div class="home-stat-num" data-stat="setlists" data-target="{{ stats.setlists }}">0</div>
             <div class="home-stat-label">Setlists criados</div>
         </div>
+        {% if stats.biblioteca is defined %}
+        <div>
+            <div class="home-stat-num" data-stat="biblioteca" data-target="{{ stats.biblioteca }}" data-format="pt-br">0</div>
+            <div class="home-stat-label">Cifras na biblioteca</div>
+        </div>
+        {% endif %}
     </div>
 </section>
 {% endif %}
@@ -723,8 +729,17 @@
 <script>
 (function () {
     var els = document.querySelectorAll('.home-stat-num[data-target]');
+    function formatStat(el, n) {
+        if (el.dataset.format === 'pt-br') {
+            el.textContent = n.toLocaleString('pt-BR');
+        } else {
+            el.textContent = String(n);
+        }
+    }
     if (!els.length || !('IntersectionObserver' in window)) {
-        els.forEach(function (el) { el.textContent = el.dataset.target; });
+        els.forEach(function (el) {
+            formatStat(el, parseInt(el.dataset.target, 10) || 0);
+        });
         return;
     }
     function animate(el) {
@@ -734,7 +749,8 @@
         var t0 = performance.now();
         function frame(t) {
             var p = Math.min(1, (t - t0) / duration);
-            el.textContent = Math.round(start + (target - start) * p);
+            var current = Math.round(start + (target - start) * p);
+            formatStat(el, current);
             if (p < 1) requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);

@@ -38,7 +38,19 @@
     if (ql === 'sus4') return root + 'sus4';
     if (ql === '7sus4') return root + '7sus4';
     if (ql === 'sus2') return root;
-    if (ql === 'dim' || ql === 'o' || ql === 'º' || ql === '°') return root + 'm';
+    if (ql === 'dim' || ql === 'o' || ql === 'º' || ql === '°') return root + 'dim';
+    if (ql === 'dim7' || ql === 'm7b5' || ql === 'ø') return root + 'm7b5';
+    if (ql === 'aug' || ql === '+') return root + 'aug';
+    if (ql === '6') return root + '6';
+    if (ql === 'm6' || ql === 'min6') return root + 'm6';
+    if (ql === '9') return root + '9';
+    if (ql === 'm9' || ql === 'min9') return root + 'm9';
+    if (ql === 'maj9' || ql === 'M9') return root + 'maj9';
+    if (ql === 'add9') return root + 'add9';
+    if (ql === '11') return root + '11';
+    if (ql === 'm11') return root + 'm11';
+    if (ql === '13') return root + '13';
+    if (ql === '5') return root + '5';
     return root + q;
   }
 
@@ -59,11 +71,17 @@
 
   function getChordPositions(inst, chordDisplay) {
     var realBank = (CD.REAL_SHAPES && CD.REAL_SHAPES[inst]) || {};
+    var dbBank = (CD.CHORDS_DB_SHAPES && CD.CHORDS_DB_SHAPES[inst]) || {};
     var legacyBank = (COMMON_SHAPES && COMMON_SHAPES[inst]) || {};
     var keys = chordKeyCandidates(chordDisplay);
     for (var i = 0; i < keys.length; i++) {
       if (realBank[keys[i]] && realBank[keys[i]].length) {
         return realBank[keys[i]].slice();
+      }
+    }
+    for (var d = 0; d < keys.length; d++) {
+      if (dbBank[keys[d]] && dbBank[keys[d]].length) {
+        return dbBank[keys[d]].slice();
       }
     }
     for (var j = 0; j < keys.length; j++) {
@@ -229,22 +247,31 @@
     }
 
     var autos = buildAutoShapes(tuning, chord.notes || [], 3);
+    if (CD.discoverVoicings) {
+      var discovered = CD.discoverVoicings(tuning, chord.notes || [], 6);
+      discovered.forEach(function (v) {
+        var k = fretsKey(v.frets);
+        var dup = autos.some(function (f) { return fretsKey(f) === k; });
+        if (!dup) autos.push(v.frets);
+      });
+    }
     if (autos.length) {
-      return autos.map(function (f, idx) {
+      return autos.slice(0, 6).map(function (f, idx) {
+        var fingers = CD.assignAutoFingers ? CD.assignAutoFingers(f) : null;
         return {
           frets: f,
-          fingers: null,
-          label: 'Sugerido ' + (idx + 1),
-          source: 'Posição sugerida',
+          fingers: fingers,
+          label: idx === 0 ? 'Sugerido' : 'Variação ' + (idx + 1),
+          source: 'Algoritmo de voicings',
         };
       });
     }
 
     return [{
       frets: buildAutoShape(tuning, chord.notes || []),
-      fingers: null,
+      fingers: CD.assignAutoFingers ? CD.assignAutoFingers(buildAutoShape(tuning, chord.notes || [])) : null,
       label: 'Sugerido',
-      source: 'Posição sugerida',
+      source: 'Algoritmo de voicings',
     }];
   }
 

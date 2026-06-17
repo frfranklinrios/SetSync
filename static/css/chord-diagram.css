@@ -181,6 +181,18 @@
   pointer-events: none;
 }
 
+.diagram-note-label {
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.diagram-tuning {
+  fill: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
 .diagram-scale-name {
   font-size: var(--text-xl);
 }

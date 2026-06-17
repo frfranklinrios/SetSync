@@ -631,13 +631,10 @@ def perfil():
         flash('Usuário não encontrado.', 'danger')
         return redirect(url_for('dashboard'))
 
-    perfil_ctx = dict(user=user)
+    perfil_ctx = _perfil_template_context(user)
 
     if request.method == 'POST':
-        nome = (request.form.get('display_name') or '').strip()
-        phone_raw = (request.form.get('phone') or '').strip()
-        whatsapp_notify = request.form.get('whatsapp_notify') == '1'
-        email_notify = request.form.get('email_notify') == '1'
+        form_section = (request.form.get('form_section') or 'profile').strip()
         blockout_action = (request.form.get('blockout_action') or '').strip()
 
         if blockout_action == 'add':
@@ -657,6 +654,32 @@ def perfil():
                 flash('Indisponibilidade removida.', 'info')
             return redirect(url_for('auth.perfil'))
 
+        if form_section == 'notifications':
+            from notification_prefs import NOTIFICATION_CATEGORIES
+
+            push_notify = request.form.get('push_notify') == '1'
+            email_notify = request.form.get('email_notify') == '1'
+            whatsapp_notify = request.form.get('whatsapp_notify') == '1'
+            prefs = {'categories': {}}
+            for cat_id in NOTIFICATION_CATEGORIES:
+                prefs['categories'][cat_id] = {
+                    'push': request.form.get(f'notify_{cat_id}_push') == '1',
+                    'email': request.form.get(f'notify_{cat_id}_email') == '1',
+                    'whatsapp': request.form.get(f'notify_{cat_id}_whatsapp') == '1',
+                }
+            update_user_profile(
+                session['user_id'],
+                push_notify=push_notify,
+                email_notify=email_notify,
+                whatsapp_notify=whatsapp_notify if user.get('phone') else False,
+                notification_prefs=prefs,
+            )
+            flash('Preferências de notificação salvas.', 'success')
+            return redirect(url_for('auth.perfil'))
+
+        nome = (request.form.get('display_name') or '').strip()
+        phone_raw = (request.form.get('phone') or '').strip()
+
         if len(nome) < 2:
             flash('Digite um nome com pelo menos 2 caracteres.', 'warning')
             return render_template('perfil.html', **perfil_ctx)
@@ -672,8 +695,7 @@ def perfil():
             session['user_id'],
             display_name=nome,
             phone=phone_raw,
-            whatsapp_notify=whatsapp_notify if phone_raw else False,
-            email_notify=email_notify,
+            whatsapp_notify=False if not phone_raw else None,
         )
         session['display_name'] = nome
         flash('Perfil atualizado.', 'success')
@@ -682,4 +704,18 @@ def perfil():
     from models_band_team import list_user_blockouts
     perfil_ctx['blockouts'] = list_user_blockouts(session['user_id'])
     return render_template('perfil.html', **perfil_ctx)
+
+
+def _perfil_template_context(user: dict) -> dict:
+    from db import get_user_notification_prefs
+    from notification_prefs import NOTIFICATION_CATEGORIES
+    from push_notification_service import is_push_configured
+
+    prefs = get_user_notification_prefs(user)
+    return {
+        'user': user,
+        'notification_categories': NOTIFICATION_CATEGORIES,
+        'notification_prefs': prefs,
+        'push_configured': is_push_configured(),
+    }
 

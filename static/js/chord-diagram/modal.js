@@ -221,7 +221,7 @@
     }
 
     document.addEventListener('click', function (ev) {
-      var target = ev.target.closest('.chord, .cj-chord, .sp-chord, .grade-chord, .grade-chord-play, .chord-text, .chord-sheet-chord');
+      var target = ev.target.closest('.chord, .cj-chord, .sp-chord, .grade-chord, .grade-chord-play, .grade-visual-chord, .chord-text, .chord-sheet-chord, .cs-chord');
       if (target && target.textContent && target.textContent.trim()) {
         ev.preventDefault();
         openChordModal(target.textContent.trim());

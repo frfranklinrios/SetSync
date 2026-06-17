@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="row justify-content-center py-2">
-  <div class="col-lg-7">
+  <div class="col-lg-9">
     <h2 class="mb-3">Meu perfil</h2>
     {% if user.email %}
     <div class="card mb-3">
@@ -22,44 +22,127 @@
       </div>
     </div>
     {% endif %}
-    <div class="card">
+    <div class="card mb-3">
       <div class="card-body">
         <form method="POST" action="{{ url_for('auth.perfil') }}">
           {% include 'partials/csrf_input.html' %}
+          <input type="hidden" name="form_section" value="profile">
           <div class="mb-3">
             <label class="form-label" for="display_name">Nome no app</label>
             <input type="text" class="form-control" id="display_name" name="display_name"
                    value="{{ user.display_name or '' }}" required maxlength="60">
             <div class="form-text">É assim que os integrantes da banda veem você — escalação, membros e notificações.</div>
           </div>
-          <div class="mb-3">
+          <div class="mb-4">
             <label class="form-label" for="phone">WhatsApp</label>
             <input type="tel" class="form-control" id="phone" name="phone"
                    value="{{ user.phone or '' }}" placeholder="Ex.: 11 99999-9999" inputmode="tel">
             <div class="form-text">Com DDI 55 se omitir o país. Usado para alertas da banda.</div>
           </div>
-          <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" id="email_notify" name="email_notify"
-                   value="1" {% if user.email_notify is none or user.email_notify %}checked{% endif %}>
-            <label class="form-check-label" for="email_notify">
-              Receber notificações da banda e lembretes por e-mail
-            </label>
-          </div>
-          <div class="form-check mb-4">
-            <input class="form-check-input" type="checkbox" id="whatsapp_notify" name="whatsapp_notify"
-                   value="1" {% if user.whatsapp_notify is none or user.whatsapp_notify %}checked{% endif %}
-                   {% if not user.phone %}disabled{% endif %}>
-            <label class="form-check-label" for="whatsapp_notify">
-              Receber notificações da banda por WhatsApp
-            </label>
-          </div>
           <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Salvar</button>
+            <button type="submit" class="btn btn-primary">Salvar perfil</button>
             <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Voltar</a>
           </div>
         </form>
       </div>
     </div>
+
+    <div class="card mb-3" id="notificacoes">
+      <div class="card-body">
+        <h3 class="h6 mb-2">Notificações</h3>
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+          Escolha como receber cada tipo de alerta. No celular, ative o <strong>push</strong> para avisos instantâneos
+          (Android e iPhone com o app instalado na tela inicial).
+        </p>
+
+        {% if push_configured %}
+        <div class="alert alert-light border mb-3 py-2 px-3" id="push-device-status">
+          <div class="d-flex flex-wrap align-items-center gap-2 justify-content-between">
+            <span id="push-device-label" class="small text-muted">Verificando push no dispositivo…</span>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="push-enable-btn" hidden>
+              <i class="fas fa-bell me-1"></i> Ativar neste dispositivo
+            </button>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-3">Push ainda não configurado no servidor.</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('auth.perfil') }}#notificacoes">
+          {% include 'partials/csrf_input.html' %}
+          <input type="hidden" name="form_section" value="notifications">
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-4">
+              <div class="form-check">
+                <input class="form-check-input notify-global" type="checkbox" id="push_notify" name="push_notify"
+                       value="1" data-channel="push" {% if user.push_notify %}checked{% endif %}>
+                <label class="form-check-label" for="push_notify">Push no celular / navegador</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check">
+                <input class="form-check-input notify-global" type="checkbox" id="email_notify" name="email_notify"
+                       value="1" data-channel="email" {% if user.email_notify is none or user.email_notify %}checked{% endif %}>
+                <label class="form-check-label" for="email_notify">E-mail</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check">
+                <input class="form-check-input notify-global" type="checkbox" id="whatsapp_notify" name="whatsapp_notify"
+                       value="1" data-channel="whatsapp"
+                       {% if user.whatsapp_notify is none or user.whatsapp_notify %}checked{% endif %}
+                       {% if not user.phone %}disabled{% endif %}>
+                <label class="form-check-label" for="whatsapp_notify">WhatsApp</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-3 notify-prefs-table">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th class="text-center" style="width:4.5rem;">Push</th>
+                  <th class="text-center" style="width:4.5rem;">E-mail</th>
+                  <th class="text-center" style="width:5rem;">WhatsApp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cat_id, cat in notification_categories.items() %}
+                {% set cp = notification_prefs.categories[cat_id] %}
+                <tr>
+                  <td>
+                    <strong>{{ cat.label }}</strong>
+                    <div class="text-muted small">{{ cat.description }}</div>
+                  </td>
+                  <td class="text-center">
+                    <input class="form-check-input notify-cat" type="checkbox"
+                           name="notify_{{ cat_id }}_push" value="1" data-channel="push"
+                           {% if cp.push %}checked{% endif %}>
+                  </td>
+                  <td class="text-center">
+                    <input class="form-check-input notify-cat" type="checkbox"
+                           name="notify_{{ cat_id }}_email" value="1" data-channel="email"
+                           {% if cp.email %}checked{% endif %}>
+                  </td>
+                  <td class="text-center">
+                    <input class="form-check-input notify-cat" type="checkbox"
+                           name="notify_{{ cat_id }}_whatsapp" value="1" data-channel="whatsapp"
+                           {% if cp.whatsapp %}checked{% endif %}
+                           {% if not user.phone %}disabled{% endif %}>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Salvar notificações</button>
+        </form>
+      </div>
+    </div>
+
     <div class="card mt-3">
       <div class="card-body">
         <h3 class="h6 mb-3">Indisponibilidade</h3>
@@ -102,17 +185,52 @@
     </div>
   </div>
 </div>
+<style>
+.notify-prefs-table .form-check-input { float: none; margin: 0; }
+.notify-prefs-table tr.is-channel-off { opacity: 0.45; }
+</style>
 <script>
 (function () {
   var phone = document.getElementById('phone');
-  var notify = document.getElementById('whatsapp_notify');
-  if (!phone || !notify) return;
-  function sync() {
-    notify.disabled = !phone.value.trim();
-    if (!phone.value.trim()) notify.checked = false;
+  var waGlobal = document.getElementById('whatsapp_notify');
+  function syncPhone() {
+    var has = phone && phone.value.trim();
+    document.querySelectorAll('[data-channel="whatsapp"]').forEach(function (el) {
+      if (el === waGlobal) el.disabled = !has;
+      else if (!has) { el.disabled = true; el.checked = false; }
+      else el.disabled = false;
+    });
   }
-  phone.addEventListener('input', sync);
-  sync();
+  if (phone) phone.addEventListener('input', syncPhone);
+  syncPhone();
+
+  function syncChannelRows() {
+    ['push', 'email', 'whatsapp'].forEach(function (ch) {
+      var globalOn = document.querySelector('.notify-global[data-channel="' + ch + '"]');
+      var on = globalOn && globalOn.checked && !globalOn.disabled;
+      document.querySelectorAll('.notify-cat[data-channel="' + ch + '"]').forEach(function (el) {
+        var row = el.closest('tr');
+        if (!on) {
+          el.disabled = true;
+          if (row) row.classList.add('is-channel-off');
+        } else {
+          if (ch !== 'whatsapp' || (phone && phone.value.trim())) {
+            el.disabled = false;
+          }
+          if (row) row.classList.remove('is-channel-off');
+        }
+      });
+    });
+  }
+  document.querySelectorAll('.notify-global').forEach(function (el) {
+    el.addEventListener('change', syncChannelRows);
+  });
+  syncChannelRows();
 })();
 </script>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/push-notifications.js') }}?v=1"></script>
 {% endblock %}

@@ -1,6 +1,6 @@
 // SetSync service worker — app-shell + offline fallback
 // Bump CACHE_VERSION whenever the app shell changes so old caches are evicted.
-const CACHE_VERSION = 'setsync-v10';
+const CACHE_VERSION = 'setsync-v11';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 
@@ -133,4 +133,44 @@ async function networkFirstJSON(request) {
 
 self.addEventListener('message', (event) => {
     if (event.data === 'skipWaiting') self.skipWaiting();
+});
+
+self.addEventListener('push', (event) => {
+    let data = { title: 'SetSync', body: '', url: '/' };
+    try {
+        if (event.data) {
+            const parsed = event.data.json();
+            data = { ...data, ...parsed };
+        }
+    } catch (e) {
+        if (event.data) {
+            data.body = event.data.text();
+        }
+    }
+    const title = data.title || 'SetSync';
+    const options = {
+        body: data.body || '',
+        icon: '/static/icons/icon-192.png',
+        badge: '/static/icons/icon-192.png',
+        data: { url: data.url || '/' },
+        tag: data.type || 'setsync',
+        renotify: true,
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const path = (event.notification.data && event.notification.data.url) || '/';
+    const url = path.startsWith('http') ? path : new URL(path, self.location.origin).href;
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            for (const client of windowClients) {
+                if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) return clients.openWindow(url);
+        })
+    );
 });

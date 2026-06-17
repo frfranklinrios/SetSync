@@ -70,14 +70,15 @@ def dispatch_notification_email(
     title: str,
     body: str = '',
     url_path: str | None = None,
+    notification_type: str = '',
 ) -> bool:
     """Envia e-mail ao usuário se tiver opt-in e SMTP configurado."""
     if not is_configured() or not user_id:
         return False
-    from db import get_user, user_wants_email_notifications
+    from db import get_user, user_wants_notification_channel
 
     user = get_user(user_id)
-    if not user or not user_wants_email_notifications(user):
+    if not user or not user_wants_notification_channel(user, 'email', notification_type):
         return False
     email = (user.get('email') or '').strip()
     if not email:

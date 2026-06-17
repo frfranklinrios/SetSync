@@ -35,9 +35,11 @@
     var boardW = (tuning.length - 1) * colGap;
     var boardH = rows * rowGap;
     var svgW = marginX * 2 + boardW;
-    var svgH = marginY + boardH + 18;
+    var svgH = marginY + boardH + 28;
     var rootStr = notes.length ? CD.rootStringIndex(tuning, frets, notes[0]) : -1;
     var barres = CD.detectBarres(frets);
+    var noteLabels = opts.showNoteLabels && CD.noteLabelsForFrets
+      ? CD.noteLabelsForFrets(tuning, frets) : null;
     var chordName = escText(chord.display || chord.input || '');
     var sourceLabel = escText(opts.sourceLabel || 'Shape sugerido');
 
@@ -100,11 +102,25 @@
       var r = dd === rootStr ? LAYOUT.rootDotR : LAYOUT.dotR;
       parts.push('<circle class="' + dotCls + '" cx="' + dx + '" cy="' + fy + '" r="' + r + '"></circle>');
       var finger = fingers && fingers[dd];
+      var labelText = '';
       if (finger && typeof finger === 'number' && finger > 0) {
+        labelText = String(finger);
+      } else if (noteLabels && noteLabels[dd]) {
+        labelText = escText(noteLabels[dd]);
+      }
+      if (labelText) {
         parts.push(
-          '<text class="diagram-finger-num" x="' + dx + '" y="' + fy + '">' + finger + '</text>'
+          '<text class="diagram-finger-num' + (finger ? '' : ' diagram-note-label') + '" x="' + dx + '" y="' + fy + '">' + labelText + '</text>'
         );
       }
+    }
+
+    var tuningY = marginY + boardH + 14;
+    for (var tu = 0; tu < tuning.length; tu++) {
+      var tx = marginX + (tu * colGap);
+      parts.push(
+        '<text class="diagram-tuning" x="' + tx + '" y="' + tuningY + '">' + escText(tuning[tu]) + '</text>'
+      );
     }
 
     parts.push('</svg></div>');
@@ -122,6 +138,7 @@
       frets: frets,
       fingers: shapeOption && shapeOption.fingers,
       sourceLabel: (shapeOption && shapeOption.source) || 'Cifra clássica',
+      showNoteLabels: shapeOption && shapeOption.source === 'Algoritmo de voicings',
     });
   }
 

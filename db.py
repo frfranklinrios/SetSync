@@ -265,6 +265,8 @@ def init_db():
         add_column_if_missing(c, 'users', 'phone', 'TEXT')
         add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
         add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
+        add_column_if_missing(c, 'users', 'push_notify', 'INTEGER NOT NULL DEFAULT 0')
+        add_column_if_missing(c, 'users', 'notification_prefs_json', 'TEXT')
         add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
         add_column_if_missing(c, 'users', 'onboarding_checklist_dismissed', 'INTEGER NOT NULL DEFAULT 0')
         add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
@@ -398,6 +400,8 @@ def init_db():
     add_column_if_missing(c, 'users', 'phone', 'TEXT')
     add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
+    add_column_if_missing(c, 'users', 'push_notify', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'notification_prefs_json', 'TEXT')
     add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
     add_column_if_missing(c, 'users', 'onboarding_checklist_dismissed', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
@@ -713,8 +717,11 @@ def update_user_profile(
     phone: str | None = None,
     whatsapp_notify: bool | None = None,
     email_notify: bool | None = None,
+    push_notify: bool | None = None,
+    notification_prefs: dict | None = None,
 ) -> None:
     from whatsapp_service import normalize_whatsapp_phone
+    from notification_prefs import serialize_notification_prefs
 
     db = get_db()
     c = db.cursor()
@@ -732,6 +739,16 @@ def update_user_profile(
         c.execute(
             'UPDATE users SET email_notify = ? WHERE id = ?',
             (1 if email_notify else 0, user_id),
+        )
+    if push_notify is not None:
+        c.execute(
+            'UPDATE users SET push_notify = ? WHERE id = ?',
+            (1 if push_notify else 0, user_id),
+        )
+    if notification_prefs is not None:
+        c.execute(
+            'UPDATE users SET notification_prefs_json = ? WHERE id = ?',
+            (serialize_notification_prefs(notification_prefs), user_id),
         )
     db.commit()
     db.close()
@@ -777,6 +794,134 @@ def user_has_phone(user: dict | None) -> bool:
 
 
 def user_wants_email_notifications(user: dict | None) -> bool:
+    if not user:
+        return False
+    if user.get('email_notify') is None:
+        return True
+    return int(user.get('email_notify') or 0) == 1
+
+
+def user_wants_push_notifications(user: dict | None) -> bool:
+    if not user:
+        return False
+    return int(user.get('push_notify') or 0) == 1
+
+
+def get_user_notification_prefs(user: dict | None) -> dict:
+    from notification_prefs import parse_notification_prefs
+
+    if not user:
+        return parse_notification_prefs(None)
+    return parse_notification_prefs(user.get('notification_prefs_json'))
+
+
+def user_wants_notification_channel(
+    user: dict | None,
+    channel: str,
+    notification_type: str,
+) -> bool:
+    """Respeita toggle global do canal + preferência por categoria."""
+    from notification_prefs import notification_category, category_channel_enabled
+
+    if not user:
+        return False
+    if channel == 'email' and not user_wants_email_notifications(user):
+        return False
+    if channel == 'whatsapp':
+        if not user_wants_whatsapp_notifications(user) or not user_has_phone(user):
+            return False
+    if channel == 'push' and not user_wants_push_notifications(user):
+        return False
+
+    cat = notification_category(notification_type)
+    if not cat:
+        return True
+    prefs = get_user_notification_prefs(user)
+    return category_channel_enabled(prefs, cat, channel)
+
+
+def save_push_subscription(
+    user_id: str,
+    *,
+    endpoint: str,
+    p256dh: str,
+    auth: str,
+    user_agent: str | None = None,
+) -> str:
+    sub_id = str(uuid.uuid4())
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT id FROM push_subscriptions WHERE endpoint = ?', (endpoint,))
+    existing = c.fetchone()
+    if existing:
+        c.execute(
+            '''UPDATE push_subscriptions
+               SET user_id = ?, p256dh = ?, auth = ?, user_agent = ?, last_used_at = CURRENT_TIMESTAMP
+               WHERE endpoint = ?''',
+            (user_id, p256dh, auth, user_agent, endpoint),
+        )
+        sub_id = existing['id'] if hasattr(existing, 'keys') else existing[0]
+    else:
+        c.execute(
+            '''INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, user_agent)
+               VALUES (?, ?, ?, ?, ?, ?)''',
+            (sub_id, user_id, endpoint, p256dh, auth, user_agent),
+        )
+    db.commit()
+    db.close()
+    return sub_id
+
+
+def delete_push_subscription(user_id: str, endpoint: str) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?',
+        (user_id, endpoint),
+    )
+    deleted = c.rowcount > 0
+    db.commit()
+    db.close()
+    return deleted
+
+
+def delete_all_push_subscriptions(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('DELETE FROM push_subscriptions WHERE user_id = ?', (user_id,))
+    n = c.rowcount
+    db.commit()
+    db.close()
+    return int(n)
+
+
+def list_push_subscriptions(user_id: str) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT * FROM push_subscriptions WHERE user_id = ? ORDER BY created_at DESC',
+        (user_id,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def count_push_subscriptions(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM push_subscriptions WHERE user_id = ?', (user_id,))
+    row = c.fetchone()
+    db.close()
+    return int(row['n'] if row else 0)
+
+
+def remove_push_subscription_by_endpoint(endpoint: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('DELETE FROM push_subscriptions WHERE endpoint = ?', (endpoint,))
+    db.commit()
+    db.close()
     if not user:
         return False
     if user.get('email_notify') is None:
@@ -2072,6 +2217,25 @@ def _migrate_notifications_schema(c) -> None:
         ON whatsapp_cifra_digest(user_id, digest_date)
         WHERE sent_at IS NULL
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            endpoint TEXT NOT NULL UNIQUE,
+            p256dh TEXT NOT NULL,
+            auth TEXT NOT NULL,
+            user_agent TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_used_at TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
+        ON push_subscriptions(user_id)
+    ''')
+    add_column_if_missing(c, 'users', 'push_notify', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'notification_prefs_json', 'TEXT')
 
 
 def _digest_date_sp() -> str:
@@ -2183,6 +2347,7 @@ def create_notification(
     url_path: str | None = None,
     payload: dict | None = None,
     skip_whatsapp: bool = False,
+    skip_push: bool = False,
 ) -> str:
     import json
     if url_path and (not url_path.startswith('/') or url_path.startswith('//')):
@@ -2216,6 +2381,7 @@ def create_notification(
                 title=title,
                 body=body or '',
                 url_path=url_path,
+                notification_type=type,
             )
         except Exception:
             import logging
@@ -2229,12 +2395,28 @@ def create_notification(
             title=title,
             body=body or '',
             url_path=url_path,
+            notification_type=type,
         )
     except Exception:
         import logging
         logging.getLogger('setsync.email_notify').exception(
             'Falha ao enviar notificação por e-mail para %s', user_id,
         )
+    if not skip_push:
+        try:
+            from push_notification_service import dispatch_notification_push
+            dispatch_notification_push(
+                user_id,
+                notification_type=type,
+                title=title,
+                body=body or '',
+                url_path=url_path,
+            )
+        except Exception:
+            import logging
+            logging.getLogger('setsync.push').exception(
+                'Falha ao enviar push para %s', user_id,
+            )
     return nid
 
 
@@ -2249,6 +2431,7 @@ def create_notifications_for_users(
     url_path: str | None = None,
     payload: dict | None = None,
     skip_whatsapp: bool = False,
+    skip_push: bool = False,
 ) -> int:
     seen = set()
     count = 0
@@ -2266,6 +2449,7 @@ def create_notifications_for_users(
             url_path=url_path,
             payload=payload,
             skip_whatsapp=skip_whatsapp,
+            skip_push=skip_push,
         )
         count += 1
     return count
