@@ -1,0 +1,211 @@
+/**
+ * Modal de busca/importação — mesma folha visual da tela «ver cifra».
+ */
+
+.cifra-search-modal-content {
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border, #334155);
+  border-radius: 12px;
+}
+
+.cifra-search-modal-content .modal-header {
+  padding: 1rem 1.25rem 0.5rem;
+}
+
+.cifra-search-modal-content .modal-body {
+  padding: 0.5rem 1.25rem 1rem;
+}
+
+.cifra-search-modal-content .modal-footer {
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid var(--border, #334155) !important;
+}
+
+.cifra-search-modal-content.cifra-search-modal--preview .modal-header .cifra-search-modal-subtitle {
+  display: none;
+}
+
+/* ── Folha de preview (espelha cifra-sheet-paper / #cifra-col) ───────── */
+.cifra-search-modal-content .cifra-modal-preview-box.cifra-sheet-paper {
+  --ss-bg: #111827;
+  --ss-fg: #e7e5e4;
+  --ss-chord: var(--chord-highlight, #2dd4bf);
+  --ss-lyric: #f1f5f9;
+  --ss-muted: #94a3b8;
+  --ss-border: #334155;
+  --ss-rule: #1e293b;
+  --ss-tab-bg: #0f172a;
+  --ss-tab-border: #f59e0b;
+  --ss-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 4px 18px rgba(0, 0, 0, 0.25);
+
+  background: var(--ss-bg) !important;
+  color: var(--ss-fg) !important;
+  font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace) !important;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+  padding: 1.35rem 1.6rem 1.5rem;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 4px;
+  box-shadow: var(--ss-shadow);
+  max-height: min(62vh, 560px);
+  overflow: auto;
+  word-break: normal;
+}
+
+[data-theme="light"] .cifra-search-modal-content .cifra-modal-preview-box.cifra-sheet-paper {
+  --ss-bg: #ffffff;
+  --ss-fg: #1c1917;
+  --ss-chord: var(--chord-highlight, #c2410c);
+  --ss-lyric: #292524;
+  --ss-border: #d6d3d1;
+  --ss-rule: #e7e5e4;
+  --ss-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.cifra-search-modal-content .cifra-modal-preview-box .sp-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 0.35rem;
+  row-gap: 0.15rem;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-box .sp-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-right: 0.55rem;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-box .sp-chord,
+.cifra-search-modal-content .cifra-modal-preview-box .chord,
+.cifra-search-modal-content .cifra-modal-preview-box .cifra-chords {
+  color: var(--ss-chord) !important;
+  font-weight: 700;
+  font-family: inherit !important;
+  font-size: 1em;
+  line-height: 1.25;
+  min-height: 1.25em;
+  white-space: nowrap;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-box .sp-word,
+.cifra-search-modal-content .cifra-modal-preview-box .cifra-lyric {
+  color: var(--ss-lyric) !important;
+  font-weight: 400;
+  font-family: inherit !important;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-box .cifra-section,
+.cifra-search-modal-content .cifra-modal-preview-box .sp-section {
+  display: block;
+  font-weight: 700;
+  font-size: var(--text-sm, 0.875rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ss-chord) !important;
+  margin: 0.85rem 0 0.45rem;
+  padding: 0.2rem 0 0.35rem;
+  border-bottom: 1px solid var(--ss-border);
+}
+
+.cifra-search-modal-content .cifra-modal-preview-box .cifra-tab-block {
+  background: var(--ss-tab-bg) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-left: 3px solid var(--ss-tab-border) !important;
+  border-radius: 4px;
+  margin: 0.75rem 0;
+  padding: 0.7rem 0.9rem;
+  overflow-x: auto;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-box .cifra-tab-line {
+  font-family: inherit !important;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  white-space: pre;
+  color: var(--ss-lyric) !important;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-heading {
+  text-align: right;
+  min-width: 0;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-heading .title {
+  font-weight: 700;
+  font-size: var(--text-base, 1rem);
+  line-height: 1.3;
+}
+
+.cifra-search-modal-content .cifra-modal-preview-heading .meta {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--muted, #94a3b8);
+}
+
+/* Resultados da busca */
+.cifra-search-modal-content .cifra-modal-results {
+  border: 1px solid var(--border, #334155);
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.cifra-search-modal-content .cifra-modal-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border: 0;
+  border-bottom: 1px solid var(--border, #334155);
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cifra-search-modal-content .cifra-modal-result:last-child {
+  border-bottom: 0;
+}
+
+.cifra-search-modal-content .cifra-modal-result:hover {
+  background: var(--chord-highlight-bg, rgba(45, 212, 191, 0.08));
+}
+
+.cifra-search-modal-content .cifra-modal-result-title {
+  font-weight: 600;
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.cifra-search-modal-content .cifra-modal-result-artist {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--muted, #94a3b8);
+}
+
+@media (max-width: 576px) {
+  .cifra-search-modal-content .cifra-modal-preview-box.cifra-sheet-paper {
+    max-height: 55vh;
+    padding: 1rem 1.1rem;
+    font-size: 0.95rem;
+  }
+}

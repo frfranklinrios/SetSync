@@ -24,6 +24,7 @@
   var previewMeta = document.getElementById("cifra-modal-preview-meta");
   var previewBody = document.getElementById("cifra-modal-preview-body");
   var backBtn = document.getElementById("cifra-modal-back");
+  var modalContent = document.getElementById("cifraSearchModalContent");
 
   var currentPayload = null;
   var debounceTimer = null;
@@ -48,6 +49,7 @@
     if (stepSearch) stepSearch.classList.remove("d-none");
     if (stepPreview) stepPreview.classList.add("d-none");
     if (importBtn) importBtn.classList.add("d-none");
+    if (modalContent) modalContent.classList.remove("cifra-search-modal--preview");
     currentPayload = null;
   }
 
@@ -55,6 +57,7 @@
     if (stepSearch) stepSearch.classList.add("d-none");
     if (stepPreview) stepPreview.classList.remove("d-none");
     if (importBtn) importBtn.classList.remove("d-none");
+    if (modalContent) modalContent.classList.add("cifra-search-modal--preview");
   }
 
   function renderResults(items) {
