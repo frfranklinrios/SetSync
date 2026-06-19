@@ -15,6 +15,7 @@ from flask import (
 )
 
 from blueprints.auth import login_required
+from cifra_referencia import build_referencia_snapshot, meta_from_import_payload
 from cifras_tool.pipeline_cifras import (
     executar_apenas_cifra,
     validar_url_cifra,
@@ -151,6 +152,107 @@ def _resposta_api_cifras(pacote: dict) -> dict:
         "cached": bool(pacote.get("cached")),
         "modo": "api-cifras",
     }
+
+
+@cifras_import_bp.route("/api/preview", methods=["POST"])
+@login_required
+def api_preview_cifra():
+    """Renderiza HTML da cifra para exibição no modal (sem salvar)."""
+    from cifra_user_draft import cifra_dict_from_import
+    from blueprints.cifras import prepare_cifra_sheet
+
+    data = request.get_json(silent=True) or {}
+    fake = cifra_dict_from_import(data)
+    if not (fake.get('conteudo') or fake.get('cifra_json') or fake.get('grade_json')):
+        return jsonify({"detail": "Cifra sem conteúdo para visualizar."}), 400
+
+    sheet = prepare_cifra_sheet(fake)
+    html = render_template("partials/cifra_sheet_body.html", sheet=sheet)
+    return jsonify({
+        "titulo": fake.get("titulo"),
+        "artista": fake.get("artista"),
+        "tom_original": fake.get("tom_original"),
+        "html": html,
+        "has_content": bool(sheet.get("has_content")),
+    })
+
+
+@cifras_import_bp.route("/api/para-banda/<band_id>", methods=["POST"])
+@login_required
+def api_import_para_banda(band_id: str):
+    """Importa cifra da biblioteca direto para o repertório da banda."""
+    from flask import url_for
+    import json
+
+    from db import count_band_cifras, create_cifra, get_band, is_band_editor
+    import band_notifications as bn
+    from monetizacao import check_limite, LIMITES_GRATIS
+
+    user_id = session["user_id"]
+    band = get_band(band_id)
+    if not band or not is_band_editor(band_id, user_id):
+        return jsonify({"detail": "Sem permissão para importar nesta banda."}), 403
+
+    rate_key = f'import:{user_id}'
+    if not check_rate_limit(rate_key, max_attempts=30, window_sec=3600):
+        return jsonify({"detail": "Limite de importações por hora atingido. Tente mais tarde."}), 429
+
+    if not check_limite(band, 'musica'):
+        return jsonify({
+            "detail": f"Limite do plano atingido ({LIMITES_GRATIS['musica']} músicas).",
+            "upgrade": True,
+        }), 402
+
+    data = request.get_json(silent=True) or {}
+    titulo = (data.get("titulo") or "").strip()
+    artista = (data.get("artista") or "").strip()
+    if not titulo or not artista:
+        return jsonify({"detail": "Título e artista são obrigatórios."}), 400
+
+    tom_original = (data.get("tom_original") or data.get("tom") or "C").strip()
+    conteudo = data.get("conteudo") or ""
+    cifra_json = data.get("cifra_json")
+    grade_json = data.get("grade_json")
+    if cifra_json is not None and not isinstance(cifra_json, str):
+        cifra_json = json.dumps(cifra_json, ensure_ascii=False)
+    if grade_json is not None and not isinstance(grade_json, str):
+        grade_json = json.dumps(grade_json, ensure_ascii=False)
+
+    referencia_json = build_referencia_snapshot(
+        source="api-cifras",
+        titulo=titulo,
+        artista=artista,
+        tom_original=tom_original,
+        conteudo=conteudo,
+        cifra_json=cifra_json,
+        grade_json=grade_json,
+        meta=meta_from_import_payload(data),
+    )
+
+    cifras_antes = count_band_cifras(band_id)
+    cifra_id = create_cifra(
+        titulo,
+        artista,
+        tom_original,
+        conteudo,
+        band_id,
+        cifra_json=cifra_json,
+        grade_json=grade_json,
+        bpm=data.get("bpm"),
+        duracao_seg=data.get("duracao_seg"),
+        referencia_json=referencia_json,
+    )
+    if cifras_antes == 0:
+        from google_ads import mark_funnel_event
+        mark_funnel_event('primeira_cifra')
+    bn.cifra_created(band_id, user_id, cifra_id, titulo)
+
+    return jsonify({
+        "cifra_id": cifra_id,
+        "titulo": titulo,
+        "view_url": url_for("cifras.view", cifra_id=cifra_id),
+        "edit_url": url_for("cifras.edit", cifra_id=cifra_id),
+    })
 
 
 @cifras_import_bp.route("/api/buscar")

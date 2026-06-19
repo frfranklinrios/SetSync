@@ -1,0 +1,85 @@
+{# Modal: busca, preview e importação de cifras para a banda #}
+<div class="modal fade" id="cifraSearchModal" tabindex="-1" aria-labelledby="cifraSearchModalLabel" aria-hidden="true"
+     data-band-id="{{ band.id }}">
+  <div class="modal-dialog modal-dialog-scrollable modal-xl modal-fullscreen-sm-down">
+    <div class="modal-content cifra-search-modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div class="w-100">
+          <h5 class="modal-title" id="cifraSearchModalLabel">
+            <i class="fas fa-search me-2 text-muted"></i>Buscar cifra
+          </h5>
+          <p class="text-muted small mb-0">Biblioteca local + índice online · preview antes de importar</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div id="cifra-search-step-search">
+          <label class="form-label small" for="cifra-modal-query">Título ou artista</label>
+          <div class="input-group mb-2">
+            <input type="search" class="form-control" id="cifra-modal-query"
+                   placeholder="Ex.: Fernandinho ele está comigo" autocomplete="off">
+            <button type="button" class="btn btn-primary" id="cifra-modal-search-btn">Buscar</button>
+          </div>
+          <p class="form-text" id="cifra-modal-status" role="status"></p>
+          <div class="list-group border rounded d-none" id="cifra-modal-results"></div>
+        </div>
+
+        <div id="cifra-search-step-preview" class="d-none">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="cifra-modal-back">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
+              </button>
+            </div>
+            <div class="text-end">
+              <div class="fw-semibold" id="cifra-modal-preview-title"></div>
+              <div class="text-muted small" id="cifra-modal-preview-meta"></div>
+            </div>
+          </div>
+          <div class="cifra-modal-preview-box cifra-container" id="cifra-modal-preview-body"></div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0 flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary d-none" id="cifra-modal-import-btn">
+          <i class="fas fa-download me-1"></i> Importar para {{ band.name }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.cifra-search-modal-content .cifra-modal-preview-box {
+  max-height: min(62vh, 520px);
+  overflow: auto;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.cifra-search-modal-content .cifra-modal-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.cifra-search-modal-content .cifra-modal-result:last-child { border-bottom: 0; }
+.cifra-search-modal-content .cifra-modal-result:hover {
+  background: var(--chord-highlight-bg, rgba(13, 148, 136, 0.08));
+}
+.cifra-search-modal-content .cifra-modal-result-title { font-weight: 600; }
+.cifra-search-modal-content .cifra-modal-result-artist { font-size: var(--text-xs); color: var(--muted); }
+@media (max-width: 576px) {
+  .cifra-search-modal-content .cifra-modal-preview-box { max-height: 55vh; }
+}
+</style>

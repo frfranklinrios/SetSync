@@ -29,6 +29,9 @@
             </a>
             {% endif %}
             {% if can_edit %}
+            <button type="button" class="btn btn-outline-primary btn-sm" data-open-cifra-search>
+                <i class="fas fa-search me-1"></i> Buscar cifra
+            </button>
             <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Nova Cifra
             </a>
@@ -37,7 +40,11 @@
     </div>
 
     {% if cifras %}
-    <div class="row-card">
+    <div class="mb-3">
+        <input type="search" class="form-control form-control-sm" id="cifra-list-filter"
+               placeholder="Filtrar repertório…" autocomplete="off" aria-label="Filtrar cifras">
+    </div>
+    <div class="row-card" id="cifra-list-rows">
         {% for cifra in cifras %}
         {{ cifra_row(cifra, band, show_edit=can_edit, show_delete=can_edit) }}
         {% endfor %}
@@ -47,6 +54,9 @@
         <i class="fas fa-music"></i>
         <p class="mb-3" style="font-size: var(--text-base);">Nenhuma cifra cadastrada ainda.</p>
         {% if can_edit %}
+        <button type="button" class="btn btn-outline-primary me-2" data-open-cifra-search>
+            <i class="fas fa-search me-1"></i> Buscar na biblioteca
+        </button>
         <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra
         </a>
@@ -54,4 +64,28 @@
     </div>
     {% endif %}
 </div>
+
+{% if can_edit %}
+{% include 'cifras/_cifra_search_modal.html' %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if can_edit %}
+<script src="{{ url_for('static', filename='js/cifra-search-modal.js') }}?v=1"></script>
+<script>
+(function () {
+  var input = document.getElementById('cifra-list-filter');
+  var rows = document.getElementById('cifra-list-rows');
+  if (!input || !rows) return;
+  input.addEventListener('input', function () {
+    var q = (input.value || '').trim().toLowerCase();
+    rows.querySelectorAll('.row-item').forEach(function (el) {
+      var text = (el.textContent || '').toLowerCase();
+      el.style.display = !q || text.indexOf(q) >= 0 ? '' : 'none';
+    });
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

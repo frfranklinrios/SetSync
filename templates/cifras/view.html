@@ -288,6 +288,22 @@
         </div>
 
         {% include 'cifras/_cifra_referencia_banner.html' %}
+        {% if viewing_personal %}
+        <div class="alert alert-info py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" style="font-size: var(--text-sm);">
+            <span><i class="fas fa-user me-1"></i> Exibindo <strong>sua versão pessoal</strong> desta cifra.</span>
+            <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-secondary">Ver versão da banda</a>
+        </div>
+        {% elif has_personal_draft %}
+        <div class="alert alert-warning py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" style="font-size: var(--text-sm);">
+            <span><i class="fas fa-user-edit me-1"></i> Você tem uma <strong>versão pessoal</strong> diferente da banda.</span>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('cifras.view', cifra_id=cifra.id, versao='minha') }}" class="btn btn-sm btn-outline-primary">Ver minha versão</a>
+                {% if can_edit %}
+                <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="btn btn-sm btn-primary">Continuar editando</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
         <ul class="nav nav-tabs cifra-content-tabs" id="cifraViewTabs" role="tablist">
             <li class="nav-item" role="presentation">

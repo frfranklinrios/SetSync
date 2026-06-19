@@ -85,7 +85,15 @@ def run_agenda_reminder_jobs() -> None:
 
 
 def run_whatsapp_cifra_digest_jobs() -> None:
-    """Um WhatsApp por usuário com resumo das cifras editadas no dia."""
+    """Legado: resumos antigos só de cifra (WhatsApp)."""
     from whatsapp_cifra_digest import send_pending_cifra_digests
 
     send_pending_cifra_digests()
+
+
+def run_notification_digest_jobs() -> None:
+    """Resumo diário de notificações não urgentes (push, e-mail e WhatsApp)."""
+    from notification_digest import send_pending_notification_digests
+
+    send_pending_notification_digests()
+    run_whatsapp_cifra_digest_jobs()

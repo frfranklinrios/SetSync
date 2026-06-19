@@ -56,7 +56,7 @@ NOTIFICATION_CATEGORIES: dict[str, dict[str, Any]] = {
     'produto': {
         'label': 'Novidades',
         'description': 'Comunicados e atualizações do SetSync',
-        'types': frozenset({'product_update'}),
+        'types': frozenset({'product_update', 'notification_digest'}),
     },
 }
 

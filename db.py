@@ -278,6 +278,7 @@ def init_db():
         _migrate_agenda_schema(c)
         _migrate_band_member_invites_schema(c)
         _migrate_band_team_schema(c)
+        _migrate_cifra_drafts_schema(c)
         add_column_if_missing(c, 'cifras', 'referencia_json', 'TEXT')
         _ensure_perf_indexes(c)
         db.commit()
@@ -411,10 +412,32 @@ def init_db():
     _migrate_agenda_schema(c)
     _migrate_band_member_invites_schema(c)
     _migrate_band_team_schema(c)
+    _migrate_cifra_drafts_schema(c)
     _ensure_perf_indexes(c)
     db.commit()
 
     db.close()
+
+
+def _migrate_cifra_drafts_schema(c) -> None:
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS cifra_user_drafts (
+            id TEXT PRIMARY KEY,
+            cifra_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            titulo TEXT,
+            artista TEXT,
+            tom_original TEXT,
+            conteudo TEXT,
+            cifra_json TEXT,
+            grade_json TEXT,
+            leadsheet_json TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(cifra_id, user_id),
+            FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
 
 
 def _migrate_band_team_schema(c) -> None:
@@ -2139,11 +2162,95 @@ def update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
 def delete_cifra(cifra_id):
     db = get_db()
     c = db.cursor()
+    c.execute('DELETE FROM cifra_user_drafts WHERE cifra_id = ?', (cifra_id,))
     c.execute('DELETE FROM cifra_vocalist_transpose WHERE cifra_id = ?', (cifra_id,))
     c.execute('DELETE FROM setlist_cifras WHERE cifra_id = ?', (cifra_id,))
     c.execute('DELETE FROM cifras WHERE id = ?', (cifra_id,))
     db.commit()
     db.close()
+
+
+def get_cifra_user_draft(cifra_id: str, user_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT * FROM cifra_user_drafts WHERE cifra_id = ? AND user_id = ?',
+        (cifra_id, user_id),
+    )
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def upsert_cifra_user_draft(cifra_id: str, user_id: str, fields: dict) -> str:
+    db = get_db()
+    c = db.cursor()
+    existing = get_cifra_user_draft(cifra_id, user_id)
+    draft_id = existing['id'] if existing else str(uuid.uuid4())
+    c.execute(
+        '''INSERT INTO cifra_user_drafts
+           (id, cifra_id, user_id, titulo, artista, tom_original, conteudo,
+            cifra_json, grade_json, leadsheet_json, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(cifra_id, user_id) DO UPDATE SET
+             titulo=excluded.titulo,
+             artista=excluded.artista,
+             tom_original=excluded.tom_original,
+             conteudo=excluded.conteudo,
+             cifra_json=excluded.cifra_json,
+             grade_json=excluded.grade_json,
+             leadsheet_json=excluded.leadsheet_json,
+             updated_at=CURRENT_TIMESTAMP''',
+        (
+            draft_id,
+            cifra_id,
+            user_id,
+            fields.get('titulo'),
+            fields.get('artista'),
+            fields.get('tom_original'),
+            fields.get('conteudo'),
+            fields.get('cifra_json'),
+            fields.get('grade_json'),
+            fields.get('leadsheet_json'),
+        ),
+    )
+    db.commit()
+    db.close()
+    return draft_id
+
+
+def delete_cifra_user_draft(cifra_id: str, user_id: str) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'DELETE FROM cifra_user_drafts WHERE cifra_id = ? AND user_id = ?',
+        (cifra_id, user_id),
+    )
+    deleted = c.rowcount > 0
+    db.commit()
+    db.close()
+    return deleted
+
+
+def publish_cifra_user_draft(cifra_id: str, user_id: str) -> bool:
+    draft = get_cifra_user_draft(cifra_id, user_id)
+    cifra = get_cifra(cifra_id)
+    if not draft or not cifra:
+        return False
+    update_cifra(
+        cifra_id,
+        draft.get('titulo') or cifra['titulo'],
+        draft.get('artista') or cifra['artista'],
+        draft.get('tom_original') or cifra['tom_original'],
+        draft.get('conteudo') if draft.get('conteudo') is not None else cifra['conteudo'],
+        cifra_json=draft.get('cifra_json') if draft.get('cifra_json') is not None else cifra.get('cifra_json'),
+        grade_json=draft.get('grade_json') if draft.get('grade_json') is not None else cifra.get('grade_json'),
+        leadsheet_json=draft.get('leadsheet_json') if draft.get('leadsheet_json') is not None else cifra.get('leadsheet_json'),
+        bpm=cifra.get('bpm'),
+        duracao_seg=cifra.get('duracao_seg'),
+    )
+    delete_cifra_user_draft(cifra_id, user_id)
+    return True
 
 
 def set_cifra_transpose_semitones(cifra_id, semitones: int, vocalist_id: str | None = None) -> None:
@@ -2215,6 +2322,28 @@ def _migrate_notifications_schema(c) -> None:
     c.execute('''
         CREATE INDEX IF NOT EXISTS idx_whatsapp_cifra_digest_pending
         ON whatsapp_cifra_digest(user_id, digest_date)
+        WHERE sent_at IS NULL
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS notification_digest_queue (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            notification_id TEXT,
+            band_id TEXT,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT,
+            url_path TEXT,
+            digest_date TEXT NOT NULL,
+            queued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sent_at TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_notification_digest_pending
+        ON notification_digest_queue(user_id, digest_date)
         WHERE sent_at IS NULL
     ''')
     c.execute('''
@@ -2336,6 +2465,95 @@ def mark_whatsapp_cifra_digest_sent(user_id: str) -> int:
     return int(n)
 
 
+def _should_queue_notification_digest(user: dict | None, notification_type: str) -> bool:
+    if not user:
+        return False
+    for ch in ('push', 'email', 'whatsapp'):
+        if user_wants_notification_channel(user, ch, notification_type):
+            return True
+    return False
+
+
+def queue_notification_digest(
+    user_id: str,
+    *,
+    notification_id: str,
+    band_id: str | None,
+    notification_type: str,
+    title: str,
+    body: str = '',
+    url_path: str | None = None,
+) -> str:
+    digest_date = _digest_date_sp()
+    db = get_db()
+    c = db.cursor()
+    row_id = str(uuid.uuid4())
+    c.execute(
+        '''INSERT INTO notification_digest_queue
+           (id, user_id, notification_id, band_id, type, title, body, url_path, digest_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        (
+            row_id,
+            user_id,
+            notification_id,
+            band_id,
+            notification_type,
+            title,
+            body or '',
+            url_path,
+            digest_date,
+        ),
+    )
+    db.commit()
+    db.close()
+    return row_id
+
+
+def list_pending_notification_digest_user_ids() -> list[str]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT DISTINCT user_id FROM notification_digest_queue
+           WHERE sent_at IS NULL ORDER BY user_id''',
+    )
+    ids = [r['user_id'] for r in c.fetchall()]
+    db.close()
+    return ids
+
+
+def list_notification_digest_for_user(user_id: str, *, pending_only: bool = True) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    sql = '''
+        SELECT d.*, b.name AS band_name
+        FROM notification_digest_queue d
+        LEFT JOIN bands b ON b.id = d.band_id
+        WHERE d.user_id = ?
+    '''
+    params: list = [user_id]
+    if pending_only:
+        sql += ' AND d.sent_at IS NULL'
+    sql += ' ORDER BY d.queued_at ASC'
+    c.execute(sql, params)
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def mark_notification_digest_sent(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE notification_digest_queue SET sent_at = CURRENT_TIMESTAMP
+           WHERE user_id = ? AND sent_at IS NULL''',
+        (user_id,),
+    )
+    n = c.rowcount if c.rowcount is not None else 0
+    db.commit()
+    db.close()
+    return int(n)
+
+
 def create_notification(
     user_id: str,
     *,
@@ -2348,6 +2566,8 @@ def create_notification(
     payload: dict | None = None,
     skip_whatsapp: bool = False,
     skip_push: bool = False,
+    skip_email: bool = False,
+    urgent: bool | None = None,
 ) -> str:
     import json
     if url_path and (not url_path.startswith('/') or url_path.startswith('//')):
@@ -2373,50 +2593,68 @@ def create_notification(
     )
     db.commit()
     db.close()
-    if not skip_whatsapp:
-        try:
-            from whatsapp_service import dispatch_notification_whatsapp
-            dispatch_notification_whatsapp(
-                user_id,
-                title=title,
-                body=body or '',
-                url_path=url_path,
-                notification_type=type,
-            )
-        except Exception:
-            import logging
-            logging.getLogger('setsync.whatsapp').exception(
-                'Falha ao enviar notificação WhatsApp para %s', user_id,
-            )
-    try:
-        from notification_email_service import dispatch_notification_email
-        dispatch_notification_email(
+
+    from notification_urgency import is_urgent_notification
+
+    user = get_user(user_id)
+    send_now = is_urgent_notification(type, urgent=urgent)
+
+    if send_now:
+        if not skip_whatsapp:
+            try:
+                from whatsapp_service import dispatch_notification_whatsapp
+                dispatch_notification_whatsapp(
+                    user_id,
+                    title=title,
+                    body=body or '',
+                    url_path=url_path,
+                    notification_type=type,
+                )
+            except Exception:
+                import logging
+                logging.getLogger('setsync.whatsapp').exception(
+                    'Falha ao enviar notificação WhatsApp para %s', user_id,
+                )
+        if not skip_email:
+            try:
+                from notification_email_service import dispatch_notification_email
+                dispatch_notification_email(
+                    user_id,
+                    title=title,
+                    body=body or '',
+                    url_path=url_path,
+                    notification_type=type,
+                )
+            except Exception:
+                import logging
+                logging.getLogger('setsync.email_notify').exception(
+                    'Falha ao enviar notificação por e-mail para %s', user_id,
+                )
+        if not skip_push:
+            try:
+                from push_notification_service import dispatch_notification_push
+                dispatch_notification_push(
+                    user_id,
+                    notification_type=type,
+                    title=title,
+                    body=body or '',
+                    url_path=url_path,
+                )
+            except Exception:
+                import logging
+                logging.getLogger('setsync.push').exception(
+                    'Falha ao enviar push para %s', user_id,
+                )
+    elif _should_queue_notification_digest(user, type):
+        queue_notification_digest(
             user_id,
+            notification_id=nid,
+            band_id=band_id,
+            notification_type=type,
             title=title,
             body=body or '',
             url_path=url_path,
-            notification_type=type,
         )
-    except Exception:
-        import logging
-        logging.getLogger('setsync.email_notify').exception(
-            'Falha ao enviar notificação por e-mail para %s', user_id,
-        )
-    if not skip_push:
-        try:
-            from push_notification_service import dispatch_notification_push
-            dispatch_notification_push(
-                user_id,
-                notification_type=type,
-                title=title,
-                body=body or '',
-                url_path=url_path,
-            )
-        except Exception:
-            import logging
-            logging.getLogger('setsync.push').exception(
-                'Falha ao enviar push para %s', user_id,
-            )
     return nid
 
 
@@ -2432,6 +2670,8 @@ def create_notifications_for_users(
     payload: dict | None = None,
     skip_whatsapp: bool = False,
     skip_push: bool = False,
+    skip_email: bool = False,
+    urgent: bool | None = None,
 ) -> int:
     seen = set()
     count = 0
@@ -2450,6 +2690,8 @@ def create_notifications_for_users(
             payload=payload,
             skip_whatsapp=skip_whatsapp,
             skip_push=skip_push,
+            skip_email=skip_email,
+            urgent=urgent,
         )
         count += 1
     return count

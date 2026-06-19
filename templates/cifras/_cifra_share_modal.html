@@ -1,0 +1,29 @@
+{# Modal: decidir se a edição fica privada ou vai para a banda #}
+<div class="modal fade" id="cifraShareModal" tabindex="-1" aria-labelledby="cifraShareModalLabel" aria-hidden="true"
+     data-cifra-id="{{ cifra.id }}"
+     data-can-publish="{{ '1' if can_publish_draft else '0' }}">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="cifraShareModalLabel">Como salvar suas alterações?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">Suas edições foram salvas como <strong>versão pessoal</strong>. A banda continua vendo a versão anterior até você decidir publicar.</p>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-outline-primary" id="cifra-share-keep-private">
+            <i class="fas fa-user me-2"></i>Manter só para mim
+          </button>
+          {% if can_publish_draft %}
+          <button type="button" class="btn btn-primary" id="cifra-share-publish">
+            <i class="fas fa-users me-2"></i>Enviar para a banda
+          </button>
+          {% endif %}
+        </div>
+        <p class="form-text mt-3 mb-0">
+          Versão pessoal: só você vê em «Minha versão». Publicar: todos os membros passam a ver a cifra editada.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

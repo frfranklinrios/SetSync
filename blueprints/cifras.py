@@ -23,7 +23,9 @@ from db import (get_band, get_cifra, get_band_cifras, count_band_cifras, create_
                 get_cifra_vocalist_transpose, get_cifra_transpose_by_vocalists,
                 band_vocalist_belongs_to_band, vocalists_summary_label,
                 vocalist_entry_display_name, update_cifra_referencia,
-                restore_cifra_from_referencia)
+                restore_cifra_from_referencia,
+                get_cifra_user_draft, upsert_cifra_user_draft, delete_cifra_user_draft,
+                publish_cifra_user_draft)
 import band_notifications as bn
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   pychord_highlight_chords, highlight_chords_html,
@@ -676,22 +678,26 @@ def view(cifra_id):
         flash('Sem acesso', 'danger')
         return redirect(url_for('dashboard'))
 
-    transpositions = get_transposition_options(cifra['tom_original'])
-    current_transpose = resolve_cifra_transpose(cifra_id, cifra['tom_original'])
-    display_key = key_at_transpose(cifra['tom_original'], current_transpose)
+    from cifra_user_draft import draft_differs_from_band, merge_cifra_with_draft
 
-    cifra = _cifra_for_display(cifra)
-    conteudo = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
-    # Transpor usando pychord se possível
+    draft = get_cifra_user_draft(cifra_id, user_id)
+    viewing_personal = request.args.get('versao') == 'minha' and draft
+    display_source = merge_cifra_with_draft(cifra, draft) if viewing_personal else cifra
+    has_personal_draft = bool(draft and draft_differs_from_band(draft, cifra))
+
+    transpositions = get_transposition_options(display_source['tom_original'])
+    current_transpose = resolve_cifra_transpose(cifra_id, display_source['tom_original'])
+    display_key = key_at_transpose(display_source['tom_original'], current_transpose)
+
+    display_source = _cifra_for_display(display_source)
+    conteudo = sanitize_tab_html_artifacts(display_source['conteudo'] or '')
     if current_transpose != 0:
-        conteudo = pychord_transpose_text(conteudo, current_transpose, cifra['tom_original'])
-    conteudo = format_text_chords_br(conteudo, key_at_transpose(cifra['tom_original'], current_transpose))
+        conteudo = pychord_transpose_text(conteudo, current_transpose, display_source['tom_original'])
+    conteudo = format_text_chords_br(conteudo, key_at_transpose(display_source['tom_original'], current_transpose))
 
-    # Parsear cifra_json e grade_json
-    cifra_data = _load_best_structured_cifra(cifra, current_transpose)
-
-    grade_data = _load_display_grade_data(cifra, current_transpose)
-    leadsheet_document = _load_display_leadsheet(cifra, current_transpose)
+    cifra_data = _load_best_structured_cifra(display_source, current_transpose)
+    grade_data = _load_display_grade_data(display_source, current_transpose)
+    leadsheet_document = _load_display_leadsheet(display_source, current_transpose)
 
     grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
     has_tab = content_has_tablatura(conteudo)
@@ -719,16 +725,16 @@ def view(cifra_id):
         active_tab = 'cifra'
 
     return render_template('cifras/view.html',
-                           cifra=cifra,
+                           cifra=display_source,
                            band=band,
                            conteudo=conteudo,
                            conteudo_html=conteudo_html,
                            cifra_data=cifra_data,
                            grade_data=grade_data,
                            leadsheet_document=leadsheet_document,
-                           has_chordsheet=cifra_has_chordsheet(cifra) or bool(leadsheet_document),
+                           has_chordsheet=cifra_has_chordsheet(display_source) or bool(leadsheet_document),
                            grouped_cifra=grouped_cifra,
-                           lyrics_plain=lyrics_from_cifra(cifra, vocalist_id=active_vocalist_id),
+                           lyrics_plain=lyrics_from_cifra(display_source, vocalist_id=active_vocalist_id),
                            active_tab=active_tab,
                            transpositions=transpositions,
                            current_transpose=current_transpose,
@@ -744,6 +750,9 @@ def view(cifra_id):
                            is_admin=is_band_admin(cifra['band_id'], user_id),
                            is_member=is_band_member(cifra['band_id'], user_id),
                            can_edit=is_band_editor(cifra['band_id'], user_id),
+                           viewing_personal=viewing_personal,
+                           has_personal_draft=has_personal_draft,
+                           can_publish_draft=is_band_editor(cifra['band_id'], user_id),
                            **_referencia_context(cifra))
 
 def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None):
@@ -862,11 +871,14 @@ def _edit_page_context(cifra, band, active_tab=None, user_id=None):
     from chordsheet.examples import EXAMPLES
     from chordsheet_bridge import load_editor_initial
     from setlist_public import lyrics_from_cifra
+    from cifra_user_draft import draft_differs_from_band, merge_cifra_with_draft
 
     tab = (active_tab or request.args.get('tab') or 'cifra').strip().lower()
     if tab not in ('cifra', 'chordsheet', 'letra'):
         tab = 'cifra'
-    initial = load_editor_initial(cifra, user_id=user_id)
+    draft = get_cifra_user_draft(cifra['id'], user_id) if user_id else None
+    display_cifra = merge_cifra_with_draft(cifra, draft) if draft else cifra
+    initial = load_editor_initial(display_cifra, user_id=user_id)
     examples_public = {
         key: {
             'title': ex.get('title', key),
@@ -876,12 +888,14 @@ def _edit_page_context(cifra, band, active_tab=None, user_id=None):
         for key, ex in EXAMPLES.items()
     }
     return {
-        'cifra': _cifra_for_display(cifra),
+        'cifra': _cifra_for_display(display_cifra),
         'band': band,
         'active_tab': tab,
-        'lyrics_plain': lyrics_from_cifra(cifra),
+        'lyrics_plain': lyrics_from_cifra(display_cifra),
         'chordsheet_initial': initial,
         'chordsheet_examples': examples_public,
+        'has_personal_draft': bool(draft and draft_differs_from_band(draft, cifra)),
+        'can_publish_draft': is_band_editor(band['id'], user_id) if user_id else False,
         **_referencia_context(cifra),
     }
 
@@ -1367,3 +1381,86 @@ def leadsheet_api_analisar(cifra_id):
         return jsonify({'ok': True, 'analysis': result})
     except Exception as exc:
         return jsonify({'ok': False, 'error': str(exc)}), 400
+
+
+def _draft_access(cifra_id: str, user_id: str):
+    cifra = get_cifra(cifra_id)
+    if not cifra or not is_band_member(cifra['band_id'], user_id):
+        return None, None
+    return cifra, cifra['band_id']
+
+
+@cifras_bp.route('/<cifra_id>/api/rascunho', methods=['GET'])
+@login_required
+def api_get_rascunho(cifra_id):
+    user_id = session['user_id']
+    cifra, _ = _draft_access(cifra_id, user_id)
+    if not cifra:
+        return jsonify({'detail': 'Sem acesso.'}), 403
+    draft = get_cifra_user_draft(cifra_id, user_id)
+    from cifra_user_draft import draft_differs_from_band
+    return jsonify({
+        'draft': draft,
+        'has_draft': bool(draft and draft_differs_from_band(draft, cifra)),
+        'can_publish': is_band_editor(cifra['band_id'], user_id),
+    })
+
+
+@cifras_bp.route('/<cifra_id>/api/rascunho', methods=['PUT'])
+@login_required
+def api_save_rascunho(cifra_id):
+    user_id = session['user_id']
+    cifra, band_id = _draft_access(cifra_id, user_id)
+    if not cifra:
+        return jsonify({'detail': 'Sem acesso.'}), 403
+    if not is_band_editor(band_id, user_id):
+        return jsonify({'detail': 'Sem permissão para editar.'}), 403
+
+    from cifra_user_draft import draft_payload_from_form, draft_differs_from_band
+
+    data = request.get_json(silent=True) or {}
+    fields = draft_payload_from_form(data)
+    if not fields:
+        return jsonify({'detail': 'Nada para salvar.'}), 400
+
+    for key in ('titulo', 'artista', 'tom_original', 'conteudo'):
+        if key not in fields or fields[key] in (None, ''):
+            fields[key] = cifra.get(key)
+
+    draft_id = upsert_cifra_user_draft(cifra_id, user_id, fields)
+    draft = get_cifra_user_draft(cifra_id, user_id)
+    return jsonify({
+        'ok': True,
+        'draft_id': draft_id,
+        'has_draft': bool(draft and draft_differs_from_band(draft, cifra)),
+    })
+
+
+@cifras_bp.route('/<cifra_id>/api/rascunho/publicar', methods=['POST'])
+@login_required
+def api_publicar_rascunho(cifra_id):
+    user_id = session['user_id']
+    cifra, band_id = _draft_access(cifra_id, user_id)
+    if not cifra:
+        return jsonify({'detail': 'Sem acesso.'}), 403
+    if not is_band_editor(band_id, user_id):
+        return jsonify({'detail': 'Sem permissão para publicar na banda.'}), 403
+    if not publish_cifra_user_draft(cifra_id, user_id):
+        return jsonify({'detail': 'Rascunho não encontrado.'}), 404
+    titulo = get_cifra(cifra_id).get('titulo') or 'Cifra'
+    bn.cifra_updated(band_id, user_id, cifra_id, titulo)
+    return jsonify({
+        'ok': True,
+        'redirect': url_for('cifras.view', cifra_id=cifra_id),
+    })
+
+
+@cifras_bp.route('/<cifra_id>/api/rascunho/descartar', methods=['POST'])
+@login_required
+def api_descartar_rascunho(cifra_id):
+    user_id = session['user_id']
+    cifra, _ = _draft_access(cifra_id, user_id)
+    if not cifra:
+        return jsonify({'detail': 'Sem acesso.'}), 403
+    delete_cifra_user_draft(cifra_id, user_id)
+    return jsonify({'ok': True})

@@ -41,6 +41,8 @@ def _html_wrapper(title: str, body_html: str, button_url: str | None, button_lab
         f'{btn}'
         '<p style="margin:28px 0 0;font-size:12px;color:#a8a29e">'
         'Você recebe este e-mail porque ativou alertas no SetSync. '
+        'Alertas urgentes (escalação, convites e lembretes) chegam na hora; '
+        'demais atualizações vão em um resumo diário. '
         f'<a href="{external_url_for("auth.perfil")}">Ajustar preferências</a>'
         '</p></div>'
     )
