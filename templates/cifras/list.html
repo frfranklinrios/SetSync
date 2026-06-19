@@ -72,7 +72,7 @@
 
 {% block scripts %}
 {% if can_edit %}
-<script src="{{ url_for('static', filename='js/cifra-search-modal.js') }}?v=1"></script>
+{% include 'cifras/_cifra_search_scripts.html' %}
 <script>
 (function () {
   var input = document.getElementById('cifra-list-filter');

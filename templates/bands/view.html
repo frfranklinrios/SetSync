@@ -122,13 +122,16 @@
     <div class="tab-pane fade show active" id="tab-cifras">
         <div class="tab-head">
             <p class="tab-count">{{ cifras|length }} cifra{{ '' if cifras|length == 1 else 's' }}</p>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
                 {% if cifras %}
                 <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-play me-1"></i> Tocar todas
                 </a>
                 {% endif %}
                 {% if can_edit %}
+                <button type="button" class="btn btn-outline-primary btn-sm" data-open-cifra-search>
+                    <i class="fas fa-search me-1"></i> Buscar cifra
+                </button>
                 <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus me-1"></i> Nova Cifra
                 </a>
@@ -147,6 +150,9 @@
             <i class="fas fa-music"></i>
             <p class="mb-3" style="font-size: var(--text-base);">Nenhuma cifra cadastrada ainda.</p>
             {% if can_edit %}
+            <button type="button" class="btn btn-outline-primary btn-sm me-2" data-open-cifra-search>
+                <i class="fas fa-search me-1"></i> Buscar na biblioteca
+            </button>
             <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra
             </a>
@@ -273,4 +279,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
+{% if can_edit %}
+{% include 'cifras/_cifra_search_modal.html' %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if can_edit %}
+{% include 'cifras/_cifra_search_scripts.html' %}
+{% endif %}
 {% endblock %}

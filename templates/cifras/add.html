@@ -117,7 +117,17 @@
         </div>
     </div>
 
-    {% include 'cifras/_api_cifras_search.html' %}
+    <div class="mb-3 p-3 border rounded bg-body-secondary bg-opacity-10">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div>
+                <strong class="d-block">Buscar na biblioteca de cifras</strong>
+                <span class="text-muted small">Preview no popup e importação com um clique para {{ band.name }}</span>
+            </div>
+            <button type="button" class="btn btn-primary" data-open-cifra-search>
+                <i class="fas fa-search me-1"></i> Buscar e importar
+            </button>
+        </div>
+    </div>
 
     <div class="editor-grid mb-3">
         <!-- Coluna esquerda: textarea de entrada -->
@@ -496,4 +506,10 @@ if (window.SetSyncGradeVisual) {
     };
 }
 </script>
+
+{% include 'cifras/_cifra_search_modal.html' %}
+{% endblock %}
+
+{% block scripts %}
+{% include 'cifras/_cifra_search_scripts.html' %}
 {% endblock %}

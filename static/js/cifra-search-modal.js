@@ -4,8 +4,10 @@
 (function () {
   "use strict";
 
-  var modalEl = document.getElementById("cifraSearchModal");
-  if (!modalEl) return;
+  function init() {
+    var modalEl = document.getElementById("cifraSearchModal");
+    if (!modalEl || modalEl.dataset.cifraSearchBound) return;
+    modalEl.dataset.cifraSearchBound = "1";
 
   var bandId = modalEl.getAttribute("data-band-id");
   var bsModal = window.bootstrap && bootstrap.Modal
@@ -249,4 +251,11 @@
   });
 
   window.SetSyncCifraSearchModal = { open: function () { if (bsModal) bsModal.show(); } };
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
