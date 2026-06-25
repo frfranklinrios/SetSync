@@ -458,6 +458,23 @@ def _migrate_admin_outreach_schema(c) -> None:
         CREATE INDEX IF NOT EXISTS idx_admin_whatsapp_invites_target
         ON admin_whatsapp_invites(target_type, target_id, created_at DESC)
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_prospects (
+            id TEXT PRIMARY KEY,
+            nome TEXT NOT NULL,
+            cidade TEXT,
+            phone TEXT NOT NULL,
+            notes TEXT,
+            created_by_user_id TEXT NOT NULL,
+            last_invite_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+        )
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_studio_prospects_phone
+        ON studio_prospects(phone)
+    ''')
 
 
 def _migrate_cifra_drafts_schema(c) -> None:
@@ -1944,6 +1961,70 @@ def get_latest_admin_whatsapp_invites() -> dict[tuple[str, str], dict]:
         d = dict(row)
         out[(d['target_type'], d['target_id'])] = d
     return out
+
+
+def upsert_studio_prospect(
+    *,
+    prospect_id: str,
+    nome: str,
+    cidade: str | None,
+    phone: str,
+    created_by_user_id: str,
+    notes: str | None = None,
+) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT id FROM studio_prospects WHERE id = ?', (prospect_id,))
+    if c.fetchone():
+        c.execute(
+            '''UPDATE studio_prospects
+               SET nome = ?, cidade = ?, phone = ?, notes = COALESCE(?, notes)
+               WHERE id = ?''',
+            (nome, cidade, phone, notes, prospect_id),
+        )
+    else:
+        c.execute(
+            '''INSERT INTO studio_prospects
+               (id, nome, cidade, phone, notes, created_by_user_id)
+               VALUES (?, ?, ?, ?, ?, ?)''',
+            (prospect_id, nome, cidade, phone, notes, created_by_user_id),
+        )
+    db.commit()
+    db.close()
+
+
+def mark_studio_prospect_invite_sent(prospect_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE studio_prospects SET last_invite_at = CURRENT_TIMESTAMP WHERE id = ?',
+        (prospect_id,),
+    )
+    db.commit()
+    db.close()
+
+
+def get_studio_prospect(prospect_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM studio_prospects WHERE id = ?', (prospect_id,))
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def list_studio_prospects(*, limit: int = 100) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT * FROM studio_prospects
+           ORDER BY COALESCE(last_invite_at, created_at) DESC
+           LIMIT ?''',
+        (limit,),
+    )
+    rows = c.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
 
 
 def set_band_logo_filename(band_id: str, filename: str | None) -> None:
