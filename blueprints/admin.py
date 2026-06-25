@@ -11,17 +11,16 @@ from db import (
     get_all_cifras,
     get_all_users,
     get_user,
-    get_band,
     get_band_members,
     get_band_cifras,
     get_latest_admin_whatsapp_invites,
+    list_band_prospects,
     list_studio_prospects,
     list_testimonials,
     get_testimonial,
     create_testimonial,
     update_testimonial,
     delete_testimonial,
-    set_band_contact_whatsapp,
     set_user_superadmin,
     is_superadmin_env_only,
 )
@@ -75,6 +74,7 @@ def index():
     funnel_stats = funnel_counts()
     invite_log = get_latest_admin_whatsapp_invites()
     studio_prospects = list_studio_prospects()
+    band_prospects = list_band_prospects()
 
     return render_template(
         'admin/index.html',
@@ -83,6 +83,7 @@ def index():
         users=users,
         studios=studios,
         studio_prospects=studio_prospects,
+        band_prospects=band_prospects,
         env_users=env_users,
         env_emails=env_emails,
         funnel_stats=funnel_stats,
@@ -167,72 +168,49 @@ def convite_whatsapp():
     phone = (request.form.get('phone') or '').strip()
     action = (request.form.get('action') or 'send').strip()
 
-    if target_type == 'studio_prospect':
-        from admin_outreach import send_studio_prospect_invite
+    if action == 'resend' and target_id and target_type in ('band_prospect', 'studio_prospect'):
+        from admin_outreach import resend_prospect_invite
 
-        if action == 'resend' and target_id:
-            from admin_outreach import send_admin_whatsapp_invite
-            from db import get_studio_prospect
-
-            prospect = get_studio_prospect(target_id)
-            if not prospect:
-                flash('Prospect não encontrado.', 'danger')
-                return redirect(url_for('admin.index') + '#tab-convites')
-            result = send_admin_whatsapp_invite(
-                target_type='studio_prospect',
-                target_id=target_id,
-                phone=prospect.get('phone') or phone,
-                sent_by_user_id=session['user_id'],
-                save_phone=False,
-            )
-        else:
-            result = send_studio_prospect_invite(
-                phone=phone,
-                nome=(request.form.get('studio_nome') or '').strip(),
-                cidade=(request.form.get('studio_cidade') or '').strip(),
-                sent_by_user_id=session['user_id'],
-                notes=(request.form.get('notes') or '').strip(),
-            )
+        result = resend_prospect_invite(
+            target_type=target_type,
+            target_id=target_id,
+            sent_by_user_id=session['user_id'],
+        )
         if result.get('ok'):
-            flash('Convite de cadastro enviado por WhatsApp.', 'success')
+            flash('Convite reenviado por WhatsApp.', 'success')
         else:
             flash(result.get('error') or 'Não foi possível enviar.', 'danger')
         return redirect(url_for('admin.index') + '#tab-convites')
 
-    if target_type not in ('band',) or not target_id:
-        flash('Selecione uma banda válida.', 'danger')
-        return redirect(url_for('admin.index') + '#tab-convites')
+    if target_type == 'studio_prospect':
+        from admin_outreach import send_studio_prospect_invite
 
-    if action == 'save_only':
-        from whatsapp_service import normalize_whatsapp_phone
+        result = send_studio_prospect_invite(
+            phone=phone,
+            nome=(request.form.get('studio_nome') or request.form.get('prospect_nome') or '').strip(),
+            cidade=(request.form.get('studio_cidade') or request.form.get('prospect_cidade') or '').strip(),
+            sent_by_user_id=session['user_id'],
+            notes=(request.form.get('notes') or '').strip(),
+        )
+    elif target_type == 'band_prospect':
+        from admin_outreach import send_band_prospect_invite
 
-        normalized = normalize_whatsapp_phone(phone) if phone else None
-        if phone and not normalized:
-            flash('Número de WhatsApp inválido.', 'danger')
-            return redirect(url_for('admin.index') + '#tab-bands')
+        result = send_band_prospect_invite(
+            phone=phone,
+            nome=(request.form.get('band_nome') or request.form.get('prospect_nome') or '').strip(),
+            cidade=(request.form.get('band_cidade') or request.form.get('prospect_cidade') or '').strip(),
+            sent_by_user_id=session['user_id'],
+            notes=(request.form.get('notes') or '').strip(),
+        )
+    else:
+        flash('Tipo de convite inválido.', 'danger')
+        return redirect(url_for('admin.index') + '#admin-convites')
 
-        if not get_band(target_id):
-            flash('Banda não encontrada.', 'danger')
-            return redirect(url_for('admin.index') + '#tab-bands')
-        set_band_contact_whatsapp(target_id, normalized)
-        flash('WhatsApp da banda salvo.', 'success')
-        return redirect(url_for('admin.index') + '#tab-bands')
-
-    from admin_outreach import send_admin_whatsapp_invite
-
-    result = send_admin_whatsapp_invite(
-        target_type=target_type,
-        target_id=target_id,
-        phone=phone,
-        sent_by_user_id=session['user_id'],
-        save_phone=True,
-    )
     if result.get('ok'):
-        flash('Convite enviado por WhatsApp.', 'success')
+        flash('Convite de cadastro enviado por WhatsApp.', 'success')
     else:
         flash(result.get('error') or 'Não foi possível enviar.', 'danger')
-    tab = (request.form.get('return_tab') or '').strip() or 'bands'
-    return redirect(url_for('admin.index') + f'#tab-{tab}')
+    return redirect(url_for('admin.index') + '#admin-convites')
 
 
 @admin_bp.route('/usuarios/<user_id>/superadmin', methods=['POST'])

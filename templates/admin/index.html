@@ -60,6 +60,9 @@
         <a href="{{ url_for('whatsapp_admin.index') }}" class="btn btn-success btn-sm">
             <i class="fab fa-whatsapp me-1"></i> WhatsApp
         </a>
+        <a href="#admin-convites" class="btn btn-outline-success btn-sm">
+            <i class="fas fa-paper-plane me-1"></i> Convidar
+        </a>
         <a href="{{ url_for('admin.depoimentos') }}" class="btn btn-outline-primary btn-sm">Depoimentos</a>
         <a href="{{ url_for('assinatura_bp.admin_vouchers') }}" class="btn btn-outline-primary btn-sm">Vouchers</a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
@@ -118,10 +121,12 @@
 </div>
 {% endif %}
 
+{% include 'admin/partials/convite_forms.html' %}
+
 <ul class="nav nav-tabs mb-3" role="tablist">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-bands" type="button">Bandas</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-studios" type="button">Estúdios</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-convites" type="button">Convites WhatsApp</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-convites" type="button">Histórico convites</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cifras" type="button">Cifras</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">Usuários</button></li>
 </ul>
@@ -137,45 +142,22 @@
                             <th>Titular</th>
                             <th>Membros</th>
                             <th>Cifras</th>
-                            <th>WhatsApp convite</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for band in bands %}
-                        {% set inv = invite_log.get(('band', band.id)) %}
                         <tr>
                             <td><strong>{{ band.name }}</strong></td>
                             <td>{{ user_display_name(band.owner) if band.owner else '—' }}</td>
                             <td>{{ band.members_count }}</td>
                             <td>{{ band.cifras_count }}</td>
-                            <td>
-                                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="admin-wa-form">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="target_type" value="band">
-                                    <input type="hidden" name="target_id" value="{{ band.id }}">
-                                    <input type="tel" name="phone" placeholder="11 99999-9999"
-                                           value="{{ band.contact_whatsapp|whatsapp_display if band.contact_whatsapp else '' }}"
-                                           inputmode="tel" autocomplete="tel">
-                                    <button type="submit" name="action" value="send" class="btn btn-sm btn-success" title="Salvar número e enviar convite">
-                                        <i class="fab fa-whatsapp"></i>
-                                    </button>
-                                    <button type="submit" name="action" value="save_only" class="btn btn-sm btn-outline-secondary" title="Só salvar número">
-                                        <i class="fas fa-save"></i>
-                                    </button>
-                                    {% if inv and inv.success %}
-                                    <span class="admin-wa-meta">Enviado {{ inv.created_at|date_short }}</span>
-                                    {% elif inv %}
-                                    <span class="admin-wa-meta text-danger">Falha {{ inv.created_at|date_short }}</span>
-                                    {% endif %}
-                                </form>
-                            </td>
                             <td class="text-end">
                                 <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-sm btn-outline-primary">Abrir</a>
                             </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="6" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
+                        <tr><td colspan="5" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -242,87 +224,62 @@
     </div>
 
     <div class="tab-pane fade" id="tab-convites">
-        <div class="row g-3">
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h2 class="h6 mb-2">
-                            <i class="fas fa-door-open me-1 text-success"></i>
-                            Convidar estúdio a se cadastrar
-                        </h2>
-                        <p class="text-muted" style="font-size: var(--text-sm);">
-                            Para estúdios que <strong>ainda não estão no SetSync</strong>.
-                            O dono recebe WhatsApp com link para <strong>criar conta e cadastrar o estúdio</strong> — você não precisa cadastrar por ele.
-                        </p>
-                        <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="row g-2">
-                            {% include 'partials/csrf_input.html' %}
-                            <input type="hidden" name="target_type" value="studio_prospect">
-                            <input type="hidden" name="return_tab" value="convites">
-                            <div class="col-12">
-                                <label class="form-label">Nome do estúdio</label>
-                                <input type="text" name="studio_nome" class="form-control form-control-sm"
-                                       placeholder="Ex.: Studio Forte" required maxlength="120">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Cidade</label>
-                                <input type="text" name="studio_cidade" class="form-control form-control-sm"
-                                       placeholder="Ex.: Fortaleza" maxlength="80">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">WhatsApp do dono</label>
-                                <input type="tel" name="phone" class="form-control form-control-sm"
-                                       placeholder="85 99999-9999" required inputmode="tel">
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" name="action" value="send" class="btn btn-success btn-sm">
-                                    <i class="fab fa-whatsapp me-1"></i> Enviar convite de cadastro
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h2 class="h6 mb-2">
-                            <i class="fas fa-users me-1 text-primary"></i>
-                            Convidar para banda existente
-                        </h2>
-                        <p class="text-muted" style="font-size: var(--text-sm);">
-                            Para quem já tem banda no SetSync — envia link para entrar na equipe.
-                        </p>
-                        <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="row g-2">
-                            {% include 'partials/csrf_input.html' %}
-                            <input type="hidden" name="target_type" value="band">
-                            <input type="hidden" name="return_tab" value="convites">
-                            <div class="col-md-7">
-                                <label class="form-label">Banda</label>
-                                <select name="target_id" class="form-select form-select-sm" required>
-                                    {% for band in bands %}
-                                    <option value="{{ band.id }}">{{ band.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-5">
-                                <label class="form-label">WhatsApp</label>
-                                <input type="tel" name="phone" class="form-control form-control-sm"
-                                       placeholder="11 99999-9999" required inputmode="tel">
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" name="action" value="send" class="btn btn-primary btn-sm">
-                                    <i class="fab fa-whatsapp me-1"></i> Enviar convite da banda
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+            Convites enviados para quem ainda não se cadastrou.
+            <a href="#admin-convites">Enviar novo convite</a>
+        </p>
+
+        {% if band_prospects %}
+        <div class="card mb-3">
+            <div class="card-header py-2" style="font-size: var(--text-sm);">Bandas convidadas</div>
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Banda</th>
+                            <th>Cidade</th>
+                            <th>WhatsApp</th>
+                            <th>Último convite</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in band_prospects %}
+                        {% set inv = invite_log.get(('band_prospect', p.id)) %}
+                        <tr>
+                            <td><strong>{{ p.nome }}</strong></td>
+                            <td>{{ p.cidade or '—' }}</td>
+                            <td>{{ p.phone|whatsapp_display }}</td>
+                            <td>
+                                {% if p.last_invite_at %}
+                                {{ p.last_invite_at|date_short }}
+                                {% elif inv and inv.success %}
+                                {{ inv.created_at|date_short }}
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="target_type" value="band_prospect">
+                                    <input type="hidden" name="target_id" value="{{ p.id }}">
+                                    <button type="submit" name="action" value="resend" class="btn btn-sm btn-outline-primary">
+                                        <i class="fab fa-whatsapp"></i> Reenviar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
+        {% endif %}
 
         {% if studio_prospects %}
-        <div class="card mt-3">
-            <div class="card-header py-2" style="font-size: var(--text-sm);">Estúdios convidados (ainda não cadastrados)</div>
+        <div class="card mb-3">
+            <div class="card-header py-2" style="font-size: var(--text-sm);">Estúdios convidados</div>
             <div class="table-responsive">
                 <table class="table table-hover admin-table mb-0">
                     <thead>
@@ -355,7 +312,6 @@
                                     {% include 'partials/csrf_input.html' %}
                                     <input type="hidden" name="target_type" value="studio_prospect">
                                     <input type="hidden" name="target_id" value="{{ p.id }}">
-                                    <input type="hidden" name="return_tab" value="convites">
                                     <button type="submit" name="action" value="resend" class="btn btn-sm btn-outline-success">
                                         <i class="fab fa-whatsapp"></i> Reenviar
                                     </button>
@@ -367,6 +323,10 @@
                 </table>
             </div>
         </div>
+        {% endif %}
+
+        {% if not band_prospects and not studio_prospects %}
+        <div class="text-muted text-center py-4">Nenhum convite enviado ainda.</div>
         {% endif %}
     </div>
 
@@ -484,4 +444,20 @@
         </div>
     </div>
 </div>
+<script>
+(function () {
+    var hash = (window.location.hash || '').replace('#', '');
+    if (!hash) return;
+    if (hash === 'admin-convites') {
+        var el = document.getElementById('admin-convites');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+    }
+    if (!hash.startsWith('tab-')) return;
+    var btn = document.querySelector('[data-bs-target="#' + hash + '"]');
+    if (btn && window.bootstrap && bootstrap.Tab) {
+        bootstrap.Tab.getOrCreateInstance(btn).show();
+    }
+})();
+</script>
 {% endblock %}
