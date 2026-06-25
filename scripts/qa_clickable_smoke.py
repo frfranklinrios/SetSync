@@ -118,7 +118,7 @@ def safe(page, fn, label: str) -> None:
 
 
 def run_public(page) -> None:
-    for path in ["/ajuda", "/guia", "/blog", "/igrejas", "/planos"]:
+    for path in ["/ajuda", "/guia", "/blog", "/igrejas", "/planos", "/assinatura/planos"]:
         safe(page, lambda p=path: page.goto(BASE + p, wait_until="domcontentloaded", timeout=20000), path)
         check_page(page, path)
 

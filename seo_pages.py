@@ -89,7 +89,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'html': (
                 '<p>O plano <strong>Worship</strong> cobre <strong>múltiplas bandas</strong> na mesma conta, '
                 'cada uma com repertório e setlists próprios. Veja preços em '
-                '<a href="/planos">Planos</a>.</p>'
+                '<a href="/assinatura/planos">Planos</a>.</p>'
             ),
         },
     ]

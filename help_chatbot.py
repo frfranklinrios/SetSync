@@ -198,7 +198,7 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
     if any(t in q for t in ('estudio', 'sala', 'reserv', 'agend')):
         from models_studio import list_studios_by_owner
         if list_studios_by_owner(user_id):
-            ctas.append({'label': 'Painel do estúdio', 'url': url_for('studios.meus')})
+            ctas.append({'label': 'Painel do estúdio', 'url': url_for('studios.my_studios')})
         else:
             ctas.append({'label': 'Cadastrar estúdio', 'url': url_for('studios.register_studio')})
         ctas.append({'label': 'Buscar estúdios', 'url': url_for('studios.search')})

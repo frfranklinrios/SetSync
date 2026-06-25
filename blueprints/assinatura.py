@@ -70,6 +70,12 @@ def _banda_do_usuario(banda_id: str, user_id: str) -> dict | None:
     return band
 
 
+@assinatura_bp.route('/planos')
+def planos_redirect():
+    """Atalho legado usado em guias SEO e conteúdo antigo."""
+    return redirect(url_for('assinatura_bp.planos'), code=301)
+
+
 @assinatura_bp.route('/assinatura/planos')
 @login_required
 def planos():
