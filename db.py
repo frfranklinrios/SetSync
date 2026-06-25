@@ -12,6 +12,7 @@ from database import (
     table_columns,
     table_exists,
 )
+from config import app_now_naive, app_now_str
 
 DB_PATH = SQLITE_PATH
 
@@ -247,6 +248,13 @@ def _init_postgres_schema(c) -> None:
             UNIQUE (usuario_id, campaign),
             FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
         )''',
+        '''CREATE TABLE IF NOT EXISTS user_instruments (
+            user_id TEXT NOT NULL,
+            instrument_id TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (user_id, instrument_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )''',
     ]
     for sql in statements:
         c.execute(sql)
@@ -280,6 +288,11 @@ def init_db():
         _migrate_band_team_schema(c)
         _migrate_cifra_drafts_schema(c)
         add_column_if_missing(c, 'cifras', 'referencia_json', 'TEXT')
+        _migrate_roadmap_phase3_schema(c)
+        _migrate_studio_schema(c)
+        _migrate_growth_schema(c)
+        _migrate_user_instruments_schema(c)
+        _migrate_admin_outreach_schema(c)
         _ensure_perf_indexes(c)
         db.commit()
         db.close()
@@ -370,6 +383,8 @@ def init_db():
     add_column_if_missing(c, 'setlists', 'public_share_token', 'TEXT')
     add_column_if_missing(c, 'setlists', 'public_share_enabled', 'INTEGER DEFAULT 0')
     add_column_if_missing(c, 'setlist_cifras', 'vocalist_id', 'TEXT')
+    add_column_if_missing(c, 'setlist_cifras', 'play_notes', 'TEXT')
+    add_column_if_missing(c, 'cifras', 'play_notes', 'TEXT')
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS band_vocalists (
@@ -413,10 +428,36 @@ def init_db():
     _migrate_band_member_invites_schema(c)
     _migrate_band_team_schema(c)
     _migrate_cifra_drafts_schema(c)
+    _migrate_roadmap_phase3_schema(c)
+    _migrate_studio_schema(c)
+    _migrate_growth_schema(c)
+    _migrate_user_instruments_schema(c)
+    _migrate_admin_outreach_schema(c)
     _ensure_perf_indexes(c)
     db.commit()
 
     db.close()
+
+
+def _migrate_admin_outreach_schema(c) -> None:
+    add_column_if_missing(c, 'bands', 'contact_whatsapp', 'TEXT')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS admin_whatsapp_invites (
+            id TEXT PRIMARY KEY,
+            target_type TEXT NOT NULL,
+            target_id TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            sent_by_user_id TEXT NOT NULL,
+            message_body TEXT,
+            success INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (sent_by_user_id) REFERENCES users(id)
+        )
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_admin_whatsapp_invites_target
+        ON admin_whatsapp_invites(target_type, target_id, created_at DESC)
+    ''')
 
 
 def _migrate_cifra_drafts_schema(c) -> None:
@@ -438,6 +479,221 @@ def _migrate_cifra_drafts_schema(c) -> None:
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     ''')
+
+
+def _migrate_roadmap_phase3_schema(c) -> None:
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS cifra_play_drawings (
+            cifra_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            strokes_json TEXT NOT NULL DEFAULT '[]',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (cifra_id, user_id),
+            FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    add_column_if_missing(c, 'band_events', 'fee_total', 'REAL')
+    add_column_if_missing(c, 'band_events', 'fee_transport_discount', 'REAL')
+    add_column_if_missing(c, 'band_events', 'fee_equipment_discount', 'REAL')
+    add_column_if_missing(c, 'band_events', 'fee_notes', 'TEXT')
+    add_column_if_missing(c, 'band_events', 'fee_settled_at', 'TIMESTAMP')
+    add_column_if_missing(c, 'cifras', 'spotify_url', 'TEXT')
+    add_column_if_missing(c, 'cifras', 'apple_music_url', 'TEXT')
+
+
+def _migrate_studio_schema(c) -> None:
+    """Estúdios de ensaio — cadastro, salas, disponibilidade e agendamentos."""
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studios (
+            id TEXT PRIMARY KEY,
+            owner_user_id TEXT NOT NULL,
+            nome TEXT NOT NULL,
+            descricao TEXT,
+            cidade TEXT NOT NULL,
+            bairro TEXT,
+            endereco TEXT,
+            telefone TEXT,
+            whatsapp TEXT,
+            preco_hora REAL,
+            ativo INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_photos (
+            id TEXT PRIMARY KEY,
+            studio_id TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_rooms (
+            id TEXT PRIMARY KEY,
+            studio_id TEXT NOT NULL,
+            nome TEXT NOT NULL,
+            capacidade_pessoas INTEGER,
+            equipamentos_json TEXT,
+            ativa INTEGER NOT NULL DEFAULT 1,
+            FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_room_photos (
+            id TEXT PRIMARY KEY,
+            room_id TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (room_id) REFERENCES studio_rooms(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_room_availability (
+            id TEXT PRIMARY KEY,
+            room_id TEXT NOT NULL,
+            dia_semana INTEGER,
+            data_especifica TEXT,
+            hora_inicio TEXT NOT NULL,
+            hora_fim TEXT NOT NULL,
+            recorrente INTEGER NOT NULL DEFAULT 1,
+            FOREIGN KEY (room_id) REFERENCES studio_rooms(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_room_blocks (
+            id TEXT PRIMARY KEY,
+            room_id TEXT NOT NULL,
+            data TEXT NOT NULL,
+            hora_inicio TEXT NOT NULL,
+            hora_fim TEXT NOT NULL,
+            motivo TEXT,
+            FOREIGN KEY (room_id) REFERENCES studio_rooms(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_bookings (
+            id TEXT PRIMARY KEY,
+            room_id TEXT NOT NULL,
+            band_id TEXT NOT NULL,
+            requested_by_user_id TEXT NOT NULL,
+            data TEXT NOT NULL,
+            hora_inicio TEXT NOT NULL,
+            hora_fim TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pendente',
+            observacao TEXT,
+            band_event_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            responded_at TIMESTAMP,
+            FOREIGN KEY (room_id) REFERENCES studio_rooms(id) ON DELETE CASCADE,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (requested_by_user_id) REFERENCES users(id),
+            FOREIGN KEY (band_event_id) REFERENCES band_events(id) ON DELETE SET NULL
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_subscriptions (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL UNIQUE,
+            plano TEXT NOT NULL DEFAULT 'estudio_basico',
+            status TEXT NOT NULL DEFAULT 'ativa',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    add_column_if_missing(c, 'band_events', 'studio_booking_id', 'TEXT')
+    add_column_if_missing(c, 'studios', 'endereco_lat', 'REAL')
+    add_column_if_missing(c, 'studios', 'endereco_lng', 'REAL')
+    add_column_if_missing(c, 'studios', 'endereco_place_id', 'TEXT')
+    add_column_if_missing(c, 'studios', 'onboarding_dismissed', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'studio_subscriptions', 'mp_preapproval_id', 'TEXT')
+    add_column_if_missing(c, 'studio_subscriptions', 'mp_subscription_id', 'TEXT')
+    add_column_if_missing(c, 'studio_subscriptions', 'data_proxima_cobranca', 'TIMESTAMP')
+    add_column_if_missing(c, 'studio_subscriptions', 'trial_inicio', 'TIMESTAMP')
+    add_column_if_missing(c, 'studio_subscriptions', 'trial_fim', 'TIMESTAMP')
+    add_column_if_missing(c, 'studio_subscriptions', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_studios_city ON studios(cidade, bairro, ativo)'
+    )
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_studios_owner ON studios(owner_user_id)'
+    )
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_studio_bookings_room_date '
+        'ON studio_bookings(room_id, data, status)'
+    )
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_studio_bookings_band '
+        'ON studio_bookings(band_id, status)'
+    )
+
+
+def _migrate_growth_schema(c) -> None:
+    """Funil, NPS, métricas de estúdio e e-mails de onboarding estúdio."""
+    add_column_if_missing(c, 'users', 'play_mode_used', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'agenda_event_used', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'nps_score', 'INTEGER')
+    add_column_if_missing(c, 'users', 'nps_submitted_at', 'TIMESTAMP')
+    add_column_if_missing(c, 'users', 'nps_dismissed', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'pwa_prompt_dismissed', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'studios', 'page_views', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'studios', 'booking_clicks', 'INTEGER NOT NULL DEFAULT 0')
+    if IS_POSTGRES:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS product_funnel_events (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT,
+                step TEXT NOT NULL,
+                meta_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            )
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS studio_onboarding_emails (
+                id SERIAL PRIMARY KEY,
+                owner_user_id TEXT NOT NULL,
+                studio_id TEXT NOT NULL,
+                email_numero INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pendente',
+                enviado_em TIMESTAMP,
+                UNIQUE (owner_user_id, email_numero),
+                FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE
+            )
+        ''')
+    else:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS product_funnel_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                step TEXT NOT NULL,
+                meta_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            )
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS studio_onboarding_emails (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                owner_user_id TEXT NOT NULL,
+                studio_id TEXT NOT NULL,
+                email_numero INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pendente',
+                enviado_em TIMESTAMP,
+                UNIQUE (owner_user_id, email_numero),
+                FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE
+            )
+        ''')
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_funnel_step ON product_funnel_events(step)'
+    )
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_funnel_user ON product_funnel_events(user_id, step)'
+    )
 
 
 def _migrate_band_team_schema(c) -> None:
@@ -504,6 +760,18 @@ def _migrate_band_team_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE CASCADE,
             FOREIGN KEY (invited_by) REFERENCES users(id)
+        )
+    ''')
+
+
+def _migrate_user_instruments_schema(c) -> None:
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS user_instruments (
+            user_id TEXT NOT NULL,
+            instrument_id TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (user_id, instrument_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     ''')
 
@@ -778,7 +1046,7 @@ def update_user_profile(
 
 
 def touch_user_last_login(user_id: str) -> None:
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     c.execute('UPDATE users SET last_login_at = ? WHERE id = ?', (now, user_id))
@@ -1198,7 +1466,7 @@ def _migrate_assinaturas_schema(c) -> None:
 def create_assinatura_gratis(banda_id: str, *, cursor=None, commit: bool = True) -> dict:
     """Cria assinatura grátis ativa para uma banda."""
     assinatura_id = str(uuid.uuid4())
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     row = {
         'id': assinatura_id,
         'banda_id': banda_id,
@@ -1618,6 +1886,64 @@ def update_band(band_id, name, description, **_ignored):
     c.execute('UPDATE bands SET name = ?, description = ? WHERE id = ?', (name, description, band_id))
     db.commit()
     db.close()
+
+
+def set_band_contact_whatsapp(band_id: str, phone: str | None) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE bands SET contact_whatsapp = ? WHERE id = ?', (phone, band_id))
+    db.commit()
+    db.close()
+
+
+def log_admin_whatsapp_invite(
+    *,
+    invite_id: str,
+    target_type: str,
+    target_id: str,
+    phone: str,
+    sent_by_user_id: str,
+    message_body: str,
+    success: bool,
+) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO admin_whatsapp_invites
+           (id, target_type, target_id, phone, sent_by_user_id, message_body, success)
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        (
+            invite_id, target_type, target_id, phone, sent_by_user_id,
+            message_body[:4000] if message_body else None,
+            1 if success else 0,
+        ),
+    )
+    db.commit()
+    db.close()
+
+
+def get_latest_admin_whatsapp_invites() -> dict[tuple[str, str], dict]:
+    """Último convite por (target_type, target_id)."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT a.* FROM admin_whatsapp_invites a
+           INNER JOIN (
+               SELECT target_type, target_id, MAX(created_at) AS max_at
+               FROM admin_whatsapp_invites
+               GROUP BY target_type, target_id
+           ) latest
+           ON a.target_type = latest.target_type
+           AND a.target_id = latest.target_id
+           AND a.created_at = latest.max_at'''
+    )
+    rows = c.fetchall()
+    db.close()
+    out: dict[tuple[str, str], dict] = {}
+    for row in rows:
+        d = dict(row)
+        out[(d['target_type'], d['target_id'])] = d
+    return out
 
 
 def set_band_logo_filename(band_id: str, filename: str | None) -> None:
@@ -2162,10 +2488,93 @@ def update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
 def delete_cifra(cifra_id):
     db = get_db()
     c = db.cursor()
+    c.execute('DELETE FROM cifra_play_drawings WHERE cifra_id = ?', (cifra_id,))
     c.execute('DELETE FROM cifra_user_drafts WHERE cifra_id = ?', (cifra_id,))
     c.execute('DELETE FROM cifra_vocalist_transpose WHERE cifra_id = ?', (cifra_id,))
     c.execute('DELETE FROM setlist_cifras WHERE cifra_id = ?', (cifra_id,))
     c.execute('DELETE FROM cifras WHERE id = ?', (cifra_id,))
+    db.commit()
+    db.close()
+
+
+def update_cifra_streaming(cifra_id, apple_music_url=None):
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE cifras SET spotify_url=NULL, apple_music_url=?, updated_at=CURRENT_TIMESTAMP
+           WHERE id=?''',
+        (apple_music_url, cifra_id),
+    )
+    db.commit()
+    db.close()
+
+
+def set_cifra_play_notes(cifra_id: str, play_notes: str | None) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE cifras SET play_notes = ?, updated_at=CURRENT_TIMESTAMP WHERE id = ?',
+        (play_notes, cifra_id),
+    )
+    db.commit()
+    db.close()
+
+
+def get_cifra_play_drawing(cifra_id: str, user_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT * FROM cifra_play_drawings WHERE cifra_id = ? AND user_id = ?',
+        (cifra_id, user_id),
+    )
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def upsert_cifra_play_drawing(cifra_id: str, user_id: str, strokes_json: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO cifra_play_drawings (cifra_id, user_id, strokes_json, updated_at)
+           VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(cifra_id, user_id) DO UPDATE SET
+             strokes_json=excluded.strokes_json,
+             updated_at=CURRENT_TIMESTAMP''',
+        (cifra_id, user_id, strokes_json or '[]'),
+    )
+    db.commit()
+    db.close()
+
+
+def update_event_fees(
+    event_id: str,
+    *,
+    fee_total: float | None,
+    fee_transport_discount: float | None,
+    fee_equipment_discount: float | None,
+    fee_notes: str | None,
+    fee_settled: bool = False,
+) -> None:
+    db = get_db()
+    c = db.cursor()
+    settled_at = 'CURRENT_TIMESTAMP' if fee_settled else None
+    if fee_settled:
+        c.execute(
+            '''UPDATE band_events
+               SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
+                   fee_notes=?, fee_settled_at=CURRENT_TIMESTAMP
+               WHERE id=?''',
+            (fee_total, fee_transport_discount, fee_equipment_discount, fee_notes, event_id),
+        )
+    else:
+        c.execute(
+            '''UPDATE band_events
+               SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
+                   fee_notes=?, fee_settled_at=NULL
+               WHERE id=?''',
+            (fee_total, fee_transport_discount, fee_equipment_discount, fee_notes, event_id),
+        )
     db.commit()
     db.close()
 
@@ -2909,7 +3318,7 @@ def get_blog_post_by_slug(slug: str, published_only: bool = True) -> dict | None
 def upsert_blog_post(data: dict) -> None:
     db = get_db()
     c = db.cursor()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute('SELECT id FROM blog_posts WHERE slug = ?', (data['slug'],))
     existing = c.fetchone()
     pub = 1 if data.get('publicado') else 0
@@ -2979,7 +3388,7 @@ def list_onboarding_pending() -> list[dict]:
 def mark_onboarding_sent(row_id: int, status: str = 'enviado') -> None:
     db = get_db()
     c = db.cursor()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute(
         'UPDATE onboarding_emails SET status = ?, enviado_em = ? WHERE id = ?',
         (status, now, row_id),
@@ -3019,8 +3428,8 @@ def update_assinatura_trial(
 def list_trials_expiring_soon(days: int = 3) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    limite = (datetime.utcnow() + timedelta(days=days)).strftime('%Y-%m-%d %H:%M:%S')
-    agora = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    limite = (app_now_naive() + timedelta(days=days)).strftime('%Y-%m-%d %H:%M:%S')
+    agora = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute(
         '''SELECT a.*, b.name AS band_name, b.owner_id, u.email AS owner_email
            FROM assinaturas a
@@ -3036,8 +3445,28 @@ def list_trials_expiring_soon(days: int = 3) -> list[dict]:
     return rows
 
 
+def list_studio_trials_expiring_soon(days: int = 3) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    limite = (app_now_naive() + timedelta(days=days)).strftime('%Y-%m-%d %H:%M:%S')
+    agora = app_now_str()
+    c.execute(
+        '''SELECT s.*, u.email AS owner_email
+           FROM studio_subscriptions s
+           JOIN users u ON u.id = s.user_id
+           WHERE s.trial_usado = 1 AND s.trial_fim IS NOT NULL
+             AND s.trial_fim > ? AND s.trial_fim <= ?
+             AND (s.plano = 'estudio_basico' OR s.plano IS NULL)
+             AND s.status = 'ativa' ''',
+        (agora, limite),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
 def list_expired_trials() -> list[dict]:
-    agora = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    agora = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     c.execute(
@@ -3072,7 +3501,7 @@ def retention_was_sent(usuario_id: str, campaign: str) -> bool:
 def mark_retention_sent(usuario_id: str, campaign: str, status: str = 'enviado') -> None:
     db = get_db()
     c = db.cursor()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     try:
         c.execute(
             '''INSERT INTO retention_emails (usuario_id, campaign, status, enviado_em)
@@ -3090,7 +3519,7 @@ def mark_retention_sent(usuario_id: str, campaign: str, status: str = 'enviado')
 
 
 def list_retention_candidates_inactive(min_days: int) -> list[dict]:
-    cutoff = (datetime.utcnow() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     if IS_POSTGRES:
@@ -3119,7 +3548,7 @@ def list_retention_candidates_inactive(min_days: int) -> list[dict]:
 
 
 def list_retention_candidates_no_band(*, min_days: int) -> list[dict]:
-    cutoff = (datetime.utcnow() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     if IS_POSTGRES:
@@ -3161,3 +3590,175 @@ def list_retention_candidates_no_band(*, min_days: int) -> list[dict]:
 
 def list_retention_candidates_trial_expired() -> list[dict]:
     return list_expired_trials()
+
+
+def list_retention_candidates_studio_trial_expired() -> list[dict]:
+    """Donos com trial Premium de estúdio expirado nos últimos 14 dias."""
+    cutoff = (app_now_naive() - timedelta(days=14)).strftime('%Y-%m-%d %H:%M:%S')
+    db = get_db()
+    c = db.cursor()
+    if IS_POSTGRES:
+        c.execute(
+            '''SELECT ss.user_id AS owner_id, u.email AS owner_email,
+                      MIN(s.nome) AS studio_nome, MIN(s.id) AS studio_id
+               FROM studio_subscriptions ss
+               JOIN users u ON u.id = ss.user_id
+               LEFT JOIN studios s ON s.owner_user_id = ss.user_id
+               WHERE ss.trial_usado = 1
+                 AND ss.plano != 'estudio_premium'
+                 AND ss.trial_fim IS NOT NULL
+                 AND ss.trial_fim < CURRENT_TIMESTAMP
+                 AND ss.trial_fim >= ?::timestamp
+               GROUP BY ss.user_id, u.email''',
+            (cutoff,),
+        )
+    else:
+        c.execute(
+            '''SELECT ss.user_id AS owner_id, u.email AS owner_email,
+                      MIN(s.nome) AS studio_nome, MIN(s.id) AS studio_id
+               FROM studio_subscriptions ss
+               JOIN users u ON u.id = ss.user_id
+               LEFT JOIN studios s ON s.owner_user_id = ss.user_id
+               WHERE ss.trial_usado = 1
+                 AND ss.plano != 'estudio_premium'
+                 AND ss.trial_fim IS NOT NULL
+                 AND ss.trial_fim < CURRENT_TIMESTAMP
+                 AND ss.trial_fim >= datetime('now', '-14 days')
+               GROUP BY ss.user_id, u.email'''
+        )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def mark_user_play_mode_used(user_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE users SET play_mode_used = 1 WHERE id = ? AND play_mode_used = 0',
+        (user_id,),
+    )
+    db.commit()
+    db.close()
+
+
+def user_play_mode_used(user_id: str) -> bool:
+    user = get_user(user_id)
+    return bool(user and user.get('play_mode_used'))
+
+
+def mark_user_agenda_event_used(user_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE users SET agenda_event_used = 1 WHERE id = ? AND agenda_event_used = 0',
+        (user_id,),
+    )
+    db.commit()
+    db.close()
+
+
+def user_agenda_event_used(user_id: str) -> bool:
+    user = get_user(user_id)
+    return bool(user and user.get('agenda_event_used'))
+
+
+def save_user_nps(user_id: str, score: int) -> None:
+    from config import app_now_str
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE users SET nps_score = ?, nps_submitted_at = ?, nps_dismissed = 1
+           WHERE id = ?''',
+        (max(0, min(10, score)), app_now_str(), user_id),
+    )
+    db.commit()
+    db.close()
+
+
+def dismiss_user_nps(user_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE users SET nps_dismissed = 1 WHERE id = ?', (user_id,))
+    db.commit()
+    db.close()
+
+
+def user_should_see_nps(user_id: str) -> bool:
+    user = get_user(user_id)
+    if not user or user.get('nps_submitted_at') or user.get('nps_dismissed'):
+        return False
+    from monetizacao import get_assinatura_banda
+    for b in get_owned_bands(user_id):
+        ass = get_assinatura_banda(b['id'])
+        if ass.trial_usado and not ass.trial_ativo():
+            return True
+    from models_studio import get_studio_subscription, list_studios_by_owner
+    from monetizacao import dias_restantes_trial_estudio, studio_tem_premium
+    if list_studios_by_owner(user_id) and not studio_tem_premium(user_id):
+        sub = get_studio_subscription(user_id)
+        if sub and sub.get('trial_usado') and dias_restantes_trial_estudio(user_id) is None:
+            return True
+    return False
+
+
+def dismiss_pwa_prompt(user_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE users SET pwa_prompt_dismissed = 1 WHERE id = ?', (user_id,))
+    db.commit()
+    db.close()
+
+
+def user_should_see_pwa_prompt(user_id: str) -> bool:
+    user = get_user(user_id)
+    if not user or user.get('pwa_prompt_dismissed'):
+        return False
+    return bool(user.get('play_mode_used') or user.get('agenda_event_used'))
+
+
+def ensure_studio_onboarding_rows(owner_user_id: str, studio_id: str) -> None:
+    from sqlite3 import IntegrityError
+    db = get_db()
+    c = db.cursor()
+    for n in range(1, 6):
+        try:
+            c.execute(
+                '''INSERT INTO studio_onboarding_emails
+                   (owner_user_id, studio_id, email_numero, status)
+                   VALUES (?, ?, ?, 'pendente')''',
+                (owner_user_id, studio_id, n),
+            )
+        except IntegrityError:
+            pass
+    db.commit()
+    db.close()
+
+
+def list_studio_onboarding_pending() -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT soe.*, u.email, s.nome AS studio_nome, s.created_at AS studio_created_at
+           FROM studio_onboarding_emails soe
+           JOIN users u ON u.id = soe.owner_user_id
+           JOIN studios s ON s.id = soe.studio_id
+           WHERE soe.status = 'pendente'
+           ORDER BY soe.owner_user_id, soe.email_numero'''
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def mark_studio_onboarding_sent(row_id: int, status: str = 'enviado') -> None:
+    from config import app_now_str
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE studio_onboarding_emails SET status = ?, enviado_em = ? WHERE id = ?',
+        (status, app_now_str(), row_id),
+    )
+    db.commit()
+    db.close()
+

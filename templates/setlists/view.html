@@ -262,6 +262,17 @@
                 <div class="row-sub">{{ cifra.artista }}</div>
                 {% endif %}
             </a>
+            {% if can_edit %}
+            <input type="text" class="row-play-notes form-control form-control-sm mt-1"
+                   data-cifra-id="{{ cifra.id }}"
+                   placeholder="Nota de palco (ex: devagar, capo 2)"
+                   value="{{ cifra.setlist_play_notes or cifra.play_notes or '' }}"
+                   maxlength="240" aria-label="Nota de palco de {{ cifra.titulo }}">
+            {% elif cifra.setlist_play_notes or cifra.play_notes %}
+            <div class="row-play-notes-read text-muted small mt-1">
+                <i class="fas fa-sticky-note me-1"></i>{{ cifra.setlist_play_notes or cifra.play_notes }}
+            </div>
+            {% endif %}
         </div>
         {% if cifra.tom_original and vocalists %}
         <div class="row-meta">
@@ -313,6 +324,7 @@
     var status = document.getElementById('order-status');
     var REORDER_URL = {{ url_for('setlists.reorder_ajax', setlist_id=setlist.id) | tojson }};
     var VOCALIST_ROW_URL = {{ url_for('setlists.set_cifra_vocalist', setlist_id=setlist.id, cifra_id='__CID__') | tojson }};
+    var PLAY_NOTES_URL = {{ url_for('setlists.set_cifra_play_notes', setlist_id=setlist.id, cifra_id='__CID__') | tojson }};
 
     var vocalistSaves = {};
     var isDragging = false;
@@ -375,6 +387,45 @@
         var sel = e.target.closest('.row-vocalist-sel');
         if (!sel) return;
         saveVocalist(sel);
+    });
+
+    function savePlayNotes(inp) {
+        var cid = inp.getAttribute('data-cifra-id');
+        var value = (inp.value || '').trim();
+        var previous = inp.getAttribute('data-saved-value');
+        if (previous == null) previous = value;
+        if (value === previous) return;
+        var url = PLAY_NOTES_URL.replace('__CID__', encodeURIComponent(cid));
+        inp.classList.add('is-saving');
+        showStatus('Salvando nota…');
+        var headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (window.csrfToken) headers['X-CSRFToken'] = window.csrfToken;
+        (window.ssFetch || window.fetch)(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headers,
+            body: JSON.stringify({ play_notes: value })
+        }).then(function (r) { return r.json(); })
+          .then(function (data) {
+              if (!data.ok) throw new Error(data.error || 'fail');
+              inp.setAttribute('data-saved-value', value);
+              showStatus('Nota salva ✓', 'ok');
+          })
+          .catch(function () {
+              inp.value = previous;
+              showStatus('Erro ao salvar nota', 'err');
+          })
+          .finally(function () { inp.classList.remove('is-saving'); });
+    }
+
+    document.getElementById('setlist-card').addEventListener('blur', function (e) {
+        var inp = e.target.closest('.row-play-notes');
+        if (!inp) return;
+        savePlayNotes(inp);
+    }, true);
+
+    document.querySelectorAll('.row-play-notes').forEach(function (inp) {
+        inp.setAttribute('data-saved-value', (inp.value || '').trim());
     });
 
     function showStatus(text, klass) {

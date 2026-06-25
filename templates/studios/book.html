@@ -1,0 +1,80 @@
+{% extends "index.html" %}
+{% block title %}Reservar — {{ room.nome }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.search') }}">Estúdios</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.detail', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item active">Reservar</li>
+    </ol>
+</nav>
+
+<h1 class="h5 mb-3">Reservar {{ room.nome }} — {{ studio.nome }}</h1>
+<p class="text-muted small">{{ full_address }}</p>
+
+<form method="post" id="book-form">
+    {% include 'partials/csrf_input.html' %}
+    <div class="mb-3">
+        <label class="form-label" for="band_id">Banda</label>
+        <select name="band_id" id="band_id" class="form-select" required>
+            {% for b in user_bands %}
+            <option value="{{ b.id }}">{{ b.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="data">Data</label>
+        <input type="date" name="data" id="data" class="form-control" required value="{{ selected_date }}">
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-6">
+            <label class="form-label" for="hora_inicio">Início</label>
+            <input type="time" name="hora_inicio" id="hora_inicio" class="form-control" required>
+        </div>
+        <div class="col-6">
+            <label class="form-label" for="hora_fim">Fim</label>
+            <input type="time" name="hora_fim" id="hora_fim" class="form-control" required>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="observacao">Observação</label>
+        <textarea name="observacao" id="observacao" class="form-control" rows="2" maxlength="500"></textarea>
+    </div>
+
+    {% if slots %}
+    <div class="mb-3">
+        <div class="form-label">Horários disponíveis (1h)</div>
+        <div class="d-flex flex-wrap gap-2">
+            {% for slot in slots %}
+            <button type="button" class="btn btn-sm btn-outline-secondary slot-pick"
+                    data-inicio="{{ slot.inicio }}" data-fim="{{ slot.fim }}">
+                {{ slot.inicio }}–{{ slot.fim }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary">Solicitar agendamento</button>
+    <a href="{{ url_for('studios.detail', studio_id=studio.id) }}" class="btn btn-link">Voltar</a>
+</form>
+
+<script>
+(function () {
+    var dataEl = document.getElementById('data');
+    if (dataEl) {
+        dataEl.addEventListener('change', function () {
+            var u = new URL(location.href);
+            u.searchParams.set('data', dataEl.value);
+            location.href = u.toString();
+        });
+    }
+    document.querySelectorAll('.slot-pick').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('hora_inicio').value = btn.getAttribute('data-inicio');
+            document.getElementById('hora_fim').value = btn.getAttribute('data-fim');
+        });
+    });
+})();
+</script>
+{% endblock %}

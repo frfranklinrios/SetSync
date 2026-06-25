@@ -49,6 +49,11 @@
     </article>
     {% endfor %}
 </div>
+<div class="text-center mt-3">
+    {% with variant='inline' %}
+    {% include 'partials/mercadopago_trust.html' %}
+    {% endwith %}
+</div>
 <script>
 (function () {
     var toggle = document.getElementById('toggle-anual');

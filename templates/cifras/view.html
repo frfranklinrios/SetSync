@@ -210,6 +210,44 @@
     border-color: var(--chord-highlight-border);
 }
 [data-theme="light"] .transpose-step-btn:hover:not(:disabled) { background: rgba(0,0,0,0.06); }
+
+.vocalist-field-label {
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+}
+.vocalist-current {
+    display: block;
+    padding: 0.45rem 0.65rem;
+    margin-bottom: 0.65rem;
+    border: 1px solid var(--chord-highlight);
+    border-radius: 7px;
+    background: #0f172a;
+    color: #f1f5f9;
+    font-weight: 600;
+    font-size: var(--text-sm);
+}
+[data-theme="light"] .vocalist-current {
+    background: #fff;
+    color: #1e293b;
+    border-color: var(--chord-highlight-border);
+}
+.vocalist-add-row {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.65rem;
+}
+.vocalist-add-row .form-control {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--text-sm);
+}
+.vocalist-add-toggle {
+    font-size: var(--text-xs);
+    padding: 0.2rem 0;
+}
 [data-theme="light"] .sl-item { color: #374151; }
 [data-theme="light"] .sl-item:hover { background: #f9fafb; }
 [data-theme="light"] #cifra-col .cifra-container.cifra-sheet-paper,
@@ -227,9 +265,9 @@
 .cifra-content-tabs .tab-pane { padding-top: 0.75rem; }
 .letra-pane {
     white-space: pre-wrap;
-    font-family: var(--font-sans);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     font-size: var(--text-base);
-    line-height: 1.65;
+    line-height: 1.95;
     padding: 1.35rem 1.6rem;
     border: 1px solid var(--ss-border, var(--border));
     border-radius: 2px;
@@ -260,7 +298,7 @@
     <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">← {{ band.name }}</a>
 </div>
 
-<div class="row g-4">
+<div class="row g-4" data-realtime-band="{{ band.id }}" data-cifra-id="{{ cifra.id }}">
     <div id="cifra-col" class="col-lg-8">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
             <div>
@@ -272,8 +310,13 @@
                 </p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}"
+                <a href="{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id, versao='minha' if viewing_personal else none) }}"
                    class="btn btn-sm btn-primary" title="Tecla P">▶ Modo Tocar</a>
+                {% if cifra.apple_music_url %}
+                <a href="{{ cifra.apple_music_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary" title="Abrir no Apple Music">
+                    <i class="fab fa-apple me-1"></i> Apple Music
+                </a>
+                {% endif %}
                 {% if can_edit %}
                 <a href="{{ url_for('cifras.edit', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
                 {% endif %}
@@ -395,8 +438,8 @@
                     Tom cadastrado: <strong>{{ cifra.tom_original|normalize_tom }}</strong>
                 </p>
                 {% if vocalists|length > 1 %}
-                <label class="form-label mb-1" style="font-size: var(--text-xs);">Cantora/cantor</label>
-                <select class="form-select form-select-sm mb-2"
+                <div class="vocalist-field-label">Cantora/cantor</div>
+                <select class="form-select form-select-sm mb-2" id="vocalist-sel"
                         onchange="location.href=CIFRA_BASE+'?vocalist='+encodeURIComponent(this.value)">
                     {% for v in vocalists %}
                     <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>
@@ -405,13 +448,29 @@
                     {% endfor %}
                 </select>
                 {% elif vocalists|length == 1 %}
-                <p class="text-muted mb-2" style="font-size: var(--text-xs);">
-                    Tom para <strong>{{ vocalists[0].name }}</strong>{% if vocalists[0].user_id %} — conta vinculada{% endif %}.
-                </p>
+                <div class="vocalist-field-label">Cantora/cantor</div>
+                <div class="vocalist-current" id="vocalist-current">{{ vocalists[0].name }}</div>
                 {% else %}
                 <p class="text-muted mb-2" style="font-size: var(--text-xs);">
-                    <a href="{{ url_for('bands.settings', band_id=band.id) }}">Cadastre cantoras/cantores</a>
-                    para um tom por voz. Enquanto isso, o tom vale para toda a banda.
+                    Nenhuma cantora/cantor cadastrada. O tom vale para toda a banda.
+                </p>
+                {% endif %}
+                {% if can_edit %}
+                <div id="vocalist-add-wrap" class="{% if vocalists|length > 0 %}d-none{% endif %}">
+                    <div class="vocalist-field-label">Novo cantor</div>
+                    <div class="vocalist-add-row">
+                        <input type="text" class="form-control form-control-sm" id="vocalist-add-name"
+                               placeholder="Nome" maxlength="80" autocomplete="off">
+                        <button type="button" class="btn btn-sm btn-primary" id="vocalist-add-btn">Salvar</button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary vocalist-add-toggle mb-2{% if vocalists|length == 0 %} d-none{% endif %}"
+                        id="vocalist-add-toggle">
+                    <i class="fas fa-plus me-1"></i>Adicionar cantor
+                </button>
+                {% elif not vocalists %}
+                <p class="text-muted mb-2" style="font-size: var(--text-xs);">
+                    Peça a um editor da banda para cadastrar cantoras/cantores.
                 </p>
                 {% endif %}
                 <div class="transpose-stepper" id="transpose-stepper" role="group" aria-label="Transpor"
@@ -471,7 +530,7 @@
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=15"></script>
 <script>
 const CIFRA_BASE = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
-const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}";
+const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id, versao='minha' if viewing_personal else none) }}";
 (function () {
     var stepper = document.getElementById('transpose-stepper');
     if (!stepper) return;
@@ -504,6 +563,63 @@ const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra
         btnUp.addEventListener('click', function () { goTranspose(1); });
     }
 })();
+
+{% if can_edit %}
+(function () {
+    var ADD_URL = {{ url_for('bands.add_vocalist_api', band_id=band.id)|tojson }};
+    var toggle = document.getElementById('vocalist-add-toggle');
+    var wrap = document.getElementById('vocalist-add-wrap');
+    var input = document.getElementById('vocalist-add-name');
+    var btn = document.getElementById('vocalist-add-btn');
+    if (!toggle || !wrap || !input || !btn) return;
+
+    function showForm(show) {
+        wrap.classList.toggle('d-none', !show);
+        toggle.classList.toggle('d-none', show);
+        if (show) input.focus();
+    }
+
+    toggle.addEventListener('click', function () { showForm(true); });
+
+    function submitAdd() {
+        var name = (input.value || '').trim();
+        if (!name) {
+            input.focus();
+            return;
+        }
+        btn.disabled = true;
+        var fetchFn = window.ssFetch || window.fetch;
+        fetchFn(ADD_URL, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRFToken': window.csrfToken || ''
+            },
+            body: JSON.stringify({ name: name })
+        }).then(function (r) { return r.json(); })
+          .then(function (data) {
+              if (!data || !data.ok) throw new Error((data && data.error) || 'Falha ao salvar');
+              var url = CIFRA_BASE + '?vocalist=' + encodeURIComponent(data.vocalist_id);
+              var semi = new URLSearchParams(location.search).get('transpose');
+              if (semi) url += '&transpose=' + encodeURIComponent(semi);
+              location.href = url;
+          })
+          .catch(function (err) {
+              alert(err.message || 'Não foi possível adicionar.');
+              btn.disabled = false;
+          });
+    }
+
+    btn.addEventListener('click', submitAdd);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); submitAdd(); }
+        if (e.key === 'Escape') { showForm(false); input.value = ''; }
+    });
+})();
+{% endif %}
+
 const LEADSHEET_DOC = {{ leadsheet_document|tojson if leadsheet_document else 'null' }};
 const CIFRA_TITULO = {{ cifra.titulo|tojson }};
 const CIFRA_ARTISTA = {{ cifra.artista|tojson }};
@@ -605,4 +721,5 @@ document.addEventListener('keydown', function (e) {
     }
 });
 </script>
+<script src="{{ url_for('static', filename='js/realtime-sync.js') }}?v=1"></script>
 {% endblock %}

@@ -1,0 +1,124 @@
+{% extends "index.html" %}
+{% block title %}{% if studio %}Editar estúdio{% else %}Cadastrar estúdio{% endif %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/agenda-location.css') }}?v=1">
+{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-4">{% if studio %}Editar estúdio{% else %}Cadastrar estúdio{% endif %}</h1>
+
+{% if not studio %}
+<div class="alert alert-info py-3 mb-4 small">
+    <div class="fw-semibold mb-2"><i class="fas fa-route me-1"></i> O que acontece depois do cadastro</div>
+    <p class="mb-2">Você entra no <strong>painel do estúdio</strong> com um guia passo a passo para:</p>
+    <ol class="mb-2 ps-3">
+        <li>Completar perfil, fotos e contato</li>
+        <li>Cadastrar salas e horários de disponibilidade</li>
+        <li>Imprimir o <strong>QR de agendamento</strong> para a recepção</li>
+        <li>Receber e confirmar reservas de bandas pelo SetSync</li>
+    </ol>
+    <p class="mb-0 text-muted">Bandas encontram seu estúdio na busca e o ensaio confirmado entra na agenda delas automaticamente.</p>
+</div>
+{% endif %}
+
+<form method="post">
+    {% include 'partials/csrf_input.html' %}
+    <div class="mb-3">
+        <label class="form-label" for="nome">Nome</label>
+        <input type="text" name="nome" id="nome" class="form-control" required maxlength="120"
+               value="{{ studio.nome if studio else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="descricao">Descrição</label>
+        <textarea name="descricao" id="descricao" class="form-control" rows="3">{{ studio.descricao if studio else '' }}</textarea>
+    </div>
+
+    <p class="form-label mb-2">Localização</p>
+    {% if google_maps_api_key %}
+    <div class="mb-3 agenda-location-wrap">
+        <label class="form-label" for="studio-address-search">Buscar endereço</label>
+        <input type="text" id="studio-address-search" class="form-control"
+               value="{{ full_address if studio else '' }}"
+               placeholder="Digite o endereço ou nome do estúdio…"
+               autocomplete="off">
+        <div class="form-text">Selecione um resultado do Google Maps para preencher cidade, bairro e rua.</div>
+    </div>
+    {% endif %}
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label class="form-label" for="cidade">Cidade</label>
+            <input type="text" name="cidade" id="cidade" class="form-control" required
+                   value="{{ studio.cidade if studio else '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="bairro">Bairro</label>
+            <input type="text" name="bairro" id="bairro" class="form-control"
+                   value="{{ studio.bairro if studio else '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="endereco">Endereço (rua e número)</label>
+            <input type="text" name="endereco" id="endereco" class="form-control"
+                   value="{{ studio.endereco if studio else '' }}">
+        </div>
+    </div>
+    <input type="hidden" name="endereco_lat" id="endereco_lat"
+           value="{{ studio.endereco_lat if studio and studio.endereco_lat is not none else '' }}">
+    <input type="hidden" name="endereco_lng" id="endereco_lng"
+           value="{{ studio.endereco_lng if studio and studio.endereco_lng is not none else '' }}">
+    <input type="hidden" name="endereco_place_id" id="endereco_place_id"
+           value="{{ studio.endereco_place_id if studio and studio.endereco_place_id else '' }}">
+
+    {% if maps_embed_url %}
+    <div class="agenda-map-embed mb-3">
+        <iframe title="Mapa do estúdio" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                src="{{ maps_embed_url }}"></iframe>
+    </div>
+    {% endif %}
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label class="form-label" for="telefone">Telefone</label>
+            <input type="text" name="telefone" id="telefone" class="form-control"
+                   value="{{ studio.telefone if studio else '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="whatsapp">WhatsApp</label>
+            <input type="text" name="whatsapp" id="whatsapp" class="form-control"
+                   value="{{ studio.whatsapp if studio else '' }}">
+        </div>
+    </div>
+    {% if studio %}
+    <div class="form-check mb-3">
+        <input type="checkbox" name="ativo" id="ativo" class="form-check-input" value="1"
+               {% if studio.ativo %}checked{% endif %}>
+        <label class="form-check-label" for="ativo">Estúdio visível na busca</label>
+    </div>
+    {% endif %}
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    {% if studio %}
+    <a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}" class="btn btn-link">Voltar</a>
+    {% else %}
+    <a href="{{ url_for('studios.search') }}" class="btn btn-link">Cancelar</a>
+    {% endif %}
+</form>
+{% endblock %}
+
+{% block scripts %}
+{% if google_maps_api_key %}
+<div id="studio-maps-auth-alert" class="alert alert-warning py-2 small d-none mb-3" role="alert">
+    <i class="fas fa-map-marked-alt me-1"></i>
+    Sugestões do Google Maps indisponíveis. Preencha cidade, bairro e endereço manualmente.
+</div>
+<script>
+window.gm_authFailure = function () {
+    var el = document.getElementById('studio-maps-auth-alert');
+    if (el) el.classList.remove('d-none');
+};
+</script>
+<script src="{{ url_for('static', filename='js/studio-address-autocomplete.js') }}?v=1"></script>
+<script async defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&language=pt-BR&region=BR&callback=SetSyncInitStudioAddress"></script>
+{% endif %}
+{% endblock %}

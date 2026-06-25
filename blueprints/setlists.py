@@ -38,7 +38,7 @@ def _require_setlist_access(setlist, user_id):
     return True, band
 
 
-PRINT_SECTION_KEYS = ('indice', 'cifras', 'letras', 'chordsheet')
+PRINT_SECTION_KEYS = ('indice', 'cifras', 'letras', 'chordsheet', 'tecnico')
 
 
 def parse_print_sections(source=None) -> dict[str, bool]:
@@ -61,6 +61,8 @@ def parse_print_sections(source=None) -> dict[str, bool]:
         }
         if 'chordsheets' in selected:
             selected.add('chordsheet')
+        if 'technical' in selected:
+            selected.add('tecnico')
         for k in keys:
             sections[k] = k in selected
     else:
@@ -118,6 +120,8 @@ def build_setlist_print_payload(
         sheet['display_key'] = (
             cifra_display_key(c, vocalist_id=vid) if c.get('tom_original') else sheet['display_key']
         )
+        from setlist_technical import enrich_sheet_technical
+        sheet = enrich_sheet_technical(sheet)
         sheets.append(sheet)
 
     if cols is None:
@@ -247,7 +251,7 @@ def tocar(setlist_id):
         flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
     all_cifras = [
-        enrich_cifra_for_tocar(dict(c), setlist_id=setlist_id)
+        enrich_cifra_for_tocar(dict(c), setlist_id=setlist_id, user_id=user_id)
         for c in get_setlist_cifras(setlist_id)
     ]
     start_id = request.args.get('start')
@@ -257,7 +261,23 @@ def tocar(setlist_id):
             if str(c['id']) == str(start_id):
                 start_idx = i
                 break
-    return render_play_mode(setlist, band, all_cifras, start_idx=start_idx, is_virtual=False)
+    event_context = None
+    event_id = (request.args.get('event_id') or '').strip()
+    if event_id:
+        from models_agenda import get_band_event
+        from agenda_util import event_type_label, format_event_datetime
+
+        ev = get_band_event(event_id)
+        if ev and ev.get('band_id') == band['id'] and ev.get('setlist_id') == int(setlist_id):
+            event_context = {
+                'id': ev['id'],
+                'title': ev.get('title') or '',
+                'location': ev.get('location') or '',
+                'starts_at': format_event_datetime(ev['starts_at']) if ev.get('starts_at') else '',
+                'event_type': event_type_label(ev.get('event_type')),
+                'notes': (ev.get('notes') or '').strip(),
+            }
+    return render_play_mode(setlist, band, all_cifras, start_idx=start_idx, is_virtual=False, event_context=event_context)
 
 # Ordenar músicas da setlist via AJAX (drag-and-drop inline)
 @setlists_bp.route('/<setlist_id>/reorder', methods=['POST'])
@@ -388,7 +408,12 @@ def create(band_id):
             resp = resposta_limite_plano('setlists', LIMITES_GRATIS['setlist'])
             if resp:
                 return resp
+        from db import count_band_setlists
+        antes = count_band_setlists(band_id)
         setlist_id = create_setlist(band_id, name, description)
+        if antes == 0:
+            from product_funnel import log_funnel_step
+            log_funnel_step(user_id, 'primeira_setlist')
         bn.setlist_created(band_id, user_id, setlist_id, name)
         flash('Setlist criada!', 'success')
         return redirect(url_for('setlists.view', setlist_id=setlist_id))
@@ -417,6 +442,55 @@ def set_cifra_vocalist(setlist_id, cifra_id):
     vname = vocalist_entry_display_name(v) if v else ''
     display_key = cifra_display_key(cifra, vocalist_id=vid) if cifra else ''
     return jsonify({'ok': True, 'vocalist_id': vid, 'vocalist_name': vname, 'display_key': display_key})
+
+
+@setlists_bp.route('/<setlist_id>/cifra/<cifra_id>/play-notes', methods=['POST'])
+@login_required
+def set_cifra_play_notes(setlist_id, cifra_id):
+    """Notas de palco desta música na setlist."""
+    from models_setlist import set_setlist_cifra_play_notes
+
+    setlist = get_setlist(setlist_id)
+    ok, band = _require_setlist_access(setlist, session['user_id'])
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not is_band_editor(band['id'], session['user_id']):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
+    data = request.get_json(silent=True) or {}
+    notes = (data.get('play_notes') or '').strip()
+    if not set_setlist_cifra_play_notes(setlist_id, cifra_id, notes or None):
+        return jsonify({'ok': False, 'error': 'Música não encontrada na setlist'}), 404
+    return jsonify({'ok': True, 'play_notes': notes})
+
+
+@setlists_bp.route('/<setlist_id>/offline-pack.json')
+@login_required
+def offline_pack(setlist_id):
+    """Pacote offline só com as músicas desta setlist."""
+    from blueprints.cifras import enrich_cifra_for_tocar, play_cifra_client_payload
+    from config import app_now_naive
+
+    user_id = session['user_id']
+    setlist = get_setlist(setlist_id)
+    ok, band = _require_setlist_access(setlist, user_id)
+    if not ok:
+        return jsonify({'detail': 'Sem acesso.'}), 403
+    cifras = [
+        enrich_cifra_for_tocar(dict(c), setlist_id=int(setlist_id), user_id=user_id)
+        for c in get_setlist_cifras(setlist_id)
+    ]
+    payload = {
+        'band_id': str(band['id']),
+        'band_name': band.get('name') or '',
+        'setlist_id': int(setlist_id),
+        'setlist_name': setlist.get('name') or '',
+        'saved_at': app_now_naive().strftime('%Y-%m-%dT%H:%M:%S'),
+        'cifras': [
+            play_cifra_client_payload(c, setlist_id=int(setlist_id), is_virtual=False)
+            for c in cifras
+        ],
+    }
+    return jsonify(payload)
 
 
 @setlists_bp.route('/<setlist_id>/vocalist', methods=['POST'])

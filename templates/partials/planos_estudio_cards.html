@@ -1,0 +1,76 @@
+{# planos_estudio: list[PlanoSite] — cards com logo para página de assinatura #}
+<div id="estudio" class="planos-estudio-section mb-4">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <h2 class="h5 mb-0">Planos Estúdio</h2>
+        <span class="text-muted small">Para donos de sala de ensaio</span>
+    </div>
+    <div class="row g-3">
+        {% for p in planos_estudio %}
+        <div class="col-md-6">
+            <article class="card h-100 plano-estudio-card{% if p.destaque %} plano-estudio-card--destaque border-primary{% endif %}">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-start gap-3 mb-2">
+                        {% if p.logo %}
+                        <img src="{{ url_for('static', filename=p.logo) }}"
+                             alt=""
+                             width="64" height="64"
+                             class="plano-estudio-logo flex-shrink-0"
+                             loading="lazy">
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                <h3 class="h6 mb-0">{{ p.nome }}</h3>
+                                {% if p.badge_label %}
+                                <span class="badge {% if p.destaque %}bg-primary{% else %}bg-info text-dark{% endif %}">{{ p.badge_label }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="plano-estudio-preco mb-0">
+                                {{ p.preco_label }}{% if p.sufixo %}<small class="text-muted">{{ p.sufixo }}</small>{% endif %}
+                            </p>
+                            {% if p.cobrado_anual_label %}
+                            <p class="small text-muted mb-0">{{ p.cobrado_anual_label }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <ul class="small text-muted mb-3 plano-estudio-features">
+                        {% for feat in p.features %}
+                        <li>{{ feat }}</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="mt-auto">
+                        {% if p.id == 'estudio_basico' %}
+                        <a href="{{ url_for('studios.register_studio') }}"
+                           class="btn w-100 {% if p.cta_outline %}btn-outline-primary{% else %}btn-primary{% endif %}">
+                            {{ p.cta }}
+                        </a>
+                        {% elif p.id == 'estudio_premium' %}
+                        <form method="post" action="{{ url_for('assinatura_bp.iniciar_estudio', plano=p.id) }}" class="js-checkout-form">
+                            {% include 'partials/csrf_input.html' %}
+                            {% include 'partials/billing_period_toggle.html' %}
+                            <button type="submit" class="btn w-100 {% if p.cta_outline %}btn-outline-primary{% else %}btn-primary{% endif %}"
+                                    {% if mp_status and not mp_status.pronto_checkout_estudio %}disabled title="Checkout indisponível no momento"{% endif %}>
+                                {{ p.cta }}
+                            </button>
+                        </form>
+                        {% if mp_status and not mp_status.pronto_checkout_estudio %}
+                        <p class="small text-muted mt-2 mb-0">Assinatura Premium em breve — use o plano básico gratuito por enquanto.</p>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="mt-2">
+        {% with variant='inline' %}
+        {% include 'partials/mercadopago_trust.html' %}
+        {% endwith %}
+    </div>
+</div>
+<style>
+.plano-estudio-logo { border-radius: 12px; }
+.plano-estudio-card--destaque { box-shadow: 0 0 0 1px rgba(13, 110, 253, 0.25); }
+.plano-estudio-preco { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
+.plano-estudio-features { padding-left: 1.1rem; margin-bottom: 0; }
+</style>

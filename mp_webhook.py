@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 
 from db import get_assinatura_by_mp_id, update_assinatura
 from mercadopago_client import get_mp_sdk
-from monetizacao import PLANO_PRO, STATUS_ATIVA, STATUS_CANCELADA, STATUS_INADIMPLENTE
+from monetizacao import PLANO_PRO, PLANO_ESTUDIO_PREMIUM, STATUS_ATIVA, STATUS_CANCELADA, STATUS_INADIMPLENTE
+from config import app_now_naive, app_now_str
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +77,9 @@ def extrair_topic_id(req) -> tuple[str, str]:
 
 
 def ativar_assinatura_mp(banda_id: str, plano: str, mp_id: str, proxima_cobranca: str | None = None) -> None:
-    agora = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    agora = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     if not proxima_cobranca:
-        proxima_cobranca = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+        proxima_cobranca = (app_now_naive() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
     update_assinatura(
         banda_id,
         plano=plano,
@@ -89,6 +90,60 @@ def ativar_assinatura_mp(banda_id: str, plano: str, mp_id: str, proxima_cobranca
         data_proxima_cobranca=proxima_cobranca,
         data_cancelamento=None,
     )
+
+
+def ativar_studio_subscription_mp(
+    user_id: str,
+    plano: str,
+    mp_id: str,
+    proxima_cobranca: str | None = None,
+) -> None:
+    from models_studio import update_studio_subscription
+
+    if not proxima_cobranca:
+        proxima_cobranca = (app_now_naive() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+    update_studio_subscription(
+        user_id,
+        plano=plano,
+        status=STATUS_ATIVA,
+        mp_subscription_id=mp_id,
+        mp_preapproval_id=mp_id,
+        data_proxima_cobranca=proxima_cobranca,
+    )
+
+
+def _processar_preapproval_studio(body: dict, data_id: str) -> bool:
+    """Retorna True se o evento foi tratado como assinatura de estúdio."""
+    ref = body.get('external_reference', '')
+    if not ref.startswith('studio:'):
+        return False
+
+    parts = ref.split(':', 2)
+    user_id = parts[1] if len(parts) > 1 else ''
+    plano = parts[2] if len(parts) > 2 else PLANO_ESTUDIO_PREMIUM
+    if not user_id:
+        from models_studio import get_studio_subscription_by_mp_id
+        row = get_studio_subscription_by_mp_id(data_id)
+        if row:
+            user_id = row['user_id']
+            plano = row.get('plano', PLANO_ESTUDIO_PREMIUM)
+
+    if not user_id:
+        logger.warning('Webhook preapproval estúdio sem user_id (id=%s)', data_id)
+        return True
+
+    status_mp = (body.get('status') or '').lower()
+    from models_studio import update_studio_subscription
+
+    if status_mp in ('authorized', 'active', 'approved'):
+        next_charge = body.get('next_payment_date')
+        ativar_studio_subscription_mp(user_id, plano, data_id, next_charge)
+        logger.info('Assinatura estúdio ativada user=%s plano=%s', user_id, plano)
+    elif status_mp == 'cancelled':
+        update_studio_subscription(user_id, status=STATUS_CANCELADA)
+    elif status_mp == 'paused':
+        update_studio_subscription(user_id, status=STATUS_INADIMPLENTE)
+    return True
 
 
 def processar_notificacao_mp(topic: str, data_id: str) -> None:
@@ -106,6 +161,9 @@ def processar_notificacao_mp(topic: str, data_id: str) -> None:
             logger.error('MP preapproval.get(%s): %s', data_id, info)
             return
         body = info.get('response') or {}
+        if _processar_preapproval_studio(body, data_id):
+            return
+
         ref = body.get('external_reference', '')
         banda_id, plano = (ref.split(':', 1) + [PLANO_PRO])[:2] if ':' in ref else (None, PLANO_PRO)
         status_mp = (body.get('status') or '').lower()
@@ -132,7 +190,7 @@ def processar_notificacao_mp(topic: str, data_id: str) -> None:
             update_assinatura(
                 banda_id,
                 status=STATUS_CANCELADA,
-                data_cancelamento=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                data_cancelamento=app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S'),
             )
             try:
                 import admin_notifications as an
@@ -160,7 +218,7 @@ def processar_notificacao_mp(topic: str, data_id: str) -> None:
             )
             row = get_assinatura_by_mp_id(str(preapproval_id)) if preapproval_id else None
             if row:
-                next_dt = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+                next_dt = (app_now_naive() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
                 update_assinatura(row['banda_id'], data_proxima_cobranca=next_dt, status=STATUS_ATIVA)
     else:
         logger.info('Webhook MP ignorado: topic=%s id=%s', topic, data_id)

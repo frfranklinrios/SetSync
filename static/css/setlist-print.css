@@ -375,9 +375,9 @@ html.setlist-print-root.palco-compact .palco-song-artist {
 
 .setlist-print-letra-sheet {
   white-space: pre-wrap;
-  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
   font-size: 0.92rem;
-  line-height: 1.65;
+  line-height: 1.95;
   padding: 1.1rem 1.35rem;
   color: var(--ss-fg, #1c1917);
   background: var(--ss-bg, #fff);

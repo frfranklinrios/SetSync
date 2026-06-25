@@ -3,9 +3,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('blog.blog_index') }}">
-<meta name="description" content="Artigos sobre transposição de acordes online, montagem de setlists, apps de cifras e organização de bandas. Dicas práticas do SetSync.">
-<meta property="og:title" content="Blog SetSync — Cifras, setlists e organização de bandas">
-<meta property="og:description" content="Artigos sobre transposição de acordes online, montagem de setlists, apps de cifras e organização de bandas. Dicas práticas do SetSync.">
+<meta name="description" content="Tutoriais SetSync: estúdios de ensaio, agenda, escalação, instrumentos no perfil, Modo Tocar, notificações e cifras para bandas.">
+<meta property="og:title" content="Blog SetSync — Tutoriais para bandas e estúdios">
+<meta property="og:description" content="Tutoriais passo a passo: cadastrar estúdio, reservar sala, escalação, Modo Tocar, versão pessoal e mais.">
 <meta property="og:url" content="{{ external_url_for('blog.blog_index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -19,12 +19,39 @@
 {% block content %}
 <div class="blog-hero">
     <h1>Blog SetSync</h1>
-    <p class="blog-hero-lead">Dicas de cifras, setlists e rotina de banda.</p>
+    <p class="blog-hero-lead">Tutoriais do app, dicas de cifras, setlists, estúdios de ensaio e rotina de banda.</p>
     <p class="blog-hero-note mb-0">
-        Busca algo específico? Veja o <a href="{{ url_for('guia.guia_index') }}">Guia SetSync</a>
-        com temas como compartilhar cifras, gerenciar bandas e setlist online.
+        Passo a passo do app na <a href="{{ url_for('ajuda.index') }}">central de ajuda</a>.
+        Temas de busca no <a href="{{ url_for('guia.guia_index') }}">Guia SetSync</a>.
     </p>
 </div>
+
+{% set tutorial_slugs = [
+    'como-cadastrar-estudio-ensino-setsync',
+    'como-reservar-sala-ensaio-banda-setsync',
+    'como-cadastrar-instrumentos-perfil-setsync',
+    'como-usar-agenda-escalacao-setsync',
+    'como-usar-modo-tocar-setsync',
+    'como-usar-notificacoes-setsync',
+    'como-usar-versao-pessoal-cifras-setsync',
+    'como-funciona-chord-sheet-setsync',
+] %}
+{% set tutoriais = [] %}
+{% for post in posts %}
+  {% if post.slug in tutorial_slugs %}
+    {% if tutoriais.append(post) %}{% endif %}
+  {% endif %}
+{% endfor %}
+{% if tutoriais %}
+<div class="mb-4">
+    <h2 class="h5 mb-2">Tutoriais do app</h2>
+    <div class="d-flex flex-wrap gap-2">
+        {% for post in tutoriais %}
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('blog.blog_post', slug=post.slug) }}">{{ post.titulo }}</a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <div class="blog-list">
     {% for post in posts %}

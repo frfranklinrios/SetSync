@@ -24,6 +24,7 @@ from monetizacao import (
     STATUS_ATIVA,
     get_assinatura_banda,
 )
+from config import app_now_naive, app_now_str
 
 
 VOUCHER_INDICACAO_DIAS = 15
@@ -86,7 +87,7 @@ def validar_resgate_voucher(codigo: str, banda_id: str) -> tuple[bool, str]:
         return False, 'Voucher desativado'
     if voucher.get('data_expiracao'):
         exp = _parse_dt(voucher['data_expiracao'])
-        if exp and exp < datetime.utcnow():
+        if exp and exp < app_now_naive():
             return False, 'Voucher expirado'
     max_usos = voucher.get('max_usos')
     if max_usos is not None and int(voucher.get('usos_atual') or 0) >= int(max_usos):
@@ -116,7 +117,7 @@ def resgatar_voucher(codigo: str, banda_id: str, banda_nome: str) -> tuple[bool,
     vitalicio = voucher_eh_vitalicio(voucher)
     dias = int(voucher['dias'])
     plano = voucher['plano']
-    agora = datetime.utcnow()
+    agora = app_now_naive()
     expira = expira_em_para_voucher(voucher, agora)
 
     insert_voucher_uso(
@@ -168,7 +169,7 @@ def _recompensa_indicacao(voucher: dict) -> None:
         return
     banda_id = owned[0]['id']
     assinatura = get_assinatura_banda(banda_id)
-    agora = datetime.utcnow()
+    agora = app_now_naive()
     base = assinatura.data_proxima_cobranca or agora
     if base < agora:
         base = agora

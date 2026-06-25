@@ -4,6 +4,7 @@
 {% set any_chordsheets = sheets | selectattr('has_chordsheet') | list | length > 0 %}
 {% set show_letras = ps.letras and any_lyrics %}
 {% set show_chordsheets = ps.chordsheet and any_chordsheets %}
+{% set show_tecnico = ps.tecnico %}
 
 <article class="setlist-print-doc">
     {% if ps.indice %}
@@ -50,7 +51,7 @@
             {% endfor %}
         </ol>
 
-        {% if ps.cifras or show_letras or show_chordsheets %}
+        {% if ps.cifras or show_letras or show_chordsheets or show_tecnico %}
         <p class="palco-foot">Conteúdo completo na sequência ↓</p>
         {% endif %}
     </section>
@@ -108,6 +109,30 @@
             </div>
         </section>
         {% endif %}
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if show_tecnico %}
+    <section class="setlist-print-tecnico" aria-label="Ficha técnica">
+        <p class="setlist-print-section-intro">
+            <span class="setlist-print-section-label">Ficha técnica</span>
+            <span class="setlist-print-section-sub">Escalas por tom · {{ setlist.name }}</span>
+        </p>
+
+        {% for sheet in sheets %}
+        <section class="setlist-print-song setlist-print-song--tecnico" id="song-tech-{{ sheet.index }}">
+            {% include 'partials/setlist_print_song_header.html' %}
+            <div class="cifra-sheet-paper setlist-print-tech-sheet" style="padding:1rem 1.25rem;font-size:11pt;line-height:1.5;">
+                <p class="mb-2"><strong>Tom de palco:</strong> {{ sheet.display_key or sheet.tech_root or '—' }}</p>
+                {% if sheet.tech_major_notes %}
+                <p class="mb-1"><strong>Escala maior:</strong> {{ sheet.tech_major_notes | join(', ') }}</p>
+                {% endif %}
+                {% if sheet.tech_minor_pent_notes %}
+                <p class="mb-0"><strong>Pentatônica menor:</strong> {{ sheet.tech_minor_pent_notes | join(', ') }}</p>
+                {% endif %}
+            </div>
+        </section>
         {% endfor %}
     </section>
     {% endif %}

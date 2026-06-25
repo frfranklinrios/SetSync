@@ -269,7 +269,10 @@ html[data-theme="dark"] {
   color: var(--ss-chord) !important;
   font-weight: 700;
   font-family: var(--cifra-mono-font) !important;
-  font-size: 0.95em;
+  font-size: 1em;
+  min-height: 1.25em;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 #play-app .cifra-body.cifra-sheet-paper .cifra-chords {
@@ -290,8 +293,51 @@ html[data-theme="dark"] {
   line-height: 1.35;
 }
 
+#play-app .cifra-body.cifra-sheet-paper:has(.sp-line),
+#play-app .cifra-body.cifra-sheet-paper.structured-mode {
+  white-space: normal !important;
+}
+
 #play-app .cifra-body.cifra-sheet-paper .sp-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  row-gap: 0.15rem;
   margin-bottom: 0.35rem;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .sp-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-right: 0.55rem;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .sp-item.sp-no-gap {
+  padding-right: 0;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .sp-word {
+  white-space: nowrap;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-section,
+#play-app .cifra-body.cifra-sheet-paper .sp-section {
+  display: block;
+  font-weight: 700;
+  font-size: var(--text-sm, 0.875rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ss-chord) !important;
+  margin: 0.85rem 0 0.45rem;
+  padding: 0.2rem 0 0.35rem;
+  border-bottom: 1px solid var(--ss-border);
+  column-span: all;
+}
+
+#play-app .cifra-body.cifra-sheet-paper .cifra-section:first-child,
+#play-app .cifra-body.cifra-sheet-paper .sp-section:first-child {
+  margin-top: 0.25rem;
 }
 
 #play-app .cifra-body.cifra-sheet-paper .cifra-tab-block {

@@ -10,6 +10,9 @@
                 <i class="fas fa-drum text-muted me-1" title="Ensaio"></i>
                 {% endif %}
                 {{ event.title }}
+                {% if event.studio_booking_id %}
+                <span class="badge bg-info text-dark ms-1" title="Reserva via estúdio">via Estúdio</span>
+                {% endif %}
             </div>
             <div class="row-sub">
                 {% if show_band and event.band_name %}<strong>{{ event.band_name }}</strong> · {% endif %}

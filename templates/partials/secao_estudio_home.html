@@ -1,0 +1,179 @@
+{# Estúdios de ensaio — teaser na home pública #}
+<section class="home-estudio-breakout" id="para-estudios" aria-labelledby="estudio-title">
+    <div class="home-estudio-bg" aria-hidden="true"></div>
+    <div class="home-estudio-inner">
+        <div class="home-estudio-copy">
+            <span class="home-estudio-kicker"><i class="fas fa-door-open me-1"></i> SetSync Estúdios</span>
+            <h2 id="estudio-title">Tem sala de ensaio? Receba reservas de bandas</h2>
+            <p>
+                Cadastre seu estúdio, publique fotos e salas, defina horários disponíveis e confirme pedidos
+                pelo painel. Bandas encontram você pela cidade, reservam online e o ensaio entra na agenda delas
+                quando você aprova.
+            </p>
+            <ul class="home-estudio-features">
+                <li><i class="fas fa-check" aria-hidden="true"></i>Plano <strong>beta gratuito</strong> — 30 dias Premium no 1º cadastro</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Endereço com <strong>Google Maps</strong> no cadastro</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Disponibilidade semanal e bloqueios por data</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Notificações de solicitação, confirmação e cancelamento</li>
+            </ul>
+            <div class="home-estudio-cta">
+                <a href="{{ url_for('studios.register_studio') }}" class="btn btn-light btn-lg">
+                    Cadastrar meu estúdio
+                </a>
+                <a href="{{ url_for('studios.search') }}" class="btn btn-outline-light">
+                    Buscar estúdios (bandas)
+                </a>
+                <a href="{{ url_for('studios.landing') }}" class="btn btn-outline-light btn-sm align-self-center">
+                    SetSync para estúdios
+                </a>
+            </div>
+        </div>
+        <div class="home-estudio-plans">
+            {% for p in planos_estudio %}
+            <div class="home-estudio-plan-card{% if p.destaque %} home-estudio-plan-card--premium{% endif %}">
+                {% if p.logo %}
+                <img src="{{ url_for('static', filename=p.logo) }}" alt="" width="56" height="56" class="home-estudio-plan-logo" loading="lazy">
+                {% endif %}
+                {% if p.badge_label %}
+                <span class="home-estudio-badge">{{ p.badge_label }}</span>
+                {% endif %}
+                <h3 class="home-estudio-plan-name">{{ p.nome }}</h3>
+                <p class="home-estudio-preco">{{ p.preco_label }}{% if p.sufixo %}<small>{{ p.sufixo }}</small>{% endif %}</p>
+                <p class="home-estudio-tagline">{{ p.features[0] }}</p>
+                {% if p.id == 'estudio_basico' %}
+                <a href="{{ url_for('studios.register_studio') }}" class="btn btn-sm btn-light w-100 mt-2">{{ p.cta }}</a>
+                {% elif p.id == 'estudio_premium' %}
+                <a href="{{ url_for('auth.login', next=url_for('assinatura_bp.planos') ~ '#estudio') }}" class="btn btn-sm btn-outline-light w-100 mt-2">{{ p.cta }}</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <p class="home-estudio-band-hint small mb-0 opacity-90 mt-3">
+            <strong>É banda?</strong> Use o menu <em>Estúdios</em> para reservar horário sem sair do SetSync.
+        </p>
+    </div>
+</section>
+<style>
+.home-estudio-breakout {
+    position: relative;
+    margin: 0 calc(50% - 50vw);
+    width: 100vw;
+    overflow: hidden;
+    padding: 3.5rem 1.5rem;
+    color: #fffbeb;
+}
+.home-estudio-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(135deg, rgba(67, 20, 7, 0.94) 0%, rgba(154, 52, 18, 0.88) 55%, rgba(19, 78, 74, 0.75) 100%);
+    z-index: 0;
+}
+.home-estudio-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr minmax(240px, 300px);
+    gap: 2.5rem;
+    align-items: center;
+}
+.home-estudio-kicker {
+    display: inline-block;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #fed7aa;
+    margin-bottom: 0.65rem;
+}
+.home-estudio-copy h2 {
+    font-size: clamp(1.35rem, 3vw, 1.9rem);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+    color: #fff;
+}
+.home-estudio-copy > p {
+    font-size: var(--text-base);
+    line-height: 1.55;
+    color: #fde68a;
+    margin-bottom: 1.25rem;
+    max-width: 38rem;
+}
+.home-estudio-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    font-size: var(--text-base);
+}
+.home-estudio-features li {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    color: #fef3c7;
+}
+.home-estudio-features i { color: #fb923c; margin-top: 0.2rem; font-size: var(--text-xs); }
+.home-estudio-cta { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+.home-estudio-plans {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.home-estudio-plan-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 16px;
+    padding: 1.25rem 1.15rem;
+    backdrop-filter: blur(8px);
+    text-align: center;
+}
+.home-estudio-plan-card--premium {
+    border-color: rgba(94, 234, 212, 0.45);
+    background: rgba(15, 118, 110, 0.35);
+}
+.home-estudio-plan-logo {
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+}
+.home-estudio-badge {
+    display: inline-block;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: #fb923c;
+    color: #431407;
+    margin-bottom: 0.65rem;
+}
+.home-estudio-plan-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+.home-estudio-preco {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+.home-estudio-preco small {
+    font-size: var(--text-base);
+    font-weight: 500;
+    opacity: 0.85;
+}
+.home-estudio-tagline {
+    font-size: var(--text-sm);
+    color: #fde68a;
+    margin: 0;
+}
+@media (max-width: 768px) {
+    .home-estudio-inner { grid-template-columns: 1fr; }
+    .home-estudio-plans { order: -1; }
+}
+</style>

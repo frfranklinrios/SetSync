@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 
 from db import get_db, get_user
+from config import app_now_naive, app_now_str
 
 
 def _migrate_schema(c) -> None:
@@ -123,7 +124,7 @@ def create_band_member_invite(
         (band_id, user_id),
     )
     row = c.fetchone()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
 
     if row:
         if row['status'] == 'pending':
@@ -194,7 +195,7 @@ def cancel_band_member_invite(invite_id: str, band_id: str) -> bool:
 
 
 def _set_invite_status(invite_id: str, status: str) -> None:
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     c.execute(

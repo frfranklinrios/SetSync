@@ -12,6 +12,7 @@ from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_
 from band_invites import make_band_invite_token
 from security import external_url_for
 import band_notifications as bn
+from config import app_now_naive, app_now_str
 
 bands_bp = Blueprint('bands', __name__, url_prefix='/bands')
 
@@ -56,13 +57,16 @@ def create():
         from db import get_owned_bands
         from monetizacao import iniciar_trial_banda
         from google_ads import mark_funnel_event
+        from product_funnel import log_funnel_step
 
         if len(get_owned_bands(user_id)) == 1:
             mark_funnel_event('primeira_banda')
+            log_funnel_step(user_id, 'primeira_banda')
         if iniciar_trial_banda(band_id):
             mark_funnel_event('trial_iniciado')
+            log_funnel_step(user_id, 'trial_iniciado')
             flash(
-                'Trial Pro de 14 dias ativado nesta banda — sem cartão. '
+                f'Trial Pro de 30 dias ativado nesta banda — sem cartão. '
                 'Aproveite recursos ilimitados!',
                 'info',
             )
@@ -109,7 +113,7 @@ def view(band_id):
     from datetime import datetime
     from models_agenda import get_band_events, get_events_scale_summaries
 
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     all_events = get_band_events(band_id)
     scale_summaries = get_events_scale_summaries([e['id'] for e in all_events])
     for e in all_events:
@@ -265,6 +269,40 @@ def settings(band_id):
         band_logo_url=url_for('bands.band_logo', band_id=band_id) if band_has_logo(band) else None,
     )
 
+@bands_bp.route('/<band_id>/vocalists/api', methods=['POST'])
+@login_required
+def add_vocalist_api(band_id):
+    """Adiciona cantora/cantor via AJAX (view da cifra, modo tocar)."""
+    from db import add_band_vocalist, get_band_vocalists, vocalist_entry_display_name
+
+    user_id = session['user_id']
+    band = get_band(band_id)
+    if not band or not is_band_member(band_id, user_id):
+        return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+    if not is_band_editor(band_id, user_id):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
+
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'ok': False, 'error': 'Informe o nome.'}), 400
+    try:
+        vid = add_band_vocalist(band_id, name)
+        bn.vocalist_added(band_id, user_id, name)
+    except ValueError as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 400
+
+    vocalists = get_band_vocalists(band_id)
+    return jsonify({
+        'ok': True,
+        'vocalist_id': vid,
+        'vocalists': [
+            {'id': v['id'], 'name': vocalist_entry_display_name(v)}
+            for v in vocalists
+        ],
+    })
+
+
 @bands_bp.route('/<band_id>/members')
 @login_required
 def members(band_id):
@@ -283,6 +321,9 @@ def members(band_id):
     token = make_band_invite_token(band_id)
     invite_url = external_url_for('auth.convite', token=token)
     from band_member_invites import list_pending_invites_for_band
+    from user_instruments import enrich_members_with_instruments
+
+    enrich_members_with_instruments(band_members)
 
     return render_template(
         'bands/members.html',

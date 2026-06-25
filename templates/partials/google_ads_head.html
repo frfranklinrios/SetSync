@@ -8,6 +8,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','{{ google_ads.gtm_id }}');</script>
 <!-- End Google Tag Manager -->
+{% elif google_ads.aw_id %}
+{% if google_analytics_ativo %}
+<script>
+gtag('config', '{{ google_ads.aw_id }}');
+</script>
 {% else %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ google_ads.aw_id }}"></script>
 <script>
@@ -15,9 +20,7 @@ window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', '{{ google_ads.aw_id }}');
-{% if google_ads.ga_id %}
-gtag('config', '{{ google_ads.ga_id }}');
-{% endif %}
 </script>
+{% endif %}
 {% endif %}
 {% endif %}

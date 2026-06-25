@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from config import app_now_naive
+
 _EVENT_LABELS = {
     'ensaio': 'Ensaio',
     'show': 'Show',
@@ -15,7 +17,7 @@ def event_type_label(event_type: str | None) -> str:
 
 
 def parse_event_datetime(date_str: str, time_str: str) -> str | None:
-    """Combina data e hora do formulário em timestamp UTC string."""
+    """Combina data e hora do formulário (horário local do app)."""
     date_str = (date_str or '').strip()
     time_str = (time_str or '').strip() or '00:00'
     if not date_str:
@@ -58,7 +60,7 @@ def event_relative_label(value: str | None, *, now: datetime | None = None) -> s
         dt = datetime.strptime(str(value)[:19], '%Y-%m-%d %H:%M:%S')
     except ValueError:
         return ''
-    ref = now or datetime.utcnow()
+    ref = now or app_now_naive()
     delta = (dt.date() - ref.date()).days
     if delta == 0:
         return 'Hoje'

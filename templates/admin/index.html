@@ -23,6 +23,24 @@
     border-radius: 999px;
     padding: 0.12rem 0.45rem;
 }
+.admin-wa-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+    min-width: 220px;
+}
+.admin-wa-form input[type="tel"] {
+    flex: 1 1 120px;
+    min-width: 110px;
+    font-size: var(--text-sm);
+    padding: 0.2rem 0.45rem;
+}
+.admin-wa-meta {
+    font-size: var(--text-xs);
+    color: var(--muted);
+    width: 100%;
+}
 </style>
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
@@ -32,7 +50,7 @@
             Administração
         </h1>
         <p class="text-muted mb-0" style="font-size: var(--text-base);">
-            Todas as bandas, cifras e usuários do sistema
+            Todas as bandas, estúdios, cifras e usuários do sistema
         </p>
     </div>
     <div class="d-flex gap-2">
@@ -49,19 +67,25 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-6 col-lg-3">
         <div class="admin-stat">
             <div class="num">{{ stats.bands }}</div>
             <div class="lbl">Bandas</div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-6 col-lg-3">
+        <div class="admin-stat">
+            <div class="num">{{ stats.studios }}</div>
+            <div class="lbl">Estúdios</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
         <div class="admin-stat">
             <div class="num">{{ stats.cifras }}</div>
             <div class="lbl">Cifras</div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-6 col-lg-3">
         <div class="admin-stat">
             <div class="num">{{ stats.users }}</div>
             <div class="lbl">Usuários</div>
@@ -69,8 +93,35 @@
     </div>
 </div>
 
+{% if funnel_stats %}
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <h2 class="h6 text-muted mb-2">Funil de produto</h2>
+    </div>
+    {% for step, count in funnel_stats.items() %}
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="admin-stat">
+            <div class="num">{{ count }}</div>
+            <div class="lbl" style="font-size:10px;line-height:1.3;">{{ step.replace('_', ' ') }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not whatsapp_configured %}
+<div class="alert alert-warning py-2 mb-3" style="font-size: var(--text-sm);">
+    <i class="fab fa-whatsapp me-1"></i>
+    WhatsApp não está conectado — configure em
+    <a href="{{ url_for('whatsapp_admin.index') }}">Admin → WhatsApp</a>
+    antes de enviar convites automáticos.
+</div>
+{% endif %}
+
 <ul class="nav nav-tabs mb-3" role="tablist">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-bands" type="button">Bandas</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-studios" type="button">Estúdios</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-convites" type="button">Convites WhatsApp</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cifras" type="button">Cifras</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">Usuários</button></li>
 </ul>
@@ -86,25 +137,180 @@
                             <th>Titular</th>
                             <th>Membros</th>
                             <th>Cifras</th>
+                            <th>WhatsApp convite</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for band in bands %}
+                        {% set inv = invite_log.get(('band', band.id)) %}
                         <tr>
                             <td><strong>{{ band.name }}</strong></td>
                             <td>{{ user_display_name(band.owner) if band.owner else '—' }}</td>
                             <td>{{ band.members_count }}</td>
                             <td>{{ band.cifras_count }}</td>
+                            <td>
+                                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="admin-wa-form">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="target_type" value="band">
+                                    <input type="hidden" name="target_id" value="{{ band.id }}">
+                                    <input type="tel" name="phone" placeholder="11 99999-9999"
+                                           value="{{ band.contact_whatsapp|whatsapp_display if band.contact_whatsapp else '' }}"
+                                           inputmode="tel" autocomplete="tel">
+                                    <button type="submit" name="action" value="send" class="btn btn-sm btn-success" title="Salvar número e enviar convite">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </button>
+                                    <button type="submit" name="action" value="save_only" class="btn btn-sm btn-outline-secondary" title="Só salvar número">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                    {% if inv and inv.success %}
+                                    <span class="admin-wa-meta">Enviado {{ inv.created_at|date_short }}</span>
+                                    {% elif inv %}
+                                    <span class="admin-wa-meta text-danger">Falha {{ inv.created_at|date_short }}</span>
+                                    {% endif %}
+                                </form>
+                            </td>
                             <td class="text-end">
                                 <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-sm btn-outline-primary">Abrir</a>
                             </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="5" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
+                        <tr><td colspan="6" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-studios">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Estúdio</th>
+                            <th>Cidade</th>
+                            <th>Dono</th>
+                            <th>Salas</th>
+                            <th>Pendentes</th>
+                            <th>Plano</th>
+                            <th>Status</th>
+                            <th>WhatsApp convite</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in studios %}
+                        {% set inv = invite_log.get(('studio', s.id)) %}
+                        <tr>
+                            <td><strong>{{ s.nome }}</strong></td>
+                            <td>{{ s.cidade }}{% if s.bairro %}, {{ s.bairro }}{% endif %}</td>
+                            <td>{{ user_display_name(s.owner) if s.owner else '—' }}</td>
+                            <td>{{ s.rooms_count }}</td>
+                            <td>
+                                {% if s.pending_count %}
+                                <span class="badge bg-warning text-dark">{{ s.pending_count }}</span>
+                                {% else %}
+                                <span class="text-muted">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if s.plano_ui %}
+                                <span class="badge bg-{{ s.plano_ui.badge }}">{{ s.plano_ui.label_curto|default(s.plano_ui.label) }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if s.ativo %}
+                                <span class="text-success">Ativo</span>
+                                {% else %}
+                                <span class="text-muted">Oculto</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="admin-wa-form">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="target_type" value="studio">
+                                    <input type="hidden" name="target_id" value="{{ s.id }}">
+                                    <input type="tel" name="phone" placeholder="11 99999-9999"
+                                           value="{{ s.whatsapp|whatsapp_display if s.whatsapp else '' }}"
+                                           inputmode="tel" autocomplete="tel">
+                                    <button type="submit" name="action" value="send" class="btn btn-sm btn-success" title="Salvar número e enviar convite">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </button>
+                                    <button type="submit" name="action" value="save_only" class="btn btn-sm btn-outline-secondary" title="Só salvar número">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                    {% if inv and inv.success %}
+                                    <span class="admin-wa-meta">Enviado {{ inv.created_at|date_short }}</span>
+                                    {% elif inv %}
+                                    <span class="admin-wa-meta text-danger">Falha {{ inv.created_at|date_short }}</span>
+                                    {% endif %}
+                                </form>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a href="{{ url_for('studios.owner_dashboard', studio_id=s.id) }}" class="btn btn-sm btn-outline-primary">Painel</a>
+                                <a href="{{ url_for('studios.detail', studio_id=s.id) }}" class="btn btn-sm btn-outline-secondary">Público</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="9" class="text-muted text-center py-4">Nenhum estúdio.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-convites">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6 mb-2">Convidar banda ou estúdio por WhatsApp</h2>
+                <p class="text-muted" style="font-size: var(--text-sm);">
+                    Informe o número do contato (líder da banda ou dono do estúdio).
+                    O SetSync salva o telefone e envia uma mensagem automática com link de cadastro e convite.
+                </p>
+                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="row g-3 align-items-end" style="max-width: 42rem;">
+                    {% include 'partials/csrf_input.html' %}
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo</label>
+                        <select name="target_type" id="convite-target-type" class="form-select form-select-sm" required>
+                            <option value="band">Banda</option>
+                            <option value="studio">Estúdio</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Banda / estúdio</label>
+                        <select name="target_id" id="convite-target-band" class="form-select form-select-sm convite-target-select" required>
+                            {% for band in bands %}
+                            <option value="{{ band.id }}">{{ band.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="target_id" id="convite-target-studio" class="form-select form-select-sm convite-target-select d-none" disabled>
+                            {% for s in studios %}
+                            <option value="{{ s.id }}">{{ s.nome }} — {{ s.cidade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">WhatsApp</label>
+                        <input type="tel" name="phone" class="form-control form-control-sm" placeholder="11 99999-9999" required inputmode="tel">
+                    </div>
+                    <div class="col-12">
+                        <input type="hidden" name="return_tab" value="convites">
+                        <button type="submit" name="action" value="send" class="btn btn-success btn-sm">
+                            <i class="fab fa-whatsapp me-1"></i> Salvar e enviar convite
+                        </button>
+                    </div>
+                </form>
+                <hr class="my-4">
+                <h3 class="h6 text-muted">O que é enviado</h3>
+                <ul class="small text-muted mb-0">
+                    <li><strong>Banda</strong> — link de cadastro + link de convite para entrar na banda no SetSync.</li>
+                    <li><strong>Estúdio</strong> — link para cadastrar o estúdio e página SetSync para Estúdios.</li>
+                </ul>
             </div>
         </div>
     </div>
@@ -223,4 +429,23 @@
         </div>
     </div>
 </div>
+<script>
+(function () {
+    var typeSel = document.getElementById('convite-target-type');
+    var bandSel = document.getElementById('convite-target-band');
+    var studioSel = document.getElementById('convite-target-studio');
+    if (!typeSel || !bandSel || !studioSel) return;
+    function syncConviteTargets() {
+        var isBand = typeSel.value === 'band';
+        bandSel.classList.toggle('d-none', !isBand);
+        studioSel.classList.toggle('d-none', isBand);
+        bandSel.disabled = !isBand;
+        studioSel.disabled = isBand;
+        bandSel.required = isBand;
+        studioSel.required = !isBand;
+    }
+    typeSel.addEventListener('change', syncConviteTargets);
+    syncConviteTargets();
+})();
+</script>
 {% endblock %}

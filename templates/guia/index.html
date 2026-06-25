@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('guia.guia_index') }}">
-<meta name="description" content="Guias SetSync: cifras, grade harmônica, setlists, escalação com confirmação por link, Modo Tocar e app para bandas. Encontre o tema que você buscou.">
-<meta property="og:title" content="Guia SetSync — Cifras, grade harmônica e escalação">
-<meta property="og:description" content="Guias SetSync: compartilhar cifras, grade harmônica, montar setlists, transpor acordes, Modo Tocar e escalação para bandas.">
+<meta name="description" content="Guias SetSync: cifras, grade harmônica, setlists, escalação, estúdios de ensaio, instrumentos no perfil, Modo Tocar e app para bandas.">
+<meta property="og:title" content="Guia SetSync — Cifras, agenda, estúdios e escalação">
+<meta property="og:description" content="Guias SetSync: cifras, setlists, estúdios de ensaio, escalação com confirmação, instrumentos no perfil e Modo Tocar para bandas.">
 <meta property="og:url" content="{{ external_url_for('guia.guia_index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -48,20 +48,70 @@
     <h1>Guia SetSync</h1>
     <p>
         Encontre como <strong>compartilhar cifras</strong>, <strong>gerenciar bandas</strong>,
-        <strong>montar setlists</strong>, <strong>transpor acordes</strong> e usar o
-        <strong>Modo Tocar</strong> — tudo o que músicos e bandas buscam no Google:
-        grade harmônica, escalação com confirmação por link e palco com Nashville.
+        <strong>montar setlists</strong>, <strong>escalar a equipe</strong>,
+        <strong>reservar estúdio de ensaio</strong> e usar o <strong>Modo Tocar</strong> —
+        tudo o que músicos e bandas buscam: grade harmônica, instrumentos no perfil,
+        confirmação de escala por link e palco com Nashville.
     </p>
     <p class="text-muted small" style="max-width: 42rem;">
-        Para o passo a passo completo do app (grade harmônica, extrair da cifra, escalação com confirmação por link, Modo Tocar e planos),
+        Para o passo a passo completo do app (grade harmônica, extrair da cifra, escalação, estúdios, perfil com instrumentos e planos),
         use a <a href="{{ url_for('ajuda.index') }}">central de ajuda</a>.
         Igrejas e ministérios de louvor: <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a>.
+        Donos de estúdio: <a href="{{ url_for('studios.landing') }}">SetSync para Estúdios</a>.
     </p>
     <p class="mb-0">
         <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm me-2">Criar conta grátis</a>
         <a href="{{ url_for('ajuda.index') }}" class="btn btn-outline-secondary btn-sm me-2">Ajuda</a>
         <a href="{{ url_for('blog.blog_index') }}" class="btn btn-outline-secondary btn-sm">Blog</a>
     </p>
+</div>
+
+<h2 class="h5 mt-2 mb-2">Novidades no SetSync</h2>
+<div class="guia-grid mb-4">
+    <a class="guia-link" href="{{ url_for('ajuda.index') }}#modo-tocar">
+        <strong>Modo Tocar no palco</strong>
+        <span>Seções, sync da banda, offline auto, pedal, notas de palco e modo vocalista</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('ajuda.index') }}#dashboard">
+        <strong>Painel, checklist e indicação</strong>
+        <span>Upsell inteligente, trial, NPS, PWA e voucher de 15 dias Pro</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('roadmap.index') }}">
+        <strong>Roadmap de produto</strong>
+        <span>Conversão, engajamento, estúdios e escala — tudo entregue</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('ajuda.index') }}#estudios">
+        <strong>Estúdios de ensaio</strong>
+        <span>Buscar salas, selo verificado, QR, Premium R$ 49 e métricas do dono</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('assinatura_bp.planos') }}">
+        <strong>Planos e checkout anual</strong>
+        <span>Pro, Worship, Individual e Estúdio Premium — mensal ou anual</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('ajuda.index') }}#perfil">
+        <strong>Instrumentos no perfil</strong>
+        <span>Cadastre o que você toca — a banda vê na escalação e em Membros</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('guia.guia_page', slug='reservar-sala-de-ensaio') }}">
+        <strong>Reservar sala de ensaio</strong>
+        <span>Guia para bandas que buscam estúdio pela cidade</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('guia.guia_page', slug='buscar-estudio-de-ensaio') }}">
+        <strong>Buscar estúdio de ensaio</strong>
+        <span>Encontre espaços com fotos, mapa e solicitação online</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('blog.blog_index') }}">
+        <strong>Tutoriais no blog</strong>
+        <span>Passo a passo: estúdio, agenda, Modo Tocar, perfil e mais</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('studios.search') }}">
+        <strong>Abrir busca de estúdios</strong>
+        <span>Pesquisar por cidade e bairro no app</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('ajuda.index') }}#agenda">
+        <strong>Agenda e escalação</strong>
+        <span>Eventos, lembrete com setlist, confirmação por link e formações</span>
+    </a>
 </div>
 
 <h2 class="h5 mt-4 mb-2">Comparativos</h2>

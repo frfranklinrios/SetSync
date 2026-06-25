@@ -114,6 +114,11 @@ def _auth_destination_path(user, invite_token: str | None = None) -> str:
     next_page = request.args.get('next')
     if next_page and safe_redirect_path(next_page):
         return next_page
+    from models_studio import studio_primary_home_endpoint
+    studio_home = studio_primary_home_endpoint(user['id'])
+    if studio_home:
+        ep, kwargs = studio_home
+        return url_for(ep, **kwargs)
     return url_for('dashboard')
 
 
@@ -654,6 +659,14 @@ def perfil():
                 flash('Indisponibilidade removida.', 'info')
             return redirect(url_for('auth.perfil'))
 
+        if form_section == 'instruments':
+            from user_instruments import normalize_instrument_ids, set_user_instruments
+
+            selected = normalize_instrument_ids(request.form.getlist('instrument_ids'))
+            set_user_instruments(session['user_id'], selected)
+            flash('Instrumentos salvos.', 'success')
+            return redirect(url_for('auth.perfil'))
+
         if form_section == 'notifications':
             from notification_prefs import NOTIFICATION_CATEGORIES
 
@@ -710,12 +723,24 @@ def _perfil_template_context(user: dict) -> dict:
     from db import get_user_notification_prefs
     from notification_prefs import NOTIFICATION_CATEGORIES
     from push_notification_service import is_push_configured
+    from user_instruments import instrument_catalog, list_user_instruments
 
     prefs = get_user_notification_prefs(user)
+    user_instruments = list_user_instruments(user['id'])
+    from db import get_owned_bands, get_user_bands
+    from models_studio import list_studios_by_owner
+    uid = user['id']
+    has_bands = bool(get_owned_bands(uid) or get_user_bands(uid))
+    has_studios = bool(list_studios_by_owner(uid))
     return {
         'user': user,
         'notification_categories': NOTIFICATION_CATEGORIES,
         'notification_prefs': prefs,
         'push_configured': is_push_configured(),
+        'instrument_catalog': instrument_catalog(),
+        'user_instruments': user_instruments,
+        'user_instrument_ids': {item['id'] for item in user_instruments},
+        'profile_has_bands': has_bands,
+        'profile_has_studios': has_studios,
     }
 

@@ -1,0 +1,8 @@
+{% if upsell_alerts %}
+{% for alert in upsell_alerts %}
+<div class="alert alert-{{ alert.level }} dashboard-compact-alert py-2 mb-2 small">
+    <strong>{{ alert.title }}</strong> — {{ alert.message }}
+    <a href="{{ alert.cta_url }}" class="alert-link ms-1">{{ alert.cta_label }}</a>
+</div>
+{% endfor %}
+{% endif %}

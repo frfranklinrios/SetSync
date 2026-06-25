@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from config import app_now_naive, app_now_str
 
 
 def seed_testimonials(c) -> None:
@@ -53,7 +54,7 @@ def seed_testimonials(c) -> None:
 
 
 def _blog_posts_data() -> list[dict]:
-    base_date = datetime.utcnow() - timedelta(days=30)
+    base_date = app_now_naive() - timedelta(days=30)
     posts = [
         {
             'slug': 'como-transpor-cifra-para-qualquer-tom',
@@ -135,6 +136,76 @@ def _blog_posts_data() -> list[dict]:
             'meta_description': 'Aprenda a montar chord sheets no SetSync: compassos, semi-pulsos, simile, transposição, autosave e visualização no palco.',
             'conteudo': _POST_CHORDSHEET,
         },
+        {
+            'slug': 'como-cadastrar-estudio-ensino-setsync',
+            'titulo': 'Como cadastrar seu estúdio de ensaio no SetSync',
+            'resumo': 'Passo a passo para donos de sala: perfil, fotos, salas, Google Maps, disponibilidade e confirmação de reservas.',
+            'autor': 'Equipe SetSync',
+            'tags': 'estúdio, ensaio, cadastro, reservas',
+            'meta_title': 'Cadastrar estúdio no SetSync — tutorial',
+            'meta_description': 'Aprenda a cadastrar seu estúdio de ensaio no SetSync: salas, horários, bloqueios e painel de reservas beta gratuito.',
+            'conteudo': _POST_ESTUDIO_CADASTRO,
+        },
+        {
+            'slug': 'como-reservar-sala-ensaio-banda-setsync',
+            'titulo': 'Como reservar sala de ensaio para sua banda',
+            'resumo': 'Busque estúdios por cidade, escolha horário, acompanhe a solicitação e veja o ensaio na agenda quando confirmado.',
+            'autor': 'Equipe SetSync',
+            'tags': 'estúdio, reserva, banda, ensaio',
+            'meta_title': 'Reservar sala de ensaio — tutorial SetSync',
+            'meta_description': 'Tutorial para bandas reservarem sala de ensaio no SetSync: busca, solicitação, status e agenda sincronizada.',
+            'conteudo': _POST_ESTUDIO_RESERVA,
+        },
+        {
+            'slug': 'como-cadastrar-instrumentos-perfil-setsync',
+            'titulo': 'Como cadastrar seus instrumentos no perfil',
+            'resumo': 'Marque violão, guitarra, baixo, vocal, bateria e mais — a banda vê na escalação e na lista de membros.',
+            'autor': 'Equipe SetSync',
+            'tags': 'perfil, instrumentos, escalação, banda',
+            'meta_title': 'Instrumentos no perfil — tutorial SetSync',
+            'meta_description': 'Cadastre os instrumentos que você toca no SetSync e ajude a banda a montar a escalação sem adivinhar funções.',
+            'conteudo': _POST_INSTRUMENTOS,
+        },
+        {
+            'slug': 'como-usar-agenda-escalacao-setsync',
+            'titulo': 'Como usar a agenda e escalação no SetSync',
+            'resumo': 'Crie ensaios e shows, vincule setlist, escale integrantes, confirme por link e receba lembretes automáticos.',
+            'autor': 'Equipe SetSync',
+            'tags': 'agenda, escalação, ensaio, show',
+            'meta_title': 'Agenda e escalação — tutorial SetSync',
+            'meta_description': 'Tutorial completo da agenda SetSync: eventos, escalação com confirmação, formações e lembretes.',
+            'conteudo': _POST_AGENDA,
+        },
+        {
+            'slug': 'como-usar-modo-tocar-setsync',
+            'titulo': 'Como usar o Modo Tocar no palco',
+            'resumo': 'Tela cheia, seções, sync da banda, offline auto, pedal, notas de palco, vocalista e atalhos.',
+            'autor': 'Equipe SetSync',
+            'tags': 'modo tocar, palco, cifras, setlist, pedal, offline',
+            'meta_title': 'Modo Tocar — tutorial SetSync',
+            'meta_description': 'Modo Tocar no SetSync: seções, sync, offline automático, pedal Bluetooth, notas de palco e atalhos para o culto.',
+            'conteudo': _POST_MODO_TOCAR,
+        },
+        {
+            'slug': 'como-usar-notificacoes-setsync',
+            'titulo': 'Como configurar notificações, push e WhatsApp',
+            'resumo': 'Alertas imediatos de escalação, resumo diário às 21h, lembretes de agenda e preferências por tipo.',
+            'autor': 'Equipe SetSync',
+            'tags': 'notificações, whatsapp, push, alertas',
+            'meta_title': 'Notificações SetSync — tutorial',
+            'meta_description': 'Configure push, e-mail e WhatsApp no SetSync: escalação, convites, estúdio e resumo diário.',
+            'conteudo': _POST_NOTIFICACOES,
+        },
+        {
+            'slug': 'como-usar-versao-pessoal-cifras-setsync',
+            'titulo': 'Como usar a versão pessoal de cifras',
+            'resumo': 'Edite sem alterar a banda na hora, teste no Modo Tocar e publique quando a equipe aprovar.',
+            'autor': 'Equipe SetSync',
+            'tags': 'versão pessoal, cifras, editor, banda',
+            'meta_title': 'Versão pessoal de cifras — tutorial SetSync',
+            'meta_description': 'Tutorial da versão pessoal: editar cifras em privado, alternar Banda/Minha e publicar para a equipe.',
+            'conteudo': _POST_VERSAO_PESSOAL,
+        },
     ]
     for i, p in enumerate(posts):
         p['publicado'] = True
@@ -142,11 +213,27 @@ def _blog_posts_data() -> list[dict]:
     return posts
 
 
+# Posts cujo conteúdo no seed deve sobrescrever o banco (tutoriais atualizados)
+_REFRESH_CONTENT_SLUGS = frozenset({'como-usar-modo-tocar-setsync'})
+
+
 def seed_blog_posts(c) -> None:
     """Insere posts iniciais; em deploys seguintes só adiciona slugs novos."""
     for p in _blog_posts_data():
         c.execute('SELECT id FROM blog_posts WHERE slug = ?', (p['slug'],))
-        if c.fetchone():
+        row = c.fetchone()
+        if row:
+            if p['slug'] not in _REFRESH_CONTENT_SLUGS:
+                continue
+            c.execute(
+                '''UPDATE blog_posts SET titulo=?, resumo=?, conteudo=?, meta_title=?,
+                   meta_description=?, tags=?, atualizado_em=? WHERE slug=?''',
+                (
+                    p['titulo'], p['resumo'], p['conteudo'],
+                    p['meta_title'], p['meta_description'], p['tags'],
+                    p['publicado_em'], p['slug'],
+                ),
+            )
             continue
         c.execute(
             '''INSERT INTO blog_posts
@@ -355,4 +442,232 @@ Ex.: <code>C&amp;D</code> → dois acordes dividindo o primeiro pulso.</li>
 </ol>
 <p>O Chord Sheet não substitui a cifra com letra — <strong>complementa</strong>. Quem canta usa a cifra; quem conduz harmonia usa a grade. Tudo na mesma música, sincronizado com a banda.</p>
 <p>Quer o passo a passo técnico completo? Veja a <a href="/ajuda#chord-sheet">central de ajuda do SetSync</a> ou crie uma conta grátis e teste em uma música da sua banda.</p>
+"""
+
+_POST_ESTUDIO_CADASTRO = """
+<h2>Para quem é</h2>
+<p>Se você tem <strong>sala de ensaio</strong> e quer receber bandas sem depender só de telefone e Instagram, o módulo <strong>Estúdios</strong> do SetSync centraliza cadastro, agenda e confirmações. O plano <strong>beta é gratuito</strong> com até <strong>2 salas</strong>.</p>
+
+<h2>Passo 1: criar conta e cadastrar o estúdio</h2>
+<ol>
+<li>Crie sua conta no SetSync (e-mail ou Google).</li>
+<li>No menu, acesse <strong>Estúdios → Cadastrar meu estúdio</strong>.</li>
+<li>Preencha nome, descrição, cidade e bairro.</li>
+<li>No campo de endereço, use a <strong>busca do Google Maps</strong> para preencher rua e coordenadas automaticamente.</li>
+<li>Envie <strong>fotos</strong> do espaço — ajudam bandas a escolher sua sala.</li>
+</ol>
+
+<h2>Passo 2: cadastrar salas</h2>
+<p>Cada sala pode ter nome, capacidade e lista de <strong>equipamentos</strong> (PA, bateria, amplis). No plano beta gratuito você cadastra até <strong>duas salas</strong>; precisando de mais, fale com a equipe SetSync sobre o plano premium.</p>
+
+<h2>Passo 3: disponibilidade e bloqueios</h2>
+<ul>
+<li>Defina <strong>horários semanais</strong> em que cada sala aceita reserva (ex.: seg–sex 14h–22h).</li>
+<li>Marque <strong>bloqueios</strong> pontuais — feriados, manutenção ou horário já fechado com outro cliente.</li>
+</ul>
+
+<h2>Passo 4: painel e confirmações</h2>
+<p>Contas de estúdio abrem no <strong>painel do dono</strong> após o login. Lá você vê solicitações <strong>pendentes</strong> e pode <strong>confirmar</strong> ou <strong>recusar</strong>. Ao confirmar, o ensaio entra na <strong>agenda da banda</strong> automaticamente.</p>
+
+<h2>Dicas</h2>
+<ul>
+<li>Mantenha fotos e equipamentos atualizados — bandas comparam estúdios antes de reservar.</li>
+<li>Responda pedidos em até 24h para não perder o horário para concorrentes.</li>
+<li>Ative notificações no perfil para receber aviso de nova solicitação.</li>
+</ul>
+<p>Mais detalhes na <a href="/ajuda#estudios">ajuda de estúdios</a> ou <a href="/estudios/buscar">veja como as bandas encontram você</a>.</p>
+"""
+
+_POST_ESTUDIO_RESERVA = """
+<h2>Quando usar</h2>
+<p>Sua banda já organiza cifras e setlists no SetSync — agora dá para <strong>reservar sala de ensaio</strong> no mesmo app, sem ligar para dez estúdios diferentes.</p>
+
+<h2>Passo 1: buscar estúdio</h2>
+<ol>
+<li>Menu <strong>Estúdios → Buscar</strong>.</li>
+<li>Informe <strong>cidade</strong> e, se quiser, <strong>bairro</strong>.</li>
+<li>Abra o perfil do estúdio: fotos, equipamentos e link para <strong>Google Maps</strong>.</li>
+</ol>
+
+<h2>Passo 2: solicitar horário</h2>
+<ol>
+<li>Escolha a <strong>sala</strong> e toque em <strong>Reservar</strong>.</li>
+<li>Selecione <strong>data</strong>, <strong>horário</strong> e a <strong>banda</strong> que vai ensaiar.</li>
+<li>Envie a solicitação — o status fica <strong>pendente</strong> até o estúdio responder.</li>
+</ol>
+
+<h2>Passo 3: acompanhar e ensaiar</h2>
+<ul>
+<li>Em <strong>Minhas reservas</strong> você vê pendente, confirmado ou recusado.</li>
+<li>Se <strong>confirmado</strong>, o evento aparece na <strong>Agenda da banda</strong> com badge <em>via Estúdio</em>.</li>
+<li>Você pode <strong>cancelar</strong> antes do horário, se os planos mudarem.</li>
+</ul>
+
+<h2>Integração com a rotina da banda</h2>
+<p>Depois de confirmado, vincule a <strong>setlist</strong> do ensaio no evento e use <strong>Tocar setlist</strong> na página do evento para ir direto ao Modo Tocar.</p>
+<p>Tutorial completo em <a href="/ajuda#estudios">/ajuda#estudios</a>.</p>
+"""
+
+_POST_INSTRUMENTOS = """
+<h2>Por que cadastrar</h2>
+<p>Na escalação de um show, o admin precisa saber quem é guitarrista, quem é baterista, quem toca teclado. Em vez de perguntar no grupo toda vez, cada músico deixa isso claro no <strong>perfil</strong>.</p>
+
+<h2>Como cadastrar</h2>
+<ol>
+<li>Abra <strong>Meu perfil</strong> no menu do usuário.</li>
+<li>Na seção <strong>Instrumentos</strong>, marque tudo que você toca.</li>
+<li>Opções incluem violão, guitarra, baixo, vocal, bateria, teclado/piano, ukulele, cavaquinho, som e mais.</li>
+<li>Toque em <strong>Salvar instrumentos</strong>.</li>
+</ol>
+
+<h2>Onde a banda vê</h2>
+<ul>
+<li><strong>Membros</strong> da banda — lista com e-mail e instrumentos de cada integrante.</li>
+<li><strong>Escalação</strong> do evento — abaixo do nome, antes de definir a função naquele show.</li>
+</ul>
+<p>Os instrumentos do perfil são <strong>informativos</strong>; na escalação você ainda pode definir a função específica daquele evento (ex.: guitarra base vs. solo).</p>
+
+<h2>Combine com indisponibilidade</h2>
+<p>No mesmo perfil, marque <strong>datas em que você não pode tocar</strong>. Quem escala vê o aviso ao montar o evento.</p>
+<p>Veja também <a href="/ajuda#perfil">ajuda do perfil</a> e <a href="/ajuda#agenda">escalação na agenda</a>.</p>
+"""
+
+_POST_AGENDA = """
+<h2>Visão geral</h2>
+<p>Cada banda tem uma <strong>Agenda</strong> para ensaios e shows. Você cria eventos, vincula setlist, escala quem participa e envia confirmação por link.</p>
+
+<h2>Criar um evento</h2>
+<ol>
+<li>Abra a banda → aba <strong>Agenda</strong> → <strong>Novo evento</strong>.</li>
+<li>Informe título, tipo (ensaio ou show), data/hora e local.</li>
+<li>Use a busca de <strong>Google Maps</strong> no campo local quando disponível.</li>
+<li>Vincule a <strong>setlist</strong> do ensaio ou show, se já existir.</li>
+</ol>
+
+<h2>Escalar a equipe</h2>
+<ol>
+<li>No evento, abra <strong>Escalação</strong>.</li>
+<li>Marque integrantes e opcionalmente a <strong>função</strong> (Vocal, Bateria…).</li>
+<li>Use <strong>formações salvas</strong> ou <strong>Sugerir escala</strong> para preencher mais rápido.</li>
+<li>Salve — quem foi escalado recebe notificação com link para <strong>confirmar ou recusar</strong>.</li>
+</ol>
+
+<h2>Confirmação e lembretes</h2>
+<ul>
+<li>Status: pendente, confirmado ou recusado.</li>
+<li>O dashboard mostra <strong>escalações pendentes</strong> da banda.</li>
+<li><strong>24 horas antes</strong>, lembrete por push, e-mail e WhatsApp (se configurado).</li>
+<li>Horários seguem o fuso de <strong>Fortaleza (UTC−3)</strong>.</li>
+</ul>
+
+<h2>Extras</h2>
+<ul>
+<li>Exporte <strong>.ics</strong> ou adicione ao Google Agenda.</li>
+<li>Em shows, cadastre <strong>cachê</strong> e divisão entre confirmados.</li>
+<li>Ensaios via estúdio aparecem com badge <em>via Estúdio</em>.</li>
+</ul>
+<p>Detalhes em <a href="/ajuda#agenda">/ajuda#agenda</a>.</p>
+"""
+
+_POST_MODO_TOCAR = """
+<h2>O que é</h2>
+<p>O <strong>Modo Tocar</strong> é a tela cheia para o palco: cifra legível, navegação entre músicas da setlist, auto-scroll e recursos para a banda tocar junta. Abra pela setlist, pela lista de cifras ou por <strong>Tocar setlist</strong> no evento da agenda (com banner do culto e sync automático).</p>
+
+<h2>Primeiros passos</h2>
+<ol>
+<li>Abra uma setlist ou cifra e toque em <strong>Tocar</strong>.</li>
+<li>Escolha cantora/cantor no topo se houver transposição por vocalista.</li>
+<li>Use <strong>← →</strong> ou toque nas bordas para paginar a cifra; <strong>↑ ↓</strong> para trocar de música.</li>
+<li><strong>Espaço</strong> liga o auto-scroll (velocidade <strong>Auto</strong> se a música tiver duração cadastrada).</li>
+<li>Na primeira visita, um overlay explica atalhos e oferece configurar o <strong>count-in</strong> do metrônomo.</li>
+</ol>
+
+<h2>Cifra, grade e letra</h2>
+<ul>
+<li>Menu ou tecla <strong>G</strong> alterna cifra → grade harmônica → letra.</li>
+<li><strong>N</strong> ativa modo <strong>Nashville</strong> (1–7) na grade.</li>
+<li><strong>S</strong> abre o índice de <strong>seções</strong> (Intro, Refrão, Ponte…) — toque para pular direto.</li>
+<li><strong>P</strong> ativa o <strong>modo vocalista</strong> (letra grande, sem distrações).</li>
+<li><strong>Toque em um acorde</strong> para ver diagrama (violão, guitarra, baixo, ukulele, cavaquinho, piano).</li>
+</ul>
+
+<h2>Sync, notas e culto</h2>
+<ul>
+<li><strong>Sync</strong> na barra: quando ligado, todos seguem a música que o <strong>líder</strong> avança.</li>
+<li>Ao abrir pelo <strong>evento da agenda</strong>, o sync costuma vir ligado — útil com vários tablets no culto.</li>
+<li><strong>Notas de palco</strong> — cadastre na setlist (campo por música) ou edite no aviso amarelo ao trocar de faixa.</li>
+<li>BPM, capo e compasso aparecem na barra de metadados.</li>
+</ul>
+
+<h2>Versão Banda / Minha</h2>
+<p>Se você editou uma música e manteve só para si, use os botões <strong>Banda</strong> e <strong>Minha</strong> (ou tecla <strong>V</strong>) para alternar versões no palco.</p>
+
+<h2>Metrônomo, loop e desenho</h2>
+<ul>
+<li><strong>M</strong> — metrônomo com acento no tempo 1 e count-in configurável.</li>
+<li><strong>R</strong> — loop de trecho (marque pontos A e B para repetir um refrão).</li>
+<li><strong>D</strong> — desenhar sobre a cifra (salvo na sua conta).</li>
+</ul>
+
+<h2>Offline e pedal</h2>
+<ul>
+<li>Ao abrir o Modo Tocar, o app <strong>baixa automaticamente</strong> as músicas da setlist — indicador <em>X/Y prontas</em> na barra.</li>
+<li>Instale o SetSync como <strong>PWA</strong> para reforçar o uso sem internet.</li>
+<li><strong>Pedal Bluetooth</strong>: ícone de sapato para mapear teclas; ícone <strong>varinha</strong> para o assistente passo a passo. Padrão: Page Up/Down paginam, ↑↓ trocam música.</li>
+</ul>
+
+<h2>Palco e celular</h2>
+<ul>
+<li><strong>F</strong> — tela cheia · <strong>T</strong> — tema claro/escuro</li>
+<li><strong>+ / −</strong> — tamanho da fonte · <strong>C</strong> — duas colunas · <strong>L</strong> — lista lateral</li>
+</ul>
+<p>Lista completa de atalhos em <a href="/ajuda#modo-tocar">/ajuda#modo-tocar</a>.</p>
+"""
+
+_POST_NOTIFICACOES = """
+<h2>Onde configurar</h2>
+<p>Tudo em <strong>Meu perfil → Notificações</strong>. Cadastre o <strong>WhatsApp</strong> (com DDD) antes de ativar alertas por mensagem.</p>
+
+<h2>Canais</h2>
+<ul>
+<li><strong>Push</strong> — no celular ou navegador; ative por dispositivo no perfil.</li>
+<li><strong>E-mail</strong> — convites, escalação e lembretes (padrão ligado).</li>
+<li><strong>WhatsApp</strong> — mesmos avisos por mensagem; exige número salvo.</li>
+</ul>
+
+<h2>O que chega na hora</h2>
+<p>Escalação, convites de banda, lembretes de agenda (24h antes) e reservas de <strong>estúdio</strong> (solicitação, confirmação, recusa).</p>
+
+<h2>Resumo diário</h2>
+<p>Mudanças de cifras, setlists e outras atualizações da banda entram em um <strong>resumo diário</strong> por volta das <strong>21h</strong> (horário de Fortaleza). Você escolhe por tipo na tabela do perfil.</p>
+
+<h2>Dicas</h2>
+<ul>
+<li>Desligue categorias que não usa para reduzir ruído.</li>
+<li>Músicos de palco: mantenha push ligado para escalação de última hora.</li>
+<li>Donos de estúdio: ative alertas da categoria estúdio.</li>
+</ul>
+<p>Mais em <a href="/ajuda#notificacoes">/ajuda#notificacoes</a>.</p>
+"""
+
+_POST_VERSAO_PESSOAL = """
+<h2>O problema que resolve</h2>
+<p>Você quer testar uma arrumação na cifra antes de mostrar para a banda — mas não pode apagar a versão que todo mundo usa no culto de domingo. A <strong>versão pessoal</strong> guarda suas alterações só para você até publicar.</p>
+
+<h2>Fluxo ao editar</h2>
+<ol>
+<li>Abra <strong>Editar música</strong> (papel Editor ou admin).</li>
+<li>Altere cifra, grade ou letra e salve com <strong>Salvar minha versão</strong>.</li>
+<li>Escolha <strong>Manter só para mim</strong> ou <strong>Enviar para a banda</strong>.</li>
+</ol>
+
+<h2>Onde ver cada versão</h2>
+<ul>
+<li>Na página da música: aviso com botões <strong>Ver minha versão</strong> / <strong>Ver versão da banda</strong>.</li>
+<li>No <strong>Modo Tocar</strong>: botões <strong>Banda</strong> e <strong>Minha</strong> (tecla <strong>V</strong>).</li>
+</ul>
+
+<h2>Quando publicar</h2>
+<p>Depois do ensaio, se a banda aprovar, edite de novo e salve escolhendo <strong>Enviar para a banda</strong>. Todos passam a ver a versão atualizada.</p>
+<p>Leia a seção completa em <a href="/ajuda#versao-pessoal">/ajuda#versao-pessoal</a>.</p>
 """

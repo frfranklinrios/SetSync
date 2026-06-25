@@ -68,6 +68,43 @@ def maps_embed_url(
     )
 
 
+def studio_maps_context(studio: dict | None) -> dict:
+    """URLs de mapa para templates do estúdio."""
+    if not studio:
+        return {
+            'google_maps_api_key': google_maps_api_key(),
+            'maps_open_url': None,
+            'maps_embed_url': None,
+        }
+    key = google_maps_api_key()
+    lat = studio.get('endereco_lat')
+    lng = studio.get('endereco_lng')
+    try:
+        lat = float(lat) if lat is not None and str(lat).strip() != '' else None
+    except (TypeError, ValueError):
+        lat = None
+    try:
+        lng = float(lng) if lng is not None and str(lng).strip() != '' else None
+    except (TypeError, ValueError):
+        lng = None
+    place_id = (studio.get('endereco_place_id') or '').strip() or None
+    from models_studio import studio_full_address
+    location = studio_full_address(studio) or None
+    return {
+        'google_maps_api_key': key,
+        'maps_open_url': maps_open_url(
+            location=location, lat=lat, lng=lng, place_id=place_id,
+        ),
+        'maps_embed_url': maps_embed_url(
+            api_key=key,
+            location=location,
+            lat=lat,
+            lng=lng,
+            place_id=place_id,
+        ) if location or (lat is not None and lng is not None) or place_id else None,
+    }
+
+
 def event_maps_context(event: dict | None) -> dict:
     """URLs de mapa para templates do evento."""
     if not event:

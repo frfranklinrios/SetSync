@@ -1,0 +1,67 @@
+{% extends "index.html" %}
+{% block title %}Reservar — {{ studio.nome }}{% endblock %}
+
+{% block seo %}
+<meta name="description" content="Reserve sala de ensaio em {{ studio.nome }}{% if studio.cidade %} — {{ studio.cidade }}{% endif %} pelo SetSync.">
+<meta name="robots" content="index, follow">
+{% endblock %}
+
+{% block content %}
+<div class="studio-book-landing mx-auto" style="max-width: 32rem;">
+    <div class="text-center mb-4">
+        <span class="badge text-bg-light mb-2"><i class="fas fa-door-open me-1"></i> Reserva de ensaio</span>
+        <h1 class="h4 mb-1">{{ studio.nome }}</h1>
+        <p class="text-muted mb-0">{{ full_address }}</p>
+        {% if maps_open_url %}
+        <p class="small mt-2 mb-0">
+            <a href="{{ maps_open_url }}" target="_blank" rel="noopener noreferrer">
+                <i class="fas fa-map-marker-alt me-1"></i>Ver no Google Maps
+            </a>
+        </p>
+        {% endif %}
+    </div>
+
+    {% if photos %}
+    <div class="d-flex flex-wrap gap-2 justify-content-center mb-4">
+        {% for p in photos[:4] %}
+        <img src="{{ url_for('studios.serve_studio_photo', studio_id=studio.id, filename=p.filename) }}"
+             alt="" class="rounded" style="height:88px;width:auto;object-fit:cover;">
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if studio.descricao %}
+    <p class="text-center text-muted small mb-4">{{ studio.descricao }}</p>
+    {% endif %}
+
+    {% if rooms %}
+    <h2 class="h6 text-center mb-3">Salas disponíveis</h2>
+    <ul class="list-group list-group-flush mb-4 border rounded">
+        {% for room in rooms %}
+        <li class="list-group-item small">
+            <strong>{{ room.nome }}</strong>
+            {% if room.capacidade_pessoas %}<span class="text-muted"> — até {{ room.capacidade_pessoas }} pessoas</span>{% endif %}
+            {% if room.equipamentos %}
+            <div class="text-muted">{{ room.equipamentos | join(', ') }}</div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="card border-primary mb-3">
+        <div class="card-body text-center">
+            <p class="mb-3 small text-muted">
+                Entre com sua conta de <strong>banda</strong> no SetSync para escolher data, horário e enviar a solicitação.
+                O estúdio confirma pelo painel.
+            </p>
+            <a href="{{ login_url }}" class="btn btn-primary w-100 mb-2">Entrar e reservar</a>
+            <a href="{{ register_url }}" class="btn btn-outline-secondary w-100">Criar conta grátis</a>
+        </div>
+    </div>
+
+    <p class="text-center small text-muted mb-0">
+        Powered by <a href="{{ url_for('index') }}">SetSync</a>
+    </p>
+</div>
+{% endblock %}

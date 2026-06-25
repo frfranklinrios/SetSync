@@ -55,6 +55,7 @@ from event_calendar import google_calendar_url, ics_content
 from event_scale_tokens import verify_scale_response_token
 from scale_service import process_scale_response, scale_token_url
 from security import build_canonical_url, external_url_for
+from config import app_now_naive, app_now_str
 
 agenda_bp = Blueprint('agenda', __name__, url_prefix='/agenda')
 
@@ -171,6 +172,10 @@ def create(band_id):
                 ),
             )
         event_id = create_band_event(band_id, created_by=user_id, **data)
+        from db import mark_user_agenda_event_used
+        from product_funnel import log_funnel_step
+        mark_user_agenda_event_used(user_id)
+        log_funnel_step(user_id, 'primeiro_evento_agenda')
         bn.event_created(band_id, user_id, event_id, data['title'], data['event_type'])
         flash(
             'Evento criado. Use o botão Escalação na lista para definir quem participa.',
@@ -209,7 +214,7 @@ def minha_agenda():
         e['can_edit'] = is_band_editor(e['band_id'], user_id)
         e['is_admin'] = is_band_admin(e['band_id'], user_id)
 
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     events_upcoming = [e for e in all_events if str(e.get('starts_at') or '') >= now]
     events_past = [e for e in all_events if str(e.get('starts_at') or '') < now]
     events_past.reverse()
@@ -254,6 +259,17 @@ def view(event_id):
     guests = list_event_guests(event_id)
     scale_stats = get_assignment_response_stats(event_id)
     gcal_url = google_calendar_url(event, band_name=band.get('name') or '')
+    from event_fees import compute_event_fee_split
+    from db import get_band_members
+
+    fee_split = None
+    if event.get('fee_total'):
+        fee_split = compute_event_fee_split(
+            event,
+            assignments,
+            get_band_members(band['id']),
+            name_for_user=user_display_name,
+        )
     return render_template(
         'agenda/view.html',
         event=event,
@@ -266,6 +282,7 @@ def view(event_id):
         user_assignment=user_assignment,
         user_is_scaled=user_assignment is not None,
         setlist_cifras=setlist_cifras,
+        fee_split=fee_split,
         event_type_label=event_type_label(event.get('event_type')),
         format_event_datetime=format_event_datetime,
         user_display_name=user_display_name,
@@ -301,6 +318,45 @@ def event_ics(event_id):
         mimetype='text/calendar; charset=utf-8',
         headers={'Content-Disposition': f'attachment; filename="evento-{event_id[:8]}.ics"'},
     )
+
+
+@agenda_bp.route('/<event_id>/fee', methods=['POST'])
+@login_required
+def save_event_fee(event_id):
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_admin(band['id'], user_id):
+        abort(404)
+
+    def _parse_money(name):
+        raw = (request.form.get(name) or '').strip().replace(',', '.')
+        if not raw:
+            return None
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            return None
+
+    fee_total = _parse_money('fee_total')
+    fee_transport = _parse_money('fee_transport_discount')
+    fee_equipment = _parse_money('fee_equipment_discount')
+    fee_notes = (request.form.get('fee_notes') or '').strip() or None
+    fee_settled = request.form.get('fee_settled') == '1'
+
+    if fee_total is None:
+        flash('Informe o valor total do cachê.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
+
+    from db import update_event_fees
+    update_event_fees(
+        event_id,
+        fee_total=fee_total,
+        fee_transport_discount=fee_transport or 0,
+        fee_equipment_discount=fee_equipment or 0,
+        fee_notes=fee_notes,
+        fee_settled=fee_settled,
+    )
+    flash('Cachê do evento atualizado.', 'success')
+    return redirect(url_for('agenda.view', event_id=event_id))
 
 
 @agenda_bp.route('/<event_id>/convidado', methods=['POST'])
@@ -444,6 +500,9 @@ def escala(event_id):
     blocked_ids = users_blocked_on_date(member_ids, event_date) if event_date else set()
     scale_stats = get_assignment_response_stats(event_id)
     suggestions = suggest_scale_assignments(band['id'], event_id)
+
+    from user_instruments import enrich_members_with_instruments
+    enrich_members_with_instruments(members)
 
     return render_template(
         'agenda/escala.html',

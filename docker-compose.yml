@@ -4,6 +4,9 @@ services:
     build: .
     env_file:
       - .env
+    environment:
+      TZ: ${SETSYNC_TIMEZONE:-America/Fortaleza}
+      SETSYNC_TIMEZONE: ${SETSYNC_TIMEZONE:-America/Fortaleza}
     ports:
       - "5001:5000"
     volumes:

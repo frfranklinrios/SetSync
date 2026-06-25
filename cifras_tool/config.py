@@ -14,6 +14,10 @@ class Settings:
     )
     youtube_user_agent: str | None = os.getenv("CIFRAS_YOUTUBE_USER_AGENT")
     youtube_cookies_file: str | None = os.getenv("CIFRAS_YOUTUBE_COOKIES_FILE")
+    # Ex.: chrome, firefox, chromium, brave (só funciona na máquina com navegador logado)
+    youtube_cookies_from_browser: str | None = os.getenv(
+        "CIFRAS_YOUTUBE_COOKIES_FROM_BROWSER"
+    )
     # Se true, o servidor nunca baixa áudio do YouTube (recomendado em VPS).
     youtube_no_server: bool = os.getenv("CIFRAS_YOUTUBE_NO_SERVER", "").lower() in (
         "1",

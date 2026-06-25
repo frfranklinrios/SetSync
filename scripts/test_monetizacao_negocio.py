@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta
+from config import app_now_naive, app_now_str
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -36,7 +37,30 @@ class MonetizacaoNegocioTest(unittest.TestCase):
         self.assertEqual(get_plano_efetivo(band_id), 'pro')
         dias = dias_restantes_trial(band_id)
         self.assertIsNotNone(dias)
-        self.assertGreaterEqual(dias, 13)
+        self.assertGreaterEqual(dias, 29)
+
+    def test_trial_estudio_libera_salas(self):
+        from db import create_user
+        from models_studio import create_studio, create_room, get_studio
+        from monetizacao import (
+            TRIAL_DIAS,
+            check_studio_room_limit,
+            dias_restantes_trial_estudio,
+            iniciar_trial_estudio,
+            studio_tem_premium,
+        )
+
+        self.assertEqual(TRIAL_DIAS, 30)
+        uid = create_user('studiotrial', 'studio@test.com', 'senha1234567', display_name='Studio')
+        studio_id = create_studio(uid, nome='Meu Estúdio', cidade='Fortaleza')
+        self.assertTrue(studio_tem_premium(uid))
+        dias = dias_restantes_trial_estudio(uid)
+        self.assertIsNotNone(dias)
+        self.assertGreaterEqual(dias, 29)
+        for i in range(3):
+            create_room(studio_id, nome=f'Sala {i + 1}')
+        self.assertTrue(check_studio_room_limit(uid))
+        self.assertTrue(iniciar_trial_estudio(uid) is False)
 
     def test_trial_expirado_volta_limite_gratis(self):
         from db import create_user, create_band, update_assinatura_trial
@@ -44,8 +68,8 @@ class MonetizacaoNegocioTest(unittest.TestCase):
 
         uid = create_user('expuser', 'exp@test.com', 'senha1234567')
         band_id = create_band('Banda Exp', '', uid)
-        ontem = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
-        inicio = (datetime.utcnow() - timedelta(days=15)).strftime('%Y-%m-%d %H:%M:%S')
+        ontem = (app_now_naive() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+        inicio = (app_now_naive() - timedelta(days=31)).strftime('%Y-%m-%d %H:%M:%S')
         update_assinatura_trial(band_id, trial_inicio=inicio, trial_fim=ontem, trial_usado=1)
         self.assertEqual(get_plano_efetivo(band_id), 'gratis')
 

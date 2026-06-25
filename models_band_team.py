@@ -6,6 +6,7 @@ from datetime import datetime
 
 from database import IS_POSTGRES, IntegrityError
 from db import get_db
+from config import app_now_naive, app_now_str, app_today_str
 
 DEFAULT_BAND_ROLES = (
     'Vocal',
@@ -124,7 +125,7 @@ def get_lineup_members(lineup_id: str) -> list[dict]:
 
 def create_lineup(band_id: str, name: str, members: list[dict]) -> str:
     lineup_id = str(uuid.uuid4())
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     c.execute(
@@ -230,7 +231,7 @@ def set_role_substitutes(band_id: str, role_label: str, user_ids: list[str]) -> 
 
 
 def list_user_blockouts(user_id: str) -> list[dict]:
-    today = datetime.utcnow().strftime('%Y-%m-%d')
+    today = app_today_str()
     db = get_db()
     c = db.cursor()
     c.execute(
@@ -314,7 +315,7 @@ def add_event_guest(
     invited_by: str | None = None,
 ) -> str:
     guest_id = str(uuid.uuid4())
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     c.execute(
@@ -367,7 +368,7 @@ def get_assignment_response_stats(event_id: str) -> dict:
 def list_pending_assignments_for_user(user_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute(
         '''SELECT a.*, e.title, e.starts_at, e.event_type, e.location,
                   b.id AS band_id, b.name AS band_name
@@ -391,7 +392,7 @@ def list_events_pending_responses_for_editor(user_id: str) -> list[dict]:
 
     db = get_db()
     c = db.cursor()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute(
         '''SELECT e.id, e.title, e.starts_at, e.band_id, b.name AS band_name,
                   SUM(CASE WHEN COALESCE(a.response_status, 'pending') = 'pending' THEN 1 ELSE 0 END) AS pending_count,

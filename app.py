@@ -7,6 +7,7 @@ from blueprints.cifras import cifras_bp
 from blueprints.setlists import setlists_bp
 from blueprints.cifras_import import cifras_import_bp
 from blueprints.ajuda import ajuda_bp
+from blueprints.roadmap import roadmap_bp
 from blueprints.admin import admin_bp
 from blueprints.assinatura import assinatura_bp, webhook as mp_webhook_view
 from blueprints.notifications import notifications_bp
@@ -17,6 +18,8 @@ from blueprints.whatsapp_admin import whatsapp_admin_bp
 from blueprints.agenda import agenda_bp
 from blueprints.convites import convites_bp
 from blueprints.music_api import music_api_bp
+from blueprints.realtime import realtime_bp
+from blueprints.studios import studios_bp
 from agenda_util import event_relative_label, format_event_datetime
 from db import init_db
 from extensions import init_scheduler
@@ -194,6 +197,7 @@ app.register_blueprint(cifras_import_bp)
 app.register_blueprint(cifras_bp)
 app.register_blueprint(setlists_bp)
 app.register_blueprint(ajuda_bp)
+app.register_blueprint(roadmap_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(assinatura_bp)
 app.register_blueprint(notifications_bp)
@@ -204,6 +208,8 @@ app.register_blueprint(whatsapp_admin_bp)
 app.register_blueprint(agenda_bp)
 app.register_blueprint(convites_bp)
 app.register_blueprint(music_api_bp)
+app.register_blueprint(realtime_bp)
+app.register_blueprint(studios_bp)
 init_scheduler(app)
 
 # Webhook Mercado Pago: POST externo sem CSRF de formulário
@@ -233,6 +239,9 @@ for _csrf_json_endpoint in (
     'cifras.leadsheet_api_gerar',
     'cifras.leadsheet_api_salvar',
     'cifras.leadsheet_api_analisar',
+    'studios.api_room_slots',
+    'ajuda.chat',
+    'ajuda.nps_submit',
 ):
     _view = app.view_functions.get(_csrf_json_endpoint)
     if _view:
@@ -261,7 +270,7 @@ def health():
 def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
-    from monetizacao import planos_para_site
+    from monetizacao import planos_para_site, planos_estudio_para_site
     from db import count_bands, count_cifras, count_setlists, list_testimonials
     from cifras_tool.api_cifras_client import get_api_cifras_public_stats
 
@@ -272,11 +281,12 @@ def index():
     }
     api_cifras_stats = get_api_cifras_public_stats()
     if api_cifras_stats.get('available'):
-        stats['biblioteca'] = api_cifras_stats['songs_cached']
+        stats['biblioteca'] = True
 
     return render_template(
         'home.html',
         planos_site=planos_para_site(),
+        planos_estudio=planos_estudio_para_site(),
         stats=stats,
         testimonials=list_testimonials(active_only=True),
     )
@@ -361,6 +371,7 @@ def sitemap():
         {'loc': external_url_for('index'), 'changefreq': 'weekly', 'priority': '1.0'},
         {'loc': external_url_for('guia.guia_index'), 'changefreq': 'weekly', 'priority': '0.92'},
         {'loc': external_url_for('assinatura_bp.igrejas'), 'changefreq': 'monthly', 'priority': '0.85'},
+        {'loc': external_url_for('studios.landing'), 'changefreq': 'monthly', 'priority': '0.85'},
         {'loc': external_url_for('comece'), 'changefreq': 'monthly', 'priority': '0.88'},
         {'loc': external_url_for('blog.blog_index'), 'changefreq': 'daily', 'priority': '0.9'},
         {'loc': external_url_for('ajuda.index'), 'changefreq': 'monthly', 'priority': '0.75'},
@@ -456,9 +467,22 @@ def dashboard():
         list_events_pending_responses_for_editor,
         list_pending_assignments_for_user,
     )
+    from models_studio import (
+        enrich_studios_for_admin,
+        enrich_studios_for_dashboard,
+        list_all_studios,
+        studio_primary_home_endpoint,
+    )
+
+    if not sa:
+        studio_home = studio_primary_home_endpoint(user_id)
+        if studio_home:
+            ep, kwargs = studio_home
+            return redirect(url_for(ep, **kwargs))
 
     pending_scale = list_pending_assignments_for_user(user_id)
     pending_scale_admin = list_events_pending_responses_for_editor(user_id)
+    my_studios = enrich_studios_for_dashboard(user_id) if not sa else []
 
     def _enrich_upcoming(events):
         ids = [e['id'] for e in events]
@@ -470,9 +494,22 @@ def dashboard():
             e['scale_preview'] = s.get('preview', '')
         return events
 
+    def _growth_ctx(owned):
+        if sa:
+            return {}
+        from db import user_should_see_nps, user_should_see_pwa_prompt
+        from growth_upsell import get_dashboard_upsells, show_referral_card
+        return {
+            'upsell_alerts': get_dashboard_upsells(user_id, owned_bands=owned),
+            'show_referral_card': show_referral_card(user_id),
+            'show_nps_modal': user_should_see_nps(user_id),
+            'show_pwa_prompt': user_should_see_pwa_prompt(user_id),
+        }
+
     if sa:
         all_bands = enrich_bands_plano(enrich_bands_for_display(get_all_bands()))
         owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
+        all_studios = enrich_studios_for_admin(list_all_studios())
         upcoming_events = _enrich_upcoming(
             get_upcoming_events_for_user(user_id, all_bands=True, limit=8),
         )
@@ -480,6 +517,7 @@ def dashboard():
             'dashboard.html',
             bands=all_bands,
             owned_bands=owned_bands,
+            all_studios=all_studios,
             upcoming_events=upcoming_events,
             is_superadmin=True,
             planos_resumo=resumo_planos_usuario(owned_bands),
@@ -489,10 +527,12 @@ def dashboard():
             pending_scale=pending_scale,
             pending_scale_admin=pending_scale_admin,
             api_cifras_stats=api_cifras_stats,
+            my_studios=[],
         )
     owned_bands = enrich_bands_plano(enrich_bands_for_display(get_owned_bands(user_id)))
     bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
     upcoming_events = _enrich_upcoming(get_upcoming_events_for_user(user_id, limit=8))
+    growth = _growth_ctx(owned_bands)
     return render_template(
         'dashboard.html',
         bands=bands,
@@ -506,6 +546,8 @@ def dashboard():
         pending_scale=pending_scale,
         pending_scale_admin=pending_scale_admin,
         api_cifras_stats=api_cifras_stats,
+        my_studios=my_studios,
+        **growth,
     )
 
 
@@ -519,6 +561,8 @@ _SEO_PUBLIC_ENDPOINTS = frozenset({
     'blog.blog_post',
     'ajuda.index',
     'assinatura_bp.igrejas',
+    'studios.landing',
+    'studios.booking_landing',
     'auth.register',
     'auth.login',
     'sitemap',
@@ -530,7 +574,13 @@ _SEO_PUBLIC_ENDPOINTS = frozenset({
 @app.context_processor
 def inject_google_ads():
     from flask import request as _req
-    from google_ads import consume_funnel_events, get_google_ads_config, google_ads_ativo
+    from google_ads import (
+        consume_funnel_events,
+        get_google_ads_config,
+        get_google_analytics_id,
+        google_ads_ativo,
+        google_analytics_ativo,
+    )
 
     ativo = google_ads_ativo()
     funnel_events: list[str] = []
@@ -546,6 +596,8 @@ def inject_google_ads():
     return dict(
         google_ads=get_google_ads_config(),
         google_ads_ativo=ativo,
+        google_analytics_id=get_google_analytics_id(),
+        google_analytics_ativo=google_analytics_ativo(),
         google_ads_fire_signup='signup' in funnel_events,
         google_ads_funnel_events=funnel_events,
         google_ads_enhanced_data={},
@@ -555,6 +607,7 @@ def inject_google_ads():
 @app.context_processor
 def inject_site_config():
     from config import whatsapp_number, whatsapp_message
+    from mercadopago_trust import show_mercadopago_trust
     from db import is_superadmin as _is_superadmin
     from config import google_oauth_enabled
     from security import external_url_for as _external_url_for
@@ -582,6 +635,7 @@ def inject_site_config():
         site_url=site_url,
         site_og_image=_external_url_for('static', filename='logoSetSync.png'),
         google_oauth_enabled=google_oauth_enabled(),
+        show_mercadopago_trust=show_mercadopago_trust(),
         seo_noindex=bool(ep and ep not in _SEO_PUBLIC_ENDPOINTS),
     )
 
@@ -598,12 +652,22 @@ def inject_user():
     from db import is_superadmin as _is_superadmin, count_unread_notifications, user_display_name
     from band_member_invites import inviter_display_name as _inviter_display_name
     from blueprints.cifras import cifra_display_key
+    from models_studio import is_studio_primary_user, studio_primary_home_endpoint
     unread = count_unread_notifications(user_id) if user_id else 0
+    is_studio_primary = bool(user_id and is_studio_primary_user(user_id))
+    nav_home_url = url_for('dashboard')
+    if user_id:
+        studio_home = studio_primary_home_endpoint(user_id)
+        if studio_home:
+            ep, kwargs = studio_home
+            nav_home_url = url_for(ep, **kwargs)
     return dict(
         cifra_display_key=cifra_display_key,
         user_display_name=user_display_name,
         inviter_display_name=_inviter_display_name,
         notifications_unread=unread,
+        is_studio_primary=is_studio_primary,
+        nav_home_url=nav_home_url,
         current_user={
             'id': user_id, 'username': username, 'display_name': display_name,
             'name': display_name or username, 'is_authenticated': user_id is not None,

@@ -276,3 +276,15 @@ python3 scripts/test_adsense_eligibility.py
 ```
 
 > **LGPD:** se exigir consentimento de cookies para publicidade, adicione um banner de opt-in antes de carregar o script — o SetSync hoje só prepara a carga condicional por plano.
+
+## Plano Estúdio (beta gratuito)
+
+Módulo de agendamento de salas de ensaio (`/estudios`). Na v1 **não há cobrança** via Mercado Pago.
+
+| Plano | ID interno | Limite |
+|-------|------------|--------|
+| Estúdio básico | `estudio_basico` | até **2 salas** por dono (padrão no beta) |
+| Estúdio premium | `estudio_premium` | salas ilimitadas (futuro) |
+
+- Assinatura em `studio_subscriptions` (por `user_id` do dono), criada automaticamente no cadastro.
+- Checkout MP e taxa sobre agendamentos ficam como item futuro.

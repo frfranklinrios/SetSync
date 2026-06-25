@@ -87,9 +87,17 @@ def enhanced_user_data(user: dict | None) -> dict[str, str]:
     return out
 
 
+def get_google_analytics_id() -> str:
+    return _normalize_ga_id(os.getenv('GOOGLE_ANALYTICS_ID', 'G-BKG770S75L'))
+
+
+def google_analytics_ativo() -> bool:
+    return bool(get_google_analytics_id())
+
+
 def get_google_ads_config() -> dict[str, Any]:
     aw_id = _normalize_aw_id(os.getenv('GOOGLE_ADS_ID', ''))
-    ga_id = _normalize_ga_id(os.getenv('GOOGLE_ANALYTICS_ID', ''))
+    ga_id = get_google_analytics_id()
     gtm_id = _normalize_gtm_id(os.getenv('GOOGLE_TAG_MANAGER_ID', ''))
     signup_label = (os.getenv('GOOGLE_ADS_CONVERSION_SIGNUP') or '').strip()
 

@@ -40,6 +40,12 @@ from mercadopago_client import (
     mp_error_message,
 )
 from monetizacao import PLANOS, PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP, planos_para_site
+from monetizacao import (
+    PLANO_ESTUDIO_PREMIUM,
+    PLANOS_ESTUDIO,
+    planos_estudio_para_site,
+    studio_plano_badge_ui,
+)
 from mp_webhook import (
     ativar_assinatura_mp,
     extrair_topic_id,
@@ -78,6 +84,8 @@ def planos():
     return render_template(
         'assinatura/planos.html',
         planos=PLANOS,
+        planos_estudio=planos_estudio_para_site(),
+        studio_plano_ui=studio_plano_badge_ui(user_id),
         bandas=bandas,
         banda_id=banda_id,
         assinatura=assinatura.to_dict() if assinatura else None,
@@ -118,6 +126,7 @@ def iniciar(plano):
             back_url=external_url_for('assinatura_bp.sucesso'),
             external_reference=f'{banda_id}:{plano}',
             reason=f'SetSync {PLANOS[plano].nome} — Banda: {band["name"]}',
+            billing_period=request.form.get('billing_period', 'monthly'),
         )
         result = sdk.preapproval().create(preapproval_data)
         if result.get('status') not in (200, 201):
@@ -143,6 +152,125 @@ def iniciar(plano):
         current_app.logger.exception('Erro ao iniciar assinatura: %s', exc)
         flash(f'Erro ao conectar ao Mercado Pago: {exc}', 'danger')
         return redirect(url_for('assinatura_bp.planos', banda_id=banda_id))
+
+
+@assinatura_bp.route('/assinatura/estudio/iniciar/<plano>', methods=['POST'])
+@login_required
+def iniciar_estudio(plano):
+    """Checkout Mercado Pago para plano Estúdio Premium (por conta do dono)."""
+    if plano not in PLANOS_ESTUDIO or plano != PLANO_ESTUDIO_PREMIUM:
+        flash('Plano de estúdio inválido', 'danger')
+        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+    user_id = session['user_id']
+    email = _user_email(user_id)
+    if not email:
+        flash('Cadastre um e-mail na sua conta para assinar', 'danger')
+        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+    mp_status = mp_config_status()
+    if not mp_status.get('pronto_checkout_estudio'):
+        flash('Mercado Pago não configurado: ' + ' · '.join(mp_status['faltando']), 'warning')
+        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+    try:
+        from models_studio import update_studio_subscription
+
+        sdk = get_mp_sdk()
+        definicao = PLANOS_ESTUDIO[plano]
+        preapproval_data = build_preapproval_checkout_body(
+            plano,
+            payer_email=email,
+            back_url=external_url_for('assinatura_bp.sucesso_estudio'),
+            external_reference=f'studio:{user_id}:{plano}',
+            reason=f'SetSync {definicao.nome}',
+            billing_period=request.form.get('billing_period', 'monthly'),
+        )
+        result = sdk.preapproval().create(preapproval_data)
+        if result.get('status') not in (200, 201):
+            current_app.logger.error('MP preapproval estúdio: %s', result)
+            flash(f'Não foi possível iniciar o checkout. {mp_error_message(result)}', 'danger')
+            return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+        init_point = checkout_init_point(result)
+        if not init_point:
+            flash('URL de checkout não retornada pelo Mercado Pago', 'danger')
+            return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+        session['mp_checkout'] = {'tipo': 'studio', 'user_id': user_id, 'plano': plano}
+        mp_id = (result.get('response') or {}).get('id')
+        if mp_id:
+            update_studio_subscription(user_id, mp_preapproval_id=mp_id)
+        return redirect(init_point)
+    except Exception as exc:
+        current_app.logger.exception('Erro ao iniciar assinatura estúdio: %s', exc)
+        flash(f'Erro ao conectar ao Mercado Pago: {exc}', 'danger')
+        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+
+@assinatura_bp.route('/assinatura/estudio/sucesso')
+@login_required
+def sucesso_estudio():
+    """Retorno do MP após checkout do plano Estúdio."""
+    status_retorno = (request.args.get('status') or request.args.get('collection_status') or '').lower()
+    if status_retorno == 'pending':
+        flash('Pagamento pendente. Assim que for confirmado, seu plano Premium será ativado.', 'warning')
+        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+    if status_retorno in ('failure', 'rejected', 'null'):
+        flash('Pagamento não aprovado. Tente novamente.', 'danger')
+        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+    checkout = session.pop('mp_checkout', None)
+    preapproval_id = (
+        request.args.get('preapproval_id')
+        or request.args.get('collection_id')
+        or request.args.get('payment_id')
+    )
+    user_id = session['user_id']
+    plano = PLANO_ESTUDIO_PREMIUM
+
+    if checkout and checkout.get('tipo') == 'studio':
+        user_id = checkout.get('user_id', user_id)
+        plano = checkout.get('plano', plano)
+    elif preapproval_id:
+        from models_studio import get_studio_subscription_by_mp_id
+        row = get_studio_subscription_by_mp_id(preapproval_id)
+        if row:
+            user_id = row['user_id']
+            plano = row.get('plano', PLANO_ESTUDIO_PREMIUM)
+
+    if user_id != session['user_id']:
+        flash('Sem permissão para ativar este plano.', 'danger')
+        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+    if preapproval_id:
+        try:
+            from mp_webhook import ativar_studio_subscription_mp
+
+            sdk = get_mp_sdk()
+            info = sdk.preapproval().get(preapproval_id)
+            body = info.get('response') or {}
+            ref = body.get('external_reference', '')
+            if ref.startswith('studio:'):
+                parts = ref.split(':', 2)
+                if len(parts) >= 3:
+                    plano = parts[2]
+            status_mp = body.get('status', '')
+            if status_mp in ('authorized', 'active', 'approved'):
+                next_charge = body.get('next_payment_date')
+                ativar_studio_subscription_mp(user_id, plano, preapproval_id, next_charge)
+                from product_funnel import log_funnel_step
+                log_funnel_step(user_id, 'assinatura_paga', meta={'plano': plano, 'tipo': 'studio'})
+                flash('Plano Estúdio Premium ativado!', 'success')
+            else:
+                flash('Pagamento em processamento. Você receberá confirmação em breve.', 'info')
+        except Exception as exc:
+            current_app.logger.exception('Erro ao confirmar sucesso MP estúdio: %s', exc)
+            flash('Checkout concluído. Aguarde a confirmação por e-mail.', 'info')
+    else:
+        flash('Assinatura registrada. Aguarde a confirmação.', 'info')
+
+    return redirect(url_for('assinatura_bp.planos') + '#estudio')
 
 
 @assinatura_bp.route('/assinatura/sucesso')
@@ -189,6 +317,8 @@ def sucesso():
             if status_mp in ('authorized', 'active', 'approved'):
                 next_charge = body.get('next_payment_date') or body.get('auto_recurring', {}).get('end_date')
                 ativar_assinatura_mp(banda_id, plano, preapproval_id, next_charge)
+                from product_funnel import log_funnel_step
+                log_funnel_step(session['user_id'], 'assinatura_paga', meta={'plano': plano})
                 flash('Assinatura ativada com sucesso!', 'success')
                 try:
                     import admin_notifications as an

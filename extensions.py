@@ -4,16 +4,21 @@ from __future__ import annotations
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from config import app_timezone_name, app_tz
+
 _scheduler: BackgroundScheduler | None = None
 
 
 def init_scheduler(app) -> None:
-    """Inicia job diário de vencimento de vouchers."""
+    """Inicia job diário de vouchers."""
     global _scheduler
     if _scheduler is not None:
         return
     if app.config.get('TESTING'):
         return
+
+    _tz = app_tz()
+    _tz_name = app_timezone_name()
 
     _scheduler = BackgroundScheduler(daemon=True)
 
@@ -25,9 +30,9 @@ def init_scheduler(app) -> None:
             except Exception as exc:
                 app.logger.exception('Erro no job de vouchers: %s', exc)
 
-    _scheduler.add_job(_job, 'cron', hour=6, minute=0, id='voucher_daily')
+    _scheduler.add_job(_job, 'cron', hour=6, minute=0, timezone=_tz, id='voucher_daily')
     _scheduler.start()
-    app.logger.info('APScheduler: jobs diários (vouchers, onboarding, retenção) às 06:00 UTC')
+    app.logger.info('APScheduler: jobs diários (vouchers, onboarding, retenção) às 06:00 (%s)', _tz_name)
 
     def _agenda_job():
         with app.app_context():
@@ -37,8 +42,8 @@ def init_scheduler(app) -> None:
             except Exception as exc:
                 app.logger.exception('Erro no job de lembretes da agenda: %s', exc)
 
-    _scheduler.add_job(_agenda_job, 'cron', minute=0, id='agenda_reminders_hourly')
-    app.logger.info('APScheduler: lembretes de agenda a cada hora (24h antes do evento)')
+    _scheduler.add_job(_agenda_job, 'cron', minute=0, timezone=_tz, id='agenda_reminders_hourly')
+    app.logger.info('APScheduler: lembretes de agenda a cada hora (%s)', _tz_name)
 
     def _digest_job():
         with app.app_context():
@@ -47,15 +52,6 @@ def init_scheduler(app) -> None:
                 run_notification_digest_jobs()
             except Exception as exc:
                 app.logger.exception('Erro no resumo diário de notificações: %s', exc)
-
-    from config import app_timezone_name
-    from zoneinfo import ZoneInfo
-
-    _tz_name = app_timezone_name()
-    try:
-        _tz = ZoneInfo(_tz_name)
-    except Exception:
-        _tz = None
 
     _scheduler.add_job(
         _digest_job,

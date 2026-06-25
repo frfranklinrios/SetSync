@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from db import ensure_onboarding_rows, list_onboarding_pending, mark_onboarding_sent, get_user
 from email_service import is_configured, send_email
 from security import external_url_for
+from config import app_now_naive, app_now_str
 
 # Dias após cadastro para cada e-mail (0 = imediato)
 _ONBOARDING_SCHEDULE = {
@@ -125,7 +126,7 @@ def verificar_e_disparar_onboarding() -> int:
         return 0
 
     urls = _urls()
-    agora = datetime.utcnow()
+    agora = app_now_naive()
     enviados = 0
     for row in list_onboarding_pending():
         num = int(row['email_numero'])

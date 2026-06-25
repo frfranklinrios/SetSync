@@ -1,0 +1,49 @@
+{% if show_nps_modal %}
+<div class="modal fade" id="npsModal" tabindex="-1" aria-labelledby="npsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="npsModalLabel">Como está sendo o SetSync?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">De 0 a 10, o quanto você recomendaria o SetSync para outra banda?</p>
+                <div class="d-flex flex-wrap gap-1 justify-content-center mb-3" id="nps-scores">
+                    {% for i in range(11) %}
+                    <button type="button" class="btn btn-sm btn-outline-primary nps-score-btn" data-score="{{ i }}">{{ i }}</button>
+                    {% endfor %}
+                </div>
+                <div id="nps-toast" class="small text-muted text-center"></div>
+            </div>
+            <div class="modal-footer">
+                <form method="post" action="{{ url_for('ajuda.nps_dismiss') }}" class="mb-0">
+                    {% include 'partials/csrf_input.html' %}
+                    <button type="submit" class="btn btn-link btn-sm text-muted">Agora não</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var modalEl = document.getElementById('npsModal');
+    if (!modalEl) return;
+    var modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    modalEl.querySelectorAll('.nps-score-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var score = btn.getAttribute('data-score');
+            fetch('{{ url_for("ajuda.nps_submit") }}', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ score: parseInt(score, 10) }),
+            }).then(function () {
+                document.getElementById('nps-toast').textContent = 'Obrigado pelo feedback!';
+                setTimeout(function () { modal.hide(); }, 800);
+            });
+        });
+    });
+})();
+</script>
+{% endif %}

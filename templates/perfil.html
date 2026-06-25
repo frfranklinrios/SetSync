@@ -6,6 +6,17 @@
 <div class="row justify-content-center py-2">
   <div class="col-lg-9">
     <h2 class="mb-3">Meu perfil</h2>
+    {% if profile_has_bands and not profile_has_studios %}
+    <div class="alert alert-info py-2 small mb-3">
+        Tem estúdio de ensaio? <a href="{{ url_for('studios.register_studio') }}">Cadastre no SetSync</a>
+        e receba reservas de bandas com QR na recepção.
+    </div>
+    {% elif profile_has_studios and not profile_has_bands %}
+    <div class="alert alert-info py-2 small mb-3">
+        Também toca em uma banda? <a href="{{ url_for('bands.create') }}">Crie sua banda</a>
+        para usar cifras, setlists e agenda integrada às reservas.
+    </div>
+    {% endif %}
     {% if user.email %}
     <div class="card mb-3">
       <div class="card-body">
@@ -43,6 +54,31 @@
             <button type="submit" class="btn btn-primary">Salvar perfil</button>
             <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Voltar</a>
           </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mb-3" id="instrumentos">
+      <div class="card-body">
+        <h3 class="h6 mb-2">Instrumentos</h3>
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+          Marque tudo que você toca. Os integrantes da banda veem isso na escalação e na lista de membros.
+        </p>
+        <form method="POST" action="{{ url_for('auth.perfil') }}#instrumentos">
+          {% include 'partials/csrf_input.html' %}
+          <input type="hidden" name="form_section" value="instruments">
+          <div class="row g-2 mb-3">
+            {% for inst in instrument_catalog %}
+            <div class="col-sm-6 col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="instrument_ids" value="{{ inst.id }}"
+                       id="inst-{{ inst.id }}"{% if inst.id in user_instrument_ids %} checked{% endif %}>
+                <label class="form-check-label" for="inst-{{ inst.id }}">{{ inst.label }}</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="submit" class="btn btn-primary">Salvar instrumentos</button>
         </form>
       </div>
     </div>

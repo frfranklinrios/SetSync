@@ -1,0 +1,56 @@
+{% extends "index.html" %}
+{% block title %}{% if room %}Editar sala{% else %}Nova sala{% endif %}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item active">{% if room %}Editar sala{% else %}Nova sala{% endif %}</li>
+    </ol>
+</nav>
+
+<form method="post">
+    {% include 'partials/csrf_input.html' %}
+    <div class="mb-3">
+        <label class="form-label" for="nome">Nome da sala</label>
+        <input type="text" name="nome" id="nome" class="form-control" required maxlength="80"
+               value="{{ room.nome if room else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="capacidade_pessoas">Capacidade (pessoas)</label>
+        <input type="number" name="capacidade_pessoas" id="capacidade_pessoas" class="form-control" min="1"
+               value="{{ room.capacidade_pessoas if room and room.capacidade_pessoas else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="equipamentos">Equipamentos (separados por vírgula)</label>
+        <input type="text" name="equipamentos" id="equipamentos" class="form-control"
+               value="{{ room.equipamentos | join(', ') if room and room.equipamentos else '' }}"
+               placeholder="Bateria, amplificador, microfone">
+    </div>
+    {% if room %}
+    <div class="form-check mb-3">
+        <input type="checkbox" name="ativa" id="ativa" class="form-check-input" value="1" {% if room.ativa %}checked{% endif %}>
+        <label class="form-check-label" for="ativa">Sala ativa</label>
+    </div>
+    {% endif %}
+    <button type="submit" class="btn btn-primary">{% if room %}Salvar{% else %}Criar sala{% endif %}</button>
+    <a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}" class="btn btn-link">{% if room %}Voltar{% else %}Cancelar{% endif %}</a>
+</form>
+
+{% if room %}
+{% if photos %}
+<div class="d-flex flex-wrap gap-2 my-3">
+    {% for p in photos %}
+    <img src="{{ url_for('studios.serve_room_photo', room_id=room.id, filename=p.filename) }}"
+         alt="" class="rounded" style="height:80px;width:auto;object-fit:cover;">
+    {% endfor %}
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('studios.upload_room_photo', studio_id=studio.id, room_id=room.id) }}" enctype="multipart/form-data" class="mb-3">
+    {% include 'partials/csrf_input.html' %}
+    <label class="form-label">Fotos da sala</label>
+    <input type="file" name="foto" accept="image/png,image/jpeg,image/webp" class="form-control form-control-sm mb-2" required>
+    <button type="submit" class="btn btn-sm btn-outline-secondary">Enviar foto</button>
+</form>
+{% endif %}
+{% endblock %}

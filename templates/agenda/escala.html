@@ -136,6 +136,9 @@
                         {% if m.email %}
                         <div class="escala-member-email">{{ m.email }}</div>
                         {% endif %}
+                        {% if m.instruments_label %}
+                        <div class="escala-member-email"><i class="fas fa-guitar me-1"></i>{{ m.instruments_label }}</div>
+                        {% endif %}
                     </label>
                     <div class="escala-member-role">
                         <input type="text" class="form-control form-control-sm" name="role_{{ mid }}"

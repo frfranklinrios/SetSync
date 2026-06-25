@@ -27,6 +27,14 @@ from db import (get_band, get_cifra, get_band_cifras, count_band_cifras, create_
                 get_cifra_user_draft, upsert_cifra_user_draft, delete_cifra_user_draft,
                 publish_cifra_user_draft)
 import band_notifications as bn
+
+def _notify_band_realtime(band_id, event: str, **data) -> None:
+    try:
+        from blueprints.realtime import notify_band
+        notify_band(str(band_id), event, dict(data))
+    except Exception:
+        pass
+
 from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   pychord_highlight_chords, highlight_chords_html,
                   split_chord_progression, chord_components_info,
@@ -37,6 +45,7 @@ from util import (transpose_text, get_available_tones, pychord_transpose_text,
                   sanitize_tab_html_artifacts, content_has_tablatura,
                   highlight_chords_play_html, render_grouped_cifra_html,
                   _is_tab_line, _is_tab_header, _is_tab_meta_line, _TAB_ARTIFACT_RE)
+from config import app_now_naive, app_now_str
 
 cifras_bp = Blueprint('cifras', __name__, url_prefix='/cifras')
 
@@ -188,6 +197,14 @@ def _parse_extra_fields(form):
     duracao_seg = int(float(duracao_seg_raw)) if duracao_seg_raw else None
 
     return cifra_json, grade_json, bpm, duracao_seg
+
+
+def _parse_streaming_urls(form):
+    apple = (form.get('apple_music_url') or '').strip()
+    if apple and not apple.startswith(('http://', 'https://')):
+        flash('URL do Apple Music inválida — use link completo (https://…)', 'danger')
+        return False
+    return apple or None
 
 
 def _finalize_referencia_json(form, *, titulo, artista, tom_original):
@@ -606,8 +623,20 @@ def _persist_leadsheet(cifra_id, payload: dict, meta: dict | None = None) -> Non
     )
 
 
-def enrich_cifra_for_tocar(cifra, setlist_id=None):
-    """Prepara cifra para o modo tocar com dados estruturados corretos."""
+def _effective_cifra_for_versao(cifra, user_id, versao=None):
+    """Retorna cifra oficial ou mesclada com rascunho pessoal (?versao=minha)."""
+    from cifra_user_draft import draft_differs_from_band, merge_cifra_with_draft
+
+    if versao != 'minha' or not user_id:
+        return cifra
+    draft = get_cifra_user_draft(cifra['id'], user_id)
+    if draft and draft_differs_from_band(draft, cifra):
+        return merge_cifra_with_draft(cifra, draft)
+    return cifra
+
+
+def _enrich_single_cifra_for_tocar(cifra, setlist_id=None):
+    """Prepara uma cifra (fonte banda ou mesclada) para o modo tocar."""
     c = dict(cifra)
     band_id = c.get('band_id')
     active_vid = get_active_vocalist_id(band_id, setlist_id=setlist_id) if band_id else None
@@ -640,6 +669,176 @@ def enrich_cifra_for_tocar(cifra, setlist_id=None):
     if flat:
         c['grade_json'] = json.dumps(flat, ensure_ascii=False)
     return c
+
+
+def enrich_cifra_for_tocar(cifra, setlist_id=None, user_id=None):
+    """Prepara cifra para o modo tocar; inclui campos da versão pessoal quando existir."""
+    from cifra_user_draft import draft_differs_from_band, merge_cifra_with_draft
+
+    result = _enrich_single_cifra_for_tocar(cifra, setlist_id=setlist_id)
+    result['has_personal_draft'] = False
+
+    if user_id:
+        draft = get_cifra_user_draft(cifra['id'], user_id)
+        if draft and draft_differs_from_band(draft, cifra):
+            personal = _enrich_single_cifra_for_tocar(
+                merge_cifra_with_draft(cifra, draft), setlist_id=setlist_id
+            )
+            result['has_personal_draft'] = True
+            result['html_mine'] = personal['html']
+            result['cifra_structured_mine'] = personal.get('cifra_structured')
+            result['lyrics_plain_mine'] = personal.get('lyrics_plain')
+            result['has_tablatura_mine'] = personal.get('has_tablatura')
+            result['tom_original_mine'] = personal.get('tom_original')
+            result['tom_root_mine'] = personal.get('tom_root')
+            result['transpose_map_mine'] = personal.get('transpose_map')
+            result['grade_s_mine'] = personal.get('grade_json')
+            result['leadsheet_s_mine'] = personal.get('leadsheet_json')
+            if personal.get('titulo') != result.get('titulo'):
+                result['titulo_mine'] = personal.get('titulo')
+            if personal.get('artista') != result.get('artista'):
+                result['artista_mine'] = personal.get('artista')
+
+    return result
+
+
+def _leadsheet_meta_value(cifra, field: str) -> str:
+    """Extrai campo de meta do LeadSheet/chordsheet embutido na cifra."""
+    for key in ('leadsheet_json', 'grade_json'):
+        raw = cifra.get(key)
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw) if isinstance(raw, str) else raw
+        except (TypeError, ValueError, json.JSONDecodeError):
+            continue
+        if isinstance(data, dict):
+            meta = data.get('meta')
+            if isinstance(meta, dict):
+                val = meta.get(field)
+                if val not in (None, ''):
+                    return str(val).strip()
+    doc = resolve_leadsheet_document(cifra)
+    if not doc:
+        return ''
+    meta = doc.get('meta') if isinstance(doc, dict) else None
+    if not meta:
+        return ''
+    val = meta.get(field)
+    return str(val).strip() if val not in (None, '') else ''
+
+
+def _resolve_play_notes(cifra) -> str:
+    """Notas de palco: setlist sobrescreve notas gerais da cifra."""
+    sl = (cifra.get('setlist_play_notes') or '').strip()
+    if sl:
+        return sl
+    return (cifra.get('play_notes') or '').strip()
+
+
+def play_cifra_client_payload(cifra, setlist_id=None, is_virtual=False):
+    """Monta dict serializável para o JSON do modo tocar."""
+    sl_id = None if is_virtual else setlist_id
+    payload = {
+        'id': cifra['id'],
+        'titulo': cifra.get('titulo'),
+        'artista': cifra.get('artista'),
+        'tom': cifra_display_key(cifra, setlist_id=sl_id),
+        'tom_original': cifra.get('tom_original'),
+        'tom_root': cifra.get('tom_root'),
+        'transpose_semitones': cifra.get('transpose_semitones') or 0,
+        'transpose_by_vocalist': cifra.get('transpose_by_vocalist') or {},
+        'transpose_map': cifra.get('transpose_map'),
+        'has_tablatura': bool(cifra.get('has_tablatura')),
+        'html': cifra.get('html'),
+        'cifra_structured': cifra.get('cifra_structured'),
+        'lyrics_plain': cifra.get('lyrics_plain') or '',
+        'bpm': cifra.get('bpm'),
+        'capo': _leadsheet_meta_value(cifra, 'capo') or cifra.get('capo') or '',
+        'time_signature': _leadsheet_meta_value(cifra, 'time_signature') or '4/4',
+        'duracao_seg': cifra.get('duracao_seg'),
+        'play_notes': _resolve_play_notes(cifra),
+        'grade_s': cifra.get('grade_json'),
+        'leadsheet_s': cifra.get('leadsheet_json'),
+        'has_personal_draft': bool(cifra.get('has_personal_draft')),
+    }
+    if payload['has_personal_draft']:
+        payload.update({
+            'html_mine': cifra.get('html_mine'),
+            'cifra_structured_mine': cifra.get('cifra_structured_mine'),
+            'lyrics_plain_mine': cifra.get('lyrics_plain_mine') or '',
+            'has_tablatura_mine': cifra.get('has_tablatura_mine'),
+            'tom_original_mine': cifra.get('tom_original_mine'),
+            'tom_root_mine': cifra.get('tom_root_mine'),
+            'transpose_map_mine': cifra.get('transpose_map_mine'),
+            'grade_s_mine': cifra.get('grade_s_mine'),
+            'leadsheet_s_mine': cifra.get('leadsheet_s_mine'),
+        })
+        if cifra.get('titulo_mine'):
+            payload['titulo_mine'] = cifra['titulo_mine']
+        if cifra.get('artista_mine'):
+            payload['artista_mine'] = cifra['artista_mine']
+    return payload
+
+
+def play_cifras_json_for_client(all_cifras, setlist_id=None, is_virtual=False):
+    """JSON seguro para embutir em <script type=\"application/json\">."""
+    items = [
+        play_cifra_client_payload(c, setlist_id=setlist_id, is_virtual=is_virtual)
+        for c in all_cifras
+    ]
+    return json.dumps(items, ensure_ascii=False).replace('</', '<\\/')
+
+
+def play_cifras_json_b64_for_client(all_cifras, setlist_id=None, is_virtual=False):
+    """JSON em base64 — evita quebra do HTML por conteúdo da cifra no embed."""
+    import base64
+
+    raw = play_cifras_json_for_client(all_cifras, setlist_id=setlist_id, is_virtual=is_virtual)
+    return base64.b64encode(raw.encode('utf-8')).decode('ascii')
+
+
+@cifras_bp.route('/band/<band_id>/offline-pack.json')
+@login_required
+def offline_pack(band_id):
+    """Pacote JSON para armazenamento offline (IndexedDB) no dispositivo."""
+    from datetime import datetime
+
+    user_id = session['user_id']
+    band = get_band(band_id)
+    if not band or not is_band_member(band_id, user_id):
+        return jsonify({'detail': 'Sem acesso.'}), 403
+
+    cifras = get_band_cifras(band_id)
+    enriched = [
+        enrich_cifra_for_tocar(c, user_id=user_id)
+        for c in cifras
+    ]
+    payload = {
+        'band_id': str(band_id),
+        'band_name': band.get('name') or '',
+        'saved_at': app_now_naive().strftime('%Y-%m-%dT%H:%M:%S'),
+        'cifras': [play_cifra_client_payload(c) for c in enriched],
+    }
+    return jsonify(payload)
+
+
+@cifras_bp.route('/<cifra_id>/play-notes', methods=['POST'])
+@login_required
+def save_cifra_play_notes(cifra_id):
+    """Salva notas de palco gerais da música (banda)."""
+    from db import get_cifra, set_cifra_play_notes
+
+    user_id = session['user_id']
+    cifra = get_cifra(cifra_id)
+    if not cifra:
+        return jsonify({'ok': False, 'error': 'Cifra não encontrada'}), 404
+    if not is_band_editor(cifra['band_id'], user_id):
+        return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
+    data = request.get_json(silent=True) or {}
+    notes = (data.get('play_notes') or '').strip()
+    set_cifra_play_notes(cifra_id, notes or None)
+    return jsonify({'ok': True, 'play_notes': notes})
 
 
 @cifras_bp.route('/band/<band_id>')
@@ -755,24 +954,55 @@ def view(cifra_id):
                            can_publish_draft=is_band_editor(cifra['band_id'], user_id),
                            **_referencia_context(cifra))
 
-def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None):
+def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None, event_context=None):
     """Renderiza o modo tocar (mesmo layout para banda e setlist)."""
+    from flask import request as _req
+
+    user_id = session.get('user_id')
     vocalists = get_band_vocalists(band['id']) if band else []
     sl_id = None if is_virtual or not setlist else setlist.get('id')
     active_vocalist_id = get_active_vocalist_id(band['id'], setlist_id=sl_id) if band else None
     vocalist_name = active_vocalist_label(band['id'], setlist_id=sl_id) if band else None
+    can_edit = bool(band and user_id and is_band_editor(band['id'], user_id))
+    play_state_url = None
+    offline_pack_url = None
+    play_notes_url_tpl = None
+    if band and band.get('id'):
+        from flask import url_for as _url_for
+        play_state_url = _url_for('realtime.set_play_state', band_id=band['id'])
+        if setlist and not is_virtual and setlist.get('id'):
+            offline_pack_url = _url_for('setlists.offline_pack', setlist_id=setlist['id'])
+            play_notes_url_tpl = _url_for(
+                'setlists.set_cifra_play_notes', setlist_id=setlist['id'], cifra_id='__ID__'
+            )
+        else:
+            offline_pack_url = _url_for('cifras.offline_pack', band_id=band['id'])
+            play_notes_url_tpl = _url_for('cifras.save_cifra_play_notes', cifra_id='__ID__')
     return render_template(
         'cifras/play_mode.html',
         setlist=setlist,
         band=band,
         all_cifras=all_cifras,
+        play_cifras_json=play_cifras_json_b64_for_client(
+            all_cifras,
+            setlist_id=sl_id,
+            is_virtual=is_virtual,
+        ),
         start_idx=start_idx,
         is_virtual=is_virtual,
         exit_url=exit_url,
         vocalists=vocalists,
         active_vocalist_id=active_vocalist_id,
         vocalist_name=vocalist_name,
+        can_edit=can_edit,
         play_target_key=session.get(PLAY_TARGET_KEY_SESSION) or '',
+        start_versao=(_req.args.get('versao') or '').strip().lower(),
+        event_context=event_context,
+        play_state_url=play_state_url,
+        offline_pack_url=offline_pack_url,
+        play_notes_url_tpl=play_notes_url_tpl,
+        user_id=user_id,
+        auto_follow_leader=bool(event_context),
     )
 
 
@@ -787,7 +1017,14 @@ def tocar_band(band_id):
         flash('Sem acesso a essa banda', 'danger')
         return redirect(url_for('dashboard'))
 
-    all_cifras = [enrich_cifra_for_tocar(c) for c in get_band_cifras(band_id)]
+    from db import mark_user_play_mode_used
+    from product_funnel import log_funnel_step
+    mark_user_play_mode_used(user_id)
+    log_funnel_step(user_id, 'play_mode')
+
+    all_cifras = [
+        enrich_cifra_for_tocar(c, user_id=user_id) for c in get_band_cifras(band_id)
+    ]
     if not all_cifras:
         flash('Esta banda ainda não tem cifras.', 'warning')
         return redirect(url_for('bands.view', band_id=band_id))
@@ -858,9 +1095,16 @@ def add(band_id):
         cifra_id = create_cifra(titulo, artista, tom_original, conteudo or '',
                                 band_id, cifra_json, grade_json, None, bpm, duracao_seg,
                                 referencia_json=referencia_json)
+        streaming = _parse_streaming_urls(request.form)
+        if streaming is False:
+            return render_template('cifras/add.html', band=band)
+        from db import update_cifra_streaming
+        update_cifra_streaming(cifra_id, streaming)
         if cifras_antes == 0:
             from google_ads import mark_funnel_event
+            from product_funnel import log_funnel_step
             mark_funnel_event('primeira_cifra')
+            log_funnel_step(user_id, 'primeira_cifra')
         bn.cifra_created(band_id, user_id, cifra_id, titulo)
         flash(f'Cifra "{titulo}" adicionada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
@@ -968,6 +1212,13 @@ def edit(cifra_id):
         update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
                      cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
 
+        streaming = _parse_streaming_urls(request.form)
+        if streaming is False:
+            return render_template('cifras/edit.html', **_edit_page_context(cifra, band, user_id=user_id))
+        from db import update_cifra_streaming
+        update_cifra_streaming(cifra_id, streaming)
+        cifra['apple_music_url'] = streaming
+
         referencia_json = _finalize_referencia_json(
             request.form,
             titulo=titulo,
@@ -978,6 +1229,7 @@ def edit(cifra_id):
             update_cifra_referencia(cifra_id, referencia_json)
 
         bn.cifra_updated(cifra['band_id'], user_id, cifra_id, titulo)
+        _notify_band_realtime(cifra['band_id'], 'cifra_updated', cifra_id=cifra_id, titulo=titulo)
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
@@ -1006,6 +1258,7 @@ def restaurar_referencia(cifra_id):
         return redirect(url_for('cifras.edit', cifra_id=cifra_id))
 
     bn.cifra_updated(cifra['band_id'], user_id, cifra_id, cifra['titulo'])
+    _notify_band_realtime(cifra['band_id'], 'cifra_updated', cifra_id=cifra_id, titulo=cifra['titulo'])
     flash('Cifra restaurada para a versão da biblioteca. As alterações da banda foram descartadas.', 'success')
     return redirect(url_for('cifras.edit', cifra_id=cifra_id, tab='cifra'))
 
@@ -1030,6 +1283,7 @@ def delete(cifra_id):
     band_id = cifra['band_id']
     delete_cifra(cifra_id)
     bn.cifra_deleted(band_id, user_id, titulo)
+    _notify_band_realtime(band_id, 'cifra_deleted', cifra_id=cifra_id, titulo=titulo)
     flash('Cifra deletada', 'success')
     return redirect(url_for('cifras.list_by_band', band_id=band_id))
 
@@ -1078,6 +1332,8 @@ def get_transposed(cifra_id):
 
     if not cifra or not is_band_member(cifra['band_id'], user_id):
         return jsonify({'error': 'Sem acesso'}), 403
+
+    cifra = _effective_cifra_for_versao(cifra, user_id, request.args.get('versao'))
 
     semitones = request.args.get('semitones', 0, type=int)
     want_html = request.args.get('html', '0') == '1'
@@ -1131,6 +1387,8 @@ def chordsheet_render(cifra_id):
     cifra = get_cifra(cifra_id)
     if not cifra or not is_band_member(cifra['band_id'], user_id):
         return jsonify({'ok': False, 'error': 'Sem acesso'}), 403
+
+    cifra = _effective_cifra_for_versao(cifra, user_id, request.args.get('versao'))
 
     semitones = normalize_transpose_semitones(
         request.args.get('semitones', 0, type=int)
@@ -1265,6 +1523,7 @@ def chordsheet_api_save(cifra_id):
         if not autosave:
             titulo = (data.get("meta") or {}).get("title") or cifra.get("titulo") or "Cifra"
             bn.cifra_updated(cifra["band_id"], session["user_id"], cifra_id, titulo)
+            _notify_band_realtime(cifra["band_id"], 'cifra_updated', cifra_id=cifra_id, titulo=titulo)
         cifra = get_cifra(cifra_id)
         return jsonify({
             "ok": True,
@@ -1348,6 +1607,7 @@ def leadsheet_api_salvar(cifra_id):
         _persist_leadsheet(cifra_id, payload, meta)
         titulo = meta.get('titulo') or cifra.get('titulo') or 'Cifra'
         bn.cifra_updated(cifra['band_id'], session['user_id'], cifra_id, titulo)
+        _notify_band_realtime(cifra['band_id'], 'cifra_updated', cifra_id=cifra_id, titulo=titulo)
         return jsonify({
             'ok': True,
             'redirect': url_for('cifras.view', cifra_id=cifra_id),
@@ -1449,6 +1709,7 @@ def api_publicar_rascunho(cifra_id):
         return jsonify({'detail': 'Rascunho não encontrado.'}), 404
     titulo = get_cifra(cifra_id).get('titulo') or 'Cifra'
     bn.cifra_updated(band_id, user_id, cifra_id, titulo)
+    _notify_band_realtime(band_id, 'cifra_published', cifra_id=cifra_id, titulo=titulo)
     return jsonify({
         'ok': True,
         'redirect': url_for('cifras.view', cifra_id=cifra_id),
@@ -1463,4 +1724,38 @@ def api_descartar_rascunho(cifra_id):
     if not cifra:
         return jsonify({'detail': 'Sem acesso.'}), 403
     delete_cifra_user_draft(cifra_id, user_id)
+    return jsonify({'ok': True})
+
+
+@cifras_bp.route('/<cifra_id>/api/play-draw', methods=['GET'])
+@login_required
+def api_get_play_draw(cifra_id):
+    user_id = session['user_id']
+    cifra, _ = _draft_access(cifra_id, user_id)
+    if not cifra:
+        return jsonify({'detail': 'Sem acesso.'}), 403
+    from db import get_cifra_play_drawing
+    row = get_cifra_play_drawing(cifra_id, user_id)
+    strokes = []
+    if row and row.get('strokes_json'):
+        try:
+            strokes = json.loads(row['strokes_json'])
+        except ValueError:
+            strokes = []
+    return jsonify({'strokes': strokes, 'updated_at': row.get('updated_at') if row else None})
+
+
+@cifras_bp.route('/<cifra_id>/api/play-draw', methods=['PUT'])
+@login_required
+def api_save_play_draw(cifra_id):
+    user_id = session['user_id']
+    cifra, _ = _draft_access(cifra_id, user_id)
+    if not cifra:
+        return jsonify({'detail': 'Sem acesso.'}), 403
+    data = request.get_json(silent=True) or {}
+    strokes = data.get('strokes')
+    if not isinstance(strokes, list):
+        return jsonify({'detail': 'Campo strokes inválido.'}), 400
+    from db import upsert_cifra_play_drawing
+    upsert_cifra_play_drawing(cifra_id, user_id, json.dumps(strokes, ensure_ascii=False))
     return jsonify({'ok': True})

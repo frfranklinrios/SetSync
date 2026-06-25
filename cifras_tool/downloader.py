@@ -6,6 +6,7 @@ from pathlib import Path
 from yt_dlp import DownloadError, YoutubeDL
 from yt_dlp.utils import ExtractorError
 
+from cifras_tool.config import settings
 from cifras_tool.ydl_common import build_ydl_opts
 
 
@@ -73,6 +74,14 @@ class AudioDownloader:
                 raise RegionBlockedError("Video bloqueado por regiao.") from err
             if "sign in to confirm your age" in message:
                 raise VideoUnavailableError("Video com restricao de idade.") from err
+            if "sign in to confirm" in message and "bot" in message:
+                raise DownloaderError(
+                    "YouTube bloqueou o download (detecção de bot). "
+                    "Exporte cookies de uma sessão logada no navegador e configure "
+                    "CIFRAS_YOUTUBE_COOKIES_FILE no .env "
+                    "(formato Netscape, com SAPISID e __Secure-1PSID). "
+                    "Em desenvolvimento local, use CIFRAS_YOUTUBE_COOKIES_FROM_BROWSER=chrome."
+                ) from err
             raise DownloaderError(f"Falha ao baixar audio: {err}") from err
         except Exception as err:
             raise DownloaderError(f"Erro inesperado no downloader: {err}") from err

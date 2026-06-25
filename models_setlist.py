@@ -141,7 +141,9 @@ def get_setlist_cifras(setlist_id):
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT cifras.*, setlist_cifras.vocalist_id AS setlist_vocalist_id
+        '''SELECT cifras.*,
+                  setlist_cifras.vocalist_id AS setlist_vocalist_id,
+                  setlist_cifras.play_notes AS setlist_play_notes
            FROM cifras
            JOIN setlist_cifras ON cifras.id = setlist_cifras.cifra_id
            WHERE setlist_cifras.setlist_id = ?
@@ -151,3 +153,18 @@ def get_setlist_cifras(setlist_id):
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
+
+
+def set_setlist_cifra_play_notes(setlist_id, cifra_id, play_notes: str | None) -> bool:
+    """Notas de palco desta música na setlist."""
+    notes = (play_notes or '').strip() or None
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE setlist_cifras SET play_notes = ? WHERE setlist_id = ? AND cifra_id = ?',
+        (notes, int(setlist_id), str(cifra_id)),
+    )
+    updated = (c.rowcount or 0) > 0
+    db.commit()
+    db.close()
+    return updated

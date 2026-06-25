@@ -254,12 +254,14 @@
         <div>
             <h1 class="mb-0">Olá, {{ current_user.name }}</h1>
             <p class="lead">
-                {% if is_superadmin %}Administrador do sistema — todas as bandas{% else %}Suas bandas, cifras e setlists{% endif %}
+                {% if is_superadmin %}Administrador do sistema — bandas e estúdios
+                {% elif my_studios %}Seus estúdios{% if owned_bands or bands %} e bandas{% endif %}
+                {% else %}Suas bandas, cifras e setlists{% endif %}
             </p>
             {% if api_cifras_stats and api_cifras_stats.available %}
             <p class="api-cifras-stat mb-0" title="Cifras na biblioteca local para importar ao adicionar música">
                 <i class="fas fa-book-open" aria-hidden="true"></i>
-                <span><strong>{{ api_cifras_stats.songs_cached_fmt }}</strong> cifras na biblioteca</span>
+                <span><strong>Centenas de milhares</strong> de cifras na nossa biblioteca</span>
             </p>
             {% endif %}
         </div>
@@ -272,6 +274,11 @@
             <a href="{{ url_for('agenda.minha_agenda') }}" class="btn btn-outline-secondary btn-sm dashboard-action-btn">
                 <i class="fas fa-calendar-alt me-1"></i> Ver minha agenda
             </a>
+            {% if my_studios %}
+            <a href="{{ url_for('studios.register_studio') }}" class="btn btn-outline-secondary btn-sm dashboard-action-btn">
+                <i class="fas fa-building me-1"></i> Novo estúdio
+            </a>
+            {% endif %}
             <a href="{{ url_for('bands.create') }}" class="btn btn-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-plus me-1"></i> Nova Banda
             </a>
@@ -284,6 +291,9 @@
             {% include 'partials/pending_scale.html' %}
             {% include 'partials/pending_scale_admin.html' %}
             {% include 'partials/onboarding_checklist.html' %}
+            {% include 'partials/dashboard_upsell.html' %}
+            {% include 'partials/dashboard_referral.html' %}
+            {% include 'partials/pwa_install_prompt.html' %}
 
             {% if trial_ui and trial_ui.ativo %}
             <div class="alert alert-success dashboard-compact-alert mb-0">
@@ -310,10 +320,62 @@
             </div>
             {% endif %}
 
+            {% if my_studios and not is_superadmin %}
+            <p class="section-title">Meus estúdios</p>
+            <div class="bands-grid mb-1">
+                {% for s in my_studios %}
+                <a href="{{ url_for('studios.owner_dashboard', studio_id=s.id) }}" class="band-tile">
+                    <div class="band-tile-head">
+                        <div class="band-tile-text">
+                            <h6><i class="fas fa-building text-muted me-1"></i>{{ s.nome }}</h6>
+                            <p class="band-desc">{{ s.cidade }}{% if s.bairro %}, {{ s.bairro }}{% endif %}</p>
+                        </div>
+                    </div>
+                    <div class="band-meta">
+                        <span class="tile-badge"><i class="fas fa-door-open"></i> {{ s.rooms_count }} sala{% if s.rooms_count != 1 %}s{% endif %}</span>
+                        {% if s.pending_count %}
+                        <span class="tile-badge role-admin">{{ s.pending_count }} pendente{% if s.pending_count != 1 %}s{% endif %}</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             {% if is_superadmin %}
             <div class="alert alert-info dashboard-compact-alert mb-0">
-                Você tem acesso de <strong>administrador</strong> a todas as bandas e cifras.
+                Você tem acesso de <strong>administrador</strong> a todas as bandas, estúdios e cifras.
             </div>
+
+            {% if all_studios %}
+            <p class="section-title">Todos os estúdios ({{ all_studios|length }})</p>
+            <div class="bands-grid mb-3">
+                {% for s in all_studios %}
+                <a href="{{ url_for('studios.owner_dashboard', studio_id=s.id) }}" class="band-tile">
+                    <div class="band-tile-head">
+                        <div class="band-tile-text">
+                            <h6><i class="fas fa-building text-muted me-1"></i>{{ s.nome }}</h6>
+                            <p class="band-desc">{{ s.cidade }}{% if s.bairro %}, {{ s.bairro }}{% endif %}</p>
+                        </div>
+                    </div>
+                    <div class="band-meta">
+                        <span class="tile-badge role-admin">Admin global</span>
+                        {% if s.plano_ui %}
+                        <span class="tile-badge plano-{{ s.plano_ui.plano_id }}">{{ s.plano_ui.label_curto|default(s.plano_ui.label) }}</span>
+                        {% endif %}
+                        <span class="tile-badge"><i class="fas fa-door-open"></i> {{ s.rooms_count }} sala{% if s.rooms_count != 1 %}s{% endif %}</span>
+                        {% if s.pending_count %}
+                        <span class="tile-badge role-admin">{{ s.pending_count }} pendente{% if s.pending_count != 1 %}s{% endif %}</span>
+                        {% endif %}
+                        {% if not s.ativo %}
+                        <span class="tile-badge">Oculto</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <p class="section-title">Todas as bandas ({{ bands|length }})</p>
             <div class="bands-grid mb-1">
                 {% for band in bands %}
@@ -426,6 +488,7 @@
         {% endif %}
     </div>
 </div>
+{% include 'partials/nps_modal.html' %}
 <style>
 @media (min-width: 992px) {
     .dashboard-action-btn.btn-sm {

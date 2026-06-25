@@ -488,15 +488,96 @@
     return true;
   }
 
+  function fixPasteEncoding(text) {
+    if (!text) return text;
+    return String(text)
+      .replace(/\u00c3\u00a1/g, "\u00e1")
+      .replace(/\u00c3\u00a9/g, "\u00e9")
+      .replace(/\u00c3\u00ad/g, "\u00ed")
+      .replace(/\u00c3\u00b3/g, "\u00f3")
+      .replace(/\u00c3\u00ba/g, "\u00fa")
+      .replace(/\u00c3\u00a3/g, "\u00e3")
+      .replace(/\u00c3\u00b5/g, "\u00f5")
+      .replace(/\u00c3\u00a7/g, "\u00e7")
+      .replace(/N\u00c3\u00a3o/g, "N\u00e3o")
+      .replace(/Refr\u00c3\u00a3o/g, "Refr\u00e3o");
+  }
+
+  function looksLikeChordOverLyricPlain(text) {
+    var lines = String(text || "").replace(/\r/g, "").split("\n");
+    var chordLines = 0;
+    var pairs = 0;
+    for (var i = 0; i < lines.length - 1; i++) {
+      var a = lines[i].trim();
+      var b = lines[i + 1].trim();
+      if (!a || !b) continue;
+      if (isChordLine(a) && !isChordLine(b) && layoutTemLetra(b)) {
+        pairs++;
+      }
+      if (isChordLine(a)) chordLines++;
+    }
+    return pairs >= 2 || (pairs >= 1 && chordLines >= 2);
+  }
+
+  function isChordLine(line) {
+    var tokens = String(line || "").trim().split(/\s+/);
+    if (!tokens.length) return false;
+    var chords = 0;
+    for (var i = 0; i < tokens.length; i++) {
+      if (isChordToken(tokens[i], true)) chords++;
+    }
+    return chords >= 2 && chords / tokens.length >= 0.6;
+  }
+
+  function converterChordOverLyric(text) {
+    var lines = String(text || "").replace(/\r/g, "").split("\n");
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var a = lines[i];
+      var b = i + 1 < lines.length ? lines[i + 1] : "";
+      if (isChordLine(a.trim()) && b.trim() && !isChordLine(b.trim()) && layoutTemLetra(b)) {
+        out.push(mergeChordLyricLine(a, b));
+        i++;
+      } else {
+        out.push(a);
+      }
+    }
+    return out.join("\n");
+  }
+
+  function mergeChordLyricLine(chordLine, lyricLine) {
+    var chords = chordLine.trim().split(/\s+/);
+    var lyric = lyricLine;
+    var pos = 0;
+    var parts = [];
+    for (var i = 0; i < chords.length; i++) {
+      var ch = chords[i];
+      var start = chordLine.indexOf(ch, pos);
+      if (start < 0) start = pos;
+      var nextStart = i + 1 < chords.length ? chordLine.indexOf(chords[i + 1], start + ch.length) : chordLine.length;
+      if (nextStart < 0) nextStart = chordLine.length;
+      var width = Math.max(1, nextStart - start);
+      var slice = lyric.substr(0, width);
+      lyric = lyric.slice(width);
+      parts.push("[" + ch + "]" + slice);
+      pos = nextStart;
+    }
+    if (lyric.trim()) parts.push(lyric);
+    return parts.join("");
+  }
+
   global.SetSyncCifraClubPaste = {
     attach: attach,
     aplicarNormalizacao: aplicarNormalizacao,
     converterHtmlParaInline: converterHtmlParaInline,
     looksLikeCifraClub: looksLikeCifraClub,
     looksLikeCifraClubPlain: looksLikeCifraClubPlain,
+    looksLikeChordOverLyricPlain: looksLikeChordOverLyricPlain,
     normalizarColagem: function (text) {
-      if (!looksLikeCifraClubPlain(text)) return text;
-      return converterHtmlParaInline(text);
+      text = fixPasteEncoding(text);
+      if (looksLikeCifraClubPlain(text)) return converterHtmlParaInline(text);
+      if (looksLikeChordOverLyricPlain(text)) return converterChordOverLyric(text);
+      return text;
     },
   };
 })(window);

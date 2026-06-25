@@ -25,5 +25,9 @@ def build_ydl_opts(**overrides) -> dict:
     }
     if settings.youtube_cookies_file:
         opts["cookiefile"] = settings.youtube_cookies_file
+    elif settings.youtube_cookies_from_browser:
+        browser = settings.youtube_cookies_from_browser.strip()
+        if browser:
+            opts["cookiesfrombrowser"] = (browser,)
     opts.update(overrides)
     return opts

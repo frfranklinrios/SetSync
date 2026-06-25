@@ -1,0 +1,12 @@
+{% if show_pwa_prompt %}
+<div class="alert alert-info dashboard-compact-alert d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 small" id="pwa-install-prompt">
+    <span><i class="fas fa-mobile-screen me-1"></i> Instale o SetSync na tela inicial para usar offline no ensaio.</span>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-primary" onclick="installPWA()">Instalar</button>
+        <form method="post" action="{{ url_for('ajuda.pwa_dismiss') }}" class="mb-0">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Depois</button>
+        </form>
+    </div>
+</div>
+{% endif %}

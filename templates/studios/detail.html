@@ -1,0 +1,82 @@
+{% extends "index.html" %}
+{% block title %}{{ studio.nome }}{% endblock %}
+{% block seo %}
+{% if og_title %}
+<meta property="og:title" content="{{ og_title }}">
+<meta property="og:description" content="{{ og_description }}">
+{% if og_image %}<meta property="og:image" content="{{ og_image }}">{% endif %}
+<meta property="og:url" content="{{ og_url }}">
+<meta property="og:type" content="website">
+{% endif %}
+{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.search') }}">Estúdios</a></li>
+        <li class="breadcrumb-item active">{{ studio.nome }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">{{ studio.nome }}</h1>
+        {% if studio_verified %}
+        <span class="badge bg-success mb-2"><i class="fas fa-certificate me-1"></i>Verificado SetSync</span>
+        {% endif %}
+        <p class="text-muted mb-0">{{ full_address }}</p>
+        {% if maps_open_url %}
+        <p class="small mt-1 mb-0">
+            <a href="{{ maps_open_url }}" target="_blank" rel="noopener noreferrer">
+                <i class="fas fa-map-marker-alt me-1"></i>Abrir no Google Maps
+            </a>
+        </p>
+        {% endif %}
+        {% if studio.telefone or studio.whatsapp %}
+        <p class="small mt-1">
+            {% if studio.telefone %}Tel: {{ studio.telefone }}{% endif %}
+            {% if studio.whatsapp %} · WhatsApp: {{ studio.whatsapp }}{% endif %}
+        </p>
+        {% endif %}
+    </div>
+    {% if is_owner %}
+    <a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}" class="btn btn-outline-secondary btn-sm">Painel do estúdio</a>
+    {% endif %}
+</div>
+
+{% if photos %}
+<div class="d-flex flex-wrap gap-2 mb-4">
+    {% for p in photos %}
+    <img src="{{ url_for('studios.serve_studio_photo', studio_id=studio.id, filename=p.filename) }}"
+         alt="" class="rounded" style="height:100px;width:auto;object-fit:cover;">
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if studio.descricao %}<p>{{ studio.descricao }}</p>{% endif %}
+
+<h2 class="h6 mt-4">Salas</h2>
+{% if rooms %}
+<div class="list-group mb-4">
+    {% for room in rooms %}
+    <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <strong>{{ room.nome }}</strong>
+                {% if room.capacidade_pessoas %}<span class="text-muted small"> — até {{ room.capacidade_pessoas }} pessoas</span>{% endif %}
+                {% if room.equipamentos %}
+                <div class="small text-muted">{{ room.equipamentos | join(', ') }}</div>
+                {% endif %}
+            </div>
+            {% if user_bands %}
+            <a href="{{ url_for('studios.book_room', studio_id=studio.id, room_id=room.id) }}" class="btn btn-primary btn-sm">Reservar</a>
+            {% else %}
+            <span class="text-muted small">Entre em uma banda para reservar</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">Nenhuma sala cadastrada ainda.</p>
+{% endif %}
+{% endblock %}

@@ -246,6 +246,11 @@ def api_import_para_banda(band_id: str):
         from google_ads import mark_funnel_event
         mark_funnel_event('primeira_cifra')
     bn.cifra_created(band_id, user_id, cifra_id, titulo)
+    try:
+        from blueprints.realtime import notify_band
+        notify_band(str(band_id), 'cifra_imported', {'cifra_id': cifra_id, 'titulo': titulo})
+    except Exception:
+        pass
 
     return jsonify({
         "cifra_id": cifra_id,

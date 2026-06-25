@@ -11,13 +11,16 @@ from db import (
     get_all_cifras,
     get_all_users,
     get_user,
+    get_band,
     get_band_members,
     get_band_cifras,
+    get_latest_admin_whatsapp_invites,
     list_testimonials,
     get_testimonial,
     create_testimonial,
     update_testimonial,
     delete_testimonial,
+    set_band_contact_whatsapp,
     set_user_superadmin,
     is_superadmin_env_only,
 )
@@ -44,9 +47,12 @@ def superadmin_required(f):
 @admin_bp.route('/')
 @superadmin_required
 def index():
+    from models_studio import enrich_studios_for_admin, list_all_studios
+
     bands = get_all_bands()
     cifras = get_all_cifras()
     users = get_all_users()
+    studios = enrich_studios_for_admin(list_all_studios())
 
     for band in bands:
         owner = get_user(band['owner_id'])
@@ -62,17 +68,28 @@ def index():
     env_users = os.getenv('SETSYNC_SUPERADMIN_USERNAMES', '').strip()
     env_emails = os.getenv('SETSYNC_SUPERADMIN_EMAILS', '').strip()
 
+    from product_funnel import funnel_counts
+    from whatsapp_service import is_configured as whatsapp_configured
+
+    funnel_stats = funnel_counts()
+    invite_log = get_latest_admin_whatsapp_invites()
+
     return render_template(
         'admin/index.html',
         bands=bands,
         cifras=cifras,
         users=users,
+        studios=studios,
         env_users=env_users,
         env_emails=env_emails,
+        funnel_stats=funnel_stats,
+        invite_log=invite_log,
+        whatsapp_configured=whatsapp_configured(),
         stats={
             'bands': len(bands),
             'cifras': len(cifras),
             'users': len(users),
+            'studios': len(studios),
         },
     )
 
@@ -137,6 +154,59 @@ def depoimentos_excluir(testimonial_id: int):
     delete_testimonial(testimonial_id)
     flash('Depoimento removido.', 'success')
     return redirect(url_for('admin.depoimentos'))
+
+
+@admin_bp.route('/convite-whatsapp', methods=['POST'])
+@superadmin_required
+def convite_whatsapp():
+    target_type = (request.form.get('target_type') or '').strip().lower()
+    target_id = (request.form.get('target_id') or '').strip()
+    phone = (request.form.get('phone') or '').strip()
+    action = (request.form.get('action') or 'send').strip()
+
+    if target_type not in ('band', 'studio') or not target_id:
+        flash('Selecione uma banda ou estúdio válido.', 'danger')
+        return redirect(url_for('admin.index') + '#tab-convites')
+
+    if action == 'save_only':
+        from whatsapp_service import normalize_whatsapp_phone
+        from models_studio import get_studio, update_studio
+
+        normalized = normalize_whatsapp_phone(phone) if phone else None
+        if phone and not normalized:
+            flash('Número de WhatsApp inválido.', 'danger')
+            return redirect(url_for('admin.index') + f'#tab-{"bands" if target_type == "band" else "studios"}')
+
+        if target_type == 'band':
+            if not get_band(target_id):
+                flash('Banda não encontrada.', 'danger')
+                return redirect(url_for('admin.index') + '#tab-bands')
+            set_band_contact_whatsapp(target_id, normalized)
+            flash('WhatsApp da banda salvo.', 'success')
+            return redirect(url_for('admin.index') + '#tab-bands')
+
+        if not get_studio(target_id):
+            flash('Estúdio não encontrado.', 'danger')
+            return redirect(url_for('admin.index') + '#tab-studios')
+        update_studio(target_id, whatsapp=normalized)
+        flash('WhatsApp do estúdio salvo.', 'success')
+        return redirect(url_for('admin.index') + '#tab-studios')
+
+    from admin_outreach import send_admin_whatsapp_invite
+
+    result = send_admin_whatsapp_invite(
+        target_type=target_type,
+        target_id=target_id,
+        phone=phone,
+        sent_by_user_id=session['user_id'],
+        save_phone=True,
+    )
+    if result.get('ok'):
+        flash('Convite enviado por WhatsApp.', 'success')
+    else:
+        flash(result.get('error') or 'Não foi possível enviar.', 'danger')
+    tab = (request.form.get('return_tab') or '').strip() or ('bands' if target_type == 'band' else 'studios')
+    return redirect(url_for('admin.index') + f'#tab-{tab}')
 
 
 @admin_bp.route('/usuarios/<user_id>/superadmin', methods=['POST'])

@@ -1,0 +1,18 @@
+{% extends "index.html" %}
+{% block title %}Calendário — {{ studio.nome }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/band-agenda-calendar.css') }}?v=1">
+{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item active">Calendário</li>
+    </ol>
+</nav>
+
+<h1 class="h5 mb-3">Ocupação das salas</h1>
+<div id="band-agenda-calendar" class="agenda-cal-wrap" aria-label="Calendário de agendamentos"></div>
+<script type="application/json" id="band-agenda-events-json">{{ events_calendar | tojson }}</script>
+<script src="{{ url_for('static', filename='js/band-agenda-calendar.js') }}?v=1"></script>
+{% endblock %}

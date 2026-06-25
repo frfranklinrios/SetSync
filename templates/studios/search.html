@@ -1,0 +1,63 @@
+{% extends "index.html" %}
+{% block title %}Estúdios de ensaio{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <h1 class="h4 mb-0">Estúdios de ensaio</h1>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('studios.my_bookings') }}" class="btn btn-outline-secondary btn-sm">Minhas reservas</a>
+        <a href="{{ url_for('studios.register_studio') }}" class="btn btn-primary btn-sm">Cadastrar meu estúdio</a>
+    </div>
+</div>
+
+{% if my_studios %}
+<div class="card mb-4">
+    <div class="card-header">Meus estúdios</div>
+    <div class="list-group list-group-flush">
+        {% for s in my_studios %}
+        <a href="{{ url_for('studios.owner_dashboard', studio_id=s.id) }}" class="list-group-item list-group-item-action">
+            <strong>{{ s.nome }}</strong>
+            <span class="text-muted small"> — {{ s.cidade }}{% if s.bairro %}, {{ s.bairro }}{% endif %}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <input type="text" name="cidade" class="form-control" placeholder="Cidade" value="{{ cidade }}">
+    </div>
+    <div class="col-md-4">
+        <input type="text" name="bairro" class="form-control" placeholder="Bairro" value="{{ bairro }}">
+    </div>
+    <div class="col-md-4">
+        <button type="submit" class="btn btn-primary w-100">Buscar</button>
+    </div>
+</form>
+
+{% if cidade or bairro %}
+    {% if studios %}
+    <div class="row g-3">
+        {% for s in studios %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="h6 card-title">
+                        {{ s.nome }}
+                        {% if s.verified %}<span class="badge bg-success ms-1" title="Estúdio verificado">✓</span>{% endif %}
+                    </h2>
+                    <p class="text-muted small mb-2">{{ s.cidade }}{% if s.bairro %} · {{ s.bairro }}{% endif %}</p>
+                    {% if s.descricao %}<p class="small">{{ s.descricao[:120] }}{% if s.descricao|length > 120 %}…{% endif %}</p>{% endif %}
+                    <a href="{{ url_for('studios.detail', studio_id=s.id) }}" class="btn btn-sm btn-outline-primary">Ver salas</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">Nenhum estúdio encontrado nesta região.</p>
+    {% endif %}
+{% else %}
+<p class="text-muted">Informe cidade ou bairro para buscar estúdios disponíveis.</p>
+{% endif %}
+{% endblock %}

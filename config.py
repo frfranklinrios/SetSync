@@ -75,6 +75,26 @@ def app_now():
     return datetime.now(ZoneInfo(app_timezone_name()))
 
 
+def app_tz():
+    """ZoneInfo do fuso configurado."""
+    from zoneinfo import ZoneInfo
+
+    try:
+        return ZoneInfo(app_timezone_name())
+    except Exception:
+        return ZoneInfo('America/Fortaleza')
+
+
+def app_now_naive():
+    """Data/hora local (Fortaleza) sem tzinfo — compatível com timestamps no banco."""
+    return app_now().replace(tzinfo=None)
+
+
+def app_now_str() -> str:
+    """Timestamp local YYYY-MM-DD HH:MM:SS para o banco."""
+    return app_now_naive().strftime('%Y-%m-%d %H:%M:%S')
+
+
 def app_today_str() -> str:
     """Data local YYYY-MM-DD (Fortaleza por padrão)."""
     return app_now().strftime('%Y-%m-%d')

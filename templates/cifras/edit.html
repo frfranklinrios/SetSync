@@ -12,9 +12,9 @@
 
 .letra-edit-pane {
     white-space: pre-wrap;
-    font-family: var(--font-sans);
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     font-size: var(--text-base);
-    line-height: 1.65;
+    line-height: 1.95;
     padding: 1rem 1.1rem;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -188,6 +188,13 @@
                     <label class="form-label">BPM</label>
                     <input type="number" class="form-control" name="bpm" step="0.1"
                            value="{{ cifra.bpm or '' }}">
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Apple Music <span class="text-muted">(opcional)</span></label>
+                    <input type="url" class="form-control" name="apple_music_url"
+                           value="{{ cifra.apple_music_url or '' }}" placeholder="https://music.apple.com/…">
                 </div>
             </div>
         </div>

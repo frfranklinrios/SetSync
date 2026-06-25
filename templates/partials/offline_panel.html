@@ -1,0 +1,20 @@
+{# Painel offline — Fase 1 roadmap #}
+<div class="card mb-3 offline-panel-card" data-offline-panel data-band-id="{{ band.id }}" data-band-name="{{ band.name }}">
+  <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+    <span><i class="fas fa-wifi-off me-1"></i> Modo offline</span>
+    <button type="button" class="btn btn-sm btn-outline-primary" data-offline-download>
+      Disponibilizar offline
+    </button>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-2">
+      Salva o repertório desta banda neste dispositivo para consulta sem internet.
+      Ideal antes de shows com sinal instável.
+    </p>
+    <div class="offline-progress mb-2" style="height:6px;background:var(--border);border-radius:4px;overflow:hidden">
+      <div class="offline-progress-bar" style="height:100%;width:0;background:var(--accent);transition:width .2s"></div>
+    </div>
+    <div class="offline-progress-text text-muted small mb-3" style="min-height:1.2em"></div>
+    <div class="offline-pack-list"></div>
+  </div>
+</div>

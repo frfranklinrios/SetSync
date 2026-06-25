@@ -71,6 +71,7 @@ def mp_config_status() -> dict:
         'planos_ok': planos_ok,
         'webhook_ok': _valor_preenchido(webhook),
         'pronto_checkout': pronto,
+        'pronto_checkout_estudio': token_ok,
         'faltando': faltando,
     }
 
@@ -90,31 +91,54 @@ def build_preapproval_checkout_body(
     back_url: str,
     external_reference: str,
     reason: str | None = None,
+    billing_period: str = 'monthly',
 ) -> dict:
     """
   Corpo para POST /preapproval com pagamento pendente (redirect ao checkout MP).
 
   Com preapproval_plan_id o MP exige card_token_id (checkout transparente).
   Sem plano + auto_recurring + status pending retorna init_point.
-    """
-    from monetizacao import PLANOS
 
-    definicao = PLANOS.get(plano)
+  billing_period: 'monthly' | 'annual'
+    """
+    from monetizacao import PLANOS, PLANOS_ESTUDIO, PRECO_INDIVIDUAL_ANUAL, PRECO_PRO_ANUAL
+    from monetizacao import PRECO_WORSHIP_ANUAL, PRECO_ESTUDIO_PREMIUM_ANUAL
+
+    definicao = PLANOS.get(plano) or PLANOS_ESTUDIO.get(plano)
     if not definicao or definicao.preco_mensal is None:
         raise ValueError(f'Plano inválido para checkout: {plano!r}')
 
-    return {
-        'reason': reason or f'SetSync {definicao.nome}',
-        'payer_email': payer_email,
-        'back_url': back_url,
-        'external_reference': external_reference,
-        'status': 'pending',
-        'auto_recurring': {
+    annual_map = {
+        'individual': PRECO_INDIVIDUAL_ANUAL,
+        'pro': PRECO_PRO_ANUAL,
+        'worship': PRECO_WORSHIP_ANUAL,
+        'estudio_premium': PRECO_ESTUDIO_PREMIUM_ANUAL,
+    }
+    if billing_period == 'annual':
+        amount = float(annual_map.get(plano) or (definicao.preco_mensal * 10))
+        recurring = {
+            'frequency': 12,
+            'frequency_type': 'months',
+            'transaction_amount': amount,
+            'currency_id': 'BRL',
+        }
+        suffix = ' (anual)'
+    else:
+        recurring = {
             'frequency': 1,
             'frequency_type': 'months',
             'transaction_amount': float(definicao.preco_mensal),
             'currency_id': 'BRL',
-        },
+        }
+        suffix = ''
+
+    return {
+        'reason': (reason or f'SetSync {definicao.nome}') + suffix,
+        'payer_email': payer_email,
+        'back_url': back_url,
+        'external_reference': external_reference,
+        'status': 'pending',
+        'auto_recurring': recurring,
     }
 
 

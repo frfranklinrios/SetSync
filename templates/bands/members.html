@@ -50,6 +50,9 @@
                 <div class="row-info">
                     <div class="row-title">{{ user_display_name(member) }}</div>
                     <div class="row-sub">{{ member.email }}</div>
+                    {% if member.instruments_label %}
+                    <div class="row-sub text-muted"><i class="fas fa-guitar me-1"></i>{{ member.instruments_label }}</div>
+                    {% endif %}
                 </div>
                 {% if band.owner_id == member.id %}
                 <span class="row-badge owner">Proprietário</span>

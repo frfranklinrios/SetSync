@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Plano Est�dio Premium">
+  <defs>
+    <linearGradient id="bg-premium" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#134e4a"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="24" fill="url(#bg-premium)"/>
+  <path d="M60 22 L74 30 L74 38 L86 38 L86 82 H34 V38 H46 V30 Z" fill="none" stroke="#5eead4" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="22" y="48" width="18" height="34" rx="3" fill="#2ab5a0" opacity="0.5"/>
+  <rect x="80" y="48" width="18" height="34" rx="3" fill="#2ab5a0" opacity="0.5"/>
+  <rect x="50" y="56" width="20" height="26" rx="2" fill="#5eead4"/>
+  <path d="M60 14 L63 22 H71 L65 27 L67 35 L60 30 L53 35 L55 27 L49 22 H57 Z" fill="#fcd34d"/>
+  <text x="60" y="104" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="#ccfbf1">PREMIUM</text>
+</svg>

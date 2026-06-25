@@ -31,6 +31,9 @@
                 Teste com uma banda no <strong>plano Grátis</strong>. Quando crescer, um upgrade Worship cobre a igreja inteira.
                 <a href="{{ url_for('assinatura_bp.planos') }}" class="igrejas-link-muted">Músico solo ou banda única? Ver planos Pro</a>
             </p>
+            {% with variant='dark' %}
+            {% include 'partials/mercadopago_trust.html' %}
+            {% endwith %}
         </div>
         <div class="igrejas-worship-price-card"
              data-preco-mensal="{{ plano_worship.preco_label }}{% if plano_worship.sufixo %}<small>{{ plano_worship.sufixo }}</small>{% endif %}"

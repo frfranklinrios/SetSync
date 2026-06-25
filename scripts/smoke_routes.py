@@ -38,6 +38,19 @@ SKIP_POST = frozenset({
     'assinatura_bp.voucher_resgatar',
     'notifications.api_mark_read',
     'notifications.api_mark_all_read',
+    'studios.upload_studio_photo',
+    'studios.upload_room_photo',
+    'studios.delete_studio_photo_route',
+    'studios.confirm_booking',
+    'studios.reject_booking',
+    'studios.cancel_booking',
+    'studios.register_studio',
+    'studios.new_room',
+    'studios.edit_room',
+    'studios.edit_studio',
+    'studios.room_availability',
+    'studios.room_blocks',
+    'studios.book_room',
 })
 
 # Redirecionam para Google ou precisam de query especial
@@ -113,6 +126,16 @@ def load_context() -> dict:
     ctx['nome_arquivo'] = 'teste.txt'
     ctx['token'] = 'invalid-token-ok'
 
+    c.execute('SELECT id FROM studios LIMIT 1')
+    st = c.fetchone()
+    ctx['studio_id'] = st['id'] if st else '00000000-0000-0000-0000-000000000001'
+    c.execute('SELECT id FROM studio_rooms LIMIT 1')
+    rm = c.fetchone()
+    ctx['room_id'] = rm['id'] if rm else '00000000-0000-0000-0000-000000000002'
+    c.execute('SELECT id FROM studio_bookings LIMIT 1')
+    bk = c.fetchone()
+    ctx['booking_id'] = bk['id'] if bk else '00000000-0000-0000-0000-000000000003'
+
     return ctx
 
 
@@ -135,6 +158,9 @@ def fill_rule(rule: str, ctx: dict) -> str | None:
         ('<notification_id>', ctx['notification_id']),
         ('<job_id>', ctx['job_id']),
         ('<nome_arquivo>', ctx['nome_arquivo']),
+        ('<studio_id>', ctx['studio_id']),
+        ('<room_id>', ctx['room_id']),
+        ('<booking_id>', ctx['booking_id']),
     ]
     for key, val in replacements:
         url = url.replace(key, str(val))
@@ -214,7 +240,7 @@ def run() -> int:
 
         public_gets = [
             '/', '/health', '/login', '/auth/login', '/auth/register',
-            '/ajuda', '/igrejas', '/offline', '/manifest.webmanifest', '/sw.js', '/ads.txt',
+            '/ajuda', '/igrejas', '/estudios', '/offline', '/manifest.webmanifest', '/sw.js', '/ads.txt',
             f'/setlists/letras/{ctx.get("public_token", "x")}',
             f'/setlists/compartilhar/{ctx.get("public_token", "x")}',
         ]

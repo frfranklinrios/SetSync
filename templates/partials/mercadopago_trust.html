@@ -1,0 +1,73 @@
+{# Pagamento via Mercado Pago — use variant: banner | inline | dark #}
+{% if show_mercadopago_trust %}
+{% set _v = variant|default('banner') %}
+<div class="mp-trust mp-trust--{{ _v }}" role="note" aria-label="Pagamento via Mercado Pago">
+  {% if _v == 'banner' %}
+  <div class="mp-trust-banner-inner">
+    <div class="mp-trust-icon" aria-hidden="true"><i class="fas fa-shield-halved"></i></div>
+    <div class="mp-trust-body">
+      <strong class="mp-trust-title">Pagamento via Mercado Pago</strong>
+      <p class="mp-trust-text mb-0">
+        Ao assinar, você é redirecionado ao site do <strong>Mercado Pago</strong>.
+        Seus dados de cartão <strong>não passam pelo SetSync</strong>.
+        {% if show_trial_note|default(true) %}
+        O trial de 30 dias é <strong>sem cartão</strong> — só pedimos pagamento se você escolher assinar.
+        {% endif %}
+      </p>
+      <ul class="mp-trust-list small text-muted mb-0 mt-2">
+        <li>Cobrança recorrente autorizada por você no Mercado Pago</li>
+        <li>Plano mensal ou anual — escolha antes de confirmar</li>
+        <li>Para cancelar, use sua conta Mercado Pago ou fale com nosso suporte</li>
+      </ul>
+    </div>
+  </div>
+  {% elif _v == 'dark' %}
+  <p class="mp-trust-dark-text mb-0">
+    <i class="fas fa-shield-halved me-1" aria-hidden="true"></i>
+    Pagamento processado pelo <strong>Mercado Pago</strong> — cartão não passa pelo SetSync.
+    Trial de 30 dias <strong>sem cartão</strong>.
+  </p>
+  {% else %}
+  <p class="mp-trust-inline mb-0">
+    <i class="fas fa-shield-halved text-success me-1" aria-hidden="true"></i>
+    Pagamento via <strong>Mercado Pago</strong>. Seus dados de cartão não passam pelo SetSync.
+  </p>
+  {% endif %}
+</div>
+<style>
+.mp-trust--banner {
+  border: 1px solid rgba(42, 181, 160, 0.35);
+  background: rgba(42, 181, 160, 0.08);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+.mp-trust-banner-inner { display: flex; gap: 0.75rem; align-items: flex-start; }
+.mp-trust-icon {
+  width: 2.25rem; height: 2.25rem; border-radius: 8px;
+  background: rgba(42, 181, 160, 0.15);
+  color: var(--accent, #2ab5a0);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 1.1rem;
+}
+.mp-trust-title { display: block; font-size: var(--text-sm); margin-bottom: 0.25rem; }
+.mp-trust-text { font-size: var(--text-sm); line-height: 1.5; color: var(--text); }
+.mp-trust-list { padding-left: 1.1rem; margin-bottom: 0; }
+.mp-trust-list li { margin-bottom: 0.2rem; }
+.mp-trust--inline .mp-trust-inline {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.45;
+}
+.mp-trust--dark .mp-trust-dark-text {
+  font-size: var(--text-sm);
+  color: #fde68a;
+  line-height: 1.5;
+  margin-top: 0.75rem;
+}
+[data-theme="dark"] .mp-trust--banner {
+  background: rgba(42, 181, 160, 0.1);
+  border-color: rgba(42, 181, 160, 0.3);
+}
+</style>
+{% endif %}

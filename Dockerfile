@@ -28,6 +28,9 @@ RUN python3 scripts/build_chords_db_json.py
 # Criar diretório de dados
 RUN mkdir -p data
 
+ENV TZ=America/Fortaleza
+ENV SETSYNC_TIMEZONE=America/Fortaleza
+
 # Rodar com gunicorn em produção
 EXPOSE 5000
 

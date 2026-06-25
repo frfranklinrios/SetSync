@@ -7,6 +7,11 @@
     <div>
         <h1 class="h3 mb-1">Planos SetSync</h1>
         <p class="text-muted mb-0">Do músico solo a várias bandas — escolha o plano ideal.</p>
+        <div class="mt-2">
+            {% with variant='inline' %}
+            {% include 'partials/mercadopago_trust.html' %}
+            {% endwith %}
+        </div>
     </div>
     <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
 </div>
@@ -62,9 +67,10 @@
                 <p class="display-6 fw-bold">R$ 15<small class="fs-6 text-muted">/mês</small></p>
                 <p class="small">Para quem toca sozinho · 1 integrante · PDF</p>
                 {% if banda_id %}
-                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='individual') }}">
+                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='individual') }}" class="js-checkout-form">
                     {% include 'partials/csrf_input.html' %}
                     <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    {% include 'partials/billing_period_toggle.html' %}
                     <button type="submit" class="btn btn-outline-primary w-100"
                             {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
                         Assinar Individual
@@ -81,9 +87,10 @@
                 <p class="display-6 fw-bold">R$ 29<small class="fs-6 text-muted">/mês</small></p>
                 <p class="small">Banda com vários integrantes · sem limites · PDF</p>
                 {% if banda_id %}
-                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}">
+                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}" class="js-checkout-form">
                     {% include 'partials/csrf_input.html' %}
                     <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    {% include 'partials/billing_period_toggle.html' %}
                     <button type="submit" class="btn btn-primary w-100"
                             {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
                         Assinar Pro
@@ -101,9 +108,10 @@
                 <p class="small">Várias bandas na mesma conta · sem limites</p>
                 <p class="small text-muted mb-2"><a href="{{ url_for('assinatura_bp.igrejas') }}">Detalhes para igrejas</a></p>
                 {% if banda_id %}
-                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='worship') }}">
+                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='worship') }}" class="js-checkout-form">
                     {% include 'partials/csrf_input.html' %}
                     <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    {% include 'partials/billing_period_toggle.html' %}
                     <button type="submit" class="btn btn-outline-primary w-100"
                             {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
                         Assinar Worship
@@ -113,6 +121,30 @@
             </div>
         </div>
     </div>
+</div>
+
+{% include 'partials/mercadopago_trust.html' %}
+
+<div id="estudio" class="mb-2">
+<p class="small text-muted mb-3">
+    <a href="{{ url_for('studios.landing') }}">SetSync para Estúdios</a> — página dedicada com comparativo e FAQ.
+</p>
+{% if studio_plano_ui %}
+<div class="planos-resumo-card mb-3" style="border:1px solid var(--border);border-radius:10px;padding:0.85rem 1rem;background:var(--bg);">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        {% if studio_plano_ui.logo %}
+        <img src="{{ url_for('static', filename=studio_plano_ui.logo) }}" alt="" width="40" height="40" style="border-radius:8px;">
+        {% endif %}
+        <div>
+            <span class="small text-muted">Seu plano estúdio</span>
+            <div class="fw-semibold">{{ studio_plano_ui.label }}
+                <span class="badge bg-{{ studio_plano_ui.badge }}">{{ studio_plano_ui.label_curto }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% include 'partials/planos_estudio_cards.html' %}
 </div>
 
 <div class="card">
@@ -132,6 +164,20 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+document.querySelectorAll('.js-billing-toggle').forEach(function (group) {
+    var form = group.closest('form');
+    var input = form && form.querySelector('.js-billing-period-input');
+    if (!input) return;
+    group.querySelectorAll('[data-period]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            group.querySelectorAll('[data-period]').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            input.value = btn.getAttribute('data-period');
+        });
+    });
+});
+</script>
 <script>
 (function () {
     const btn = document.getElementById('voucher-resgatar-btn');

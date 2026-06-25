@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('ajuda.index') }}">
-<meta name="description" content="Ajuda SetSync: cifras, grade harmônica, setlists, agenda com escalação por link, Modo Tocar (Nashville, auto-scroll) e convites. Passo a passo para sua equipe.">
-<meta property="og:title" content="Ajuda SetSync — Cifras, grade harmônica e escalação">
-<meta property="og:description" content="Ajuda SetSync: cifras, grade harmônica, setlists, agenda com confirmação por link, Modo Tocar e convites para bandas.">
+<meta name="description" content="Ajuda SetSync: cifras, versão pessoal, grade harmônica, setlists, agenda com escalação, estúdios, Modo Tocar (sync, offline, pedal) e convites.">
+<meta property="og:title" content="Ajuda SetSync — Cifras, agenda, estúdios e Modo Tocar">
+<meta property="og:description" content="Ajuda SetSync: cifras, setlists, agenda, estúdios, Modo Tocar com sync e offline automático, escalação e palco para bandas.">
 <meta property="og:url" content="{{ external_url_for('ajuda.index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -187,7 +187,11 @@
   <div>
     <h2>Ajuda</h2>
     <p class="help-muted mb-0">
-      Guia do SetSync em <strong>setsync.com.br</strong> — bandas, cifras, <strong>grade harmônica</strong>, setlists, agenda com escalação e Modo Tocar.
+      Guia do SetSync em <strong>setsync.com.br</strong> — bandas, cifras, setlists, agenda com escalação,
+      <strong>estúdios de ensaio</strong>, <strong>instrumentos no perfil</strong> e Modo Tocar.
+      Use o <strong>assistente</strong> <i class="fas fa-comment-dots text-primary"></i> no canto da tela para dúvidas rápidas
+      (com atalhos para cadastrar cifra, estúdio ou ver planos quando você estiver logado).
+      Veja também o <a href="{{ url_for('roadmap.index') }}">roadmap de produto</a>.
     </p>
   </div>
   <a class="btn btn-outline-secondary btn-sm"
@@ -201,24 +205,32 @@
     <div class="card-header">Tópicos</div>
     <div class="list-group list-group-flush">
       <a class="list-group-item" href="#conta">
-        <strong>Conta e acesso</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Login, e-mail, Google</div>
+        <strong>Conta e perfil</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Login, nome, WhatsApp, instrumentos</div>
       </a>
       <a class="list-group-item" href="#primeiros-passos">
         <strong>Primeiros passos</strong>
         <div class="text-muted" style="font-size: var(--text-sm);">Da conta ao primeiro show</div>
       </a>
+      <a class="list-group-item" href="#dashboard">
+        <strong>Painel e dicas</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Checklist, upsell, indicação, NPS e PWA</div>
+      </a>
       <a class="list-group-item" href="#planos">
         <strong>Planos</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Grátis, Individual, Pro, Worship</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Grátis, Pro, Worship, cobrança MP</div>
       </a>
       <a class="list-group-item" href="#bandas">
         <strong>Bandas e membros</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Convites, cantoras/cantores, permissões</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Convites, instrumentos, permissões</div>
       </a>
       <a class="list-group-item" href="#cifras">
         <strong>Cifras</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">ChordPro, colar cifra, grade harmônica</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Buscar, colar, versão pessoal, grade</div>
+      </a>
+      <a class="list-group-item" href="#versao-pessoal">
+        <strong>Versão pessoal</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Editar sem alterar a banda de imediato</div>
       </a>
       <a class="list-group-item" href="#transposicao">
         <strong>Transposição</strong>
@@ -232,13 +244,17 @@
         <strong>Agenda e escalação</strong>
         <div class="text-muted" style="font-size: var(--text-sm);">Ensaios, calendário, equipe por evento</div>
       </a>
+      <a class="list-group-item" href="#estudios">
+        <strong>Estúdios de ensaio</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Buscar, reservar salas, cadastrar estúdio</div>
+      </a>
       <a class="list-group-item" href="#notificacoes">
         <strong>Alertas</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">E-mail, WhatsApp e lembretes</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Push, e-mail, WhatsApp e resumo diário</div>
       </a>
       <a class="list-group-item" href="#modo-tocar">
         <strong>Modo Tocar</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Rolagem, atalhos, lista lateral</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Palco, seções, sync, offline auto, pedal</div>
       </a>
       <a class="list-group-item" href="#chord-sheet">
         <strong>Grade harmônica</strong>
@@ -246,11 +262,15 @@
       </a>
       <a class="list-group-item" href="#importador">
         <strong>Importar cifra</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Cifra → SetSync</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Buscar cifra, colar, Cifra → SetSync</div>
       </a>
       <a class="list-group-item" href="#pwa">
         <strong>Instalar no celular</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">PWA e offline</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">PWA, offline e sincronia</div>
+      </a>
+      <a class="list-group-item" href="{{ url_for('roadmap.index') }}">
+        <strong>Roadmap</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Mercado, engajamento e produto técnico</div>
       </a>
       <a class="list-group-item" href="#problemas">
         <strong>Problemas comuns</strong>
@@ -261,14 +281,35 @@
 
   <div>
     <section class="card help-section" id="conta">
-      <div class="card-header">Conta e acesso</div>
+      <div class="card-header">Conta, acesso e perfil</div>
       <div class="card-body">
+        <h3>Entrar e criar conta</h3>
         <ul>
           <li>Crie conta com <strong>e-mail e senha</strong> ou use <strong>Entrar com Google</strong>.</li>
           <li>No login, use <strong>usuário ou e-mail</strong> (o e-mail não diferencia maiúsculas/minúsculas).</li>
           <li>A sessão permanece ativa por cerca de <strong>2 dias</strong> no mesmo dispositivo e é renovada enquanto você usa o app.</li>
           <li>Quem recebe um <strong>link de convite</strong> de banda pode se cadastrar e já entra na banda automaticamente (veja abaixo).</li>
         </ul>
+
+        <h3 id="perfil">Meu perfil</h3>
+        <p>
+          Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a> (menu do usuário) você configura como a banda enxerga você:
+        </p>
+        <ul>
+          <li><strong>Nome no app</strong> — exibido na escalação, lista de membros e notificações.</li>
+          <li><strong>WhatsApp</strong> — com DDD (o país 55 é assumido se omitir); necessário para alertas por mensagem.</li>
+          <li><strong>Instrumentos</strong> — marque um ou mais (violão, guitarra, baixo, vocal, bateria, teclado, ukulele, cavaquinho, som…). A banda vê isso em <span class="code">Membros</span> e na <strong>escalação</strong> de eventos.</li>
+          <li><strong>Indisponibilidade</strong> — datas em que você não pode tocar; quem escala vê o aviso.</li>
+          <li><strong>Notificações</strong> — push, e-mail e WhatsApp por tipo de alerta (veja a seção <a href="#notificacoes">Alertas</a>).</li>
+          <li>Se você só toca em banda, o perfil pode sugerir <strong>cadastrar um estúdio</strong>; se só tem estúdio, sugere <strong>criar uma banda</strong> — para usar cifras e agenda integradas às reservas.</li>
+        </ul>
+
+        <h3>Horário do app</h3>
+        <p class="mb-0">
+          Datas, lembretes de agenda e o <strong>resumo diário</strong> de notificações usam o fuso de
+          <strong>Fortaleza (UTC−3)</strong>. O resumo de mudanças da banda sai por volta das <strong>21h</strong>;
+          lembretes de evento chegam cerca de <strong>24 horas antes</strong> do horário marcado.
+        </p>
       </div>
     </section>
 
@@ -279,16 +320,59 @@
           <li>Acesse o SetSync e <strong>entre</strong> ou <strong>crie sua conta</strong>.</li>
           <li>Em <span class="code">Bandas</span>, crie uma banda (ex.: nome do grupo ou projeto).</li>
           <li>Em <strong>Configurações da banda</strong>, cadastre <strong>cantoras/cantores</strong> se mais de uma pessoa canta em tons diferentes.</li>
-          <li>Adicione <strong>cifras</strong> (manual ou pelo importador <span class="code">Cifra → SetSync</span>).</li>
+          <li>Adicione <strong>cifras</strong> com <strong>Buscar cifra</strong> (preview antes de importar), colando texto no formulário ou pelo importador <span class="code">Cifra → SetSync</span>.</li>
           <li>Na aba <strong>Grade harmônica</strong>, use <strong>Extrair da cifra</strong> para montar a progressão a partir dos acordes — ou edite à mão.</li>
           <li>Monte um <strong>setlist</strong> com a ordem do show ou ensaio.</li>
+          <li>Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>, cadastre seus <strong>instrumentos</strong> e o <strong>WhatsApp</strong> para alertas.</li>
           <li>Na aba <strong>Agenda</strong>, registre ensaios e apresentações e, se quiser, <strong>escale</strong> quem participa.</li>
+          <li>Menu <strong>Estúdios</strong> — busque salas de ensaio na sua cidade e solicite reserva (opcional).</li>
           <li>Toque em <strong>Tocar</strong> (na setlist ou no evento) para abrir o <strong>Modo Tocar</strong> em tela cheia.</li>
         </ol>
         <div class="help-callout">
           No palco: use <strong>2 colunas</strong> (<span class="kbd">C</span>) ou <strong>caber na tela</strong> (<span class="kbd">A</span>) em cifras longas.
           O <strong>auto-scroll</strong> (<span class="kbd">Espaço</span>) funciona na cifra e na <strong>grade harmônica</strong> — na grade, a velocidade inicial segue o <strong>BPM</strong> da música quando cadastrado.
         </div>
+      </div>
+    </section>
+
+    <section class="card help-section" id="dashboard">
+      <div class="card-header">Painel inicial, checklist e conversão</div>
+      <div class="card-body">
+        <p>
+          Após o login, o <strong>painel</strong> reúne bandas, próximos eventos, convites pendentes e dicas
+          personalizadas conforme seu uso.
+        </p>
+        <h3>Checklist de primeiros passos (banda)</h3>
+        <ul>
+          <li>Quem cria a primeira banda vê um <strong>checklist</strong> no painel: adicionar cifra, montar setlist, abrir Modo Tocar, criar evento na agenda etc.</li>
+          <li>Os passos são marcados automaticamente quando você usa o recurso de verdade (ex.: Modo Tocar só conclui após abrir o palco).</li>
+          <li>Você pode dispensar o checklist quando não precisar mais.</li>
+        </ul>
+        <h3>Alertas de plano e trial</h3>
+        <ul>
+          <li>Se a banda estiver perto do limite do plano grátis (músicas, integrantes ou setlists), aparece um aviso com link para <strong>Ver planos Pro</strong>.</li>
+          <li>Nos últimos 7 dias de <strong>trial Pro</strong> (banda) ou <strong>trial Premium</strong> (estúdio), o painel lembra quantos dias restam.</li>
+        </ul>
+        <h3>Indique uma banda</h3>
+        <ul>
+          <li>Depois de montar a <strong>primeira setlist</strong>, o painel pode mostrar um card para <strong>indicar outra banda</strong>.</li>
+          <li>Gere um voucher de <strong>15 dias Pro</strong> em <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">Indicar banda</a>. Quando alguém usar, você ganha mais 15 dias na sua banda principal.</li>
+        </ul>
+        <h3>Pesquisa rápida (NPS)</h3>
+        <ul>
+          <li>Após o período de trial, o app pode pedir uma nota de <strong>0 a 10</strong> sobre a experiência — ajuda a priorizar melhorias.</li>
+          <li>Você pode responder depois ou dispensar; a pesquisa não bloqueia o uso do app.</li>
+        </ul>
+        <h3>Instalar no celular (PWA)</h3>
+        <ul>
+          <li>O painel pode sugerir <strong>adicionar o SetSync à tela inicial</strong> para abrir como app no palco.</li>
+          <li>Detalhes de instalação no iPhone e Android: seção <a href="#pwa">Instalar no celular</a>.</li>
+        </ul>
+        <h3>Assistente de ajuda</h3>
+        <p class="mb-0">
+          O ícone <i class="fas fa-comment-dots"></i> no canto da tela abre o chatbot com respostas da Ajuda, Guia e FAQ.
+          Logado, as respostas podem incluir botões como <em>Adicionar cifra</em>, <em>Cadastrar estúdio</em> ou <em>Ver planos</em>.
+        </p>
       </div>
     </section>
 
@@ -301,21 +385,36 @@
           {% if current_user.is_authenticated %} (menu superior){% endif %}.
         </p>
         <table class="help-table">
-          <tr><th>Grátis</th><td>Até 30 músicas, 5 integrantes, 10 setlists e 1 banda por conta.</td></tr>
+          <tr><th>Grátis</th><td>Até 30 músicas, 5 integrantes, 10 setlists e 1 banda por conta. Trial Pro de 30 dias na primeira banda.</td></tr>
           <tr><th>Individual</th><td>Para quem toca sozinho: 1 banda, só você no elenco, repertório ilimitado e PDF.</td></tr>
           <tr><th>Pro</th><td>Músicas, integrantes e setlists ilimitados <em>na banda</em>; exportação em PDF.</td></tr>
           <tr><th>Worship</th><td>Tudo do Pro em <strong>várias bandas</strong> da mesma conta — para quem administra mais de um grupo.</td></tr>
+          <tr><th>Estúdio básico</th><td>Para donos de estúdio: cadastro, fotos, salas e agendamentos — <strong>grátis</strong> com até <strong>2 salas</strong>.</td></tr>
+          <tr><th>Estúdio Premium</th><td><strong>R$ 49/mês</strong> ou <strong>R$ 490/ano</strong> (equivalente a 10 meses). Salas ilimitadas e trial Premium de 30 dias no primeiro cadastro.</td></tr>
         </table>
         <ul>
-          <li>Ao atingir um limite do plano grátis, o app avisa e oferece upgrade.</li>
-          <li><strong>Vouchers</strong> promocionais liberam Pro por tempo determinado (código enviado pela equipe SetSync).</li>
+          <li>Ao atingir um limite do plano grátis, o app avisa no painel e oferece upgrade.</li>
+          <li>Em <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a>, use o seletor <strong>Mensal / Anual</strong> para ver o desconto anual (banda e estúdio).</li>
+          <li><strong>Vouchers</strong> promocionais liberam Pro por tempo determinado (código enviado pela equipe SetSync ou <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">indicação de banda</a>).</li>
           <li>No plano grátis podem aparecer <strong>anúncios</strong> em algumas telas; contas pagas não exibem anúncios.</li>
         </ul>
+
+        <h3 id="cobranca">Cobrança e Mercado Pago</h3>
+        <ul>
+          <li>Planos pagos (Individual, Pro, Worship e Estúdio Premium) usam <strong>Mercado Pago</strong> para assinatura recorrente.</li>
+          <li>Ao tocar em <strong>Assinar</strong>, você é <strong>redirecionado ao site do Mercado Pago</strong> — lá você autoriza a cobrança. O SetSync <strong>não armazena número de cartão</strong>.</li>
+          <li>Escolha <strong>mensal ou anual</strong> antes de confirmar (o anual equivale a pagar 10 meses e usar 12).</li>
+          <li>O <strong>trial de 30 dias</strong> (primeira banda ou primeiro estúdio Premium) é <strong>sem cartão</strong>; só pedimos pagamento se você decidir assinar depois.</li>
+          <li><strong>Vouchers</strong> e indicação de banda ativam Pro por tempo limitado sem passar pelo checkout.</li>
+          <li>Para <strong>cancelar</strong> uma assinatura paga, use sua conta no Mercado Pago ou entre em contato com o suporte SetSync.</li>
+        </ul>
+
         <div class="help-callout">
           Precisa de várias bandas na mesma conta? Veja o plano <strong>Worship</strong> em
           <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a>.
           Para igrejas e ministérios de louvor, há uma página dedicada:
           <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a>.
+          Donos de sala de ensaio: <a href="{{ url_for('studios.landing') }}">SetSync para Estúdios</a>.
           Bandas únicas costumam usar o <strong>Pro</strong>; músico solo, o <strong>Individual</strong>.
         </div>
       </div>
@@ -359,6 +458,13 @@
           <li>Vincular uma <strong>conta</strong> é opcional; serve para marcar quem canta na lista de membros.</li>
           <li>Com várias cantoras/cantores, cada música pode ter <strong>tom salvo por pessoa</strong> na banda e na setlist.</li>
         </ul>
+
+        <h3>Instrumentos dos integrantes</h3>
+        <ul>
+          <li>Cada músico cadastra o que toca em <a href="{{ url_for('auth.perfil') }}">Meu perfil → Instrumentos</a>.</li>
+          <li>Em <span class="code">Membros</span>, a lista mostra os instrumentos de cada pessoa.</li>
+          <li>Na <strong>escalação</strong> do evento, os instrumentos aparecem abaixo do nome — ajuda a montar a equipe sem adivinhar quem é guitarrista ou baterista.</li>
+        </ul>
       </div>
     </section>
 
@@ -370,6 +476,15 @@
           <li><strong>Título</strong> e <strong>artista</strong> aparecem nas listas e no Modo Tocar.</li>
           <li><strong>Tom</strong> é a referência original (ex.: <span class="code">G</span>, <span class="code">Bm</span>, <span class="code">C#m</span>).</li>
           <li>O conteúdo é salvo em <strong>ChordPro</strong>; acordes devem ficar entre colchetes, ex.: <span class="code">[Am]</span> na letra.</li>
+          <li>Na lista de cifras da banda, use <strong>Buscar cifra</strong> para pesquisar no índice online, ver o <strong>preview</strong> formatado e importar direto para o repertório (requer papel <strong>Editor</strong> ou admin).</li>
+        </ul>
+
+        <h3>Visualização</h3>
+        <ul>
+          <li>Na página da música, abas <strong>Cifra</strong>, <strong>Grade harmônica</strong> e <strong>Letra</strong> — já transpostas conforme o tom escolhido.</li>
+          <li>A cifra usa layout de <strong>folha</strong>: seções em maiúsculas (Intro, Refrão…), acordes destacados e letra em fonte monoespaçada.</li>
+          <li>Se você tiver uma <strong>versão pessoal</strong> diferente da banda, aparece um aviso com link para alternar — veja a seção <a href="#versao-pessoal">Versão pessoal</a>.</li>
+          <li>Link opcional para <strong>Apple Music</strong> (cadastrado em Editar música) aparece como botão na página da cifra.</li>
         </ul>
 
         <h3>Colar de outro site</h3>
@@ -382,7 +497,8 @@
 
         <h3>Diagramas de acordes</h3>
         <ul>
-          <li>Em qualquer tela com cifra formatada, <strong>toque em um acorde</strong> para abrir o diagrama (violão ou cavaco).</li>
+          <li>Em qualquer tela com cifra formatada, <strong>toque em um acorde</strong> para abrir o diagrama.</li>
+          <li>Instrumentos disponíveis: <strong>violão</strong>, <strong>guitarra</strong>, <strong>baixo</strong>, <strong>ukulele</strong>, <strong>cavaquinho</strong> e <strong>piano/teclado</strong> — com escalas e arpejos no modal.</li>
         </ul>
 
         <h3>Listas</h3>
@@ -399,11 +515,50 @@
         <h3>Grade harmônica (progressão por compassos)</h3>
         <ul>
           <li>Além da cifra com letra, configure uma <strong>grade harmônica</strong> — folha só com acordes e compassos (sem letra).</li>
-          <li>Na visualização: abas <strong>Cifra</strong>, <strong>Grade harmônica</strong> e <strong>Letra</strong>. Para editar: <strong>Editar</strong> → aba <strong>Grade harmônica</strong> (requer papel <strong>Editor</strong> ou admin).</li>
+          <li>Para editar: <strong>Editar</strong> → aba <strong>Grade harmônica</strong> (requer papel <strong>Editor</strong> ou admin).</li>
           <li>Use <strong>Extrair da cifra</strong> no editor para gerar um rascunho a partir dos acordes — revise compassos e salve.</li>
           <li>Músicas com grade antiga são convertidas na primeira abertura do editor — revise e salve.</li>
           <li>Detalhes de sintaxe, pulsos e notação: seção <a href="#chord-sheet">Grade harmônica</a> abaixo.</li>
         </ul>
+      </div>
+    </section>
+
+    <section class="card help-section" id="versao-pessoal">
+      <div class="card-header">Versão pessoal (editar sem mudar a banda na hora)</div>
+      <div class="card-body">
+        <p>
+          Ao <strong>editar</strong> uma cifra (papel <strong>Editor</strong>, admin ou proprietário), o SetSync salva suas alterações primeiro como
+          <strong>versão pessoal</strong>. A banda continua vendo a versão anterior até você decidir publicar.
+        </p>
+
+        <h3>Fluxo ao salvar</h3>
+        <ol>
+          <li>Abra <strong>Editar música</strong>, altere cifra, grade harmônica ou letra e toque em <strong>Salvar minha versão</strong>.</li>
+          <li>Um modal pergunta o que fazer:
+            <ul>
+              <li><strong>Manter só para mim</strong> — só você vê a versão editada (em <em>Minha versão</em>).</li>
+              <li><strong>Enviar para a banda</strong> — publica de uma vez; todos os membros passam a ver a cifra atualizada.</li>
+            </ul>
+          </li>
+        </ol>
+
+        <h3>Onde ver cada versão</h3>
+        <ul>
+          <li>Na página da música: aviso <strong>Versão pessoal</strong> com botões <strong>Ver minha versão</strong> e <strong>Ver versão da banda</strong>.</li>
+          <li>No <strong>Modo Tocar</strong>, se a música tiver versão pessoal sua, aparecem os botões <strong>Banda</strong> / <strong>Minha</strong> na barra superior (ou tecla <span class="kbd">V</span>).</li>
+          <li>A escolha Banda/Minha é lembrada por música no seu dispositivo.</li>
+        </ul>
+
+        <h3>O que entra na versão pessoal</h3>
+        <ul>
+          <li>Título, artista, tom, texto da cifra ChordPro, grade harmônica e lead sheet — tudo que você alterar no editor.</li>
+          <li>A <strong>transposição</strong> do palco (tom por cantora/cantor) continua separada: não substitui o conteúdo salvo.</li>
+        </ul>
+
+        <div class="help-callout">
+          Quer testar uma arrumação antes do ensaio? Edite, mantenha privado e use <strong>Minha</strong> no Modo Tocar.
+          Quando a banda aprovar, publique em <strong>Editar</strong> → salvar → <strong>Enviar para a banda</strong>.
+        </div>
       </div>
     </section>
 
@@ -417,6 +572,7 @@
           <li>A mesma regra vale na <strong>grade harmônica</strong> e na cifra ChordPro.</li>
           <li>Com <strong>várias cantoras/cantores</strong>, o SetSync guarda a transposição de cada pessoa por música.</li>
           <li>No Modo Tocar, escolha a cantora/cantor no topo para ver o tom certo; a mudança pode ser salva na banda.</li>
+          <li>Se você tiver <strong>versão pessoal</strong> de uma música, a transposição vale para a versão que estiver exibindo (Banda ou Minha).</li>
           <li>Na <strong>setlist</strong>, cada linha pode ter cantora/cantor e tom próprios para aquele show.</li>
         </ul>
       </div>
@@ -428,7 +584,7 @@
         <ul>
           <li>O setlist define a <strong>ordem das músicas</strong> no show ou ensaio.</li>
           <li>Na tela da setlist, <strong>arraste pelo ícone</strong> à esquerda para reordenar; a ordem é salva automaticamente.</li>
-          <li>Em cada música da lista você pode escolher a <strong>cantora/cantor</strong> e ver o <strong>tom</strong> daquela faixa.</li>
+          <li>Em cada música da lista você pode escolher a <strong>cantora/cantor</strong>, ver o <strong>tom</strong> daquela faixa e cadastrar uma <strong>nota de palco</strong> (ex.: “devagar”, “capo 2”) — aparece ao entrar na música no Modo Tocar.</li>
           <li>Use <strong>Tocar</strong> no topo para abrir o Modo Tocar com todas as músicas do setlist.</li>
         </ul>
 
@@ -457,7 +613,7 @@
           <li>No campo <strong>Local</strong>, busque o endereço com sugestões do <strong>Google Maps</strong> (quando configurado no servidor).</li>
           <li>No detalhe do evento, o local abre no Google Maps e pode exibir mapa embutido.</li>
           <li>É possível vincular uma <strong>setlist</strong> ao evento — o roteiro daquele show ou ensaio.</li>
-          <li>No detalhe do evento, use <strong>Tocar setlist</strong> para ir direto ao Modo Tocar.</li>
+          <li>No detalhe do evento, use <strong>Tocar setlist</strong> para ir direto ao Modo Tocar — com <strong>contexto do culto</strong> (horário, local, observações) na faixa superior e <strong>sincronização automática</strong> entre músicos (quem lidera avança a música para a banda).</li>
           <li>O <strong>painel inicial</strong> mostra os próximos eventos das suas bandas.</li>
         </ul>
 
@@ -471,6 +627,7 @@
         <h3>Escalação e confirmação</h3>
         <ul>
           <li>Em cada evento, admins abrem <strong>Escalação</strong> e marcam quem participa por <strong>função</strong> (Vocal, Bateria, Teclado…).</li>
+          <li>Abaixo do nome de cada integrante aparecem os <strong>instrumentos do perfil</strong> (se cadastrados) — além do campo de função na escala.</li>
           <li>Status: <strong>Pendente</strong>, <strong>Confirmado</strong> ou <strong>Recusado</strong>. O músico responde pelo <strong>link no e-mail ou WhatsApp</strong> (aceitar ou recusar em um toque).</li>
           <li>Convide <strong>convidados externos</strong> (não membros) com nome e função — também recebem link de confirmação.</li>
           <li>Use <strong>formações salvas</strong> (em Configurações → Gerenciar equipe) ou <strong>Sugerir escala</strong> para preencher mais rápido.</li>
@@ -481,10 +638,19 @@
           <li>Integrantes <strong>recém-escalados</strong> recebem notificação imediata (e e-mail/WhatsApp, se ativados no perfil).</li>
         </ul>
 
+        <h3>Cachê do show</h3>
+        <ul>
+          <li>Em eventos do tipo <strong>show</strong>, administradores cadastram o <strong>valor total</strong>, descontos de transporte/equipamento e observações.</li>
+          <li>O app divide o valor <strong>líquido</strong> igualmente entre integrantes <strong>confirmados</strong> na escalação (ou todos os membros, se não houver escala definida).</li>
+          <li>Marque <strong>Fechado</strong> quando o pagamento for acertado com a banda.</li>
+        </ul>
+
         <h3>Calendário e lembretes</h3>
         <ul>
           <li>Exporte o evento em <strong>.ics</strong> ou adicione ao <strong>Google Agenda</strong> pelo link na página do evento.</li>
           <li><strong>24 horas antes</strong> do evento, quem está na escala (ou todos, se não houver escala) recebe lembrete por notificação, e-mail e WhatsApp.</li>
+          <li>Se o evento tiver <strong>setlist vinculada</strong>, o lembrete menciona o roteiro — abra direto do evento com <strong>Tocar setlist</strong>.</li>
+          <li>Horários de eventos e lembretes seguem o fuso de <strong>Fortaleza (UTC−3)</strong>.</li>
         </ul>
 
         <div class="help-callout">
@@ -494,14 +660,58 @@
       </div>
     </section>
 
+    <section class="card help-section" id="estudios">
+      <div class="card-header">Estúdios de ensaio</div>
+      <div class="card-body">
+        <p>
+          O SetSync permite <strong>buscar estúdios</strong> por cidade/bairro e <strong>solicitar reservas</strong> de salas de ensaio.
+          Donos de estúdio cadastram o espaço, definem disponibilidade e confirmam ou recusam pedidos — com endereço no <strong>Google Maps</strong>.
+        </p>
+        <h3>Para bandas</h3>
+        <ul>
+          <li>Menu <strong>Estúdios</strong> → busque por cidade ou bairro.</li>
+          <li>Estúdios com perfil completo exibem o selo <strong>Verificado</strong> na busca.</li>
+          <li>Abra o estúdio, veja fotos, equipamentos e <strong>abrir no Google Maps</strong>.</li>
+          <li>Escolha a sala e clique em <strong>Reservar</strong>.</li>
+          <li>Selecione data, horário e banda. A solicitação fica <strong>pendente</strong> até o estúdio confirmar.</li>
+          <li>Quando confirmado, o ensaio entra na <strong>Agenda da banda</strong> com badge <em>via Estúdio</em>.</li>
+          <li>Em <strong>Minhas reservas</strong> você acompanha status e pode cancelar.</li>
+        </ul>
+        <h3>Para donos de estúdio</h3>
+        <ul>
+          <li><strong>Cadastrar meu estúdio</strong> — perfil, fotos, salas e equipamentos.</li>
+          <li>Após o cadastro, o <strong>painel</strong> mostra um guia de primeiros passos: perfil, fotos, salas, horários, QR e divulgação.</li>
+          <li>Você recebe <strong>e-mails de onboarding</strong> (D0, D2, D5, D7 e D10) com dicas de painel, QR, fotos e primeira reserva.</li>
+          <li>No cadastro do endereço, use a <strong>busca com Google Maps</strong> para preencher rua, bairro, cidade e coordenadas automaticamente.</li>
+          <li>Configure <strong>disponibilidade semanal</strong> e <strong>bloqueios</strong> pontuais por sala.</li>
+          <li>No <strong>painel</strong>, confirme ou recuse solicitações; confirmação cria evento na agenda da banda.</li>
+          <li><strong>QR Code de agendamento</strong> — no painel, baixe ou imprima o QR para a recepção; bandas escaneiam e reservam pelo app.</li>
+          <li>O painel mostra <strong>visualizações da página</strong> e <strong>cliques no agendamento</strong> para acompanhar divulgação.</li>
+          <li>Com perfil completo (fotos, endereço, disponibilidade e QR), o estúdio ganha o selo <strong>Verificado</strong> na busca.</li>
+          <li>A <strong>página pública</strong> do estúdio tem preview rico para compartilhar no Instagram e WhatsApp.</li>
+          <li>Contas de estúdio abrem direto no <strong>painel do estúdio</strong> após o login (sem passar pela lista de bandas).</li>
+          <li>Plano básico: até <strong>2 salas</strong>. <strong>Premium</strong> (R$ 49/mês ou R$ 490/ano): salas ilimitadas e trial de 30 dias no primeiro cadastro.</li>
+        </ul>
+        <p class="mb-0">
+          <a href="{{ url_for('studios.landing') }}" class="btn btn-sm btn-outline-secondary">SetSync para Estúdios</a>
+          <a href="{{ url_for('studios.search') }}" class="btn btn-sm btn-outline-primary ms-2">Buscar estúdios</a>
+          <a href="{{ url_for('studios.register_studio') }}" class="btn btn-sm btn-primary ms-2">Cadastrar estúdio</a>
+        </p>
+      </div>
+    </section>
+
     <section class="card help-section" id="notificacoes">
-      <div class="card-header">Alertas (e-mail e WhatsApp)</div>
+      <div class="card-header">Alertas (push, e-mail e WhatsApp)</div>
       <div class="card-body">
         <ul>
           <li>Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>, cadastre seu <strong>WhatsApp</strong> (com DDD; o país 55 é assumido se omitir) e marque os alertas desejados.</li>
-          <li><strong>E-mail</strong> — notificações da banda e lembretes de agenda (padrão ligado).</li>
+          <li><strong>Push</strong> — notificações no celular ou navegador (ative por dispositivo na seção de notificações do perfil).</li>
+          <li><strong>E-mail</strong> — avisos da banda e lembretes de agenda (padrão ligado).</li>
           <li><strong>WhatsApp</strong> — mesmos avisos por mensagem; só funciona com número salvo no perfil.</li>
-          <li>Você recebe avisos sobre: cifras novas ou alteradas, setlists, convites, eventos na agenda e quando for <strong>escalado</strong> (com link para confirmar ou recusar).</li>
+          <li>Alertas <strong>urgentes</strong> (escalação, convites, lembretes de agenda) chegam na hora.</li>
+          <li>Mudanças de cifras, setlists e demais atualizações da banda entram em um <strong>resumo diário</strong> por volta das <strong>21h</strong> (horário de Fortaleza).</li>
+          <li>Você pode ligar ou desligar cada <strong>tipo de alerta</strong> por canal (push, e-mail, WhatsApp) na tabela do perfil.</li>
+          <li>Reservas de <strong>estúdio</strong> (solicitação, confirmação ou recusa) também geram notificação.</li>
           <li>Lembretes de evento saem cerca de <strong>24 horas antes</strong> para quem está na escalação.</li>
           <li>E-mails saem de <span class="code">contato@setsync.com.br</span>.</li>
           <li>Contas <span class="code">@setsync.com.br</span> também podem usar o webmail interno (superadmin).</li>
@@ -529,16 +739,55 @@
         <ul>
           <li>No menu superior, escolha <strong>Cifra</strong>, <strong>Grade harmônica</strong> ou <strong>Letra</strong> (quando disponíveis na música).</li>
           <li>Tecla <span class="kbd">G</span> alterna entre os modos na ordem: cifra → grade → letra.</li>
+          <li>A <strong>cifra</strong> usa o mesmo layout de <strong>folha</strong> do preview e da visualização normal: fundo escuro (ou claro no tema claro), seções com rótulo (Intro, Refrão…), acordes destacados e letra legível.</li>
           <li>Tecla <span class="kbd">N</span> liga o modo <strong>Nashville</strong> (números 1–7) na grade harmônica.</li>
           <li>A <strong>grade</strong> usa a mesma transposição da cifra (cantora/cantor e tom do palco).</li>
           <li><strong>Auto-scroll</strong> funciona na cifra e na grade; na grade, a velocidade inicial segue o <strong>BPM</strong> da música quando cadastrado.</li>
           <li>Se a grade parecer desatualizada após editar, force atualização (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>) — o palco guarda cache do HTML renderizado.</li>
         </ul>
 
+        <h3>Versão Banda / Minha</h3>
+        <ul>
+          <li>Se você editou uma música e manteve alterações só para si, os botões <strong>Banda</strong> e <strong>Minha</strong> aparecem na barra do Modo Tocar.</li>
+          <li><span class="kbd">V</span> alterna entre a versão oficial da banda e a sua versão pessoal.</li>
+          <li>Na lista lateral (<span class="kbd">L</span>), músicas com versão pessoal exibem o indicador <strong>Minha</strong>.</li>
+          <li>Membros que não editaram veem sempre a versão da banda.</li>
+        </ul>
+
         <h3>Acordes no palco</h3>
         <ul>
-          <li><strong>Toque em um acorde</strong> na cifra ou na grade para ver o diagrama (violão/cavaco/teclado).</li>
+          <li><strong>Toque em um acorde</strong> na cifra ou na grade para ver o diagrama (violão, guitarra, baixo, ukulele, cavaquinho ou piano).</li>
           <li><strong>Capo</strong> cadastrado na música aparece na faixa de metadados no Modo Tocar.</li>
+        </ul>
+
+        <h3>Metrônomo, pedal e anotações no palco</h3>
+        <ul>
+          <li><strong>Metrônomo</strong> — botão na barra ou tecla <span class="kbd">M</span>. Usa o <strong>BPM</strong> e o compasso da música; acento no tempo 1; <strong>count-in</strong> configurável (2 ou 4 tempos) no primeiro uso ou no overlay de atalhos.</li>
+          <li><strong>Desenhar sobre a cifra</strong> — botão ou tecla <span class="kbd">D</span> ativa um canvas transparente para marcas à mão. Use <span class="kbd">E</span> para borracha e o botão <i class="fas fa-trash-alt"></i> para limpar. O desenho fica salvo na <strong>sua conta</strong> e sincroniza entre dispositivos.</li>
+          <li><strong>Pedais Bluetooth</strong> — por padrão <span class="kbd">Page Up</span>/<span class="kbd">Page Down</span> paginam e <span class="kbd">↑</span>/<span class="kbd">↓</span> trocam de música. Ícone de pedal: mapeamento manual; ícone <i class="fas fa-magic"></i>: <strong>assistente</strong> que detecta as teclas do seu pedal passo a passo.</li>
+        </ul>
+
+        <h3>Seções, vocalista e loop</h3>
+        <ul>
+          <li><strong>Seções</strong> (<span class="kbd">S</span>) — painel lateral lista Intro, Refrão, Ponte etc.; toque para ir direto à seção na cifra.</li>
+          <li><strong>Modo vocalista</strong> (<span class="kbd">P</span>) — letra grande, sem distrações, ideal para projeção ou cantor no palco.</li>
+          <li><strong>Loop de trecho</strong> (<span class="kbd">R</span>) — marque pontos <strong>A</strong> e <strong>B</strong> e repita o trecho (ensaio de refrão difícil).</li>
+          <li><strong>Próxima música</strong> — canto inferior esquerdo mostra um preview da faixa seguinte.</li>
+        </ul>
+
+        <h3>Sincronizar a banda no palco</h3>
+        <ul>
+          <li>Botão <strong>Sync</strong> na barra: quando ligado, você segue a música que o <strong>líder</strong> avança (via tempo real na banda).</li>
+          <li>Ao abrir pelo <strong>evento da agenda</strong>, o Sync costuma vir ligado — útil no culto com vários tablets.</li>
+          <li>Quem lidera não precisa fazer nada extra: trocar de música já avisa os outros.</li>
+        </ul>
+
+        <h3>Offline e metadados no palco</h3>
+        <ul>
+          <li>Ao abrir o Modo Tocar, o app <strong>baixa automaticamente</strong> o repertório da setlist (ou da banda) para o dispositivo — indicador <em>12/12 prontas</em> na barra offline.</li>
+          <li><strong>BPM</strong>, <strong>capo</strong> e <strong>compasso</strong> aparecem na barra de metadados junto com artista e tom.</li>
+          <li><strong>Notas de palco</strong> — cadastre na setlist (campo por música) ou edite no palco (botão Editar no aviso amarelo ao trocar de faixa).</li>
+          <li>Com <strong>duração</strong> cadastrada na música, o auto-scroll pode usar velocidade <strong>Auto</strong> (termina a rolagem no tempo da faixa).</li>
         </ul>
 
         <h3>Atalhos úteis</h3>
@@ -548,14 +797,26 @@
           <tr><th><span class="kbd">C</span></th><td>Duas colunas</td></tr>
           <tr><th><span class="kbd">A</span></th><td>Caber na tela (ajuste automático)</td></tr>
           <tr><th><span class="kbd">G</span></th><td>Alterna cifra → grade harmônica → letra (quando houver)</td></tr>
+          <tr><th><span class="kbd">V</span></th><td>Alterna versão <strong>Banda</strong> / <strong>Minha</strong> (se houver versão pessoal)</td></tr>
+          <tr><th><span class="kbd">S</span></th><td>Índice de seções (Intro, Refrão…)</td></tr>
+          <tr><th><span class="kbd">P</span></th><td>Modo vocalista (letra grande)</td></tr>
+          <tr><th><span class="kbd">R</span></th><td>Loop de trecho (A/B)</td></tr>
+          <tr><th><span class="kbd">M</span></th><td>Liga / pausa metrônomo</td></tr>
+          <tr><th><span class="kbd">D</span></th><td>Liga / pausa desenho sobre a cifra</td></tr>
           <tr><th><span class="kbd">N</span></th><td>Nashville (1–7) na grade harmônica</td></tr>
+          <tr><th><span class="kbd">↑</span> / <span class="kbd">↓</span></th><td>Música anterior / próxima (pedal ou teclado)</td></tr>
           <tr><th><span class="kbd">F</span></th><td>Tela cheia</td></tr>
           <tr><th><span class="kbd">T</span></th><td>Tema claro / escuro</td></tr>
+          <tr><th><span class="kbd">L</span></th><td>Lista lateral de músicas</td></tr>
           <tr><th><span class="kbd">Esc</span></th><td>Fecha lista ou sai do modo tocar</td></tr>
         </table>
 
         <div class="help-callout">
-          Em tablets e celulares, prefira <strong>tela cheia</strong> e evite gestos do navegador (voltar) durante o show.
+          Na <strong>primeira vez</strong> no Modo Tocar, um overlay explica os atalhos e oferece configurar o <strong>count-in</strong> do metrônomo. Em seguida, o <strong>assistente de pedal</strong> pode mapear seu footswitch Bluetooth.
+        </div>
+
+        <div class="help-callout">
+          Em tablets e celulares, prefira <strong>tela cheia</strong> e evite gestos do navegador (voltar) durante o show. No iOS, desative <strong>Teclado completo</strong> (Acessibilidade) se o pedal não responder.
         </div>
       </div>
     </section>
@@ -641,7 +902,7 @@
         <ul>
           <li><strong>Visualização da cifra</strong> — abas <strong>Cifra</strong>, <strong>Grade harmônica</strong> e <strong>Letra</strong>, já transpostas conforme o tom escolhido.</li>
           <li><strong>Modo Tocar</strong> — menu <strong>Cifra / Grade / Letra</strong> ou tecla <span class="kbd">G</span>; <span class="kbd">N</span> para Nashville na grade.</li>
-          <li><strong>PDF da setlist</strong> (Pro/Worship) — seção opcional de grades harmônicas por música.</li>
+          <li><strong>PDF da setlist</strong> (Pro/Worship) — seções opcionais: cifras, letras, grades harmônicas e <strong>ficha técnica</strong> (escalas por tom).</li>
         </ul>
 
         <h3>Manual chordsheet.com</h3>
@@ -661,31 +922,74 @@
     </section>
 
     <section class="card help-section" id="importador">
-      <div class="card-header">Importar cifra (Cifra → SetSync)</div>
+      <div class="card-header">Importar cifra</div>
       <div class="card-body">
         <p>
-          Além de <strong>colar de um site de cifras</strong> (veja seção Cifras), você pode usar o botão <strong>Cifra → SetSync</strong>
-          ao adicionar ou editar uma música. A ferramenta preenche título, tom e conteúdo a partir de uma URL.
+          Há três caminhos para trazer músicas para a banda. O mais prático na maioria dos casos é
+          <strong>Buscar cifra</strong> na lista de cifras da banda.
         </p>
-        <h3>Modos da ferramenta</h3>
+
+        <h3>Buscar cifra (recomendado)</h3>
+        <ul>
+          <li>Na página da banda ou na lista de cifras, toque em <strong>Buscar cifra</strong>.</li>
+          <li>Digite <strong>título ou artista</strong> — o SetSync consulta o repertório já importado no servidor e um índice online.</li>
+          <li>Resultados marcados como <strong>Pronta</strong> abrem mais rápido; <strong>Índice</strong> busca a página na hora.</li>
+          <li>Toque em uma música para ver o <strong>preview</strong> formatado (mesmo layout de folha da visualização).</li>
+          <li>Se estiver ok, <strong>Importar para [banda]</strong> adiciona a música ao repertório (requer papel <strong>Editor</strong> ou admin).</li>
+        </ul>
+
+        <h3>Colar no formulário</h3>
+        <ul>
+          <li>Em <strong>Adicionar</strong> ou <strong>Editar</strong> cifra, cole o texto copiado de um site de cifras (<span class="kbd">Ctrl</span>+<span class="kbd">V</span>).</li>
+          <li>A conversão para ChordPro costuma ser automática; se não reconhecer, use <strong>Converter colagem</strong>.</li>
+          <li>Veja também a seção <a href="#cifras">Cifras → Colar de outro site</a>.</li>
+        </ul>
+
+        <h3>Cifra → SetSync (ferramenta avançada)</h3>
+        <p>
+          Ao adicionar ou editar uma música, o botão <strong>Cifra → SetSync</strong> abre uma ferramenta embutida com mais opções:
+        </p>
         <ul>
           <li><strong>Somente cifra</strong> — cole a URL da página da música em um site de cifras compatível.</li>
           <li><strong>Enviar áudio</strong> — MP3/WAV para gerar cifra ou grade (quando disponível no servidor).</li>
         </ul>
+
         <div class="help-callout">
-          Para a maioria das músicas, <strong>colar o texto</strong> no formulário da cifra é o caminho mais rápido.
+          Há limite de importações por hora para evitar abuso. Se aparecer mensagem de limite, aguarde um pouco e tente de novo.
+          Depois de importar, revise título, tom e seções antes de usar no palco.
         </div>
       </div>
     </section>
 
     <section class="card help-section" id="pwa">
-      <div class="card-header">Instalar no celular (PWA)</div>
+      <div class="card-header">Instalar no celular (PWA), offline e sincronia</div>
       <div class="card-body">
         <ul>
-          <li><strong>Android / desktop:</strong> use <strong>Instalar</strong> no menu quando o navegador permitir.</li>
+          <li><strong>Android / desktop:</strong> use <strong>Instalar</strong> no menu quando o navegador permitir — o painel também pode sugerir após o cadastro.</li>
           <li><strong>iPhone / iPad:</strong> abra no <strong>Safari</strong>, toque <strong>Instalar</strong> e siga: Compartilhar → Adicionar à Tela de Início. No iOS o Chrome não instala o app completo.</li>
-          <li>Páginas já visitadas podem abrir <strong>offline</strong> em parte; cifras novas precisam de internet.</li>
           <li>Depois de atualizações do site, faça <strong>atualização forçada</strong> (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>) ou reinstale o atalho se algo parecer desatualizado.</li>
+        </ul>
+
+        <h3>Disponibilizar offline (repertório da banda)</h3>
+        <ul>
+          <li>Na página da <strong>banda</strong>, aba <strong>Repertório</strong>, use <strong>Disponibilizar offline</strong> para baixar todas as cifras desta banda para o dispositivo (IndexedDB).</li>
+          <li>A barra de progresso mostra o download; depois você vê quantas músicas estão salvas e pode <strong>remover</strong> o pacote.</li>
+          <li>No <strong>Modo Tocar</strong>, o app <strong>baixa automaticamente</strong> a setlist ao abrir (só as músicas daquela lista — mais rápido que a banda inteira). Se a internet cair, usa o pacote salvo para cifra, grade e letra.</li>
+          <li>Transposição em tempo real ainda pode exigir conexão na primeira vez; depois o cache local ajuda.</li>
+          <li>O pacote offline é <strong>por banda e por dispositivo</strong> — cada celular/tablet do palco baixa o seu.</li>
+        </ul>
+
+        <h3>Sincronia em tempo real</h3>
+        <ul>
+          <li>Quando alguém da banda <strong>importa, edita, publica ou remove</strong> uma cifra, os outros membros com a banda aberta recebem atualização automática (sem precisar recarregar a página).</li>
+          <li>Funciona na visualização da cifra e na aba Repertório da banda.</li>
+          <li>No <strong>Modo Tocar</strong>, com <strong>Sync</strong> ligado, todos seguem a música que o líder avança (tempo real por banda).</li>
+        </ul>
+
+        <h3>Colagem de cifras de outros sites</h3>
+        <ul>
+          <li>Ao colar de sites como Ultimate Guitar (formato acorde sobre letra), o importador tenta <strong>converter automaticamente</strong> para o formato do SetSync.</li>
+          <li>Há também higienização de encoding e lixo comum de sites brasileiros — se algo falhar, use <strong>Converter colagem</strong> ou edite manualmente.</li>
         </ul>
       </div>
     </section>
@@ -704,6 +1008,14 @@
           <li>Copie de novo a cifra inteira (versão simplificada costuma colar melhor).</li>
           <li>Use <strong>Converter colagem</strong> após colar; o importador gera acordes em colchetes <span class="code">[Am]</span> automaticamente.</li>
           <li>Palavras partidas ou comentários estranhos: edite manualmente antes de salvar.</li>
+          <li>Prefira <strong>Buscar cifra</strong> na lista da banda — o preview mostra como ficará antes de importar.</li>
+        </ul>
+
+        <h3>Versão pessoal vs versão da banda</h3>
+        <ul>
+          <li>Depois de editar, suas mudanças ficam em <strong>versão pessoal</strong> até você publicar — a banda não vê automaticamente.</li>
+          <li>Na visualização ou no Modo Tocar, use <strong>Ver minha versão</strong> ou os botões <strong>Banda</strong> / <strong>Minha</strong> (tecla <span class="kbd">V</span>).</li>
+          <li>Para atualizar o repertório da banda: edite de novo, salve e escolha <strong>Enviar para a banda</strong>.</li>
         </ul>
 
         <h3>Transposição / tom errado</h3>
@@ -728,11 +1040,14 @@
         <ul>
           <li>Atualize com <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span> (ou limpe cache do PWA).</li>
           <li>Se instalou como app, feche e abra de novo pelo ícone.</li>
+          <li>No <strong>Modo Tocar</strong>, layout antigo ou cifra em branco quase sempre é cache — force atualização ou reabra o Modo Tocar.</li>
         </ul>
 
         <h3>Layout no celular</h3>
         <ul>
           <li>Use <strong>Modo Tocar</strong> em tela cheia (<span class="kbd">F</span>) para ler cifras no palco.</li>
+          <li><strong>Pedal Bluetooth</strong> não responde? Foque a janela do Modo Tocar, use o <strong>assistente de pedal</strong> (ícone varinha) e evite teclado virtual aberto no iOS.</li>
+          <li><strong>Offline</strong>: abra o Modo Tocar com internet uma vez para baixar a setlist; confira o indicador <em>X/Y prontas</em> na barra.</li>
         </ul>
 
         <h3>Erro inesperado no servidor</h3>

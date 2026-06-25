@@ -13,6 +13,7 @@ from models_agenda import (
     list_events_in_time_window,
     mark_event_reminder_sent,
 )
+from config import app_now_naive, app_now_str
 
 logger = logging.getLogger('setsync.agenda_reminders')
 
@@ -28,12 +29,14 @@ def _reminder_body(event: dict) -> str:
         parts.append(f'Local: {event["location"]}.')
     if event.get('setlist_name'):
         parts.append(f'Setlist: {event["setlist_name"]}.')
+    if event.get('setlist_id'):
+        parts.append(f'Revise a setlist no app antes do ensaio.')
     return ' '.join(parts)
 
 
 def verificar_e_enviar_lembretes_agenda() -> int:
     """Notifica membros ~24h antes de cada evento. Retorna quantidade enviada."""
-    now = datetime.utcnow()
+    now = app_now_naive()
     window_start = (now + timedelta(hours=REMINDER_HOURS_BEFORE)).strftime('%Y-%m-%d %H:%M:%S')
     window_end = (
         now + timedelta(hours=REMINDER_HOURS_BEFORE + REMINDER_WINDOW_HOURS)

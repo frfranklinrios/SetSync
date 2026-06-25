@@ -26,6 +26,17 @@ NOTIFICATION_CATEGORIES: dict[str, dict[str, Any]] = {
             'event_updated',
             'event_deleted',
             'event_reminder',
+            'studio_booking_confirmed',
+            'studio_booking_rejected',
+            'studio_booking_cancelled',
+        }),
+    },
+    'estudio': {
+        'label': 'Estúdio',
+        'description': 'Solicitações e respostas de agendamento no seu estúdio',
+        'types': frozenset({
+            'studio_booking_requested',
+            'studio_booking_cancelled',
         }),
     },
     'convites': {

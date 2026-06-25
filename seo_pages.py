@@ -64,8 +64,9 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
                 '<li><strong>Setlists</strong> — ordem do show ou ensaio, tom por cantor, navegação no Modo Tocar.</li>'
                 '<li><strong>Transposição</strong> — cada vocalista com o tom certo; sustenidos e bemóis pela armadura do tom.</li>'
                 '<li><strong>Grade harmônica</strong> — editor com salvamento automático, extrair da cifra, notação brasileira e semi-pulsos.</li>'
-                '<li><strong>Agenda</strong> — ensaios e shows com setlist vinculada, escalação com confirmação por link e lembretes.</li>'
-                '<li><strong>Plano grátis</strong> — comece sem cartão; evolua para Individual, Pro ou Worship.</li>'
+                '<li><strong>Agenda</strong> — ensaios e shows com setlist vinculada, escalação com confirmação por link, instrumentos no perfil e lembretes.</li>'
+                '<li><strong>Estúdios</strong> — busque salas de ensaio, solicite reserva e sincronize com a agenda da banda.</li>'
+                '<li><strong>Plano grátis</strong> — comece sem cartão; evolua para Individual, Pro, Worship ou Estúdio (beta).</li>'
                 '</ul>'
             ),
         },
@@ -77,8 +78,9 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
                 '<li>Monte a banda e envie o link de convite aos integrantes.</li>'
                 '<li>Cadastre as músicas do repertório (importe cifras ou digite).</li>'
                 '<li>Defina vocalistas e transposição por cantor, se necessário.</li>'
+                '<li>Cadastre seus <strong>instrumentos</strong> em Meu perfil — a banda vê na escalação.</li>'
                 '<li>Monte o setlist do ensaio ou show e compartilhe com a equipe.</li>'
-                '<li>No palco, abra o Modo Tocar — tela cheia, auto-scroll e tema escuro.</li>'
+                '<li>No palco, abra o Modo Tocar — sync da banda, offline automático da setlist, seções e pedal Bluetooth.</li>'
                 '</ol>'
             ),
         },
@@ -159,9 +161,31 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'h2': 'Agenda, ensaios e escalação',
             'html': (
                 '<p>Marque ensaios e shows no calendário, vincule a setlist do evento e escale '
-                'quem participa por função. Confirmação em um toque por link no e-mail ou WhatsApp, '
+                'quem participa por função. Cada músico cadastra <strong>instrumentos no perfil</strong> '
+                '— visíveis na escalação. Confirmação em um toque por link no e-mail ou WhatsApp, '
                 'formações salvas, sugestão de escala e painel de pendentes no dashboard. '
-                'Lembretes automáticos e exportação para Google Agenda ou arquivo .ics.</p>'
+                'Lembretes automáticos (horário de Fortaleza) e exportação para Google Agenda ou arquivo .ics.</p>'
+            ),
+        })
+
+    if 'estudio' in obj or 'estúdio' in obj or 'sala de ensaio' in obj or 'reservar' in verb:
+        blocks.insert(1, {
+            'h2': 'Estúdios de ensaio',
+            'html': (
+                '<p>Busque estúdios por cidade e bairro, veja fotos e equipamentos, abra o endereço no '
+                '<strong>Google Maps</strong> e solicite reserva de sala. Quando o estúdio confirma, o ensaio '
+                'entra na agenda da banda. Donos de estúdio cadastram salas, disponibilidade e bloqueios — '
+                'plano beta gratuito com até 2 salas.</p>'
+            ),
+        })
+
+    if 'instrumento' in obj or 'músico' in obj or 'perfil' in obj:
+        blocks.insert(1, {
+            'h2': 'Instrumentos no perfil',
+            'html': (
+                '<p>Em <strong>Meu perfil</strong>, marque violão, guitarra, baixo, vocal, bateria, teclado e mais. '
+                'A banda enxerga isso na lista de membros e na escalação de eventos — sem planilha paralela '
+                'de “quem toca o quê”.</p>'
             ),
         })
 
@@ -178,9 +202,10 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
         blocks.insert(1, {
             'h2': 'Modo Tocar e app no celular',
             'html': (
-                '<p>Tela cheia para o palco: fonte grande, auto-scroll na cifra e na grade harmônica, '
-                'modo Nashville, duas colunas e tema claro ou escuro. '
-                'Instale como PWA na tela inicial e use offline quando precisar — ideal no palco ou no ensaio.</p>'
+                '<p>Tela cheia para o palco: seções, modo vocalista, sync entre músicos, '
+                'offline automático da setlist, notas de palco, metrônomo com count-in, '
+                'pedal Bluetooth e auto-scroll. '
+                'Instale como PWA na tela inicial — ideal no culto ou no ensaio sem internet.</p>'
             ),
         })
 
@@ -204,6 +229,9 @@ _KEYWORD_PAIRS: list[tuple[str, str]] = [
     ('gerenciar', 'músicos'),
     ('gerenciar', 'ensaios'),
     ('gerenciar', 'escalação'),
+    ('reservar', 'sala de ensaio'),
+    ('buscar', 'estúdio de ensaio'),
+    ('cadastrar', 'estúdio de ensaio'),
     # organizar
     ('organizar', 'cifras'),
     ('organizar', 'setlists'),
@@ -275,6 +303,11 @@ _STANDALONE_TOPICS: list[str] = [
     'palco cifras tela cheia',
     'software cifras banda',
     'plataforma setlist louvor',
+    'estúdio de ensaio online',
+    'reservar sala ensaio banda',
+    'cadastrar estúdio ensaio',
+    'instrumentos músico perfil',
+    'escalação banda instrumentos',
 ]
 
 
@@ -297,6 +330,10 @@ _PREMIUM_SLUGS = frozenset({
     'chord-sheet-cifra',
     'grade-harmonica-cifra',
     'convidar-musicos',
+    'reservar-sala-de-ensaio',
+    'buscar-estudio-de-ensaio',
+    'gerenciar-escalacao',
+    'instrumentos-musico-perfil',
 })
 
 
@@ -304,8 +341,12 @@ def _premium_faq_block(phrase: str) -> dict[str, Any]:
     return {
         'h2': 'Perguntas frequentes',
         'html': (
-            '<p><strong>O SetSync é grátis?</strong> Sim, para começar com banda, repertório e Modo Tocar.</p>'
-            f'<p><strong>Preciso instalar app?</strong> Funciona no navegador; instale como PWA para usar offline no palco.</p>'
+            '<p><strong>O SetSync é grátis?</strong> Sim, para começar com banda, repertório e Modo Tocar. '
+            'Trial Pro de 30 dias na primeira banda; estúdios têm trial Premium no primeiro cadastro.</p>'
+            '<p><strong>Preciso instalar app?</strong> Funciona no navegador; instale como PWA. '
+            'No Modo Tocar a setlist baixa automaticamente; na banda use Disponibilizar offline para o repertório inteiro.</p>'
+            '<p><strong>Plano anual?</strong> Em <a href="/assinatura/planos">Planos</a>, use Mensal/Anual para ver o desconto '
+            '(equivalente a 10 meses pagos por 12).</p>'
         ),
     }
 
@@ -474,11 +515,19 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Posso usar cifras offline no celular?',
-            'a': 'Instale o SetSync como PWA na tela inicial. O app funciona offline para consultar repertório e tocar no Modo Tocar quando a internet falhar.',
+            'a': 'Instale o SetSync como PWA na tela inicial. Na banda, use Disponibilizar offline no repertório; no Modo Tocar, a setlist baixa automaticamente ao abrir — ideal se a internet falhar no culto.',
         },
         {
             'q': 'O que é o Modo Tocar?',
-            'a': 'Tela cheia para o palco: cifra legível à distância, auto-scroll na cifra e na grade harmônica, modo Nashville, navegação entre músicas da setlist e tema escuro para ambientes com pouca luz.',
+            'a': 'Tela cheia para o palco: cifra legível, seções (S), modo vocalista (P), auto-scroll, metrônomo com count-in, sync entre músicos, offline automático da setlist, notas de palco, pedal Bluetooth e navegação entre músicas da setlist.',
+        },
+        {
+            'q': 'Como sincronizar a banda no palco?',
+            'a': 'No Modo Tocar, ligue o botão Sync — todos seguem a música que o líder avança. Ao abrir pelo evento da agenda (Tocar setlist), o sync costuma vir ligado automaticamente.',
+        },
+        {
+            'q': 'Como configurar pedal Bluetooth no SetSync?',
+            'a': 'No Modo Tocar, use o ícone de pedal para mapear teclas ou o assistente (varinha) que detecta Page Up/Down e setas. Por padrão, ↑↓ trocam música e Page Up/Down paginam a cifra.',
         },
         {
             'q': 'Posso exportar setlist em PDF?',
@@ -494,11 +543,43 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Como organizar ensaios da banda?',
-            'a': 'Use a Agenda: marque ensaio ou show, vincule a setlist, escale por função e envie confirmação por link no e-mail ou WhatsApp. Lembretes automáticos ajudam a equipe a não esquecer.',
+            'a': 'Use a Agenda: marque ensaio ou show, vincule a setlist, escale por função e envie confirmação por link no e-mail ou WhatsApp. Cadastre seus instrumentos no perfil para a equipe ver na escalação. Lembretes automáticos ajudam a equipe a não esquecer.',
+        },
+        {
+            'q': 'O SetSync tem reserva de estúdio de ensaio?',
+            'a': 'Sim. Bandas buscam estúdios por cidade, solicitam horário e acompanham em Minhas reservas. Quando confirmado, o ensaio entra na agenda da banda. Donos cadastram salas, QR na recepção e plano Premium (R$ 49/mês) para salas ilimitadas — trial de 30 dias no primeiro cadastro.',
+        },
+        {
+            'q': 'Como funciona o assistente de ajuda do SetSync?',
+            'a': 'O ícone de chat no canto da tela responde com base na Ajuda, Guia e FAQ. Se você estiver logado, as respostas podem incluir atalhos para adicionar cifra, cadastrar estúdio ou ver planos.',
+        },
+        {
+            'q': 'Existe plano anual com desconto?',
+            'a': 'Sim. Em Planos, alterne Mensal/Anual para Pro, Worship, Individual e Estúdio Premium. O anual equivale a pagar 10 meses e usar 12.',
+        },
+        {
+            'q': 'Como indicar outra banda e ganhar Pro grátis?',
+            'a': 'Após montar sua primeira setlist, o painel pode mostrar indicação. Em Planos → Indicar banda, gere um voucher de 15 dias Pro; quando alguém usar, você ganha mais 15 dias na sua banda principal.',
+        },
+        {
+            'q': 'O que é o selo Verificado do estúdio?',
+            'a': 'Estúdios com perfil completo — fotos, endereço, disponibilidade e QR de agendamento — exibem o selo na busca. O dono vê visualizações e cliques no painel.',
+        },
+        {
+            'q': 'Posso cadastrar os instrumentos que toco?',
+            'a': 'Em Meu perfil, marque um ou mais instrumentos (violão, guitarra, baixo, vocal, bateria, teclado…). A banda vê isso na lista de membros e na escalação de eventos.',
         },
         {
             'q': 'Quantas músicas posso cadastrar?',
             'a': 'O plano grátis tem limites generosos para começar. Planos pagos ampliam repertório, bandas e recursos como PDF e Worship multi-bandas.',
+        },
+        {
+            'q': 'Como funciona a cobrança no SetSync?',
+            'a': 'Ao assinar Pro, Worship, Individual ou Estúdio Premium, você é redirecionado ao Mercado Pago. Lá você autoriza a assinatura recorrente — o SetSync não armazena dados do seu cartão. O trial de 30 dias é sem cartão.',
+        },
+        {
+            'q': 'É seguro pagar pelo SetSync?',
+            'a': 'O pagamento é processado pelo Mercado Pago, um dos meios mais usados no Brasil. Seus dados de cartão não passam pelos servidores do SetSync — você confirma tudo no site do MP.',
         },
         {
             'q': 'O SetSync é melhor que mandar cifra no WhatsApp?',

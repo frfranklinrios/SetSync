@@ -10,6 +10,7 @@ from db import (
     marcar_aviso_voucher_enviado,
     update_assinatura,
     list_trials_expiring_soon,
+    list_studio_trials_expiring_soon,
 )
 from monetizacao import PLANOS
 from email_service import send_email
@@ -19,11 +20,12 @@ from retention_emails import verificar_e_disparar_retencao
 from agenda_reminders import verificar_e_enviar_lembretes_agenda
 from security import external_url_for
 from vouchers import STATUS_EXPIRADO
+from config import app_now_naive, app_now_str
 
 
 def verificar_vouchers_vencidos() -> None:
     """Rebaixa bandas com voucher expirado e envia e-mail."""
-    agora = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    agora = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     for row in list_voucher_usos_vencendo(agora):
         banda_id = row['banda_id']
         update_assinatura(
@@ -41,12 +43,12 @@ def verificar_vouchers_vencidos() -> None:
 
 def avisar_vouchers_proximo_vencimento() -> None:
     """E-mail 3 dias antes do vencimento."""
-    limite = (datetime.utcnow() + timedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S')
+    limite = (app_now_naive() + timedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S')
     for row in list_voucher_usos_aviso(limite):
         plano = row.get('plano', 'pro')
         plano_nome = PLANOS.get(plano).nome if plano in PLANOS else plano
         expira = datetime.strptime(str(row['expira_em'])[:19], '%Y-%m-%d %H:%M:%S')
-        dias = max(1, (expira - datetime.utcnow()).days)
+        dias = max(1, (expira - app_now_naive()).days)
         email = row.get('owner_email')
         if email and send_voucher_aviso_email(email, plano_nome, dias):
             marcar_aviso_voucher_enviado(row['id'])
@@ -72,12 +74,35 @@ def avisar_trials_proximo_vencimento() -> None:
         send_email([email], subject, html, body)
 
 
+def avisar_studio_trials_proximo_vencimento() -> None:
+    """E-mail quando faltam ~3 dias para o trial Premium de estúdio acabar."""
+    link = external_url_for('assinatura_bp.planos') + '#estudio'
+    for row in list_studio_trials_expiring_soon(days=3):
+        email = row.get('owner_email')
+        if not email:
+            continue
+        fim = str(row.get('trial_fim', ''))[:10]
+        subject = 'Seu trial Premium de estúdio termina em 3 dias'
+        body = (
+            f'Seu trial Premium de estúdio termina em breve ({fim}).\n'
+            f'Assine para manter salas ilimitadas: {link}'
+        )
+        html = (
+            f'<p>Seu <strong>trial Premium de estúdio</strong> termina em <strong>3 dias</strong>.</p>'
+            f'<p><a href="{link}">Ver planos Estúdio</a></p>'
+        )
+        send_email([email], subject, html, body)
+
+
 def run_daily_voucher_jobs() -> None:
     avisar_vouchers_proximo_vencimento()
     verificar_vouchers_vencidos()
     avisar_trials_proximo_vencimento()
+    avisar_studio_trials_proximo_vencimento()
     verificar_e_disparar_onboarding()
     verificar_e_disparar_retencao()
+    from studio_onboarding_emails import verificar_e_disparar_onboarding_estudio
+    verificar_e_disparar_onboarding_estudio()
 
 
 def run_agenda_reminder_jobs() -> None:

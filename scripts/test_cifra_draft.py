@@ -71,6 +71,16 @@ def main() -> int:
     assert delete_cifra_user_draft(cid, uid)
     assert get_cifra_user_draft(cid, uid) is None
 
+    from blueprints.cifras import enrich_cifra_for_tocar
+
+    upsert_cifra_user_draft(cid, uid, draft_fields)
+    enriched = enrich_cifra_for_tocar(cifra, user_id=uid)
+    assert enriched.get('has_personal_draft') is True
+    assert enriched.get('html_mine')
+    assert 'sp-chord">A<' in enriched['html_mine']
+    assert 'sp-chord">G<' in enriched['html']
+
+    print('ok enrich_cifra_for_tocar com rascunho pessoal')
     print('ok rascunho pessoal create/merge/publish/discard')
     print('Todos os testes cifra_draft passaram.')
     return 0

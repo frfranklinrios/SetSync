@@ -7,6 +7,7 @@ from db import (
     list_retention_candidates_no_band,
     get_user,
     list_retention_candidates_trial_expired,
+    list_retention_candidates_studio_trial_expired,
     mark_retention_sent,
     retention_was_sent,
     user_wants_email_notifications,
@@ -84,8 +85,26 @@ _CAMPAIGNS = {
         'html_body': (
             '<p>O <strong>trial Pro</strong> da banda <em>{band_name}</em> terminou.</p>'
             '<p>Volte ao Pro por R$ 29/mês e mantenha recursos ilimitados + exportação PDF.</p>'
+            '<p style="font-size:14px;color:#64748b;">Ao assinar, você paga pelo <strong>Mercado Pago</strong> — '
+            'seus dados de cartão não passam pelo SetSync.</p>'
         ),
         'button_label': 'Ver planos Pro',
+        'button_key': 'planos_url',
+    },
+    'studio_trial_expired': {
+        'subject': 'Trial Premium do estúdio terminou',
+        'body': (
+            'Seu trial Premium do estúdio {studio_name} terminou.\n'
+            'O plano básico permite até 2 salas. Assine Premium por R$ 49/mês.\n\n'
+            '{planos_url}'
+        ),
+        'html_body': (
+            '<p>O <strong>trial Premium</strong> do estúdio <em>{studio_name}</em> terminou.</p>'
+            '<p>Volte a ter <strong>salas ilimitadas</strong> por R$ 49/mês.</p>'
+            '<p style="font-size:14px;color:#64748b;">Pagamento via <strong>Mercado Pago</strong> — '
+            'cartão não passa pelo SetSync.</p>'
+        ),
+        'button_label': 'Ver planos Estúdio',
         'button_key': 'planos_url',
     },
 }
@@ -96,6 +115,7 @@ def _urls() -> dict[str, str]:
         'dashboard_url': external_url_for('dashboard'),
         'bands_url': external_url_for('bands.list_bands'),
         'planos_url': external_url_for('assinatura_bp.planos'),
+        'planos_estudio_url': external_url_for('assinatura_bp.planos') + '#estudio',
     }
 
 
@@ -167,6 +187,26 @@ def verificar_e_disparar_retencao() -> int:
             continue
         extra = {'band_name': row.get('band_name') or 'sua banda'}
         if _send_campaign(email, 'trial_expired', extra=extra):
+            mark_retention_sent(uid, campaign, 'enviado')
+            enviados += 1
+        else:
+            mark_retention_sent(uid, campaign, 'erro')
+
+    for row in list_retention_candidates_studio_trial_expired():
+        uid = row['owner_id']
+        campaign = f"studio_trial_expired:{row.get('studio_id') or uid}"
+        if retention_was_sent(uid, campaign):
+            continue
+        if not user_wants_email_notifications(get_user(uid)):
+            continue
+        email = (row.get('owner_email') or '').strip()
+        if not email:
+            continue
+        extra = {
+            'studio_name': row.get('studio_nome') or 'seu estúdio',
+            'planos_url': _urls()['planos_estudio_url'],
+        }
+        if _send_campaign(email, 'studio_trial_expired', extra=extra):
             mark_retention_sent(uid, campaign, 'enviado')
             enviados += 1
         else:

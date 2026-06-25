@@ -1,0 +1,28 @@
+{# Assistente de ajuda — busca em Ajuda, Guia e FAQ #}
+<button type="button" class="help-chat-fab" id="help-chat-fab"
+        aria-label="Abrir assistente de ajuda" aria-expanded="false" title="Ajuda rápida">
+    <i class="fas fa-comment-dots" aria-hidden="true"></i>
+</button>
+<div class="help-chat-panel" id="help-chat-panel" role="dialog" aria-label="Assistente SetSync"
+     data-chat-url="{{ url_for('ajuda.chat') }}"
+     data-suggestions-url="{{ url_for('ajuda.chat_suggestions') }}">
+    <div class="help-chat-header">
+        <div>
+            <strong>Assistente SetSync</strong>
+            <span>Respostas da Ajuda e do Guia</span>
+        </div>
+        <button type="button" class="help-chat-close" aria-label="Fechar">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="help-chat-messages" aria-live="polite"></div>
+    <form class="help-chat-form" autocomplete="off">
+        <input type="text" name="q" maxlength="300"
+               placeholder="Ex.: como transpor cifra?" aria-label="Sua pergunta">
+        <button type="submit" class="help-chat-send" aria-label="Enviar">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </form>
+</div>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/help-chatbot.css') }}?v=1">
+<script src="{{ url_for('static', filename='js/help-chatbot.js') }}?v=1"></script>

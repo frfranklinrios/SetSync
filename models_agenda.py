@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta
 
+from config import app_now_naive, app_now_str
+
 from database import IS_POSTGRES, IntegrityError
 from db import get_db
 
@@ -27,17 +29,18 @@ def create_band_event(
     notes: str | None = None,
     setlist_id: int | None = None,
     created_by: str | None = None,
+    studio_booking_id: str | None = None,
 ) -> str:
     event_id = str(uuid.uuid4())
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_naive().strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     c.execute(
         '''INSERT INTO band_events
            (id, band_id, setlist_id, event_type, title, starts_at, ends_at,
             location, location_lat, location_lng, location_place_id,
-            notes, created_by, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            notes, created_by, created_at, studio_booking_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (
             event_id,
             band_id,
@@ -53,6 +56,7 @@ def create_band_event(
             notes,
             created_by,
             now,
+            studio_booking_id,
         ),
     )
     db.commit()
@@ -83,7 +87,7 @@ def get_band_events(
 ) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_naive().strftime('%Y-%m-%d %H:%M:%S')
     sql = '''
         SELECT e.*, s.name AS setlist_name
         FROM band_events e
@@ -154,8 +158,8 @@ def get_upcoming_events_for_user(
     """Próximos eventos das bandas do usuário (ou todas, para superadmin)."""
     db = get_db()
     c = db.cursor()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-    until = (datetime.utcnow() + timedelta(days=days_ahead)).strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_naive().strftime('%Y-%m-%d %H:%M:%S')
+    until = (app_now_naive() + timedelta(days=days_ahead)).strftime('%Y-%m-%d %H:%M:%S')
     sql = '''
         SELECT e.*, b.name AS band_name, s.name AS setlist_name
         FROM band_events e
@@ -240,7 +244,7 @@ def event_reminder_was_sent(event_id: str, user_id: str) -> bool:
 def mark_event_reminder_sent(event_id: str, user_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_naive().strftime('%Y-%m-%d %H:%M:%S')
     try:
         c.execute(
             'INSERT INTO event_reminders (event_id, user_id, sent_at) VALUES (?, ?, ?)',
@@ -311,7 +315,7 @@ def set_event_assignments(
     assigned_by: str | None = None,
 ) -> list[str]:
     """Atualiza escala preservando respostas de quem permanece. Retorna IDs recém-adicionados."""
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_naive().strftime('%Y-%m-%d %H:%M:%S')
     existing = {a['user_id']: a for a in get_event_assignments(event_id)}
     new_map: dict[str, dict] = {}
     for item in assignments:
@@ -381,7 +385,7 @@ def respond_event_assignment(
     """Registra aceite ou recusa do escalado. Retorna a linha atualizada."""
     status = 'accepted' if accepted else 'declined'
     note = (note or '').strip()[:500] or None
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = app_now_naive().strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
     c.execute(
@@ -454,7 +458,7 @@ def count_band_events(band_id: str, *, upcoming_only: bool = False) -> int:
     db = get_db()
     c = db.cursor()
     if upcoming_only:
-        now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        now = app_now_naive().strftime('%Y-%m-%d %H:%M:%S')
         c.execute(
             'SELECT COUNT(*) AS n FROM band_events WHERE band_id = ? AND starts_at >= ?',
             (band_id, now),

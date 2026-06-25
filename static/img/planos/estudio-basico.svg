@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Plano Est�dio B�sico">
+  <defs>
+    <linearGradient id="bg-basico" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="100%" stop-color="#ffedd5"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="24" fill="url(#bg-basico)"/>
+  <rect x="28" y="38" width="64" height="52" rx="6" fill="#ea580c" opacity="0.15"/>
+  <path d="M60 28 L88 44 V82 H32 V44 Z" fill="none" stroke="#c2410c" stroke-width="3.5" stroke-linejoin="round"/>
+  <rect x="50" y="58" width="20" height="24" rx="2" fill="#ea580c"/>
+  <circle cx="42" cy="52" r="3" fill="#fb923c"/>
+  <circle cx="78" cy="52" r="3" fill="#fb923c"/>
+  <text x="60" y="104" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#9a3412">B�SICO</text>
+</svg>

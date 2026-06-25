@@ -1,0 +1,52 @@
+{% extends "index.html" %}
+{% block title %}Bloqueios — {{ room.nome }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item active">Bloqueios — {{ room.nome }}</li>
+    </ol>
+</nav>
+
+<h1 class="h5 mb-3">Bloqueios pontuais</h1>
+
+<form method="post" class="row g-2 mb-4">
+    {% include 'partials/csrf_input.html' %}
+    <input type="hidden" name="action" value="add">
+    <div class="col-md-3">
+        <input type="date" name="data" class="form-control" required>
+    </div>
+    <div class="col-md-2">
+        <input type="time" name="hora_inicio" class="form-control" required>
+    </div>
+    <div class="col-md-2">
+        <input type="time" name="hora_fim" class="form-control" required>
+    </div>
+    <div class="col-md-3">
+        <input type="text" name="motivo" class="form-control" placeholder="Motivo" maxlength="200">
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Adicionar</button>
+    </div>
+</form>
+
+{% if blocks %}
+<div class="list-group">
+    {% for b in blocks %}
+    <div class="list-group-item d-flex justify-content-between">
+        <span>{{ b.data }} · {{ b.hora_inicio }}–{{ b.hora_fim }}{% if b.motivo %} — {{ b.motivo }}{% endif %}</span>
+        <form method="post" action="{{ url_for('studios.room_blocks', studio_id=studio.id, room_id=room.id) }}">
+            {% include 'partials/csrf_input.html' %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="block_id" value="{{ b.id }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">Nenhum bloqueio cadastrado.</p>
+{% endif %}
+
+<a href="{{ url_for('studios.room_availability', studio_id=studio.id, room_id=room.id) }}" class="btn btn-link btn-sm mt-3">Disponibilidade</a>
+{% endblock %}

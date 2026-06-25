@@ -7,7 +7,9 @@ from db import (
     count_band_setlists,
     get_owned_bands,
     get_user_bands,
+    user_agenda_event_used,
     user_onboarding_checklist_dismissed,
+    user_play_mode_used,
 )
 from flask import url_for
 
@@ -64,7 +66,7 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         {
             'id': 'tocar',
             'label': 'Testar o Modo Tocar',
-            'done': total_cifras > 0 and total_setlists > 0,
+            'done': user_play_mode_used(user_id),
             'url': (
                 url_for('cifras.tocar_band', band_id=first_band_id, start=first_cifra_id)
                 if first_band_id and first_cifra_id
@@ -73,6 +75,16 @@ def get_onboarding_progress(user_id: str) -> dict | None:
                     if first_band_id and total_cifras
                     else (url_for('cifras.add', band_id=first_band_id) if first_band_id else url_for('bands.create'))
                 )
+            ),
+        },
+        {
+            'id': 'agenda',
+            'label': 'Criar um evento na agenda',
+            'done': user_agenda_event_used(user_id),
+            'url': (
+                url_for('agenda.create', band_id=first_band_id)
+                if first_band_id
+                else url_for('bands.create')
             ),
         },
     ]

@@ -1,9 +1,11 @@
 {% extends "index.html" %}
 {% block title %}Tocar — {{ setlist.name }}{% endblock %}
+{% block body_class %}play-mode{% endblock %}
 
 {% block adsense_head %}{% endblock %}
 {% block adsense_footer %}{% endblock %}
 {% block adsense_content %}{% endblock %}
+{% block chord_diagram %}{% endblock %}
 
 {% block content %}
 <style>
@@ -66,6 +68,24 @@ body { overflow-x: hidden; }
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.pb-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+.pb-meta-row .pb-meta {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+body.play-mode.chrome-hidden .pb-meta-row {
+    justify-content: center;
+}
+#version-stepper-wrap {
+    flex-shrink: 0;
+}
 
 /* Bar buttons */
 .pb-btn {
@@ -91,6 +111,16 @@ body { overflow-x: hidden; }
     pointer-events: none;
 }
 .pb-btn.pb-on { background: var(--chord-highlight-border) !important; }
+.draw-tools {
+    display: none;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0 0.15rem;
+    border-left: 1px solid rgba(148, 163, 184, 0.35);
+    margin-left: 0.1rem;
+}
+.draw-tools.draw-tools-visible { display: inline-flex; }
+#draw-clear-btn:hover { color: #f87171 !important; }
 .pb-btn.pb-exit {
     border-color: rgba(239,68,68,0.4);
     color: #f87171;
@@ -168,7 +198,83 @@ body { overflow-x: hidden; }
 /* Transpose stepper (+ / −) */
 .transpose-mini {
     font-family: inherit;
+    font-size: var(--text-xs);
+    max-width: 7.5rem;
 }
+.play-vocalist-ctrl {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+.play-vocalist-ctrl .pb-btn {
+    padding: 0.35rem 0.45rem;
+    min-width: 0;
+}
+.vocalist-add-pop {
+    position: fixed;
+    z-index: 12050;
+    display: flex;
+    gap: 0.35rem;
+    padding: 0.5rem;
+    background: #1e293b;
+    border: 1px solid var(--chord-highlight-border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.vocalist-add-pop input {
+    width: 10rem;
+    font-size: var(--text-sm);
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #475569;
+    background: #0f172a;
+    color: #f1f5f9;
+}
+[data-theme="light"] .vocalist-add-pop {
+    background: #fff;
+    border-color: #e2e8f0;
+}
+[data-theme="light"] .vocalist-add-pop input {
+    background: #fff;
+    color: #1e293b;
+    border-color: #cbd5e1;
+}
+.version-stepper {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--chord-highlight-border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--chord-highlight-bg);
+    vertical-align: middle;
+}
+.version-step-btn {
+    background: transparent;
+    border: none;
+    color: var(--chord-highlight);
+    padding: 0.32rem 0.55rem;
+    cursor: pointer;
+    font-size: var(--text-xs);
+    line-height: 1.2;
+    font-family: inherit;
+    white-space: nowrap;
+}
+.version-step-btn:hover { background: rgba(255,255,255,0.08); }
+.version-step-btn.active {
+    background: var(--chord-highlight-border);
+    font-weight: 700;
+}
+.row-badge--mine {
+    background: rgba(234, 88, 12, 0.18);
+    color: #fdba74;
+    border: 1px solid rgba(234, 88, 12, 0.45);
+}
+[data-theme="light"] .row-badge--mine {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fdba74;
+}
+[data-theme="light"] .version-step-btn:hover { background: rgba(0,0,0,0.06); }
 .transpose-stepper {
     display: inline-flex;
     align-items: stretch;
@@ -229,17 +335,17 @@ body { overflow-x: hidden; }
     -webkit-overflow-scrolling: touch;
 }
 
-.cifra-body {
+.cifra-body:not(.cifra-sheet-paper) {
     font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
     line-height: 1.95;
     color: #e2e8f0;
     padding: 2rem 4vw;
-    white-space: pre;        /* preserva alinhamento acorde↔letra */
+    white-space: pre;        /* preserva alinhamento acorde↔letra (legado) */
     word-break: normal;
     font-size: var(--play-font, 1.05rem);
     transition: opacity 0.15s, font-size 0.15s;
 }
-[data-theme="light"] .cifra-body { color: #1e293b; }
+[data-theme="light"] .cifra-body:not(.cifra-sheet-paper) { color: #1e293b; }
 
 .cifra-body.fading { opacity: 0.35; }
 
@@ -299,25 +405,25 @@ body { overflow-x: hidden; }
 [data-theme="light"] .cifra-body .cifra-tab-title { color: #b45309; }
 [data-theme="light"] .cifra-body .cifra-tab-line { color: #334155; }
 [data-theme="light"] .cifra-body .tab-string { color: #d97706; }
-.cifra-body.structured-mode {
+.cifra-body:not(.cifra-sheet-paper).structured-mode {
     white-space: normal;
 }
-.cifra-body .sp-line {
+.cifra-body:not(.cifra-sheet-paper) .sp-line {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
     row-gap: 0.2rem;
     margin-bottom: 0.45rem;
 }
-.cifra-body .sp-item {
+.cifra-body:not(.cifra-sheet-paper) .sp-item {
     display: inline-flex;
     flex-direction: column;
     padding-right: 0.55rem;
 }
-.cifra-body .sp-item.sp-no-gap {
+.cifra-body:not(.cifra-sheet-paper) .sp-item.sp-no-gap {
     padding-right: 0;
 }
-.cifra-body .sp-chord {
+.cifra-body:not(.cifra-sheet-paper) .sp-chord {
     color: var(--chord-highlight) !important;
     font-weight: 700;
     font-size: 0.82em;
@@ -325,17 +431,17 @@ body { overflow-x: hidden; }
     line-height: 1.25;
     white-space: nowrap;
 }
-.cifra-body .sp-word {
+.cifra-body:not(.cifra-sheet-paper) .sp-word {
     color: #e2e8f0;
     line-height: 1.45;
     white-space: nowrap;
 }
-[data-theme="light"] .cifra-body .cifra-chords {
+[data-theme="light"] .cifra-body:not(.cifra-sheet-paper) .cifra-chords {
     background: var(--chord-highlight-bg);
     border-left-color: var(--chord-highlight-border);
 }
-[data-theme="light"] .cifra-body .cifra-lyric { color: #334155; }
-[data-theme="light"] .cifra-body .sp-word { color: #1e293b; }
+[data-theme="light"] .cifra-body:not(.cifra-sheet-paper) .cifra-lyric { color: #334155; }
+[data-theme="light"] .cifra-body:not(.cifra-sheet-paper) .sp-word { color: #1e293b; }
 
 /* Two-col mode: precisa permitir wrap pois cada coluna é mais estreita */
 .cifra-body.two-col {
@@ -351,14 +457,15 @@ body { overflow-x: hidden; }
 
 .cifra-body.letra-mode {
     white-space: pre-wrap;
-    font-family: var(--font-sans);
-    line-height: 1.7;
+    font-family: var(--cifra-mono-font, "JetBrains Mono", ui-monospace, monospace);
+    line-height: 1.95;
     word-break: break-word;
 }
 .cifra-body .letra-play-pane {
     max-width: 42rem;
     margin: 0 auto;
-    font-size: 1.05em;
+    font-size: inherit;
+    font-family: inherit;
 }
 .cifra-body.letra-mode.two-col .letra-play-pane {
     max-width: none;
@@ -742,10 +849,12 @@ body.play-mode.edges-hint .tap-zone {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand+SC&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=20">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=10">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=21">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-cifra.css') }}?v=12">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/offline-manager.css') }}?v=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=16">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=17">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-features.css') }}?v=2">
 <style>
 #cifra-content.grade-mode .cs-play-embed.setsync-cs-sheet { padding: 0; }
 </style>
@@ -766,6 +875,9 @@ body.play-mode.edges-hint .tap-zone {
             <div class="row-sub">{{ cifra.artista }}</div>
             {% endif %}
         </div>
+        {% if cifra.has_personal_draft %}
+        <span class="row-badge row-badge--mine" title="Você tem uma versão pessoal desta música">Minha</span>
+        {% endif %}
         {% if cifra.tom_original or cifra.tom_root or cifra.tom %}
         <span class="row-badge">{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none) }}</span>
         {% endif %}
@@ -774,6 +886,24 @@ body.play-mode.edges-hint .tap-zone {
 </div>
 
 <div id="play-app">
+    <div id="play-event-bar" class="d-none" aria-label="Contexto do evento">
+        <div>
+            <div class="play-event-title">—</div>
+            <div class="play-event-meta"></div>
+            <div class="play-event-notes d-none"></div>
+        </div>
+    </div>
+    <div id="play-offline-banner" class="d-none" role="status">
+        <span class="play-offline-msg">—</span>
+        <span class="play-offline-status text-muted small" id="play-offline-status"></span>
+        <button type="button" class="pb-btn btn-sm" id="play-offline-download">Baixar offline</button>
+    </div>
+    <div id="play-loop-bar" class="d-none" aria-label="Loop de trecho">
+        <span class="play-loop-status">—</span>
+        <button type="button" class="pb-btn btn-sm" id="loop-mark-a">A</button>
+        <button type="button" class="pb-btn btn-sm" id="loop-mark-b">B</button>
+        <button type="button" class="pb-btn btn-sm" id="loop-toggle-active">Loop</button>
+    </div>
     <!-- Top bar -->
     <div id="play-bar">
         <button class="pb-btn pb-chrome-ctrl" onclick="toggleDrawer()" title="Lista (L)" aria-label="Abrir lista">
@@ -783,21 +913,41 @@ body.play-mode.edges-hint .tap-zone {
             <i class="fas fa-chevron-left"></i>
         </button>
         <div class="pb-song" id="bar-song" title="Toque para mostrar controles">
-            <div class="pb-title" id="bar-title">—</div>
-            <div class="pb-meta" id="bar-meta"></div>
+            <div class="pb-title" id="bar-title">{% if all_cifras and all_cifras|length > start_idx|default(0) %}{{ all_cifras[start_idx|default(0)].titulo }}{% else %}—{% endif %}</div>
+            <div class="pb-meta-row">
+                <div class="pb-meta" id="bar-meta"></div>
+                <div class="version-stepper transpose-mini d-none" id="version-stepper-wrap" role="group" aria-label="Versão da cifra"
+                     onclick="event.stopPropagation()">
+                    <button type="button" class="version-step-btn active" id="version-band-btn"
+                            onclick="event.stopPropagation(); setVersionMode('band')" title="Versão da banda">Banda</button>
+                    <button type="button" class="version-step-btn" id="version-mine-btn"
+                            onclick="event.stopPropagation(); setVersionMode('mine')" title="Minha versão">Minha</button>
+                </div>
+            </div>
         </div>
         <button class="pb-btn pb-chrome-ctrl" id="btn-next" onclick="nextSong()" title="Próxima música" aria-label="Próxima música">
             <i class="fas fa-chevron-right"></i>
         </button>
 
         <div class="bar-group-extra pb-chrome-ctrl">
-            {% if vocalists|length > 0 %}
-            <select id="vocalist-sel" class="transpose-mini me-1" onchange="onVocalistChange(this.value)"
-                    title="Cantora/cantor desta setlist">
-                {% for v in vocalists %}
-                <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
-                {% endfor %}
-            </select>
+            {% if can_edit|default(false) or vocalists|length > 0 %}
+            <div class="play-vocalist-ctrl me-1">
+                <select id="vocalist-sel" class="transpose-mini" onchange="onVocalistChange(this.value)"
+                        title="Cantora/cantor" {% if vocalists|length == 0 %}disabled{% endif %}>
+                    {% for v in vocalists %}
+                    <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
+                    {% endfor %}
+                    {% if vocalists|length == 0 %}
+                    <option value="">—</option>
+                    {% endif %}
+                </select>
+                {% if can_edit|default(false) %}
+                <button type="button" class="pb-btn" id="vocalist-add-btn" onclick="toggleVocalistAddPop()"
+                        title="Adicionar cantor" aria-label="Adicionar cantor">
+                    <i class="fas fa-plus"></i>
+                </button>
+                {% endif %}
+            </div>
             {% endif %}
             <div class="transpose-stepper transpose-mini" role="group"
                  aria-label="{% if vocalist_name %}Tom para {{ vocalist_name }}{% else %}Transpor{% endif %}">
@@ -835,6 +985,45 @@ body.play-mode.edges-hint .tap-zone {
             <button class="pb-btn" id="nashville-btn" onclick="toggleNashville()" title="Numeração Nashville (N)" aria-label="Nashville">
                 <i class="fas fa-hashtag"></i><span class="pb-label-text">&nbsp;1-7</span>
             </button>
+            <button class="pb-btn" id="sections-btn" type="button" title="Seções (S)" aria-label="Ir para seção">
+                <i class="fas fa-bookmark"></i><span class="pb-label-text">&nbsp;Seções</span>
+            </button>
+            <button class="pb-btn" id="vocalist-mode-btn" type="button" title="Modo vocalista / projeção (P)" aria-label="Modo vocalista">
+                <i class="fas fa-microphone"></i><span class="pb-label-text">&nbsp;Vocal</span>
+            </button>
+            <button class="pb-btn" id="loop-btn" type="button" title="Loop de trecho (R)" aria-label="Loop">
+                <i class="fas fa-redo"></i><span class="pb-label-text">&nbsp;Loop</span>
+            </button>
+            {% if band %}
+            <button class="pb-btn" id="sync-follow-btn" type="button" title="Seguir líder da banda" aria-label="Sincronizar">
+                <i class="fas fa-users"></i><span class="pb-label-text">&nbsp;Sync</span>
+            </button>
+            {% endif %}
+            <button class="pb-btn" id="metronome-btn" onclick="toggleMetronome()" title="Metrônomo (M)" aria-label="Metrônomo" data-count-in="4">
+                <i class="fas fa-drum"></i><span class="pb-label-text">&nbsp;Metro</span>
+            </button>
+            <button class="pb-btn" id="draw-btn" onclick="toggleDraw()" title="Desenhar na cifra (D)" aria-label="Anotações">
+                <i class="fas fa-pen"></i>
+            </button>
+            <div class="draw-tools" id="draw-tools" aria-label="Ferramentas de desenho">
+                <button type="button" class="pb-btn" id="draw-pen-btn" onclick="setDrawPen()" title="Caneta" aria-label="Caneta">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button type="button" class="pb-btn" id="draw-eraser-btn" onclick="setDrawEraser()" title="Borracha (E)" aria-label="Borracha">
+                    <i class="fas fa-eraser"></i>
+                </button>
+                <button type="button" class="pb-btn" id="draw-clear-btn" onclick="clearDraw()" title="Limpar anotações" aria-label="Limpar anotações">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+            <button class="pb-btn" id="pedal-btn" type="button" title="Configurar pedal Bluetooth" aria-label="Pedal"
+                    data-bs-toggle="modal" data-bs-target="#play-pedal-modal">
+                <i class="fas fa-shoe-prints"></i>
+            </button>
+            <button class="pb-btn pb-chrome-ctrl" id="pedal-wizard-open-btn" type="button"
+                    title="Assistente de pedal" aria-label="Assistente de pedal">
+                <i class="fas fa-magic"></i>
+            </button>
             <button class="pb-btn" id="scroll-btn" onclick="toggleScroll()" title="Auto-scroll (Espaço)" aria-label="Auto-scroll">
                 <i class="fas fa-angle-double-down"></i><span class="pb-label-text">&nbsp;Scroll</span>
             </button>
@@ -859,7 +1048,7 @@ body.play-mode.edges-hint .tap-zone {
             <i class="fas fa-chevron-left" aria-hidden="true"></i>
         </button>
         <div id="cifra-scroll" class="cifra-scroll-port">
-            <div class="cifra-body cifra-sheet-paper" id="cifra-content"></div>
+            <div class="cifra-body cifra-sheet-paper" id="cifra-content">{% if all_cifras and all_cifras|length > start_idx|default(0) and all_cifras[start_idx|default(0)].html %}{{ all_cifras[start_idx|default(0)].html | safe }}{% endif %}</div>
         </div>
         <button type="button" class="tap-zone right" id="tap-next" aria-label="Próxima página da cifra">
             <i class="fas fa-chevron-right" aria-hidden="true"></i>
@@ -885,28 +1074,207 @@ body.play-mode.edges-hint .tap-zone {
 <div id="scroll-badge" onclick="toggleScroll()">⏬ rolando — toque para pausar</div>
 
 <!-- Keyboard hint -->
-<div id="kbd-hint">Bordas ou ← →: paginar cifra (próxima música só na última página) · L lista · Espaço auto-scroll · Esc sair</div>
+<div id="kbd-hint">Bordas ou ← →: paginar · ↑↓: música · S: seções · P: vocal · M: metrônomo · Espaço scroll · Esc sair</div>
+
+<div id="play-sections" aria-hidden="true">
+    <div class="play-sections-hd">Seções</div>
+    <ul class="play-sections-list" id="play-sections-list"></ul>
+</div>
+
+<div id="play-next-peek" class="d-none" aria-hidden="true">
+    <div class="play-next-peek-label">Próxima</div>
+    <div class="play-next-peek-title">—</div>
+    <div class="play-next-peek-artist text-muted"></div>
+</div>
+
+<div id="sync-leader-badge" class="d-none" aria-live="polite"></div>
+<div id="countin-badge" aria-hidden="true"></div>
+
+<div id="play-stage-note" class="d-none" role="status" aria-live="polite">
+    <div class="play-stage-note-inner">
+        <i class="fas fa-sticky-note me-2" aria-hidden="true"></i>
+        <span id="play-stage-note-text"></span>
+        {% if can_edit|default(false) %}
+        <button type="button" class="pb-btn btn-sm ms-2" id="play-stage-note-edit" title="Editar nota">Editar</button>
+        {% endif %}
+    </div>
+</div>
+
+<div id="play-pedal-wizard" class="d-none" role="dialog" aria-label="Assistente de pedal">
+    <div class="play-onboard-card play-pedal-wizard-card">
+        <h3 class="play-pedal-wizard-title">Configurar pedal</h3>
+        <div class="progress mb-2" style="height:4px;">
+            <div class="progress-bar play-pedal-wizard-progress" style="width:0%"></div>
+        </div>
+        <p class="play-pedal-wizard-body mb-3">—</p>
+        <p class="text-muted small mb-3">Dica: no iOS, desative Acessibilidade → Teclado completo se o pedal não responder.</p>
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="pb-btn" data-pedal-wizard-next>Continuar</button>
+            <button type="button" class="pb-btn d-none" data-pedal-wizard-skip>Pular</button>
+            <button type="button" class="pb-btn pb-exit" data-pedal-wizard-dismiss>Depois</button>
+        </div>
+    </div>
+</div>
+
+<div id="play-onboard-overlay" class="d-none" role="dialog" aria-label="Atalhos do Modo Tocar">
+    <div class="play-onboard-card">
+        <h3><i class="fas fa-play-circle me-2"></i>Modo Tocar</h3>
+        <ul>
+            <li><strong>Bordas / ← →</strong> — paginar a cifra</li>
+            <li><strong>↑ ↓</strong> — música anterior / próxima (pedal)</li>
+            <li><strong>S</strong> — pular para Intro, Refrão, Ponte…</li>
+            <li><strong>P</strong> — letra grande para vocalista</li>
+            <li><strong>M</strong> — metrônomo com count-in</li>
+            <li><strong>Sync</strong> — seguir a música que o líder avança</li>
+        </ul>
+        <label class="d-block mb-2" for="countin-select">Count-in antes do metrônomo</label>
+        <select id="countin-select" class="form-select form-select-sm mb-3">
+            <option value="0">Desligado</option>
+            <option value="4" selected>4 tempos</option>
+            <option value="2">2 tempos</option>
+        </select>
+        <button type="button" class="pb-btn w-100" data-onboard-dismiss>Entendi</button>
+    </div>
+</div>
+
+{% if can_edit|default(false) %}
+<div id="vocalist-add-pop" class="vocalist-add-pop d-none" role="dialog" aria-label="Adicionar cantor">
+    <input type="text" id="vocalist-add-inp" placeholder="Nome do cantor" maxlength="80" autocomplete="off">
+    <button type="button" class="pb-btn" id="vocalist-add-save" onclick="submitVocalistAdd()">Salvar</button>
+</div>
+{% endif %}
+
+<div class="modal fade" id="play-pedal-modal" tabindex="-1" aria-labelledby="playPedalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:var(--card-bg,#1e293b);color:var(--text,#e2e8f0);">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="playPedalModalLabel"><i class="fas fa-shoe-prints me-2"></i>Pedal / atalhos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="play-pedal-modal-body"></div>
+        </div>
+    </div>
+</div>
 
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=16"></script>
-<script id="cifras-data" type="application/json">
-[{% for cifra in all_cifras %}{"id":{{ cifra.id | tojson }},"titulo":{{ cifra.titulo | tojson }},"artista":{{ cifra.artista | tojson }},"tom":{{ cifra_display_key(cifra, setlist_id=setlist.id if not is_virtual|default(false) else none)|tojson }},"tom_original":{{ cifra.tom_original | tojson }},"tom_root":{{ cifra.tom_root | tojson }},"transpose_semitones":{{ cifra.transpose_semitones|default(0)|tojson }},"transpose_by_vocalist":{{ cifra.transpose_by_vocalist|default({})|tojson }},"transpose_map":{{ cifra.transpose_map | tojson }},"has_tablatura":{{ cifra.has_tablatura | tojson }},"html":{{ cifra.html | tojson }},"cifra_structured":{{ cifra.cifra_structured | tojson }},"lyrics_plain":{{ cifra.lyrics_plain | default('') | tojson }},"bpm":{{ cifra.bpm | tojson }},"grade_s":{{ cifra.grade_json | tojson }},"leadsheet_s":{{ cifra.leadsheet_json | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]
-</script>
+<script src="{{ url_for('static', filename='js/offline-store.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/play-metronome.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/play-draw-overlay.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/play-pedal-config.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/play-pedal-wizard.js') }}?v=1"></script>
+<script id="play-features-config" type="application/json">{{ {
+    'bandId': band.id if band else none,
+    'bandName': band.name if band else '',
+    'setlistId': setlist.id if setlist and not is_virtual|default(false) else none,
+    'songCount': all_cifras|length,
+    'playStateUrl': play_state_url,
+    'offlinePackUrl': offline_pack_url,
+    'playNotesUrlTpl': play_notes_url_tpl,
+    'canEdit': can_edit|default(false),
+    'userId': user_id,
+    'event': event_context,
+    'autoFollowLeader': auto_follow_leader|default(false),
+}|tojson }}</script>
+<script id="cifras-data" type="application/json">{{ play_cifras_json | safe }}</script>
 
 <script>
 (function () {
     document.body.classList.add('play-mode');
 
-    var CIFRAS = JSON.parse(document.getElementById('cifras-data').textContent);
+    function decodeBase64Utf8(b64) {
+        var bin = atob(b64);
+        if (typeof TextDecoder !== 'undefined') {
+            var bytes = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+        try {
+            return decodeURIComponent(escape(bin));
+        } catch (e) {
+            return bin;
+        }
+    }
+
+    function decodeCifrasPayload() {
+        var el = document.getElementById('cifras-data');
+        if (!el) return [];
+        var raw = (el.textContent || '').trim();
+        if (!raw) return [];
+        try {
+            return JSON.parse(decodeBase64Utf8(raw));
+        } catch (b64Err) {
+            try {
+                return JSON.parse(raw);
+            } catch (jsonErr) {
+                console.error('SetSync: falha ao ler cifras do modo tocar', b64Err, jsonErr);
+                return [];
+            }
+        }
+    }
+
+    function showPlayBootError(msg) {
+        var el = document.getElementById('cifra-content');
+        if (!el) return;
+        if (el.innerHTML && el.innerHTML.trim()) return;
+        var safe = String(msg || '')
+            .replace(/&/g, '\u0026amp;')
+            .replace(/</g, '\u003c')
+            .replace(/>/g, '\u003e');
+        el.innerHTML = '<div class="grade-empty-play" style="padding:2rem 4vw;color:#94a3b8;font-size:var(--text-base);">' +
+            safe + '</div>';
+    }
+
+    function readPlayPref(key) {
+        try {
+            var localVal = localStorage.getItem(key);
+            if (localVal) return localVal;
+        } catch (e) {}
+        try {
+            return sessionStorage.getItem(key) || '';
+        } catch (e2) {
+            return '';
+        }
+    }
+
+    function writePlayPref(key, val) {
+        try { localStorage.setItem(key, val); } catch (e) {}
+        try { sessionStorage.setItem(key, val); } catch (e2) {}
+    }
+
+    function clearPlayPref(key) {
+        try { localStorage.removeItem(key); } catch (e) {}
+        try { sessionStorage.removeItem(key); } catch (e2) {}
+    }
+
+    function readSessionPref(key, def) {
+        try {
+            var val = sessionStorage.getItem(key);
+            return (val != null && val !== '') ? val : (def !== undefined ? def : '');
+        } catch (e) {
+            return def !== undefined ? def : '';
+        }
+    }
+
+    function writeSessionPref(key, val) {
+        try { sessionStorage.setItem(key, val); } catch (e) {}
+    }
+
+    function removeSessionPref(key) {
+        try { sessionStorage.removeItem(key); } catch (e) {}
+    }
+
+    var CIFRAS = decodeCifrasPayload();
     var START_IDX = {{ start_idx|default(0) }};
+    var BAND_ID = {{ (band.id if band else none)|tojson }};
     var EXIT_URL = {{ (exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id))) | tojson }};
     var SETLIST_ID = {{ (setlist.id if setlist and not is_virtual|default(false) else none)|tojson }};
     var SETLIST_VOCALIST_URL = {{ (url_for('setlists.set_vocalist', setlist_id=setlist.id) if setlist and not is_virtual|default(false) else none)|tojson }};
+    var ADD_VOCALIST_URL = {{ (url_for('bands.add_vocalist_api', band_id=band.id) if band else none)|tojson }};
 
     var current = Math.max(0, Math.min(CIFRAS.length - 1, START_IDX));
     var VALID_VOCALISTS = [{% for v in vocalists %}{{ v.id|tojson }}{% if not loop.last %}, {% endif %}{% endfor %}];
     var activeVocalistId = {{ (active_vocalist_id or '')|tojson }}
-        || localStorage.getItem('play.vocalistId')
-        || sessionStorage.getItem('play.vocalistId')
+        || readPlayPref('play.vocalistId')
         || '';
     if (activeVocalistId && VALID_VOCALISTS.indexOf(activeVocalistId) === -1) {
         activeVocalistId = VALID_VOCALISTS[0] || '';
@@ -915,21 +1283,19 @@ body.play-mode.edges-hint .tap-zone {
         activeVocalistId = VALID_VOCALISTS[0];
     }
     if (activeVocalistId) {
-        localStorage.setItem('play.vocalistId', activeVocalistId);
-        sessionStorage.setItem('play.vocalistId', activeVocalistId);
+        writePlayPref('play.vocalistId', activeVocalistId);
     }
     var targetKey = {{ (play_target_key or '')|tojson }};
     if (!targetKey) {
-        targetKey = localStorage.getItem('play.targetKey') || sessionStorage.getItem('play.targetKey') || '';
+        targetKey = readPlayPref('play.targetKey');
     }
     if (targetKey) {
-        localStorage.setItem('play.targetKey', targetKey);
-        sessionStorage.setItem('play.targetKey', targetKey);
+        writePlayPref('play.targetKey', targetKey);
     }
     // Migração: valor antigo em semitons absolutos
-    var legacySemi = sessionStorage.getItem('play.transposeSemi');
+    var legacySemi = readSessionPref('play.transposeSemi');
     if (!targetKey && legacySemi && legacySemi !== '0') {
-        sessionStorage.removeItem('play.transposeSemi');
+        removeSessionPref('play.transposeSemi');
     }
     var htmlCache = {};          // (cifra_id + ':' + semitones) -> html
     var structuredCache = {};    // (cifra_id + ':' + semitones) -> cifra_data[]
@@ -941,32 +1307,84 @@ body.play-mode.edges-hint .tap-zone {
     var VIEW_MODE_LABELS = { cifra: 'Cifra', chordsheet: 'Grade', letra: 'Letra' };
     var VIEW_MODE_CYCLE = ['cifra', 'chordsheet', 'letra'];
 
-    // Pre-cache the original (semitones=0) html
-    CIFRAS.forEach(function (c) {
-        htmlCache[c.id + ':0'] = c.html;
-        if (c.lyrics_plain) lyricsCache[c.id + ':0'] = c.lyrics_plain;
+    function seedPlayCaches(c) {
+        if (!c || c.id == null) return;
+        htmlCache[c.id + ':0:band'] = c.html || '';
+        if (c.lyrics_plain) lyricsCache[c.id + ':0:band'] = c.lyrics_plain;
         if (Array.isArray(c.cifra_structured) && c.cifra_structured.length) {
-            structuredCache[c.id + ':0'] = c.cifra_structured;
+            structuredCache[c.id + ':0:band'] = c.cifra_structured;
         }
         if (c.grade_s) {
             try {
                 var parsedGrade = JSON.parse(c.grade_s);
-                if (Array.isArray(parsedGrade)) gradeCache[c.id + ':0'] = parsedGrade;
+                if (Array.isArray(parsedGrade)) gradeCache[c.id + ':0:band'] = parsedGrade;
             } catch (e) {}
         }
         if (c.leadsheet_s) {
             try {
                 var ls0 = typeof c.leadsheet_s === 'string' ? JSON.parse(c.leadsheet_s) : c.leadsheet_s;
-                if (LeadsheetPlayRender.isLeadsheet(ls0)) leadsheetCache[c.id + ':0'] = ls0;
+                if (window.LeadsheetPlayRender && LeadsheetPlayRender.isLeadsheet(ls0)) {
+                    leadsheetCache[c.id + ':0:band'] = ls0;
+                }
             } catch (e) {}
         }
-    });
+        if (c.has_personal_draft) {
+            if (c.html_mine) htmlCache[c.id + ':0:mine'] = c.html_mine;
+            if (c.lyrics_plain_mine) lyricsCache[c.id + ':0:mine'] = c.lyrics_plain_mine;
+            if (Array.isArray(c.cifra_structured_mine) && c.cifra_structured_mine.length) {
+                structuredCache[c.id + ':0:mine'] = c.cifra_structured_mine;
+            }
+            if (c.grade_s_mine) {
+                try {
+                    var parsedGradeMine = JSON.parse(c.grade_s_mine);
+                    if (Array.isArray(parsedGradeMine)) gradeCache[c.id + ':0:mine'] = parsedGradeMine;
+                } catch (e) {}
+            }
+            if (c.leadsheet_s_mine) {
+                try {
+                    var lsMine = typeof c.leadsheet_s_mine === 'string' ? JSON.parse(c.leadsheet_s_mine) : c.leadsheet_s_mine;
+                    if (window.LeadsheetPlayRender && LeadsheetPlayRender.isLeadsheet(lsMine)) {
+                        leadsheetCache[c.id + ':0:mine'] = lsMine;
+                    }
+                } catch (e) {}
+            }
+        }
+    }
+
+    function primePlayCaches() {
+        CIFRAS.forEach(function (c) {
+            try { seedPlayCaches(c); } catch (e) {
+                console.warn('SetSync: falha ao preparar cache da cifra', c && c.id, e);
+            }
+        });
+    }
 
     // ── Settings (persist) ─────────────────
-    var fontStep = parseInt(sessionStorage.getItem('play.fontStep') || '0', 10);
-    var twoColActive = sessionStorage.getItem('play.twoCols') === '1';
+    var fontStep = parseInt(readSessionPref('play.fontStep', '0'), 10);
+    var twoColActive = readSessionPref('play.twoCols') === '1';
     var isScrolling = false, lastTs = null, scrollAcc = 0;
     var resumeScrollAfterLoad = false;
+    var durationScrollPxMs = null;
+
+    function currentSpeed() {
+        if (durationScrollPxMs != null) return durationScrollPxMs;
+        return SPEED_PRESETS[speedIdx].v;
+    }
+
+    function applyDurationScrollSpeed() {
+        durationScrollPxMs = null;
+        if (viewMode !== 'cifra' && viewMode !== 'letra') return;
+        var c = getCurrent();
+        if (!c || !c.duracao_seg) return;
+        var wrap = scrollWrap();
+        if (!wrap) return;
+        var scrollable = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+        if (scrollable < 24) return;
+        var dur = Number(c.duracao_seg);
+        if (dur >= 30 && dur <= 3600) {
+            durationScrollPxMs = scrollable / (dur * 1000);
+        }
+    }
 
     // Auto-scroll speed presets (px/ms)
     var SPEED_PRESETS = [
@@ -975,14 +1393,132 @@ body.play-mode.edges-hint .tap-zone {
         { label: 'Rápido', v: 0.050 },
         { label: 'Turbo',  v: 0.075 }
     ];
-    var speedIdx = parseInt(sessionStorage.getItem('play.speedIdx') || '1', 10);
+    var speedIdx = parseInt(readSessionPref('play.speedIdx', '1'), 10);
     if (speedIdx < 0 || speedIdx >= SPEED_PRESETS.length) speedIdx = 1;
-    var viewMode = sessionStorage.getItem('play.viewMode') || 'cifra';
-    var nashvilleMode = sessionStorage.getItem('play.nashville') === '1';
+    var viewMode = readSessionPref('play.viewMode', 'cifra');
+    var nashvilleMode = readSessionPref('play.nashville') === '1';
     if (VIEW_MODE_CYCLE.indexOf(viewMode) === -1) viewMode = 'cifra';
 
+    var VERSION_BY_CIFRA_KEY = 'play.versionByCifra';
+
+    function getVersionPref(cifraId) {
+        try {
+            var map = JSON.parse(readSessionPref(VERSION_BY_CIFRA_KEY, '{}'));
+            if (map[cifraId] === 'mine' || map[cifraId] === 'band') return map[cifraId];
+        } catch (e) {}
+        return 'band';
+    }
+
+    function setVersionPref(cifraId, mode) {
+        var map = {};
+        try { map = JSON.parse(readSessionPref(VERSION_BY_CIFRA_KEY, '{}')); } catch (e) {}
+        map[cifraId] = mode;
+        writeSessionPref(VERSION_BY_CIFRA_KEY, JSON.stringify(map));
+    }
+
+    function isPersonalVersion(raw) {
+        return !!(raw && raw.has_personal_draft && getVersionPref(raw.id) === 'mine');
+    }
+
+    function versionSuffix(raw) {
+        return isPersonalVersion(raw) ? ':mine' : ':band';
+    }
+
+    function fetchCacheKey(id, semitones, raw) {
+        raw = raw || getCurrent();
+        return id + ':' + semitones + versionSuffix(raw);
+    }
+
+    var offlinePackPromise = null;
+    function loadOfflinePack() {
+        if (!BAND_ID || !window.SetSyncOfflineStore || !SetSyncOfflineStore.isSupported()) {
+            return Promise.resolve(null);
+        }
+        if (!offlinePackPromise) {
+            offlinePackPromise = SetSyncOfflineStore.getPack(String(BAND_ID)).catch(function () { return null; });
+        }
+        return offlinePackPromise;
+    }
+
+    function offlinePackField(hit, field, raw) {
+        if (!hit) return null;
+        if (isPersonalVersion(raw)) {
+            var mine = hit[field + '_mine'];
+            if (mine != null && mine !== '') return mine;
+        }
+        return hit[field];
+    }
+
+    function findOfflineCifra(pack, id) {
+        if (!pack || !Array.isArray(pack.cifras)) return null;
+        for (var i = 0; i < pack.cifras.length; i++) {
+            if (pack.cifras[i].id === id) return pack.cifras[i];
+        }
+        return null;
+    }
+
+    function seedOfflineCaches(id, raw, hit) {
+        if (!hit) return;
+        var suffix = versionSuffix(raw);
+        var key0 = id + ':0' + suffix;
+        var html = offlinePackField(hit, 'html', raw);
+        if (html) htmlCache[key0] = html;
+        var structured = offlinePackField(hit, 'cifra_structured', raw);
+        if (structured) structuredCache[key0] = structured;
+        var lyrics = offlinePackField(hit, 'lyrics_plain', raw);
+        if (lyrics) lyricsCache[key0] = lyrics;
+        var gradeS = offlinePackField(hit, 'grade_s', raw);
+        if (gradeS) {
+            try {
+                var g = typeof gradeS === 'string' ? JSON.parse(gradeS) : gradeS;
+                if (Array.isArray(g)) gradeCache[key0] = g;
+            } catch (e) {}
+        }
+        var leadsheetS = offlinePackField(hit, 'leadsheet_s', raw);
+        if (leadsheetS) {
+            try {
+                var ls = typeof leadsheetS === 'string' ? JSON.parse(leadsheetS) : leadsheetS;
+                if (window.LeadsheetPlayRender && LeadsheetPlayRender.isLeadsheet(ls)) {
+                    leadsheetCache[key0] = ls;
+                }
+            } catch (e) {}
+        }
+    }
+
+    function hydrateFromOfflinePack(id, raw) {
+        return loadOfflinePack().then(function (pack) {
+            var hit = findOfflineCifra(pack, id);
+            if (!hit) return null;
+            seedOfflineCaches(id, raw, hit);
+            return hit;
+        });
+    }
+
+    function versionQuery(raw) {
+        return isPersonalVersion(raw) ? '&versao=minha' : '';
+    }
+
+    function withActiveVersion(raw) {
+        if (!raw || !isPersonalVersion(raw)) return raw;
+        var out = Object.assign({}, raw, {
+            html: raw.html_mine || raw.html,
+            cifra_structured: raw.cifra_structured_mine != null ? raw.cifra_structured_mine : raw.cifra_structured,
+            lyrics_plain: raw.lyrics_plain_mine != null ? raw.lyrics_plain_mine : raw.lyrics_plain,
+            has_tablatura: raw.has_tablatura_mine != null ? raw.has_tablatura_mine : raw.has_tablatura,
+            tom_original: raw.tom_original_mine || raw.tom_original,
+            tom_root: raw.tom_root_mine || raw.tom_root,
+            transpose_map: raw.transpose_map_mine || raw.transpose_map,
+            grade_s: raw.grade_s_mine != null ? raw.grade_s_mine : raw.grade_s,
+            leadsheet_s: raw.leadsheet_s_mine != null ? raw.leadsheet_s_mine : raw.leadsheet_s
+        });
+        if (raw.titulo_mine) out.titulo = raw.titulo_mine;
+        if (raw.artista_mine) out.artista = raw.artista_mine;
+        return out;
+    }
+
     // ── Render ──────────────────────────────
-    function getCurrent() { return CIFRAS[current]; }
+    function getCurrent() { return withActiveVersion(CIFRAS[current]); }
+    function getCurrentRaw() { return CIFRAS[current]; }
 
     const SAVE_TRANSPOSE_URL = {{ url_for('cifras.save_transpose', cifra_id='__ID__')|tojson }};
 
@@ -1047,6 +1583,26 @@ body.play-mode.edges-hint .tap-zone {
         return keyAtTranspose(c, semi);
     }
 
+    function formatSongMetaExtras(c) {
+        if (!c) return '';
+        var parts = [];
+        if (c.bpm) parts.push(Math.round(Number(c.bpm)) + ' BPM');
+        if (c.capo) parts.push('Capo ' + c.capo);
+        if (c.time_signature && c.time_signature !== '4/4') parts.push(c.time_signature);
+        return parts.length ? ' · ' + parts.join(' · ') : '';
+    }
+
+    function preloadSong(idx) {
+        if (idx < 0 || idx >= CIFRAS.length) return;
+        var raw = CIFRAS[idx];
+        if (!raw) return;
+        var c = withActiveVersion(raw);
+        var t = getTranspose(c);
+        fetchTransposed(c.id, t, function () {}, c.has_tablatura);
+        fetchLyrics(c.id, t, function () {});
+        fetchStructured(c.id, t, function () {});
+    }
+
     function getLeadSheetWidth() {
         if (LeadsheetPlayRender && LeadsheetPlayRender.getPlayAreaWidth) {
             return LeadsheetPlayRender.getPlayAreaWidth();
@@ -1061,9 +1617,23 @@ body.play-mode.edges-hint .tap-zone {
         requestAnimationFrame(function () { startScroll(); });
     }
 
+    function fallbackPlayHtml(id, raw) {
+        var key0 = fetchCacheKey(id, 0, raw);
+        return htmlCache[key0] || htmlCache[id + ':0:band'] || htmlCache[id + ':0:mine'] || '';
+    }
+
     function renderHtml(html) {
         var el = document.getElementById('cifra-content');
-        el.innerHTML = html;
+        if (!el) return;
+        var next = String(html || '');
+        if (!next.trim()) {
+            el.classList.remove('fading');
+            if (!el.innerHTML.trim()) {
+                showPlayBootError('Não foi possível exibir esta cifra. Atualize a página (Ctrl+Shift+R).');
+            }
+            return;
+        }
+        el.innerHTML = next;
         el.classList.remove('fading');
         var csWrap = el.querySelector('.cs-chart, .chord-sheet-wrap, .leadsheet-play-wrap');
         if (csWrap && viewMode === 'chordsheet') {
@@ -1083,7 +1653,7 @@ body.play-mode.edges-hint .tap-zone {
                             renderHtml('<div class="cs-play-embed setsync-cs-sheet">' + html + '</div>');
                             return;
                         }
-                        var key = c.id + ':' + t;
+                        var key = fetchCacheKey(c.id, t, getCurrentRaw());
                         var doc = leadsheetCache[key] || gradeCache[key];
                         if (doc) renderHtml(buildLeadSheetHtml(doc, c));
                     });
@@ -1095,11 +1665,15 @@ body.play-mode.edges-hint .tap-zone {
         }
         if (fitMode && !twoColActive && viewMode === 'cifra') requestAnimationFrame(autoFit);
         requestAnimationFrame(updateTapZoneState);
+        requestAnimationFrame(applyDurationScrollSpeed);
         tryResumeAutoScroll();
     }
 
     function escHtml(s) {
-        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return String(s)
+            .replace(/&/g, '\u0026amp;')
+            .replace(/</g, '\u003c')
+            .replace(/>/g, '\u003e');
     }
 
     function playModeEmptyChordSheetMessage() {
@@ -1109,11 +1683,13 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     function fetchChordSheetHtml(id, semitones, cb) {
-        var key = id + ':' + semitones + ':' + (nashvilleMode ? 'n' : 'l');
+        var raw = getCurrentRaw();
+        var key = fetchCacheKey(id, semitones, raw) + ':' + (nashvilleMode ? 'n' : 'l');
         if (chordSheetHtmlCache[key]) { cb(chordSheetHtmlCache[key]); return; }
         var url = CHORDSHEET_RENDER_URL.replace('__ID__', encodeURIComponent(id))
             + '?semitones=' + encodeURIComponent(semitones)
-            + (nashvilleMode ? '&nashville=1' : '');
+            + (nashvilleMode ? '&nashville=1' : '')
+            + versionQuery(raw);
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -1235,6 +1811,12 @@ body.play-mode.edges-hint .tap-zone {
         var html = '';
         groups.forEach(function(group) {
             if (isSectionGroup(group)) {
+                var secItem = group[0] || {};
+                var secLabel = secItem.section || String(secItem.texto_letra || '').trim();
+                secLabel = secLabel.replace(/^\{\s*comment\s*:\s*/i, '').replace(/\}$/, '').trim();
+                if (secLabel) {
+                    html += '<p class="cifra-section sp-section">' + escHtml(secLabel) + '</p>';
+                }
                 return;
             }
             html += '<div class="sp-line">';
@@ -1266,31 +1848,46 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     function fetchTransposed(id, semitones, cb, hasTab) {
-        var key = id + ':' + semitones;
-        if (htmlCache[key]) { cb(htmlCache[key]); return; }
+        var raw = getCurrentRaw();
+        var c = getCurrent();
+        var key = fetchCacheKey(id, semitones, raw);
+        var cached = htmlCache[key];
+        if (cached) { cb(cached); return; }
+        if (semitones === 0 && c && c.html) {
+            htmlCache[key] = c.html;
+            cb(c.html);
+            return;
+        }
         var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
                     .replace('__ID__', encodeURIComponent(id))
-                    + '?semitones=' + semitones + '&html=1&play=1';
+                    + '?semitones=' + semitones + '&html=1&play=1' + versionQuery(raw);
         document.getElementById('cifra-content').classList.add('fading');
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                if (data && data.html != null) {
+                if (data && data.html != null && String(data.html).trim()) {
                     htmlCache[key] = data.html;
                     cb(data.html);
                 } else {
-                    cb(htmlCache[id + ':0'] || '');
+                    cb(fallbackPlayHtml(id, raw));
                 }
             })
-            .catch(function () { cb(htmlCache[id + ':0'] || ''); });
+            .catch(function () {
+                var fb = htmlCache[key] || fallbackPlayHtml(id, raw);
+                if (fb) { cb(fb); return; }
+                hydrateFromOfflinePack(id, raw).then(function () {
+                    cb(htmlCache[key] || fallbackPlayHtml(id, raw));
+                });
+            });
     }
 
     function fetchStructured(id, semitones, cb) {
-        var key = id + ':' + semitones;
+        var raw = getCurrentRaw();
+        var key = fetchCacheKey(id, semitones, raw);
         if (structuredCache[key]) { cb(structuredCache[key]); return; }
         var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
                     .replace('__ID__', encodeURIComponent(id))
-                    + '?semitones=' + semitones + '&structured=1';
+                    + '?semitones=' + semitones + '&structured=1' + versionQuery(raw);
         document.getElementById('cifra-content').classList.add('fading');
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
@@ -1299,10 +1896,16 @@ body.play-mode.edges-hint .tap-zone {
                     structuredCache[key] = data.cifra_data;
                     cb(data.cifra_data);
                 } else {
-                    cb(structuredCache[id + ':0'] || null);
+                    cb(structuredCache[fetchCacheKey(id, 0, raw)] || null);
                 }
             })
-            .catch(function () { cb(structuredCache[id + ':0'] || null); });
+            .catch(function () {
+                var fb = structuredCache[fetchCacheKey(id, semitones, raw)] || structuredCache[fetchCacheKey(id, 0, raw)];
+                if (fb) { cb(fb); return; }
+                hydrateFromOfflinePack(id, raw).then(function () {
+                    cb(structuredCache[fetchCacheKey(id, semitones, raw)] || structuredCache[fetchCacheKey(id, 0, raw)] || null);
+                });
+            });
     }
 
     function buildLyricsHtml(text) {
@@ -1314,11 +1917,12 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     function fetchLyrics(id, semitones, cb) {
-        var key = id + ':' + semitones;
+        var raw = getCurrentRaw();
+        var key = fetchCacheKey(id, semitones, raw);
         if (lyricsCache[key]) { cb(lyricsCache[key]); return; }
         var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
                     .replace('__ID__', encodeURIComponent(id))
-                    + '?semitones=' + semitones + '&lyrics=1';
+                    + '?semitones=' + semitones + '&lyrics=1' + versionQuery(raw);
         document.getElementById('cifra-content').classList.add('fading');
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
@@ -1328,18 +1932,23 @@ body.play-mode.edges-hint .tap-zone {
                 cb(text);
             })
             .catch(function () {
-                cb(lyricsCache[id + ':0'] || '');
+                var fb = lyricsCache[fetchCacheKey(id, semitones, raw)] || lyricsCache[fetchCacheKey(id, 0, raw)];
+                if (fb) { cb(fb); return; }
+                hydrateFromOfflinePack(id, raw).then(function () {
+                    cb(lyricsCache[fetchCacheKey(id, semitones, raw)] || lyricsCache[fetchCacheKey(id, 0, raw)] || '');
+                });
             });
     }
 
     function fetchGrade(id, semitones, cb) {
-        var key = id + ':' + semitones;
+        var raw = getCurrentRaw();
+        var key = fetchCacheKey(id, semitones, raw);
         if (leadsheetCache[key]) { cb(leadsheetCache[key]); return; }
         if (gradeCache[key]) { cb(gradeCache[key]); return; }
 
         var url = '{{ url_for("cifras.get_transposed", cifra_id="__ID__") }}'
                     .replace('__ID__', encodeURIComponent(id))
-                    + '?semitones=' + semitones + '&grade=1';
+                    + '?semitones=' + semitones + '&grade=1' + versionQuery(raw);
 
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
@@ -1351,15 +1960,46 @@ body.play-mode.edges-hint .tap-zone {
                     gradeCache[key] = data.grade_data;
                     cb(data.grade_data);
                 } else {
-                    cb(leadsheetCache[id + ':0'] || gradeCache[id + ':0'] || null);
+                    var fb = fetchCacheKey(id, 0, raw);
+                    cb(leadsheetCache[fb] || gradeCache[fb] || null);
                 }
             })
             .catch(function () {
-                cb(leadsheetCache[id + ':0'] || gradeCache[id + ':0'] || null);
+                var fb = fetchCacheKey(id, 0, raw);
+                cb(leadsheetCache[fb] || gradeCache[fb] || null);
             });
     }
 
+    function updateVersionUi(raw) {
+        var wrap = document.getElementById('version-stepper-wrap');
+        if (!wrap) return;
+        var has = raw && raw.has_personal_draft;
+        wrap.classList.toggle('d-none', !has);
+        if (!has) return;
+        var mode = getVersionPref(raw.id);
+        var bandBtn = document.getElementById('version-band-btn');
+        var mineBtn = document.getElementById('version-mine-btn');
+        if (bandBtn) bandBtn.classList.toggle('active', mode !== 'mine');
+        if (mineBtn) mineBtn.classList.toggle('active', mode === 'mine');
+    }
+
+    function cycleVersionMode() {
+        var raw = getCurrentRaw();
+        if (!raw || !raw.has_personal_draft) return;
+        setVersionMode(getVersionPref(raw.id) === 'mine' ? 'band' : 'mine');
+    }
+
+    function setVersionMode(mode) {
+        var raw = getCurrentRaw();
+        if (!raw || !raw.has_personal_draft) return;
+        if (mode !== 'mine' && mode !== 'band') return;
+        setVersionPref(raw.id, mode);
+        updateVersionUi(raw);
+        render();
+    }
+
     function render() {
+        var raw = getCurrentRaw();
         var c = getCurrent();
         if (!c) return;
 
@@ -1372,13 +2012,24 @@ body.play-mode.edges-hint .tap-zone {
         document.getElementById('bar-title').textContent = c.titulo;
         var tomLabel = 'Tom ' + getDisplayKey(c);
         var vSel = document.getElementById('vocalist-sel');
-        var vName = vSel ? vSel.options[vSel.selectedIndex].text : {{ vocalist_name|tojson if vocalist_name else '""' }};
+        var vName = '';
+        if (vSel && vSel.options && vSel.selectedIndex >= 0 && vSel.options[vSel.selectedIndex]) {
+            vName = vSel.options[vSel.selectedIndex].text;
+        } else if ({{ (vocalist_name or '')|tojson }}) {
+            vName = {{ (vocalist_name or '')|tojson }};
+        }
         if (vName) tomLabel += ' · ' + vName;
         if (t !== 0) {
             tomLabel += ' (cadastro: ' + (c.tom_original || c.tom_root || c.tom) + ')';
         }
+        if (isPersonalVersion(raw)) tomLabel += ' · minha versão';
+        var artista = c.artista || '';
         document.getElementById('bar-meta').textContent =
-            c.artista + ' · ' + tomLabel + ' · ' + (current + 1) + '/' + CIFRAS.length;
+            artista + formatSongMetaExtras(c) + ' · ' + tomLabel + ' · ' + (current + 1) + '/' + CIFRAS.length;
+
+        if (window.SetSyncMetronome && SetSyncMetronome.updateSongContext) {
+            SetSyncMetronome.updateSongContext(c);
+        }
 
         document.getElementById('btn-prev').disabled = (current === 0);
         document.getElementById('btn-next').disabled = (current === CIFRAS.length - 1);
@@ -1392,7 +2043,16 @@ body.play-mode.edges-hint .tap-zone {
             item.classList.toggle('active', i === current);
         });
 
+        updateVersionUi(raw);
         updateTransposeUi(c);
+
+        if (window.SetSyncDrawOverlay && c && c.id) {
+            var drawApiTpl2 = {{ url_for('cifras.api_get_play_draw', cifra_id='__ID__') | tojson }};
+            SetSyncDrawOverlay.configure({
+                apiUrl: drawApiTpl2.replace('__ID__', encodeURIComponent(c.id)),
+            });
+            window.SetSyncDrawOverlay.onCifraChange(c.id);
+        }
 
         var el = document.getElementById('cifra-content');
         el.classList.remove('grade-mode', 'letra-mode', 'structured-mode', 'two-col');
@@ -1416,9 +2076,7 @@ body.play-mode.edges-hint .tap-zone {
             });
         } else {
             if (twoColActive) el.classList.add('two-col');
-            if (c.has_tablatura || (structuredCache[c.id + ':0'] && structuredCache[c.id + ':0'].length)) {
-                el.classList.add('structured-mode');
-            }
+            el.classList.add('structured-mode');
             fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
         }
     }
@@ -1427,6 +2085,7 @@ body.play-mode.edges-hint .tap-zone {
         if (idx < 0 || idx >= CIFRAS.length) return;
         current = idx;
         render();
+        preloadSong(idx + 1);
     }
 
     function prevSong() { goTo(current - 1); }
@@ -1569,11 +2228,9 @@ body.play-mode.edges-hint .tap-zone {
     function onVocalistChange(vocalistId) {
         activeVocalistId = vocalistId || '';
         if (activeVocalistId) {
-            localStorage.setItem('play.vocalistId', activeVocalistId);
-            sessionStorage.setItem('play.vocalistId', activeVocalistId);
+            writePlayPref('play.vocalistId', activeVocalistId);
         } else {
-            localStorage.removeItem('play.vocalistId');
-            sessionStorage.removeItem('play.vocalistId');
+            clearPlayPref('play.vocalistId');
         }
         if (SETLIST_VOCALIST_URL) {
             var fetchFn = window.ssFetch || window.fetch;
@@ -1592,6 +2249,73 @@ body.play-mode.edges-hint .tap-zone {
             });
         }
         render();
+    }
+
+    function repopulateVocalistSelect(vocalists, selectId) {
+        var sel = document.getElementById('vocalist-sel');
+        if (!sel) return;
+        sel.innerHTML = '';
+        (vocalists || []).forEach(function (v) {
+            var opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.name;
+            sel.appendChild(opt);
+        });
+        sel.disabled = !vocalists || !vocalists.length;
+        if (selectId) {
+            sel.value = selectId;
+            onVocalistChange(selectId);
+        }
+    }
+
+    function toggleVocalistAddPop() {
+        var pop = document.getElementById('vocalist-add-pop');
+        var btn = document.getElementById('vocalist-add-btn');
+        if (!pop) return;
+        var show = pop.classList.contains('d-none');
+        pop.classList.toggle('d-none', !show);
+        if (show) {
+            var inp = document.getElementById('vocalist-add-inp');
+            if (inp) { inp.value = ''; inp.focus(); }
+            if (btn) {
+                var r = btn.getBoundingClientRect();
+                pop.style.top = Math.round(r.bottom + 6) + 'px';
+                pop.style.left = Math.max(8, Math.round(r.left - 120)) + 'px';
+            }
+        }
+    }
+
+    function submitVocalistAdd() {
+        if (!ADD_VOCALIST_URL) return;
+        var inp = document.getElementById('vocalist-add-inp');
+        var saveBtn = document.getElementById('vocalist-add-save');
+        var name = inp ? (inp.value || '').trim() : '';
+        if (!name) {
+            if (inp) inp.focus();
+            return;
+        }
+        if (saveBtn) saveBtn.disabled = true;
+        var headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (window.csrfToken) headers['X-CSRFToken'] = window.csrfToken;
+        fetch(ADD_VOCALIST_URL, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headers,
+            body: JSON.stringify({ name: name })
+        }).then(function (r) { return r.json(); })
+          .then(function (data) {
+              if (!data || !data.ok) throw new Error((data && data.error) || 'Falha ao salvar');
+              VALID_VOCALISTS = (data.vocalists || []).map(function (v) { return v.id; });
+              repopulateVocalistSelect(data.vocalists, data.vocalist_id);
+              var pop = document.getElementById('vocalist-add-pop');
+              if (pop) pop.classList.add('d-none');
+          })
+          .catch(function (err) {
+              alert(err.message || 'Não foi possível adicionar.');
+          })
+          .finally(function () {
+              if (saveBtn) saveBtn.disabled = false;
+          });
     }
 
     var TRANSPOSE_MIN = -6;
@@ -1626,7 +2350,7 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     // ── Font size ───────────────────────────
-    var fitMode = sessionStorage.getItem('play.fit') !== '0';  // default: on
+    var fitMode = readSessionPref('play.fit', '1') !== '0';  // default: on
     var baseRem = 1.05;
 
     function userBaseRem() {
@@ -1668,12 +2392,12 @@ body.play-mode.edges-hint .tap-zone {
     }
     function changeFontSize(d) {
         fontStep = Math.max(-3, Math.min(8, fontStep + d));
-        sessionStorage.setItem('play.fontStep', fontStep);
+        writeSessionPref('play.fontStep', fontStep);
         applyFont();
     }
     function toggleFit() {
         fitMode = !fitMode;
-        sessionStorage.setItem('play.fit', fitMode ? '1' : '0');
+        writeSessionPref('play.fit', fitMode ? '1' : '0');
         document.getElementById('fit-btn').classList.toggle('pb-on', fitMode);
         applyFont();
     }
@@ -1686,6 +2410,7 @@ body.play-mode.edges-hint .tap-zone {
     function applyTwoCols() {
         var el = document.getElementById('cifra-content');
         var btn = document.getElementById('cols-btn');
+        if (!el || !btn) return;
         var on = twoColActive && twoColSupported();
         if (on) {
             el.classList.add('two-col');
@@ -1699,7 +2424,7 @@ body.play-mode.edges-hint .tap-zone {
     function toggleCols() {
         if (!twoColSupported()) return;
         twoColActive = !twoColActive;
-        sessionStorage.setItem('play.twoCols', twoColActive ? '1' : '0');
+        writeSessionPref('play.twoCols', twoColActive ? '1' : '0');
         applyTwoCols();
         if (viewMode === 'letra') render();
         if (twoColActive && isScrolling) stopScroll();
@@ -1719,7 +2444,7 @@ body.play-mode.edges-hint .tap-zone {
         if (VIEW_MODE_CYCLE.indexOf(mode) === -1) mode = 'cifra';
         if (viewMode === mode) return;
         viewMode = mode;
-        sessionStorage.setItem('play.viewMode', viewMode);
+        writeSessionPref('play.viewMode', viewMode);
         updateViewModeUi();
         if (viewMode === 'letra' && isScrolling) stopScroll();
         render();
@@ -1732,10 +2457,27 @@ body.play-mode.edges-hint .tap-zone {
 
     function toggleNashville() {
         nashvilleMode = !nashvilleMode;
-        sessionStorage.setItem('play.nashville', nashvilleMode ? '1' : '0');
+        writeSessionPref('play.nashville', nashvilleMode ? '1' : '0');
         chordSheetHtmlCache = {};
         updateNashvilleUi();
-        if (viewMode === 'chordsheet') render();
+        if (viewMode === 'chordsheet') {
+            render();
+        } else if (nashvilleMode) {
+            flashPlayHint('Nashville 1-7 vale na visualização Grade harmônica (tecla G).');
+        }
+    }
+
+    function flashPlayHint(msg) {
+        var el = document.getElementById('kbd-hint');
+        if (!el) return;
+        var prev = el.textContent;
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(flashPlayHint._t);
+        flashPlayHint._t = setTimeout(function () {
+            el.textContent = prev;
+            el.classList.remove('show');
+        }, 3200);
     }
 
     function speedIndexForBpm(bpm) {
@@ -1753,8 +2495,6 @@ body.play-mode.edges-hint .tap-zone {
     }
 
     // ── Auto-scroll ─────────────────────────
-    function currentSpeed() { return SPEED_PRESETS[speedIdx].v; }
-
     function scrollFrame(ts) {
         if (!isScrolling) return;
         if (!lastTs) lastTs = ts;
@@ -1783,6 +2523,8 @@ body.play-mode.edges-hint .tap-zone {
         if (viewMode === 'chordsheet') {
             var c = getCurrent();
             if (c && c.bpm) speedIdx = speedIndexForBpm(c.bpm);
+        } else {
+            applyDurationScrollSpeed();
         }
         isScrolling = true; lastTs = null; scrollAcc = 0;
         document.getElementById('scroll-btn').classList.add('pb-on');
@@ -1800,13 +2542,19 @@ body.play-mode.edges-hint .tap-zone {
     function toggleScroll() { if (isScrolling) stopScroll(); else startScroll(); }
 
     function adjustSpeed(delta) {
+        durationScrollPxMs = null;
         speedIdx = Math.max(0, Math.min(SPEED_PRESETS.length - 1, speedIdx + delta));
-        sessionStorage.setItem('play.speedIdx', speedIdx);
+        writeSessionPref('play.speedIdx', speedIdx);
         updateSpeedLabel();
     }
     function updateSpeedLabel() {
         var lbl = document.getElementById('speed-label');
-        if (lbl) lbl.textContent = SPEED_PRESETS[speedIdx].label;
+        if (!lbl) return;
+        if (durationScrollPxMs != null && isScrolling) {
+            lbl.textContent = 'Auto';
+            return;
+        }
+        lbl.textContent = SPEED_PRESETS[speedIdx].label;
     }
 
     // ── Wake Lock (mantém tela acesa durante o show) ──
@@ -1874,6 +2622,7 @@ body.play-mode.edges-hint .tap-zone {
     if (barSong) {
         barSong.addEventListener('click', function (e) {
             if (!document.body.classList.contains('chrome-hidden')) return;
+            if (e.target.closest('#version-stepper-wrap')) return;
             e.stopPropagation();
             showChrome();
         });
@@ -1891,9 +2640,80 @@ body.play-mode.edges-hint .tap-zone {
         document.getElementById('play-drawer').setAttribute('aria-hidden', 'true');
     }
 
+    // ── Expose (antes dos listeners — onclick no HTML depende disso) ──
+    window.prevSong = prevSong;
+    window.nextSong = nextSong;
+    window.tapScrollUp = tapScrollUp;
+    window.tapScrollDown = tapScrollDown;
+    window.goTo = goTo;
+    window.changeFontSize = changeFontSize;
+    window.toggleCols = toggleCols;
+    window.toggleScroll = toggleScroll;
+    window.toggleDrawer = toggleDrawer;
+    window.closeDrawer = closeDrawer;
+    window.onTransposeStep = onTransposeStep;
+    window.onVocalistChange = onVocalistChange;
+    window.toggleVocalistAddPop = toggleVocalistAddPop;
+    window.submitVocalistAdd = submitVocalistAdd;
+    window.toggleFullscreen = toggleFullscreen;
+    window.adjustSpeed = adjustSpeed;
+    window.toggleFit = toggleFit;
+    window.setViewMode = setViewMode;
+    window.cycleViewMode = cycleViewMode;
+    window.toggleNashville = toggleNashville;
+    function toggleMetronome() {
+        var c = getCurrent();
+        var bpm = (c && c.bpm) ? Number(c.bpm) : 120;
+        var btn = document.getElementById('metronome-btn');
+        var countIn = btn ? parseInt(btn.getAttribute('data-count-in') || '0', 10) : 0;
+        var ts = (c && c.time_signature) ? c.time_signature : '4/4';
+        if (window.SetSyncMetronome) {
+            if (SetSyncMetronome.isActive && SetSyncMetronome.isActive()) {
+                SetSyncMetronome.stop();
+            } else {
+                SetSyncMetronome.start(bpm, {
+                    timeSignature: ts,
+                    countIn: countIn,
+                    onCountInDone: function () {},
+                });
+            }
+        }
+    }
+
+    function toggleDraw() {
+        if (window.SetSyncDrawOverlay) window.SetSyncDrawOverlay.toggle();
+    }
+
+    function setDrawPen() {
+        if (window.SetSyncDrawOverlay) {
+            window.SetSyncDrawOverlay.setEnabled(true);
+            window.SetSyncDrawOverlay.setTool('pen');
+        }
+    }
+
+    function setDrawEraser() {
+        if (window.SetSyncDrawOverlay) {
+            window.SetSyncDrawOverlay.setEnabled(true);
+            window.SetSyncDrawOverlay.setTool('eraser');
+        }
+    }
+
+    function clearDraw() {
+        if (window.SetSyncDrawOverlay) window.SetSyncDrawOverlay.clear();
+    }
+
+    window.toggleDraw = toggleDraw;
+    window.setDrawPen = setDrawPen;
+    window.setDrawEraser = setDrawEraser;
+    window.clearDraw = clearDraw;
+    window.toggleMetronome = toggleMetronome;
+    window.setVersionMode = setVersionMode;
+    window.cycleVersionMode = cycleVersionMode;
+
     // ── Build dots & drawer click handlers ──
     function buildDots() {
         var container = document.getElementById('prog-dots');
+        if (!container) return;
         container.innerHTML = '';
         if (CIFRAS.length <= 20) {
             CIFRAS.forEach(function (_, i) {
@@ -1923,25 +2743,54 @@ body.play-mode.edges-hint .tap-zone {
     });
 
     // ── Keyboard ────────────────────────────
+    if (window.SetSyncPedalConfig) {
+        SetSyncPedalConfig.bindHandlers({
+            pageDown: tapScrollDown,
+            pageUp: tapScrollUp,
+            prevSong: prevSong,
+            nextSong: nextSong,
+            toggleScroll: toggleScroll,
+            toggleMetronome: toggleMetronome,
+            toggleDraw: toggleDraw,
+            toggleFullscreen: toggleFullscreen,
+        });
+        var pedalModalBody = document.getElementById('play-pedal-modal-body');
+        var pedalModal = document.getElementById('play-pedal-modal');
+        if (pedalModal) {
+            pedalModal.addEventListener('show.bs.modal', function () {
+                SetSyncPedalConfig.renderModal(pedalModalBody);
+            });
+        }
+    }
+
     document.addEventListener('keydown', function (e) {
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         var tag = e.target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (window.SetSyncPedalConfig && SetSyncPedalConfig.handleKeydown(e)) return;
         switch (e.key) {
-            case 'ArrowLeft':  e.preventDefault(); tapScrollUp(); break;
-            case 'ArrowRight': e.preventDefault(); tapScrollDown(); break;
             case 'l': case 'L': toggleDrawer(); break;
             case '+': case '=': changeFontSize(1); break;
             case '-': case '_': changeFontSize(-1); break;
             case 'c': case 'C': toggleCols(); break;
             case 'a': case 'A': toggleFit(); break;
-            case 'f': case 'F': toggleFullscreen(); break;
             case 't': case 'T': if (typeof toggleTheme === 'function') toggleTheme(); break;
             case 'g': case 'G': cycleViewMode(); break;
+            case 'v': case 'V': cycleVersionMode(); break;
             case 'n': case 'N': toggleNashville(); break;
-            case ' ': e.preventDefault(); toggleScroll(); break;
-            case 'PageDown': e.preventDefault(); tapScrollDown(); break;
-            case 'PageUp': e.preventDefault(); tapScrollUp(); break;
+            case 's': case 'S':
+                if (window.SetSyncPlayFeatures && SetSyncPlayFeatures.toggleSectionsPanel) {
+                    SetSyncPlayFeatures.toggleSectionsPanel();
+                }
+                break;
+            case 'p': case 'P':
+                document.getElementById('vocalist-mode-btn') && document.getElementById('vocalist-mode-btn').click();
+                break;
+            case 'r': case 'R':
+                document.getElementById('loop-btn') && document.getElementById('loop-btn').click();
+                break;
+            case 'd': case 'D': toggleDraw(); break;
+            case 'e': case 'E': setDrawEraser(); break;
             case 'Escape':
                 if (document.getElementById('play-drawer').classList.contains('open')) {
                     closeDrawer();
@@ -1957,6 +2806,7 @@ body.play-mode.edges-hint .tap-zone {
 
     (function () {
         var wrap = scrollWrap();
+        if (!wrap) return;
         var scrollStateTimer = null;
         wrap.addEventListener('scroll', function () {
             clearTimeout(scrollStateTimer);
@@ -2001,44 +2851,92 @@ body.play-mode.edges-hint .tap-zone {
         }, { passive: true });
     })();
 
-    // ── Expose ──────────────────────────────
-    window.prevSong = prevSong;
-    window.nextSong = nextSong;
-    window.tapScrollUp = tapScrollUp;
-    window.tapScrollDown = tapScrollDown;
-    window.goTo = goTo;
-    window.changeFontSize = changeFontSize;
-    window.toggleCols = toggleCols;
-    window.toggleScroll = toggleScroll;
-    window.toggleDrawer = toggleDrawer;
-    window.closeDrawer = closeDrawer;
-    window.onTransposeStep = onTransposeStep;
-    window.onVocalistChange = onVocalistChange;
-    window.toggleFullscreen = toggleFullscreen;
-    window.adjustSpeed = adjustSpeed;
-    window.toggleFit = toggleFit;
-    window.setViewMode = setViewMode;
-    window.cycleViewMode = cycleViewMode;
-    window.toggleNashville = toggleNashville;
-
     document.querySelectorAll('#view-mode-menu [data-view-mode]').forEach(function (item) {
         item.addEventListener('click', function () {
             setViewMode(item.getAttribute('data-view-mode'));
         });
     });
 
+    var vAddInp = document.getElementById('vocalist-add-inp');
+    if (vAddInp) {
+        vAddInp.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); submitVocalistAdd(); }
+            if (e.key === 'Escape') {
+                var pop = document.getElementById('vocalist-add-pop');
+                if (pop) pop.classList.add('d-none');
+            }
+        });
+    }
+    document.addEventListener('click', function (e) {
+        var pop = document.getElementById('vocalist-add-pop');
+        var btn = document.getElementById('vocalist-add-btn');
+        if (!pop || pop.classList.contains('d-none')) return;
+        if (pop.contains(e.target) || (btn && btn.contains(e.target))) return;
+        pop.classList.add('d-none');
+    });
+
+    var START_VERSAO = {{ start_versao|default('')|tojson }};
+
     // ── Init ────────────────────────────────
-    updateViewModeUi();
-    updateNashvilleUi();
-    applyTwoCols();
-    document.getElementById('fit-btn').classList.toggle('pb-on', fitMode);
-    buildDots();
-    render();
-    applyFont();      // depois do render para que autoFit veja o conteúdo
-    updateSpeedLabel();
-    requestWakeLock();
-    syncFsBtn();
-    showChrome();
+    try {
+        primePlayCaches();
+        if (!CIFRAS.length) {
+            showPlayBootError('Não foi possível carregar as cifras. Atualize a página (Ctrl+Shift+R).');
+        }
+        if (START_VERSAO === 'minha') {
+            var rawStart = getCurrentRaw();
+            if (rawStart && rawStart.has_personal_draft) {
+                setVersionPref(rawStart.id, 'mine');
+            }
+        }
+        updateViewModeUi();
+        updateNashvilleUi();
+        applyTwoCols();
+        var fitBtn = document.getElementById('fit-btn');
+        if (fitBtn) fitBtn.classList.toggle('pb-on', fitMode);
+        buildDots();
+        if (CIFRAS.length) {
+            render();
+        }
+        if (window.SetSyncDrawOverlay && getCurrent()) {
+            var drawApiTpl = {{ url_for('cifras.api_get_play_draw', cifra_id='__ID__') | tojson }};
+            SetSyncDrawOverlay.configure({
+                apiUrl: drawApiTpl.replace('__ID__', encodeURIComponent(getCurrent().id)),
+            });
+            window.SetSyncDrawOverlay.mount('cifra-scroll', getCurrent().id);
+        }
+        applyFont();
+        updateSpeedLabel();
+        requestWakeLock();
+        syncFsBtn();
+        showChrome();
+        preloadSong(current + 1);
+
+        window.SetSyncPlayApi = {
+            getCurrent: getCurrent,
+            getCurrentRaw: getCurrentRaw,
+            getCifras: function () { return CIFRAS; },
+            getCurrentIndex: function () { return current; },
+            goTo: goTo,
+            render: render,
+            renderHtml: renderHtml,
+            scrollWrap: scrollWrap,
+            setViewMode: setViewMode,
+            preloadSong: preloadSong,
+        };
+    } catch (initErr) {
+        console.error('SetSync play mode init:', initErr);
+        try { primePlayCaches(); } catch (cacheErr) {}
+        var boot = getCurrent();
+        if (boot && boot.html) {
+            renderHtml(boot.html);
+        } else {
+            var bootEl = document.getElementById('cifra-content');
+            if (bootEl && !bootEl.innerHTML.trim()) {
+                showPlayBootError('Erro ao iniciar o modo tocar. Atualize a página (Ctrl+Shift+R).');
+            }
+        }
+    }
 
     // Re-ajustar fonte quando girar o tablet ou redimensionar
     var resizeTimer = null;
@@ -2067,14 +2965,18 @@ body.play-mode.edges-hint .tap-zone {
     setTimeout(function () { document.body.classList.remove('edges-hint'); }, 1400);
 
     var hint = document.getElementById('kbd-hint');
-    hint.classList.add('show');
-    setTimeout(function () { hint.classList.remove('show'); }, 4200);
+    if (hint) {
+        hint.classList.add('show');
+        setTimeout(function () { hint.classList.remove('show'); }, 4200);
+    }
 
     // Clean up on navigate-away
     window.addEventListener('pagehide', function () {
-        document.body.classList.remove('play-mode', 'chrome-hidden', 'edges-hint');
+        document.body.classList.remove('play-mode', 'chrome-hidden', 'edges-hint', 'play-vocalist-projection');
+        if (window.SetSyncMetronome) window.SetSyncMetronome.stop();
         releaseWakeLock();
     });
 })();
 </script>
+<script src="{{ url_for('static', filename='js/play-mode-features.js') }}?v=2"></script>
 {% endblock %}

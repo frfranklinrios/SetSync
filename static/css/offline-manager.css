@@ -1,0 +1,36 @@
+.offline-panel-card .offline-pack-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.offline-panel-card .offline-pack-item:last-child {
+  border-bottom: none;
+}
+
+#play-app.metronome-flash #cifra-wrap {
+  box-shadow: inset 0 0 0 3px rgba(45, 212, 191, 0.55);
+  transition: box-shadow 0.05s;
+}
+
+.play-draw-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  touch-action: none;
+}
+.play-draw-canvas.play-draw-active {
+  pointer-events: auto;
+}
+.play-draw-canvas.play-draw-pen {
+  cursor: crosshair;
+}
+.play-draw-canvas.play-draw-eraser {
+  cursor: cell;
+}
+#cifra-scroll {
+  position: relative;
+}
