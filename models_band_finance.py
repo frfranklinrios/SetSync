@@ -17,14 +17,16 @@ def list_band_events_for_finance(
 ) -> list[dict]:
     db = get_db()
     c = db.cursor()
+    start_at = f'{from_date[:10]} 00:00:00'
+    end_at = f'{to_date[:10]} 23:59:59'
     c.execute(
         '''SELECT *
            FROM band_events
            WHERE band_id = ?
-             AND substr(starts_at, 1, 10) >= ?
-             AND substr(starts_at, 1, 10) <= ?
+             AND starts_at >= ?
+             AND starts_at <= ?
            ORDER BY starts_at DESC''',
-        (band_id, from_date[:10], to_date[:10]),
+        (band_id, start_at, end_at),
     )
     rows = [dict(r) for r in c.fetchall()]
     db.close()
