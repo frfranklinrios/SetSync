@@ -97,7 +97,7 @@
         <tbody>
             {% for e in report.events %}
             <tr>
-                <td>{{ e.starts_at[:10] if e.starts_at else '—' }}</td>
+                <td>{{ (e.starts_at|string)[:10] if e.starts_at else '—' }}</td>
                 <td>{{ e.title }}</td>
                 <td>{{ event_type_label(e.event_type) }}</td>
                 <td class="num">{% if e.has_fee %}R$ {{ '%.2f'|format(e.fee_net) }}{% else %}—{% endif %}</td>

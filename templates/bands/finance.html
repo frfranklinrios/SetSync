@@ -115,7 +115,7 @@
         <tbody>
             {% for e in report.events %}
             <tr>
-                <td>{{ e.starts_at[:10] if e.starts_at else '—' }}</td>
+                <td>{{ (e.starts_at|string)[:10] if e.starts_at else '—' }}</td>
                 <td>
                     <a href="{{ url_for('agenda.view', event_id=e.id) }}">{{ e.title }}</a>
                 </td>
