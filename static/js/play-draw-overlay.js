@@ -18,7 +18,17 @@
 
   var PEN_WIDTH = 2.5;
   var ERASER_WIDTH = 20;
-  var PEN_COLOR = 'rgba(45, 212, 191, 0.9)';
+  var PEN_COLOR = 'rgba(251, 146, 60, 0.9)';
+
+  function resolvePenColor() {
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    return light ? 'rgba(37, 99, 235, 0.9)' : 'rgba(251, 146, 60, 0.9)';
+  }
+
+  function syncPenColor() {
+    PEN_COLOR = resolvePenColor();
+    redraw();
+  }
 
   function storageKey(id) {
     return 'setsync-draw:' + String(id || 'unknown');
@@ -252,6 +262,9 @@
     opts = opts || {};
     if (opts.apiUrl) apiUrl = opts.apiUrl;
   }
+
+  syncPenColor();
+  document.addEventListener('setsync-themechange', syncPenColor);
 
   global.SetSyncDrawOverlay = {
     mount: mount,

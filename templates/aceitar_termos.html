@@ -1,0 +1,27 @@
+{% extends "index.html" %}
+{% block title %}Aceitar termos — SetSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-md-8 col-lg-6">
+    <h1 class="h4 mb-3">Antes de continuar</h1>
+    <p class="text-muted">
+      Para usar o SetSync, confirme que leu e concorda com nossos documentos legais.
+    </p>
+    <form method="post">
+      {% include 'partials/csrf_input.html' %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="aceite" value="1" id="aceite-termos" required>
+        <label class="form-check-label" for="aceite-termos">
+          Li e aceito a
+          <a href="{{ url_for('legal.privacidade') }}" target="_blank" rel="noopener">Política de Privacidade</a>
+          e os
+          <a href="{{ url_for('legal.termos') }}" target="_blank" rel="noopener">Termos de Uso</a>.
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">Continuar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

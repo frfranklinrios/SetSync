@@ -3,6 +3,7 @@ from werkzeug.exceptions import HTTPException
 from config import config
 from blueprints.auth import auth_bp, login_required
 from blueprints.bands import bands_bp
+from blueprints.legal import legal_bp
 from blueprints.cifras import cifras_bp
 from blueprints.setlists import setlists_bp
 from blueprints.cifras_import import cifras_import_bp
@@ -192,6 +193,7 @@ def security_headers(response):
 
 # Registro de Blueprints
 app.register_blueprint(auth_bp)
+app.register_blueprint(legal_bp)
 app.register_blueprint(bands_bp)
 app.register_blueprint(cifras_import_bp)
 app.register_blueprint(cifras_bp)
@@ -242,6 +244,7 @@ for _csrf_json_endpoint in (
     'studios.api_room_slots',
     'ajuda.chat',
     'ajuda.nps_submit',
+    'legal.cookie_consent',
 ):
     _view = app.view_functions.get(_csrf_json_endpoint)
     if _view:
@@ -285,7 +288,6 @@ def index():
 
     return render_template(
         'home.html',
-        planos_site=planos_para_site(),
         planos_estudio=planos_estudio_para_site(),
         stats=stats,
         testimonials=list_testimonials(active_only=True),
@@ -369,6 +371,7 @@ def sitemap():
 
     pages = [
         {'loc': external_url_for('index'), 'changefreq': 'weekly', 'priority': '1.0'},
+        {'loc': external_url_for('assinatura_bp.bandas'), 'changefreq': 'monthly', 'priority': '0.9'},
         {'loc': external_url_for('guia.guia_index'), 'changefreq': 'weekly', 'priority': '0.92'},
         {'loc': external_url_for('assinatura_bp.igrejas'), 'changefreq': 'monthly', 'priority': '0.85'},
         {'loc': external_url_for('studios.landing'), 'changefreq': 'monthly', 'priority': '0.85'},
@@ -553,6 +556,7 @@ def dashboard():
 
 _SEO_PUBLIC_ENDPOINTS = frozenset({
     'index',
+    'assinatura_bp.bandas',
     'guia.guia_index',
     'guia.guia_page',
     'comece',
@@ -565,6 +569,8 @@ _SEO_PUBLIC_ENDPOINTS = frozenset({
     'studios.booking_landing',
     'auth.register',
     'auth.login',
+    'legal.privacidade',
+    'legal.termos',
     'sitemap',
     'robots_txt',
     'google_site_verification',
@@ -581,6 +587,7 @@ def inject_google_ads():
         google_ads_ativo,
         google_analytics_ativo,
     )
+    from lgpd import may_load_tracking
 
     ativo = google_ads_ativo()
     funnel_events: list[str] = []
@@ -590,7 +597,7 @@ def inject_google_ads():
         'bands.view',
         'cifras.view',
     })
-    if ativo and _req.endpoint in _fire:
+    if ativo and may_load_tracking() and _req.endpoint in _fire:
         funnel_events = consume_funnel_events()
 
     return dict(

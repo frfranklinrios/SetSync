@@ -1,5 +1,5 @@
-{# Google Analytics 4 (gtag.js) — carrega em todas as páginas quando o ID está configurado #}
-{% if google_analytics_ativo %}
+{# Google Analytics 4 (gtag.js) — só após consentimento LGPD #}
+{% if google_analytics_ativo and may_load_tracking %}
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ google_analytics_id }}"></script>
 <script>

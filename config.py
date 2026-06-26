@@ -54,6 +54,8 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', '1').lower() in (
         '1', 'true', 'yes',
     )
+    # Alguns navegadores/extensões não enviam Referer no POST; o token CSRF já protege o formulário.
+    WTF_CSRF_SSL_STRICT = False
 
 config = {
     'development': DevelopmentConfig,

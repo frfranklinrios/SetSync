@@ -1,0 +1,15 @@
+{# Barra de atalhos do painel do dono — incluir em todas as telas do estúdio #}
+<div class="d-flex gap-2 flex-wrap studio-owner-toolbar{% if toolbar_class %} {{ toolbar_class }}{% endif %}">
+    <a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}"
+       class="btn btn-outline-secondary btn-sm{% if active == 'painel' %} active{% endif %}">Painel</a>
+    <a href="{{ url_for('studios.edit_studio', studio_id=studio.id) }}"
+       class="btn btn-outline-secondary btn-sm{% if active == 'editar' %} active{% endif %}">Editar perfil</a>
+    <a href="{{ url_for('studios.owner_rooms', studio_id=studio.id) }}"
+       class="btn btn-outline-secondary btn-sm{% if active == 'salas' %} active{% endif %}">Salas</a>
+    <a href="{{ url_for('studios.owner_calendar', studio_id=studio.id) }}"
+       class="btn btn-outline-secondary btn-sm{% if active == 'calendario' %} active{% endif %}">Calendário</a>
+    <a href="{{ url_for('studios.owner_finance', studio_id=studio.id) }}"
+       class="btn btn-outline-secondary btn-sm{% if active == 'financeiro' %} active{% endif %}">Financeiro</a>
+    <a href="{{ url_for('studios.detail', studio_id=studio.id) }}"
+       class="btn btn-outline-primary btn-sm{% if active == 'publico' %} active{% endif %}">Página pública</a>
+</div>

@@ -1,0 +1,105 @@
+{% extends "index.html" %}
+{% block title %}Política de Privacidade — SetSync{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('legal.privacidade') }}">
+<meta name="description" content="Política de Privacidade do SetSync — como tratamos dados pessoais de bandas, músicos e estúdios.">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+  <div class="col-lg-8">
+    <h1 class="h3 mb-3">Política de Privacidade</h1>
+    <p class="text-muted small">Última atualização: junho de 2026</p>
+
+    <div class="card mb-3">
+      <div class="card-body legal-prose">
+        <p>
+          O <strong>SetSync</strong> (“nós”) trata dados pessoais de usuários que utilizam a plataforma
+          de cifras, setlists, agenda e estúdios de ensaio. Esta política descreve quais dados coletamos,
+          para quais finalidades e quais são seus direitos sob a
+          <strong>Lei Geral de Proteção de Dados (LGPD)</strong>.
+        </p>
+
+        <h2 class="h5 mt-4">1. Quem somos</h2>
+        <p>
+          Controlador: SetSync.<br>
+          Encarregado (DPO): <strong>{{ dpo_name }}</strong><br>
+          Contato do titular: <a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>
+        </p>
+
+        <h2 class="h5 mt-4">2. Dados que coletamos</h2>
+        <ul>
+          <li><strong>Cadastro:</strong> usuário, nome de exibição, e-mail, senha (armazenada com hash).</li>
+          <li><strong>Perfil:</strong> WhatsApp (opcional), instrumentos, preferências de notificação.</li>
+          <li><strong>Uso do app:</strong> bandas, cifras, setlists, agenda, reservas de estúdio e dados de estúdio (endereço, contato).</li>
+          <li><strong>Pagamentos:</strong> processados pelo <strong>Mercado Pago</strong>; não armazenamos número de cartão.</li>
+          <li><strong>Comunicações:</strong> e-mail transacional, WhatsApp (se autorizado), push no navegador.</li>
+          <li><strong>Técnicos:</strong> cookies de sessão, logs de servidor e, se você consentir, cookies de medição/anúncios (Google).</li>
+        </ul>
+
+        <h2 class="h5 mt-4">3. Finalidades e bases legais</h2>
+        <ul>
+          <li>Prestação do serviço contratado (execução de contrato / cadastro).</li>
+          <li>Alertas de banda e estúdio (consentimento — você pode desligar no perfil).</li>
+          <li>Cobrança de planos pagos (execução de contrato; operador: Mercado Pago).</li>
+          <li>Medição de audiência e anúncios (consentimento — banner de cookies).</li>
+          <li>Segurança, prevenção a fraudes e suporte (legítimo interesse).</li>
+        </ul>
+
+        <h2 class="h5 mt-4">4. Compartilhamento</h2>
+        <p>Podemos compartilhar dados com operadores necessários ao serviço:</p>
+        <ul>
+          <li><strong>Mercado Pago</strong> — assinaturas.</li>
+          <li><strong>Google</strong> — login OAuth, Analytics/Ads (somente com consentimento).</li>
+          <li><strong>Provedor de e-mail e WhatsApp</strong> — envio de alertas autorizados.</li>
+        </ul>
+        <p>Não vendemos sua lista de contatos a terceiros.</p>
+
+        <h2 class="h5 mt-4">5. Retenção</h2>
+        <p>
+          Mantemos os dados enquanto sua conta estiver ativa e pelo tempo necessário para obrigações legais
+          ou resolução de disputas. Ao excluir a conta, removemos dados pessoais identificáveis conforme
+          descrito na seção de exclusão em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>.
+        </p>
+
+        <h2 class="h5 mt-4">6. Seus direitos (art. 18 LGPD)</h2>
+        <p>Você pode solicitar:</p>
+        <ul>
+          <li>Confirmação e acesso aos dados — veja resumo em <a href="{{ url_for('auth.meus_dados') }}">Meus dados</a>.</li>
+          <li>Correção — em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>.</li>
+          <li>Eliminação — <a href="{{ url_for('auth.excluir_conta') }}">Excluir minha conta</a>.</li>
+          <li>Revogação de consentimento — notificações no perfil; cookies no banner do site.</li>
+          <li>Portabilidade — envie pedido para <a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>.</li>
+        </ul>
+
+        <h2 class="h5 mt-4">7. Cookies</h2>
+        <p>
+          Usamos cookies essenciais para login e segurança. Cookies de medição e publicidade só são
+          carregados após seu consentimento no banner exibido no site.
+        </p>
+
+        <h2 class="h5 mt-4">8. Crianças e adolescentes</h2>
+        <p>
+          O serviço não é direcionado a menores de 18 anos sem consentimento do responsável.
+          Se soubermos de cadastro indevido, excluiremos os dados mediante contato.
+        </p>
+
+        <h2 class="h5 mt-4">9. Alterações</h2>
+        <p>
+          Podemos atualizar esta política. Mudanças relevantes serão comunicadas no app ou por e-mail.
+        </p>
+
+        <p class="mb-0">
+          <a href="{{ url_for('legal.termos') }}">Termos de Uso</a>
+          · <a href="{{ url_for('ajuda.index') }}">Ajuda</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.legal-prose h2 { margin-top: 1.25rem; }
+.legal-prose ul { padding-left: 1.25rem; }
+</style>
+{% endblock %}

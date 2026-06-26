@@ -40,6 +40,8 @@ from models_studio import (
     create_booking,
     create_room,
     create_studio,
+    count_bookings_for_room,
+    delete_room,
     delete_room_block,
     delete_room_photo,
     delete_studio_photo,
@@ -370,6 +372,278 @@ def owner_dashboard(studio_id):
     )
 
 
+STUDIO_EXPENSE_CATEGORIES = (
+    ('aluguel', 'Aluguel'),
+    ('energia', 'Energia'),
+    ('manutencao', 'Manutenção'),
+    ('equipamento', 'Equipamento'),
+    ('salarios', 'Salários'),
+    ('outros', 'Outros'),
+)
+
+
+def _parse_finance_period() -> tuple[int, int]:
+    from studio_finance import default_finance_period
+
+    y, m, _, _ = default_finance_period()
+    try:
+        y = int(request.args.get('ano') or request.form.get('ano') or y)
+        m = int(request.args.get('mes') or request.form.get('mes') or m)
+    except (TypeError, ValueError):
+        pass
+    if m < 1:
+        m = 1
+    if m > 12:
+        m = 12
+    if y < 2000:
+        y = 2000
+    if y > 2100:
+        y = 2100
+    return y, m
+
+
+def _resolve_studio_finance_user(studio_id: str):
+    """Sessão do dono ou token curto para captura PDF server-side."""
+    from db import get_studio, is_superadmin
+
+    pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
+    if pdfgen:
+        from security import verify_studio_finance_pdf_token
+
+        uid = verify_studio_finance_pdf_token(request.args.get('pdf_token', ''), studio_id)
+        if not uid:
+            return None, None
+        studio = get_studio(studio_id)
+        if not studio:
+            return None, None
+        if studio.get('owner_user_id') != uid and not is_superadmin(uid):
+            return None, None
+        return studio, uid
+    return _require_studio_owner(studio_id)
+
+
+def _load_finance_report(studio_id: str, year: int, month: int):
+    from studio_finance import build_studio_finance_report, month_bounds
+    from models_studio_finance import list_studio_bookings_for_finance, list_studio_expenses
+
+    studio = get_studio(studio_id)
+    if not studio:
+        return None
+    from_date, to_date = month_bounds(year, month)
+    bookings = list_studio_bookings_for_finance(
+        studio_id, from_date=from_date, to_date=to_date,
+    )
+    expenses = list_studio_expenses(
+        studio_id, from_date=from_date, to_date=to_date,
+    )
+    report = build_studio_finance_report(
+        studio=studio,
+        bookings=bookings,
+        expenses=expenses,
+        year=year,
+        month=month,
+    )
+    return studio, report, from_date, to_date
+
+
+def _finance_redirect(studio_id: str) -> str:
+    y, m = _parse_finance_period()
+    return redirect(url_for('studios.owner_finance', studio_id=studio_id, ano=y, mes=m))
+
+
+@studios_bp.route('/<studio_id>/financeiro')
+@login_required
+def owner_finance(studio_id):
+    studio, uid = _require_studio_owner(studio_id)
+    if not studio:
+        flash('Sem acesso.', 'danger')
+        return redirect(url_for('studios.search'))
+    year, month = _parse_finance_period()
+    loaded = _load_finance_report(studio_id, year, month)
+    if not loaded:
+        flash('Estúdio não encontrado.', 'danger')
+        return redirect(url_for('studios.search'))
+    studio, report, from_date, to_date = loaded
+    return render_template(
+        'studios/owner/finance.html',
+        studio=studio,
+        report=report,
+        expense_categories=STUDIO_EXPENSE_CATEGORIES,
+        from_date=from_date,
+        to_date=to_date,
+    )
+
+
+@studios_bp.route('/<studio_id>/financeiro/imprimir')
+def owner_finance_print(studio_id):
+    studio, uid = _resolve_studio_finance_user(studio_id)
+    if not studio:
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login', next=request.path))
+        flash('Sem acesso.', 'danger')
+        return redirect(url_for('studios.search'))
+    year, month = _parse_finance_period()
+    loaded = _load_finance_report(studio_id, year, month)
+    if not loaded:
+        flash('Estúdio não encontrado.', 'danger')
+        return redirect(url_for('studios.search'))
+    studio, report, from_date, to_date = loaded
+    from config import app_now_str
+    from studio_finance_pdf import period_label
+
+    pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
+    expense_labels = dict(STUDIO_EXPENSE_CATEGORIES)
+    return render_template(
+        'studios/owner/finance_print.html',
+        studio=studio,
+        report=report,
+        from_date=from_date,
+        to_date=to_date,
+        period_label=period_label(year, month),
+        generated_at=app_now_str()[:16].replace('T', ' '),
+        expense_labels=expense_labels,
+        pdfgen=pdfgen,
+    )
+
+
+@studios_bp.route('/<studio_id>/financeiro/exportar-pdf')
+@login_required
+def owner_finance_export_pdf(studio_id):
+    from io import BytesIO
+
+    from studio_finance_pdf import build_finance_pdf_download_name, generate_studio_finance_pdf_bytes
+
+    studio, uid = _require_studio_owner(studio_id)
+    if not studio:
+        flash('Sem acesso.', 'danger')
+        return redirect(url_for('studios.search'))
+    year, month = _parse_finance_period()
+    try:
+        pdf_bytes = generate_studio_finance_pdf_bytes(
+            studio_id, uid, year=year, month=month,
+        )
+    except Exception as exc:
+        current_app.logger.exception('PDF financeiro do estúdio falhou: %s', exc)
+        flash('Não foi possível gerar o PDF agora. Tente imprimir pelo navegador.', 'danger')
+        return redirect(url_for('studios.owner_finance_print', studio_id=studio_id, ano=year, mes=month))
+    filename = build_finance_pdf_download_name(studio['nome'], year, month)
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@studios_bp.route('/<studio_id>/financeiro/precos', methods=['GET', 'POST'])
+@login_required
+def owner_finance_prices(studio_id):
+    studio, uid = _require_studio_owner(studio_id)
+    if not studio:
+        flash('Sem acesso.', 'danger')
+        return redirect(url_for('studios.search'))
+    rooms = list_rooms(studio_id, active_only=False)
+    year, month = _parse_finance_period()
+
+    if request.method == 'POST':
+        from studio_schemas import parse_finance_prices_form
+
+        studio_preco, room_prices = parse_finance_prices_form(
+            request.form, [r['id'] for r in rooms],
+        )
+        update_studio(studio_id, preco_hora=studio_preco)
+        for room in rooms:
+            rid = room['id']
+            if rid in room_prices:
+                update_room(rid, preco_hora=room_prices[rid])
+        flash('Preços por hora salvos.', 'success')
+        return redirect(url_for(
+            'studios.owner_finance', studio_id=studio_id, ano=year, mes=month,
+        ))
+
+    return render_template(
+        'studios/owner/finance_prices.html',
+        studio=studio,
+        rooms=rooms,
+        finance_year=year,
+        finance_month=month,
+    )
+
+
+@studios_bp.route('/<studio_id>/financeiro/reserva/<booking_id>', methods=['POST'])
+@login_required
+def save_booking_finance(studio_id, booking_id):
+    studio, uid = _require_studio_owner(studio_id)
+    if not studio:
+        abort(404)
+    booking = get_booking_enriched(booking_id)
+    if not booking or (booking.get('studio') or {}).get('id') != studio_id:
+        flash('Reserva não encontrada.', 'danger')
+        return _finance_redirect(studio_id)
+    from studio_finance import parse_money_field
+    from models_studio_finance import update_booking_finance
+
+    raw_valor = request.form.get('valor_cobrado', '').strip()
+    clear_valor = 'clear_valor' in request.form
+    valor = parse_money_field(raw_valor) if raw_valor and not clear_valor else None
+    paid_raw = request.form.get('pago')
+    paid = True if paid_raw == '1' else False if paid_raw == '0' else None
+    notes = (request.form.get('finance_notes') or '').strip()[:500]
+
+    update_booking_finance(
+        booking_id,
+        valor_cobrado=valor,
+        clear_valor=clear_valor or (not raw_valor and not clear_valor and 'valor_cobrado' in request.form),
+        paid=paid,
+        finance_notes=notes,
+    )
+    flash('Reserva atualizada.', 'success')
+    return _finance_redirect(studio_id)
+
+
+@studios_bp.route('/<studio_id>/financeiro/despesa', methods=['POST'])
+@login_required
+def add_studio_expense(studio_id):
+    studio, uid = _require_studio_owner(studio_id)
+    if not studio:
+        abort(404)
+    from studio_finance import parse_money_field
+    from models_studio_finance import create_studio_expense
+
+    data = (request.form.get('data') or '').strip()[:10]
+    descricao = (request.form.get('descricao') or '').strip()
+    valor = parse_money_field(request.form.get('valor'))
+    categoria = (request.form.get('categoria') or 'outros').strip()[:40]
+    if not data or not descricao or valor is None or valor <= 0:
+        flash('Preencha data, descrição e valor da despesa.', 'danger')
+        return _finance_redirect(studio_id)
+    create_studio_expense(
+        studio_id,
+        data=data,
+        descricao=descricao,
+        valor=valor,
+        categoria=categoria,
+        created_by_user_id=uid,
+    )
+    flash('Despesa registrada.', 'success')
+    return _finance_redirect(studio_id)
+
+
+@studios_bp.route('/<studio_id>/financeiro/despesa/<expense_id>/excluir', methods=['POST'])
+@login_required
+def delete_studio_expense_route(studio_id, expense_id):
+    studio, uid = _require_studio_owner(studio_id)
+    if not studio:
+        abort(404)
+    from models_studio_finance import delete_studio_expense
+
+    if delete_studio_expense(expense_id, studio_id):
+        flash('Despesa removida.', 'success')
+    else:
+        flash('Despesa não encontrada.', 'danger')
+    return _finance_redirect(studio_id)
+
+
 @studios_bp.route('/<studio_id>/editar', methods=['GET', 'POST'])
 @login_required
 def edit_studio(studio_id):
@@ -412,6 +686,28 @@ def owner_calendar(studio_id):
 
 # ── Salas ─────────────────────────────────────────────────────────────────
 
+@studios_bp.route('/<studio_id>/salas')
+@login_required
+def owner_rooms(studio_id):
+    studio, uid = _require_studio_owner(studio_id)
+    if not studio:
+        flash('Sem acesso.', 'danger')
+        return redirect(url_for('studios.search'))
+    rooms = list_rooms(studio_id, active_only=False)
+    plano_ui = studio_plano_badge_ui(uid)
+    room_limit = None if plano_ui.get('premium') else LIMITES_ESTUDIO_BASICO['sala']
+    booking_counts = {r['id']: count_bookings_for_room(r['id']) for r in rooms}
+    return render_template(
+        'studios/owner/rooms.html',
+        studio=studio,
+        rooms=rooms,
+        booking_counts=booking_counts,
+        can_add_room=check_studio_room_limit(uid),
+        room_limit=room_limit,
+        studio_plano_ui=plano_ui,
+    )
+
+
 @studios_bp.route('/<studio_id>/salas/nova', methods=['GET', 'POST'])
 @login_required
 def new_room(studio_id):
@@ -429,7 +725,12 @@ def new_room(studio_id):
             room_id = create_room(studio_id, **data)
             flash('Sala criada.', 'success')
             return redirect(url_for('studios.room_availability', studio_id=studio_id, room_id=room_id))
-    return render_template('studios/owner/room_form.html', studio=studio, room=None)
+    return render_template(
+        'studios/owner/room_form.html',
+        studio=studio,
+        room=None,
+        rooms_back_url=url_for('studios.owner_rooms', studio_id=studio_id),
+    )
 
 
 @studios_bp.route('/<studio_id>/salas/<room_id>/editar', methods=['GET', 'POST'])
@@ -446,9 +747,53 @@ def edit_room(studio_id, room_id):
         else:
             update_room(room_id, **data)
             flash('Sala atualizada.', 'success')
-            return redirect(url_for('studios.owner_dashboard', studio_id=studio_id))
+            return redirect(url_for('studios.owner_rooms', studio_id=studio_id))
     photos = list_room_photos(room_id)
-    return render_template('studios/owner/room_form.html', studio=studio, room=room, photos=photos)
+    return render_template(
+        'studios/owner/room_form.html',
+        studio=studio,
+        room=room,
+        photos=photos,
+        rooms_back_url=url_for('studios.owner_rooms', studio_id=studio_id),
+    )
+
+
+@studios_bp.route('/<studio_id>/salas/<room_id>/toggle-ativa', methods=['POST'])
+@login_required
+def toggle_room_active(studio_id, room_id):
+    studio, room, uid = _require_room_in_studio(studio_id, room_id)
+    if not studio or not room:
+        abort(404)
+    new_state = 0 if room.get('ativa') else 1
+    update_room(room_id, ativa=new_state)
+    flash(
+        'Sala reativada.' if new_state else 'Sala desativada — não aparece para novas reservas.',
+        'success',
+    )
+    return redirect(url_for('studios.owner_rooms', studio_id=studio_id))
+
+
+@studios_bp.route('/<studio_id>/salas/<room_id>/excluir', methods=['POST'])
+@login_required
+def remove_room(studio_id, room_id):
+    studio, room, uid = _require_room_in_studio(studio_id, room_id)
+    if not studio or not room:
+        abort(404)
+    n_bookings = count_bookings_for_room(room_id)
+    if n_bookings and not request.form.get('confirm_delete'):
+        flash(
+            f'Esta sala tem {n_bookings} reserva(s) no histórico. '
+            'Confirme a exclusão para remover tudo.',
+            'warning',
+        )
+        return redirect(url_for('studios.owner_rooms', studio_id=studio_id))
+    for photo in list_room_photos(room_id):
+        delete_room_photo_file(room_id, photo.get('filename') or '')
+    if delete_room(room_id):
+        flash('Sala excluída.', 'success')
+    else:
+        flash('Não foi possível excluir a sala.', 'danger')
+    return redirect(url_for('studios.owner_rooms', studio_id=studio_id))
 
 
 @studios_bp.route('/<studio_id>/salas/<room_id>/disponibilidade', methods=['GET', 'POST'])

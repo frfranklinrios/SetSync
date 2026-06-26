@@ -7,12 +7,16 @@ from datetime import datetime, timedelta
 from db import (
     list_voucher_usos_aviso,
     list_voucher_usos_vencendo,
+    list_studio_voucher_usos_aviso,
+    list_studio_voucher_usos_vencendo,
+    marcar_aviso_studio_voucher_enviado,
     marcar_aviso_voucher_enviado,
     update_assinatura,
     list_trials_expiring_soon,
     list_studio_trials_expiring_soon,
 )
-from monetizacao import PLANOS
+from monetizacao import PLANOS, PLANOS_ESTUDIO, PLANO_ESTUDIO_PREMIUM
+from models_studio import PLANO_ESTUDIO_BASICO, update_studio_subscription
 from email_service import send_email
 from monetizacao_emails import send_voucher_aviso_email, send_voucher_expirado_email
 from onboarding_emails import verificar_e_disparar_onboarding
@@ -39,6 +43,36 @@ def verificar_vouchers_vencidos() -> None:
         email = row.get('owner_email')
         if email:
             send_voucher_expirado_email(email, plano_nome)
+
+
+def verificar_studio_vouchers_vencidos() -> None:
+    """Rebaixa contas de estúdio com voucher expirado e envia e-mail."""
+    agora = app_now_str()
+    for row in list_studio_voucher_usos_vencendo(agora):
+        user_id = row['user_id']
+        update_studio_subscription(
+            user_id,
+            plano=PLANO_ESTUDIO_BASICO,
+            status=STATUS_EXPIRADO,
+        )
+        plano = row.get('plano', PLANO_ESTUDIO_PREMIUM)
+        plano_nome = PLANOS_ESTUDIO.get(plano).nome if plano in PLANOS_ESTUDIO else plano
+        email = row.get('owner_email')
+        if email:
+            send_voucher_expirado_email(email, plano_nome)
+
+
+def avisar_studio_vouchers_proximo_vencimento() -> None:
+    """E-mail 3 dias antes do vencimento do voucher de estúdio."""
+    limite = (app_now_naive() + timedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S')
+    for row in list_studio_voucher_usos_aviso(limite):
+        plano = row.get('plano', PLANO_ESTUDIO_PREMIUM)
+        plano_nome = PLANOS_ESTUDIO.get(plano).nome if plano in PLANOS_ESTUDIO else plano
+        expira = datetime.strptime(str(row['expira_em'])[:19], '%Y-%m-%d %H:%M:%S')
+        dias = max(1, (expira - app_now_naive()).days)
+        email = row.get('owner_email')
+        if email and send_voucher_aviso_email(email, plano_nome, dias):
+            marcar_aviso_studio_voucher_enviado(row['id'])
 
 
 def avisar_vouchers_proximo_vencimento() -> None:
@@ -96,7 +130,9 @@ def avisar_studio_trials_proximo_vencimento() -> None:
 
 def run_daily_voucher_jobs() -> None:
     avisar_vouchers_proximo_vencimento()
+    avisar_studio_vouchers_proximo_vencimento()
     verificar_vouchers_vencidos()
+    verificar_studio_vouchers_vencidos()
     avisar_trials_proximo_vencimento()
     avisar_studio_trials_proximo_vencimento()
     verificar_e_disparar_onboarding()

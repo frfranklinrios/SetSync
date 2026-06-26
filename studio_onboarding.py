@@ -65,7 +65,7 @@ def get_studio_onboarding_progress(studio: dict) -> dict | None:
             'id': 'rooms',
             'label': 'Cadastrar salas de ensaio',
             'done': has_rooms,
-            'url': url_for('studios.new_room', studio_id=studio_id),
+            'url': url_for('studios.owner_rooms', studio_id=studio_id),
         },
         {
             'id': 'availability',

@@ -1,0 +1,42 @@
+{% if tracking_requires_consent and cookie_consent_choice is none %}
+<div id="ss-cookie-banner" class="ss-cookie-banner" role="dialog" aria-live="polite"
+     aria-label="Consentimento de cookies"
+     data-consent-url="{{ url_for('legal.cookie_consent') }}">
+  <div class="ss-cookie-banner__inner">
+    <p class="ss-cookie-banner__text mb-0">
+      Usamos cookies e ferramentas de medição (Google Analytics/Ads) para melhorar o SetSync.
+      Você pode aceitar ou continuar apenas com cookies essenciais.
+      <a href="{{ url_for('legal.privacidade') }}">Saiba mais</a>.
+    </p>
+    <div class="ss-cookie-banner__actions">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-choice="essential">Apenas essenciais</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-choice="reject">Recusar</button>
+      <button type="button" class="btn btn-sm btn-primary" data-choice="accept">Aceitar</button>
+    </div>
+  </div>
+</div>
+<style>
+.ss-cookie-banner {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 1080;
+  padding: 12px 16px;
+  background: var(--surface, #fff);
+  border-top: 1px solid var(--border, #e2e8f0);
+  box-shadow: 0 -4px 24px rgba(0,0,0,.12);
+}
+[data-theme="dark"] .ss-cookie-banner { background: #0b1422; }
+.ss-cookie-banner__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.ss-cookie-banner__text { font-size: var(--text-sm, .875rem); max-width: 640px; }
+.ss-cookie-banner__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+</style>
+<script src="{{ url_for('static', filename='js/cookie-consent.js') }}?v=1"></script>
+{% endif %}

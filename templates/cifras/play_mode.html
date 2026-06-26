@@ -121,6 +121,37 @@ body.play-mode.chrome-hidden .pb-meta-row {
 }
 .draw-tools.draw-tools-visible { display: inline-flex; }
 #draw-clear-btn:hover { color: #f87171 !important; }
+
+/* Lápis (anotações) — laranja no escuro, azul no claro */
+body.play-mode {
+    --play-pen-color: #fb923c;
+    --play-pen-border: rgba(251, 146, 60, 0.48);
+    --play-pen-bg: rgba(251, 146, 60, 0.14);
+    --play-pen-bg-on: rgba(251, 146, 60, 0.28);
+}
+[data-theme="light"] body.play-mode {
+    --play-pen-color: #2563eb;
+    --play-pen-border: rgba(37, 99, 235, 0.45);
+    --play-pen-bg: rgba(37, 99, 235, 0.1);
+    --play-pen-bg-on: rgba(37, 99, 235, 0.22);
+}
+#draw-btn,
+#draw-pen-btn {
+    color: var(--play-pen-color) !important;
+    border-color: var(--play-pen-border) !important;
+    background: var(--play-pen-bg) !important;
+}
+#draw-btn:hover,
+#draw-pen-btn:hover {
+    color: var(--play-pen-color) !important;
+    background: var(--play-pen-bg-on) !important;
+}
+#draw-btn.pb-on,
+#draw-pen-btn.pb-on {
+    background: var(--play-pen-bg-on) !important;
+    border-color: var(--play-pen-border) !important;
+    color: var(--play-pen-color) !important;
+}
 .pb-btn.pb-exit {
     border-color: rgba(239,68,68,0.4);
     color: #f87171;
@@ -854,7 +885,7 @@ body.play-mode.edges-hint .tap-zone {
 <link rel="stylesheet" href="{{ url_for('static', filename='css/offline-manager.css') }}?v=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/leadsheet-play.css') }}?v=16">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=17">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-features.css') }}?v=2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-features.css') }}?v=3">
 <style>
 #cifra-content.grade-mode .cs-play-embed.setsync-cs-sheet { padding: 0; }
 </style>
@@ -988,9 +1019,12 @@ body.play-mode.edges-hint .tap-zone {
             <button class="pb-btn" id="sections-btn" type="button" title="Seções (S)" aria-label="Ir para seção">
                 <i class="fas fa-bookmark"></i><span class="pb-label-text">&nbsp;Seções</span>
             </button>
-            <button class="pb-btn" id="vocalist-mode-btn" type="button" title="Modo vocalista / projeção (P)" aria-label="Modo vocalista">
-                <i class="fas fa-microphone"></i><span class="pb-label-text">&nbsp;Vocal</span>
-            </button>
+            {% if public_letras_url %}
+            <a href="{{ public_letras_url }}" class="pb-btn" id="public-letras-btn" target="_blank" rel="noopener"
+               title="Link público de letras — cantor, telão ou outro celular (P)" aria-label="Abrir link de letras">
+                <i class="fas fa-align-left"></i><span class="pb-label-text">&nbsp;Letras</span>
+            </a>
+            {% endif %}
             <button class="pb-btn" id="loop-btn" type="button" title="Loop de trecho (R)" aria-label="Loop">
                 <i class="fas fa-redo"></i><span class="pb-label-text">&nbsp;Loop</span>
             </button>
@@ -1074,7 +1108,7 @@ body.play-mode.edges-hint .tap-zone {
 <div id="scroll-badge" onclick="toggleScroll()">⏬ rolando — toque para pausar</div>
 
 <!-- Keyboard hint -->
-<div id="kbd-hint">Bordas ou ← →: paginar · ↑↓: música · S: seções · P: vocal · M: metrônomo · Espaço scroll · Esc sair</div>
+<div id="kbd-hint">Bordas ou ← →: paginar · ↑↓: música · S: seções · {% if public_letras_url %}P: link letras · {% endif %}M: metrônomo · Espaço scroll · Esc sair</div>
 
 <div id="play-sections" aria-hidden="true">
     <div class="play-sections-hd">Seções</div>
@@ -1123,7 +1157,11 @@ body.play-mode.edges-hint .tap-zone {
             <li><strong>Bordas / ← →</strong> — paginar a cifra</li>
             <li><strong>↑ ↓</strong> — música anterior / próxima (pedal)</li>
             <li><strong>S</strong> — pular para Intro, Refrão, Ponte…</li>
-            <li><strong>P</strong> — letra grande para vocalista</li>
+            {% if public_letras_url %}
+            <li><strong>P</strong> — abrir <strong>link de letras</strong> (cantor ou telão)</li>
+            {% else %}
+            <li><strong>G</strong> — alternar cifra, grade ou letra nesta tela</li>
+            {% endif %}
             <li><strong>M</strong> — metrônomo com count-in</li>
             <li><strong>Sync</strong> — seguir a música que o líder avança</li>
         </ul>
@@ -1159,7 +1197,7 @@ body.play-mode.edges-hint .tap-zone {
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=16"></script>
 <script src="{{ url_for('static', filename='js/offline-store.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/play-metronome.js') }}?v=2"></script>
-<script src="{{ url_for('static', filename='js/play-draw-overlay.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/play-draw-overlay.js') }}?v=4"></script>
 <script src="{{ url_for('static', filename='js/play-pedal-config.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/play-pedal-wizard.js') }}?v=1"></script>
 <script id="play-features-config" type="application/json">{{ {
@@ -1267,6 +1305,7 @@ body.play-mode.edges-hint .tap-zone {
     var START_IDX = {{ start_idx|default(0) }};
     var BAND_ID = {{ (band.id if band else none)|tojson }};
     var EXIT_URL = {{ (exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id))) | tojson }};
+    var PUBLIC_LETRAS_URL = {{ public_letras_url | tojson }};
     var SETLIST_ID = {{ (setlist.id if setlist and not is_virtual|default(false) else none)|tojson }};
     var SETLIST_VOCALIST_URL = {{ (url_for('setlists.set_vocalist', setlist_id=setlist.id) if setlist and not is_virtual|default(false) else none)|tojson }};
     var ADD_VOCALIST_URL = {{ (url_for('bands.add_vocalist_api', band_id=band.id) if band else none)|tojson }};
@@ -2784,7 +2823,11 @@ body.play-mode.edges-hint .tap-zone {
                 }
                 break;
             case 'p': case 'P':
-                document.getElementById('vocalist-mode-btn') && document.getElementById('vocalist-mode-btn').click();
+                if (PUBLIC_LETRAS_URL) {
+                    window.open(PUBLIC_LETRAS_URL, '_blank', 'noopener');
+                } else {
+                    setViewMode('letra');
+                }
                 break;
             case 'r': case 'R':
                 document.getElementById('loop-btn') && document.getElementById('loop-btn').click();
@@ -2972,11 +3015,11 @@ body.play-mode.edges-hint .tap-zone {
 
     // Clean up on navigate-away
     window.addEventListener('pagehide', function () {
-        document.body.classList.remove('play-mode', 'chrome-hidden', 'edges-hint', 'play-vocalist-projection');
+        document.body.classList.remove('play-mode', 'chrome-hidden', 'edges-hint');
         if (window.SetSyncMetronome) window.SetSyncMetronome.stop();
         releaseWakeLock();
     });
 })();
 </script>
-<script src="{{ url_for('static', filename='js/play-mode-features.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/play-mode-features.js') }}?v=3"></script>
 {% endblock %}

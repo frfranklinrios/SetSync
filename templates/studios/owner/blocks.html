@@ -4,9 +4,13 @@
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb small">
         <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_rooms', studio_id=studio.id) }}">Salas</a></li>
         <li class="breadcrumb-item active">Bloqueios — {{ room.nome }}</li>
     </ol>
 </nav>
+
+{% set active = 'salas' %}
+{% include 'studios/owner/_toolbar.html' %}
 
 <h1 class="h5 mb-3">Bloqueios pontuais</h1>
 

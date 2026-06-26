@@ -64,14 +64,37 @@ def parse_room_form(form) -> dict | None:
             capacidade = None
     equip_raw = _clean(form.get('equipamentos'), 500)
     equipamentos = [e.strip() for e in equip_raw.split(',') if e.strip()] if equip_raw else []
+    preco = None
+    if not form.get('clear_preco_hora'):
+        preco_raw = _clean(form.get('preco_hora'), 20)
+        if preco_raw:
+            try:
+                preco = max(0.0, float(preco_raw.replace(',', '.')))
+            except ValueError:
+                preco = None
     out = {
         'nome': nome,
         'capacidade_pessoas': capacidade,
         'equipamentos': equipamentos,
+        'preco_hora': preco,
     }
     if 'ativa' in form:
         out['ativa'] = 1 if form.get('ativa') else 0
     return out
+
+
+def parse_finance_prices_form(form, room_ids: list[str]) -> tuple[float | None, dict[str, float | None]]:
+    """Preço padrão do estúdio e mapa room_id → preço (None = usar padrão)."""
+    from studio_finance import parse_money_field
+
+    studio_preco = parse_money_field(form.get('preco_hora_studio'))
+    room_prices: dict[str, float | None] = {}
+    for rid in room_ids:
+        if form.get(f'clear_preco_{rid}'):
+            room_prices[rid] = None
+        else:
+            room_prices[rid] = parse_money_field(form.get(f'preco_hora_{rid}'))
+    return studio_preco, room_prices
 
 
 def parse_weekly_availability_form(form) -> list[dict]:

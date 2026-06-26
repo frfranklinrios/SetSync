@@ -10,16 +10,24 @@
         <form method="post" action="{{ url_for('assinatura_bp.admin_vouchers_criar') }}" id="form-criar-voucher">
             {% include 'partials/csrf_input.html' %}
             <div class="row g-3 align-items-end mb-3">
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Destino</label>
+                    <select name="destino" id="voucher-destino" class="form-select">
+                        <option value="banda">Banda</option>
+                        <option value="estudio">Estúdio</option>
+                    </select>
+                </div>
                 <div class="col-sm-6 col-md-3">
                     <label class="form-label">Prefixo do código</label>
-                    <input type="text" name="prefixo" class="form-control" placeholder="Ex.: IGREJA">
+                    <input type="text" name="prefixo" id="voucher-prefixo" class="form-control" placeholder="Ex.: IGREJA">
                 </div>
                 <div class="col-sm-6 col-md-2">
                     <label class="form-label">Plano</label>
-                    <select name="plano" class="form-select">
+                    <select name="plano" id="voucher-plano" class="form-select">
                         <option value="individual">Individual</option>
-                        <option value="pro">Pro</option>
+                        <option value="pro" selected>Pro</option>
                         <option value="worship">Worship</option>
+                        <option value="estudio_premium" data-destino="estudio" hidden>Estúdio Premium</option>
                     </select>
                 </div>
                 <div class="col-sm-6 col-md-2" id="campo-dias">
@@ -44,8 +52,8 @@
                         Voucher vitalício
                     </label>
                 </div>
-                <p class="text-muted small mb-0 mt-2 ps-1">
-                    Com esta opção marcada, a banda que resgatar o código terá acesso ao plano escolhido
+                <p class="text-muted small mb-0 mt-2 ps-1" id="voucher-vitalicio-hint">
+                    Com esta opção marcada, quem resgatar terá acesso ao plano escolhido
                     <strong>sem data de vencimento</strong> (não expira automaticamente).
                 </p>
             </div>
@@ -62,6 +70,7 @@
         <thead>
             <tr>
                 <th>Código</th>
+                <th>Destino</th>
                 <th>Plano</th>
                 <th>Duração</th>
                 <th>Usos</th>
@@ -80,6 +89,7 @@
                     <span class="badge text-bg-success ms-1">Vitalício</span>
                     {% endif %}
                 </td>
+                <td>{% if v.destino == 'estudio' %}Estúdio{% else %}Banda{% endif %}</td>
                 <td>{{ v.plano }}</td>
                 <td>{% if v.eh_vitalicio %}Vitalício{% else %}{{ v.dias }} dias{% endif %}</td>
                 <td>{{ v.usos_atual }}{% if v.max_usos %}/{{ v.max_usos }}{% else %}/∞{% endif %}</td>
@@ -119,19 +129,48 @@
 {% block scripts %}
 <script>
 (function () {
+    var destino = document.getElementById('voucher-destino');
+    var plano = document.getElementById('voucher-plano');
+    var prefixo = document.getElementById('voucher-prefixo');
+    var hint = document.getElementById('voucher-vitalicio-hint');
     var chk = document.getElementById('chk-vitalicio');
     var inputDias = document.getElementById('input-dias');
     var campoDias = document.getElementById('campo-dias');
-    if (!chk || !inputDias) return;
+
+    function syncDestino() {
+        var estudio = destino && destino.value === 'estudio';
+        if (!plano) return;
+        plano.querySelectorAll('option').forEach(function (opt) {
+            var od = opt.getAttribute('data-destino');
+            if (od === 'estudio') {
+                opt.hidden = !estudio;
+            } else if (estudio) {
+                opt.hidden = true;
+            } else {
+                opt.hidden = false;
+            }
+        });
+        if (estudio) {
+            plano.value = 'estudio_premium';
+            if (prefixo && !prefixo.value.trim()) prefixo.placeholder = 'ESTUDIO';
+            if (hint) hint.innerHTML = 'Conta de <strong>estúdio</strong> ganha Premium (salas ilimitadas) pelo período ou vitalício.';
+        } else {
+            if (plano.value === 'estudio_premium') plano.value = 'pro';
+            if (prefixo) prefixo.placeholder = 'Ex.: IGREJA';
+            if (hint) hint.innerHTML = 'A <strong>banda</strong> que resgatar ganha o plano escolhido sem data de vencimento automático, se vitalício.';
+        }
+    }
+
     function syncVitalicio() {
         var on = chk.checked;
         inputDias.disabled = on;
         inputDias.required = !on;
-        if (campoDias) {
-            campoDias.style.opacity = on ? '0.5' : '1';
-        }
+        if (campoDias) campoDias.style.opacity = on ? '0.5' : '1';
     }
-    chk.addEventListener('change', syncVitalicio);
+
+    if (destino) destino.addEventListener('change', syncDestino);
+    if (chk) chk.addEventListener('change', syncVitalicio);
+    syncDestino();
     syncVitalicio();
 })();
 
@@ -147,7 +186,8 @@ document.querySelectorAll('.btn-ver-usos').forEach(function (btn) {
             body.innerHTML = '<ul class="list-unstyled mb-0">' + data.usos.map(function (u) {
                 var exp = (u.expira_em || '').slice(0, 10);
                 if (exp && exp >= '2090-01-01') exp = 'Vitalício';
-                return '<li><strong>' + (u.banda_nome || u.banda_id) + '</strong> — ' + (u.usado_em || '') +
+                var nome = u.banda_nome || u.user_nome || u.banda_id || u.user_id;
+                return '<li><strong>' + nome + '</strong> — ' + (u.usado_em || '') +
                     (exp ? ' · ' + exp : '') + '</li>';
             }).join('') + '</ul>';
         }

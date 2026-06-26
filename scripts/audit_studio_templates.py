@@ -70,6 +70,40 @@ def main() -> int:
         )),
         ('studios/my_bookings.html', dict(bookings=[])),
         ('studios/owner/form.html', dict(studio=studio, photos=[])),
+        ('studios/owner/rooms.html', dict(
+            studio=studio, rooms=rooms, booking_counts={r['id']: 0 for r in rooms},
+            can_add_room=True, room_limit=2, studio_plano_ui={
+                'logo': 'img/planos/estudio-basico.svg', 'label': 'Básico', 'premium': False,
+            },
+        )),
+        ('studios/owner/finance.html', dict(
+            studio=studio, report={
+                'year': 2026, 'month': 6, 'preco_hora': 80.0, 'tem_preco_sala': True,
+                'bookings': [], 'expenses': [],
+                'stats': {
+                    'reservas': 0, 'horas': 0.0,
+                    'receita_confirmada': 0.0, 'recebido': 0.0, 'a_receber': 0.0,
+                    'despesas': 0.0, 'liquido': 0.0,
+                },
+            },
+            from_date='2026-06-01', to_date='2026-06-30',
+            expense_categories=[('aluguel', 'Aluguel')],
+        )),
+        ('studios/owner/finance_print.html', dict(
+            studio=studio,
+            report={
+                'year': 2026, 'month': 6, 'preco_hora': 80.0, 'tem_preco_sala': False,
+                'bookings': [], 'expenses': [],
+                'stats': {
+                    'reservas': 1, 'horas': 5.0,
+                    'receita_confirmada': 400.0, 'recebido': 0.0, 'a_receber': 400.0,
+                    'despesas': 350.0, 'liquido': -350.0,
+                },
+            },
+            from_date='2026-06-01', to_date='2026-06-30',
+            period_label='Junho 2026', generated_at='2026-06-25 12:00',
+            expense_labels={'aluguel': 'Aluguel'}, pdfgen=False,
+        )),
         ('studios/owner/room_form.html', dict(studio=studio, room=room, photos=[])),
         ('studios/owner/availability.html', dict(
             studio=studio, room=room, weekday_labels=weekday_labels, weekly_by_dow={},

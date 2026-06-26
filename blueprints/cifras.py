@@ -978,6 +978,12 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         else:
             offline_pack_url = _url_for('cifras.offline_pack', band_id=band['id'])
             play_notes_url_tpl = _url_for('cifras.save_cifra_play_notes', cifra_id='__ID__')
+    public_letras_url = None
+    if setlist and not is_virtual and setlist.get('public_share_enabled'):
+        share_token = (setlist.get('public_share_token') or '').strip()
+        if share_token:
+            from setlist_public import public_share_urls
+            public_letras_url = public_share_urls(share_token)['letras']
     return render_template(
         'cifras/play_mode.html',
         setlist=setlist,
@@ -1003,6 +1009,7 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         play_notes_url_tpl=play_notes_url_tpl,
         user_id=user_id,
         auto_follow_leader=bool(event_context),
+        public_letras_url=public_letras_url,
     )
 
 

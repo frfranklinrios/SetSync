@@ -10,6 +10,7 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
 {% include 'partials/seo_public.html' %}
+{% include 'partials/seo_faq_igrejas.html' %}
 {% endblock %}
 
 {% block chord_diagram %}{% endblock %}
@@ -22,7 +23,7 @@
 .igrejas-hero {
     position: relative;
     overflow: hidden;
-    padding: 3.5rem 1.5rem 4rem;
+    padding: 1.5rem 1.5rem 4rem;
     background: linear-gradient(165deg, #fff7ed 0%, #fff 50%, #f0fdfa 100%);
     border-bottom: 1px solid var(--border);
 }
@@ -155,6 +156,8 @@
 
 {% block content %}
 <section class="igrejas-hero">
+    {% set active = 'igreja' %}
+    {% include 'partials/audience_bar.html' %}
     <div class="igrejas-hero-inner">
         <span class="badge text-bg-light mb-3"><i class="fas fa-church me-1"></i> SetSync para ministérios de louvor</span>
         <h1>Pare de perder o culto no grupo do WhatsApp</h1>
@@ -167,9 +170,10 @@
             <li><i class="fas fa-check"></i> Várias equipes, uma liderança</li>
             <li><i class="fas fa-check"></i> Tom certo para cada cantor</li>
             <li><i class="fas fa-check"></i> Funciona sem internet no culto</li>
+            <li><i class="fas fa-check"></i> Teste grátis · sem cartão</li>
         </ul>
         <div class="igrejas-cta-row">
-            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
+            <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
             <a href="#plano-worship" class="btn btn-outline-secondary btn-lg">Ver plano Worship</a>
             {% if whatsapp %}
             <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
@@ -261,8 +265,6 @@
 
 {% include 'partials/calculadora_worship.html' %}
 
-{% include 'partials/secao_screenshots.html' %}
-
 {% if testimonials %}
 <section class="igrejas-section home-testimonials">
     <h2>Igrejas e ministérios que organizam o louvor</h2>
@@ -342,7 +344,7 @@
     <h2>Organize o louvor da sua igreja hoje</h2>
     <p>Comece grátis em minutos. Sem cartão. Quando a congregação crescer, o Worship cobre todos os ministérios.</p>
     <div class="igrejas-cta-row justify-content-center">
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
+        <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
         {% if whatsapp %}
         <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
            class="btn btn-success btn-lg" target="_blank" rel="noopener">

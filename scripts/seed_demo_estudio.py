@@ -10,7 +10,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT)
 
 DEMO_USERNAME = 'estudio_teste'
-DEMO_PASSWORD = 'SetSyncEstudio2026!'
+DEMO_PASSWORD = 'EstudioTeste2026'
 DEMO_EMAIL = 'estudio.teste@setsync.com.br'
 DEMO_DISPLAY = 'Carlos Estúdio'
 
@@ -47,12 +47,13 @@ ROOMS = [
 
 
 def ensure_user(username: str, email: str, password: str, display_name: str) -> str:
-    from db import create_user, get_user_by_username, update_user_display_name
+    from db import create_user, get_user_by_username, update_user_display_name, update_user_password_by_email
 
     u = get_user_by_username(username)
     if u:
         if display_name and (u.get('display_name') or '') != display_name:
             update_user_display_name(u['id'], display_name)
+        update_user_password_by_email(email, password)
         return u['id']
     uid = create_user(username, email, password, display_name=display_name)
     if not uid:

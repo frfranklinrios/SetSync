@@ -1,4 +1,12 @@
-/* Modo Tocar — recursos avançados (seções, culto, vocalista, loop, sync) */
+/* Modo Tocar — recursos avançados (seções, culto, loop, sync) */
+
+body.play-mode.chrome-hidden #cifra-content.letra-mode {
+    font-size: clamp(1.35rem, 4.5vw, 2.4rem) !important;
+    line-height: 1.55 !important;
+}
+body.play-mode.chrome-hidden #cifra-content.letra-mode .letra-play-pane {
+    max-width: 48rem;
+}
 
 #play-event-bar {
     display: flex;
@@ -168,19 +176,6 @@ body.play-mode.chrome-hidden #play-next-peek { bottom: 1rem; }
 
 #cifra-wrap.metronome-flash-accent {
     box-shadow: inset 0 0 0 3px rgba(251, 191, 36, 0.45);
-}
-
-body.play-vocalist-projection #cifra-content.letra-mode {
-    font-size: clamp(1.35rem, 4.5vw, 2.4rem) !important;
-    line-height: 1.55 !important;
-}
-body.play-vocalist-projection #cifra-content.letra-mode .letra-play-pane {
-    max-width: 48rem;
-}
-body.play-vocalist-projection .pb-chrome-ctrl,
-body.play-vocalist-projection #play-foot,
-body.play-vocalist-projection .tap-zone {
-    display: none !important;
 }
 
 #play-onboard-overlay {

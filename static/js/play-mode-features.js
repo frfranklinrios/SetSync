@@ -1,5 +1,5 @@
 /**
- * Recursos avançados do Modo Tocar (seções, culto, vocalista, loop, sync, offline).
+ * Recursos avançados do Modo Tocar (seções, culto, loop, sync, offline).
  */
 (function (global) {
   'use strict';
@@ -126,20 +126,6 @@
       nextPeek.querySelector('.play-next-peek-artist').textContent = next.artista || '';
       nextPeek.classList.remove('d-none');
     }
-
-    // ── Modo vocalista (projeção) ───────────────────────
-    var vocalistBtn = document.getElementById('vocalist-mode-btn');
-
-    function toggleVocalistProjection() {
-      var on = document.body.classList.toggle('play-vocalist-projection');
-      if (vocalistBtn) vocalistBtn.classList.toggle('pb-on', on);
-      if (on && api.setViewMode) api.setViewMode('letra');
-      if (on) {
-        document.body.classList.add('chrome-hidden');
-      }
-    }
-
-    if (vocalistBtn) vocalistBtn.addEventListener('click', toggleVocalistProjection);
 
     // ── Loop de trecho ──────────────────────────────────
     var loopBtn = document.getElementById('loop-btn');

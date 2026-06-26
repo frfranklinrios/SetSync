@@ -1,5 +1,5 @@
 {# Dispara conversões/funil pendentes (uma vez por evento) #}
-{% if google_ads_funnel_events %}
+{% if google_ads_funnel_events and may_load_tracking %}
 <script>
 window.__setsyncGoogleAds = {
   events: {{ google_ads_funnel_events | tojson }},

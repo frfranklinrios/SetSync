@@ -82,7 +82,7 @@
     </a>
     <a class="guia-link" href="{{ url_for('ajuda.index') }}#estudios">
         <strong>Estúdios de ensaio</strong>
-        <span>Buscar salas, selo verificado, QR, Premium R$ 49 e métricas do dono</span>
+        <span>Buscar salas, selo verificado, QR, financeiro e Premium R$ 49</span>
     </a>
     <a class="guia-link" href="{{ url_for('assinatura_bp.planos') }}">
         <strong>Planos e checkout anual</strong>
@@ -91,6 +91,14 @@
     <a class="guia-link" href="{{ url_for('ajuda.index') }}#perfil">
         <strong>Instrumentos no perfil</strong>
         <span>Cadastre o que você toca — a banda vê na escalação e em Membros</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('guia.guia_page', slug='gerenciar-financeiro-do-estudio') }}">
+        <strong>Financeiro do estúdio</strong>
+        <span>Receita de reservas, pagamentos, despesas e líquido mensal</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('guia.guia_page', slug='resgatar-voucher-estudio-premium') }}">
+        <strong>Voucher Estúdio Premium</strong>
+        <span>Resgatar código promocional para salas ilimitadas</span>
     </a>
     <a class="guia-link" href="{{ url_for('guia.guia_page', slug='reservar-sala-de-ensaio') }}">
         <strong>Reservar sala de ensaio</strong>

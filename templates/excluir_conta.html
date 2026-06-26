@@ -1,0 +1,42 @@
+{% extends "index.html" %}
+{% block title %}Excluir conta — SetSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-2">
+  <div class="col-lg-7">
+    <h2 class="h4 text-danger mb-3">Excluir minha conta</h2>
+    <p class="text-muted">
+      Esta ação é <strong>permanente</strong>. Seus dados pessoais serão removidos e você perderá acesso
+      às bandas em que participa. Bandas das quais você é o único integrante serão excluídas.
+    </p>
+
+    {% if blockers %}
+    <div class="alert alert-warning">
+      <strong>Não é possível excluir agora:</strong>
+      <ul class="mb-0 mt-2">{% for b in blockers %}<li>{{ b }}</li>{% endfor %}</ul>
+    </div>
+    <p class="small text-muted">
+      Precisa de ajuda? <a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>
+    </p>
+    <a href="{{ url_for('auth.perfil') }}" class="btn btn-outline-secondary">Voltar ao perfil</a>
+    {% else %}
+    <form method="post" class="card">
+      <div class="card-body">
+        <p>Para confirmar, digite seu usuário: <strong>{{ user.username }}</strong></p>
+        {% include 'partials/csrf_input.html' %}
+        <div class="mb-3">
+          <label class="form-label" for="confirm_username">Usuário</label>
+          <input type="text" class="form-control" id="confirm_username" name="confirm_username"
+                 autocomplete="off" required>
+        </div>
+        <button type="submit" class="btn btn-danger"
+                onclick="return confirm('Tem certeza? Esta ação não pode ser desfeita.');">
+          Excluir minha conta permanentemente
+        </button>
+        <a href="{{ url_for('auth.perfil') }}" class="btn btn-link">Cancelar</a>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

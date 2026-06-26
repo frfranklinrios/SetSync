@@ -1,0 +1,819 @@
+{% extends "index.html" %}
+
+{% block title %}SetSync para Bandas — Cifras, setlists e Modo Tocar offline{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('assinatura_bp.bandas') }}">
+<meta name="description" content="SetSync para bandas e músicos: cifras compartilhadas, setlists com tom por cantor, agenda com escalação, financeiro de cachês e Modo Tocar offline no palco. 30 dias Pro grátis.">
+<meta name="keywords" content="SetSync banda, setlist online, app cifras banda, escalação banda, modo tocar offline, cachê banda">
+<meta property="og:title" content="SetSync para Bandas — Repertório sincronizado no palco">
+<meta property="og:description" content="Cifras, setlists, agenda e palco offline para sua banda — sem caos no WhatsApp.">
+<meta property="og:url" content="{{ external_url_for('assinatura_bp.bandas') }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ site_og_image }}">
+{% include 'partials/seo_public.html' %}
+{% include 'partials/seo_home_jsonld.html' %}
+{% include 'partials/seo_faq_home.html' %}
+{% endblock %}
+
+{% block chord_diagram %}{% endblock %}
+
+{% block main_class %}home-page{% endblock %}
+
+{% block extra_head %}
+<style>
+.home-page {
+    padding: 0;
+    max-width: none;
+}
+.home-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 1.5rem 1.5rem 3.5rem;
+    background: linear-gradient(165deg, #fff7ed 0%, #fff 45%, #f0fdfa 100%);
+    border-bottom: 1px solid var(--border);
+}
+.home-hero-inner {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+.home-hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+.home-hero-copy { min-width: 0; }
+.home-hero-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1.25rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.home-hero-points li { display: flex; align-items: center; gap: 0.4rem; }
+.home-hero-points i { color: var(--accent); font-size: var(--text-sm); }
+.home-compare-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    border-top: 1px solid var(--border);
+}
+.home-compare-section h2 {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.home-compare-sub {
+    color: var(--muted);
+    max-width: 42rem;
+    margin-bottom: 1.75rem;
+    line-height: 1.55;
+}
+.home-compare-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+.home-compare-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: #fff;
+}
+[data-theme="dark"] .home-compare-card { background: #0b1422; border-color: #334155; }
+.home-compare-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+.home-compare-card p { font-size: var(--text-sm); color: var(--muted); margin: 0; line-height: 1.5; }
+.home-compare-card .fa-circle-xmark { color: #dc2626; font-size: var(--text-base); }
+.home-compare-solution .fa-circle-check { color: #0d9488; font-size: var(--text-base); }
+.hero-side-label {
+    display: inline-block;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.85rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+    border: 1px solid var(--chord-highlight-border);
+}
+[data-theme="dark"] .hero-side-label { color: #5eead4; }
+.home-hero-copy h1 {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.85rem;
+}
+.hero-mock-clean {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--chord-highlight-border);
+    box-shadow: 0 16px 40px rgba(42, 181, 160, 0.15);
+}
+.hero-mock-clean img { width: 100%; height: auto; display: block; }
+@media (max-width: 900px) {
+    .home-hero-grid { grid-template-columns: 1fr; }
+    .hero-mock-clean { max-width: 420px; margin-left: auto; margin-right: auto; }
+}
+[data-theme="dark"] .home-hero {
+    background: linear-gradient(165deg, #0b1422 0%, #0f172a 50%, #134e4a22 100%);
+    border-bottom-color: #334155;
+}
+.home-hero::before {
+    content: "";
+    position: absolute;
+    inset: -40% 30% auto -20%;
+    height: 120%;
+    background: radial-gradient(ellipse at center, rgba(234, 88, 12, 0.12), transparent 70%);
+    pointer-events: none;
+}
+[data-theme="dark"] .home-hero::before {
+    background: radial-gradient(ellipse at center, rgba(42, 181, 160, 0.15), transparent 70%);
+}
+.home-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+    border: 1px solid var(--chord-highlight-border);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 1.25rem;
+}
+[data-theme="dark"] .home-badge {
+    color: #5eead4;
+    background: rgba(42, 181, 160, 0.12);
+    border-color: rgba(42, 181, 160, 0.35);
+}
+.home-hero h1 {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    max-width: 20ch;
+}
+.home-lead {
+    font-size: var(--text-md);
+    color: var(--muted);
+    max-width: 42rem;
+    line-height: 1.6;
+    margin-bottom: 1.75rem;
+}
+.home-cta { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.home-cta .btn-lg { padding: 0.65rem 1.35rem; font-weight: 600; }
+.home-hero-img {
+    max-width: 280px;
+    width: 100%;
+    filter: drop-shadow(0 12px 32px rgba(0,0,0,0.12));
+}
+[data-theme="dark"] .home-hero-img { filter: drop-shadow(0 12px 32px rgba(0,0,0,0.45)); }
+
+.home-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+.home-section h2 {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+.home-section .section-sub {
+    color: var(--muted);
+    font-size: var(--text-base);
+    margin-bottom: 1.75rem;
+}
+.home-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+.home-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.35rem;
+    background: #fff;
+    height: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+[data-theme="dark"] .home-card {
+    background: #0b1422;
+    border-color: #334155;
+}
+.home-card:hover {
+    border-color: var(--chord-highlight-border);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+[data-theme="dark"] .home-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+.home-card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--accent);
+    background: var(--chord-highlight-bg);
+    margin-bottom: 0.85rem;
+}
+[data-theme="dark"] .home-card-icon {
+    color: #5eead4;
+    background: rgba(42, 181, 160, 0.12);
+}
+.home-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+.home-card p {
+    font-size: var(--text-sm);
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Planos */
+.home-planos {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 3rem 0;
+}
+[data-theme="dark"] .home-planos {
+    background: #0f172a;
+    border-color: #334155;
+}
+.home-planos-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+.home-planos-note {
+    font-size: var(--text-sm);
+    color: var(--muted);
+    text-align: center;
+    margin-top: 1.25rem;
+}
+.home-hero h1 {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    max-width: 20ch;
+}
+.planos-publicos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+    align-items: center;
+}
+.plano-publico-card--destaque {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent), 0 24px 48px rgba(234, 88, 12, 0.18);
+    transform: scale(1.06);
+    z-index: 2;
+    padding: 1.75rem 1.5rem 1.5rem;
+}
+[data-theme="dark"] .plano-publico-card--destaque {
+    border-color: #2ab5a0;
+    box-shadow: 0 0 0 2px #2ab5a0, 0 24px 48px rgba(42, 181, 160, 0.22);
+}
+@media (max-width: 900px) {
+    .plano-publico-card--destaque { transform: none; }
+}
+.plano-publico-card--destaque.toggle-anual-pop {
+    animation: planoPop 0.45s ease;
+}
+@keyframes planoPop {
+    0% { transform: scale(1.06); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1.06); }
+}
+.plano-publico-card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem 1.35rem 1.35rem;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+[data-theme="dark"] .plano-publico-card {
+    background: #0b1422;
+    border-color: #334155;
+}
+.plano-publico-badge {
+    position: absolute;
+    top: -0.65rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+}
+[data-theme="dark"] .plano-publico-badge { background: #2ab5a0; }
+.plano-publico-nome {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0.35rem;
+}
+.plano-publico-preco {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+}
+.plano-publico-preco small {
+    font-size: var(--text-base);
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 0.15rem;
+}
+.plano-publico-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+    flex: 1;
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.plano-publico-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    line-height: 1.45;
+}
+.plano-publico-features .fa-check {
+    color: var(--accent);
+    margin-top: 0.2rem;
+    font-size: var(--text-xs);
+}
+[data-theme="dark"] .plano-publico-features .fa-check { color: #2ab5a0; }
+
+.home-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    counter-reset: step;
+}
+.home-step {
+    text-align: center;
+    padding: 1rem;
+}
+.home-step-num {
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0 auto 0.75rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: var(--text-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+[data-theme="dark"] .home-step-num { background: #2ab5a0; }
+.home-step strong { display: block; margin-bottom: 0.35rem; font-size: var(--text-base); }
+.home-step span { font-size: var(--text-sm); color: var(--muted); }
+
+.home-cta-band {
+    text-align: center;
+    padding: 2.5rem 1.5rem 3.5rem;
+}
+.home-cta-band h2 { font-size: var(--text-lg); margin-bottom: 0.5rem; }
+.home-cta-band p { color: var(--muted); margin-bottom: 1.25rem; }
+
+.home-faq details {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background: var(--bg);
+}
+.home-faq summary {
+    font-weight: 600;
+    cursor: pointer;
+    font-size: var(--text-base);
+}
+.home-faq details p {
+    margin: 0.65rem 0 0;
+    font-size: var(--text-base);
+    color: var(--muted);
+    line-height: 1.55;
+}
+.home-seo-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+}
+.home-seo-links a {
+    font-size: var(--text-sm);
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--muted);
+}
+.home-seo-links a:hover { border-color: var(--accent); color: var(--accent); }
+
+.home-audience-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+.home-audience-tabs a {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    color: var(--muted);
+    background: #fff;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+[data-theme="dark"] .home-audience-tabs a { background: #0b1422; border-color: #334155; }
+.home-audience-tabs a:hover,
+.home-audience-tabs a.is-active {
+    border-color: var(--chord-highlight-border);
+    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+}
+[data-theme="dark"] .home-audience-tabs a:hover,
+[data-theme="dark"] .home-audience-tabs a.is-active { color: #5eead4; }
+
+.home-stats {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+}
+.home-stats .container-lg {
+    max-width: 1100px;
+}
+.home-stat-item {
+    padding: 0.25rem 0.5rem;
+}
+.home-stat-num {
+    font-size: var(--text-3xl);
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+}
+[data-theme="dark"] .home-stat-num { color: #2ab5a0; }
+.home-stat-label { font-size: var(--text-sm); color: var(--muted); margin-top: 0.35rem; }
+.home-stat-num.home-stat-text {
+    font-size: var(--text-lg);
+    line-height: 1.25;
+}
+@media (min-width: 992px) {
+    .home-stat-num.home-stat-text { font-size: var(--text-xl); }
+}
+
+.home-testimonials { background: #fff; border-top: 1px solid var(--border); }
+[data-theme="dark"] .home-testimonials { background: #0b1422; }
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+@media (max-width: 768px) { .testimonials-grid { grid-template-columns: 1fr; } }
+.testimonial-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    height: 100%;
+    background: var(--bg);
+}
+.testimonial-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--chord-highlight-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: var(--accent); margin-bottom: 0.75rem;
+}
+.testimonial-name { font-weight: 700; }
+.testimonial-desc { font-size: var(--text-sm); color: var(--muted); }
+.testimonial-text { font-style: italic; font-size: var(--text-base); margin-top: 0.75rem; line-height: 1.55; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="home-hero">
+    {% set active = 'banda' %}
+    {% include 'partials/audience_bar.html' %}
+    <div class="home-hero-inner">
+        <div class="home-hero-grid">
+            <div class="home-hero-copy">
+                <span class="home-badge"><i class="fas fa-gift me-1"></i> 30 dias Pro grátis · sem cartão</span>
+                <span class="hero-side-label"><i class="fas fa-music me-1"></i> Para bandas</span>
+                <h1>Cifras e setlists da sua banda em um só app</h1>
+                <p class="home-lead">
+                    O <strong>SetSync</strong> é um app brasileiro para bandas e músicos: repertório compartilhado,
+                    transposição por cantor, agenda com escalação e <strong>Modo Tocar offline</strong> no palco.
+                </p>
+                <ul class="home-hero-points">
+                    <li><i class="fas fa-check" aria-hidden="true"></i> Cifras e setlists na mesma conta da banda</li>
+                    <li><i class="fas fa-check" aria-hidden="true"></i> Tom certo para cada cantor na setlist</li>
+                    <li><i class="fas fa-check" aria-hidden="true"></i> Funciona offline no ensaio e no show</li>
+                    <li><i class="fas fa-check" aria-hidden="true"></i> Cadastro em ~2 min · email ou Google</li>
+                </ul>
+                <div class="home-cta mt-4">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
+                    <a href="{{ url_for('studios.search') }}" class="btn btn-outline-secondary btn-lg">Buscar estúdios</a>
+                </div>
+            </div>
+            <figure class="hero-mock-clean mb-0">
+                <img src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
+                     alt="Painel do SetSync com setlist da banda e tom por cantor"
+                     width="1389" height="822"
+                     loading="eager"
+                     decoding="async">
+            </figure>
+        </div>
+    </div>
+</section>
+
+{% if stats %}
+<section class="home-stats" id="estatisticas">
+    <div class="container-lg px-3">
+        <div class="row g-4 text-center justify-content-center">
+            <div class="col-6 col-lg-3 home-stat-item">
+                <div class="home-stat-num" data-stat="bandas" data-target="{{ stats.bandas }}">0</div>
+                <div class="home-stat-label">Bandas ativas</div>
+            </div>
+            <div class="col-6 col-lg-3 home-stat-item">
+                <div class="home-stat-num" data-stat="musicas" data-target="{{ stats.musicas }}">0</div>
+                <div class="home-stat-label">Músicas cadastradas</div>
+            </div>
+            <div class="col-6 col-lg-3 home-stat-item">
+                <div class="home-stat-num" data-stat="setlists" data-target="{{ stats.setlists }}">0</div>
+                <div class="home-stat-label">Setlists criados</div>
+            </div>
+            {% if stats.biblioteca %}
+            <div class="col-6 col-lg-3 home-stat-item">
+                <div class="home-stat-num home-stat-text">Centenas de milhares</div>
+                <div class="home-stat-label">de cifras na nossa biblioteca</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="home-compare-section">
+    <h2>Do grupo do WhatsApp ao repertório organizado</h2>
+    <p class="home-compare-sub">
+        Se a banda ainda depende de print, PDF e mensagem solta, o SetSync centraliza tudo —
+        com a versão certa de cada música e o tom de cada cantor.
+    </p>
+    <div class="home-compare-grid">
+        <article class="home-compare-card">
+            <h3><i class="fas fa-circle-xmark" aria-hidden="true"></i> Cifra espalhada no grupo</h3>
+            <p>Print antigo, PDF rasurado e versões diferentes no celular de cada músico.</p>
+        </article>
+        <article class="home-compare-card home-compare-solution">
+            <h3><i class="fas fa-circle-check" aria-hidden="true"></i> Biblioteca da banda</h3>
+            <p>Uma cifra atualizada para todos — com transposição e tom por cantor na setlist.</p>
+        </article>
+        <article class="home-compare-card">
+            <h3><i class="fas fa-circle-xmark" aria-hidden="true"></i> Tom errado no palco</h3>
+            <p>Cada cantor em uma tonalidade e a banda descobre só na hora do show.</p>
+        </article>
+        <article class="home-compare-card home-compare-solution">
+            <h3><i class="fas fa-circle-check" aria-hidden="true"></i> Modo Tocar preparado</h3>
+            <p>Setlist com o tom certo, tela cheia e offline quando a internet falha.</p>
+        </article>
+    </div>
+</section>
+
+<section class="home-planos" id="planos">
+    <div class="home-planos-inner">
+        <h2 class="text-center mb-1">Planos SetSync Cifras e Setlists</h2>
+        <p class="section-sub text-center mx-auto" style="max-width: 40rem;">
+            Planos para bandas e músicos. Donos de estúdio começam no <strong>beta gratuito</strong> — veja abaixo.
+        </p>
+        {% set plano_worship = planos_site | selectattr('id', 'equalto', 'worship') | first %}
+        {% set planos_grid = planos_site | rejectattr('id', 'equalto', 'worship') | list %}
+        {% include 'partials/planos_publicos.html' %}
+        <p class="home-planos-note">
+            Após criar a conta, gerencie a assinatura em <strong>Planos</strong> no app.
+        </p>
+    </div>
+</section>
+
+{% include 'partials/secao_modo_tocar_scroll.html' %}
+
+{% include 'partials/secao_offline_pwa.html' %}
+
+<section class="home-section">
+    <h2>Recursos para bandas, músicos e estúdios</h2>
+    <p class="section-sub">Do cadastro da música à reserva de sala de ensaio — em um só lugar.</p>
+    <div class="home-features">
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-users"></i></div>
+            <h3>Bandas e convites</h3>
+            <p>Crie a banda, convide musicistas por link ou e-mail e compartilhe o mesmo repertório.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-drum"></i></div>
+            <h3>Instrumentos no perfil</h3>
+            <p>Cada músico marca o que toca; a banda vê na lista de membros e na escalação de eventos.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-guitar"></i></div>
+            <h3>Cifras inteligentes</h3>
+            <p>Acordes destacados, transposição na hora, diagramas e tom por cantora/cantor.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-list-ol"></i></div>
+            <h3>Setlists</h3>
+            <p>Monte o roteiro do show, defina cantora/cantor e tom em cada música e navegue com setas ou toque.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-calendar-alt"></i></div>
+            <h3>Agenda da banda</h3>
+            <p>Ensaios e shows, calendário mensal, setlist por evento e local com Google Maps.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-user-check"></i></div>
+            <h3>Escalação por evento</h3>
+            <p>Escale quem participa, confirmação por link, formações salvas e sugestão automática.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-door-open"></i></div>
+            <h3>Estúdios de ensaio</h3>
+            <p>Bandas buscam salas por cidade; donos cadastram, confirmam reservas e sincronizam com a agenda.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-bell"></i></div>
+            <h3>Lembretes e alertas</h3>
+            <p>Próximos eventos no painel, lembrete 24h antes e notificações por e-mail e WhatsApp.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-expand"></i></div>
+            <h3>Modo Tocar</h3>
+            <p>Tela cheia para o palco: duas colunas, auto-scroll, fonte ajustável e tema claro ou escuro.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-file-pdf"></i></div>
+            <h3>PDF no plano Pro</h3>
+            <p>Exporte setlists formatadas para ensaio ou arquivo — recurso premium.</p>
+        </article>
+        <article class="home-card">
+            <div class="home-card-icon"><i class="fas fa-mobile-screen"></i></div>
+            <h3>App no celular</h3>
+            <p>Instale na tela inicial (PWA) e use offline quando precisar — ideal no palco ou no ensaio.</p>
+        </article>
+    </div>
+</section>
+
+{% if testimonials %}
+<section class="home-section home-testimonials">
+    <h2>Quem usa recomenda</h2>
+    <p class="section-sub">Bandas e músicos que já sincronizaram o repertório no SetSync.</p>
+    <div class="testimonials-grid">
+        {% for t in testimonials[:3] %}
+        <article class="testimonial-card">
+            <div class="testimonial-avatar" aria-hidden="true">{{ t.nome[:1] }}</div>
+            <div class="testimonial-name">{{ t.nome }}</div>
+            <div class="testimonial-desc">{{ t.descricao }}{% if t.cidade %} · {{ t.cidade }}{% endif %}</div>
+            <p class="testimonial-text">"{{ t.texto }}"</p>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% include 'partials/secao_screenshots.html' %}
+
+<section class="home-section pt-0">
+    <h2>Como começar</h2>
+    <p class="section-sub">Em poucos minutos sua banda já está ensaiando com o SetSync.</p>
+    <div class="home-steps">
+        <div class="home-step">
+            <div class="home-step-num">1</div>
+            <strong>Crie sua conta</strong>
+            <span>Plano Grátis, sem cartão. Email ou Google.</span>
+        </div>
+        <div class="home-step">
+            <div class="home-step-num">2</div>
+            <strong>Monte a banda</strong>
+            <span>Adicione músicas e envie o link de convite aos integrantes.</span>
+        </div>
+        <div class="home-step">
+            <div class="home-step-num">3</div>
+            <strong>Agende e escale</strong>
+            <span>Marque ensaios e shows na Agenda, vincule a setlist e escale a equipe.</span>
+        </div>
+        <div class="home-step">
+            <div class="home-step-num">4</div>
+            <strong>Toque ao vivo</strong>
+            <span>Abra o Modo Tocar no evento ou na setlist — upgrade em Planos se precisar.</span>
+        </div>
+    </div>
+</section>
+
+<section class="home-section home-faq" id="faq">
+    <h2>Perguntas frequentes</h2>
+    <p class="section-sub">O que músicos e líderes de banda buscam sobre cifras, setlists e palco.</p>
+    {% for item in faq_entries %}
+    <details>
+        <summary>{{ item.q }}</summary>
+        <p>{{ item.a }}</p>
+    </details>
+    {% endfor %}
+    <p class="mt-3 mb-1">
+        <a href="{{ url_for('guia.guia_index') }}">Ver todos os guias →</a>
+        · <a href="{{ url_for('blog.blog_index') }}">Blog com tutoriais</a>
+        · <a href="{{ url_for('ajuda.index') }}">Ajuda</a>
+        · <a href="{{ url_for('studios.search') }}">Buscar estúdios</a>
+    </p>
+</section>
+
+<section class="home-cta-band">
+    <h2>Pronto para sincronizar o set?</h2>
+    <p>Crie a banda, convide os músicos e teste o Pro grátis por 30 dias.</p>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2">Criar conta grátis</a>
+    <a href="#planos" class="btn btn-outline-secondary btn-lg me-2">Ver planos</a>
+    <a href="{{ url_for('studios.search') }}" class="btn btn-outline-secondary btn-lg me-2">Buscar estúdios</a>
+    <button type="button" class="btn btn-outline-secondary btn-lg" onclick="typeof installPWA === 'function' && installPWA()">
+        <i class="fas fa-download me-1"></i> Instalar app
+    </button>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var els = document.querySelectorAll('.home-stat-num[data-target]');
+    function formatStat(el, n) {
+        if (el.dataset.format === 'pt-br') {
+            el.textContent = n.toLocaleString('pt-BR');
+        } else {
+            el.textContent = String(n);
+        }
+    }
+    if (!els.length || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+            formatStat(el, parseInt(el.dataset.target, 10) || 0);
+        });
+        return;
+    }
+    function animate(el) {
+        var target = parseInt(el.dataset.target, 10) || 0;
+        var start = 0;
+        var duration = 1200;
+        var t0 = performance.now();
+        function frame(t) {
+            var p = Math.min(1, (t - t0) / duration);
+            var current = Math.round(start + (target - start) * p);
+            formatStat(el, current);
+            if (p < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    }
+    var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+            if (e.isIntersecting) {
+                animate(e.target);
+                obs.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.3 });
+    els.forEach(function (el) { obs.observe(el); });
+})();
+</script>
+{% endblock %}

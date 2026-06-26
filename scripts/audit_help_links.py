@@ -62,7 +62,7 @@ def main() -> int:
 
     with app.test_client() as client:
         key_paths = [
-            '/ajuda', '/guia', '/blog', '/roadmap', '/igrejas',
+            '/', '/bandas', '/ajuda', '/guia', '/blog', '/roadmap', '/igrejas',
             '/planos', '/assinatura/planos', '/estudios/buscar', '/estudios',
         ]
         for path in key_paths:

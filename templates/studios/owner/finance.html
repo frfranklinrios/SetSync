@@ -1,0 +1,233 @@
+{% extends "index.html" %}
+{% block title %}Financeiro — {{ studio.nome }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item active">Financeiro</li>
+    </ol>
+</nav>
+
+{% set active = 'financeiro' %}
+{% include 'studios/owner/_toolbar.html' %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+    <div>
+        <h1 class="h5 mb-1"><i class="fas fa-coins me-1"></i> Financeiro</h1>
+        <p class="text-muted mb-0 small">
+            Reservas confirmadas de {{ from_date }} a {{ to_date }}
+            {% if report.preco_hora or report.tem_preco_sala %}
+            · preço/hora por sala{% if report.preco_hora %} (padrão R$ {{ '%.2f'|format(report.preco_hora) }}){% endif %}
+            · <a href="{{ url_for('studios.owner_finance_prices', studio_id=studio.id, ano=report.year, mes=report.month) }}">Ajustar preços</a>
+            {% else %}
+            · <a href="{{ url_for('studios.owner_finance_prices', studio_id=studio.id, ano=report.year, mes=report.month) }}">Cadastre o preço/hora</a>
+            {% endif %}
+        </p>
+    </div>
+    <form method="get" class="d-flex gap-2 align-items-end">
+        <div>
+            <label class="form-label small mb-1">Mês</label>
+            <select name="mes" class="form-select form-select-sm">
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}" {% if m == report.month %}selected{% endif %}>
+                    {{ ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m] }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small mb-1">Ano</label>
+            <input type="number" name="ano" class="form-control form-control-sm" style="width:5.5rem"
+                   value="{{ report.year }}" min="2000" max="2100">
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Filtrar</button>
+        <a href="{{ url_for('studios.owner_finance_print', studio_id=studio.id, ano=report.year, mes=report.month) }}"
+           class="btn btn-sm btn-outline-primary" title="Relatório em PDF">
+            <i class="fas fa-file-pdf me-1"></i> PDF
+        </a>
+    </form>
+</div>
+
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="border rounded p-2 text-center small h-100">
+            <div class="fw-bold">R$ {{ '%.2f'|format(report.stats.receita_confirmada) }}</div>
+            <div class="text-muted">Receita confirmada</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="border rounded p-2 text-center small h-100">
+            <div class="fw-bold text-success">R$ {{ '%.2f'|format(report.stats.recebido) }}</div>
+            <div class="text-muted">Recebido</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="border rounded p-2 text-center small h-100">
+            <div class="fw-bold text-warning">R$ {{ '%.2f'|format(report.stats.a_receber) }}</div>
+            <div class="text-muted">A receber</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="border rounded p-2 text-center small h-100">
+            <div class="fw-bold text-danger">R$ {{ '%.2f'|format(report.stats.despesas) }}</div>
+            <div class="text-muted">Despesas</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="border rounded p-2 text-center small h-100">
+            <div class="fw-bold">R$ {{ '%.2f'|format(report.stats.liquido) }}</div>
+            <div class="text-muted">Líquido (recebido − despesas)</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="border rounded p-2 text-center small h-100">
+            <div class="fw-bold">{{ report.stats.reservas }}</div>
+            <div class="text-muted">{{ '%.1f'|format(report.stats.horas) }} h reservadas</div>
+        </div>
+    </div>
+</div>
+
+<h2 class="h6">Reservas confirmadas</h2>
+{% if report.bookings %}
+<div class="table-responsive mb-4">
+    <table class="table table-sm align-middle" style="font-size: var(--text-sm);">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Horário</th>
+                <th>Sala</th>
+                <th>Banda</th>
+                <th class="text-end">Horas</th>
+                <th class="text-end">Valor</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in report.bookings %}
+            <tr>
+                <td>{{ b.data }}</td>
+                <td>{{ b.hora_inicio }}–{{ b.hora_fim }}</td>
+                <td>{{ b.room_nome }}</td>
+                <td>{{ b.band_name or '—' }}</td>
+                <td class="text-end">{{ '%.1f'|format(b.duration_hours) }}</td>
+                <td class="text-end">
+                    <strong>R$ {{ '%.2f'|format(b.valor_cobrado_efetivo) }}</strong>
+                    {% if b.valor_customizado %}
+                    <div class="text-muted" style="font-size:0.75rem;">manual</div>
+                    {% elif b.preco_hora_efetivo %}
+                    <div class="text-muted" style="font-size:0.75rem;">R$ {{ '%.2f'|format(b.preco_hora_efetivo) }}/h</div>
+                    {% else %}
+                    <div class="text-muted" style="font-size:0.75rem;">sem preço/hora</div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if b.is_paid %}
+                    <span class="badge text-bg-success">Pago</span>
+                    {% else %}
+                    <span class="badge text-bg-warning">Pendente</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            data-bs-toggle="collapse" data-bs-target="#fin-{{ b.id }}" aria-expanded="false">
+                        Ajustar
+                    </button>
+                </td>
+            </tr>
+            <tr class="collapse" id="fin-{{ b.id }}">
+                <td colspan="8" class="bg-light">
+                    <form method="post" action="{{ url_for('studios.save_booking_finance', studio_id=studio.id, booking_id=b.id) }}" class="row g-2 align-items-end">
+                        {% include 'partials/csrf_input.html' %}
+                        <input type="hidden" name="ano" value="{{ report.year }}">
+                        <input type="hidden" name="mes" value="{{ report.month }}">
+                        <div class="col-md-2">
+                            <label class="form-label mb-1 small">Valor (R$)</label>
+                            <input type="text" name="valor_cobrado" class="form-control form-control-sm" inputmode="decimal"
+                                   value="{{ b.valor_cobrado if b.valor_customizado else '' }}"
+                                   placeholder="{{ '%.2f'|format(b.valor_estimado) }}">
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" name="clear_valor" value="1" id="clr-{{ b.id }}">
+                                <label class="form-check-label small" for="clr-{{ b.id }}">Usar estimativa</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-1 small">Pagamento</label>
+                            <select name="pago" class="form-select form-select-sm">
+                                <option value="1" {% if b.is_paid %}selected{% endif %}>Pago</option>
+                                <option value="0" {% if not b.is_paid %}selected{% endif %}>Pendente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label mb-1 small">Observações</label>
+                            <input type="text" name="finance_notes" class="form-control form-control-sm" maxlength="500"
+                                   value="{{ b.finance_notes or '' }}" placeholder="Ex.: desconto para banda fixa">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Salvar</button>
+                        </div>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted small mb-4">Nenhuma reserva confirmada neste período.</p>
+{% endif %}
+
+<h2 class="h6">Despesas do mês</h2>
+<form method="post" action="{{ url_for('studios.add_studio_expense', studio_id=studio.id) }}" class="row g-2 align-items-end mb-3">
+    {% include 'partials/csrf_input.html' %}
+    <input type="hidden" name="ano" value="{{ report.year }}">
+    <input type="hidden" name="mes" value="{{ report.month }}">
+    <div class="col-md-2">
+        <label class="form-label mb-1 small">Data</label>
+        <input type="date" name="data" class="form-control form-control-sm" required value="{{ to_date }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label mb-1 small">Descrição</label>
+        <input type="text" name="descricao" class="form-control form-control-sm" maxlength="200" required placeholder="Ex.: conta de luz">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label mb-1 small">Valor (R$)</label>
+        <input type="text" name="valor" class="form-control form-control-sm" inputmode="decimal" required placeholder="350.00">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label mb-1 small">Categoria</label>
+        <select name="categoria" class="form-select form-select-sm">
+            {% for val, label in expense_categories %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-outline-primary btn-sm w-100">Adicionar</button>
+    </div>
+</form>
+
+{% if report.expenses %}
+<ul class="list-group mb-4">
+    {% for e in report.expenses %}
+    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2 small">
+        <div>
+            <strong>{{ e.data }}</strong> — {{ e.descricao }}
+            <span class="text-muted">· {{ e.categoria }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-danger">R$ {{ '%.2f'|format(e.valor) }}</span>
+            <form method="post" action="{{ url_for('studios.delete_studio_expense_route', studio_id=studio.id, expense_id=e.id) }}">
+                {% include 'partials/csrf_input.html' %}
+                <input type="hidden" name="ano" value="{{ report.year }}">
+                <input type="hidden" name="mes" value="{{ report.month }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Remover esta despesa?');">Excluir</button>
+            </form>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-muted small mb-0">Nenhuma despesa registrada neste período.</p>
+{% endif %}
+{% endblock %}

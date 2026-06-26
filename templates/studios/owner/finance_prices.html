@@ -1,0 +1,96 @@
+{% extends "index.html" %}
+{% block title %}Preços por hora — {{ studio.nome }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_finance', studio_id=studio.id, ano=finance_year, mes=finance_month) }}">Financeiro</a></li>
+        <li class="breadcrumb-item active">Preços por hora</li>
+    </ol>
+</nav>
+
+{% set active = 'financeiro' %}
+{% include 'studios/owner/_toolbar.html' %}
+
+<h1 class="h5 mb-2"><i class="fas fa-tags me-1"></i> Preços por hora</h1>
+<p class="text-muted small mb-4">
+    Defina o valor padrão do estúdio e, se quiser, um preço diferente por sala.
+    O financeiro usa o preço da sala; se estiver em branco, usa o padrão do estúdio.
+</p>
+
+{% if not rooms %}
+<div class="alert alert-warning small">
+    Você ainda não cadastrou salas.
+    <a href="{{ url_for('studios.new_room', studio_id=studio.id) }}">Criar primeira sala</a>
+</div>
+{% else %}
+<form method="post">
+    {% include 'partials/csrf_input.html' %}
+    <input type="hidden" name="ano" value="{{ finance_year }}">
+    <input type="hidden" name="mes" value="{{ finance_month }}">
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <label class="form-label fw-semibold" for="preco_hora_studio">Preço padrão do estúdio (R$/hora)</label>
+            <input type="text" name="preco_hora_studio" id="preco_hora_studio" class="form-control form-control-sm"
+                   style="max-width: 12rem;" inputmode="decimal"
+                   value="{% if studio.preco_hora is not none %}{{ '%.2f'|format(studio.preco_hora) }}{% endif %}"
+                   placeholder="Ex.: 80.00">
+            <div class="form-text">Aplicado a salas sem preço próprio abaixo.</div>
+        </div>
+    </div>
+
+    <h2 class="h6 mb-3">Salas</h2>
+    <div class="table-responsive mb-4">
+        <table class="table table-sm align-middle" style="font-size: var(--text-sm);">
+            <thead>
+                <tr>
+                    <th>Sala</th>
+                    <th>Status</th>
+                    <th style="min-width: 10rem;">Preço/hora (R$)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for room in rooms %}
+                <tr>
+                    <td>
+                        <strong>{{ room.nome }}</strong>
+                        <div>
+                            <a href="{{ url_for('studios.edit_room', studio_id=studio.id, room_id=room.id) }}" class="small">Editar sala</a>
+                        </div>
+                    </td>
+                    <td>
+                        {% if room.ativa %}
+                        <span class="badge text-bg-success">Ativa</span>
+                        {% else %}
+                        <span class="badge text-bg-secondary">Inativa</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <input type="text" name="preco_hora_{{ room.id }}" class="form-control form-control-sm"
+                               inputmode="decimal"
+                               value="{% if room.preco_hora is not none %}{{ '%.2f'|format(room.preco_hora) }}{% endif %}"
+                               placeholder="{% if studio.preco_hora %}{{ '%.2f'|format(studio.preco_hora) }}{% else %}Padrão{% endif %}">
+                    </td>
+                    <td>
+                        {% if room.preco_hora is not none %}
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" name="clear_preco_{{ room.id }}" value="1"
+                                   id="clear-{{ room.id }}">
+                            <label class="form-check-label small" for="clear-{{ room.id }}">Usar padrão</label>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-sm">Salvar preços</button>
+    <a href="{{ url_for('studios.owner_finance', studio_id=studio.id, ano=finance_year, mes=finance_month) }}"
+       class="btn btn-link btn-sm">Voltar ao financeiro</a>
+</form>
+{% endif %}
+{% endblock %}

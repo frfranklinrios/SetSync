@@ -1,5 +1,5 @@
-{# Tag global Google Ads / GA4 / GTM — só em produção com IDs configurados #}
-{% if google_ads_ativo %}
+{# Tag global Google Ads / GA4 / GTM — só após consentimento LGPD #}
+{% if google_ads_ativo and may_load_tracking %}
 {% if google_ads.use_gtm %}
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':

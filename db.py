@@ -268,37 +268,8 @@ def init_db():
     if IS_POSTGRES:
         _init_postgres_schema(c)
         db.commit()
-        add_column_if_missing(c, 'bands', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
-        add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
-        add_column_if_missing(c, 'users', 'phone', 'TEXT')
-        add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
-        add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
-        add_column_if_missing(c, 'users', 'push_notify', 'INTEGER NOT NULL DEFAULT 0')
-        add_column_if_missing(c, 'users', 'notification_prefs_json', 'TEXT')
-        add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
-        add_column_if_missing(c, 'users', 'onboarding_checklist_dismissed', 'INTEGER NOT NULL DEFAULT 0')
-        add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
-        add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
-        add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
-        _migrate_assinaturas_schema(c)
-        _migrate_notifications_schema(c)
-        _migrate_content_schema(c)
-        _migrate_agenda_schema(c)
-        _migrate_band_member_invites_schema(c)
-        _migrate_band_team_schema(c)
-        _migrate_cifra_drafts_schema(c)
-        add_column_if_missing(c, 'cifras', 'referencia_json', 'TEXT')
-        _migrate_roadmap_phase3_schema(c)
-        _migrate_studio_schema(c)
-        _migrate_growth_schema(c)
-        _migrate_user_instruments_schema(c)
-        _migrate_admin_outreach_schema(c)
-        _ensure_perf_indexes(c)
-        db.commit()
-        db.close()
-        return
-
-    db.executescript('''
+    else:
+        db.executescript('''
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
@@ -362,30 +333,54 @@ def init_db():
             FOREIGN KEY (cifra_id) REFERENCES cifras(id)
         );
     ''')
-    db.commit()
+        db.commit()
 
-    # Migration: colunas novas em BDs SQLite já existentes
+    _run_schema_migrations(c)
+    db.commit()
+    db.close()
+
+
+def _migrate_core_legacy_columns(c) -> None:
+    """Colunas incrementais sobre o schema base (SQLite legado e Postgres existente)."""
     add_column_if_missing(c, 'users', 'display_name', 'TEXT')
+    add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'phone', 'TEXT')
+    add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
+    add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
+    add_column_if_missing(c, 'users', 'push_notify', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'notification_prefs_json', 'TEXT')
+    add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
+    add_column_if_missing(c, 'users', 'onboarding_checklist_dismissed', 'INTEGER NOT NULL DEFAULT 0')
+
+    add_column_if_missing(c, 'bands', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+    add_column_if_missing(c, 'bands', 'vocalist_user_id', 'TEXT')
+    add_column_if_missing(c, 'bands', 'vocalist_name', 'TEXT')
+    add_column_if_missing(c, 'bands', 'logo_filename', 'TEXT')
+
     for col, typedef in [
         ('cifra_json', 'TEXT'),
         ('grade_json', 'TEXT'),
         ('bpm', 'REAL'),
         ('duracao_seg', 'INTEGER'),
+        ('leadsheet_json', 'TEXT'),
+        ('transpose_semitones', 'INTEGER DEFAULT 0'),
+        ('referencia_json', 'TEXT'),
     ]:
         add_column_if_missing(c, 'cifras', col, typedef)
-    add_column_if_missing(c, 'cifras', 'leadsheet_json', 'TEXT')
-    add_column_if_missing(c, 'cifras', 'transpose_semitones', 'INTEGER DEFAULT 0')
-    add_column_if_missing(c, 'cifras', 'referencia_json', 'TEXT')
-    add_column_if_missing(c, 'bands', 'vocalist_user_id', 'TEXT')
-    add_column_if_missing(c, 'bands', 'vocalist_name', 'TEXT')
-    add_column_if_missing(c, 'bands', 'logo_filename', 'TEXT')
+
     add_column_if_missing(c, 'setlists', 'vocalist_id', 'TEXT')
     add_column_if_missing(c, 'setlists', 'public_share_token', 'TEXT')
     add_column_if_missing(c, 'setlists', 'public_share_enabled', 'INTEGER DEFAULT 0')
     add_column_if_missing(c, 'setlist_cifras', 'vocalist_id', 'TEXT')
-    add_column_if_missing(c, 'setlist_cifras', 'play_notes', 'TEXT')
-    add_column_if_missing(c, 'cifras', 'play_notes', 'TEXT')
 
+
+def _migrate_assinaturas_trial_columns(c) -> None:
+    add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
+    add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
+    add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
+
+
+def _migrate_vocalists_tables(c) -> None:
     c.execute('''
         CREATE TABLE IF NOT EXISTS band_vocalists (
             id TEXT PRIMARY KEY,
@@ -408,21 +403,19 @@ def init_db():
         )
     ''')
     _migrate_vocalists_schema(c)
+
+
+def _run_schema_migrations(c) -> None:
+    """Migrações incrementais compartilhadas por SQLite e PostgreSQL.
+
+    Ao adicionar coluna ou tabela nova, inclua aqui (ou em uma _migrate_* chamada
+    por esta função) — não duplique lógica só no ramo SQLite de init_db().
+    """
+    _migrate_core_legacy_columns(c)
+    _migrate_vocalists_tables(c)
     _migrate_assinaturas_schema(c)
-    _migrate_vouchers_schema(c)
-    add_column_if_missing(c, 'vouchers', 'eh_vitalicio', 'INTEGER NOT NULL DEFAULT 0')
+    _migrate_studio_voucher_schema(c)
     _migrate_notifications_schema(c)
-    add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'phone', 'TEXT')
-    add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
-    add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
-    add_column_if_missing(c, 'users', 'push_notify', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'notification_prefs_json', 'TEXT')
-    add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
-    add_column_if_missing(c, 'users', 'onboarding_checklist_dismissed', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
-    add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
-    add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
     _migrate_content_schema(c)
     _migrate_agenda_schema(c)
     _migrate_band_member_invites_schema(c)
@@ -430,13 +423,16 @@ def init_db():
     _migrate_cifra_drafts_schema(c)
     _migrate_roadmap_phase3_schema(c)
     _migrate_studio_schema(c)
+    _migrate_band_finance_schema(c)
     _migrate_growth_schema(c)
     _migrate_user_instruments_schema(c)
     _migrate_admin_outreach_schema(c)
+    _migrate_lgpd_schema(c)
     _ensure_perf_indexes(c)
-    db.commit()
 
-    db.close()
+
+def _migrate_lgpd_schema(c) -> None:
+    add_column_if_missing(c, 'users', 'privacy_accepted_at', 'TIMESTAMP')
 
 
 def _migrate_admin_outreach_schema(c) -> None:
@@ -534,6 +530,8 @@ def _migrate_roadmap_phase3_schema(c) -> None:
     add_column_if_missing(c, 'band_events', 'fee_settled_at', 'TIMESTAMP')
     add_column_if_missing(c, 'cifras', 'spotify_url', 'TEXT')
     add_column_if_missing(c, 'cifras', 'apple_music_url', 'TEXT')
+    add_column_if_missing(c, 'cifras', 'play_notes', 'TEXT')
+    add_column_if_missing(c, 'setlist_cifras', 'play_notes', 'TEXT')
 
 
 def _migrate_studio_schema(c) -> None:
@@ -661,6 +659,53 @@ def _migrate_studio_schema(c) -> None:
     c.execute(
         'CREATE INDEX IF NOT EXISTS idx_studio_bookings_band '
         'ON studio_bookings(band_id, status)'
+    )
+    _migrate_studio_finance_schema(c)
+
+
+def _migrate_studio_finance_schema(c) -> None:
+    add_column_if_missing(c, 'studio_bookings', 'valor_cobrado', 'REAL')
+    add_column_if_missing(c, 'studio_bookings', 'pago_em', 'TIMESTAMP')
+    add_column_if_missing(c, 'studio_bookings', 'finance_notes', 'TEXT')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_expenses (
+            id TEXT PRIMARY KEY,
+            studio_id TEXT NOT NULL,
+            data TEXT NOT NULL,
+            descricao TEXT NOT NULL,
+            valor REAL NOT NULL,
+            categoria TEXT NOT NULL DEFAULT 'outros',
+            created_by_user_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE,
+            FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+        )
+    ''')
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_studio_expenses_studio_date '
+        'ON studio_expenses(studio_id, data)'
+    )
+    add_column_if_missing(c, 'studio_rooms', 'preco_hora', 'REAL')
+
+
+def _migrate_band_finance_schema(c) -> None:
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_expenses (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            data TEXT NOT NULL,
+            descricao TEXT NOT NULL,
+            valor REAL NOT NULL,
+            categoria TEXT NOT NULL DEFAULT 'outros',
+            created_by_user_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+        )
+    ''')
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_band_expenses_band_date '
+        'ON band_expenses(band_id, data)'
     )
 
 
@@ -1309,6 +1354,23 @@ def get_user(user_id):
     return dict(row) if row else None
 
 
+def set_privacy_accepted(user_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE users SET privacy_accepted_at = CURRENT_TIMESTAMP WHERE id = ?',
+        (user_id,),
+    )
+    db.commit()
+    db.close()
+
+
+def user_needs_privacy_acceptance(user: dict | None) -> bool:
+    if not user:
+        return False
+    return not user.get('privacy_accepted_at')
+
+
 def user_display_name(user: dict | None) -> str:
     """Nome amigável: display_name informado pelo usuário, senão username."""
     if not user:
@@ -1495,6 +1557,7 @@ def _migrate_assinaturas_schema(c) -> None:
         if not c.fetchone():
             create_assinatura_gratis(row['id'], cursor=c, commit=False)
     c.connection.commit()
+    _migrate_assinaturas_trial_columns(c)
 
 
 def create_assinatura_gratis(banda_id: str, *, cursor=None, commit: bool = True) -> dict:
@@ -1651,6 +1714,26 @@ def get_assinatura_by_mp_id(mp_subscription_id: str) -> dict | None:
     return dict(row) if row else None
 
 
+def _migrate_studio_voucher_schema(c) -> None:
+    """Vouchers com destino banda/estúdio e usos por conta de dono."""
+    _migrate_vouchers_schema(c)
+    add_column_if_missing(c, 'vouchers', 'eh_vitalicio', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'vouchers', 'destino', "TEXT NOT NULL DEFAULT 'banda'")
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio_voucher_usos (
+            id TEXT PRIMARY KEY,
+            voucher_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            usado_em TIMESTAMP NOT NULL,
+            expira_em TIMESTAMP NOT NULL,
+            aviso_3d_enviado INTEGER NOT NULL DEFAULT 0,
+            UNIQUE (voucher_id, user_id),
+            FOREIGN KEY (voucher_id) REFERENCES vouchers(id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
+
+
 def _migrate_vouchers_schema(c) -> None:
     c.execute('''
         CREATE TABLE IF NOT EXISTS vouchers (
@@ -1693,17 +1776,19 @@ def create_voucher(
     data_expiracao: str | None = None,
     eh_indicacao: bool = False,
     eh_vitalicio: bool = False,
+    destino: str = 'banda',
 ) -> dict:
     vid = str(uuid.uuid4())
     db = get_db()
     c = db.cursor()
     c.execute(
         '''INSERT INTO vouchers
-           (id, codigo, plano, dias, criado_por_id, max_usos, eh_indicacao, eh_vitalicio, data_expiracao)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+           (id, codigo, plano, dias, criado_por_id, max_usos, eh_indicacao, eh_vitalicio,
+            data_expiracao, destino)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (
             vid, codigo.upper(), plano, dias, criado_por_id, max_usos,
-            int(eh_indicacao), int(eh_vitalicio), data_expiracao,
+            int(eh_indicacao), int(eh_vitalicio), data_expiracao, destino,
         ),
     )
     db.commit()
@@ -1803,6 +1888,106 @@ def list_voucher_usos(voucher_id: str) -> list[dict]:
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     return rows
+
+
+def get_studio_voucher_uso(voucher_id: str, user_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT * FROM studio_voucher_usos WHERE voucher_id = ? AND user_id = ?',
+        (voucher_id, user_id),
+    )
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def insert_studio_voucher_uso(voucher_id: str, user_id: str, usado_em, expira_em) -> str:
+    uso_id = str(uuid.uuid4())
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO studio_voucher_usos (id, voucher_id, user_id, usado_em, expira_em)
+           VALUES (?, ?, ?, ?, ?)''',
+        (
+            uso_id,
+            voucher_id,
+            user_id,
+            usado_em.strftime('%Y-%m-%d %H:%M:%S'),
+            expira_em.strftime('%Y-%m-%d %H:%M:%S'),
+        ),
+    )
+    db.commit()
+    db.close()
+    return uso_id
+
+
+def list_studio_voucher_usos(voucher_id: str) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT svu.*, COALESCE(u.display_name, u.username) AS user_nome, u.email AS user_email
+           FROM studio_voucher_usos svu
+           JOIN users u ON u.id = svu.user_id
+           WHERE svu.voucher_id = ?
+           ORDER BY svu.usado_em DESC''',
+        (voucher_id,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def list_studio_voucher_usos_vencendo(antes_de: str) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT svu.*, v.plano, u.email AS owner_email,
+                  COALESCE(u.display_name, u.username) AS user_nome
+           FROM studio_voucher_usos svu
+           JOIN vouchers v ON v.id = svu.voucher_id
+           JOIN studio_subscriptions ss ON ss.user_id = svu.user_id
+           JOIN users u ON u.id = svu.user_id
+           WHERE svu.expira_em <= ? AND ss.status = 'voucher'
+           AND v.destino = 'estudio'
+           AND COALESCE(v.eh_vitalicio, 0) = 0''',
+        (antes_de,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def list_studio_voucher_usos_aviso(ate: str) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT svu.*, v.plano, u.email AS owner_email,
+                  COALESCE(u.display_name, u.username) AS user_nome
+           FROM studio_voucher_usos svu
+           JOIN vouchers v ON v.id = svu.voucher_id
+           JOIN studio_subscriptions ss ON ss.user_id = svu.user_id
+           JOIN users u ON u.id = svu.user_id
+           WHERE ss.status = 'voucher' AND svu.aviso_3d_enviado = 0
+           AND svu.expira_em <= ? AND svu.expira_em > datetime('now')
+           AND v.destino = 'estudio'
+           AND COALESCE(v.eh_vitalicio, 0) = 0''',
+        (ate,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def marcar_aviso_studio_voucher_enviado(uso_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE studio_voucher_usos SET aviso_3d_enviado = 1 WHERE id = ?',
+        (uso_id,),
+    )
+    db.commit()
+    db.close()
 
 
 def count_vouchers_indicacao_ativos(criado_por_id: str) -> int:

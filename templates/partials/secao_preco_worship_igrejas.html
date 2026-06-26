@@ -19,7 +19,7 @@
                 <li><i class="fas fa-check" aria-hidden="true"></i>Sem anúncios em nenhum ministério</li>
             </ul>
             <div class="igrejas-worship-cta">
-                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">Começar grátis</a>
+                <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-light btn-lg">Começar grátis</a>
                 {% if whatsapp %}
                 <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
                    class="btn btn-outline-light btn-lg" target="_blank" rel="noopener">
@@ -61,7 +61,7 @@
             <p class="igrejas-worship-economia small js-igrejas-economia" hidden">{{ plano_worship.economia_anual }}</p>
             {% endif %}
             <p class="igrejas-worship-tagline">Congregação inteira · cancele quando quiser</p>
-            <a href="{{ url_for('auth.register') }}" class="btn btn-light w-100 mt-3">Criar conta da igreja</a>
+            <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-light w-100 mt-3">Criar conta da igreja</a>
         </div>
     </div>
 </section>

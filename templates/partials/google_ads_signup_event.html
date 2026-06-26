@@ -1,5 +1,5 @@
 {# Conversão de inscrição — dispara uma vez após cadastro bem-sucedido #}
-{% if google_ads_fire_signup %}
+{% if google_ads_fire_signup and may_load_tracking %}
 {% if google_ads.use_gtm %}
 <script>
 window.dataLayer = window.dataLayer || [];

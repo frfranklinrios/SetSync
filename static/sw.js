@@ -1,6 +1,6 @@
 // SetSync service worker — app-shell + offline fallback
 // Bump CACHE_VERSION whenever the app shell changes so old caches are evicted.
-const CACHE_VERSION = 'setsync-v18';
+const CACHE_VERSION = 'setsync-v19';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 
@@ -13,6 +13,8 @@ const APP_SHELL = [
     '/static/icons/icon-512.png',
     '/static/icons/apple-touch-icon.png',
     '/static/icons/notification-badge.png',
+    '/static/img/planos/estudio-basico.svg',
+    '/static/img/planos/estudio-premium.svg',
     '/static/js/theme.js',
     '/offline',
     '/manifest.webmanifest'
@@ -80,6 +82,10 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (url.pathname.startsWith('/static/') || url.pathname === '/manifest.webmanifest') {
+        if (url.pathname.startsWith('/static/img/planos/') && url.pathname.endsWith('.svg')) {
+            event.respondWith(networkFirstStatic(request));
+            return;
+        }
         event.respondWith(cacheFirst(request));
         return;
     }
@@ -107,9 +113,7 @@ async function networkFirstHTML(request) {
     }
 }
 
-async function cacheFirst(request) {
-    const cached = await caches.match(request);
-    if (cached) return cached;
+async function networkFirstStatic(request) {
     try {
         const resp = await fetch(request);
         if (isCacheableResponse(resp)) {
@@ -118,6 +122,24 @@ async function cacheFirst(request) {
         }
         return resp;
     } catch (err) {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        return new Response('', { status: 504, statusText: 'Offline asset' });
+    }
+}
+
+async function cacheFirst(request) {
+    const cached = await caches.match(request);
+    if (cached && cached.ok) return cached;
+    try {
+        const resp = await fetch(request);
+        if (isCacheableResponse(resp)) {
+            const cache = await caches.open(RUNTIME_CACHE);
+            cache.put(request, resp.clone());
+        }
+        return resp;
+    } catch (err) {
+        if (cached) return cached;
         return new Response('', { status: 504, statusText: 'Offline asset' });
     }
 }

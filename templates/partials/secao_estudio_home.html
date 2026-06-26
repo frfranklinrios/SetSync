@@ -15,7 +15,28 @@
                 <li><i class="fas fa-check" aria-hidden="true"></i>Endereço com <strong>Google Maps</strong> no cadastro</li>
                 <li><i class="fas fa-check" aria-hidden="true"></i>Disponibilidade semanal e bloqueios por data</li>
                 <li><i class="fas fa-check" aria-hidden="true"></i>Notificações de solicitação, confirmação e cancelamento</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i><strong>Financeiro</strong> — receita, pagamentos e despesas no painel</li>
             </ul>
+            <div class="home-estudio-preview" aria-hidden="false">
+                <button type="button" class="home-estudio-shot home-estudio-shot--mobile"
+                        data-lightbox-src="{{ url_for('static', filename='screenshots/estudio-painel-mobile.png') }}"
+                        data-lightbox-alt="Painel do estúdio no celular — salas e QR de agendamento"
+                        data-lightbox-caption="Painel no celular — salas e QR"
+                        aria-label="Ampliar painel no celular">
+                    <img src="{{ url_for('static', filename='screenshots/estudio-painel-mobile.png') }}"
+                         alt="" width="478" height="785" loading="lazy" decoding="async">
+                    <span>Painel no celular</span>
+                </button>
+                <button type="button" class="home-estudio-shot home-estudio-shot--desktop"
+                        data-lightbox-src="{{ url_for('static', filename='screenshots/estudio-financeiro-desktop.png') }}"
+                        data-lightbox-alt="Financeiro do estúdio — receita, reservas e despesas"
+                        data-lightbox-caption="Financeiro — receita, reservas e despesas"
+                        aria-label="Ampliar financeiro no painel">
+                    <img src="{{ url_for('static', filename='screenshots/estudio-financeiro-desktop.png') }}"
+                         alt="" width="2640" height="1422" loading="lazy" decoding="async">
+                    <span>Financeiro no painel</span>
+                </button>
+            </div>
             <div class="home-estudio-cta">
                 <a href="{{ url_for('studios.register_studio') }}" class="btn btn-light btn-lg">
                     Cadastrar meu estúdio
@@ -32,7 +53,7 @@
             {% for p in planos_estudio %}
             <div class="home-estudio-plan-card{% if p.destaque %} home-estudio-plan-card--premium{% endif %}">
                 {% if p.logo %}
-                <img src="{{ url_for('static', filename=p.logo) }}" alt="" width="56" height="56" class="home-estudio-plan-logo" loading="lazy">
+                <img src="{{ url_for('static', filename=p.logo) }}" alt="" width="56" height="56" class="home-estudio-plan-logo" decoding="async" fetchpriority="high">
                 {% endif %}
                 {% if p.badge_label %}
                 <span class="home-estudio-badge">{{ p.badge_label }}</span>
@@ -115,6 +136,39 @@
     color: #fef3c7;
 }
 .home-estudio-features i { color: #fb923c; margin-top: 0.2rem; font-size: var(--text-xs); }
+.home-estudio-preview {
+    display: grid;
+    grid-template-columns: minmax(0, 120px) minmax(0, 1fr);
+    gap: 0.85rem;
+    align-items: end;
+    margin-bottom: 1.35rem;
+    max-width: 28rem;
+}
+.home-estudio-shot {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    text-decoration: none;
+    color: #fde68a;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    transition: opacity 0.15s ease;
+    cursor: zoom-in;
+}
+.home-estudio-shot:hover { opacity: 0.92; color: #fff; }
+.home-estudio-shot img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+.home-estudio-shot--mobile img {
+    border-radius: 14px;
+    padding: 4px;
+    background: rgba(15, 23, 42, 0.55);
+}
 .home-estudio-cta { display: flex; flex-wrap: wrap; gap: 0.65rem; }
 .home-estudio-plans {
     display: flex;
@@ -175,5 +229,7 @@
 @media (max-width: 768px) {
     .home-estudio-inner { grid-template-columns: 1fr; }
     .home-estudio-plans { order: -1; }
+    .home-estudio-preview { max-width: none; }
 }
 </style>
+{% include 'partials/image_lightbox_assets.html' %}

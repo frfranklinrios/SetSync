@@ -1,13 +1,13 @@
 {% extends "index.html" %}
 
-{% block title %}SetSync Cifras e Setlists — App de cifras e setlists para bandas do Brasil{% endblock %}
+{% block title %}SetSync — App para bandas, igrejas e estúdios de ensaio{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('index') }}">
-<meta name="description" content="SetSync: cifras e setlists para bandas, reserva de estúdios de ensaio, agenda com escalação, instrumentos no perfil e Modo Tocar offline. App brasileiro para músicos e donos de sala.">
-<meta name="keywords" content="SetSync cifras, setlist online, estúdio de ensaio, reservar sala ensaio, app cifras banda, escalação banda, modo tocar offline">
-<meta property="og:title" content="SetSync — Cifras para bandas e estúdios de ensaio">
-<meta property="og:description" content="Bandas: cifras, setlists e palco. Estúdios: receba reservas online. Tudo no mesmo app brasileiro.">
+<meta name="description" content="SetSync é o app brasileiro para música ao vivo: cifras e setlists para bandas, plano Worship para igrejas e agenda com financeiro para estúdios de ensaio. Tudo em um só lugar.">
+<meta name="keywords" content="SetSync, app música, cifras banda, setlist, estúdio ensaio, louvor igreja">
+<meta property="og:title" content="SetSync — Bandas, igrejas e estúdios em um app">
+<meta property="og:description" content="Repertório sincronizado, agenda com escalação, reservas de sala e Modo Tocar offline — escolha seu perfil e comece grátis.">
 <meta property="og:url" content="{{ external_url_for('index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -29,20 +29,74 @@
 .home-hero {
     position: relative;
     overflow: hidden;
-    padding: 3rem 1.5rem 3.5rem;
+    padding: 1.5rem 1.5rem 3.5rem;
     background: linear-gradient(165deg, #fff7ed 0%, #fff 45%, #f0fdfa 100%);
     border-bottom: 1px solid var(--border);
 }
-.hero-split {
+.home-hero-inner {
     position: relative;
     max-width: 1100px;
     margin: 0 auto;
+}
+.home-hero-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
     align-items: center;
 }
-.hero-pain, .hero-solution { min-width: 0; }
+.home-hero-copy { min-width: 0; }
+.home-hero-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1.25rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.home-hero-points li { display: flex; align-items: center; gap: 0.4rem; }
+.home-hero-points i { color: var(--accent); font-size: var(--text-sm); }
+.home-compare-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    border-top: 1px solid var(--border);
+}
+.home-compare-section h2 {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.home-compare-sub {
+    color: var(--muted);
+    max-width: 42rem;
+    margin-bottom: 1.75rem;
+    line-height: 1.55;
+}
+.home-compare-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+.home-compare-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: #fff;
+}
+[data-theme="dark"] .home-compare-card { background: #0b1422; border-color: #334155; }
+.home-compare-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+.home-compare-card p { font-size: var(--text-sm); color: var(--muted); margin: 0; line-height: 1.5; }
+.home-compare-card .fa-circle-xmark { color: #dc2626; font-size: var(--text-base); }
+.home-compare-solution .fa-circle-check { color: #0d9488; font-size: var(--text-base); }
 .hero-side-label {
     display: inline-block;
     font-size: var(--text-sm);
@@ -52,67 +106,12 @@
     margin-bottom: 0.85rem;
     padding: 0.25rem 0.6rem;
     border-radius: 999px;
-}
-.hero-pain .hero-side-label {
-    color: #b91c1c;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.25);
-}
-.hero-solution .hero-side-label {
     color: var(--accent-dark);
     background: var(--chord-highlight-bg);
     border: 1px solid var(--chord-highlight-border);
 }
-[data-theme="dark"] .hero-solution .hero-side-label { color: #5eead4; }
-.hero-pain-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 1rem;
-    font-size: var(--text-sm);
-    color: var(--muted);
-}
-.hero-pain-list li {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.45rem;
-    line-height: 1.45;
-}
-.hero-pain-list i { color: #ef4444; margin-top: 0.2rem; font-size: var(--text-sm); }
-.chaos-stack {
-    position: relative;
-    height: 200px;
-    margin-top: 0.5rem;
-}
-.chaos-card {
-    position: absolute;
-    width: 88%;
-    padding: 0.75rem 0.9rem;
-    border-radius: 10px;
-    font-size: var(--text-sm);
-    line-height: 1.4;
-    border: 1px solid var(--border);
-    background: #fff;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    color: var(--muted);
-}
-[data-theme="dark"] .chaos-card {
-    background: #1e293b;
-    border-color: #475569;
-}
-.chaos-card--wa {
-    top: 0; left: 0; transform: rotate(-4deg);
-    border-left: 3px solid #25d366;
-}
-.chaos-card--pdf {
-    top: 28%; right: 0; transform: rotate(3deg);
-    border-left: 3px solid #dc2626;
-}
-.chaos-card--tom {
-    bottom: 0; left: 8%; transform: rotate(-1deg);
-    border-left: 3px solid #f59e0b;
-}
-.chaos-card strong { color: var(--text); display: block; margin-bottom: 0.2rem; font-size: var(--text-sm); }
-.hero-solution h1 {
+[data-theme="dark"] .hero-side-label { color: #5eead4; }
+.home-hero-copy h1 {
     font-size: var(--text-2xl);
     font-weight: 700;
     line-height: 1.15;
@@ -120,7 +119,6 @@
     margin-bottom: 0.85rem;
 }
 .hero-mock-clean {
-    margin-top: 1.25rem;
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid var(--chord-highlight-border);
@@ -128,8 +126,8 @@
 }
 .hero-mock-clean img { width: 100%; height: auto; display: block; }
 @media (max-width: 900px) {
-    .hero-split { grid-template-columns: 1fr; }
-    .chaos-stack { height: 180px; max-width: 340px; margin-left: auto; margin-right: auto; }
+    .home-hero-grid { grid-template-columns: 1fr; }
+    .hero-mock-clean { max-width: 420px; margin-left: auto; margin-right: auto; }
 }
 [data-theme="dark"] .home-hero {
     background: linear-gradient(165deg, #0b1422 0%, #0f172a 50%, #134e4a22 100%);
@@ -145,11 +143,6 @@
 }
 [data-theme="dark"] .home-hero::before {
     background: radial-gradient(ellipse at center, rgba(42, 181, 160, 0.15), transparent 70%);
-}
-.home-hero-inner {
-    position: relative;
-    max-width: 1100px;
-    margin: 0 auto;
 }
 .home-badge {
     display: inline-flex;
@@ -534,58 +527,115 @@
 .testimonial-desc { font-size: var(--text-sm); color: var(--muted); }
 .testimonial-text { font-style: italic; font-size: var(--text-base); margin-top: 0.75rem; line-height: 1.55; }
 
+.home-hero-hub { max-width: 900px; margin: 0 auto; text-align: center; }
+.home-hero-hub h1 { max-width: none; margin-left: auto; margin-right: auto; }
+.home-hero-hub .home-lead { margin-left: auto; margin-right: auto; }
+.home-audience-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 2rem 0 1.5rem;
+    text-align: left;
+}
+@media (max-width: 768px) { .home-audience-cards { grid-template-columns: 1fr; } }
+.home-audience-card {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    background: rgba(255,255,255,0.85);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    height: 100%;
+}
+[data-theme="dark"] .home-audience-card { background: rgba(30,41,59,0.6); border-color: #334155; }
+.home-audience-card:hover {
+    border-color: var(--chord-highlight-border);
+    box-shadow: 0 8px 24px rgba(42, 181, 160, 0.12);
+    transform: translateY(-2px);
+    color: inherit;
+}
+.home-audience-card-icon {
+    width: 2.5rem; height: 2.5rem; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--chord-highlight-bg);
+    color: var(--accent-dark);
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+[data-theme="dark"] .home-audience-card-icon { color: #5eead4; }
+.home-audience-card h2 {
+    font-size: var(--text-md);
+    font-weight: 700;
+    margin: 0 0 0.35rem;
+}
+.home-audience-card p {
+    font-size: var(--text-sm);
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+    line-height: 1.5;
+}
+.home-audience-card-cta {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--accent-dark);
+}
+[data-theme="dark"] .home-audience-card-cta { color: #5eead4; }
+.home-platform-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+@media (max-width: 768px) { .home-platform-grid { grid-template-columns: 1fr; } }
+.home-platform-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: var(--bg);
+}
+.home-platform-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.35rem; }
+.home-platform-card p { font-size: var(--text-sm); color: var(--muted); margin: 0; line-height: 1.5; }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="home-hero">
-    <div class="hero-split">
-        <div class="hero-pain">
-            <span class="hero-side-label">A dor de hoje</span>
-            <ul class="hero-pain-list">
-                <li><i class="fas fa-times-circle" aria-hidden="true"></i> Print de cifra no WhatsApp — versão errada no show</li>
-                <li><i class="fas fa-times-circle" aria-hidden="true"></i> PDF rasurado e desatualizado na pasta da banda</li>
-                <li><i class="fas fa-times-circle" aria-hidden="true"></i> Tom errado porque cada cantor canta em uma tonalidade</li>
-            </ul>
-            <div class="chaos-stack" aria-hidden="true">
-                <div class="chaos-card chaos-card--wa">
-                    <strong>Grupo WhatsApp · 47 msgs</strong>
-                    "Alguém manda a cifra de novo?? A do PDF tá em Bb..."
-                </div>
-                <div class="chaos-card chaos-card--pdf">
-                    <strong>setlist_FINAL_v3.pdf</strong>
-                    Rabiscos, páginas faltando, acorde apagado
-                </div>
-                <div class="chaos-card chaos-card--tom">
-                    <strong>Tom errado</strong>
-                    Ana canta em G · Dani em A · ninguém sincronizado
-                </div>
-            </div>
+    {% include 'partials/audience_bar.html' %}
+    <div class="home-hero-inner home-hero-hub">
+        <span class="home-badge"><i class="fas fa-gift me-1"></i> 30 dias grátis · sem cartão</span>
+        <h1>O app completo para música ao vivo</h1>
+        <p class="home-lead">
+            O <strong>SetSync</strong> reúne <strong>bandas</strong>, <strong>igrejas</strong> e <strong>estúdios de ensaio</strong>
+            em um ecossistema: repertório compartilhado, agenda com escalação, reservas de sala e
+            <strong>Modo Tocar offline</strong> no palco.
+        </p>
+
+        <div class="home-audience-cards">
+            <a href="{{ url_for('assinatura_bp.bandas') }}" class="home-audience-card">
+                <div class="home-audience-card-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
+                <h2>Sou banda</h2>
+                <p>Cifras, setlists, agenda, cachês e palco offline para sua banda ou projeto.</p>
+                <span class="home-audience-card-cta">Ver para bandas →</span>
+            </a>
+            <a href="{{ url_for('assinatura_bp.igrejas') }}" class="home-audience-card">
+                <div class="home-audience-card-icon"><i class="fas fa-church" aria-hidden="true"></i></div>
+                <h2>Sou igreja</h2>
+                <p>Plano Worship: várias equipes de louvor, um repertório e uma liderança.</p>
+                <span class="home-audience-card-cta">Ver para igrejas →</span>
+            </a>
+            <a href="{{ url_for('studios.landing') }}" class="home-audience-card">
+                <div class="home-audience-card-icon"><i class="fas fa-door-open" aria-hidden="true"></i></div>
+                <h2>Tenho estúdio</h2>
+                <p>Salas, calendário, reservas online e financeiro para donos de sala de ensaio.</p>
+                <span class="home-audience-card-cta">Ver para estúdios →</span>
+            </a>
         </div>
-        <div class="hero-solution">
-            <span class="hero-side-label"><i class="fas fa-music me-1"></i> Bandas e estúdios</span>
-            <h1>Cifras, setlists e estúdios — tudo sincronizado</h1>
-            <p class="home-lead">
-                App brasileiro para <strong>bandas e músicos</strong>: repertório compartilhado, transposição por cantor,
-                agenda com escalação e <strong>Modo Tocar offline</strong>.
-                Para <strong>donos de estúdio</strong>: receba reservas de ensaio online — plano beta gratuito.
-            </p>
-            <div class="home-audience-tabs" role="navigation" aria-label="Para quem é o SetSync">
-                <a href="#planos" class="is-active"><i class="fas fa-users me-1"></i> Sou banda</a>
-                <a href="{{ url_for('studios.landing') }}"><i class="fas fa-door-open me-1"></i> Tenho estúdio</a>
-            </div>
-            <div class="home-cta">
-                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
-                <a href="{{ url_for('studios.search') }}" class="btn btn-outline-secondary btn-lg">Buscar estúdios</a>
-                <a href="#modo-tocar" class="btn btn-outline-secondary btn-lg d-none d-md-inline-block">Modo Tocar</a>
-            </div>
-            <figure class="hero-mock-clean">
-                <img src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
-                     alt="Interface do SetSync — painel de setlist com tom por cantor"
-                     width="1389" height="822"
-                     loading="eager"
-                     decoding="async">
-            </figure>
+
+        <div class="home-cta justify-content-center">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
+            <a href="{{ url_for('comece') }}" class="btn btn-outline-secondary btn-lg">Como funciona</a>
         </div>
     </div>
 </section>
@@ -617,18 +667,22 @@
 </section>
 {% endif %}
 
-<section class="home-planos" id="planos">
-    <div class="home-planos-inner">
-        <h2 class="text-center mb-1">Planos SetSync Cifras e Setlists</h2>
-        <p class="section-sub text-center mx-auto" style="max-width: 40rem;">
-            Planos para bandas e músicos. Donos de estúdio começam no <strong>beta gratuito</strong> — veja abaixo.
-        </p>
-        {% set plano_worship = planos_site | selectattr('id', 'equalto', 'worship') | first %}
-        {% set planos_grid = planos_site | rejectattr('id', 'equalto', 'worship') | list %}
-        {% include 'partials/planos_publicos.html' %}
-        <p class="home-planos-note">
-            Após criar a conta, gerencie a assinatura em <strong>Planos</strong> no app.
-        </p>
+<section class="home-section">
+    <h2>Tudo que um projeto musical precisa</h2>
+    <p class="section-sub">Do ensaio ao show — e da reserva de sala ao fechamento do mês.</p>
+    <div class="home-platform-grid">
+        <article class="home-platform-card">
+            <h3><i class="fas fa-music me-1 text-muted"></i> Repertório</h3>
+            <p>Cifras com transposição, setlists por cantor, biblioteca compartilhada e Modo Tocar na tela cheia.</p>
+        </article>
+        <article class="home-platform-card">
+            <h3><i class="fas fa-calendar-alt me-1 text-muted"></i> Agenda</h3>
+            <p>Ensaios e shows com escalação, confirmação por link, setlist do evento e lembretes.</p>
+        </article>
+        <article class="home-platform-card">
+            <h3><i class="fas fa-door-open me-1 text-muted"></i> Estúdios</h3>
+            <p>Bandas reservam salas por cidade; donos confirmam, sincronizam com a agenda e controlam o financeiro.</p>
+        </article>
     </div>
 </section>
 
@@ -636,76 +690,10 @@
 
 {% include 'partials/secao_worship_plano.html' %}
 
-{% include 'partials/secao_modo_tocar_scroll.html' %}
-
-{% include 'partials/secao_offline_pwa.html' %}
-
-<section class="home-section">
-    <h2>Recursos para bandas, músicos e estúdios</h2>
-    <p class="section-sub">Do cadastro da música à reserva de sala de ensaio — em um só lugar.</p>
-    <div class="home-features">
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-users"></i></div>
-            <h3>Bandas e convites</h3>
-            <p>Crie a banda, convide musicistas por link ou e-mail e compartilhe o mesmo repertório.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-drum"></i></div>
-            <h3>Instrumentos no perfil</h3>
-            <p>Cada músico marca o que toca; a banda vê na lista de membros e na escalação de eventos.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-guitar"></i></div>
-            <h3>Cifras inteligentes</h3>
-            <p>Acordes destacados, transposição na hora, diagramas e tom por cantora/cantor.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-list-ol"></i></div>
-            <h3>Setlists</h3>
-            <p>Monte o roteiro do show, defina cantora/cantor e tom em cada música e navegue com setas ou toque.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-calendar-alt"></i></div>
-            <h3>Agenda da banda</h3>
-            <p>Ensaios e shows, calendário mensal, setlist por evento e local com Google Maps.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-user-check"></i></div>
-            <h3>Escalação por evento</h3>
-            <p>Escale quem participa, confirmação por link, formações salvas e sugestão automática.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-door-open"></i></div>
-            <h3>Estúdios de ensaio</h3>
-            <p>Bandas buscam salas por cidade; donos cadastram, confirmam reservas e sincronizam com a agenda.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-bell"></i></div>
-            <h3>Lembretes e alertas</h3>
-            <p>Próximos eventos no painel, lembrete 24h antes e notificações por e-mail e WhatsApp.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-expand"></i></div>
-            <h3>Modo Tocar</h3>
-            <p>Tela cheia para o palco: duas colunas, auto-scroll, fonte ajustável e tema claro ou escuro.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-file-pdf"></i></div>
-            <h3>PDF no plano Pro</h3>
-            <p>Exporte setlists formatadas para ensaio ou arquivo — recurso premium.</p>
-        </article>
-        <article class="home-card">
-            <div class="home-card-icon"><i class="fas fa-mobile-screen"></i></div>
-            <h3>App no celular</h3>
-            <p>Instale na tela inicial (PWA) e use offline quando precisar — ideal no palco ou no ensaio.</p>
-        </article>
-    </div>
-</section>
-
 {% if testimonials %}
 <section class="home-section home-testimonials">
     <h2>Quem usa recomenda</h2>
-    <p class="section-sub">Bandas e músicos que já sincronizaram o repertório no SetSync.</p>
+    <p class="section-sub">Bandas, igrejas e estúdios que já organizaram o trabalho no SetSync.</p>
     <div class="testimonials-grid">
         {% for t in testimonials[:3] %}
         <article class="testimonial-card">
@@ -719,61 +707,35 @@
 </section>
 {% endif %}
 
-{% include 'partials/secao_screenshots.html' %}
-
-<section class="home-section pt-0">
-    <h2>Como começar</h2>
-    <p class="section-sub">Em poucos minutos sua banda já está ensaiando com o SetSync.</p>
-    <div class="home-steps">
-        <div class="home-step">
-            <div class="home-step-num">1</div>
-            <strong>Crie sua conta</strong>
-            <span>Plano Grátis, sem cartão. Email ou Google.</span>
-        </div>
-        <div class="home-step">
-            <div class="home-step-num">2</div>
-            <strong>Monte a banda</strong>
-            <span>Adicione músicas e envie o link de convite aos integrantes.</span>
-        </div>
-        <div class="home-step">
-            <div class="home-step-num">3</div>
-            <strong>Agende e escale</strong>
-            <span>Marque ensaios e shows na Agenda, vincule a setlist e escale a equipe.</span>
-        </div>
-        <div class="home-step">
-            <div class="home-step-num">4</div>
-            <strong>Toque ao vivo</strong>
-            <span>Abra o Modo Tocar no evento ou na setlist — upgrade em Planos se precisar.</span>
-        </div>
-    </div>
-</section>
-
 <section class="home-section home-faq" id="faq">
     <h2>Perguntas frequentes</h2>
-    <p class="section-sub">O que músicos e líderes de banda buscam sobre cifras, setlists e palco.</p>
-    {% for item in faq_entries %}
+    <p class="section-sub">Dúvidas comuns sobre o SetSync como plataforma.</p>
     <details>
-        <summary>{{ item.q }}</summary>
-        <p>{{ item.a }}</p>
+        <summary>O SetSync é só para bandas?</summary>
+        <p>Não. Há módulos para <strong>bandas e músicos</strong>, <strong>igrejas</strong> (plano Worship) e <strong>donos de estúdio</strong> (reservas e financeiro). Escolha seu perfil nas páginas <a href="{{ url_for('assinatura_bp.bandas') }}">Bandas</a>, <a href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a> ou <a href="{{ url_for('studios.landing') }}">Estúdios</a>.</p>
     </details>
-    {% endfor %}
+    <details>
+        <summary>Preciso pagar para começar?</summary>
+        <p>Não. O plano Grátis não exige cartão. Bandas ganham <strong>30 dias de Pro</strong> na primeira conta; estúdios têm trial Premium no primeiro cadastro.</p>
+    </details>
+    <details>
+        <summary>Funciona offline no palco?</summary>
+        <p>Sim. Instale como app (PWA) e use setlists e cifras já abertas sem internet — ideal em shows e cultos.</p>
+    </details>
     <p class="mt-3 mb-1">
         <a href="{{ url_for('guia.guia_index') }}">Ver todos os guias →</a>
-        · <a href="{{ url_for('blog.blog_index') }}">Blog com tutoriais</a>
+        · <a href="{{ url_for('blog.blog_index') }}">Blog</a>
         · <a href="{{ url_for('ajuda.index') }}">Ajuda</a>
-        · <a href="{{ url_for('studios.search') }}">Buscar estúdios</a>
     </p>
 </section>
 
 <section class="home-cta-band">
-    <h2>Pronto para sincronizar o set?</h2>
-    <p>Bandas no mesmo repertório. Estúdios com agenda cheia. Comece grátis em minutos.</p>
-    <a href="{{ url_for('comece') }}" class="btn btn-primary btn-lg me-2">Começar grátis</a>
-    <a href="{{ url_for('studios.register_studio') }}" class="btn btn-outline-primary btn-lg me-2">Cadastrar estúdio</a>
-    <a href="#planos" class="btn btn-outline-secondary btn-lg me-2">Ver preços</a>
-    <button type="button" class="btn btn-outline-secondary btn-lg" onclick="typeof installPWA === 'function' && installPWA()">
-        <i class="fas fa-download me-1"></i> Instalar app
-    </button>
+    <h2>Escolha seu perfil e comece grátis</h2>
+    <p>Banda, igreja ou estúdio — o SetSync cresce com o seu projeto musical.</p>
+    <a href="{{ url_for('assinatura_bp.bandas') }}" class="btn btn-primary btn-lg me-2 mb-2">Sou banda</a>
+    <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-outline-primary btn-lg me-2 mb-2">Sou igreja</a>
+    <a href="{{ url_for('studios.landing') }}" class="btn btn-outline-primary btn-lg me-2 mb-2">Tenho estúdio</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary btn-lg mb-2">Criar conta</a>
 </section>
 {% endblock %}
 

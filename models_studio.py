@@ -422,6 +422,7 @@ def create_room(
     nome: str,
     capacidade_pessoas: int | None = None,
     equipamentos: list | None = None,
+    preco_hora: float | None = None,
 ) -> str:
     room_id = str(uuid.uuid4())
     equip_json = json.dumps(equipamentos or [], ensure_ascii=False)
@@ -429,9 +430,9 @@ def create_room(
     c = db.cursor()
     c.execute(
         '''INSERT INTO studio_rooms
-           (id, studio_id, nome, capacidade_pessoas, equipamentos_json, ativa)
-           VALUES (?, ?, ?, ?, ?, 1)''',
-        (room_id, studio_id, nome, capacidade_pessoas, equip_json),
+           (id, studio_id, nome, capacidade_pessoas, equipamentos_json, preco_hora, ativa)
+           VALUES (?, ?, ?, ?, ?, ?, 1)''',
+        (room_id, studio_id, nome, capacidade_pessoas, equip_json, preco_hora),
     )
     db.commit()
     db.close()
@@ -474,7 +475,7 @@ def list_rooms(studio_id: str, *, active_only: bool = True) -> list[dict]:
 
 
 def update_room(room_id: str, **fields) -> None:
-    allowed = {'nome', 'capacidade_pessoas', 'ativa'}
+    allowed = {'nome', 'capacidade_pessoas', 'ativa', 'preco_hora'}
     parts, vals = [], []
     for key, val in fields.items():
         if key in allowed:
@@ -491,6 +492,25 @@ def update_room(room_id: str, **fields) -> None:
     c.execute(f'UPDATE studio_rooms SET {", ".join(parts)} WHERE id = ?', vals)
     db.commit()
     db.close()
+
+
+def count_bookings_for_room(room_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM studio_bookings WHERE room_id = ?', (room_id,))
+    row = c.fetchone()
+    db.close()
+    return int(row['n'] if row else 0)
+
+
+def delete_room(room_id: str) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute('DELETE FROM studio_rooms WHERE id = ?', (room_id,))
+    deleted = c.rowcount > 0
+    db.commit()
+    db.close()
+    return deleted
 
 
 def get_room_with_studio(room_id: str) -> tuple[dict | None, dict | None]:

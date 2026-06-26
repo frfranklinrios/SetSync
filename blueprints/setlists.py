@@ -590,6 +590,9 @@ def _render_public_setlist_page(token: str):
         and band_id
         and usuario_deve_ver_anuncios(None, band_id, cfg=adsense_cfg)
     )
+    from lgpd import may_load_tracking
+    if not may_load_tracking():
+        adsense_show = False
     return render_template(
         'setlists/public_letras.html',
         **data,

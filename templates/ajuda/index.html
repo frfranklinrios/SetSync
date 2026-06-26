@@ -252,6 +252,14 @@
         <strong>Estúdios de ensaio</strong>
         <div class="text-muted" style="font-size: var(--text-sm);">Buscar, reservar salas, cadastrar estúdio</div>
       </a>
+      <a class="list-group-item" href="#estudio-financeiro">
+        <strong>Financeiro do estúdio</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Receita, pagamentos e despesas no painel</div>
+      </a>
+      <a class="list-group-item" href="#estudio-voucher">
+        <strong>Voucher Estúdio Premium</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Código promocional para salas ilimitadas</div>
+      </a>
       <a class="list-group-item" href="#notificacoes">
         <strong>Alertas</strong>
         <div class="text-muted" style="font-size: var(--text-sm);">Push, e-mail, WhatsApp e resumo diário</div>
@@ -399,7 +407,7 @@
         <ul>
           <li>Ao atingir um limite do plano grátis, o app avisa no painel e oferece upgrade.</li>
           <li>Em <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a>, use o seletor <strong>Mensal / Anual</strong> para ver o desconto anual (banda e estúdio).</li>
-          <li><strong>Vouchers</strong> promocionais liberam Pro por tempo determinado (código enviado pela equipe SetSync ou <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">indicação de banda</a>).</li>
+          <li><strong>Vouchers</strong> promocionais liberam Pro ou Estúdio Premium por tempo determinado (código enviado pela equipe SetSync ou <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">indicação de banda</a> para planos de banda).</li>
           <li>No plano grátis podem aparecer <strong>anúncios</strong> em algumas telas; contas pagas não exibem anúncios.</li>
         </ul>
 
@@ -409,7 +417,7 @@
           <li>Ao tocar em <strong>Assinar</strong>, você é <strong>redirecionado ao site do Mercado Pago</strong> — lá você autoriza a cobrança. O SetSync <strong>não armazena número de cartão</strong>.</li>
           <li>Escolha <strong>mensal ou anual</strong> antes de confirmar (o anual equivale a pagar 10 meses e usar 12).</li>
           <li>O <strong>trial de 30 dias</strong> (primeira banda ou primeiro estúdio Premium) é <strong>sem cartão</strong>; só pedimos pagamento se você decidir assinar depois.</li>
-          <li><strong>Vouchers</strong> e indicação de banda ativam Pro por tempo limitado sem passar pelo checkout.</li>
+          <li><strong>Vouchers</strong> e indicação de banda ativam Pro por tempo limitado sem passar pelo checkout. Vouchers de <strong>estúdio</strong> ativam Premium na conta do dono — veja <a href="#estudio-voucher">Voucher Estúdio Premium</a>.</li>
           <li>Para <strong>cancelar</strong> uma assinatura paga, use sua conta no Mercado Pago ou entre em contato com o suporte SetSync.</li>
         </ul>
 
@@ -595,7 +603,7 @@
         <h3>Link público de letras</h3>
         <ul>
           <li>Na setlist, abra <strong>Link público</strong> e toque em <strong>Ativar link</strong> (admins da banda).</li>
-          <li>O visitante vê um <strong>menu de músicas</strong> e a letra de cada uma, <strong>sem login</strong>; a página atualiza quando você altera a setlist.</li>
+          <li>O visitante vê um <strong>menu de músicas</strong> e a letra de cada uma, <strong>sem login</strong>; a página atualiza quando você altera a setlist. Use no telão ou no celular do cantor — no Modo Tocar, a banda toca com cifra/grade.</li>
           <li>Copie o link ou use o <strong>QR Code</strong> para projetor, equipe de som ou público.</li>
           <li><strong>Gerar novo link</strong> invalida o anterior — use se o link vazou.</li>
           <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio), com opção de incluir <strong>cifras</strong>, <strong>letras</strong> e <strong>grades harmônicas</strong> por música.</li>
@@ -689,17 +697,102 @@
           <li>No cadastro do endereço, use a <strong>busca com Google Maps</strong> para preencher rua, bairro, cidade e coordenadas automaticamente.</li>
           <li>Configure <strong>disponibilidade semanal</strong> e <strong>bloqueios</strong> pontuais por sala.</li>
           <li>No <strong>painel</strong>, confirme ou recuse solicitações; confirmação cria evento na agenda da banda.</li>
+          <li><strong>Financeiro</strong> — veja a seção <a href="#estudio-financeiro">Financeiro do estúdio</a> abaixo.</li>
           <li><strong>QR Code de agendamento</strong> — no painel, baixe ou imprima o QR para a recepção; bandas escaneiam e reservam pelo app.</li>
           <li>O painel mostra <strong>visualizações da página</strong> e <strong>cliques no agendamento</strong> para acompanhar divulgação.</li>
           <li>Com perfil completo (fotos, endereço, disponibilidade e QR), o estúdio ganha o selo <strong>Verificado</strong> na busca.</li>
           <li>A <strong>página pública</strong> do estúdio tem preview rico para compartilhar no Instagram e WhatsApp.</li>
           <li>Contas de estúdio abrem direto no <strong>painel do estúdio</strong> após o login (sem passar pela lista de bandas).</li>
-          <li>Plano básico: até <strong>2 salas</strong>. <strong>Premium</strong> (R$ 49/mês ou R$ 490/ano): salas ilimitadas e trial de 30 dias no primeiro cadastro.</li>
+          <li>Plano básico: até <strong>2 salas</strong>. <strong>Premium</strong> (R$ 49/mês ou R$ 490/ano): salas ilimitadas e trial de 30 dias no primeiro cadastro. Também é possível ativar Premium com <strong>voucher</strong> — veja <a href="#estudio-voucher">abaixo</a>.</li>
         </ul>
         <p class="mb-0">
           <a href="{{ url_for('studios.landing') }}" class="btn btn-sm btn-outline-secondary">SetSync para Estúdios</a>
           <a href="{{ url_for('studios.search') }}" class="btn btn-sm btn-outline-primary ms-2">Buscar estúdios</a>
           <a href="{{ url_for('studios.register_studio') }}" class="btn btn-sm btn-primary ms-2">Cadastrar estúdio</a>
+        </p>
+
+        <h3 id="estudio-financeiro" class="mt-4">Financeiro do estúdio</h3>
+        <p>
+          Donos de estúdio controlam <strong>receita</strong>, <strong>pagamentos</strong> e <strong>despesas</strong>
+          no painel — sem planilha separada. Só entram reservas com status <strong>confirmado</strong>.
+        </p>
+        <h4 class="h6">Antes de começar</h4>
+        <ul>
+          <li>Cadastre o <strong>preço por hora</strong> no financeiro → link <strong>Cadastre o preço/hora</strong> (lista todas as salas de uma vez) ou em cada sala em Editar.</li>
+          <li>Sem preço/hora, o financeiro ainda lista reservas, mas a estimativa de valor fica zerada até você cadastrar o valor.</li>
+        </ul>
+        <h4 class="h6">Abrir o financeiro</h4>
+        <ol>
+          <li>Entre no <strong>painel do estúdio</strong> (menu Estúdios → seu espaço).</li>
+          <li>Clique em <strong>Financeiro</strong> (ao lado de Calendário).</li>
+          <li>Use o filtro de <strong>mês e ano</strong> para ver períodos anteriores.</li>
+        </ol>
+        <h4 class="h6">Resumo do mês</h4>
+        <ul>
+          <li><strong>Receita confirmada</strong> — soma do valor de todas as reservas confirmadas no período.</li>
+          <li><strong>Recebido</strong> — parcela já marcada como paga.</li>
+          <li><strong>A receber</strong> — confirmado menos recebido.</li>
+          <li><strong>Despesas</strong> — lançamentos manuais (aluguel, energia, manutenção, equipamento, salários, outros).</li>
+          <li><strong>Líquido</strong> — recebido menos despesas.</li>
+          <li><strong>Horas reservadas</strong> — total de horas das reservas confirmadas no mês.</li>
+        </ul>
+        <h4 class="h6">Valor de cada reserva</h4>
+        <p>
+          O valor padrão é <strong>duração × preço/hora</strong> (ex.: 2 h a R$ 80/h = R$ 160).
+          Em <strong>Ajustar</strong>, você pode:
+        </p>
+        <ul>
+          <li>Informar um <strong>valor manual</strong> (desconto, pacote ou acordo com a banda).</li>
+          <li>Marcar <strong>Usar estimativa</strong> para voltar ao cálculo automático.</li>
+          <li>Definir status <strong>Pago</strong> ou <strong>Pendente</strong>.</li>
+          <li>Adicionar <strong>observações</strong> (ex.: “pago no PIX”, “banda fixa”).</li>
+        </ul>
+        <h4 class="h6">Despesas</h4>
+        <p>
+          No mesmo mês, cadastre despesas com data, descrição, valor e categoria.
+          Elas entram no cálculo do <strong>líquido</strong>. Você pode excluir um lançamento se tiver registrado por engano.
+        </p>
+        <p class="mb-0 small text-muted">
+          Guia detalhado: <a href="{{ url_for('guia.guia_page', slug='gerenciar-financeiro-do-estudio') }}">Gerenciar financeiro do estúdio</a>.
+          Bandas não veem o financeiro do estúdio — apenas o status da reserva em <strong>Minhas reservas</strong>.
+        </p>
+
+        <h3 id="estudio-voucher" class="mt-4">Voucher Estúdio Premium</h3>
+        <p>
+          Donos de estúdio podem receber um <strong>código promocional</strong> que libera o plano
+          <strong>Premium</strong> (salas ilimitadas) por dias definidos ou de forma <strong>vitalícia</strong>,
+          sem passar pelo Mercado Pago.
+        </p>
+        <h4 class="h6">Quem pode resgatar</h4>
+        <ul>
+          <li>A conta que <strong>cadastrou o estúdio</strong> (dono) — o voucher vale para a conta, não para um estúdio específico.</li>
+          <li>É preciso ter pelo menos um estúdio cadastrado (ou cadastrar antes de resgatar).</li>
+          <li>Não funciona se você já tem <strong>Premium pago</strong> ativo no Mercado Pago.</li>
+          <li>Cada código só pode ser usado <strong>uma vez</strong> por conta.</li>
+        </ul>
+        <h4 class="h6">Como resgatar</h4>
+        <ol>
+          <li>Entre no SetSync com a conta do dono do estúdio.</li>
+          <li>Abra <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Planos</a> (menu superior).</li>
+          <li>Role até <strong>Tem um voucher?</strong>, digite o código e toque em <strong>Resgatar</strong>.</li>
+          <li>O painel passa a mostrar <strong>Estúdio Premium</strong> e você pode cadastrar salas além do limite do Básico.</li>
+        </ol>
+        <h4 class="h6">Voucher de banda x voucher de estúdio</h4>
+        <ul>
+          <li>Códigos para <strong>banda</strong> (Pro, Worship, Individual) aplicam na banda selecionada em Planos.</li>
+          <li>Códigos para <strong>estúdio</strong> (prefixo comum <span class="code">ESTUDIO-</span>) aplicam na sua conta de dono — não use o seletor de banda.</li>
+          <li>Se o código for de estúdio e você tentar como banda (ou o contrário), o app avisa qual seção usar.</li>
+        </ul>
+        <h4 class="h6">Validade e expiração</h4>
+        <ul>
+          <li>Vouchers por prazo expiram automaticamente; a conta volta ao <strong>Básico</strong> (até 2 salas).</li>
+          <li>Você recebe <strong>e-mail</strong> cerca de 3 dias antes do vencimento e quando o período termina.</li>
+          <li>Vouchers <strong>vitalícios</strong> não expiram — o Premium permanece enquanto o voucher estiver ativo.</li>
+          <li>Se o trial Premium de 30 dias ainda estiver ativo, ele continua valendo em paralelo até acabar; o voucher segue as regras acima quando for o plano efetivo.</li>
+        </ul>
+        <p class="mb-0">
+          <a href="{{ url_for('assinatura_bp.planos') }}#estudio" class="btn btn-sm btn-outline-primary">Resgatar em Planos</a>
+          <a href="{{ url_for('guia.guia_page', slug='resgatar-voucher-estudio-premium') }}" class="btn btn-sm btn-outline-secondary ms-2">Guia passo a passo</a>
         </p>
       </div>
     </section>
@@ -771,10 +864,10 @@
           <li><strong>Pedais Bluetooth</strong> — por padrão <span class="kbd">Page Up</span>/<span class="kbd">Page Down</span> paginam e <span class="kbd">↑</span>/<span class="kbd">↓</span> trocam de música. Ícone de pedal: mapeamento manual; ícone <i class="fas fa-magic"></i>: <strong>assistente</strong> que detecta as teclas do seu pedal passo a passo.</li>
         </ul>
 
-        <h3>Seções, vocalista e loop</h3>
+        <h3>Seções e loop</h3>
         <ul>
           <li><strong>Seções</strong> (<span class="kbd">S</span>) — painel lateral lista Intro, Refrão, Ponte etc.; toque para ir direto à seção na cifra.</li>
-          <li><strong>Modo vocalista</strong> (<span class="kbd">P</span>) — letra grande, sem distrações, ideal para projeção ou cantor no palco.</li>
+          <li><strong>Letra nesta tela</strong> — menu <strong>Cifra / Grade / Letra</strong> ou tecla <span class="kbd">G</span>. Para cantor em outro aparelho ou telão, use o <a href="#setlists">link público de letras</a> da setlist.</li>
           <li><strong>Loop de trecho</strong> (<span class="kbd">R</span>) — marque pontos <strong>A</strong> e <strong>B</strong> e repita o trecho (ensaio de refrão difícil).</li>
           <li><strong>Próxima música</strong> — canto inferior esquerdo mostra um preview da faixa seguinte.</li>
         </ul>
@@ -803,7 +896,7 @@
           <tr><th><span class="kbd">G</span></th><td>Alterna cifra → grade harmônica → letra (quando houver)</td></tr>
           <tr><th><span class="kbd">V</span></th><td>Alterna versão <strong>Banda</strong> / <strong>Minha</strong> (se houver versão pessoal)</td></tr>
           <tr><th><span class="kbd">S</span></th><td>Índice de seções (Intro, Refrão…)</td></tr>
-          <tr><th><span class="kbd">P</span></th><td>Modo vocalista (letra grande)</td></tr>
+          <tr><th><span class="kbd">P</span></th><td>Abre o link público de letras (se a setlist tiver link ativo)</td></tr>
           <tr><th><span class="kbd">R</span></th><td>Loop de trecho (A/B)</td></tr>
           <tr><th><span class="kbd">M</span></th><td>Liga / pausa metrônomo</td></tr>
           <tr><th><span class="kbd">D</span></th><td>Liga / pausa desenho sobre a cifra</td></tr>

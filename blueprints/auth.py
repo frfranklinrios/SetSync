@@ -5,7 +5,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from db import (create_user, get_user_by_username, get_user_by_login, get_user, verify_password,
                 get_user_by_google_id, create_google_user, get_user_by_email,
                 update_user_display_name, update_user_profile, update_user_password_by_email,
-                is_superadmin, get_band, touch_user_last_login, user_has_phone)
+                is_superadmin, get_band, touch_user_last_login, user_has_phone,
+                set_privacy_accepted, user_needs_privacy_acceptance)
 from whatsapp_service import normalize_whatsapp_phone
 from band_invites import parse_band_invite_token, apply_band_invite
 import band_notifications as bn
@@ -34,6 +35,12 @@ _SETUP_PROMPT_EXEMPT = frozenset({
     'auth.google_callback',
     'auth.convite',
     'auth.cadastro_concluido',
+    'auth.aceitar_termos',
+    'auth.meus_dados',
+    'auth.excluir_conta',
+    'legal.privacidade',
+    'legal.termos',
+    'legal.cookie_consent',
     'convites.index',
     'convites.aceitar',
     'convites.recusar',
@@ -69,7 +76,10 @@ def _login_user_session(user):
 
 
 def _auth_setup_redirect(next_page: str):
-    """Nome → WhatsApp → destino (após login/cadastro)."""
+    """Nome → termos → WhatsApp → destino (após login/cadastro)."""
+    user = get_user(session.get('user_id'))
+    if user and user_needs_privacy_acceptance(user):
+        return redirect(url_for('auth.aceitar_termos', next=next_page))
     if not session.get('display_name'):
         return redirect(url_for('auth.definir_nome', next=next_page))
     if _should_prompt_phone():
@@ -361,6 +371,10 @@ def register():
         if len(password) < MIN_PASSWORD_LEN:
             flash(f'Senha deve ter no mínimo {MIN_PASSWORD_LEN} caracteres', 'danger')
             return render_template('register.html', **form_values)
+
+        if request.form.get('aceite_privacidade') != '1':
+            flash('É necessário aceitar a Política de Privacidade e os Termos de Uso.', 'danger')
+            return render_template('register.html', **form_values)
         
         if get_user_by_username(username):
             flash('Usuário já existe', 'danger')
@@ -377,6 +391,7 @@ def register():
             phone=phone_raw or None,
             whatsapp_notify=whatsapp_notify if phone_raw else False,
         )
+        set_privacy_accepted(user_id)
         user = get_user(user_id)
         _login_user_session(user)
         from google_ads import mark_signup_conversion_pending
@@ -396,6 +411,7 @@ def register():
         invite_token=invite_token,
         invite_band=invite_band,
         plano_intent=plano_intent,
+        whatsapp_notify=False,
     )
 
 
@@ -743,4 +759,79 @@ def _perfil_template_context(user: dict) -> dict:
         'profile_has_bands': has_bands,
         'profile_has_studios': has_studios,
     }
+
+
+@auth_bp.route('/aceitar-termos', methods=['GET', 'POST'])
+@login_required
+def aceitar_termos():
+    next_page = request.args.get('next') or request.form.get('next') or url_for('dashboard')
+    if not safe_redirect_path(next_page):
+        next_page = url_for('dashboard')
+    user = get_user(session['user_id'])
+    if not user or not user_needs_privacy_acceptance(user):
+        return redirect(next_page)
+    if request.method == 'POST':
+        if request.form.get('aceite') != '1':
+            flash('É necessário aceitar para continuar.', 'warning')
+            return render_template('aceitar_termos.html', next=next_page)
+        set_privacy_accepted(session['user_id'])
+        flash('Obrigado! Preferências registradas.', 'success')
+        return redirect(next_page)
+    return render_template('aceitar_termos.html', next=next_page)
+
+
+@auth_bp.route('/meus-dados')
+@login_required
+def meus_dados():
+    from account_deletion import user_data_summary
+    from lgpd import privacy_contact_email
+
+    summary = user_data_summary(session['user_id'])
+    return render_template(
+        'meus_dados.html',
+        summary=summary,
+        privacy_email=privacy_contact_email(),
+    )
+
+
+@auth_bp.route('/excluir-conta', methods=['GET', 'POST'])
+@login_required
+def excluir_conta():
+    from account_deletion import account_deletion_blockers, delete_user_account
+    from lgpd import privacy_contact_email
+
+    user_id = session['user_id']
+    blockers = account_deletion_blockers(user_id)
+    if request.method == 'POST':
+        if blockers:
+            flash(blockers[0], 'danger')
+            return redirect(url_for('auth.excluir_conta'))
+        confirm = (request.form.get('confirm_username') or '').strip()
+        user = get_user(user_id)
+        if not user or confirm != user.get('username'):
+            flash('Digite seu nome de usuário exatamente como cadastrado para confirmar.', 'warning')
+            return render_template(
+                'excluir_conta.html',
+                blockers=blockers,
+                user=user,
+                privacy_email=privacy_contact_email(),
+            )
+        ok, msg = delete_user_account(user_id)
+        if not ok:
+            flash(msg, 'danger')
+            return render_template(
+                'excluir_conta.html',
+                blockers=account_deletion_blockers(user_id),
+                user=user,
+                privacy_email=privacy_contact_email(),
+            )
+        session.clear()
+        flash('Sua conta foi excluída. Sentiremos sua falta!', 'info')
+        return redirect(url_for('index'))
+    return render_template(
+        'excluir_conta.html',
+        blockers=blockers,
+        user=get_user(user_id),
+        privacy_email=privacy_contact_email(),
+    )
 

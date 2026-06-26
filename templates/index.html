@@ -562,7 +562,7 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('index') }}#planos">Planos</a>
+                            <a class="nav-link" href="{{ url_for('assinatura_bp.bandas') }}#planos">Planos</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a>
@@ -617,6 +617,8 @@
     <footer>
         <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync Cifras e Setlists — app de cifras e setlists para bandas">
         &copy; 2026 SetSync
+        · <a href="{{ url_for('legal.privacidade') }}" class="text-muted">Privacidade</a>
+        · <a href="{{ url_for('legal.termos') }}" class="text-muted">Termos</a>
         {% if not current_user.is_authenticated %}
         · <a href="{{ url_for('guia.guia_index') }}" class="text-muted">Guia</a>
         · <a href="{{ url_for('blog.blog_index') }}" class="text-muted">Blog</a>
@@ -716,6 +718,7 @@
     {% endblock %}
     {% include 'partials/google_ads_signup_event.html' %}
     {% include 'partials/google_ads_funnel.html' %}
+    {% include 'partials/cookie_consent.html' %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

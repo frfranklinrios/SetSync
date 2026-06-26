@@ -74,9 +74,19 @@
             </div>
             <div class="form-check mb-3">
                 <input class="form-check-input" type="checkbox" id="whatsapp_notify" name="whatsapp_notify"
-                       value="1" {% if whatsapp_notify is not defined or whatsapp_notify %}checked{% endif %}>
+                       value="1"{% if whatsapp_notify %} checked{% endif %}>
                 <label class="form-check-label" for="whatsapp_notify">
                     Receber alertas da banda por WhatsApp
+                </label>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="aceite_privacidade" name="aceite_privacidade"
+                       value="1" required{% if aceite_privacidade %} checked{% endif %}>
+                <label class="form-check-label" for="aceite_privacidade">
+                    Li e aceito a
+                    <a href="{{ url_for('legal.privacidade') }}" target="_blank" rel="noopener">Política de Privacidade</a>
+                    e os
+                    <a href="{{ url_for('legal.termos') }}" target="_blank" rel="noopener">Termos de Uso</a>.
                 </label>
             </div>
             <div class="mb-3">

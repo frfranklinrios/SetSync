@@ -1,0 +1,200 @@
+{% extends "index.html" %}
+{% block title %}Relatório financeiro — {{ band.name }}{% endblock %}
+
+{% block extra_head %}
+<script>
+(function () {
+    if (window.setSetSyncTheme) {
+        window.setSetSyncTheme('light', { persist: false });
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+    document.documentElement.classList.add('studio-finance-print-root');
+    {% if pdfgen %}document.documentElement.classList.add('pdfgen');{% endif %}
+})();
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/studio-finance-print.css') }}?v=1">
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3 no-print">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.finance', band_id=band.id, ano=report.year, mes=report.month) }}">Financeiro</a></li>
+        <li class="breadcrumb-item active">Relatório PDF</li>
+    </ol>
+</nav>
+
+<div class="studio-finance-print-toolbar no-print">
+    <a href="{{ url_for('bands.finance_export_pdf', band_id=band.id, ano=report.year, mes=report.month) }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-file-pdf me-1"></i> Baixar PDF
+    </a>
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+        <i class="fas fa-print me-1"></i> Imprimir
+    </button>
+    <a href="{{ url_for('bands.finance', band_id=band.id, ano=report.year, mes=report.month) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Voltar
+    </a>
+    <span class="text-muted toolbar-hint">A4 paisagem · {{ period_label }}</span>
+</div>
+
+<div class="studio-finance-print-doc">
+    <header class="sf-print-header">
+        <div>
+            <h1 class="sf-print-title">Financeiro — {{ band.name }}</h1>
+            <p class="sf-print-sub">
+                Cachês, ensaios em estúdio e despesas de {{ from_date }} a {{ to_date }}
+            </p>
+        </div>
+        <div class="sf-print-meta">
+            <div><strong>{{ period_label }}</strong></div>
+            <div>Gerado em {{ generated_at }}</div>
+            <div>SetSync</div>
+        </div>
+    </header>
+
+    <div class="sf-summary-grid">
+        <div class="sf-summary-card">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.receita_confirmada) }}</div>
+            <div class="lbl">Cachês confirmados</div>
+        </div>
+        <div class="sf-summary-card val-success">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.recebido) }}</div>
+            <div class="lbl">Recebido</div>
+        </div>
+        <div class="sf-summary-card val-warning">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.a_receber) }}</div>
+            <div class="lbl">A receber</div>
+        </div>
+        <div class="sf-summary-card val-danger">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.custos_ensaio) }}</div>
+            <div class="lbl">Ensaios em estúdio</div>
+        </div>
+        <div class="sf-summary-card val-danger">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.despesas) }}</div>
+            <div class="lbl">Outras despesas</div>
+        </div>
+        <div class="sf-summary-card">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.liquido) }}</div>
+            <div class="lbl">Líquido (recebido − custos)</div>
+        </div>
+    </div>
+
+    <h2 class="sf-section-title">Eventos da agenda</h2>
+    {% if report.events %}
+    <table class="sf-table">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Evento</th>
+                <th>Tipo</th>
+                <th class="num">Cachê líquido</th>
+                <th>Status</th>
+                <th>Obs.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in report.events %}
+            <tr>
+                <td>{{ e.starts_at[:10] if e.starts_at else '—' }}</td>
+                <td>{{ e.title }}</td>
+                <td>{{ event_type_label(e.event_type) }}</td>
+                <td class="num">{% if e.has_fee %}R$ {{ '%.2f'|format(e.fee_net) }}{% else %}—{% endif %}</td>
+                <td>
+                    {% if e.has_fee %}
+                        {% if e.is_received %}
+                        <span class="sf-badge sf-badge-paid">Recebido</span>
+                        {% else %}
+                        <span class="sf-badge sf-badge-pending">Pendente</span>
+                        {% endif %}
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ e.fee_notes or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="sf-empty">Nenhum evento neste período.</p>
+    {% endif %}
+
+    <h2 class="sf-section-title">Ensaios em estúdio</h2>
+    {% if report.bookings %}
+    <table class="sf-table">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Horário</th>
+                <th>Estúdio</th>
+                <th>Sala</th>
+                <th class="num">Horas</th>
+                <th class="num">Custo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in report.bookings %}
+            <tr>
+                <td>{{ b.data }}</td>
+                <td>{{ b.hora_inicio }}–{{ b.hora_fim }}</td>
+                <td>{{ b.studio_nome }}</td>
+                <td>{{ b.room_nome }}</td>
+                <td class="num">{{ '%.1f'|format(b.duration_hours) }}</td>
+                <td class="num">R$ {{ '%.2f'|format(b.valor_cobrado_efetivo) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="sf-empty">Nenhuma reserva confirmada neste período.</p>
+    {% endif %}
+
+    <h2 class="sf-section-title">Despesas do mês</h2>
+    {% if report.expenses %}
+    <table class="sf-table">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th class="num">Valor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in report.expenses %}
+            <tr>
+                <td>{{ e.data }}</td>
+                <td>{{ e.descricao }}</td>
+                <td>{{ expense_labels.get(e.categoria, e.categoria) }}</td>
+                <td class="num">R$ {{ '%.2f'|format(e.valor) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="sf-empty">Nenhuma despesa registrada neste período.</p>
+    {% endif %}
+
+    <p class="sf-footnote">
+        Relatório gerado pelo SetSync. Cachês líquidos descontam transporte e equipamento cadastrados no evento.
+        Custos de estúdio seguem preço/hora informado pelo dono da sala.
+    </p>
+</div>
+
+<script>
+(function () {
+    function signalPdfReady() {
+        document.body.setAttribute('data-pdf-ready', '1');
+    }
+    window.addEventListener('load', function () {
+        {% if pdfgen %}
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(signalPdfReady).catch(signalPdfReady);
+        } else {
+            setTimeout(signalPdfReady, 300);
+        }
+        {% endif %}
+    });
+})();
+</script>
+{% endblock %}

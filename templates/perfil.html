@@ -182,6 +182,21 @@
 
     <div class="card mt-3">
       <div class="card-body">
+        <h3 class="h6 mb-2">Privacidade e dados</h3>
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+          Veja o que guardamos, exporte um resumo ou solicite exclusão da conta (LGPD).
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('auth.meus_dados') }}" class="btn btn-outline-secondary btn-sm">Meus dados</a>
+          <a href="{{ url_for('auth.excluir_conta') }}" class="btn btn-outline-danger btn-sm">Excluir conta</a>
+          <a href="{{ url_for('legal.privacidade') }}" class="btn btn-link btn-sm">Política de Privacidade</a>
+          <a href="{{ url_for('legal.termos') }}" class="btn btn-link btn-sm">Termos de Uso</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body">
         <h3 class="h6 mb-3">Indisponibilidade</h3>
         <p class="text-muted mb-3" style="font-size: var(--text-sm);">
           Marque dias em que você não pode tocar. Quem escala vê o aviso na lista de integrantes.

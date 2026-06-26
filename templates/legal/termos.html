@@ -1,0 +1,84 @@
+{% extends "index.html" %}
+{% block title %}Termos de Uso — SetSync{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('legal.termos') }}">
+<meta name="description" content="Termos de Uso do SetSync — regras de utilização da plataforma para bandas e estúdios.">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+  <div class="col-lg-8">
+    <h1 class="h3 mb-3">Termos de Uso</h1>
+    <p class="text-muted small">Última atualização: junho de 2026</p>
+
+    <div class="card mb-3">
+      <div class="card-body legal-prose">
+        <p>
+          Ao criar conta ou usar o <strong>SetSync</strong>, você concorda com estes Termos e com a
+          <a href="{{ url_for('legal.privacidade') }}">Política de Privacidade</a>.
+        </p>
+
+        <h2 class="h5 mt-4">1. O serviço</h2>
+        <p>
+          O SetSync oferece ferramentas para bandas e músicos (cifras, setlists, agenda, modo palco)
+          e para donos de estúdio (cadastro, reservas, financeiro). Planos gratuitos e pagos podem ter
+          limites descritos em <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a>.
+        </p>
+
+        <h2 class="h5 mt-4">2. Sua conta</h2>
+        <ul>
+          <li>Você é responsável pela confidencialidade da senha e pela atividade na sua conta.</li>
+          <li>Informações de cadastro devem ser verdadeiras e atualizadas.</li>
+          <li>Uma pessoa não deve compartilhar credenciais com terceiros não autorizados.</li>
+        </ul>
+
+        <h2 class="h5 mt-4">3. Conteúdo da banda</h2>
+        <p>
+          Cifras, letras e materiais inseridos na banda são de responsabilidade de quem os publica.
+          O SetSync não garante direitos autorais sobre repertório de terceiros — use apenas material
+          que sua banda tem direito de utilizar em ensaios e apresentações.
+        </p>
+
+        <h2 class="h5 mt-4">4. Uso aceitável</h2>
+        <p>É proibido:</p>
+        <ul>
+          <li>Violar leis, direitos de terceiros ou estes Termos.</li>
+          <li>Tentar acessar dados de outros usuários sem autorização.</li>
+          <li>Sobrecarregar ou comprometer a infraestrutura do serviço.</li>
+          <li>Usar o app para spam ou mensagens não solicitadas.</li>
+        </ul>
+
+        <h2 class="h5 mt-4">5. Planos pagos</h2>
+        <p>
+          Assinaturas são processadas pelo Mercado Pago. Cancelamentos seguem as regras do provedor
+          de pagamento. Trials e vouchers têm prazo e condições exibidos no momento da ativação.
+        </p>
+
+        <h2 class="h5 mt-4">6. Disponibilidade</h2>
+        <p>
+          Buscamos alta disponibilidade, mas o serviço pode passar por manutenção ou indisponibilidade
+          temporária. Não há garantia de ausência total de falhas.
+        </p>
+
+        <h2 class="h5 mt-4">7. Encerramento</h2>
+        <p>
+          Você pode encerrar sua conta em
+          <a href="{{ url_for('auth.excluir_conta') }}">Excluir conta</a>.
+          Podemos suspender contas que violem estes Termos, mediante aviso quando possível.
+        </p>
+
+        <h2 class="h5 mt-4">8. Contato</h2>
+        <p class="mb-0">
+          Dúvidas: <a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>
+          · <a href="{{ url_for('legal.privacidade') }}">Privacidade</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.legal-prose h2 { margin-top: 1.25rem; }
+.legal-prose ul { padding-left: 1.25rem; }
+</style>
+{% endblock %}

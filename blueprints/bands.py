@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, send_file, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, send_file, abort, current_app
 from blueprints.auth import login_required
 from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_bands,
                 update_band, delete_band, get_band_members, add_band_member, remove_band_member,
@@ -564,6 +564,259 @@ def equipe(band_id):
         substitutes_by_role=subs_by_role,
         user_display_name=user_display_name,
     )
+
+
+BAND_EXPENSE_CATEGORIES = (
+    ('ensaio', 'Ensaio / estúdio'),
+    ('equipamento', 'Equipamento'),
+    ('transporte', 'Transporte'),
+    ('marketing', 'Marketing'),
+    ('outros', 'Outros'),
+)
+
+
+def _require_band_admin(band_id: str):
+    user_id = session['user_id']
+    band = get_band(band_id)
+    if not band or not is_band_admin(band_id, user_id):
+        return None, None
+    return band, user_id
+
+
+def _parse_finance_period() -> tuple[int, int]:
+    from band_finance import default_finance_period
+
+    y, m, _, _ = default_finance_period()
+    try:
+        y = int(request.args.get('ano') or request.form.get('ano') or y)
+        m = int(request.args.get('mes') or request.form.get('mes') or m)
+    except (TypeError, ValueError):
+        pass
+    if m < 1:
+        m = 1
+    if m > 12:
+        m = 12
+    if y < 2000:
+        y = 2000
+    if y > 2100:
+        y = 2100
+    return y, m
+
+
+def _finance_redirect(band_id: str):
+    y, m = _parse_finance_period()
+    return redirect(url_for('bands.finance', band_id=band_id, ano=y, mes=m))
+
+
+def _load_band_finance_report(band_id: str, year: int, month: int):
+    from band_finance import build_band_finance_report, month_bounds
+    from models_band_finance import (
+        list_band_events_for_finance,
+        list_band_expenses,
+        list_band_studio_bookings_for_finance,
+    )
+
+    band = get_band(band_id)
+    if not band:
+        return None
+    from_date, to_date = month_bounds(year, month)
+    events = list_band_events_for_finance(band_id, from_date=from_date, to_date=to_date)
+    bookings = list_band_studio_bookings_for_finance(
+        band_id, from_date=from_date, to_date=to_date,
+    )
+    expenses = list_band_expenses(band_id, from_date=from_date, to_date=to_date)
+    report = build_band_finance_report(
+        band=band,
+        events=events,
+        bookings=bookings,
+        expenses=expenses,
+        year=year,
+        month=month,
+    )
+    return band, report, from_date, to_date
+
+
+def _resolve_band_finance_user(band_id: str):
+    pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
+    if pdfgen:
+        from security import verify_band_finance_pdf_token
+
+        uid = verify_band_finance_pdf_token(request.args.get('pdf_token', ''), band_id)
+        if not uid:
+            return None, None
+        band = get_band(band_id)
+        if not band or not is_band_admin(band_id, uid):
+            return None, None
+        return band, uid
+    return _require_band_admin(band_id)
+
+
+@bands_bp.route('/<band_id>/financeiro')
+@login_required
+def finance(band_id):
+    band, uid = _require_band_admin(band_id)
+    if not band:
+        flash('Sem permissão para ver o financeiro desta banda.', 'danger')
+        return redirect(url_for('bands.view', band_id=band_id) if get_band(band_id) else url_for('dashboard'))
+    year, month = _parse_finance_period()
+    loaded = _load_band_finance_report(band_id, year, month)
+    if not loaded:
+        flash('Banda não encontrada.', 'danger')
+        return redirect(url_for('dashboard'))
+    band, report, from_date, to_date = loaded
+    from agenda_util import event_type_label
+    return render_template(
+        'bands/finance.html',
+        band=band,
+        report=report,
+        expense_categories=BAND_EXPENSE_CATEGORIES,
+        from_date=from_date,
+        to_date=to_date,
+        event_type_label=event_type_label,
+    )
+
+
+@bands_bp.route('/<band_id>/financeiro/imprimir')
+def finance_print(band_id):
+    band, uid = _resolve_band_finance_user(band_id)
+    if not band:
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login', next=request.path))
+        flash('Sem acesso.', 'danger')
+        return redirect(url_for('bands.view', band_id=band_id))
+    year, month = _parse_finance_period()
+    loaded = _load_band_finance_report(band_id, year, month)
+    if not loaded:
+        flash('Banda não encontrada.', 'danger')
+        return redirect(url_for('dashboard'))
+    band, report, from_date, to_date = loaded
+    from config import app_now_str
+    from studio_finance_pdf import period_label
+    from agenda_util import event_type_label
+
+    pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
+    expense_labels = dict(BAND_EXPENSE_CATEGORIES)
+    return render_template(
+        'bands/finance_print.html',
+        band=band,
+        report=report,
+        from_date=from_date,
+        to_date=to_date,
+        period_label=period_label(year, month),
+        generated_at=app_now_str()[:16].replace('T', ' '),
+        expense_labels=expense_labels,
+        event_type_label=event_type_label,
+        pdfgen=pdfgen,
+    )
+
+
+@bands_bp.route('/<band_id>/financeiro/exportar-pdf')
+@login_required
+def finance_export_pdf(band_id):
+    from io import BytesIO
+
+    from band_finance_pdf import build_finance_pdf_download_name, generate_band_finance_pdf_bytes
+
+    band, uid = _require_band_admin(band_id)
+    if not band:
+        flash('Sem permissão.', 'danger')
+        return redirect(url_for('bands.view', band_id=band_id))
+    year, month = _parse_finance_period()
+    try:
+        pdf_bytes = generate_band_finance_pdf_bytes(
+            band_id, uid, year=year, month=month,
+        )
+    except Exception as exc:
+        current_app.logger.exception('PDF financeiro da banda falhou: %s', exc)
+        flash('Não foi possível gerar o PDF agora. Tente imprimir pelo navegador.', 'danger')
+        return redirect(url_for('bands.finance_print', band_id=band_id, ano=year, mes=month))
+    filename = build_finance_pdf_download_name(band['name'], year, month)
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@bands_bp.route('/<band_id>/financeiro/evento/<event_id>', methods=['POST'])
+@login_required
+def save_event_finance(band_id, event_id):
+    band, uid = _require_band_admin(band_id)
+    if not band:
+        abort(404)
+    from models_agenda import get_band_event
+    from band_finance import parse_money_field
+    from db import update_event_fees
+
+    event = get_band_event(event_id)
+    if not event or event.get('band_id') != band_id:
+        flash('Evento não encontrado.', 'danger')
+        return _finance_redirect(band_id)
+
+    fee_total = parse_money_field(request.form.get('fee_total'))
+    if fee_total is None:
+        flash('Informe o valor do cachê.', 'warning')
+        return _finance_redirect(band_id)
+
+    fee_transport = parse_money_field(request.form.get('fee_transport_discount')) or 0.0
+    fee_equipment = parse_money_field(request.form.get('fee_equipment_discount')) or 0.0
+    fee_notes = (request.form.get('fee_notes') or '').strip()[:500] or None
+    fee_settled = request.form.get('fee_settled') == '1'
+
+    update_event_fees(
+        event_id,
+        fee_total=fee_total,
+        fee_transport_discount=fee_transport,
+        fee_equipment_discount=fee_equipment,
+        fee_notes=fee_notes,
+        fee_settled=fee_settled,
+    )
+    flash('Cachê do evento atualizado.', 'success')
+    return _finance_redirect(band_id)
+
+
+@bands_bp.route('/<band_id>/financeiro/despesa', methods=['POST'])
+@login_required
+def add_band_expense(band_id):
+    band, uid = _require_band_admin(band_id)
+    if not band:
+        abort(404)
+    from band_finance import parse_money_field
+    from models_band_finance import create_band_expense
+
+    data = (request.form.get('data') or '').strip()[:10]
+    descricao = (request.form.get('descricao') or '').strip()
+    valor = parse_money_field(request.form.get('valor'))
+    categoria = (request.form.get('categoria') or 'outros').strip()[:40]
+    if not data or not descricao or valor is None or valor <= 0:
+        flash('Preencha data, descrição e valor da despesa.', 'danger')
+        return _finance_redirect(band_id)
+    create_band_expense(
+        band_id,
+        data=data,
+        descricao=descricao,
+        valor=valor,
+        categoria=categoria,
+        created_by_user_id=uid,
+    )
+    flash('Despesa registrada.', 'success')
+    return _finance_redirect(band_id)
+
+
+@bands_bp.route('/<band_id>/financeiro/despesa/<expense_id>/excluir', methods=['POST'])
+@login_required
+def delete_band_expense_route(band_id, expense_id):
+    band, uid = _require_band_admin(band_id)
+    if not band:
+        abort(404)
+    from models_band_finance import delete_band_expense
+
+    if delete_band_expense(expense_id, band_id):
+        flash('Despesa removida.', 'success')
+    else:
+        flash('Despesa não encontrada.', 'danger')
+    return _finance_redirect(band_id)
 
 
 @bands_bp.route('/<band_id>/delete', methods=['POST'])

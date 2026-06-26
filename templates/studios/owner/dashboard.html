@@ -17,10 +17,9 @@
         </div>
         {% endif %}
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ url_for('studios.edit_studio', studio_id=studio.id) }}" class="btn btn-outline-secondary btn-sm">Editar perfil</a>
-        <a href="{{ url_for('studios.owner_calendar', studio_id=studio.id) }}" class="btn btn-outline-secondary btn-sm">Calendário</a>
-        <a href="{{ url_for('studios.detail', studio_id=studio.id) }}" class="btn btn-outline-primary btn-sm">Página pública</a>
+    <div>
+        {% set active = 'painel' %}
+        {% include 'studios/owner/_toolbar.html' %}
     </div>
 </div>
 
@@ -100,27 +99,37 @@
 <p class="text-muted mb-4">Nenhuma solicitação pendente.</p>
 {% endif %}
 
-<h2 class="h6">Salas ({{ rooms|length }}{% if room_limit %}/{{ room_limit }}{% endif %})</h2>
+<h2 class="h6 d-flex flex-wrap justify-content-between align-items-center gap-2" id="studio-salas">
+    <span>Salas ({{ rooms|length }}{% if room_limit %}/{{ room_limit }}{% endif %})</span>
+    <span class="d-flex gap-2">
+        <a href="{{ url_for('studios.owner_rooms', studio_id=studio.id) }}" class="btn btn-sm btn-outline-primary">Gerenciar salas</a>
+        {% if can_add_room %}
+        <a href="{{ url_for('studios.new_room', studio_id=studio.id) }}" class="btn btn-sm btn-primary">Nova sala</a>
+        {% endif %}
+    </span>
+</h2>
+{% if rooms %}
 <div class="list-group mb-3">
     {% for room in rooms %}
     <div class="list-group-item d-flex justify-content-between flex-wrap gap-2">
-        <span><strong>{{ room.nome }}</strong>{% if not room.ativa %} <span class="badge bg-secondary">inativa</span>{% endif %}</span>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ url_for('studios.edit_room', studio_id=studio.id, room_id=room.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-            <a href="{{ url_for('studios.room_availability', studio_id=studio.id, room_id=room.id) }}" class="btn btn-sm btn-outline-secondary">Disponibilidade</a>
-            <a href="{{ url_for('studios.room_blocks', studio_id=studio.id, room_id=room.id) }}" class="btn btn-sm btn-outline-secondary">Bloqueios</a>
-        </div>
+        <span><strong>{{ room.nome }}</strong>{% if not room.ativa %} <span class="badge bg-secondary">inativa</span>{% endif %}
+        {% if room.preco_hora is not none %}<span class="text-muted small"> · R$ {{ '%.2f'|format(room.preco_hora) }}/h</span>{% endif %}
+        </span>
+        <a href="{{ url_for('studios.edit_room', studio_id=studio.id, room_id=room.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
     </div>
     {% endfor %}
 </div>
-{% if can_add_room %}
-<a href="{{ url_for('studios.new_room', studio_id=studio.id) }}" class="btn btn-primary btn-sm">Nova sala</a>
 {% else %}
-<p class="small text-muted">Limite de salas do plano básico. <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Ver planos Premium</a></p>
+<p class="text-muted small mb-3">Nenhuma sala ainda. <a href="{{ url_for('studios.new_room', studio_id=studio.id) }}">Criar primeira sala</a></p>
+{% endif %}
+{% if not can_add_room and rooms %}
+<p class="small text-muted mb-4">Limite de salas do plano básico. <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Ver planos Premium</a></p>
+{% else %}
+<div class="mb-4"></div>
 {% endif %}
 
 {% if studio %}
-<h2 class="h6 mt-4" id="studio-qr-agendamento">QR Code — agendamento</h2>
+<h2 class="h6 mt-2" id="studio-qr-agendamento">QR Code — agendamento</h2>
 <div class="card mb-4">
     <div class="card-body">
         <p class="small text-muted mb-3">

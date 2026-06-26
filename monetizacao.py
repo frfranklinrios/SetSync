@@ -35,6 +35,7 @@ LIMITES_INDIVIDUAL = {
     'banda': 1,
 }
 STATUS_ATIVA = 'ativa'
+STATUS_VOUCHER = 'voucher'
 STATUS_CANCELADA = 'cancelada'
 STATUS_INADIMPLENTE = 'inadimplente'
 
@@ -744,12 +745,16 @@ def _studio_trial_ativo(sub: dict[str, Any]) -> bool:
 
 
 def studio_tem_premium(owner_user_id: str, sub: dict[str, Any] | None = None) -> bool:
-    """Premium pago ou trial Premium ativo."""
+    """Premium pago, trial Premium ativo ou voucher Premium válido."""
     if sub is None:
         from models_studio import get_or_create_studio_subscription
         sub = get_or_create_studio_subscription(owner_user_id)
     if sub.get('plano') == PLANO_ESTUDIO_PREMIUM and sub.get('status') == STATUS_ATIVA:
         return True
+    if sub.get('plano') == PLANO_ESTUDIO_PREMIUM and sub.get('status') == STATUS_VOUCHER:
+        fim = _parse_dt(sub.get('data_proxima_cobranca'))
+        if fim and fim >= _agora_utc():
+            return True
     return _studio_trial_ativo(sub)
 
 
@@ -852,7 +857,7 @@ def planos_estudio_para_site() -> list[PlanoSite]:
             features=(
                 'Até 2 salas após o trial',
                 '30 dias Premium no 1º cadastro',
-                'Painel, calendário e bloqueios',
+                'Painel, calendário e financeiro',
                 'Reservas de bandas pelo app',
                 'Endereço com Google Maps',
             ),
@@ -870,6 +875,7 @@ def planos_estudio_para_site() -> list[PlanoSite]:
             features=(
                 'Salas ilimitadas',
                 'Painel completo de agendamentos',
+                'Financeiro com receita e despesas',
                 'Notificações de reserva em tempo real',
                 'Suporte prioritário',
             ),
@@ -906,6 +912,30 @@ def studio_plano_badge_ui(user_id: str) -> dict[str, Any]:
             'logo': 'img/planos/estudio-premium.svg',
             'premium': True,
             'trial': True,
+        }
+
+    if (
+        sub.get('plano') == PLANO_ESTUDIO_PREMIUM
+        and sub.get('status') == STATUS_VOUCHER
+        and studio_tem_premium(user_id, sub)
+    ):
+        fim = _parse_dt(sub.get('data_proxima_cobranca'))
+        vitalicio = fim is not None and fim.year >= 2090
+        if vitalicio:
+            label = 'Estúdio Premium · voucher vitalício'
+        else:
+            dias = max(0, _dias_calendario(_agora_utc(), fim)) if fim else None
+            label = f'Estúdio Premium · voucher · {dias} dias' if dias is not None else 'Estúdio Premium · voucher'
+        return {
+            'plano_id': PLANO_ESTUDIO_PREMIUM,
+            'nome': 'Estúdio Premium (voucher)',
+            'label': label,
+            'label_curto': 'Voucher',
+            'badge': 'success',
+            'logo': 'img/planos/estudio-premium.svg',
+            'premium': True,
+            'trial': False,
+            'voucher': True,
         }
 
     if plano == PLANO_ESTUDIO_PREMIUM:

@@ -26,6 +26,16 @@ def _title_page(verb: str, obj: str) -> str:
 
 
 def _meta_desc(verb: str, obj: str) -> str:
+    if 'financeiro' in obj:
+        return (
+            'Controle receita de reservas confirmadas, pagamentos e despesas do seu estúdio '
+            'de ensaio no SetSync. Preço/hora, resumo mensal e líquido no painel do dono.'
+        )
+    if 'voucher' in obj and ('estudio' in obj or 'estúdio' in obj):
+        return (
+            'Resgate voucher Estúdio Premium no SetSync: salas ilimitadas por código promocional, '
+            'sem cartão. Passo a passo para donos de sala de ensaio.'
+        )
     p = _phrase(verb, obj)
     return (
         f'Como {p} com o SetSync: repertório centralizado, convites por link, '
@@ -36,6 +46,111 @@ def _meta_desc(verb: str, obj: str) -> str:
 def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
     phrase = _phrase(verb, obj)
     obj_cap = obj[0].upper() + obj[1:] if obj else ''
+
+    if 'financeiro' in obj:
+        return [
+            {
+                'html': (
+                    '<p>O <strong>financeiro do estúdio</strong> no SetSync ajuda donos de sala de ensaio '
+                    'a acompanhar <strong>receita das reservas confirmadas</strong>, marcar o que já foi '
+                    'pago e registrar <strong>despesas do mês</strong> — tudo no painel, sem planilha paralela.</p>'
+                ),
+            },
+            {
+                'h2': 'Como a receita é calculada',
+                'html': (
+                    '<p>Cadastre o <strong>preço por hora</strong> no perfil do estúdio. Para cada reserva '
+                    '<strong>confirmada</strong>, o sistema estima o valor multiplicando a duração '
+                    '(hora fim − hora início) pelo preço/hora. Você pode ajustar o valor manualmente em '
+                    'reservas com desconto, pacote ou acordo com a banda.</p>'
+                ),
+            },
+            {
+                'h2': 'Passo a passo no painel',
+                'html': (
+                    '<ol>'
+                    '<li>Cadastre o estúdio e configure salas, disponibilidade e <strong>preço/hora</strong>.</li>'
+                    '<li>Confirme solicitações de bandas no painel — só reservas confirmadas entram no financeiro.</li>'
+                    '<li>Abra <strong>Financeiro</strong> no painel do dono (ao lado de Calendário).</li>'
+                    '<li>Filtre por mês e ano para ver receita confirmada, recebido, a receber e horas reservadas.</li>'
+                    '<li>Em cada reserva, marque <strong>Pago</strong> ou <strong>Pendente</strong> e adicione observações.</li>'
+                    '<li>Registre despesas (aluguel, energia, manutenção…) para ver o <strong>líquido</strong> do mês.</li>'
+                    '</ol>'
+                ),
+            },
+            {
+                'h2': 'Resumo do mês',
+                'html': (
+                    '<ul>'
+                    '<li><strong>Receita confirmada</strong> — soma das reservas confirmadas no período.</li>'
+                    '<li><strong>Recebido</strong> — reservas marcadas como pagas.</li>'
+                    '<li><strong>A receber</strong> — diferença entre confirmado e recebido.</li>'
+                    '<li><strong>Despesas</strong> — lançamentos manuais do mês.</li>'
+                    '<li><strong>Líquido</strong> — recebido menos despesas.</li>'
+                    '</ul>'
+                ),
+            },
+            {
+                'h2': 'Integração com reservas e agenda',
+                'html': (
+                    '<p>Quando você confirma uma reserva, o ensaio vai para a agenda da banda. O financeiro '
+                    'usa os mesmos horários da reserva — não precisa digitar de novo. Bandas acompanham em '
+                    '<strong>Minhas reservas</strong>; o controle de pagamento é visível só para o dono do estúdio.</p>'
+                    '<p>Detalhes na <a href="/ajuda#estudio-financeiro">Ajuda → Financeiro do estúdio</a>.</p>'
+                ),
+            },
+        ]
+
+    if 'voucher' in obj and ('estudio' in obj or 'estúdio' in obj):
+        return [
+            {
+                'html': (
+                    '<p>Donos de estúdio podem ativar o plano <strong>Premium</strong> (salas ilimitadas) '
+                    'com um <strong>código voucher</strong> enviado pela equipe SetSync ou em campanhas '
+                    'parceiras — sem assinatura no Mercado Pago.</p>'
+                ),
+            },
+            {
+                'h2': 'Antes de resgatar',
+                'html': (
+                    '<ul>'
+                    '<li>Use a conta que <strong>cadastrou o estúdio</strong> (dono).</li>'
+                    '<li>Tenha pelo menos um estúdio no SetSync — '
+                    '<a href="/estudios">cadastre grátis</a> se ainda não tiver.</li>'
+                    '<li>O voucher não substitui assinatura <strong>Premium paga</strong> já ativa.</li>'
+                    '<li>Cada código vale <strong>uma vez</strong> por conta.</li>'
+                    '</ul>'
+                ),
+            },
+            {
+                'h2': 'Passo a passo',
+                'html': (
+                    '<ol>'
+                    '<li>Entre no SetSync com sua conta de dono.</li>'
+                    '<li>Abra <a href="/assinatura/planos#estudio">Planos → Estúdio</a>.</li>'
+                    '<li>Em <strong>Tem um voucher?</strong>, digite o código (ex.: <code>ESTUDIO-XXXX</code>) '
+                    'e toque em <strong>Resgatar</strong>.</li>'
+                    '<li>Confirme o badge <strong>Estúdio Premium</strong> no painel e cadastre salas além do limite do Básico.</li>'
+                    '</ol>'
+                ),
+            },
+            {
+                'h2': 'Diferença para voucher de banda',
+                'html': (
+                    '<p>Códigos de <strong>banda</strong> liberam Pro/Worship na banda selecionada. '
+                    'Códigos de <strong>estúdio</strong> liberam Premium na <strong>conta do dono</strong>. '
+                    'Se o app avisar que o código é do outro tipo, use a seção correta em Planos.</p>'
+                ),
+            },
+            {
+                'h2': 'Validade',
+                'html': (
+                    '<p>Vouchers por prazo expiram automaticamente; a conta volta ao plano Básico (até 2 salas). '
+                    'Você recebe e-mail antes do vencimento. Vouchers <strong>vitalícios</strong> não expiram.</p>'
+                    '<p>Mais detalhes na <a href="/ajuda#estudio-voucher">Ajuda → Voucher Estúdio Premium</a>.</p>'
+                ),
+            },
+        ]
 
     intro = (
         f'<p>O SetSync foi feito para quem precisa <strong>{phrase}</strong> sem depender de '
@@ -174,8 +289,9 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'html': (
                 '<p>Busque estúdios por cidade e bairro, veja fotos e equipamentos, abra o endereço no '
                 '<strong>Google Maps</strong> e solicite reserva de sala. Quando o estúdio confirma, o ensaio '
-                'entra na agenda da banda. Donos de estúdio cadastram salas, disponibilidade e bloqueios — '
-                'plano beta gratuito com até 2 salas.</p>'
+                'entra na agenda da banda. Donos de estúdio cadastram salas, disponibilidade, bloqueios e '
+                '<strong>financeiro</strong> (receita, pagamentos e despesas) e <strong>vouchers Premium</strong> '
+                '— plano básico gratuito com até 2 salas.</p>'
             ),
         })
 
@@ -232,6 +348,8 @@ _KEYWORD_PAIRS: list[tuple[str, str]] = [
     ('reservar', 'sala de ensaio'),
     ('buscar', 'estúdio de ensaio'),
     ('cadastrar', 'estúdio de ensaio'),
+    ('gerenciar', 'financeiro do estúdio'),
+    ('resgatar', 'voucher estúdio premium'),
     # organizar
     ('organizar', 'cifras'),
     ('organizar', 'setlists'),
@@ -306,6 +424,9 @@ _STANDALONE_TOPICS: list[str] = [
     'estúdio de ensaio online',
     'reservar sala ensaio banda',
     'cadastrar estúdio ensaio',
+    'financeiro estúdio ensaio',
+    'voucher estúdio premium',
+    'código premium estúdio ensaio',
     'instrumentos músico perfil',
     'escalação banda instrumentos',
 ]
@@ -334,6 +455,9 @@ _PREMIUM_SLUGS = frozenset({
     'buscar-estudio-de-ensaio',
     'gerenciar-escalacao',
     'instrumentos-musico-perfil',
+    'gerenciar-financeiro-do-estudio',
+    'financeiro-estudio-ensaio',
+    'resgatar-voucher-estudio-premium',
 })
 
 
@@ -547,7 +671,19 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'O SetSync tem reserva de estúdio de ensaio?',
-            'a': 'Sim. Bandas buscam estúdios por cidade, solicitam horário e acompanham em Minhas reservas. Quando confirmado, o ensaio entra na agenda da banda. Donos cadastram salas, QR na recepção e plano Premium (R$ 49/mês) para salas ilimitadas — trial de 30 dias no primeiro cadastro.',
+            'a': 'Sim. Bandas buscam estúdios por cidade, solicitam horário e acompanham em Minhas reservas. Quando confirmado, o ensaio entra na agenda da banda. Donos cadastram salas, QR na recepção, financeiro (receita e despesas), vouchers Premium promocionais e plano Premium (R$ 49/mês) para salas ilimitadas — trial de 30 dias no primeiro cadastro.',
+        },
+        {
+            'q': 'Como funciona o financeiro do estúdio no SetSync?',
+            'a': 'No painel do dono, abra Financeiro. O sistema calcula a receita das reservas confirmadas com base no preço/hora e na duração; você marca pagamentos, ajusta valores e registra despesas do mês. O resumo mostra recebido, a receber e líquido.',
+        },
+        {
+            'q': 'Como resgatar voucher Estúdio Premium?',
+            'a': 'Com a conta do dono do estúdio, abra Planos, role até Tem um voucher?, digite o código (ex.: ESTUDIO-XXXX) e resgate. O Premium libera salas ilimitadas pelo período do voucher ou vitalício, sem Mercado Pago. Cada código vale uma vez por conta.',
+        },
+        {
+            'q': 'Qual a diferença entre voucher de banda e voucher de estúdio?',
+            'a': 'Voucher de banda ativa Pro/Worship na banda escolhida em Planos. Voucher de estúdio ativa Premium na conta do dono da sala de ensaio — não depende de qual banda você selecionou.',
         },
         {
             'q': 'Como funciona o assistente de ajuda do SetSync?',

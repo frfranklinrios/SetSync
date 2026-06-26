@@ -1,0 +1,182 @@
+{% extends "index.html" %}
+{% block title %}Relatório financeiro — {{ studio.nome }}{% endblock %}
+
+{% block extra_head %}
+<script>
+(function () {
+    if (window.setSetSyncTheme) {
+        window.setSetSyncTheme('light', { persist: false });
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+    document.documentElement.classList.add('studio-finance-print-root');
+    {% if pdfgen %}document.documentElement.classList.add('pdfgen');{% endif %}
+})();
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/studio-finance-print.css') }}?v=1">
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3 no-print">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_finance', studio_id=studio.id, ano=report.year, mes=report.month) }}">Financeiro</a></li>
+        <li class="breadcrumb-item active">Relatório PDF</li>
+    </ol>
+</nav>
+
+<div class="studio-finance-print-toolbar no-print">
+    <a href="{{ url_for('studios.owner_finance_export_pdf', studio_id=studio.id, ano=report.year, mes=report.month) }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-file-pdf me-1"></i> Baixar PDF
+    </a>
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+        <i class="fas fa-print me-1"></i> Imprimir
+    </button>
+    <a href="{{ url_for('studios.owner_finance', studio_id=studio.id, ano=report.year, mes=report.month) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Voltar
+    </a>
+    <span class="text-muted toolbar-hint">A4 paisagem · {{ period_label }}</span>
+</div>
+
+<div class="studio-finance-print-doc">
+    <header class="sf-print-header">
+        <div>
+            <h1 class="sf-print-title">Financeiro — {{ studio.nome }}</h1>
+            <p class="sf-print-sub">
+                Reservas confirmadas de {{ from_date }} a {{ to_date }}
+                {% if report.preco_hora %}
+                · preço/hora padrão R$ {{ '%.2f'|format(report.preco_hora) }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="sf-print-meta">
+            <div><strong>{{ period_label }}</strong></div>
+            <div>Gerado em {{ generated_at }}</div>
+            <div>SetSync</div>
+        </div>
+    </header>
+
+    <div class="sf-summary-grid">
+        <div class="sf-summary-card">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.receita_confirmada) }}</div>
+            <div class="lbl">Receita confirmada</div>
+        </div>
+        <div class="sf-summary-card val-success">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.recebido) }}</div>
+            <div class="lbl">Recebido</div>
+        </div>
+        <div class="sf-summary-card val-warning">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.a_receber) }}</div>
+            <div class="lbl">A receber</div>
+        </div>
+        <div class="sf-summary-card val-danger">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.despesas) }}</div>
+            <div class="lbl">Despesas</div>
+        </div>
+        <div class="sf-summary-card">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.liquido) }}</div>
+            <div class="lbl">Líquido (recebido − despesas)</div>
+        </div>
+        <div class="sf-summary-card">
+            <div class="val">{{ report.stats.reservas }} · {{ '%.1f'|format(report.stats.horas) }} h</div>
+            <div class="lbl">Reservas · horas</div>
+        </div>
+    </div>
+
+    <h2 class="sf-section-title">Reservas confirmadas</h2>
+    {% if report.bookings %}
+    <table class="sf-table">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Horário</th>
+                <th>Sala</th>
+                <th>Banda</th>
+                <th class="num">Horas</th>
+                <th class="num">Valor</th>
+                <th>Status</th>
+                <th>Obs.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in report.bookings %}
+            <tr>
+                <td>{{ b.data }}</td>
+                <td>{{ b.hora_inicio }}–{{ b.hora_fim }}</td>
+                <td>{{ b.room_nome }}</td>
+                <td>{{ b.band_name or '—' }}</td>
+                <td class="num">{{ '%.1f'|format(b.duration_hours) }}</td>
+                <td class="num">
+                    R$ {{ '%.2f'|format(b.valor_cobrado_efetivo) }}
+                    {% if b.valor_customizado %}
+                    <div class="text-muted" style="font-size:0.72rem;">manual</div>
+                    {% elif b.preco_hora_efetivo %}
+                    <div class="text-muted" style="font-size:0.72rem;">R$ {{ '%.2f'|format(b.preco_hora_efetivo) }}/h</div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if b.is_paid %}
+                    <span class="sf-badge sf-badge-paid">Pago</span>
+                    {% else %}
+                    <span class="sf-badge sf-badge-pending">Pendente</span>
+                    {% endif %}
+                </td>
+                <td>{{ b.finance_notes or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="sf-empty">Nenhuma reserva confirmada neste período.</p>
+    {% endif %}
+
+    <h2 class="sf-section-title">Despesas do mês</h2>
+    {% if report.expenses %}
+    <table class="sf-table">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th class="num">Valor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in report.expenses %}
+            <tr>
+                <td>{{ e.data }}</td>
+                <td>{{ e.descricao }}</td>
+                <td>{{ expense_labels.get(e.categoria, e.categoria) }}</td>
+                <td class="num">R$ {{ '%.2f'|format(e.valor) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="sf-empty">Nenhuma despesa registrada neste período.</p>
+    {% endif %}
+
+    <p class="sf-footnote">
+        Relatório gerado pelo SetSync. Valores de reserva seguem preço/hora da sala ou do estúdio,
+        salvo ajuste manual no painel financeiro.
+    </p>
+</div>
+
+<script>
+(function () {
+    function signalPdfReady() {
+        document.body.setAttribute('data-pdf-ready', '1');
+    }
+    window.addEventListener('load', function () {
+        {% if pdfgen %}
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(signalPdfReady).catch(signalPdfReady);
+        } else {
+            setTimeout(signalPdfReady, 300);
+        }
+        {% endif %}
+    });
+})();
+</script>
+{% endblock %}

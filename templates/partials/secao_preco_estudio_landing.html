@@ -13,6 +13,7 @@
             <ul class="estudios-planos-features">
                 <li><i class="fas fa-check" aria-hidden="true"></i>Painel do dono com solicitações pendentes</li>
                 <li><i class="fas fa-check" aria-hidden="true"></i>Calendário, bloqueios e disponibilidade semanal</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Financeiro — receita, pagamentos e despesas do mês</li>
                 <li><i class="fas fa-check" aria-hidden="true"></i>Bandas reservam pelo app — ensaio na agenda delas ao confirmar</li>
                 <li><i class="fas fa-check" aria-hidden="true"></i>Endereço com Google Maps no cadastro</li>
                 <li><i class="fas fa-check" aria-hidden="true"></i>Notificações de pedido, confirmação e cancelamento</li>
@@ -30,6 +31,11 @@
                 <strong>É banda?</strong>
                 <a href="{{ url_for('auth.login', next=url_for('studios.search')) }}" class="estudios-link-muted">Entre e busque estúdios na sua cidade</a>
             </p>
+            <p class="estudios-planos-note mb-0">
+                Recebeu um <strong>código promocional</strong>?
+                <a href="{{ url_for('auth.login', next=url_for('assinatura_bp.planos') ~ '#estudio') }}" class="estudios-link-muted">Resgate em Planos</a>
+                · <a href="{{ url_for('ajuda.index') }}#estudio-voucher" class="estudios-link-muted">Como funciona</a>
+            </p>
             {% with variant='dark' %}
             {% include 'partials/mercadopago_trust.html' %}
             {% endwith %}
@@ -43,7 +49,7 @@
                      data-cobrado-anual="{{ p.cobrado_anual_label or '' }}"
                      {% endif %}>
                 {% if p.logo %}
-                <img src="{{ url_for('static', filename=p.logo) }}" alt="" width="56" height="56" class="estudios-plan-logo" loading="lazy">
+                <img src="{{ url_for('static', filename=p.logo) }}" alt="" width="56" height="56" class="estudios-plan-logo" decoding="async" fetchpriority="high">
                 {% endif %}
                 {% if p.badge_label %}
                 <span class="estudios-plan-badge">{{ p.badge_label }}</span>

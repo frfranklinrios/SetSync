@@ -150,6 +150,44 @@ def verify_pdf_access_token(token: str, setlist_id: str) -> str | None:
     return str(uid) if uid else None
 
 
+def make_studio_finance_pdf_token(studio_id: str, user_id: str) -> str:
+    return _serializer('studio-finance-pdf').dumps(
+        {'studio_id': str(studio_id), 'user_id': user_id},
+    )
+
+
+def verify_studio_finance_pdf_token(token: str, studio_id: str) -> str | None:
+    if not token:
+        return None
+    try:
+        data = _serializer('studio-finance-pdf').loads(token, max_age=180)
+    except (BadSignature, SignatureExpired, TypeError):
+        return None
+    if str(data.get('studio_id')) != str(studio_id):
+        return None
+    uid = data.get('user_id')
+    return str(uid) if uid else None
+
+
+def make_band_finance_pdf_token(band_id: str, user_id: str) -> str:
+    return _serializer('band-finance-pdf').dumps(
+        {'band_id': str(band_id), 'user_id': user_id},
+    )
+
+
+def verify_band_finance_pdf_token(token: str, band_id: str) -> str | None:
+    if not token:
+        return None
+    try:
+        data = _serializer('band-finance-pdf').loads(token, max_age=180)
+    except (BadSignature, SignatureExpired, TypeError):
+        return None
+    if str(data.get('band_id')) != str(band_id):
+        return None
+    uid = data.get('user_id')
+    return str(uid) if uid else None
+
+
 def make_oauth_state() -> str:
     import secrets
     return secrets.token_urlsafe(32)

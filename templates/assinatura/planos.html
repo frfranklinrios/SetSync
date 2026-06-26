@@ -125,7 +125,7 @@
 
 {% include 'partials/mercadopago_trust.html' %}
 
-<div id="estudio" class="mb-2">
+<div class="mb-2">
 <p class="small text-muted mb-3">
     <a href="{{ url_for('studios.landing') }}">SetSync para Estúdios</a> — página dedicada com comparativo e FAQ.
 </p>
@@ -150,6 +150,14 @@
 <div class="card">
     <div class="card-body">
         <h3 class="h6">Tem um voucher?</h3>
+        <p class="small text-muted mb-2">
+            Vouchers de <strong>banda</strong> aplicam no plano da banda selecionada acima.
+            {% if tem_estudio %}
+            Vouchers de <strong>estúdio</strong> ativam Premium na sua conta de estúdio (salas ilimitadas).
+            {% else %}
+            Para vouchers de estúdio, <a href="{{ url_for('studios.landing') }}">cadastre um estúdio</a> primeiro.
+            {% endif %}
+        </p>
         <div class="input-group">
             <input type="text" id="voucher-codigo" class="form-control" placeholder="Digite o código aqui" autocomplete="off">
             <button type="button" class="btn btn-success" id="voucher-resgatar-btn">Resgatar</button>
@@ -184,18 +192,20 @@ document.querySelectorAll('.js-billing-toggle').forEach(function (group) {
     const input = document.getElementById('voucher-codigo');
     const toast = document.getElementById('voucher-toast');
     const bandaId = {{ banda_id|tojson }};
-    if (!btn || !bandaId) return;
+    if (!btn || !input) return;
     btn.addEventListener('click', async function () {
         toast.textContent = '';
         toast.className = 'mt-2 small';
         const codigo = (input.value || '').trim();
         if (!codigo) return;
+        const payload = { codigo: codigo };
+        if (bandaId) payload.banda_id = bandaId;
         try {
             const res = await fetch('{{ url_for("assinatura_bp.voucher_resgatar") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({ codigo, banda_id: bandaId }),
+                body: JSON.stringify(payload),
             });
             const data = await res.json();
             if (data.ok) {

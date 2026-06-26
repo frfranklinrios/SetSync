@@ -1,0 +1,168 @@
+/* Relatório financeiro do estúdio — impressão / PDF */
+
+html.studio-finance-print-root {
+    --sf-ink: #0f172a;
+    --sf-muted: #64748b;
+    --sf-border: #cbd5e1;
+    --sf-success: #15803d;
+    --sf-warning: #b45309;
+    --sf-danger: #b91c1c;
+}
+
+html.studio-finance-print-root.pdfgen .navbar,
+html.studio-finance-print-root.pdfgen .no-print,
+html.studio-finance-print-root.pdfgen footer {
+    display: none !important;
+}
+
+html.studio-finance-print-root.pdfgen body {
+    background: #fff !important;
+}
+
+html.studio-finance-print-root.pdfgen main.container {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.studio-finance-print-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.studio-finance-print-toolbar .toolbar-hint {
+    font-size: var(--text-sm);
+}
+
+.studio-finance-print-doc {
+    color: var(--sf-ink);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.45;
+}
+
+.sf-print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--sf-ink);
+}
+
+.sf-print-title {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.sf-print-sub {
+    margin: 0.25rem 0 0;
+    color: var(--sf-muted);
+    font-size: 0.92rem;
+}
+
+.sf-print-meta {
+    text-align: right;
+    font-size: 0.82rem;
+    color: var(--sf-muted);
+}
+
+.sf-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.55rem;
+    margin-bottom: 1.25rem;
+}
+
+.sf-summary-card {
+    border: 1px solid var(--sf-border);
+    border-radius: 8px;
+    padding: 0.55rem 0.65rem;
+    text-align: center;
+}
+
+.sf-summary-card .val {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.sf-summary-card .lbl {
+    font-size: 0.78rem;
+    color: var(--sf-muted);
+}
+
+.sf-summary-card.val-success .val { color: var(--sf-success); }
+.sf-summary-card.val-warning .val { color: var(--sf-warning); }
+.sf-summary-card.val-danger .val { color: var(--sf-danger); }
+
+.sf-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 1rem 0 0.45rem;
+}
+
+.sf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.sf-table th,
+.sf-table td {
+    border: 1px solid var(--sf-border);
+    padding: 0.35rem 0.45rem;
+    vertical-align: top;
+}
+
+.sf-table th {
+    background: #f1f5f9;
+    font-weight: 600;
+    text-align: left;
+}
+
+.sf-table .num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.sf-badge {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.sf-badge-paid {
+    background: #dcfce7;
+    color: var(--sf-success);
+}
+
+.sf-badge-pending {
+    background: #fef3c7;
+    color: var(--sf-warning);
+}
+
+.sf-empty {
+    color: var(--sf-muted);
+    font-size: 0.85rem;
+    margin: 0.25rem 0 0.75rem;
+}
+
+.sf-footnote {
+    margin-top: 1.25rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--sf-border);
+    font-size: 0.75rem;
+    color: var(--sf-muted);
+}
+
+@media print {
+    .no-print { display: none !important; }
+    .studio-finance-print-doc { font-size: 10pt; }
+}

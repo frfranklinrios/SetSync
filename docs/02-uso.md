@@ -44,7 +44,7 @@ Tela cheia para o palco — abra pela setlist, cifra ou **Tocar setlist** no eve
 - Layout de folha (seções, acordes destacados, letra legível); **S** abre índice de seções (Intro, Refrão…)
 - Bordas e setas **← →**: rolar a cifra; **↑ ↓** ou pedal: música anterior/próxima
 - Botões **◀ ▶** na barra: trocar música imediatamente
-- **G**: cifra / grade / letra · **P**: modo vocalista · **R**: loop A/B de trecho
+- **G**: cifra / grade / letra · **P**: link de letras (setlist com link ativo) · **R**: loop A/B de trecho
 - **V**: Banda / Minha · **L**: lista lateral · **Espaço**: auto-scroll (velocidade **Auto** se a música tiver duração)
 - **M**: metrônomo com count-in · **D**: desenhar sobre a cifra · **N**: Nashville na grade
 - **C**: 2 colunas · **A**: caber · **F**: tela cheia · **T**: tema · **Esc**: sair
@@ -64,3 +64,19 @@ Menu **Ajuda** no site: `/ajuda` — inclui painel/checklist, planos (anual), es
 - Indicação de banda (15 dias Pro) após primeira setlist
 - NPS pós-trial e sugestão de instalar PWA
 - Assistente de ajuda com CTAs quando logado
+
+## Estúdios de ensaio
+
+### Bandas
+
+- Menu **Estúdios** → buscar por cidade, solicitar reserva, acompanhar em **Minhas reservas**
+- Reserva confirmada entra na **Agenda** da banda
+
+### Donos de estúdio
+
+- Cadastro, salas, disponibilidade, bloqueios e QR no **painel**
+- **Financeiro** (`/estudios/<id>/financeiro`): receita das reservas confirmadas (preço/hora × duração), marcar pago/pendente, valor manual e despesas do mês
+- Resumo: receita confirmada, recebido, a receber, despesas e líquido
+- **Voucher Premium**: código promocional em Planos → seção *Tem um voucher?* (conta do dono)
+
+Documentação: `/ajuda#estudio-financeiro`, `/ajuda#estudio-voucher` e `/guia/gerenciar-financeiro-do-estudio`, `/guia/resgatar-voucher-estudio-premium`

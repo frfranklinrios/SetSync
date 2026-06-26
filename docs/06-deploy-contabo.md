@@ -1,6 +1,6 @@
 # Deploy na Contabo (VPS)
 
-Checklist para subir o SetSync em produção **sem mudar o schema do banco** além do que `init_db()` já faz ao iniciar (colunas opcionais em SQLite existente).
+Checklist para subir o SetSync em produção. O schema evolui via `init_db()` → `_run_schema_migrations()` (mesmo caminho em **SQLite** e **PostgreSQL**).
 
 ## 1. Servidor
 

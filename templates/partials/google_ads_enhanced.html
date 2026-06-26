@@ -1,5 +1,5 @@
 {# Enhanced Conversions — dados hasheados no servidor #}
-{% if google_ads_enhanced_data and google_ads.enhanced_conversions %}
+{% if google_ads_enhanced_data and google_ads.enhanced_conversions and may_load_tracking %}
 <script>
 (function () {
   var ud = {{ google_ads_enhanced_data | tojson }};

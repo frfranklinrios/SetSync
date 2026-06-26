@@ -17,6 +17,7 @@ def render_url_to_pdf(
     cookies=None,
     *,
     timeout_ms: int = 120_000,
+    landscape: bool = False,
 ) -> bytes:
     """Abre a URL e devolve bytes do PDF A4 retrato (sem cookies de sessão por padrão)."""
     from playwright.sync_api import sync_playwright
@@ -61,6 +62,7 @@ def render_url_to_pdf(
         host = parsed.netloc.split(':')[0] or 'SetSync'
         pdf = page.pdf(
             format='A4',
+            landscape=landscape,
             print_background=True,
             prefer_css_page_size=True,
             display_header_footer=True,

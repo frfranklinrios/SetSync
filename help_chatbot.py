@@ -129,6 +129,8 @@ def default_suggestions(limit: int = 6) -> list[str]:
         'Como configurar pedal Bluetooth no SetSync?',
         'Posso usar cifras offline no celular?',
         'Como reservar estúdio de ensaio?',
+        'Como gerenciar o financeiro do estúdio?',
+        'Como resgatar voucher Estúdio Premium?',
         'Qual a diferença entre Pro e Worship?',
         'Como montar setlist online para show ou ensaio?',
         'O que são notas de palco na setlist?',
@@ -197,11 +199,47 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
             ctas.append({'label': 'Criar setlist', 'url': url_for('setlists.create', band_id=first_band)})
     if any(t in q for t in ('estudio', 'sala', 'reserv', 'agend')):
         from models_studio import list_studios_by_owner
-        if list_studios_by_owner(user_id):
+        owned = list_studios_by_owner(user_id)
+        if owned:
             ctas.append({'label': 'Painel do estúdio', 'url': url_for('studios.my_studios')})
         else:
             ctas.append({'label': 'Cadastrar estúdio', 'url': url_for('studios.register_studio')})
         ctas.append({'label': 'Buscar estúdios', 'url': url_for('studios.search')})
+    if any(t in q for t in ('financeiro', 'receita', 'despesa', 'faturamento', 'liquido', 'lucro', 'cache', 'cachê')):
+        from models_studio import list_studios_by_owner
+        from db import get_owned_bands
+        owned_studios = list_studios_by_owner(user_id)
+        owned_bands = get_owned_bands(user_id)
+        if owned_bands:
+            ctas.append({
+                'label': 'Financeiro da banda',
+                'url': url_for('bands.finance', band_id=owned_bands[0]['id']),
+            })
+        if owned_studios:
+            ctas.append({
+                'label': 'Financeiro do estúdio',
+                'url': url_for('studios.owner_finance', studio_id=owned_studios[0]['id']),
+            })
+        ctas.append({
+            'label': 'Ajuda financeiro',
+            'url': url_for('ajuda.index') + '#estudio-financeiro',
+        })
+    if any(t in q for t in ('voucher', 'codigo', 'código', 'promoc', 'cupom')):
+        from models_studio import list_studios_by_owner
+        ctas.append({
+            'label': 'Resgatar voucher',
+            'url': url_for('assinatura_bp.planos') + '#estudio',
+        })
+        if list_studios_by_owner(user_id):
+            ctas.append({
+                'label': 'Ajuda voucher estúdio',
+                'url': url_for('ajuda.index') + '#estudio-voucher',
+            })
+        else:
+            ctas.append({
+                'label': 'Cadastrar estúdio',
+                'url': url_for('studios.register_studio'),
+            })
     if any(t in q for t in ('plano', 'pro', 'premium', 'assinar', 'trial', 'limite')):
         ctas.append({'label': 'Ver planos', 'url': url_for('assinatura_bp.planos')})
     if any(t in q for t in ('pagamento', 'cobranc', 'cartao', 'cartão', 'segur', 'mercado', 'pago')):

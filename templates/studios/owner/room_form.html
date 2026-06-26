@@ -4,9 +4,13 @@
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb small">
         <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}">{{ studio.nome }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('studios.owner_rooms', studio_id=studio.id) }}">Salas</a></li>
         <li class="breadcrumb-item active">{% if room %}Editar sala{% else %}Nova sala{% endif %}</li>
     </ol>
 </nav>
+
+{% set active = 'salas' %}
+{% include 'studios/owner/_toolbar.html' %}
 
 <form method="post">
     {% include 'partials/csrf_input.html' %}
@@ -21,6 +25,25 @@
                value="{{ room.capacidade_pessoas if room and room.capacidade_pessoas else '' }}">
     </div>
     <div class="mb-3">
+        <label class="form-label" for="preco_hora">Preço por hora (R$)</label>
+        <input type="text" name="preco_hora" id="preco_hora" class="form-control" inputmode="decimal"
+               value="{% if room and room.preco_hora is not none %}{{ '%.2f'|format(room.preco_hora) }}{% endif %}"
+               placeholder="{% if studio.preco_hora %}{{ '%.2f'|format(studio.preco_hora) }} (padrão do estúdio){% else %}Ex.: 80.00{% endif %}">
+        <div class="form-text">
+            {% if studio.preco_hora %}
+            Deixe em branco para usar o preço do estúdio (R$ {{ '%.2f'|format(studio.preco_hora) }}/h).
+            {% else %}
+            Opcional. Cadastre também em <a href="{{ url_for('studios.edit_studio', studio_id=studio.id) }}">Editar perfil</a> como padrão do estúdio.
+            {% endif %}
+        </div>
+        {% if room and room.preco_hora is not none %}
+        <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" name="clear_preco_hora" value="1" id="clear_preco_hora">
+            <label class="form-check-label" for="clear_preco_hora">Usar preço padrão do estúdio</label>
+        </div>
+        {% endif %}
+    </div>
+    <div class="mb-3">
         <label class="form-label" for="equipamentos">Equipamentos (separados por vírgula)</label>
         <input type="text" name="equipamentos" id="equipamentos" class="form-control"
                value="{{ room.equipamentos | join(', ') if room and room.equipamentos else '' }}"
@@ -33,7 +56,7 @@
     </div>
     {% endif %}
     <button type="submit" class="btn btn-primary">{% if room %}Salvar{% else %}Criar sala{% endif %}</button>
-    <a href="{{ url_for('studios.owner_dashboard', studio_id=studio.id) }}" class="btn btn-link">{% if room %}Voltar{% else %}Cancelar{% endif %}</a>
+    <a href="{{ rooms_back_url or url_for('studios.owner_rooms', studio_id=studio.id) }}" class="btn btn-link">{% if room %}Voltar{% else %}Cancelar{% endif %}</a>
 </form>
 
 {% if room %}

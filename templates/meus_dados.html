@@ -1,0 +1,54 @@
+{% extends "index.html" %}
+{% block title %}Meus dados — SetSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-2">
+  <div class="col-lg-8">
+    <h2 class="mb-3">Meus dados</h2>
+    <p class="text-muted">
+      Resumo dos dados pessoais associados à sua conta (LGPD — direito de acesso).
+      Para portabilidade completa ou dúvidas, escreva para
+      <a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>.
+    </p>
+
+    <div class="card mb-3">
+      <div class="card-header">Conta</div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-sm-4">Usuário</dt><dd class="col-sm-8">{{ summary.user.username }}</dd>
+          <dt class="col-sm-4">Nome exibido</dt><dd class="col-sm-8">{{ summary.user.display_name or '—' }}</dd>
+          <dt class="col-sm-4">E-mail</dt><dd class="col-sm-8">{{ summary.user.email }}</dd>
+          <dt class="col-sm-4">WhatsApp</dt><dd class="col-sm-8">{{ summary.user.phone or '—' }}</dd>
+          <dt class="col-sm-4">Cadastro</dt><dd class="col-sm-8">{{ (summary.user.created_at or '')[:10] or '—' }}</dd>
+          <dt class="col-sm-4">Termos aceitos em</dt>
+          <dd class="col-sm-8">{{ (summary.user.privacy_accepted_at or '')[:10] or '—' }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Bandas ({{ summary.bands_count }})</div>
+      <div class="card-body">
+        {% if summary.bands %}
+        <ul class="mb-0">{% for b in summary.bands %}<li>{{ b.name }}</li>{% endfor %}</ul>
+        {% else %}<p class="text-muted mb-0 small">Nenhuma banda vinculada.</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Estúdios ({{ summary.studios_count }})</div>
+      <div class="card-body">
+        {% if summary.studios %}
+        <ul class="mb-0">{% for s in summary.studios %}<li>{{ s.nome }} — {{ s.cidade }}</li>{% endfor %}</ul>
+        {% else %}<p class="text-muted mb-0 small">Nenhum estúdio cadastrado como dono.</p>{% endif %}
+      </div>
+    </div>
+
+    <p class="mb-0">
+      <a href="{{ url_for('auth.perfil') }}" class="btn btn-outline-secondary btn-sm">Editar perfil</a>
+      <a href="{{ url_for('auth.excluir_conta') }}" class="btn btn-outline-danger btn-sm ms-2">Excluir conta</a>
+      <a href="{{ url_for('legal.privacidade') }}" class="btn btn-link btn-sm">Política de Privacidade</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

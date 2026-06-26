@@ -42,6 +42,7 @@ from mercadopago_client import (
 from monetizacao import PLANOS, PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP, planos_para_site
 from monetizacao import (
     PLANO_ESTUDIO_PREMIUM,
+    PLANO_ESTUDIO_BASICO,
     PLANOS_ESTUDIO,
     planos_estudio_para_site,
     studio_plano_badge_ui,
@@ -53,7 +54,7 @@ from mp_webhook import (
     webhook_autentico,
 )
 from security import external_url_for
-from vouchers import criar_voucher_indicacao, gerar_codigo_voucher, resgatar_voucher
+from vouchers import criar_voucher_indicacao, gerar_codigo_voucher, resgatar_voucher, resgatar_voucher_estudio, voucher_destino, VOUCHER_DESTINO_ESTUDIO
 
 assinatura_bp = Blueprint('assinatura_bp', __name__)
 
@@ -87,6 +88,8 @@ def planos():
     assinatura = get_assinatura_banda(banda_id) if banda_id else None
     plano_ui = plano_badge_ui(banda_id) if banda_id else None
     mp_status = mp_config_status()
+    from models_studio import list_studios_by_owner
+    tem_estudio = bool(list_studios_by_owner(user_id))
     return render_template(
         'assinatura/planos.html',
         planos=PLANOS,
@@ -94,6 +97,7 @@ def planos():
         studio_plano_ui=studio_plano_badge_ui(user_id),
         bandas=bandas,
         banda_id=banda_id,
+        tem_estudio=tem_estudio,
         assinatura=assinatura.to_dict() if assinatura else None,
         plano_ui=plano_ui,
         mp_status=mp_status,
@@ -384,9 +388,27 @@ def webhook():
 @assinatura_bp.route('/voucher/resgatar', methods=['POST'])
 @login_required
 def voucher_resgatar():
-    """Resgata voucher via AJAX."""
+    """Resgata voucher via AJAX (banda ou estúdio)."""
     data = request.get_json(silent=True) or request.form
     codigo = (data.get('codigo') or '').strip()
+    if not codigo:
+        return jsonify({'ok': False, 'erro': 'Informe o código'}), 400
+
+    from db import get_voucher_by_codigo, get_user
+
+    voucher = get_voucher_by_codigo(codigo)
+    if not voucher:
+        return jsonify({'ok': False, 'erro': 'Voucher não encontrado'}), 400
+
+    user = get_user(session['user_id']) or {}
+    user_nome = user.get('name') or 'Usuário'
+
+    if voucher_destino(voucher) == VOUCHER_DESTINO_ESTUDIO:
+        ok, msg, info = resgatar_voucher_estudio(codigo, session['user_id'], user_nome)
+        if not ok:
+            return jsonify({'ok': False, 'erro': msg}), 400
+        return jsonify({'ok': True, 'mensagem': msg, 'info': info})
+
     banda_id = (data.get('banda_id') or '').strip()
     band = _banda_do_usuario(banda_id, session['user_id'])
     if not band:
@@ -431,8 +453,13 @@ def admin_vouchers():
 @assinatura_bp.route('/admin/vouchers/criar', methods=['POST'])
 @superadmin_required
 def admin_vouchers_criar():
+    destino = (request.form.get('destino') or 'banda').strip().lower()
     plano = request.form.get('plano', PLANO_PRO)
-    if plano not in (PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP):
+    if destino == VOUCHER_DESTINO_ESTUDIO:
+        if plano != PLANO_ESTUDIO_PREMIUM:
+            flash('Para estúdio, use o plano Estúdio Premium', 'danger')
+            return redirect(url_for('assinatura_bp.admin_vouchers'))
+    elif plano not in (PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP):
         flash('Plano inválido', 'danger')
         return redirect(url_for('assinatura_bp.admin_vouchers'))
     eh_vitalicio = request.form.get('eh_vitalicio') in ('1', 'on', 'true')
@@ -443,6 +470,8 @@ def admin_vouchers_criar():
     max_usos = request.form.get('max_usos', '').strip()
     max_usos_int = int(max_usos) if max_usos else None
     prefixo = request.form.get('prefixo', '').strip() or None
+    if destino == VOUCHER_DESTINO_ESTUDIO and not prefixo:
+        prefixo = 'ESTUDIO'
     data_exp = request.form.get('data_expiracao', '').strip() or None
     codigo = gerar_codigo_voucher(prefixo)
     create_voucher(
@@ -453,9 +482,11 @@ def admin_vouchers_criar():
         max_usos=max_usos_int,
         data_expiracao=data_exp,
         eh_vitalicio=eh_vitalicio,
+        destino=destino,
     )
     tipo = 'vitalício' if eh_vitalicio else f'{dias} dias'
-    flash(f'Voucher {codigo} criado ({tipo})!', 'success')
+    alvo = 'estúdio' if destino == VOUCHER_DESTINO_ESTUDIO else 'banda'
+    flash(f'Voucher {codigo} criado ({tipo}, {alvo})!', 'success')
     return redirect(url_for('assinatura_bp.admin_vouchers'))
 
 
@@ -472,12 +503,41 @@ def admin_vouchers_desativar(codigo):
 @assinatura_bp.route('/admin/vouchers/<codigo>/usos')
 @superadmin_required
 def admin_vouchers_usos(codigo):
-    from db import get_voucher_by_codigo
+    from db import get_voucher_by_codigo, list_studio_voucher_usos
     voucher = get_voucher_by_codigo(codigo)
     if not voucher:
         return jsonify({'usos': []}), 404
-    usos = list_voucher_usos(voucher['id'])
+    if voucher_destino(voucher) == VOUCHER_DESTINO_ESTUDIO:
+        usos = list_studio_voucher_usos(voucher['id'])
+        for u in usos:
+            u['banda_nome'] = u.get('user_nome') or u.get('user_id')
+    else:
+        usos = list_voucher_usos(voucher['id'])
     return jsonify({'usos': usos})
+
+
+@assinatura_bp.route('/bandas')
+def bandas():
+    """Landing page para bandas e músicos."""
+    from cifras_tool.api_cifras_client import get_api_cifras_public_stats
+    from db import count_bands, count_cifras, count_setlists, list_testimonials
+    from monetizacao import planos_para_site
+
+    stats = {
+        'bandas': count_bands(),
+        'musicas': count_cifras(),
+        'setlists': count_setlists(),
+    }
+    api_cifras_stats = get_api_cifras_public_stats()
+    if api_cifras_stats.get('available'):
+        stats['biblioteca'] = True
+
+    return render_template(
+        'bandas.html',
+        planos_site=planos_para_site(),
+        stats=stats,
+        testimonials=list_testimonials(active_only=True),
+    )
 
 
 @assinatura_bp.route('/igrejas')

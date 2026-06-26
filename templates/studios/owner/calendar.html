@@ -11,6 +11,9 @@
     </ol>
 </nav>
 
+{% set active = 'calendario' %}
+{% include 'studios/owner/_toolbar.html' %}
+
 <h1 class="h5 mb-3">Ocupação das salas</h1>
 <div id="band-agenda-calendar" class="agenda-cal-wrap" aria-label="Calendário de agendamentos"></div>
 <script type="application/json" id="band-agenda-events-json">{{ events_calendar | tojson }}</script>
