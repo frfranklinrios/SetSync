@@ -37,7 +37,20 @@ class BandFinanceTest(unittest.TestCase):
         self.assertEqual(row['fee_net'], 1700.0)
         self.assertTrue(row['is_received'])
 
-    def test_list_events_for_finance_sqlite(self):
+    def test_enrich_event_finance_datetime(self):
+        from datetime import datetime
+        from band_finance import enrich_event_finance
+
+        row = enrich_event_finance({
+            'starts_at': datetime(2026, 6, 15, 20, 0, 0),
+            'fee_total': 1000,
+            'fee_transport_discount': 0,
+            'fee_equipment_discount': 0,
+            'fee_settled_at': None,
+        })
+        self.assertEqual(row['starts_at'], '2026-06-15 20:00:00')
+        self.assertEqual(row['starts_at'][:10], '2026-06-15')
+
         from models_agenda import create_band_event
         from models_band_finance import list_band_events_for_finance
 

@@ -12,6 +12,25 @@ from studio_finance import (
     parse_money_field,
 )
 
+
+def _coerce_db_value(value):
+    """Converte date/datetime do Postgres em str para templates Jinja."""
+    if value is None:
+        return None
+    if hasattr(value, 'strftime'):
+        if getattr(value, 'hour', None) is not None or getattr(value, 'minute', None) is not None:
+            return value.strftime('%Y-%m-%d %H:%M:%S')
+        return value.strftime('%Y-%m-%d')
+    return value
+
+
+def _coerce_finance_row(row: dict) -> dict:
+    out = dict(row)
+    for key in ('starts_at', 'ends_at', 'data', 'created_at', 'fee_settled_at'):
+        if key in out:
+            out[key] = _coerce_db_value(out[key])
+    return out
+
 __all__ = [
     'build_band_finance_report',
     'default_finance_period',
@@ -26,7 +45,7 @@ def enrich_event_finance(event: dict) -> dict:
     transport = _money(event.get('fee_transport_discount'))
     equipment = _money(event.get('fee_equipment_discount'))
     net = max(0.0, total - transport - equipment) if total > 0 else 0.0
-    row = dict(event)
+    row = _coerce_finance_row(event)
     row['fee_net'] = round(net, 2)
     row['has_fee'] = total > 0
     row['is_received'] = bool(row.get('fee_settled_at'))
@@ -53,9 +72,11 @@ def build_band_finance_report(
     a_receber = round(receita_confirmada - recebido, 2)
 
     enriched_bookings = [
-        enrich_booking_finance(
-            b,
-            studio_preco_hora=b.get('studio_preco_hora'),
+        _coerce_finance_row(
+            enrich_booking_finance(
+                b,
+                studio_preco_hora=b.get('studio_preco_hora'),
+            ),
         )
         for b in bookings
     ]
@@ -73,7 +94,7 @@ def build_band_finance_report(
         'month': month,
         'events': enriched_events,
         'bookings': enriched_bookings,
-        'expenses': expenses,
+        'expenses': [_coerce_finance_row(e) for e in expenses],
         'stats': {
             'eventos': len(enriched_events),
             'shows_com_cache': len(fee_events),
