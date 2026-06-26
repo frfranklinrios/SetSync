@@ -30,13 +30,13 @@
         </a>
         {% endif %}
         {% if event.setlist_id %}
-        <a href="{{ url_for('setlists.tocar', setlist_id=event.setlist_id) }}" class="icon-btn" title="Tocar setlist">
-            <i class="fas fa-play"></i>
+        <a href="{{ url_for('setlists.tocar', setlist_id=event.setlist_id) }}" class="btn btn-outline-secondary btn-sm" title="Tocar setlist">
+            <i class="fas fa-play me-1"></i><span class="d-none d-sm-inline">Tocar</span>
         </a>
         {% endif %}
         {% if can_edit %}
-        <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="icon-btn" title="Editar">
-            <i class="fas fa-pen"></i>
+        <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="btn btn-outline-secondary btn-sm" title="Editar evento">
+            <i class="fas fa-pen me-1"></i><span class="d-none d-sm-inline">Editar</span>
         </a>
         {% endif %}
     </div>

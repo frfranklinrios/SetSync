@@ -1,7 +1,11 @@
 {% extends "index.html" %}
 {% block title %}Minhas reservas{% endblock %}
 {% block content %}
-<h1 class="h4 mb-4">Minhas reservas em estúdios</h1>
+<h1 class="h4 mb-2">Minhas reservas em estúdios</h1>
+<p class="text-muted small mb-4">
+    Depois de solicitar um horário, o estúdio precisa <strong>confirmar</strong>.
+    Quando confirmado, o ensaio entra na agenda da sua banda.
+</p>
 {% if bookings %}
 <div class="list-group">
     {% for b in bookings %}
@@ -10,7 +14,17 @@
             <div>
                 <strong>{{ b.studio_nome }} / {{ b.room_nome }}</strong>
                 <div class="small text-muted">{{ b.data }} · {{ b.hora_inicio }}–{{ b.hora_fim }}</div>
-                <span class="badge {% if b.status == 'confirmado' %}bg-success{% elif b.status == 'pendente' %}bg-warning text-dark{% elif b.status == 'recusado' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">{{ b.status }}</span>
+                {% if b.status == 'confirmado' %}
+                <span class="badge bg-success">Confirmado — ensaio na agenda</span>
+                {% elif b.status == 'pendente' %}
+                <span class="badge bg-warning text-dark">Aguardando o estúdio confirmar</span>
+                {% elif b.status == 'recusado' %}
+                <span class="badge bg-secondary">Recusado pelo estúdio</span>
+                {% elif b.status == 'cancelado' %}
+                <span class="badge bg-light text-dark border">Cancelado</span>
+                {% else %}
+                <span class="badge bg-light text-dark border">{{ b.status }}</span>
+                {% endif %}
             </div>
             <div class="d-flex gap-2 align-items-start">
                 {% if b.status == 'confirmado' and b.band_event_id %}
@@ -19,7 +33,7 @@
                 {% if b.status in ('pendente', 'confirmado') %}
                 <form method="post" action="{{ url_for('studios.cancel_booking', booking_id=b.id) }}" onsubmit="return confirm('Cancelar esta reserva?');">
                     {% include 'partials/csrf_input.html' %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar reserva</button>
                 </form>
                 {% endif %}
             </div>
@@ -28,7 +42,10 @@
     {% endfor %}
 </div>
 {% else %}
-<p class="text-muted">Você ainda não fez reservas.</p>
-<a href="{{ url_for('studios.search') }}" class="btn btn-primary btn-sm">Buscar estúdios</a>
+<div class="empty py-4">
+    <p class="text-muted mb-2">Você ainda não reservou nenhuma sala de ensaio.</p>
+    <p class="text-muted small mb-3">Busque estúdios pela sua cidade, escolha a sala e o horário.</p>
+    <a href="{{ url_for('studios.search') }}" class="btn btn-primary btn-sm">Buscar estúdios</a>
+</div>
 {% endif %}
 {% endblock %}

@@ -44,29 +44,44 @@
     </form>
 </div>
 
+<div class="alert alert-light border small mb-4" role="note">
+    <i class="fas fa-info-circle text-primary me-1" aria-hidden="true"></i>
+    <strong>O que é cada número:</strong>
+    <strong>Cachês confirmados</strong> = shows com valor cadastrado;
+    <strong>Recebido</strong> = já entrou no caixa;
+    <strong>A receber</strong> = falta receber;
+    <strong>Ensaios em estúdio</strong> = custo estimado das reservas confirmadas;
+    <strong>Despesas</strong> = gastos extras (transporte, etc.);
+    <strong>Resultado</strong> = recebido menos todos os custos.
+    {% if is_admin %}
+    Para cadastrar cachê de um show, toque em <strong>Informar cachê</strong> na linha do evento.
+    {% endif %}
+    <a href="{{ url_for('ajuda.index') }}#financeiro-banda" class="ms-1">Ajuda completa</a>
+</div>
+
 <div class="row g-2 mb-4">
     <div class="col-6 col-md-4 col-lg-2">
-        <div class="border rounded p-2 text-center small h-100">
+        <div class="border rounded p-2 text-center small h-100" title="Soma dos cachês de shows com valor informado">
             <div class="fw-bold">R$ {{ '%.2f'|format(report.stats.receita_confirmada) }}</div>
-            <div class="text-muted">Cachês confirmados</div>
+            <div class="text-muted">Cachês dos shows</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
-        <div class="border rounded p-2 text-center small h-100">
+        <div class="border rounded p-2 text-center small h-100" title="Valor que a banda já recebeu">
             <div class="fw-bold text-success">R$ {{ '%.2f'|format(report.stats.recebido) }}</div>
-            <div class="text-muted">Recebido</div>
+            <div class="text-muted">Já recebido</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
-        <div class="border rounded p-2 text-center small h-100">
+        <div class="border rounded p-2 text-center small h-100" title="Cachês ainda não pagos">
             <div class="fw-bold text-warning">R$ {{ '%.2f'|format(report.stats.a_receber) }}</div>
-            <div class="text-muted">A receber</div>
+            <div class="text-muted">Falta receber</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
-        <div class="border rounded p-2 text-center small h-100">
+        <div class="border rounded p-2 text-center small h-100" title="Estimativa com base nas reservas de sala">
             <div class="fw-bold text-danger">R$ {{ '%.2f'|format(report.stats.custos_ensaio) }}</div>
-            <div class="text-muted">Ensaios em estúdio</div>
+            <div class="text-muted">Salas de ensaio</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
@@ -76,9 +91,9 @@
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
-        <div class="border rounded p-2 text-center small h-100">
+        <div class="border rounded p-2 text-center small h-100" title="Recebido menos ensaios e despesas">
             <div class="fw-bold">R$ {{ '%.2f'|format(report.stats.liquido) }}</div>
-            <div class="text-muted">Líquido (recebido − custos)</div>
+            <div class="text-muted">Resultado do mês</div>
         </div>
     </div>
 </div>
@@ -92,7 +107,7 @@
                 <th>Data</th>
                 <th>Evento</th>
                 <th>Tipo</th>
-                <th class="text-end">Cachê líquido</th>
+                <th class="text-end">Valor do show</th>
                 <th>Status</th>
                 {% if is_admin %}<th></th>{% endif %}
             </tr>
@@ -127,7 +142,7 @@
                 <td class="text-end">
                     <button type="button" class="btn btn-outline-secondary btn-sm"
                             data-bs-toggle="collapse" data-bs-target="#fee-{{ e.id }}" aria-expanded="false">
-                        Cachê
+                        Informar cachê
                     </button>
                 </td>
                 {% endif %}
@@ -178,7 +193,14 @@
     </table>
 </div>
 {% else %}
-<p class="text-muted small mb-4">Nenhum evento neste período. <a href="{{ url_for('agenda.create', band_id=band.id) }}">Criar evento na agenda</a>.</p>
+<p class="text-muted small mb-4">
+    Nenhum evento neste período.
+    {% if is_admin %}
+    <a href="{{ url_for('agenda.create', band_id=band.id) }}">Cadastre um ensaio ou show na agenda</a> primeiro.
+    {% else %}
+    Quando houver eventos na agenda do mês, eles aparecerão aqui.
+    {% endif %}
+</p>
 {% endif %}
 
 <h2 class="h6">Ensaios em estúdio (reservas confirmadas)</h2>
@@ -274,6 +296,9 @@
     {% endfor %}
 </ul>
 {% else %}
-<p class="text-muted small mb-0">Nenhuma despesa registrada neste período.</p>
+<p class="text-muted small mb-0">
+    Nenhuma despesa neste período.
+    {% if is_admin %}Use o formulário acima para registrar transporte, alimentação e outros gastos.{% endif %}
+</p>
 {% endif %}
 {% endblock %}

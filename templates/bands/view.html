@@ -51,6 +51,9 @@
     padding: 0.28rem 0.55rem;
     white-space: nowrap;
 }
+.ux-band-guide {
+    line-height: 1.55;
+}
 @media (max-width: 480px) {
     .event-escala-label { display: none; }
     .event-escala-btn { padding: 0.28rem 0.45rem; }
@@ -85,7 +88,8 @@
     </div>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ url_for('bands.finance', band_id=band.id) }}" class="btn btn-outline-primary btn-sm">
+        <a href="{{ url_for('bands.finance', band_id=band.id) }}" class="btn btn-outline-primary btn-sm"
+           title="Ver quanto a banda ganhou e gastou no mês">
             <i class="fas fa-coins me-1"></i> Financeiro
         </a>
         {% if is_admin %}
@@ -96,56 +100,71 @@
     </div>
 </div>
 
-<ul class="nav nav-tabs mb-3" id="bandTabs" role="tablist">
+<div class="alert alert-light border small mb-3 ux-band-guide" role="note">
+    <i class="fas fa-info-circle text-primary me-1" aria-hidden="true"></i>
+    <strong>Como usar:</strong> escolha uma aba abaixo —
+    <strong>Músicas</strong> (cifras da banda),
+    <strong>Roteiro</strong> (ordem das músicas no show),
+    <strong>Agenda</strong> (ensaios e apresentações),
+    <strong>Integrantes</strong>.
+    O botão <strong>Financeiro</strong> resume entradas e gastos do mês.
+</div>
+
+<ul class="nav nav-tabs mb-1" id="bandTabs" role="tablist">
     <li class="nav-item">
-        <a class="nav-link active" data-bs-toggle="tab" href="#tab-cifras">
-            <i class="fas fa-music me-1"></i> Repertório
+        <a class="nav-link active" data-bs-toggle="tab" href="#tab-cifras" id="tab-cifras-btn">
+            <i class="fas fa-music me-1"></i> Músicas
             <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ cifras|length }}</span>
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-setlists">
-            <i class="fas fa-list me-1"></i> Setlists
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-setlists" id="tab-setlists-btn">
+            <i class="fas fa-list me-1"></i> Roteiro
             <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ setlists|length }}</span>
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-agenda">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-agenda" id="tab-agenda-btn">
             <i class="fas fa-calendar-alt me-1"></i> Agenda
             <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ events_upcoming|length + events_past|length }}</span>
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-membros">
-            <i class="fas fa-users me-1"></i> Membros
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-membros" id="tab-membros-btn">
+            <i class="fas fa-users me-1"></i> Integrantes
             <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ members|length }}</span>
         </a>
     </li>
 </ul>
+<p class="text-muted small mb-3">Toque em cada aba para ver o conteúdo. Os números mostram quantos itens existem.</p>
 
 <div class="tab-content" data-realtime-band="{{ band.id }}">
     <!-- ───────────── CIFRAS ───────────── -->
     <div class="tab-pane fade show active" id="tab-cifras">
         <div class="tab-head">
-            <p class="tab-count">{{ cifras|length }} cifra{{ '' if cifras|length == 1 else 's' }}</p>
+            <p class="tab-count">{{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }} no repertório</p>
             <div class="d-flex gap-2 flex-wrap">
                 {% if cifras %}
-                <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-play me-1"></i> Tocar todas
+                <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm"
+                   title="Abre as cifras em tela cheia para tocar no palco">
+                    <i class="fas fa-play me-1"></i> Abrir no palco
                 </a>
                 {% endif %}
                 {% if can_edit %}
-                <button type="button" class="btn btn-outline-primary btn-sm" data-open-cifra-search>
-                    <i class="fas fa-search me-1"></i> Buscar cifra
+                <button type="button" class="btn btn-outline-primary btn-sm" data-open-cifra-search
+                        title="Procura na biblioteca do SetSync e adiciona à banda">
+                    <i class="fas fa-search me-1"></i> Buscar na biblioteca
                 </button>
                 <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i> Nova Cifra
+                    <i class="fas fa-plus me-1"></i> Cadastrar música
                 </a>
                 {% endif %}
             </div>
         </div>
 
+        {% if can_edit %}
         {% include 'partials/offline_panel.html' %}
+        {% endif %}
 
         {% if cifras %}
         <div class="row-card">
@@ -156,14 +175,17 @@
         {% else %}
         <div class="empty">
             <i class="fas fa-music"></i>
-            <p class="mb-3" style="font-size: var(--text-base);">Nenhuma cifra cadastrada ainda.</p>
+            <p class="mb-2" style="font-size: var(--text-base);">Ainda não há músicas nesta banda.</p>
+            <p class="text-muted small mb-3">Comece buscando na biblioteca (milhares de cifras prontas) ou cadastre manualmente.</p>
             {% if can_edit %}
             <button type="button" class="btn btn-outline-primary btn-sm me-2" data-open-cifra-search>
                 <i class="fas fa-search me-1"></i> Buscar na biblioteca
             </button>
             <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra
+                <i class="fas fa-plus me-1"></i> Cadastrar primeira música
             </a>
+            {% else %}
+            <p class="text-muted small mb-0">Peça a um administrador da banda para adicionar músicas.</p>
             {% endif %}
         </div>
         {% endif %}
@@ -172,10 +194,10 @@
     <!-- ───────────── SETLISTS ───────────── -->
     <div class="tab-pane fade" id="tab-setlists">
         <div class="tab-head">
-            <p class="tab-count">{{ setlists|length }} setlist{{ '' if setlists|length == 1 else 's' }}</p>
+            <p class="tab-count">{{ setlists|length }} roteiro{{ '' if setlists|length == 1 else 's' }} (ordem do show)</p>
             {% if can_edit %}
             <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Nova Setlist
+                <i class="fas fa-plus me-1"></i> Novo roteiro
             </a>
             {% endif %}
         </div>
@@ -189,11 +211,14 @@
         {% else %}
         <div class="empty">
             <i class="fas fa-list"></i>
-            <p class="mb-3" style="font-size: var(--text-base);">Nenhuma setlist criada ainda.</p>
+            <p class="mb-2" style="font-size: var(--text-base);">Nenhum roteiro criado ainda.</p>
+            <p class="text-muted small mb-3">O roteiro é a lista de músicas na ordem do ensaio ou do show.</p>
             {% if can_edit %}
             <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Criar Primeira Setlist
+                <i class="fas fa-plus me-1"></i> Criar primeiro roteiro
             </a>
+            {% else %}
+            <p class="text-muted small mb-0">Peça a um administrador para montar o roteiro.</p>
             {% endif %}
         </div>
         {% endif %}
@@ -207,21 +232,26 @@
                 {{ total_events }} evento{{ '' if total_events == 1 else 's' }}
                 {% if events_upcoming|length %} · {{ events_upcoming|length }} próximo{{ '' if events_upcoming|length == 1 else 's' }}{% endif %}
             </p>
+            {% if is_admin %}
             <a href="{{ url_for('agenda.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Novo evento
+                <i class="fas fa-plus me-1"></i> Novo ensaio ou show
             </a>
+            {% endif %}
         </div>
 
+        <p class="text-muted small mb-2">
+            <i class="fas fa-hand-pointer me-1"></i> Toque em um dia no calendário ou em um evento na lista para ver detalhes.
+        </p>
         <div id="band-agenda-calendar" class="agenda-cal-wrap" aria-label="Calendário de eventos"></div>
         <script type="application/json" id="band-agenda-events-json">{{ events_calendar | tojson }}</script>
 
         {% if events_upcoming or events_past %}
-        <p class="agenda-list-title mt-1">Lista de eventos</p>
+        <p class="agenda-list-title mt-3">Lista de eventos</p>
         {% if events_upcoming %}
         <h3 class="h6 text-muted mb-2">Próximos</h3>
         <div class="row-card mb-4">
             {% for event in events_upcoming %}
-            {{ event_row(event, band, can_edit=is_member, is_admin=is_admin) }}
+            {{ event_row(event, band, can_edit=is_admin, is_admin=is_admin) }}
             {% endfor %}
         </div>
         {% endif %}
@@ -229,7 +259,7 @@
         <h3 class="h6 text-muted mb-2">Anteriores</h3>
         <div class="row-card">
             {% for event in events_past %}
-            {{ event_row(event, band, can_edit=is_member, is_admin=is_admin) }}
+            {{ event_row(event, band, can_edit=is_admin, is_admin=is_admin) }}
             {% endfor %}
         </div>
         {% endif %}
@@ -237,10 +267,15 @@
         <p class="agenda-list-title">Lista de eventos</p>
         <div class="empty">
             <i class="fas fa-calendar-alt"></i>
-            <p class="mb-3" style="font-size: var(--text-base);">Nenhum ensaio ou show na agenda.</p>
+            <p class="mb-2" style="font-size: var(--text-base);">Nenhum ensaio ou show na agenda.</p>
+            {% if is_admin %}
+            <p class="text-muted small mb-3">Cadastre a data, o local e quem vai participar.</p>
             <a href="{{ url_for('agenda.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Registrar primeiro evento
             </a>
+            {% else %}
+            <p class="text-muted small mb-0">Quando o administrador criar um evento, ele aparecerá aqui.</p>
+            {% endif %}
         </div>
         {% endif %}
     </div>
@@ -248,10 +283,11 @@
     <!-- ───────────── MEMBROS ───────────── -->
     <div class="tab-pane fade" id="tab-membros">
         <div class="tab-head">
-            <p class="tab-count">{{ members|length }} membro{{ '' if members|length == 1 else 's' }}</p>
+            <p class="tab-count">{{ members|length }} integrante{{ '' if members|length == 1 else 's' }}</p>
             {% if is_admin %}
-            <a href="{{ url_for('bands.members', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-user-plus me-1"></i> Gerenciar
+            <a href="{{ url_for('bands.members', band_id=band.id) }}" class="btn btn-primary btn-sm"
+               title="Convidar pessoas e definir quem é administrador">
+                <i class="fas fa-user-plus me-1"></i> Convidar e funções
             </a>
             {% endif %}
         </div>
@@ -264,11 +300,11 @@
                     <div class="row-sub">{{ member.email }}</div>
                 </div>
                 {% if member.role == 'owner' %}
-                <span class="row-badge owner">Titular</span>
+                <span class="row-badge owner" title="Quem criou a banda">Dono</span>
                 {% elif member.role == 'admin' %}
-                <span class="row-badge owner">Admin</span>
+                <span class="row-badge owner" title="Pode configurar a banda e convidar pessoas">Administrador</span>
                 {% else %}
-                <span class="row-badge neutral">Membro</span>
+                <span class="row-badge neutral" title="Participa da banda">Integrante</span>
                 {% endif %}
             </div>
             {% endfor %}

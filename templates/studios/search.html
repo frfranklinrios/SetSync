@@ -1,13 +1,16 @@
 {% extends "index.html" %}
 {% block title %}Estúdios de ensaio{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
     <h1 class="h4 mb-0">Estúdios de ensaio</h1>
     <div class="d-flex gap-2 flex-wrap">
         <a href="{{ url_for('studios.my_bookings') }}" class="btn btn-outline-secondary btn-sm">Minhas reservas</a>
         <a href="{{ url_for('studios.register_studio') }}" class="btn btn-primary btn-sm">Cadastrar meu estúdio</a>
     </div>
 </div>
+<p class="text-muted small mb-4">
+    Digite sua <strong>cidade</strong> (e bairro, se quiser) e toque em <strong>Buscar</strong> para ver salas disponíveis.
+</p>
 
 {% if my_studios %}
 <div class="card mb-4">
@@ -58,6 +61,9 @@
     <p class="text-muted">Nenhum estúdio encontrado nesta região.</p>
     {% endif %}
 {% else %}
-<p class="text-muted">Informe cidade ou bairro para buscar estúdios disponíveis.</p>
+<div class="alert alert-light border text-muted small">
+    <i class="fas fa-search me-1"></i>
+  Informe pelo menos a <strong>cidade</strong> no campo acima e toque em <strong>Buscar</strong>.
+</div>
 {% endif %}
 {% endblock %}

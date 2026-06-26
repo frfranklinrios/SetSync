@@ -46,8 +46,10 @@
                 <label for="password" class="form-label">Senha</label>
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
-            <p class="text-muted mb-4" style="font-size: var(--text-sm);">Sessão válida por 2 dias neste dispositivo (renovada enquanto você usa o app).</p>
-            <button type="submit" class="btn btn-primary w-100">Entrar</button>
+            <p class="text-muted mb-4" style="font-size: var(--text-sm);">
+                Você permanece logado neste celular ou computador por até 2 dias enquanto usar o app.
+            </p>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">Entrar</button>
         </form>
 
         {% if google_oauth_enabled %}
@@ -58,13 +60,14 @@
         <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Entrar com Google</a>
         {% endif %}
 
+        <p class="text-center mt-3 mb-0" style="font-size: var(--text-sm);">
+            <a href="{{ url_for('auth.recuperar_senha') }}">Esqueci minha senha</a>
+        </p>
+
         <p class="text-center text-muted mt-4" style="font-size: var(--text-sm);">
             Novo por aqui?
-            <a href="{{ url_for('auth.register', convite=invite_token) if invite_token else url_for('auth.register') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Crie sua conta</a>
+            <a href="{{ url_for('auth.register', convite=invite_token) if invite_token else url_for('auth.register') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Criar conta grátis</a>
         </p>
     </div>
-</div>
-<div class="mt-3">
-    <a href="{{ url_for('auth.recuperar_senha') }}">Esqueceu sua senha?</a>
 </div>
 {% endblock %}

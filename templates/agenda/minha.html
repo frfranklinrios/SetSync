@@ -33,6 +33,9 @@
     </div>
 
     <div id="band-agenda-calendar" class="agenda-cal-wrap mb-3" aria-label="Calendário de eventos"></div>
+    <p class="text-muted small mb-3">
+        <i class="fas fa-hand-pointer me-1"></i> Toque em um dia colorido para ver o evento.
+    </p>
     <script type="application/json" id="band-agenda-events-json">{{ events_calendar | tojson }}</script>
 
     {% if events_upcoming or events_past %}
@@ -58,9 +61,16 @@
     {% else %}
     <div class="empty">
         <i class="fas fa-calendar-alt"></i>
-        <p class="mb-3" style="font-size: var(--text-base);">Nenhum ensaio ou show nas suas bandas.</p>
-        <a href="{{ url_for('bands.list_bands') }}" class="btn btn-primary">
-            <i class="fas fa-users me-1"></i> Ir para bandas
+        <p class="mb-2" style="font-size: var(--text-base);">Nenhum ensaio ou show nas suas bandas.</p>
+        <p class="text-muted small mb-3">
+            Abra uma banda e peça ao administrador para criar eventos na aba <strong>Agenda</strong>,
+            ou crie sua própria banda.
+        </p>
+        <a href="{{ url_for('bands.list_bands') }}" class="btn btn-primary me-2">
+            <i class="fas fa-users me-1"></i> Ver minhas bandas
+        </a>
+        <a href="{{ url_for('bands.create') }}" class="btn btn-outline-secondary">
+            Criar banda
         </a>
     </div>
     {% endif %}

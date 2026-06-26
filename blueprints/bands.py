@@ -664,8 +664,11 @@ def _resolve_band_finance_user(band_id: str):
 def finance(band_id):
     band, uid = _require_band_member(band_id)
     if not band:
-        flash('Sem permissão para ver o financeiro desta banda.', 'danger')
-        return redirect(url_for('bands.view', band_id=band_id) if get_band(band_id) else url_for('dashboard'))
+        if not get_band(band_id):
+            flash('Banda não encontrada.', 'danger')
+            return redirect(url_for('dashboard'))
+        flash('Você precisa ser integrante desta banda para ver o financeiro.', 'danger')
+        return redirect(url_for('dashboard'))
     is_admin = is_band_admin(band_id, uid)
     year, month = _parse_finance_period()
     loaded = _load_band_finance_report(band_id, year, month)
@@ -756,7 +759,8 @@ def finance_export_pdf(band_id):
 def save_event_finance(band_id, event_id):
     band, uid = _require_band_admin(band_id)
     if not band:
-        abort(404)
+        flash('Somente administradores da banda podem alterar cachês e despesas.', 'warning')
+        return _finance_redirect(band_id)
     from models_agenda import get_band_event
     from band_finance import parse_money_field
     from db import update_event_fees
@@ -793,7 +797,8 @@ def save_event_finance(band_id, event_id):
 def add_band_expense(band_id):
     band, uid = _require_band_admin(band_id)
     if not band:
-        abort(404)
+        flash('Somente administradores da banda podem alterar cachês e despesas.', 'warning')
+        return _finance_redirect(band_id)
     from band_finance import parse_money_field
     from models_band_finance import create_band_expense
 
@@ -821,7 +826,8 @@ def add_band_expense(band_id):
 def delete_band_expense_route(band_id, expense_id):
     band, uid = _require_band_admin(band_id)
     if not band:
-        abort(404)
+        flash('Somente administradores da banda podem alterar cachês e despesas.', 'warning')
+        return _finance_redirect(band_id)
     from models_band_finance import delete_band_expense
 
     if delete_band_expense(expense_id, band_id):

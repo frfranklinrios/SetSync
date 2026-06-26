@@ -297,14 +297,14 @@
 
             {% if trial_ui and trial_ui.ativo %}
             <div class="alert alert-success dashboard-compact-alert mb-0">
-                🎸 <strong>Trial Pro</strong> — {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %} restante{% if trial_ui.dias != 1 %}s{% endif %}
-                na banda <strong>{{ trial_ui.band_name }}</strong>.
-                <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Conheça o Pro</a>
+                🎸 <strong>Período de teste grátis</strong> — faltam {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %}
+                na banda <strong>{{ trial_ui.band_name }}</strong> (recursos Pro liberados).
+                <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Ver planos depois do teste</a>
             </div>
             {% elif trial_ui and trial_ui.expirado %}
             <div class="alert alert-warning dashboard-compact-alert mb-0">
-                Seu trial Pro em <strong>{{ trial_ui.band_name }}</strong> terminou.
-                <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Assine para continuar sem limites</a>
+                O teste grátis da banda <strong>{{ trial_ui.band_name }}</strong> terminou.
+                <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Ver planos para continuar sem limites</a>
             </div>
             {% endif %}
 
@@ -438,9 +438,13 @@
             {% if not owned_bands and not member_only %}
             <div class="empty">
                 <i class="fas fa-guitar"></i>
-                <p class="mb-3" style="font-size: var(--text-base);">Você ainda não está em nenhuma banda.</p>
+                <p class="mb-2" style="font-size: var(--text-base);">Você ainda não está em nenhuma banda.</p>
+                <p class="text-muted small mb-3">
+                    Crie uma banda para começar — ou aceite um convite que chegou por e-mail ou WhatsApp
+                    (aparece no card azul acima, se houver).
+                </p>
                 <a href="{{ url_for('bands.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i> Criar Primeira Banda
+                    <i class="fas fa-plus me-1"></i> Criar minha banda
                 </a>
             </div>
             {% endif %}

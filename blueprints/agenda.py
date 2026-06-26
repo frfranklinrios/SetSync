@@ -275,7 +275,7 @@ def view(event_id):
         event=event,
         band=band,
         is_admin=is_band_admin(band['id'], user_id),
-        can_edit=True,
+        can_edit=is_band_editor(band['id'], user_id),
         assignments=assignments,
         guests=guests,
         scale_stats=scale_stats,

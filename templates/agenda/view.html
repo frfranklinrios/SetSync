@@ -43,7 +43,7 @@
     <div class="d-flex gap-2 flex-wrap">
         {% if event.setlist_id %}
         <a href="{{ url_for('setlists.tocar', setlist_id=event.setlist_id, event_id=event.id) }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-play me-1"></i> Tocar setlist
+            <i class="fas fa-play me-1"></i> Abrir no palco
         </a>
         {% endif %}
         {% if google_calendar_url %}
@@ -62,8 +62,9 @@
         </a>
         {% endif %}
         {% if can_edit %}
-        <a href="{{ url_for('agenda.escala', event_id=event.id) }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-user-check me-1"></i> Escalação
+        <a href="{{ url_for('agenda.escala', event_id=event.id) }}" class="btn btn-primary btn-sm"
+           title="Escolher quem vai tocar neste evento">
+            <i class="fas fa-user-check me-1"></i> Quem vai tocar
         </a>
         <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-pen me-1"></i> Editar
