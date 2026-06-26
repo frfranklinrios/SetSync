@@ -575,6 +575,14 @@ BAND_EXPENSE_CATEGORIES = (
 )
 
 
+def _require_band_member(band_id: str):
+    user_id = session.get('user_id')
+    band = get_band(band_id)
+    if not band or not user_id or not is_band_member(band_id, user_id):
+        return None, None
+    return band, user_id
+
+
 def _require_band_admin(band_id: str):
     user_id = session['user_id']
     band = get_band(band_id)
@@ -645,19 +653,20 @@ def _resolve_band_finance_user(band_id: str):
         if not uid:
             return None, None
         band = get_band(band_id)
-        if not band or not is_band_admin(band_id, uid):
+        if not band or not is_band_member(band_id, uid):
             return None, None
         return band, uid
-    return _require_band_admin(band_id)
+    return _require_band_member(band_id)
 
 
 @bands_bp.route('/<band_id>/financeiro')
 @login_required
 def finance(band_id):
-    band, uid = _require_band_admin(band_id)
+    band, uid = _require_band_member(band_id)
     if not band:
         flash('Sem permissão para ver o financeiro desta banda.', 'danger')
         return redirect(url_for('bands.view', band_id=band_id) if get_band(band_id) else url_for('dashboard'))
+    is_admin = is_band_admin(band_id, uid)
     year, month = _parse_finance_period()
     loaded = _load_band_finance_report(band_id, year, month)
     if not loaded:
@@ -673,6 +682,7 @@ def finance(band_id):
         from_date=from_date,
         to_date=to_date,
         event_type_label=event_type_label,
+        is_admin=is_admin,
     )
 
 
@@ -696,6 +706,7 @@ def finance_print(band_id):
 
     pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
     expense_labels = dict(BAND_EXPENSE_CATEGORIES)
+    is_admin = is_band_admin(band_id, uid)
     return render_template(
         'bands/finance_print.html',
         band=band,
@@ -707,6 +718,7 @@ def finance_print(band_id):
         expense_labels=expense_labels,
         event_type_label=event_type_label,
         pdfgen=pdfgen,
+        is_admin=is_admin,
     )
 
 
@@ -717,7 +729,7 @@ def finance_export_pdf(band_id):
 
     from band_finance_pdf import build_finance_pdf_download_name, generate_band_finance_pdf_bytes
 
-    band, uid = _require_band_admin(band_id)
+    band, uid = _require_band_member(band_id)
     if not band:
         flash('Sem permissão.', 'danger')
         return redirect(url_for('bands.view', band_id=band_id))

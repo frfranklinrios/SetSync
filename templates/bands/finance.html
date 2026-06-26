@@ -13,7 +13,11 @@
         <h1 class="h5 mb-1"><i class="fas fa-coins me-1"></i> Financeiro</h1>
         <p class="text-muted mb-0 small">
             Cachês, ensaios em estúdio e despesas de {{ from_date }} a {{ to_date }}.
+            {% if is_admin %}
             Cadastre o cachê em cada evento da agenda ou aqui abaixo.
+            {% else %}
+            Visualização para todos os integrantes — edição apenas para administradores.
+            {% endif %}
         </p>
     </div>
     <form method="get" class="d-flex gap-2 align-items-end">
@@ -90,7 +94,7 @@
                 <th>Tipo</th>
                 <th class="text-end">Cachê líquido</th>
                 <th>Status</th>
-                <th></th>
+                {% if is_admin %}<th></th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -119,13 +123,16 @@
                     <span class="text-muted">Sem cachê</span>
                     {% endif %}
                 </td>
+                {% if is_admin %}
                 <td class="text-end">
                     <button type="button" class="btn btn-outline-secondary btn-sm"
                             data-bs-toggle="collapse" data-bs-target="#fee-{{ e.id }}" aria-expanded="false">
                         Cachê
                     </button>
                 </td>
+                {% endif %}
             </tr>
+            {% if is_admin %}
             <tr class="collapse" id="fee-{{ e.id }}">
                 <td colspan="6" class="bg-light">
                     <form method="post" action="{{ url_for('bands.save_event_finance', band_id=band.id, event_id=e.id) }}" class="row g-2 align-items-end">
@@ -165,6 +172,7 @@
                     </form>
                 </td>
             </tr>
+            {% endif %}
             {% endfor %}
         </tbody>
     </table>
@@ -212,6 +220,7 @@
 {% endif %}
 
 <h2 class="h6">Despesas do mês</h2>
+{% if is_admin %}
 <form method="post" action="{{ url_for('bands.add_band_expense', band_id=band.id) }}" class="row g-2 align-items-end mb-3">
     {% include 'partials/csrf_input.html' %}
     <input type="hidden" name="ano" value="{{ report.year }}">
@@ -240,6 +249,7 @@
         <button type="submit" class="btn btn-outline-primary btn-sm w-100">Adicionar</button>
     </div>
 </form>
+{% endif %}
 
 {% if report.expenses %}
 <ul class="list-group mb-4">
@@ -251,12 +261,14 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <span class="fw-bold text-danger">R$ {{ '%.2f'|format(e.valor) }}</span>
+            {% if is_admin %}
             <form method="post" action="{{ url_for('bands.delete_band_expense_route', band_id=band.id, expense_id=e.id) }}">
                 {% include 'partials/csrf_input.html' %}
                 <input type="hidden" name="ano" value="{{ report.year }}">
                 <input type="hidden" name="mes" value="{{ report.month }}">
                 <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Remover esta despesa?');">Excluir</button>
             </form>
+            {% endif %}
         </div>
     </li>
     {% endfor %}

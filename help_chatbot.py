@@ -207,13 +207,15 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
         ctas.append({'label': 'Buscar estúdios', 'url': url_for('studios.search')})
     if any(t in q for t in ('financeiro', 'receita', 'despesa', 'faturamento', 'liquido', 'lucro', 'cache', 'cachê')):
         from models_studio import list_studios_by_owner
-        from db import get_owned_bands
+        from db import get_owned_bands, get_user_bands
         owned_studios = list_studios_by_owner(user_id)
         owned_bands = get_owned_bands(user_id)
-        if owned_bands:
+        member_bands = get_user_bands(user_id)
+        finance_band = owned_bands[0] if owned_bands else (member_bands[0] if member_bands else None)
+        if finance_band:
             ctas.append({
                 'label': 'Financeiro da banda',
-                'url': url_for('bands.finance', band_id=owned_bands[0]['id']),
+                'url': url_for('bands.finance', band_id=finance_band['id']),
             })
         if owned_studios:
             ctas.append({
@@ -224,7 +226,7 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
             'label': 'Ajuda financeiro estúdio',
             'url': url_for('ajuda.index') + '#estudio-financeiro',
         })
-        if owned_bands:
+        if finance_band:
             ctas.append({
                 'label': 'Ajuda financeiro banda',
                 'url': url_for('ajuda.index') + '#financeiro-banda',
