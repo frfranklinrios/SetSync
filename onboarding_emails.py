@@ -108,7 +108,7 @@ _EMAILS = {
 
 def _urls() -> dict[str, str]:
     return {
-        'bands_url': external_url_for('bands.list_bands'),
+        'bands_url': external_url_for('bands.create', bem_vindo=1),
         'dashboard_url': external_url_for('dashboard'),
         'ajuda_url': external_url_for('ajuda.index'),
         'planos_url': external_url_for('assinatura_bp.planos'),

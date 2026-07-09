@@ -426,8 +426,13 @@ def comece():
 @login_required
 def dismiss_onboarding_checklist():
     from db import dismiss_onboarding_checklist as _dismiss
+    from onboarding import user_has_any_band
 
-    _dismiss(session['user_id'])
+    user_id = session['user_id']
+    if not user_has_any_band(user_id):
+        flash('Crie sua primeira banda para concluir a configuração inicial.', 'info')
+        return redirect(url_for('bands.create', bem_vindo=1))
+    _dismiss(user_id)
     return redirect(url_for('dashboard'))
 
 
@@ -440,7 +445,7 @@ def dashboard():
     )
     from monetizacao import enrich_bands_plano, resumo_planos_usuario, dias_restantes_trial, get_assinatura_banda
 
-    from onboarding import get_onboarding_progress
+    from onboarding import get_onboarding_progress, user_needs_band_activation
     from band_member_invites import list_pending_invites_for_user
     from cifras_tool.api_cifras_client import get_api_cifras_public_stats
 
@@ -448,6 +453,7 @@ def dashboard():
 
     user_id = session['user_id']
     onboarding = get_onboarding_progress(user_id)
+    needs_activation = user_needs_band_activation(user_id)
     pending_band_invites = list_pending_invites_for_user(user_id)
     sa = is_superadmin(user_id)
 
@@ -526,6 +532,7 @@ def dashboard():
             planos_resumo=resumo_planos_usuario(owned_bands),
             trial_ui=_trial_ctx(owned_bands),
             onboarding=onboarding,
+            needs_activation=needs_activation,
             pending_band_invites=pending_band_invites,
             pending_scale=pending_scale,
             pending_scale_admin=pending_scale_admin,
@@ -545,6 +552,7 @@ def dashboard():
         planos_resumo=resumo_planos_usuario(owned_bands),
         trial_ui=_trial_ctx(owned_bands),
         onboarding=onboarding,
+        needs_activation=needs_activation,
         pending_band_invites=pending_band_invites,
         pending_scale=pending_scale,
         pending_scale_admin=pending_scale_admin,

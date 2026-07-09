@@ -45,7 +45,12 @@ def create():
         
         if not name:
             flash('Nome da banda é obrigatório', 'danger')
-            return render_template('bands/create.html')
+            is_first_band = not get_owned_bands(user_id) and not get_user_bands(user_id)
+            return render_template(
+                'bands/create.html',
+                is_first_band=is_first_band,
+                bem_vindo=request.args.get('bem_vindo') == '1' or is_first_band,
+            )
 
         from monetizacao import check_limite, resposta_limite_plano, LIMITES_GRATIS
         if not check_limite({'id': '', 'owner_id': user_id}, 'banda'):
@@ -59,7 +64,8 @@ def create():
         from google_ads import mark_funnel_event
         from product_funnel import log_funnel_step
 
-        if len(get_owned_bands(user_id)) == 1:
+        is_first_band = len(get_owned_bands(user_id)) == 1
+        if is_first_band:
             mark_funnel_event('primeira_banda')
             log_funnel_step(user_id, 'primeira_banda')
         if iniciar_trial_banda(band_id):
@@ -73,9 +79,18 @@ def create():
         import admin_notifications as an
         an.band_created(band_id, user_id)
         flash(f'Banda "{name}" criada com sucesso!', 'success')
+        if is_first_band:
+            return redirect(url_for('cifras.add', band_id=band_id, welcome=1))
         return redirect(url_for('bands.view', band_id=band_id))
     
-    return render_template('bands/create.html')
+    from db import get_owned_bands
+    is_first_band = not get_owned_bands(user_id) and not get_user_bands(user_id)
+    bem_vindo = request.args.get('bem_vindo') == '1' or is_first_band
+    return render_template(
+        'bands/create.html',
+        is_first_band=is_first_band,
+        bem_vindo=bem_vindo,
+    )
 
 @bands_bp.route('/<band_id>')
 @login_required

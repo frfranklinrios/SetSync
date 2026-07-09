@@ -1,13 +1,17 @@
 {# Checklist de ativação pós-cadastro #}
 {% if onboarding %}
-<div class="onboarding-card mb-4">
+<div class="onboarding-card mb-4{% if onboarding.done_count == 0 %} onboarding-card-priority{% endif %}">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
         <div>
             <div class="fw-semibold" style="font-size: var(--text-base);">
                 <i class="fas fa-rocket me-1 text-primary"></i> Primeiros passos
             </div>
             <div class="text-muted" style="font-size: var(--text-sm);">
+                {% if onboarding.done_count == 0 %}
+                Comece pela banda — depois adicione músicas e monte um setlist
+                {% else %}
                 {{ onboarding.done_count }}/{{ onboarding.total }} concluídos — ative sua banda em poucos minutos
+                {% endif %}
             </div>
         </div>
         <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
@@ -17,6 +21,13 @@
     <div class="progress mb-3" style="height:6px;">
         <div class="progress-bar bg-primary" style="width:{{ onboarding.percent }}%"></div>
     </div>
+    {% if onboarding.next_step and not onboarding.next_step.done %}
+    <div class="mb-3">
+        <a href="{{ onboarding.next_step.url }}" class="btn btn-primary btn-sm w-100 w-sm-auto">
+            <i class="fas fa-arrow-right me-1"></i>{{ onboarding.next_step.label }}
+        </a>
+    </div>
+    {% endif %}
     <ul class="onboarding-steps list-unstyled mb-3">
         {% for step in onboarding.steps %}
         <li class="onboarding-step{% if step.done %} done{% endif %}">
@@ -30,12 +41,14 @@
         </li>
         {% endfor %}
     </ul>
+    {% if onboarding.can_dismiss %}
     <form method="post" action="{{ url_for('dismiss_onboarding_checklist') }}" class="onboarding-dismiss-form mb-0">
         {% include 'partials/csrf_input.html' %}
         <button type="submit" class="btn btn-link btn-sm text-muted p-0 onboarding-dismiss-btn">
             Não mostrar mais
         </button>
     </form>
+    {% endif %}
 </div>
 <style>
 .onboarding-card {
@@ -43,6 +56,10 @@
     border-radius: 10px;
     padding: 1rem 1.15rem;
     background: linear-gradient(135deg, rgba(234,88,12,0.06), rgba(255,255,255,0.9));
+}
+.onboarding-card-priority {
+    border-color: rgba(234, 88, 12, 0.4);
+    box-shadow: 0 0 0 1px rgba(234, 88, 12, 0.08);
 }
 [data-theme="dark"] .onboarding-card { background: linear-gradient(135deg, rgba(234,88,12,0.12), #0b1422); }
 .onboarding-step {

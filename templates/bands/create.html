@@ -1,29 +1,68 @@
 {% extends "index.html" %}
 
-{% block title %}Criar Banda - SetSync{% endblock %}
+{% block title %}{% if bem_vindo %}Configure sua banda{% else %}Criar Banda{% endif %} - SetSync{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-6">
-        <h2>Criar Nova Banda</h2>
+    <div class="col-lg-7 col-xl-6">
+        {% if bem_vindo or is_first_band %}
+        <div class="text-center mb-4">
+            <div class="mb-2" style="font-size: 2rem; color: var(--accent);">
+                <i class="fas fa-guitar" aria-hidden="true"></i>
+            </div>
+            <h1 class="h3 mb-2">Crie sua primeira banda</h1>
+            <p class="text-muted mb-0" style="max-width: 28rem; margin: 0 auto;">
+                É aqui que ficam as cifras, setlists e agenda da equipe.
+                Depois você convida integrantes e todos usam o mesmo repertório.
+            </p>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3 flex-wrap mb-4" style="font-size: var(--text-sm);">
+            <span class="text-primary fw-semibold"><i class="fas fa-circle-dot me-1"></i> 1. Banda</span>
+            <span class="text-muted"><i class="far fa-circle me-1"></i> 2. Primeira música</span>
+            <span class="text-muted"><i class="far fa-circle me-1"></i> 3. Setlist</span>
+        </div>
+        {% else %}
+        <h2 class="mb-0">Criar Nova Banda</h2>
+        {% endif %}
         
-        <div class="card mt-4">
+        <div class="card mt-3">
             <div class="card-body">
                 <form method="POST">
                     {% include 'partials/csrf_input.html' %}
                     <div class="mb-3">
-                        <label for="name" class="form-label">Nome da Banda</label>
-                        <input type="text" class="form-control" id="name" name="name" required autofocus>
+                        <label for="name" class="form-label fw-semibold">Nome da banda ou ministério</label>
+                        <input type="text" class="form-control form-control-lg" id="name" name="name" required autofocus
+                               placeholder="Ex.: Banda da Igreja, Cover Rock, Ministério de Louvor">
+                        <div class="form-text">Pode mudar depois nas configurações.</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="description" class="form-label">Descrição (opcional)</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Ex: Banda de covers, banda de rock..."></textarea>
+                        <label for="description" class="form-label">Descrição <span class="text-muted fw-normal">(opcional)</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="2"
+                                  placeholder="Ex.: Louvor do culto de domingo, banda de covers…"></textarea>
                     </div>
+
+                    {% if bem_vindo or is_first_band %}
+                    <div class="alert alert-success small mb-3 mb-md-4">
+                        <i class="fas fa-gift me-1"></i>
+                        <strong>Trial Pro de 30 dias</strong> ativa automaticamente nesta banda — sem cartão.
+                    </div>
+                    {% endif %}
                     
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">Criar Banda</button>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            {% if bem_vindo or is_first_band %}
+                            Criar banda e adicionar música
+                            {% else %}
+                            Criar Banda
+                            {% endif %}
+                        </button>
+                        {% if not bem_vindo and not is_first_band %}
                         <a href="{{ url_for('bands.list_bands') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        {% else %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-link text-muted btn-sm">Voltar ao painel</a>
+                        {% endif %}
                     </div>
                 </form>
             </div>

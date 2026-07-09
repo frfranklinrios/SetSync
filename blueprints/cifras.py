@@ -1116,7 +1116,8 @@ def add(band_id):
         flash(f'Cifra "{titulo}" adicionada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
-    return render_template('cifras/add.html', band=band)
+    welcome = request.args.get('welcome') == '1'
+    return render_template('cifras/add.html', band=band, welcome=welcome)
 
 def _edit_page_context(cifra, band, active_tab=None, user_id=None):
     from chordsheet.examples import EXAMPLES

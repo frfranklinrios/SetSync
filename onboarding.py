@@ -14,6 +14,22 @@ from db import (
 from flask import url_for
 
 
+def user_has_any_band(user_id: str) -> bool:
+    """True se o usuário administra ou participa de alguma banda."""
+    if get_owned_bands(user_id):
+        return True
+    return bool(get_user_bands(user_id))
+
+
+def user_needs_band_activation(user_id: str) -> bool:
+    """Usuário sem banda e sem convite pendente — precisa criar ou aceitar convite."""
+    if user_has_any_band(user_id):
+        return False
+    from band_member_invites import list_pending_invites_for_user
+
+    return not list_pending_invites_for_user(user_id)
+
+
 def get_onboarding_progress(user_id: str) -> dict | None:
     """Checklist de ativação para o dashboard. None se oculto ou concluído."""
     if user_onboarding_checklist_dismissed(user_id):
@@ -41,7 +57,7 @@ def get_onboarding_progress(user_id: str) -> dict | None:
             'id': 'band',
             'label': 'Criar sua primeira banda',
             'done': has_band,
-            'url': url_for('bands.view', band_id=first_band_id) if has_band else url_for('bands.create'),
+            'url': url_for('bands.view', band_id=first_band_id) if has_band else url_for('bands.create', bem_vindo=1),
         },
         {
             'id': 'cifra',
@@ -50,7 +66,7 @@ def get_onboarding_progress(user_id: str) -> dict | None:
             'url': (
                 url_for('cifras.add', band_id=first_band_id)
                 if first_band_id
-                else url_for('bands.create')
+                else url_for('bands.create', bem_vindo=1)
             ),
         },
         {
@@ -60,7 +76,7 @@ def get_onboarding_progress(user_id: str) -> dict | None:
             'url': (
                 url_for('setlists.create', band_id=first_band_id)
                 if first_band_id
-                else url_for('bands.create')
+                else url_for('bands.create', bem_vindo=1)
             ),
         },
         {
@@ -84,7 +100,7 @@ def get_onboarding_progress(user_id: str) -> dict | None:
             'url': (
                 url_for('agenda.create', band_id=first_band_id)
                 if first_band_id
-                else url_for('bands.create')
+                else url_for('bands.create', bem_vindo=1)
             ),
         },
     ]
@@ -93,6 +109,8 @@ def get_onboarding_progress(user_id: str) -> dict | None:
     if done_count == len(steps):
         return None
 
+    next_step = next((s for s in steps if not s['done']), None)
+
     return {
         'steps': steps,
         'done_count': done_count,
@@ -100,4 +118,6 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         'percent': round(100 * done_count / len(steps)) if steps else 0,
         'complete': False,
         'activated': has_band and total_cifras > 0,
+        'next_step': next_step,
+        'can_dismiss': has_band,
     }

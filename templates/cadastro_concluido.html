@@ -3,12 +3,23 @@
 {% block title %}Conta criada · SetSync{% endblock %}
 
 {% block content %}
-<div class="text-center py-5 px-3" style="max-width: 28rem; margin: 0 auto;">
+<div class="text-center py-5 px-3" style="max-width: 32rem; margin: 0 auto;">
     <div class="mb-3" style="font-size: 2.5rem; color: var(--accent);">
         <i class="fas fa-circle-check" aria-hidden="true"></i>
     </div>
     <h1 class="h4 mb-2">Conta criada com sucesso!</h1>
+    {% if needs_band %}
+    <p class="text-muted mb-3">
+        Próximo passo: <strong>criar sua banda</strong> para guardar cifras e setlists.
+        Leva menos de 1 minuto.
+    </p>
+    <a href="{{ next_url }}" class="btn btn-primary btn-lg mb-3">
+        <i class="fas fa-guitar me-2"></i>Criar minha primeira banda
+    </a>
+    <p class="text-muted small mb-0">Redirecionando automaticamente em instantes…</p>
+    {% else %}
     <p class="text-muted mb-0">Redirecionando para o app…</p>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -17,7 +28,8 @@
 <script>
 (function () {
     var dest = {{ next_url|tojson }};
-    setTimeout(function () { window.location.replace(dest); }, 1200);
+    var delay = {{ 2500 if needs_band else 1200 }};
+    setTimeout(function () { window.location.replace(dest); }, delay);
 })();
 </script>
 {% endblock %}

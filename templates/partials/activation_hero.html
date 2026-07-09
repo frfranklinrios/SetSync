@@ -1,0 +1,63 @@
+{# Estado vazio: usuário sem banda — CTA principal de ativação #}
+{% if needs_activation %}
+<div class="activation-hero mb-4">
+    <div class="activation-hero-icon" aria-hidden="true">
+        <i class="fas fa-guitar"></i>
+    </div>
+    <h2 class="activation-hero-title">Falta só um passo: criar sua banda</h2>
+    <p class="activation-hero-lead">
+        O SetSync organiza cifras, setlists e ensaios <strong>por banda</strong>.
+        Leva menos de 1 minuto — depois você importa músicas da nossa biblioteca ou cadastra as suas.
+    </p>
+    <ol class="activation-hero-steps">
+        <li><strong>1.</strong> Nome da banda ou ministério</li>
+        <li><strong>2.</strong> Adicione a primeira música</li>
+        <li><strong>3.</strong> Monte um setlist e teste o Modo Tocar</li>
+    </ol>
+    <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary btn-lg activation-hero-cta">
+        <i class="fas fa-plus me-2"></i>Criar minha primeira banda
+    </a>
+    <p class="activation-hero-note text-muted small mb-0">
+        Trial Pro de 30 dias na primeira banda — sem cartão.
+    </p>
+</div>
+<style>
+.activation-hero {
+    border: 2px solid rgba(234, 88, 12, 0.35);
+    border-radius: 14px;
+    padding: 1.5rem 1.35rem;
+    background: linear-gradient(160deg, rgba(234,88,12,0.1), rgba(255,255,255,0.95));
+    text-align: center;
+}
+[data-theme="dark"] .activation-hero {
+    background: linear-gradient(160deg, rgba(234,88,12,0.15), #0b1422);
+}
+.activation-hero-icon {
+    font-size: 2.25rem;
+    color: var(--accent);
+    margin-bottom: 0.65rem;
+}
+.activation-hero-title {
+    font-size: var(--text-lg);
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+}
+.activation-hero-lead {
+    font-size: var(--text-base);
+    max-width: 36rem;
+    margin: 0 auto 1rem;
+    line-height: 1.5;
+}
+.activation-hero-steps {
+    text-align: left;
+    max-width: 22rem;
+    margin: 0 auto 1.25rem;
+    padding-left: 1.1rem;
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.activation-hero-steps li { padding: 0.2rem 0; }
+.activation-hero-cta { min-width: 16rem; }
+.activation-hero-note { margin-top: 0.75rem; }
+</style>
+{% endif %}

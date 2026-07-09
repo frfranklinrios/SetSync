@@ -129,6 +129,10 @@ def _auth_destination_path(user, invite_token: str | None = None) -> str:
     if studio_home:
         ep, kwargs = studio_home
         return url_for(ep, **kwargs)
+    from onboarding import user_needs_band_activation
+
+    if user_needs_band_activation(user['id']):
+        return url_for('bands.create', bem_vindo=1)
     return url_for('dashboard')
 
 
@@ -433,9 +437,13 @@ def cadastro_concluido():
     from google_ads import enhanced_user_data
 
     user = get_user(session.get('user_id'))
+    from onboarding import user_needs_band_activation
+
+    needs_band = user_needs_band_activation(user['id']) if user else False
     return render_template(
         'cadastro_concluido.html',
         next_url=next_path,
+        needs_band=needs_band,
         google_ads_enhanced_data=enhanced_user_data(user),
     )
 
