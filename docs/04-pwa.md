@@ -1,6 +1,6 @@
 # PWA (instalação e offline)
 
-O SetSync é servido como PWA:
+O Uníssono é servido como PWA:
 
 - Manifest: `/manifest.webmanifest`
 - Service worker: `/sw.js`
@@ -35,7 +35,7 @@ O service worker mantém ícones, manifest e página `/offline`, e faz cache de 
 Se alterou o app e o navegador não atualiza:
 
 - **Desktop:** `Ctrl` + `Shift` + `R`
-- **iOS:** Ajustes → Safari → Avançado → Dados dos Sites → remover o domínio do SetSync, ou desinstalar o ícone da tela inicial e adicionar de novo
+- **iOS:** Ajustes → Safari → Avançado → Dados dos Sites → remover o domínio do Uníssono, ou desinstalar o ícone da tela inicial e adicionar de novo
 - **Chrome:** DevTools → Application → Service Workers → Unregister
 
 A versão do cache está em `CACHE_VERSION` dentro de `static/sw.js` (ex.: `setsync-v5`).

@@ -8,10 +8,10 @@
 
 ## Executar localmente com `uv` (recomendado)
 
-Use o ambiente **somente deste diretório**. Se o shell tiver `VIRTUAL_ENV` apontando para outro projeto (ex.: `banda-app/.venv`), rode `deactivate` antes ou use sempre `uv run` dentro de `SetSync` — o `uv` cria e usa `SetSync/.venv` automaticamente.
+Use o ambiente **somente deste diretório**. Se o shell tiver `VIRTUAL_ENV` apontando para outro projeto (ex.: `banda-app/.venv`), rode `deactivate` antes ou use sempre `uv run` dentro de `Uníssono` — o `uv` cria e usa `Uníssono/.venv` automaticamente.
 
 ```bash
-cd SetSync
+cd Uníssono
 uv sync
 cp .env.example .env
 uv run app.py

@@ -17,7 +17,7 @@
 
 - Título, artista, tom e conteúdo (`[Am]` na letra)
 - **Buscar cifra** na lista da banda: pesquisa, preview e importação
-- Colar texto no formulário ou importar via **Cifra → SetSync**
+- Colar texto no formulário ou importar via **Cifra → Uníssono**
 - Listas com tom, tocar, editar (Editor ou admin)
 
 ## Versão pessoal

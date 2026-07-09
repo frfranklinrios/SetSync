@@ -387,7 +387,7 @@ html[data-theme="dark"] {
   --ss-rule: #e7e5e4;
 }
 
-/* ── Chord Sheet (módulo chordsheet / .cs-chart) — tema SetSync ─── */
+/* ── Chord Sheet (módulo chordsheet / .cs-chart) — tema Uníssono ─── */
 
 .setsync-cs-sheet {
   --rb-paper: var(--ss-bg);

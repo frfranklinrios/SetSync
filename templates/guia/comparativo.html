@@ -24,14 +24,14 @@
 .guia-page th { background: var(--bg); }
 </style>
 <article class="guia-page">
-    <p class="text-muted small mb-2"><a href="{{ url_for('guia.guia_index') }}">← Guia SetSync</a></p>
+    <p class="text-muted small mb-2"><a href="{{ url_for('guia.guia_index') }}">← Guia Uníssono</a></p>
     <h1>{{ page.h1 }}</h1>
     {% for section in page.sections %}
         {% if section.h2 %}<h2>{{ section.h2 }}</h2>{% endif %}
         {{ section.html|safe }}
     {% endfor %}
     <div class="mt-4">
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary me-2">Experimentar SetSync grátis</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary me-2">Experimentar Uníssono grátis</a>
         <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-outline-secondary">Para igrejas</a>
     </div>
 </article>

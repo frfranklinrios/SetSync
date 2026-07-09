@@ -1,4 +1,4 @@
-"""Webmail integrado ao SetSync — usa a sessão do superadmin (sem login separado)."""
+"""Webmail integrado ao Uníssono — usa a sessão do superadmin (sem login separado)."""
 
 from __future__ import annotations
 

@@ -1,12 +1,12 @@
 {% extends "index.html" %}
 
-{% block title %}Entrar — SetSync{% endblock %}
+{% block title %}Entrar — Uníssono{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('auth.login') }}">
-<meta name="description" content="Acesse sua conta SetSync para ver cifras, setlists e o Modo Tocar da sua banda.">
-<meta property="og:title" content="Entrar — SetSync">
-<meta property="og:description" content="Acesse sua conta SetSync — cifras e setlists da sua banda.">
+<meta name="description" content="Acesse sua conta Uníssono para ver cifras, setlists e o Modo Tocar da sua banda.">
+<meta property="og:title" content="Entrar — Uníssono">
+<meta property="og:description" content="Acesse sua conta Uníssono — cifras e setlists da sua banda.">
 <meta property="og:url" content="{{ external_url_for('auth.login') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -17,8 +17,11 @@
 <div class="row justify-content-center py-4">
     <div class="col-sm-10 col-md-6 col-lg-4">
 
-        <div class="text-center mb-5">
-            <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync" style="height:64px;">
+        <div class="text-center mb-4">
+            <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="{{ app_name }}" style="height:64px;">
+            <p class="text-muted small mt-3 mb-0">
+                O <strong>SetSync</strong> agora se chama <strong>{{ app_name }}</strong> — mesma conta, mesmo app.
+            </p>
         </div>
 
         {% if invite_band %}

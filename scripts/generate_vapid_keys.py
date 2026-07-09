@@ -16,7 +16,7 @@ raw = v.public_key.public_bytes(
 public_key = base64.urlsafe_b64encode(raw).decode().rstrip('=')
 private_key = v.private_pem().decode()
 
-print('# Cole no .env do SetSync:')
+print('# Cole no .env do Uníssono:')
 print(f'VAPID_PUBLIC_KEY={public_key}')
 print('VAPID_PRIVATE_KEY=' + private_key.replace('\n', '\\n'))
 print('VAPID_SUBJECT=mailto:contato@setsync.com.br')

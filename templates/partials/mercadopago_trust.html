@@ -9,7 +9,7 @@
       <strong class="mp-trust-title">Pagamento via Mercado Pago</strong>
       <p class="mp-trust-text mb-0">
         Ao assinar, você é redirecionado ao site do <strong>Mercado Pago</strong>.
-        Seus dados de cartão <strong>não passam pelo SetSync</strong>.
+        Seus dados de cartão <strong>não passam pelo Uníssono</strong>.
         {% if show_trial_note|default(true) %}
         O trial de 30 dias é <strong>sem cartão</strong> — só pedimos pagamento se você escolher assinar.
         {% endif %}
@@ -24,13 +24,13 @@
   {% elif _v == 'dark' %}
   <p class="mp-trust-dark-text mb-0">
     <i class="fas fa-shield-halved me-1" aria-hidden="true"></i>
-    Pagamento processado pelo <strong>Mercado Pago</strong> — cartão não passa pelo SetSync.
+    Pagamento processado pelo <strong>Mercado Pago</strong> — cartão não passa pelo Uníssono.
     Trial de 30 dias <strong>sem cartão</strong>.
   </p>
   {% else %}
   <p class="mp-trust-inline mb-0">
     <i class="fas fa-shield-halved text-success me-1" aria-hidden="true"></i>
-    Pagamento via <strong>Mercado Pago</strong>. Seus dados de cartão não passam pelo SetSync.
+    Pagamento via <strong>Mercado Pago</strong>. Seus dados de cartão não passam pelo Uníssono.
   </p>
   {% endif %}
 </div>

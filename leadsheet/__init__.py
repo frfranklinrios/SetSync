@@ -1,4 +1,4 @@
-"""LeadSheet — substitui a grade harmônica legada no SetSync."""
+"""LeadSheet — substitui a grade harmônica legada no Uníssono."""
 
 from .converter import (
     grade_flat_to_leadsheet,

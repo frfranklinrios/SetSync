@@ -47,7 +47,7 @@ def write_js(bank: dict, path: Path) -> None:
     path.write_text(
         '/** Arpejos de baixo — gerado por scripts/build_bass_arpeggios_from_pdf.py */\n'
         '(function (global) {\n'
-        '  var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});\n'
+        '  var CD = (global.UníssonoChordDiagram = global.UníssonoChordDiagram || {});\n'
         f'  CD.BASS_ARPEGGIO_BANK = {payload};\n'
         '})(typeof window !== "undefined" ? window : globalThis);\n',
         encoding='utf-8',

@@ -60,21 +60,25 @@ def index():
         band['members_count'] = len(get_band_members(band['id']))
         band['cifras_count'] = len(get_band_cifras(band['id']))
 
-    for u in users:
-        u['is_superadmin_db'] = bool(u.get('is_superadmin'))
-        u['is_superadmin_env'] = is_superadmin_env_only(u['id'])
-        u['is_env_admin'] = is_superadmin(u['id'])
-
-    env_users = os.getenv('SETSYNC_SUPERADMIN_USERNAMES', '').strip()
-    env_emails = os.getenv('SETSYNC_SUPERADMIN_EMAILS', '').strip()
-
     from product_funnel import funnel_counts
     from whatsapp_service import is_configured as whatsapp_configured
+    from admin_dashboard import build_admin_dashboard_context
+    from db import count_user_band_memberships
 
+    admin_ctx = build_admin_dashboard_context()
     funnel_stats = funnel_counts()
     invite_log = get_latest_admin_whatsapp_invites()
     studio_prospects = list_studio_prospects()
     band_prospects = list_band_prospects()
+
+    env_users = os.getenv('SETSYNC_SUPERADMIN_USERNAMES', '').strip()
+    env_emails = os.getenv('SETSYNC_SUPERADMIN_EMAILS', '').strip()
+
+    for u in users:
+        u['is_superadmin_db'] = bool(u.get('is_superadmin'))
+        u['is_superadmin_env'] = is_superadmin_env_only(u['id'])
+        u['is_env_admin'] = is_superadmin(u['id'])
+        u['bands_count'] = count_user_band_memberships(u['id'])
 
     return render_template(
         'admin/index.html',
@@ -87,14 +91,11 @@ def index():
         env_users=env_users,
         env_emails=env_emails,
         funnel_stats=funnel_stats,
+        funnel_rows=admin_ctx['funnel_rows'],
+        stuck_users=admin_ctx['stuck_users'],
         invite_log=invite_log,
         whatsapp_configured=whatsapp_configured(),
-        stats={
-            'bands': len(bands),
-            'cifras': len(cifras),
-            'users': len(users),
-            'studios': len(studios),
-        },
+        stats=admin_ctx['stats'],
     )
 
 

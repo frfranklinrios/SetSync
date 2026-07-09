@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cria conta demo completa para screenshots / merchandising do SetSync."""
+"""Cria conta demo completa para screenshots / merchandising do Uníssono."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT)
 
 DEMO_USERNAME = 'showcase'
-DEMO_PASSWORD = 'SetSyncShowcase2026!'
+DEMO_PASSWORD = 'UníssonoShowcase2026!'
 DEMO_EMAIL = 'showcase@setsync.com.br'
 DEMO_DISPLAY = 'Ana Costa'
 
@@ -350,7 +350,7 @@ def cleanup_showcase_bands(owner_id: str) -> None:
 
     for band in get_owned_bands(owner_id):
         name = (band.get('name') or '').strip()
-        if name in (BAND_NAME, 'SetSync Showcase'):
+        if name in (BAND_NAME, 'Uníssono Showcase'):
             delete_band(band['id'])
 
 
@@ -374,7 +374,7 @@ def main() -> int:
     from models_setlist import add_cifra_to_setlist, create_setlist, set_setlist_vocalist
     from setlist_public import set_setlist_public_share
 
-    print('=== SetSync — demo merchandising (pronto para print) ===\n')
+    print('=== Uníssono — demo merchandising (pronto para print) ===\n')
 
     owner_id = ensure_user(DEMO_USERNAME, DEMO_EMAIL, DEMO_PASSWORD, DEMO_DISPLAY)
     polish_user(owner_id, display_name=DEMO_DISPLAY, phone='85999887766')

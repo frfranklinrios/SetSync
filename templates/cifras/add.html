@@ -436,7 +436,7 @@ document.getElementById('upload_cifra').addEventListener('change', function () {
         var keepOriginal = !!(document.getElementById('timeline_keep_original') && document.getElementById('timeline_keep_original').checked);
         var normalized = normalizeImportedCifraJson(data, keepOriginal);
         if (!normalized) {
-            alert('Formato inválido.\nEsperado: JSON de cifra do SetSync ou timeline com event_type/timestamp_ms/value.');
+            alert('Formato inválido.\nEsperado: JSON de cifra do Uníssono ou timeline com event_type/timestamp_ms/value.');
             return;
         }
         _uploadedCifraJson = normalized;

@@ -5,7 +5,7 @@
 {% block seo %}
 <link rel="canonical" href="{{ canonical_url }}">
 <meta name="description" content="{{ meta_description }}">
-<meta name="keywords" content="{{ page.keywords }}, SetSync, cifras, setlist, banda, músicos">
+<meta name="keywords" content="{{ page.keywords }}, Uníssono, cifras, setlist, banda, músicos">
 <meta property="og:title" content="{{ meta_title }}">
 <meta property="og:description" content="{{ meta_description }}">
 <meta property="og:url" content="{{ canonical_url }}">
@@ -24,7 +24,7 @@
   "inLanguage": "pt-BR",
   "publisher": {
     "@type": "Organization",
-    "name": "SetSync",
+    "name": "Uníssono",
     "url": site_url
   }
 }|tojson }}
@@ -61,7 +61,7 @@
 </style>
 
 <article class="guia-page">
-    <p class="text-muted small mb-2"><a href="{{ url_for('guia.guia_index') }}">← Guia SetSync</a></p>
+    <p class="text-muted small mb-2"><a href="{{ url_for('guia.guia_index') }}">← Guia Uníssono</a></p>
     <h1>{{ page.h1 }}</h1>
 
     {% for section in page.sections %}

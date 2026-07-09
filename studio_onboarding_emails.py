@@ -18,7 +18,7 @@ _SCHEDULE = {1: 0, 2: 2, 3: 5, 4: 7, 5: 10}
 
 _EMAILS = {
     1: {
-        'subject': 'Seu estúdio no SetSync — primeiros passos',
+        'subject': 'Seu estúdio no Uníssono — primeiros passos',
         'html': (
             '<h2>Bem-vindo ao painel do estúdio</h2>'
             '<p>Complete o perfil, cadastre salas e defina horários de disponibilidade.</p>'

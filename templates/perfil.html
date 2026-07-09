@@ -1,6 +1,6 @@
 {% extends "index.html" %}
 
-{% block title %}Meu perfil · SetSync{% endblock %}
+{% block title %}Meu perfil · Uníssono{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center py-2">
@@ -8,7 +8,7 @@
     <h2 class="mb-3">Meu perfil</h2>
     {% if profile_has_bands and not profile_has_studios %}
     <div class="alert alert-info py-2 small mb-3">
-        Tem estúdio de ensaio? <a href="{{ url_for('studios.register_studio') }}">Cadastre no SetSync</a>
+        Tem estúdio de ensaio? <a href="{{ url_for('studios.register_studio') }}">Cadastre no Uníssono</a>
         e receba reservas de bandas com QR na recepção.
     </div>
     {% elif profile_has_studios and not profile_has_bands %}
@@ -24,7 +24,7 @@
         <p class="mb-2"><strong>{{ user.email }}</strong></p>
         {% if mail_inbox_url and user.email.endswith('@setsync.com.br') %}
         <p class="text-muted mb-2" style="font-size: var(--text-sm);">
-          Caixa corporativa integrada — abre direto com sua sessão do SetSync.
+          Caixa corporativa integrada — abre direto com sua sessão do Uníssono.
         </p>
         <a href="{{ mail_inbox_url }}" class="btn btn-outline-primary btn-sm">
           <i class="fas fa-envelope me-1"></i> Abrir caixa de entrada

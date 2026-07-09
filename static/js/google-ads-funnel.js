@@ -11,20 +11,20 @@
             value: value,
             currency: currency || 'BRL',
         });
-        if (cfg.debug) console.info('[SetSync] Ads conversion', sendTo);
+        if (cfg.debug) console.info('[Uníssono] Ads conversion', sendTo);
     }
 
     function fireGtagEvent(name, params) {
         if (typeof gtag !== 'function') return;
         gtag('event', name, params || {});
-        if (cfg.debug) console.info('[SetSync] gtag event', name, params);
+        if (cfg.debug) console.info('[Uníssono] gtag event', name, params);
     }
 
     function fireDataLayer(event, extra) {
         window.dataLayer = window.dataLayer || [];
         var payload = Object.assign({ event: event }, extra || {});
         window.dataLayer.push(payload);
-        if (cfg.debug) console.info('[SetSync] dataLayer', payload);
+        if (cfg.debug) console.info('[Uníssono] dataLayer', payload);
     }
 
     cfg.events.forEach(function (ev) {

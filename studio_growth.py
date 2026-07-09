@@ -70,7 +70,7 @@ def studio_og_context(studio: dict, *, photos: list | None = None) -> dict:
         )
     desc = (studio.get('descricao') or '').strip()
     if not desc:
-        desc = f'Reserve sala de ensaio em {studio.get("cidade") or "SetSync"}.'
+        desc = f'Reserve sala de ensaio em {studio.get("cidade") or "Uníssono"}.'
     return {
         'og_title': f'{studio.get("nome")} — Estúdio de ensaio',
         'og_description': desc[:200],

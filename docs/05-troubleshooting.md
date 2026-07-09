@@ -7,7 +7,7 @@
 - O site precisa estar em **HTTPS** em produção.
 - Se abriu pelo Instagram/WhatsApp, use “Abrir no Safari” antes de instalar.
 
-## “Not Found” ao abrir Cifra → SetSync
+## “Not Found” ao abrir Cifra → Uníssono
 
 - Verifique se a rota abre no navegador: `/cifras/import/tool`
 - Faça hard refresh (`Ctrl` + `Shift` + `R`) para evitar cache do PWA

@@ -22,7 +22,7 @@ from product_updates import CAMPAIGN_JUN_2026_06, enviar_comunicado
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Comunicado SetSync por e-mail e WhatsApp')
+    parser = argparse.ArgumentParser(description='Comunicado Uníssono por e-mail e WhatsApp')
     parser.add_argument(
         '--dry-run',
         action='store_true',

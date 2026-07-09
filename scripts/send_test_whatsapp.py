@@ -36,7 +36,7 @@ def main() -> int:
     print(f'Destino:  {phone}\n')
     ok = send_whatsapp_text(
         phone,
-        '*SetSync*\n\n*Teste de notificação*\n\n'
+        '*Uníssono*\n\n*Teste de notificação*\n\n'
         'Se você recebeu esta mensagem, o WhatsApp está funcionando.',
     )
     if ok:

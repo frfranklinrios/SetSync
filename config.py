@@ -113,5 +113,5 @@ def whatsapp_number() -> str:
 def whatsapp_message() -> str:
     return os.getenv(
         'WHATSAPP_MESSAGE',
-        'Olá! Tenho interesse no SetSync para minha banda.',
+        'Olá! Tenho interesse no Uníssono para minha banda.',
     ).strip()

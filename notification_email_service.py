@@ -1,4 +1,4 @@
-"""Envio de notificações in-app por e-mail (SMTP SetSync)."""
+"""Envio de notificações in-app por e-mail (SMTP Uníssono)."""
 
 from __future__ import annotations
 
@@ -35,12 +35,12 @@ def _html_wrapper(title: str, body_html: str, button_url: str | None, button_lab
         )
     return (
         '<div style="font-family:system-ui,sans-serif;color:#1c1917;max-width:520px">'
-        f'<p style="color:#78716c;font-size:13px;margin:0 0 8px">SetSync</p>'
+        f'<p style="color:#78716c;font-size:13px;margin:0 0 8px">Uníssono</p>'
         f'<h2 style="margin:0 0 12px;font-size:1.25rem">{title}</h2>'
         f'{body_html}'
         f'{btn}'
         '<p style="margin:28px 0 0;font-size:12px;color:#a8a29e">'
-        'Você recebe este e-mail porque ativou alertas no SetSync. '
+        'Você recebe este e-mail porque ativou alertas no Uníssono. '
         'Alertas urgentes (escalação, convites e lembretes) chegam na hora; '
         'demais atualizações vão em um resumo diário. '
         f'<a href="{external_url_for("auth.perfil")}">Ajustar preferências</a>'
@@ -56,14 +56,14 @@ def send_notification_email(
 ) -> bool:
     link = _notification_link(url_path)
     body_html = f'<p>{body}</p>' if body else ''
-    html = _html_wrapper(title, body_html, link, 'Abrir no SetSync')
+    html = _html_wrapper(title, body_html, link, 'Abrir no Uníssono')
     text_lines = [title]
     if body:
         text_lines.append(body)
     if link:
         text_lines.append(link)
     text = '\n\n'.join(text_lines)
-    return send_email([to_email], f'SetSync — {title}', html, text)
+    return send_email([to_email], f'Uníssono — {title}', html, text)
 
 
 def dispatch_notification_email(

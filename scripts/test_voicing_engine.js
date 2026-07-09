@@ -23,8 +23,8 @@ if (!v.length) { console.error('no voicings'); process.exit(1); }
 var f = CD.assignAutoFingers(v[0].frets);
 console.log(JSON.stringify({ count: v.length, first: v[0].frets, fingers: f }));
 """ % (
-    open('/root/SetSync/static/js/chord-diagram/constants.js').read().replace('SetSyncChordDiagram', 'CD'),
-    open('/root/SetSync/static/js/chord-diagram/theory.js').read().split('COMMON_SHAPES')[0] + 'CD.COMMON_SHAPES={};' + open('/root/SetSync/static/js/chord-diagram/theory.js').read().split('COMMON_SHAPES',1)[1] if False else '',
+    open('/root/Uníssono/static/js/chord-diagram/constants.js').read().replace('UníssonoChordDiagram', 'CD'),
+    open('/root/Uníssono/static/js/chord-diagram/theory.js').read().split('COMMON_SHAPES')[0] + 'CD.COMMON_SHAPES={};' + open('/root/Uníssono/static/js/chord-diagram/theory.js').read().split('COMMON_SHAPES',1)[1] if False else '',
     '',
 )
 
@@ -36,11 +36,11 @@ const ctx = { window: {}, globalThis: {} };
 ctx.window = ctx;
 ctx.globalThis = ctx;
 function load(p) { vm.runInNewContext(fs.readFileSync(p,'utf8'), ctx); }
-load('/root/SetSync/static/js/chord-diagram/constants.js');
-load('/root/SetSync/static/js/chord-diagram/theory.js');
-load('/root/SetSync/static/js/chord-diagram/voicing-engine.js');
-load('/root/SetSync/static/js/chord-diagram/auto-finger.js');
-const CD = ctx.SetSyncChordDiagram;
+load('/root/Uníssono/static/js/chord-diagram/constants.js');
+load('/root/Uníssono/static/js/chord-diagram/theory.js');
+load('/root/Uníssono/static/js/chord-diagram/voicing-engine.js');
+load('/root/Uníssono/static/js/chord-diagram/auto-finger.js');
+const CD = ctx.UníssonoChordDiagram;
 const v = CD.discoverVoicings(CD.TUNINGS.violao, ['A','C','E','G'], 3);
 if (!v.length) { console.error('fail'); process.exit(1); }
 console.log('ok', v.length, JSON.stringify(v[0].frets));

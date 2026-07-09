@@ -59,7 +59,7 @@ def render_url_to_pdf(
             )
         page.wait_for_timeout(250)
 
-        host = parsed.netloc.split(':')[0] or 'SetSync'
+        host = parsed.netloc.split(':')[0] or 'Uníssono'
         pdf = page.pdf(
             format='A4',
             landscape=landscape,
@@ -69,7 +69,7 @@ def render_url_to_pdf(
             header_template=(
                 '<div style="width:100%;font-size:8px;color:#64748b;padding:0 12mm;'
                 'font-family:Inter,Helvetica,Arial,sans-serif;text-align:center;">'
-                f'SetSync · {host}</div>'
+                f'Uníssono · {host}</div>'
             ),
             footer_template=(
                 '<div style="width:100%;font-size:8px;color:#94a3b8;padding:0 12mm;'

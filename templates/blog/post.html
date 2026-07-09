@@ -17,7 +17,7 @@
   "description": {{ meta_description|tojson }},
   "datePublished": {{ post.publicado_em|date_short|tojson }},
   "dateModified": {{ (post.atualizado_em or post.publicado_em)|date_short|tojson }},
-  "author": { "@type": "Organization", "name": {{ (post.autor or 'SetSync')|tojson }} },
+  "author": { "@type": "Organization", "name": {{ (post.autor or 'Uníssono')|tojson }} },
   "image": {{ og_image|tojson }},
   "mainEntityOfPage": { "@type": "WebPage", "@id": {{ canonical_url|tojson }} }
 }

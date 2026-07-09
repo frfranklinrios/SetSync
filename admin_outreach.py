@@ -22,12 +22,12 @@ def _band_signup_invite_message(band_name: str, cidade: str, register_url: str, 
     local = f' em *{cidade}*' if (cidade or '').strip() else ''
     return (
         f'Olá! 👋\n\n'
-        f'Você foi convidado a cadastrar a banda *{nome}*{local} no *SetSync*.\n\n'
+        f'Você foi convidado a cadastrar a banda *{nome}*{local} no *Uníssono*.\n\n'
         f'Organize repertório, setlists, agenda e Modo Tocar no palco — '
         f'grátis para começar, com trial Pro de 30 dias na primeira banda.\n\n'
         f'1) Crie sua conta:\n{register_url}\n\n'
         f'2) Depois crie sua banda:\n{create_band_url}\n\n'
-        f'— Equipe SetSync'
+        f'— Equipe Uníssono'
     )
 
 
@@ -38,13 +38,13 @@ def _studio_signup_invite_message(
     local = f' em *{cidade}*' if (cidade or '').strip() else ''
     return (
         f'Olá! 👋\n\n'
-        f'Você foi convidado a cadastrar o estúdio *{nome}*{local} no *SetSync*.\n\n'
+        f'Você foi convidado a cadastrar o estúdio *{nome}*{local} no *Uníssono*.\n\n'
         f'Bandas da região buscam salas de ensaio e podem reservar horário online — '
         f'com fotos, agenda, QR na recepção e trial de 30 dias no primeiro cadastro.\n\n'
         f'1) Crie sua conta:\n{register_url}\n\n'
         f'2) Cadastre o estúdio:\n{signup_studio_url}\n\n'
         f'Saiba mais:\n{landing_url}\n\n'
-        f'— Equipe SetSync'
+        f'— Equipe Uníssono'
     )
 
 

@@ -456,7 +456,7 @@ def render_chart_html(chart: Chart) -> str:
         today = app_now().strftime("%d/%m/%Y")
         footer = f"""
         <footer class="cs-footer" aria-hidden="true">
-          <span class="cs-footer-brand">SetSync</span>
+          <span class="cs-footer-brand">Uníssono</span>
           <span class="cs-page-count"></span>
           <span class="cs-footer-date">editado em {today}</span>
         </footer>"""
@@ -464,7 +464,7 @@ def render_chart_html(chart: Chart) -> str:
         <style class="cs-print-margins">@media print {{
           @page {{
             @bottom-left {{
-              content: "SetSync";
+              content: "Uníssono";
               font-family: Inter, system-ui, sans-serif;
               font-size: 7pt;
               color: #a8a29e;

@@ -1,12 +1,12 @@
 {% extends "index.html" %}
 
-{% block title %}Ajuda SetSync — Compartilhar cifras, gerenciar bandas e setlists{% endblock %}
+{% block title %}Ajuda Uníssono — Compartilhar cifras, gerenciar bandas e setlists{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('ajuda.index') }}">
-<meta name="description" content="Ajuda SetSync: cifras, versão pessoal, grade harmônica, setlists, agenda com escalação, estúdios, Modo Tocar (sync, offline, pedal) e convites.">
-<meta property="og:title" content="Ajuda SetSync — Cifras, agenda, estúdios e Modo Tocar">
-<meta property="og:description" content="Ajuda SetSync: cifras, setlists, agenda, estúdios, Modo Tocar com sync e offline automático, escalação e palco para bandas.">
+<meta name="description" content="Ajuda Uníssono: cifras, versão pessoal, grade harmônica, setlists, agenda com escalação, estúdios, Modo Tocar (sync, offline, pedal) e convites.">
+<meta property="og:title" content="Ajuda Uníssono — Cifras, agenda, estúdios e Modo Tocar">
+<meta property="og:description" content="Ajuda Uníssono: cifras, setlists, agenda, estúdios, Modo Tocar com sync e offline automático, escalação e palco para bandas.">
 <meta property="og:url" content="{{ external_url_for('ajuda.index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -187,7 +187,7 @@
   <div>
     <h2>Ajuda</h2>
     <p class="help-muted mb-0">
-      Guia do SetSync em <strong>setsync.com.br</strong> — bandas, cifras, setlists, agenda com escalação,
+      Guia do Uníssono em <strong>setsync.com.br</strong> — bandas, cifras, setlists, agenda com escalação,
       <strong>estúdios de ensaio</strong>, <strong>instrumentos no perfil</strong> e Modo Tocar.
       Use o <strong>assistente</strong> <i class="fas fa-comment-dots text-primary"></i> no canto da tela para dúvidas rápidas
       (com atalhos para cadastrar cifra, estúdio ou ver planos quando você estiver logado).
@@ -278,7 +278,7 @@
       </a>
       <a class="list-group-item" href="#importador">
         <strong>Importar cifra</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Buscar cifra, colar, Cifra → SetSync</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Buscar cifra, colar, Cifra → Uníssono</div>
       </a>
       <a class="list-group-item" href="#pwa">
         <strong>Instalar no celular</strong>
@@ -333,10 +333,10 @@
       <div class="card-header">Primeiros passos</div>
       <div class="card-body">
         <ol>
-          <li>Acesse o SetSync e <strong>entre</strong> ou <strong>crie sua conta</strong>.</li>
+          <li>Acesse o Uníssono e <strong>entre</strong> ou <strong>crie sua conta</strong>.</li>
           <li>Em <span class="code">Bandas</span>, crie uma banda (ex.: nome do grupo ou projeto).</li>
           <li>Em <strong>Configurações da banda</strong>, cadastre <strong>cantoras/cantores</strong> se mais de uma pessoa canta em tons diferentes.</li>
-          <li>Adicione <strong>cifras</strong> com <strong>Buscar cifra</strong> (preview antes de importar), colando texto no formulário ou pelo importador <span class="code">Cifra → SetSync</span>.</li>
+          <li>Adicione <strong>cifras</strong> com <strong>Buscar cifra</strong> (preview antes de importar), colando texto no formulário ou pelo importador <span class="code">Cifra → Uníssono</span>.</li>
           <li>Na aba <strong>Grade harmônica</strong>, use <strong>Extrair da cifra</strong> para montar a progressão a partir dos acordes — ou edite à mão.</li>
           <li>Monte um <strong>setlist</strong> com a ordem do show ou ensaio.</li>
           <li>Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>, cadastre seus <strong>instrumentos</strong> e o <strong>WhatsApp</strong> para alertas.</li>
@@ -381,7 +381,7 @@
         </ul>
         <h3>Instalar no celular (PWA)</h3>
         <ul>
-          <li>O painel pode sugerir <strong>adicionar o SetSync à tela inicial</strong> para abrir como app no palco.</li>
+          <li>O painel pode sugerir <strong>adicionar o Uníssono à tela inicial</strong> para abrir como app no palco.</li>
           <li>Detalhes de instalação no iPhone e Android: seção <a href="#pwa">Instalar no celular</a>.</li>
         </ul>
         <h3>Assistente de ajuda</h3>
@@ -411,26 +411,26 @@
         <ul>
           <li>Ao atingir um limite do plano grátis, o app avisa no painel e oferece upgrade.</li>
           <li>Em <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a>, use o seletor <strong>Mensal / Anual</strong> para ver o desconto anual (banda e estúdio).</li>
-          <li><strong>Vouchers</strong> promocionais liberam Pro ou Estúdio Premium por tempo determinado (código enviado pela equipe SetSync ou <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">indicação de banda</a> para planos de banda).</li>
+          <li><strong>Vouchers</strong> promocionais liberam Pro ou Estúdio Premium por tempo determinado (código enviado pela equipe Uníssono ou <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">indicação de banda</a> para planos de banda).</li>
           <li>No plano grátis podem aparecer <strong>anúncios</strong> em algumas telas; contas pagas não exibem anúncios.</li>
         </ul>
 
         <h3 id="cobranca">Cobrança e Mercado Pago</h3>
         <ul>
           <li>Planos pagos (Individual, Pro, Worship e Estúdio Premium) usam <strong>Mercado Pago</strong> para assinatura recorrente.</li>
-          <li>Ao tocar em <strong>Assinar</strong>, você é <strong>redirecionado ao site do Mercado Pago</strong> — lá você autoriza a cobrança. O SetSync <strong>não armazena número de cartão</strong>.</li>
+          <li>Ao tocar em <strong>Assinar</strong>, você é <strong>redirecionado ao site do Mercado Pago</strong> — lá você autoriza a cobrança. O Uníssono <strong>não armazena número de cartão</strong>.</li>
           <li>Escolha <strong>mensal ou anual</strong> antes de confirmar (o anual equivale a pagar 10 meses e usar 12).</li>
           <li>O <strong>trial de 30 dias</strong> (primeira banda ou primeiro estúdio Premium) é <strong>sem cartão</strong>; só pedimos pagamento se você decidir assinar depois.</li>
           <li><strong>Vouchers</strong> e indicação de banda ativam Pro por tempo limitado sem passar pelo checkout. Vouchers de <strong>estúdio</strong> ativam Premium na conta do dono — veja <a href="#estudio-voucher">Voucher Estúdio Premium</a>.</li>
-          <li>Para <strong>cancelar</strong> uma assinatura paga, use sua conta no Mercado Pago ou entre em contato com o suporte SetSync.</li>
+          <li>Para <strong>cancelar</strong> uma assinatura paga, use sua conta no Mercado Pago ou entre em contato com o suporte Uníssono.</li>
         </ul>
 
         <div class="help-callout">
           Precisa de várias bandas na mesma conta? Veja o plano <strong>Worship</strong> em
           <a href="{{ url_for('assinatura_bp.planos') }}">Planos</a>.
           Para igrejas e ministérios de louvor, há uma página dedicada:
-          <a href="{{ url_for('assinatura_bp.igrejas') }}">SetSync para Igrejas</a>.
-          Donos de sala de ensaio: <a href="{{ url_for('studios.landing') }}">SetSync para Estúdios</a>.
+          <a href="{{ url_for('assinatura_bp.igrejas') }}">Uníssono para Igrejas</a>.
+          Donos de sala de ensaio: <a href="{{ url_for('studios.landing') }}">Uníssono para Estúdios</a>.
           Bandas únicas costumam usar o <strong>Pro</strong>; músico solo, o <strong>Individual</strong>.
         </div>
       </div>
@@ -450,7 +450,7 @@
           <li>Em <span class="code">Membros</span>, copie o <strong>link de convite</strong> e envie no WhatsApp ou e-mail.</li>
           <li>Quem <strong>ainda não tem conta</strong> se cadastra pelo link e já entra na banda.</li>
           <li>Quem <strong>já tem conta</strong> pode abrir o mesmo link logado ou usar “Já tenho conta” no cadastro.</li>
-          <li>Para quem já está no SetSync, envie um <strong>convite pelo e-mail cadastrado</strong> na mesma tela — a pessoa precisa <strong>aceitar</strong> no painel ou em <span class="code">Convites</span> antes de entrar na banda.</li>
+          <li>Para quem já está no Uníssono, envie um <strong>convite pelo e-mail cadastrado</strong> na mesma tela — a pessoa precisa <strong>aceitar</strong> no painel ou em <span class="code">Convites</span> antes de entrar na banda.</li>
         </ul>
 
         <h3>Papéis na banda</h3>
@@ -543,7 +543,7 @@
       <div class="card-header">Versão pessoal (editar sem mudar a banda na hora)</div>
       <div class="card-body">
         <p>
-          Ao <strong>editar</strong> uma cifra (papel <strong>Editor</strong>, admin ou proprietário), o SetSync salva suas alterações primeiro como
+          Ao <strong>editar</strong> uma cifra (papel <strong>Editor</strong>, admin ou proprietário), o Uníssono salva suas alterações primeiro como
           <strong>versão pessoal</strong>. A banda continua vendo a versão anterior até você decidir publicar.
         </p>
 
@@ -586,7 +586,7 @@
           <li>Tons <strong>menores</strong> (ex.: <span class="code">Bm</span>, <span class="code">Am</span>) são tratados corretamente na lista de transposição — não confundem com a relativa maior.</li>
           <li><strong>Sustenidos e bemóis</strong> seguem a armadura do tom de destino (ex.: transpor de Dó para Mi♭ gera <span class="code">Eb</span>, <span class="code">Ab</span>, <span class="code">Bb</span> — não <span class="code">D#</span>).</li>
           <li>A mesma regra vale na <strong>grade harmônica</strong> e na cifra ChordPro.</li>
-          <li>Com <strong>várias cantoras/cantores</strong>, o SetSync guarda a transposição de cada pessoa por música.</li>
+          <li>Com <strong>várias cantoras/cantores</strong>, o Uníssono guarda a transposição de cada pessoa por música.</li>
           <li>No Modo Tocar, escolha a cantora/cantor no topo para ver o tom certo; a mudança pode ser salva na banda.</li>
           <li>Se você tiver <strong>versão pessoal</strong> de uma música, a transposição vale para a versão que estiver exibindo (Banda ou Minha).</li>
           <li>Na <strong>setlist</strong>, cada linha pode ter cantora/cantor e tom próprios para aquele show.</li>
@@ -670,7 +670,7 @@
         </ul>
 
         <div class="help-callout">
-          Após criar um evento, o SetSync já leva você à tela de escalação. Você também encontra o botão laranja
+          Após criar um evento, o Uníssono já leva você à tela de escalação. Você também encontra o botão laranja
           <strong>Escalação</strong> na lista de eventos e no detalhe do evento.
         </div>
       </div>
@@ -712,7 +712,7 @@
       <div class="card-header">Estúdios de ensaio</div>
       <div class="card-body">
         <p>
-          O SetSync permite <strong>buscar estúdios</strong> por cidade/bairro e <strong>solicitar reservas</strong> de salas de ensaio.
+          O Uníssono permite <strong>buscar estúdios</strong> por cidade/bairro e <strong>solicitar reservas</strong> de salas de ensaio.
           Donos de estúdio cadastram o espaço, definem disponibilidade e confirmam ou recusam pedidos — com endereço no <strong>Google Maps</strong>.
         </p>
         <h3>Para bandas</h3>
@@ -742,7 +742,7 @@
           <li>Plano básico: até <strong>2 salas</strong>. <strong>Premium</strong> (R$ 49/mês ou R$ 490/ano): salas ilimitadas e trial de 30 dias no primeiro cadastro. Também é possível ativar Premium com <strong>voucher</strong> — veja <a href="#estudio-voucher">abaixo</a>.</li>
         </ul>
         <p class="mb-0">
-          <a href="{{ url_for('studios.landing') }}" class="btn btn-sm btn-outline-secondary">SetSync para Estúdios</a>
+          <a href="{{ url_for('studios.landing') }}" class="btn btn-sm btn-outline-secondary">Uníssono para Estúdios</a>
           <a href="{{ url_for('studios.search') }}" class="btn btn-sm btn-outline-primary ms-2">Buscar estúdios</a>
           <a href="{{ url_for('studios.register_studio') }}" class="btn btn-sm btn-primary ms-2">Cadastrar estúdio</a>
         </p>
@@ -808,7 +808,7 @@
         </ul>
         <h4 class="h6">Como resgatar</h4>
         <ol>
-          <li>Entre no SetSync com a conta do dono do estúdio.</li>
+          <li>Entre no Uníssono com a conta do dono do estúdio.</li>
           <li>Abra <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Planos</a> (menu superior).</li>
           <li>Role até <strong>Tem um voucher?</strong>, digite o código e toque em <strong>Resgatar</strong>.</li>
           <li>O painel passa a mostrar <strong>Estúdio Premium</strong> e você pode cadastrar salas além do limite do Básico.</li>
@@ -961,7 +961,7 @@
           A <strong>grade harmônica</strong> é uma folha só com acordes e compassos — sem letra — no formato do
           <a href="https://www.chordsheet.com/manual/" target="_blank" rel="noopener">Chord Sheet Maker</a>
           (chordsheet.com): grade com barras verticais, seções, repetições e navegação (D.C., coda, voltas).
-          O padrão do SetSync é <strong>4 compassos por linha</strong> (ajustável de 1 a 8).
+          O padrão do Uníssono é <strong>4 compassos por linha</strong> (ajustável de 1 a 8).
         </p>
         <p>
           A visualização usa o <strong>mesmo layout de folha</strong> do restante do app e respeita o <strong>tema claro ou escuro</strong>
@@ -1027,8 +1027,8 @@
         <h3>Preferências de layout (editor)</h3>
         <ul>
           <li><strong>Compassos por linha</strong> (1–8), tamanho da fonte, espaçamento e alinhamento dos acordes.</li>
-          <li><strong>Estilo de barra</strong>: o padrão SetSync é <strong>Tab</strong> (pauta horizontal). <strong>Regular</strong> é o mais próximo do PDF clássico do chordsheet.com.</li>
-          <li><strong>Rodapé</strong> com marca SetSync e data (pode desligar na impressão).</li>
+          <li><strong>Estilo de barra</strong>: o padrão Uníssono é <strong>Tab</strong> (pauta horizontal). <strong>Regular</strong> é o mais próximo do PDF clássico do chordsheet.com.</li>
+          <li><strong>Rodapé</strong> com marca Uníssono e data (pode desligar na impressão).</li>
         </ul>
 
         <h3>Onde ver no app</h3>
@@ -1048,7 +1048,7 @@
 
         <div class="help-callout">
           Quickstart chordsheet.com: <a href="https://www.chordsheet.com/manual/quickstart" target="_blank" rel="noopener">manual oficial</a>.
-          Especificação técnica SetSync (IA / integração): <code>docs/chordsheet-formato.md</code>.
+          Especificação técnica Uníssono (IA / integração): <code>docs/chordsheet-formato.md</code>.
           Músicas antigas com grade salva abrem no editor com a progressão convertida — revise pulsos, notação e salve para fixar no novo formato.
         </div>
       </div>
@@ -1065,7 +1065,7 @@
         <h3>Buscar cifra (recomendado)</h3>
         <ul>
           <li>Na página da banda ou na lista de cifras, toque em <strong>Buscar cifra</strong>.</li>
-          <li>Digite <strong>título ou artista</strong> — o SetSync consulta o repertório já importado no servidor e um índice online.</li>
+          <li>Digite <strong>título ou artista</strong> — o Uníssono consulta o repertório já importado no servidor e um índice online.</li>
           <li>Resultados marcados como <strong>Pronta</strong> abrem mais rápido; <strong>Índice</strong> busca a página na hora.</li>
           <li>Toque em uma música para ver o <strong>preview</strong> formatado (mesmo layout de folha da visualização).</li>
           <li>Se estiver ok, <strong>Importar para [banda]</strong> adiciona a música ao repertório (requer papel <strong>Editor</strong> ou admin).</li>
@@ -1078,9 +1078,9 @@
           <li>Veja também a seção <a href="#cifras">Cifras → Colar de outro site</a>.</li>
         </ul>
 
-        <h3>Cifra → SetSync (ferramenta avançada)</h3>
+        <h3>Cifra → Uníssono (ferramenta avançada)</h3>
         <p>
-          Ao adicionar ou editar uma música, o botão <strong>Cifra → SetSync</strong> abre uma ferramenta embutida com mais opções:
+          Ao adicionar ou editar uma música, o botão <strong>Cifra → Uníssono</strong> abre uma ferramenta embutida com mais opções:
         </p>
         <ul>
           <li><strong>Somente cifra</strong> — cole a URL da página da música em um site de cifras compatível.</li>
@@ -1121,7 +1121,7 @@
 
         <h3>Colagem de cifras de outros sites</h3>
         <ul>
-          <li>Ao colar de sites como Ultimate Guitar (formato acorde sobre letra), o importador tenta <strong>converter automaticamente</strong> para o formato do SetSync.</li>
+          <li>Ao colar de sites como Ultimate Guitar (formato acorde sobre letra), o importador tenta <strong>converter automaticamente</strong> para o formato do Uníssono.</li>
           <li>Há também higienização de encoding e lixo comum de sites brasileiros — se algo falhar, use <strong>Converter colagem</strong> ou edite manualmente.</li>
         </ul>
       </div>

@@ -1,4 +1,4 @@
-# Prompt — Gerador de Chord Sheets (SetSync)
+# Prompt — Gerador de Chord Sheets (Uníssono)
 
 Copie o bloco abaixo como **system prompt** ou instrução de agente para gerar chord sheets compatíveis com `setsync.chordsheet` 1.0.0.
 

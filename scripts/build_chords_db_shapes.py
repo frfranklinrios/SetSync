@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Converte tombatossals/chords-db para SetSync REAL_SHAPES (violao/ukulele)."""
+"""Converte tombatossals/chords-db para Uníssono REAL_SHAPES (violao/ukulele)."""
 
 from __future__ import annotations
 
@@ -190,7 +190,7 @@ def main() -> None:
     lines = [
         '/** Posições importadas de tombatossals/chords-db — gerado por scripts/build_chords_db_shapes.py */',
         '(function (global) {',
-        '  var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});',
+        '  var CD = (global.UníssonoChordDiagram = global.UníssonoChordDiagram || {});',
         '  function P(label, frets, fingers, source, barres) {',
         "    return { label: label, frets: frets, fingers: fingers || null, source: source || 'chords-db', barres: barres || [] };",
         '  }',

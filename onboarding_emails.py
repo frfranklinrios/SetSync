@@ -20,15 +20,15 @@ _ONBOARDING_SCHEDULE = {
 
 _EMAILS = {
     1: {
-        'subject': 'Bem-vindo ao SetSync! Veja como começar 🎸',
+        'subject': 'Bem-vindo ao Uníssono! Veja como começar 🎸',
         'body': (
-            'Olá! Sua conta no SetSync está pronta.\n\n'
+            'Olá! Sua conta no Uníssono está pronta.\n\n'
             'Próximo passo: crie sua primeira banda e adicione uma música.\n'
             'Assista ao tour rápido e experimente o Modo Tocar.\n\n'
             'Criar banda: {bands_url}'
         ),
         'html': (
-            '<h2>Bem-vindo ao SetSync!</h2>'
+            '<h2>Bem-vindo ao Uníssono!</h2>'
             '<p>Sua conta está pronta. Comece criando sua <strong>primeira banda</strong> '
             'e cadastrando uma cifra.</p>'
             '<p><a href="{bands_url}" style="display:inline-block;padding:12px 24px;'
@@ -39,7 +39,7 @@ _EMAILS = {
         ),
     },
     2: {
-        'subject': 'Sua banda já está no SetSync?',
+        'subject': 'Sua banda já está no Uníssono?',
         'body': (
             'Convide integrantes pelo link de convite da banda.\n'
             'Todos compartilham o mesmo repertório — sem PDF desatualizado.\n\n'

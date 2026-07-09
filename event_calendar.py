@@ -67,7 +67,7 @@ def ics_content(event: dict, *, band_name: str = '', app_url: str = '') -> str:
     lines = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
-        'PRODID:-//SetSync//Agenda//PT',
+        'PRODID:-//Uníssono//Agenda//PT',
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
         'BEGIN:VEVENT',

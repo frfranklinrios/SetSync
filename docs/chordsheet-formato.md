@@ -1,6 +1,6 @@
-# Formato Chord Sheet — SetSync
+# Formato Chord Sheet — Uníssono
 
-Especificação para gerar chord sheets **100% compatíveis** com o módulo `chordsheet` do SetSync.
+Especificação para gerar chord sheets **100% compatíveis** com o módulo `chordsheet` do Uníssono.
 
 Baseado no [Chord Sheet Maker](https://www.chordsheet.com/) (meta caracteres e estilo), com a extensão **`&`** (semi-pulsos) documentada abaixo.
 
@@ -27,7 +27,7 @@ Baseado no [Chord Sheet Maker](https://www.chordsheet.com/) (meta caracteres e e
 10. [Exemplo completo](#10-exemplo-completo)
 11. [Checklist e anti-padrões](#11-checklist-e-anti-padrões)
 12. [Validação](#12-validação)
-13. [API e integração SetSync](#13-api-e-integração-setsync)
+13. [API e integração Uníssono](#13-api-e-integração-setsync)
 14. [Referências](#14-referências)
 
 ---
@@ -126,7 +126,7 @@ Estrutura **obrigatória** para agentes de IA, API e persistência:
 - `source` é sempre **string** (texto plano com `\n`).
 - Se `source` estiver presente, o parser **reconstrói** o chart a partir dele (`payload_to_chart`).
 - Round-trip: `parse_chart(source)` → `chart.to_source()` deve preservar a semântica.
-- Campo no banco SetSync: `chordsheet_json` (ou legado em `leadsheet_json` com mesmo formato).
+- Campo no banco Uníssono: `chordsheet_json` (ou legado em `leadsheet_json` com mesmo formato).
 
 ---
 
@@ -175,7 +175,7 @@ O **`_`** une segmentos no **mesmo compasso**, um acorde por **pulso inteiro**.
 
 > `C D` (espaço) = **dois compassos**. `C_D` = **um compasso**.
 
-### 4.3 Semi-pulsos — `&` *(extensão SetSync)*
+### 4.3 Semi-pulsos — `&` *(extensão Uníssono)*
 
 O **`&`** divide um **único pulso** em semi-pulsos.
 
@@ -331,7 +331,7 @@ Detalhes por estilo (`effective_quality_prefs`):
 | `half_dim_style` | `oslash`, `m7b5` | `Cm7b5` → `Cø7` (intl) ou `Cm7b5` (br) |
 | (automático) | — | `aug` → `+`; `A-` → `Am` (br) |
 
-O SetSync também aplica grafia do tom da cifra (`apply_chart_cifra_spelling`).
+O Uníssono também aplica grafia do tom da cifra (`apply_chart_cifra_spelling`).
 
 ---
 
@@ -363,7 +363,7 @@ Compasso local por compasso: `3:4` imediatamente antes do token.
 | `maj7_style` | `delta`, `MA7`, `maj7` | `delta` | Maj7 |
 | `dim_style` | `circle`, `dim` | `circle` | Diminuto |
 | `half_dim_style` | `oslash`, `m7b5` | `oslash` | Meio-diminuto |
-| `show_footer` | bool | `true` | Rodapé SetSync + data |
+| `show_footer` | bool | `true` | Rodapé Uníssono + data |
 | `bar_line_style` | ver abaixo | **`tab`** | Estilo de barras |
 | `tab_lines` | 3–8 | `6` | Linhas da pauta TAB |
 | `tab_show_barlines` | bool | `true` | Barras verticais no modo tab |
@@ -372,7 +372,7 @@ Compasso local por compasso: `3:4` imediatamente antes do token.
 
 | Valor | Uso |
 |-------|-----|
-| **`tab`** | Pauta horizontal — **padrão SetSync**; voicings manuscritos |
+| **`tab`** | Pauta horizontal — **padrão Uníssono**; voicings manuscritos |
 | `regular` | Barras verticais clássicas |
 | `none` | Sem barras |
 | `grille` | Grade com borda (jazz manouche; prefira 8/linha) |
@@ -438,7 +438,7 @@ Métodos úteis: `bar.get_pulse_grid()`, `bar.set_pulse_grid(grid)`.
 ## 10. Exemplo completo
 
 ```text
-# Demo — SetSync + chordsheet.com
+# Demo — Uníssono + chordsheet.com
 - All Meta Characters
 = A
 (A B C D)x2
@@ -532,7 +532,7 @@ python3 -m unittest chordsheet.test_meta -v
 
 ---
 
-## 13. API e integração SetSync
+## 13. API e integração Uníssono
 
 | Método | Rota | Corpo → resposta |
 |--------|------|------------------|
@@ -552,11 +552,11 @@ Conversão legado: `chart_to_grade_flat()` em `chordsheet_bridge.py`.
 - [Meta characters](https://www.chordsheet.com/manual/meta)
 - [Style / bar lines](https://www.chordsheet.com/manual/style)
 - [Prompt IA (curto)](./chordsheet-prompt-ia.md)
-- Editor SetSync → **Exemplos** → `manual_meta`, `galeria_grafica`
+- Editor Uníssono → **Exemplos** → `manual_meta`, `galeria_grafica`
 
 ### Diferenças em relação ao chordsheet.com
 
-| Recurso | chordsheet.com | SetSync |
+| Recurso | chordsheet.com | Uníssono |
 |---------|----------------|---------|
 | Semi-pulsos (`&`) | Não documentado | **Suportado** (`C&D`, `C&D_E`) |
 | Padrão de barra | Regular | **TAB** |

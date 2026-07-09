@@ -84,7 +84,7 @@
         });
         if (!res.ok) throw new Error(await parseError(res));
         showResult(await res.json());
-        setStatus(status, "Pronto. Clique em «Usar no formulário SetSync».");
+        setStatus(status, "Pronto. Clique em «Usar no formulário Uníssono».");
       } catch (err) {
         setStatus(status, err.message || String(err), true);
       } finally {

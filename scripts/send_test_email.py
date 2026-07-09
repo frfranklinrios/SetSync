@@ -52,10 +52,10 @@ def main() -> int:
 
         ok = send_email(
             [destino],
-            'Teste de e-mail — SetSync',
-            html='<p>Este é um <strong>e-mail de teste</strong> do SetSync. '
+            'Teste de e-mail — Uníssono',
+            html='<p>Este é um <strong>e-mail de teste</strong> do Uníssono. '
                  'Se você recebeu, o SMTP está funcionando. 🎸</p>',
-            body='Este é um e-mail de teste do SetSync. Se você recebeu, o SMTP está funcionando.',
+            body='Este é um e-mail de teste do Uníssono. Se você recebeu, o SMTP está funcionando.',
         )
 
     if ok:

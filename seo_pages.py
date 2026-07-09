@@ -22,23 +22,23 @@ def _phrase(verb: str, obj: str) -> str:
 
 def _title_page(verb: str, obj: str) -> str:
     p = _phrase(verb, obj)
-    return f'{p.capitalize()} — SetSync'
+    return f'{p.capitalize()} — Uníssono'
 
 
 def _meta_desc(verb: str, obj: str) -> str:
     if 'financeiro' in obj:
         return (
             'Controle receita de reservas confirmadas, pagamentos e despesas do seu estúdio '
-            'de ensaio no SetSync. Preço/hora, resumo mensal e líquido no painel do dono.'
+            'de ensaio no Uníssono. Preço/hora, resumo mensal e líquido no painel do dono.'
         )
     if 'voucher' in obj and ('estudio' in obj or 'estúdio' in obj):
         return (
-            'Resgate voucher Estúdio Premium no SetSync: salas ilimitadas por código promocional, '
+            'Resgate voucher Estúdio Premium no Uníssono: salas ilimitadas por código promocional, '
             'sem cartão. Passo a passo para donos de sala de ensaio.'
         )
     p = _phrase(verb, obj)
     return (
-        f'Como {p} com o SetSync: repertório centralizado, convites por link, '
+        f'Como {p} com o Uníssono: repertório centralizado, convites por link, '
         f'setlists, transposição e Modo Tocar para bandas e músicos. Comece grátis.'
     )
 
@@ -51,7 +51,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
         return [
             {
                 'html': (
-                    '<p>O <strong>financeiro do estúdio</strong> no SetSync ajuda donos de sala de ensaio '
+                    '<p>O <strong>financeiro do estúdio</strong> no Uníssono ajuda donos de sala de ensaio '
                     'a acompanhar <strong>receita das reservas confirmadas</strong>, marcar o que já foi '
                     'pago e registrar <strong>despesas do mês</strong> — tudo no painel, sem planilha paralela.</p>'
                 ),
@@ -106,7 +106,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             {
                 'html': (
                     '<p>Donos de estúdio podem ativar o plano <strong>Premium</strong> (salas ilimitadas) '
-                    'com um <strong>código voucher</strong> enviado pela equipe SetSync ou em campanhas '
+                    'com um <strong>código voucher</strong> enviado pela equipe Uníssono ou em campanhas '
                     'parceiras — sem assinatura no Mercado Pago.</p>'
                 ),
             },
@@ -115,7 +115,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
                 'html': (
                     '<ul>'
                     '<li>Use a conta que <strong>cadastrou o estúdio</strong> (dono).</li>'
-                    '<li>Tenha pelo menos um estúdio no SetSync — '
+                    '<li>Tenha pelo menos um estúdio no Uníssono — '
                     '<a href="/estudios">cadastre grátis</a> se ainda não tiver.</li>'
                     '<li>O voucher não substitui assinatura <strong>Premium paga</strong> já ativa.</li>'
                     '<li>Cada código vale <strong>uma vez</strong> por conta.</li>'
@@ -126,7 +126,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
                 'h2': 'Passo a passo',
                 'html': (
                     '<ol>'
-                    '<li>Entre no SetSync com sua conta de dono.</li>'
+                    '<li>Entre no Uníssono com sua conta de dono.</li>'
                     '<li>Abra <a href="/assinatura/planos#estudio">Planos → Estúdio</a>.</li>'
                     '<li>Em <strong>Tem um voucher?</strong>, digite o código (ex.: <code>ESTUDIO-XXXX</code>) '
                     'e toque em <strong>Resgatar</strong>.</li>'
@@ -153,7 +153,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
         ]
 
     intro = (
-        f'<p>O SetSync foi feito para quem precisa <strong>{phrase}</strong> sem depender de '
+        f'<p>O Uníssono foi feito para quem precisa <strong>{phrase}</strong> sem depender de '
         f'prints no WhatsApp, planilhas desatualizadas ou PDFs que ninguém sabe qual é a versão certa. '
         f'Centralize o repertório da banda, convide musicistas por link e use setlists com transposição '
         f'automática por cantor — no ensaio e no palco.</p>'
@@ -165,13 +165,13 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'html': (
                 f'<p>Quando cada músico guarda a cifra no celular de um jeito, o ensaio vira adivinhação. '
                 f'{obj_cap} compartilhado significa uma única fonte: quem edita atualiza para todos. '
-                f'No SetSync, admins da banda controlam o repertório; membros tocam a versão aprovada.</p>'
+                f'No Uníssono, admins da banda controlam o repertório; membros tocam a versão aprovada.</p>'
                 f'<p>Isso vale para bandas de bar, grupos acústicos, projetos paralelos e qualquer '
                 f'equipe que ensaia junto regularmente.</p>'
             ),
         },
         {
-            'h2': 'Como o SetSync ajuda na prática',
+            'h2': 'Como o Uníssono ajuda na prática',
             'html': (
                 '<ul>'
                 '<li><strong>Repertório único</strong> — cifras, letras e grade harmônica na mesma música.</li>'
@@ -189,7 +189,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'h2': f'Passo a passo para {phrase}',
             'html': (
                 '<ol>'
-                '<li>Crie sua conta grátis no SetSync.</li>'
+                '<li>Crie sua conta grátis no Uníssono.</li>'
                 '<li>Monte a banda e envie o link de convite aos integrantes.</li>'
                 '<li>Cadastre as músicas do repertório (importe cifras ou digite).</li>'
                 '<li>Defina vocalistas e transposição por cantor, se necessário.</li>'
@@ -211,11 +211,11 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
 
     if 'igreja' in obj or 'worship' in obj or 'louvor' in obj or 'múltiplas bandas' in obj:
         blocks.append({
-            'h2': 'SetSync para igrejas',
+            'h2': 'Uníssono para igrejas',
             'html': (
                 '<p>Se você lidera o louvor em uma congregação com várias equipes, reunimos '
                 'comparativos, preços e rotina de culto na página '
-                '<a href="/igrejas">SetSync para Igrejas</a>.</p>'
+                '<a href="/igrejas">Uníssono para Igrejas</a>.</p>'
             ),
         })
 
@@ -225,7 +225,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'html': (
                 '<p>O <strong>Worship</strong> cobre várias bandas na mesma conta — útil quando você '
                 'administra mais de um grupo musical. Detalhes, calculadora de economia e casos de '
-                'igreja estão em <a href="/igrejas">SetSync para Igrejas</a>.</p>'
+                'igreja estão em <a href="/igrejas">Uníssono para Igrejas</a>.</p>'
             ),
         })
 
@@ -235,7 +235,7 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             'html': (
                 '<p>Cadastre cada vocalista e a transposição preferida. Na setlist, escolha quem canta '
                 'cada música — a cifra abre no tom certo automaticamente, inclusive na grade harmônica. '
-                'O SetSync grafia sustenidos e bemóis conforme a armadura do tom (ex.: C→Eb gera Eb, Ab, Bb). '
+                'O Uníssono grafia sustenidos e bemóis conforme a armadura do tom (ex.: C→Eb gera Eb, Ab, Bb). '
                 'Acabou o "espera, deixa eu subir meio tom no papel".</p>'
             ),
         })
@@ -465,7 +465,7 @@ def _premium_faq_block(phrase: str) -> dict[str, Any]:
     return {
         'h2': 'Perguntas frequentes',
         'html': (
-            '<p><strong>O SetSync é grátis?</strong> Sim, para começar com banda, repertório e Modo Tocar. '
+            '<p><strong>O Uníssono é grátis?</strong> Sim, para começar com banda, repertório e Modo Tocar. '
             'Trial Pro de 30 dias na primeira banda; estúdios têm trial Premium no primeiro cadastro.</p>'
             '<p><strong>Preciso instalar app?</strong> Funciona no navegador; instale como PWA. '
             'No Modo Tocar a setlist baixa automaticamente; na banda use Disponibilizar offline para o repertório inteiro.</p>'
@@ -478,20 +478,20 @@ def _premium_faq_block(phrase: str) -> dict[str, Any]:
 _COMPARISON_PAGES: dict[str, dict[str, Any]] = {
     'cifra-club': {
         'slug': 'cifra-club',
-        'h1': 'SetSync vs Cifra Club — qual usar na banda?',
-        'meta_title': 'SetSync vs Cifra Club para bandas',
+        'h1': 'Uníssono vs Cifra Club — qual usar na banda?',
+        'meta_title': 'Uníssono vs Cifra Club para bandas',
         'meta_description': (
-            'Compare SetSync e Cifra Club: CC para estudo solo; SetSync para repertório '
+            'Compare Uníssono e Cifra Club: CC para estudo solo; Uníssono para repertório '
             'compartilhado, setlists e transposição por cantor.'
         ),
         'sections': [
             {'html': (
                 '<p>O <strong>Cifra Club</strong> é a maior biblioteca de cifras do Brasil. O '
-                '<strong>SetSync</strong> foca em <strong>banda colaborativa</strong>: versão única da '
+                '<strong>Uníssono</strong> foca em <strong>banda colaborativa</strong>: versão única da '
                 'música, setlist do show e Modo Tocar com a equipe.</p>'
             )},
             {'h2': 'Comparativo', 'html': (
-                '<table><thead><tr><th></th><th>Cifra Club</th><th>SetSync</th></tr></thead><tbody>'
+                '<table><thead><tr><th></th><th>Cifra Club</th><th>Uníssono</th></tr></thead><tbody>'
                 '<tr><td>Público</td><td>Músico solo</td><td>Banda / equipe</td></tr>'
                 '<tr><td>Repertório compartilhado</td><td>Listas pessoais</td><td>Por banda</td></tr>'
                 '<tr><td>Setlist ao vivo</td><td>Limitado</td><td>Tom por cantor</td></tr>'
@@ -503,16 +503,16 @@ _COMPARISON_PAGES: dict[str, dict[str, Any]] = {
     },
     'ipraise': {
         'slug': 'ipraise',
-        'h1': 'SetSync vs iPraise',
-        'meta_title': 'SetSync vs iPraise para bandas',
-        'meta_description': 'iPraise para escalas; SetSync para cifras, setlists e Modo Tocar com plano Worship.',
+        'h1': 'Uníssono vs iPraise',
+        'meta_title': 'Uníssono vs iPraise para bandas',
+        'meta_description': 'iPraise para escalas; Uníssono para cifras, setlists e Modo Tocar com plano Worship.',
         'sections': [
             {'html': (
-                '<p><strong>iPraise</strong> — escalas e chat. <strong>SetSync</strong> — cifras, '
+                '<p><strong>iPraise</strong> — escalas e chat. <strong>Uníssono</strong> — cifras, '
                 'setlists e palco, com agenda nos planos pagos.</p>'
             )},
             {'h2': 'Comparativo', 'html': (
-                '<table><thead><tr><th></th><th>iPraise</th><th>SetSync</th></tr></thead><tbody>'
+                '<table><thead><tr><th></th><th>iPraise</th><th>Uníssono</th></tr></thead><tbody>'
                 '<tr><td>Escalas</td><td>Forte</td><td>Agenda Pro/Worship</td></tr>'
                 '<tr><td>Modo Tocar</td><td>Básico</td><td>Tela cheia + offline</td></tr>'
                 '<tr><td>Import Cifra Club</td><td>Não</td><td>Sim</td></tr>'
@@ -546,7 +546,7 @@ def _build_page(verb: str, obj: str) -> dict[str, Any]:
         'verb': verb,
         'object': obj,
         'phrase': phrase,
-        'h1': f'{phrase.capitalize()} com o SetSync',
+        'h1': f'{phrase.capitalize()} com o Uníssono',
         'meta_title': _title_page(verb, obj),
         'meta_description': _meta_desc(verb, obj),
         'sections': sections,
@@ -606,11 +606,11 @@ def faq_entries() -> list[dict[str, str]]:
     """Perguntas frequentes para schema.org e home."""
     return [
         {
-            'q': 'O SetSync serve para compartilhar cifras com a banda?',
+            'q': 'O Uníssono serve para compartilhar cifras com a banda?',
             'a': 'Sim. Você centraliza o repertório, convida musicistas por link e todos acessam a mesma versão da cifra, com transposição por cantor e setlists sincronizadas.',
         },
         {
-            'q': 'Como gerenciar várias bandas no SetSync?',
+            'q': 'Como gerenciar várias bandas no Uníssono?',
             'a': 'No plano Worship, uma conta administra múltiplas bandas — cada uma com repertório e setlists próprios. Para igrejas e ministérios de louvor, veja setsync.com.br/igrejas.',
         },
         {
@@ -622,24 +622,24 @@ def faq_entries() -> list[dict[str, str]]:
             'a': 'Sim. Arraste as músicas na ordem desejada, defina cantor e tom por faixa, e abra o Modo Tocar no palco ou exporte PDF no plano Pro.',
         },
         {
-            'q': 'O SetSync transpor cifras automaticamente?',
+            'q': 'O Uníssono transpor cifras automaticamente?',
             'a': 'Cadastre vocalistas com transposição preferida. Ao montar a setlist, escolha quem canta — a cifra abre no tom certo, com sustenidos e bemóis pela armadura (Eb, Bb etc.), inclusive na grade harmônica.',
         },
         {
             'q': 'Existe app de cifras para banda grátis?',
-            'a': 'O SetSync tem plano grátis para começar: repertório, bandas, setlists e Modo Tocar. Planos Individual (solo), Pro (uma banda) e Worship (várias bandas) ampliam recursos.',
+            'a': 'O Uníssono tem plano grátis para começar: repertório, bandas, setlists e Modo Tocar. Planos Individual (solo), Pro (uma banda) e Worship (várias bandas) ampliam recursos.',
         },
         {
             'q': 'Como convidar músicos para a banda?',
-            'a': 'Crie a banda no SetSync e envie o link de convite por WhatsApp ou e-mail. Novos membros entram com permissão de membro ou admin.',
+            'a': 'Crie a banda no Uníssono e envie o link de convite por WhatsApp ou e-mail. Novos membros entram com permissão de membro ou admin.',
         },
         {
-            'q': 'O SetSync serve para igrejas e ministérios de louvor?',
+            'q': 'O Uníssono serve para igrejas e ministérios de louvor?',
             'a': 'Sim. Temos uma página dedicada com plano Worship, comparativos e rotina de culto em setsync.com.br/igrejas.',
         },
         {
             'q': 'Posso usar cifras offline no celular?',
-            'a': 'Instale o SetSync como PWA na tela inicial. Na banda, use Disponibilizar offline no repertório; no Modo Tocar, a setlist baixa automaticamente ao abrir — ideal se a internet falhar no culto.',
+            'a': 'Instale o Uníssono como PWA na tela inicial. Na banda, use Disponibilizar offline no repertório; no Modo Tocar, a setlist baixa automaticamente ao abrir — ideal se a internet falhar no culto.',
         },
         {
             'q': 'O que é o Modo Tocar?',
@@ -650,7 +650,7 @@ def faq_entries() -> list[dict[str, str]]:
             'a': 'No Modo Tocar, ligue o botão Sync — todos seguem a música que o líder avança. Ao abrir pelo evento da agenda (Tocar setlist), o sync costuma vir ligado automaticamente.',
         },
         {
-            'q': 'Como configurar pedal Bluetooth no SetSync?',
+            'q': 'Como configurar pedal Bluetooth no Uníssono?',
             'a': 'No Modo Tocar, use o ícone de pedal para mapear teclas ou o assistente (varinha) que detecta Page Up/Down e setas. Por padrão, ↑↓ trocam música e Page Up/Down paginam a cifra.',
         },
         {
@@ -658,7 +658,7 @@ def faq_entries() -> list[dict[str, str]]:
             'a': 'No plano Pro, exporte setlists com índice, cifras, letras e grade harmônica — você escolhe quais seções incluir.',
         },
         {
-            'q': 'SetSync substitui planilha de cifras?',
+            'q': 'Uníssono substitui planilha de cifras?',
             'a': 'Sim, para bandas que precisam de versão única, transposição e setlist. Acaba o problema de "qual arquivo é o certo?" no grupo do WhatsApp.',
         },
         {
@@ -670,11 +670,11 @@ def faq_entries() -> list[dict[str, str]]:
             'a': 'Use a Agenda: marque ensaio ou show, vincule a setlist, escale por função e envie confirmação por link no e-mail ou WhatsApp. Cadastre seus instrumentos no perfil para a equipe ver na escalação. Lembretes automáticos ajudam a equipe a não esquecer.',
         },
         {
-            'q': 'O SetSync tem reserva de estúdio de ensaio?',
+            'q': 'O Uníssono tem reserva de estúdio de ensaio?',
             'a': 'Sim. Bandas buscam estúdios por cidade, solicitam horário e acompanham em Minhas reservas. Quando confirmado, o ensaio entra na agenda da banda. Donos cadastram salas, QR na recepção, financeiro (receita e despesas), vouchers Premium promocionais e plano Premium (R$ 49/mês) para salas ilimitadas — trial de 30 dias no primeiro cadastro.',
         },
         {
-            'q': 'Como funciona o financeiro do estúdio no SetSync?',
+            'q': 'Como funciona o financeiro do estúdio no Uníssono?',
             'a': 'No painel do dono, abra Financeiro. O sistema calcula a receita das reservas confirmadas com base no preço/hora e na duração; você marca pagamentos, ajusta valores e registra despesas do mês. O resumo mostra recebido, a receber e líquido.',
         },
         {
@@ -686,7 +686,7 @@ def faq_entries() -> list[dict[str, str]]:
             'a': 'Voucher de banda ativa Pro/Worship na banda escolhida em Planos. Voucher de estúdio ativa Premium na conta do dono da sala de ensaio — não depende de qual banda você selecionou.',
         },
         {
-            'q': 'Como funciona o assistente de ajuda do SetSync?',
+            'q': 'Como funciona o assistente de ajuda do Uníssono?',
             'a': 'O ícone de chat no canto da tela responde com base na Ajuda, Guia e FAQ. Se você estiver logado, as respostas podem incluir atalhos para adicionar cifra, cadastrar estúdio ou ver planos.',
         },
         {
@@ -710,15 +710,15 @@ def faq_entries() -> list[dict[str, str]]:
             'a': 'O plano grátis tem limites generosos para começar. Planos pagos ampliam repertório, bandas e recursos como PDF e Worship multi-bandas.',
         },
         {
-            'q': 'Como funciona a cobrança no SetSync?',
-            'a': 'Ao assinar Pro, Worship, Individual ou Estúdio Premium, você é redirecionado ao Mercado Pago. Lá você autoriza a assinatura recorrente — o SetSync não armazena dados do seu cartão. O trial de 30 dias é sem cartão.',
+            'q': 'Como funciona a cobrança no Uníssono?',
+            'a': 'Ao assinar Pro, Worship, Individual ou Estúdio Premium, você é redirecionado ao Mercado Pago. Lá você autoriza a assinatura recorrente — o Uníssono não armazena dados do seu cartão. O trial de 30 dias é sem cartão.',
         },
         {
-            'q': 'É seguro pagar pelo SetSync?',
-            'a': 'O pagamento é processado pelo Mercado Pago, um dos meios mais usados no Brasil. Seus dados de cartão não passam pelos servidores do SetSync — você confirma tudo no site do MP.',
+            'q': 'É seguro pagar pelo Uníssono?',
+            'a': 'O pagamento é processado pelo Mercado Pago, um dos meios mais usados no Brasil. Seus dados de cartão não passam pelos servidores do Uníssono — você confirma tudo no site do MP.',
         },
         {
-            'q': 'O SetSync é melhor que mandar cifra no WhatsApp?',
+            'q': 'O Uníssono é melhor que mandar cifra no WhatsApp?',
             'a': 'Para equipes que ensaiam junto, sim: uma fonte atualizada, tom por cantor, setlist compartilhada e palco no Modo Tocar — sem prints desatualizados.',
         },
     ]

@@ -1,5 +1,5 @@
 {% extends "index.html" %}
-{% block title %}Administração — SetSync{% endblock %}
+{% block title %}Administração — Uníssono{% endblock %}
 
 {% block content %}
 <style>
@@ -50,10 +50,10 @@
             Administração
         </h1>
         <p class="text-muted mb-0" style="font-size: var(--text-base);">
-            Todas as bandas, estúdios, cifras e usuários do sistema
+            Visão geral do {{ app_name }} — usuários, ativação, bandas e estúdios
         </p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
         <a href="{{ url_for('mail_web.inbox') }}" class="btn btn-primary btn-sm">
             <i class="fas fa-inbox me-1"></i> E-mail
         </a>
@@ -65,9 +65,23 @@
         </a>
         <a href="{{ url_for('admin.depoimentos') }}" class="btn btn-outline-primary btn-sm">Depoimentos</a>
         <a href="{{ url_for('assinatura_bp.admin_vouchers') }}" class="btn btn-outline-primary btn-sm">Vouchers</a>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
+        <a href="{{ url_for('dashboard', view='bands') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-guitar me-1"></i> Grade de bandas
+        </a>
+        <a href="{{ url_for('bands.list_bands') }}" class="btn btn-outline-secondary btn-sm">Lista bandas</a>
     </div>
 </div>
+
+{% if stats.users_no_band %}
+<div class="alert alert-warning py-2 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" style="font-size: var(--text-sm);">
+    <div>
+        <i class="fas fa-user-clock me-1"></i>
+        <strong>{{ stats.users_no_band }}</strong> usuário{% if stats.users_no_band != 1 %}s{% endif %}
+        cadastrado{% if stats.users_no_band != 1 %}s{% endif %} sem banda — risco de abandono pós-cadastro.
+    </div>
+    <a href="#tab-users" class="btn btn-sm btn-warning" data-bs-toggle="tab" data-bs-target="#tab-users">Ver na aba Usuários</a>
+</div>
+{% endif %}
 
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
@@ -92,23 +106,27 @@
         <div class="admin-stat">
             <div class="num">{{ stats.users }}</div>
             <div class="lbl">Usuários</div>
+            {% if stats.users_no_band %}
+            <div class="text-warning mt-1" style="font-size: var(--text-xs);">{{ stats.users_no_band }} sem banda</div>
+            {% endif %}
         </div>
     </div>
 </div>
 
-{% if funnel_stats %}
-<div class="row g-3 mb-4">
-    <div class="col-12">
-        <h2 class="h6 text-muted mb-2">Funil de produto</h2>
-    </div>
-    {% for step, count in funnel_stats.items() %}
-    <div class="col-6 col-md-4 col-lg-2">
-        <div class="admin-stat">
-            <div class="num">{{ count }}</div>
-            <div class="lbl" style="font-size:10px;line-height:1.3;">{{ step.replace('_', ' ') }}</div>
+{% if funnel_rows %}
+<div class="mb-4">
+    <h2 class="h6 text-muted mb-2">Funil de ativação</h2>
+    <div class="row g-2">
+        {% for row in funnel_rows %}
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="admin-stat">
+                <div class="num">{{ row.count }}</div>
+                <div class="lbl" style="font-size:11px;line-height:1.3;text-transform:none;letter-spacing:0;">{{ row.label }}</div>
+                <div class="text-muted" style="font-size:10px;">{{ row.pct_of_users }}% dos usuários</div>
+            </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 {% endif %}
 
@@ -365,18 +383,23 @@
     </div>
 
     <div class="tab-pane fade" id="tab-users">
-        <div class="alert alert-warning py-2 mb-3" style="font-size: var(--text-sm);">
-            <strong>Superadmin do app</strong> — vê todas as bandas e o painel Admin.
-            Não confundir com <strong>admin de banda</strong> (titular promove em Membros da banda).
-            Superadmin via <code>SETSYNC_SUPERADMIN_*</code> no servidor ou coluna <code>is_superadmin</code> no banco.
+        <div class="alert alert-light border py-2 mb-3" style="font-size: var(--text-sm);">
+            <strong>Superadmin</strong> vê todo o app. <strong>Admin de banda</strong> é o titular em Membros.
+            Promoção via <code>SETSYNC_SUPERADMIN_*</code> ou coluna <code>is_superadmin</code>.
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+            <input type="search" class="form-control form-control-sm" id="admin-user-search"
+                   placeholder="Buscar por nome, usuário ou e-mail…" style="max-width: 320px;">
+            <span class="text-muted" style="font-size: var(--text-sm);">{{ users|length }} conta{% if users|length != 1 %}s{% endif %}</span>
         </div>
         <div class="card">
             <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0">
+                <table class="table table-hover admin-table mb-0" id="admin-users-table">
                     <thead>
                         <tr>
                             <th>Usuário</th>
                             <th>E-mail</th>
+                            <th>Bandas</th>
                             <th>WhatsApp</th>
                             <th>Cadastro</th>
                             <th>Superadmin</th>
@@ -385,12 +408,19 @@
                     </thead>
                     <tbody>
                         {% for u in users %}
-                        <tr>
+                        <tr data-search="{{ (user_display_name(u) ~ ' ' ~ u.username ~ ' ' ~ u.email)|lower }}">
                             <td>
                                 <strong>{{ user_display_name(u) }}</strong>
                                 <span class="text-muted" style="font-size: var(--text-sm);">@{{ u.username }}</span>
                             </td>
                             <td>{{ u.email }}</td>
+                            <td>
+                                {% if u.bands_count %}
+                                <span class="badge bg-light text-dark border">{{ u.bands_count }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">0</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if u.phone %}
                                 <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener noreferrer"
@@ -458,6 +488,18 @@
     if (btn && window.bootstrap && bootstrap.Tab) {
         bootstrap.Tab.getOrCreateInstance(btn).show();
     }
+})();
+(function () {
+    var input = document.getElementById('admin-user-search');
+    var table = document.getElementById('admin-users-table');
+    if (!input || !table) return;
+    input.addEventListener('input', function () {
+        var q = (input.value || '').trim().toLowerCase();
+        table.querySelectorAll('tbody tr').forEach(function (row) {
+            var hay = row.getAttribute('data-search') || '';
+            row.style.display = !q || hay.indexOf(q) !== -1 ? '' : 'none';
+        });
+    });
 })();
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-"""Ponto de entrada do SetSync: `uv run app.py` ou `uv run python main.py`."""
+"""Ponto de entrada do Uníssono: `uv run app.py` ou `uv run python main.py`."""
 from __future__ import annotations
 
 import os

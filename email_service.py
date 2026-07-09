@@ -1,4 +1,4 @@
-"""Serviço central de envio de e-mails do SetSync.
+"""Serviço central de envio de e-mails do Uníssono.
 
 Camada única sobre o Flask-Mail. Todo módulo que envia e-mail
 (autenticação, onboarding, assinaturas/vouchers) deve usar ``send_email``

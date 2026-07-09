@@ -1,5 +1,5 @@
 /**
- * SetSync PWA — registro do service worker, instalação (Android/desktop) e guia iOS.
+ * Uníssono PWA — registro do service worker, instalação (Android/desktop) e guia iOS.
  */
 (function () {
     'use strict';
@@ -45,7 +45,7 @@
                 });
             })
             .catch(function (err) {
-                console.warn('SetSync SW:', err);
+                console.warn('Uníssono SW:', err);
             });
 
         navigator.serviceWorker.addEventListener('controllerchange', function () {
@@ -97,7 +97,7 @@
         if (isStandalone()) return;
 
         if (isInAppBrowser()) {
-            alert('Abra este site no Safari (Compartilhar → Abrir no Safari) para instalar o SetSync na tela inicial.');
+            alert('Abra este site no Safari (Compartilhar → Abrir no Safari) para instalar o Uníssono na tela inicial.');
             return;
         }
 

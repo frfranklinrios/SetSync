@@ -25,4 +25,4 @@ ADMIN_EMAIL = (
     or f"contato@{DOMAIN}"
 ).strip().lower()
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD") or os.getenv("MAIL_PASSWORD") or ""
-SENDER_NAME = os.getenv("MAIL_SENDER_NAME", os.getenv("SENDER_NAME", "SetSync"))
+SENDER_NAME = os.getenv("MAIL_SENDER_NAME", os.getenv("SENDER_NAME", "Uníssono"))

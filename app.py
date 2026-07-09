@@ -115,7 +115,7 @@ def handle_unexpected_error(e):
     html = (
         '<!doctype html><html lang="pt-br"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        '<title>Erro — SetSync</title>'
+        '<title>Erro — Uníssono</title>'
         '<style>body{font-family:system-ui,sans-serif;background:#0c0a09;color:#e7e5e4;'
         'display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;padding:1.5rem}'
         '.box{max-width:420px;text-align:center}h1{font-size:1.3rem;margin:0 0 .5rem}'
@@ -452,6 +452,10 @@ def dashboard():
     api_cifras_stats = get_api_cifras_public_stats()
 
     user_id = session['user_id']
+    sa = is_superadmin(user_id)
+    if sa and request.args.get('view') != 'bands':
+        return redirect(url_for('admin.index'))
+
     onboarding = get_onboarding_progress(user_id)
     needs_activation = user_needs_band_activation(user_id)
     pending_band_invites = list_pending_invites_for_user(user_id)
@@ -636,11 +640,16 @@ def inject_site_config():
         except RuntimeError:
             mail_inbox_url = '/admin/email/'
 
+    from branding import APP_NAME, APP_NAME_FULL, APP_NAME_SHORT, APP_TAGLINE
     from seo_pages import faq_entries as _faq_entries
 
     ep = _request.endpoint if _request else None
     site_url = _external_url_for('index')
     return dict(
+        app_name=APP_NAME,
+        app_name_full=APP_NAME_FULL,
+        app_name_short=APP_NAME_SHORT,
+        app_tagline=APP_TAGLINE,
         faq_entries=_faq_entries(),
         whatsapp_number=whatsapp_number(),
         whatsapp_message=whatsapp_message(),
@@ -672,10 +681,13 @@ def inject_user():
     is_studio_primary = bool(user_id and is_studio_primary_user(user_id))
     nav_home_url = url_for('dashboard')
     if user_id:
-        studio_home = studio_primary_home_endpoint(user_id)
-        if studio_home:
-            ep, kwargs = studio_home
-            nav_home_url = url_for(ep, **kwargs)
+        if _is_superadmin(user_id):
+            nav_home_url = url_for('admin.index')
+        else:
+            studio_home = studio_primary_home_endpoint(user_id)
+            if studio_home:
+                ep, kwargs = studio_home
+                nav_home_url = url_for(ep, **kwargs)
     return dict(
         cifra_display_key=cifra_display_key,
         user_display_name=user_display_name,

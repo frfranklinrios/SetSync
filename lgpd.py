@@ -12,7 +12,7 @@ def privacy_contact_email() -> str:
 
 
 def dpo_label() -> str:
-    return (os.getenv('PRIVACY_DPO_NAME') or 'Encarregado SetSync').strip()
+    return (os.getenv('PRIVACY_DPO_NAME') or 'Encarregado Uníssono').strip()
 
 
 def tracking_requires_consent() -> bool:

@@ -2,7 +2,7 @@
 {% block title %}Reservar — {{ studio.nome }}{% endblock %}
 
 {% block seo %}
-<meta name="description" content="Reserve sala de ensaio em {{ studio.nome }}{% if studio.cidade %} — {{ studio.cidade }}{% endif %} pelo SetSync.">
+<meta name="description" content="Reserve sala de ensaio em {{ studio.nome }}{% if studio.cidade %} — {{ studio.cidade }}{% endif %} pelo Uníssono.">
 <meta name="robots" content="index, follow">
 {% endblock %}
 
@@ -52,7 +52,7 @@
     <div class="card border-primary mb-3">
         <div class="card-body text-center">
             <p class="mb-3 small text-muted">
-                Entre com sua conta de <strong>banda</strong> no SetSync para escolher data, horário e enviar a solicitação.
+                Entre com sua conta de <strong>banda</strong> no Uníssono para escolher data, horário e enviar a solicitação.
                 O estúdio confirma pelo painel.
             </p>
             <a href="{{ login_url }}" class="btn btn-primary w-100 mb-2">Entrar e reservar</a>
@@ -61,7 +61,7 @@
     </div>
 
     <p class="text-center small text-muted mb-0">
-        Powered by <a href="{{ url_for('index') }}">SetSync</a>
+        Powered by <a href="{{ url_for('index') }}">Uníssono</a>
     </p>
 </div>
 {% endblock %}

@@ -54,7 +54,7 @@ def _format_digest_text(entries: list[dict]) -> tuple[str, str]:
 def _format_whatsapp_message(title: str, body: str) -> str:
     base = canonical_app_url() or ''
     link = f'{base}/dashboard' if base else '/dashboard'
-    parts = ['*SetSync*', f'*{title}*', body, f'_Abrir no app:_\n{link}']
+    parts = ['*Uníssono*', f'*{title}*', body, f'_Abrir no app:_\n{link}']
     return '\n\n'.join(p for p in parts if p)
 
 

@@ -81,11 +81,11 @@ def main() -> None:
     validar_token(token)
 
     print('Criando plano Individual (R$ 15/mês)…')
-    individual_id = criar_plano(token, 'SetSync Individual', 15.0)
+    individual_id = criar_plano(token, 'Uníssono Individual', 15.0)
     print('Criando plano Pro (R$ 29/mês)…')
-    pro_id = criar_plano(token, 'SetSync Pro', 29.0)
+    pro_id = criar_plano(token, 'Uníssono Pro', 29.0)
     print('Criando plano Worship (R$ 69/mês)…')
-    worship_id = criar_plano(token, 'SetSync Worship', 69.0)
+    worship_id = criar_plano(token, 'Uníssono Worship', 69.0)
 
     print()
     print('Cole no .env:')

@@ -1,6 +1,6 @@
-# Screenshots da homepage SetSync
+# Screenshots da homepage Uníssono
 
-Imagens usadas na seção **Veja o SetSync em ação** (`partials/secao_screenshots.html`).
+Imagens usadas na seção **Veja o Uníssono em ação** (`partials/secao_screenshots.html`).
 
 | Arquivo | Descrição | Dimensão atual |
 |---------|-----------|----------------|

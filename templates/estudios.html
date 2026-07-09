@@ -1,10 +1,10 @@
 {% extends "index.html" %}
-{% block title %}SetSync para Estúdios — Receba reservas de ensaio online{% endblock %}
+{% block title %}Uníssono para Estúdios — Receba reservas de ensaio online{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('studios.landing') }}">
-<meta name="description" content="Cadastre seu estúdio de ensaio no SetSync: salas, calendário, reservas de bandas e financeiro (receita, pagamentos e despesas). Plano básico gratuito ou Premium com salas ilimitadas.">
-<meta property="og:title" content="SetSync para Estúdios — Agenda de ensaio para donos de sala">
+<meta name="description" content="Cadastre seu estúdio de ensaio no Uníssono: salas, calendário, reservas de bandas e financeiro (receita, pagamentos e despesas). Plano básico gratuito ou Premium com salas ilimitadas.">
+<meta property="og:title" content="Uníssono para Estúdios — Agenda de ensaio para donos de sala">
 <meta property="og:description" content="Publique seu estúdio, receba reservas de bandas e acompanhe o financeiro no painel: preço/hora, recebido, a receber e despesas do mês.">
 <meta property="og:url" content="{{ external_url_for('studios.landing') }}">
 <meta property="og:type" content="website">
@@ -161,7 +161,7 @@
     {% set active = 'estudio' %}
     {% include 'partials/audience_bar.html' %}
     <div class="estudios-hero-inner">
-        <span class="badge text-bg-light mb-3"><i class="fas fa-door-open me-1"></i> SetSync para estúdios de ensaio</span>
+        <span class="badge text-bg-light mb-3"><i class="fas fa-door-open me-1"></i> Uníssono para estúdios de ensaio</span>
         <h1>Pare de responder horário no WhatsApp</h1>
         <p class="estudios-lead">
             Bandas procuram sala, você confirma pelo painel e o ensaio entra na agenda delas automaticamente.
@@ -188,7 +188,7 @@
 
 <section class="estudios-section">
     <h2>O que atrapalha quem tem sala de ensaio</h2>
-    <p class="estudios-section-sub">Problemas do dia a dia — e como o SetSync organiza a operação.</p>
+    <p class="estudios-section-sub">Problemas do dia a dia — e como o Uníssono organiza a operação.</p>
     <div class="estudios-pain-grid">
         <article class="estudios-pain-card">
             <h3><i class="fas fa-circle-xmark"></i> Agenda no caderno ou planilha</h3>
@@ -339,7 +339,7 @@
         </article>
         <article class="estudios-feature-card">
             <h3><i class="fas fa-users text-primary me-1"></i> Integração com bandas</h3>
-            <p>Quando você confirma, o ensaio vira evento na agenda da banda no SetSync.</p>
+            <p>Quando você confirma, o ensaio vira evento na agenda da banda no Uníssono.</p>
         </article>
         <article class="estudios-feature-card">
             <h3><i class="fas fa-search text-primary me-1"></i> Busca por cidade</h3>
@@ -357,7 +357,7 @@
     </details>
     <details>
         <summary>As bandas pagam para reservar?</summary>
-        <p>No SetSync a reserva é de horário de ensaio — a cobrança da sala continua sendo entre você e a banda, do jeito que vocês já combinam. No painel, o <strong>financeiro</strong> ajuda a registrar o que foi cobrado e o que ainda falta receber.</p>
+        <p>No Uníssono a reserva é de horário de ensaio — a cobrança da sala continua sendo entre você e a banda, do jeito que vocês já combinam. No painel, o <strong>financeiro</strong> ajuda a registrar o que foi cobrado e o que ainda falta receber.</p>
     </details>
     <details>
         <summary>Tem controle financeiro das reservas?</summary>
@@ -376,7 +376,7 @@
     </details>
     <details>
         <summary>E se eu já uso outro sistema de agenda?</summary>
-        <p>Você pode começar só com o SetSync para receber bandas que já usam o app. Bloqueios manuais cobrem horários reservados fora da plataforma.</p>
+        <p>Você pode começar só com o Uníssono para receber bandas que já usam o app. Bloqueios manuais cobrem horários reservados fora da plataforma.</p>
     </details>
     <details>
         <summary>Sou banda — posso reservar estúdio aqui?</summary>
@@ -386,7 +386,7 @@
 
 <section class="estudios-final-cta">
     <h2>Coloque seu estúdio no mapa hoje</h2>
-    <p>Cadastro em minutos. Plano básico gratuito. Bandas já procuram sala de ensaio no SetSync.</p>
+    <p>Cadastro em minutos. Plano básico gratuito. Bandas já procuram sala de ensaio no Uníssono.</p>
     <div class="estudios-cta-row justify-content-center">
         <a href="{{ url_for('studios.register_studio') }}" class="btn btn-primary btn-lg">Cadastrar meu estúdio</a>
         <a href="{{ url_for('index') }}#para-estudios" class="btn btn-outline-secondary btn-lg">Voltar à home</a>

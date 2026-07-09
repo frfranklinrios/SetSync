@@ -1,4 +1,4 @@
-/** Constantes compartilhadas — diagramas de acordes SetSync */
+/** Constantes compartilhadas — diagramas de acordes Uníssono */
 (function (global) {
   var CD = (global.SetSyncChordDiagram = global.SetSyncChordDiagram || {});
 

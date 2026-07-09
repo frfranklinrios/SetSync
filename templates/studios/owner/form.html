@@ -20,7 +20,7 @@
         <li>Completar perfil, fotos e contato</li>
         <li>Cadastrar salas e horários de disponibilidade</li>
         <li>Imprimir o <strong>QR de agendamento</strong> para a recepção</li>
-        <li>Receber e confirmar reservas de bandas pelo SetSync</li>
+        <li>Receber e confirmar reservas de bandas pelo Uníssono</li>
     </ol>
     <p class="mb-0 text-muted">Bandas encontram seu estúdio na busca e o ensaio confirmado entra na agenda delas automaticamente.</p>
 </div>
@@ -140,6 +140,6 @@ window.gm_authFailure = function () {
 </script>
 <script src="{{ url_for('static', filename='js/studio-address-autocomplete.js') }}?v=1"></script>
 <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&language=pt-BR&region=BR&callback=SetSyncInitStudioAddress"></script>
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&language=pt-BR&region=BR&callback=UníssonoInitStudioAddress"></script>
 {% endif %}
 {% endblock %}

@@ -62,7 +62,7 @@ def get_cifra_record(artist_slug: str, song_slug: str) -> dict[str, Any]:
 
 
 def get_cifra_setsync(artist_slug: str, song_slug: str) -> dict[str, Any]:
-    """Pacote pronto para o formulário SetSync (endpoint nativo da api-cifras)."""
+    """Pacote pronto para o formulário Uníssono (endpoint nativo da api-cifras)."""
     artist = quote((artist_slug or '').strip(), safe='')
     song = quote((song_slug or '').strip(), safe='')
     if not artist or not song:

@@ -77,7 +77,7 @@
             .then(function (data) {
                 if (!data.ok) return;
                 appendMsg('bot',
-                    'Olá! Sou o assistente do SetSync. Pergunte sobre cifras, setlists, agenda, estúdios ou planos.' +
+                    'Olá! Sou o assistente do Uníssono. Pergunte sobre cifras, setlists, agenda, estúdios ou planos.' +
                     renderSuggestions(data.suggestions)
                 );
                 bindSuggestionClicks();

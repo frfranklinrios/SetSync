@@ -1,4 +1,16 @@
-# Changelog — SetSync
+# Changelog — Uníssono
+
+## 2026-07-09
+
+### Rebrand: SetSync → Uníssono
+- Nome do app atualizado em toda a interface, e-mails, PWA, SEO e documentação
+- Módulo `branding.py` centraliza `app_name` nos templates
+- Aviso na tela de login/cadastro e banner “Entendi” para quem já usa o app
+- Domínio `setsync.com.br` e formatos técnicos internos mantidos por compatibilidade
+
+### Painel master (superadmin)
+- Login e menu “Painel” levam direto ao `/admin`
+- Funil de ativação em português, alerta de usuários sem banda, busca na aba Usuários
 
 ## 2026-06-06
 
@@ -22,7 +34,7 @@
 - Contadores reais (bandas, músicas, setlists) com animação Intersection Observer
 
 ### Tarefa 5 — Screenshots
-- Seção "Veja o SetSync em ação" + `static/screenshots/README.md`
+- Seção "Veja o Uníssono em ação" + `static/screenshots/README.md`
 
 ### Tarefa 6 — Onboarding e-mail
 - Tabela `onboarding_emails`, 5 e-mails, job diário via scheduler

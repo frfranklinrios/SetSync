@@ -1,0 +1,41 @@
+{# Aviso temporário: rebrand SetSync → Uníssono #}
+{% if current_user.is_authenticated %}
+<div id="rebrand-notice" class="rebrand-notice" role="status" hidden>
+    <div class="container-fluid px-4 d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
+        <span style="font-size: var(--text-sm);">
+            <strong>SetSync agora é {{ app_name }}.</strong>
+            Mesmo app de cifras e setlists — só mudou o nome.
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="rebrand-notice-dismiss" aria-label="Fechar aviso">
+            Entendi
+        </button>
+    </div>
+</div>
+<style>
+.rebrand-notice {
+    background: linear-gradient(90deg, rgba(234,88,12,0.12), rgba(234,88,12,0.04));
+    border-bottom: 1px solid rgba(234, 88, 12, 0.25);
+}
+[data-theme="dark"] .rebrand-notice {
+    background: linear-gradient(90deg, rgba(234,88,12,0.18), rgba(11,20,34,0.95));
+}
+</style>
+<script>
+(function () {
+    var KEY = 'unissono-rebrand-notice-v1';
+    var el = document.getElementById('rebrand-notice');
+    var btn = document.getElementById('rebrand-notice-dismiss');
+    if (!el) return;
+    try {
+        if (localStorage.getItem(KEY) === '1') return;
+    } catch (e) {}
+    el.hidden = false;
+    if (btn) {
+        btn.addEventListener('click', function () {
+            el.hidden = true;
+            try { localStorage.setItem(KEY, '1'); } catch (e) {}
+        });
+    }
+})();
+</script>
+{% endif %}

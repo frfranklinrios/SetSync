@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "SetSync — Cifras e Setlists",
-  "short_name": "SetSync",
+  "name": "Uníssono — Cifras e Setlists",
+  "short_name": "Uníssono",
   "description": "Organize cifras, setlists e ensaios da sua banda.",
   "start_url": "/?source=pwa",
   "scope": "/",

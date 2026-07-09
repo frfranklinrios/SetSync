@@ -17,7 +17,7 @@ def test_kb_nonempty():
 
 def test_answer_transposicao():
     from help_chatbot import answer_question
-    r = answer_question('Como transpor cifra no SetSync?')
+    r = answer_question('Como transpor cifra no Uníssono?')
     assert r['ok']
     assert r['answer']
     assert 'transpor' in r['answer'].lower() or 'tom' in r['answer'].lower()

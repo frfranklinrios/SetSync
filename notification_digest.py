@@ -62,7 +62,7 @@ def _channels_for_digest(user: dict, entries: list[dict]) -> set[str]:
 def _whatsapp_message(title: str, body: str) -> str:
     base = canonical_app_url() or ''
     link = f'{base}/dashboard' if base else '/dashboard'
-    parts = ['*SetSync*', f'*{title}*', body, f'_Abrir no app:_\n{link}']
+    parts = ['*Uníssono*', f'*{title}*', body, f'_Abrir no app:_\n{link}']
     return '\n\n'.join(p for p in parts if p)
 
 

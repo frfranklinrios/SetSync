@@ -1,6 +1,6 @@
-# Monetização SetSync — Mercado Pago
+# Monetização Uníssono — Mercado Pago
 
-Guia para configurar planos pagos, webhooks e vouchers no SetSync.
+Guia para configurar planos pagos, webhooks e vouchers no Uníssono.
 
 ## 1. Conta Mercado Pago
 
@@ -58,7 +58,7 @@ MP_PLAN_WORSHIP_ID=2c938084...
 
 Copie os valores para o `.env`.
 
-> **Checkout:** o SetSync cria a assinatura **sem** `preapproval_plan_id` (valores R$ 29 / R$ 69 em `monetizacao.py`) e redireciona ao `init_point` do MP. Com plano associado na API, o MP exige `card_token_id` (checkout transparente). Os `MP_PLAN_*` servem para validação e referência no painel.
+> **Checkout:** o Uníssono cria a assinatura **sem** `preapproval_plan_id` (valores R$ 29 / R$ 69 em `monetizacao.py`) e redireciona ao `init_point` do MP. Com plano associado na API, o MP exige `card_token_id` (checkout transparente). Os `MP_PLAN_*` servem para validação e referência no painel.
 
 ## 4. Webhook no painel Mercado Pago
 
@@ -275,7 +275,7 @@ Teste local da lógica (sem rede):
 python3 scripts/test_adsense_eligibility.py
 ```
 
-> **LGPD:** se exigir consentimento de cookies para publicidade, adicione um banner de opt-in antes de carregar o script — o SetSync hoje só prepara a carga condicional por plano.
+> **LGPD:** se exigir consentimento de cookies para publicidade, adicione um banner de opt-in antes de carregar o script — o Uníssono hoje só prepara a carga condicional por plano.
 
 ## Plano Estúdio (beta gratuito)
 

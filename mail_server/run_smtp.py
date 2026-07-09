@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    logger.info("SMTP SetSync — domínio %s, hostname %s", DOMAIN, MAIL_HOSTNAME)
+    logger.info("SMTP Uníssono — domínio %s, hostname %s", DOMAIN, MAIL_HOSTNAME)
     logger.info("Caixa principal: %s", ADMIN_EMAIL)
 
     storage = EmailStorage()

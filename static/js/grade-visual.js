@@ -1,5 +1,5 @@
 /**
- * Chord sheet visual + conversão texto ↔ JSON (formato SetSync).
+ * Chord sheet visual + conversão texto ↔ JSON (formato Uníssono).
  */
 (function (global) {
   function escHtml(s) {

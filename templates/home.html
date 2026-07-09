@@ -1,12 +1,12 @@
 {% extends "index.html" %}
 
-{% block title %}SetSync — App para bandas, igrejas e estúdios de ensaio{% endblock %}
+{% block title %}Uníssono — App para bandas, igrejas e estúdios de ensaio{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('index') }}">
-<meta name="description" content="SetSync é o app brasileiro para música ao vivo: cifras e setlists para bandas, plano Worship para igrejas e agenda com financeiro para estúdios de ensaio. Tudo em um só lugar.">
-<meta name="keywords" content="SetSync, app música, cifras banda, setlist, estúdio ensaio, louvor igreja">
-<meta property="og:title" content="SetSync — Bandas, igrejas e estúdios em um app">
+<meta name="description" content="Uníssono é o app brasileiro para música ao vivo: cifras e setlists para bandas, plano Worship para igrejas e agenda com financeiro para estúdios de ensaio. Tudo em um só lugar.">
+<meta name="keywords" content="Uníssono, app música, cifras banda, setlist, estúdio ensaio, louvor igreja">
+<meta property="og:title" content="Uníssono — Bandas, igrejas e estúdios em um app">
 <meta property="og:description" content="Repertório sincronizado, agenda com escalação, reservas de sala e Modo Tocar offline — escolha seu perfil e comece grátis.">
 <meta property="og:url" content="{{ external_url_for('index') }}">
 <meta property="og:type" content="website">
@@ -607,7 +607,7 @@
         <span class="home-badge"><i class="fas fa-gift me-1"></i> 30 dias grátis · sem cartão</span>
         <h1>O app completo para música ao vivo</h1>
         <p class="home-lead">
-            O <strong>SetSync</strong> reúne <strong>bandas</strong>, <strong>igrejas</strong> e <strong>estúdios de ensaio</strong>
+            O <strong>Uníssono</strong> reúne <strong>bandas</strong>, <strong>igrejas</strong> e <strong>estúdios de ensaio</strong>
             em um ecossistema: repertório compartilhado, agenda com escalação, reservas de sala e
             <strong>Modo Tocar offline</strong> no palco.
         </p>
@@ -693,7 +693,7 @@
 {% if testimonials %}
 <section class="home-section home-testimonials">
     <h2>Quem usa recomenda</h2>
-    <p class="section-sub">Bandas, igrejas e estúdios que já organizaram o trabalho no SetSync.</p>
+    <p class="section-sub">Bandas, igrejas e estúdios que já organizaram o trabalho no Uníssono.</p>
     <div class="testimonials-grid">
         {% for t in testimonials[:3] %}
         <article class="testimonial-card">
@@ -709,9 +709,9 @@
 
 <section class="home-section home-faq" id="faq">
     <h2>Perguntas frequentes</h2>
-    <p class="section-sub">Dúvidas comuns sobre o SetSync como plataforma.</p>
+    <p class="section-sub">Dúvidas comuns sobre o Uníssono como plataforma.</p>
     <details>
-        <summary>O SetSync é só para bandas?</summary>
+        <summary>O Uníssono é só para bandas?</summary>
         <p>Não. Há módulos para <strong>bandas e músicos</strong>, <strong>igrejas</strong> (plano Worship) e <strong>donos de estúdio</strong> (reservas e financeiro). Escolha seu perfil nas páginas <a href="{{ url_for('assinatura_bp.bandas') }}">Bandas</a>, <a href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a> ou <a href="{{ url_for('studios.landing') }}">Estúdios</a>.</p>
     </details>
     <details>
@@ -731,7 +731,7 @@
 
 <section class="home-cta-band">
     <h2>Escolha seu perfil e comece grátis</h2>
-    <p>Banda, igreja ou estúdio — o SetSync cresce com o seu projeto musical.</p>
+    <p>Banda, igreja ou estúdio — o Uníssono cresce com o seu projeto musical.</p>
     <a href="{{ url_for('assinatura_bp.bandas') }}" class="btn btn-primary btn-lg me-2 mb-2">Sou banda</a>
     <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-outline-primary btn-lg me-2 mb-2">Sou igreja</a>
     <a href="{{ url_for('studios.landing') }}" class="btn btn-outline-primary btn-lg me-2 mb-2">Tenho estúdio</a>

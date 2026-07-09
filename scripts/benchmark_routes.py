@@ -95,7 +95,7 @@ def main() -> int:
     if ctx['is_superadmin']:
         routes.append(('GET', '/admin/'))
 
-    print('=== Benchmark SetSync (3 amostras/rota) ===')
+    print('=== Benchmark Uníssono (3 amostras/rota) ===')
     print(f'Usuário: {u["username"]}\n')
     print(f'{"Rota":<52} {"HTTP":>4} {"ms avg":>8} {"ms max":>8} {"KB":>7}')
     print('-' * 85)

@@ -16,7 +16,7 @@ def seed_testimonials(c) -> None:
             'cidade': 'Campinas, SP',
             'descricao': 'Guitarrista — Banda Ágape',
             'texto': (
-                'Antes do SetSync a gente perdia 20 minutos de ensaio só transpondo cifra no papel. '
+                'Antes do Uníssono a gente perdia 20 minutos de ensaio só transpondo cifra no papel. '
                 'Hoje abrimos o Modo Tocar e cada cantor vê a música no tom certo. Mudou nosso culto.'
             ),
             'foto_url': '',
@@ -60,17 +60,17 @@ def _blog_posts_data() -> list[dict]:
             'slug': 'como-transpor-cifra-para-qualquer-tom',
             'titulo': 'Como transpor cifra para qualquer tom — guia completo para guitarristas',
             'resumo': 'Aprenda a transpor cifras na prática: intervalos, capotraste, tom do cantor e ferramentas digitais.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'cifras, transposição, guitarra, teoria musical',
             'meta_title': 'Como transpor cifra — guia para guitarristas',
-            'meta_description': 'Guia prático de transposição de cifras: entenda intervalos, use capotraste e ferramentas como o SetSync.',
+            'meta_description': 'Guia prático de transposição de cifras: entenda intervalos, use capotraste e ferramentas como o Uníssono.',
             'conteudo': _POST_TRANSPOSE,
         },
         {
             'slug': 'montar-setlist-culto-gospel-5-passos',
             'titulo': 'Como montar um setlist para culto gospel em 5 passos',
             'resumo': 'Do repertório ao palco: fluxo, tom por cantor, ordem das músicas e link compartilhado com a equipe.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'setlist, culto, louvor, igreja',
             'meta_title': 'Setlist para culto gospel em 5 passos',
             'meta_description': 'Monte setlists de culto gospel com ordem, tom por vocalista e compartilhamento com a banda.',
@@ -80,7 +80,7 @@ def _blog_posts_data() -> list[dict]:
             'slug': 'melhores-apps-cifras-banda-2026',
             'titulo': 'Os melhores aplicativos de cifras para banda em 2026',
             'resumo': 'Comparativo honesto entre apps de cifra: o que funciona para banda, igreja e ensaio ao vivo.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'apps, cifras, comparativo, banda',
             'meta_title': 'Melhores apps de cifras para banda 2026',
             'meta_description': 'Comparativo dos melhores apps de cifras para bandas e ministérios de louvor em 2026.',
@@ -90,7 +90,7 @@ def _blog_posts_data() -> list[dict]:
             'slug': 'organizar-ministerio-louvor-igreja',
             'titulo': 'Como organizar o ministério de louvor da sua igreja',
             'resumo': 'Estrutura, repertório compartilhado, ensaios produtivos e ferramentas que reduzem retrabalho.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'ministério, louvor, igreja, organização',
             'meta_title': 'Organizar ministério de louvor na igreja',
             'meta_description': 'Dicas práticas para organizar o ministério de louvor: repertório, ensaios e ferramentas digitais.',
@@ -100,7 +100,7 @@ def _blog_posts_data() -> list[dict]:
             'slug': 'diferenca-tom-escala-musica',
             'titulo': 'Diferença entre tom e escala: o que todo músico precisa saber',
             'resumo': 'Tom, tonalidade e escala explicados sem jargão — essencial para transpor e comunicar com a banda.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'teoria musical, tom, escala, transposição',
             'meta_title': 'Tom vs escala — guia para músicos',
             'meta_description': 'Entenda a diferença entre tom e escala e como isso afeta cifras, setlists e ensaios.',
@@ -110,9 +110,9 @@ def _blog_posts_data() -> list[dict]:
             'slug': 'compartilhar-cifras-com-a-banda',
             'titulo': 'Como compartilhar cifras com a banda sem perder a versão certa',
             'resumo': 'Pare de mandar print no WhatsApp: repertório único, convites por link, setlist sincronizada e letras públicas para a equipe.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'compartilhar cifras, banda, repertório, setlist',
-            'meta_title': 'Compartilhar cifras com a banda — guia SetSync',
+            'meta_title': 'Compartilhar cifras com a banda — guia Uníssono',
             'meta_description': 'Aprenda a compartilhar cifras com sua banda: repertório centralizado, convites, setlists e link público de letras.',
             'conteudo': _POST_COMPARTILHAR_CIFRAS,
         },
@@ -120,89 +120,89 @@ def _blog_posts_data() -> list[dict]:
             'slug': 'gerenciar-bandas-ministerio-louvor',
             'titulo': 'Como gerenciar bandas e ministérios de louvor no mesmo lugar',
             'resumo': 'Convites, permissões, várias bandas na conta Worship e agenda com escalação — sem planilha perdida.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'gerenciar bandas, ministério, louvor, igreja',
-            'meta_title': 'Gerenciar bandas de louvor — SetSync',
+            'meta_title': 'Gerenciar bandas de louvor — Uníssono',
             'meta_description': 'Guia para gerenciar bandas: convidar músicos, organizar repertório, setlists e múltiplos ministérios na igreja.',
             'conteudo': _POST_GERENCIAR_BANDAS,
         },
         {
             'slug': 'como-funciona-chord-sheet-setsync',
-            'titulo': 'Como funciona o Chord Sheet no SetSync',
+            'titulo': 'Como funciona o Chord Sheet no Uníssono',
             'resumo': 'Progressão harmônica em grade, editor com prévia ao vivo, salvamento automático, notação brasileira e uso no Modo Tocar — guia completo.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'chord sheet, acordes, progressão harmônica, editor, modo tocar',
-            'meta_title': 'Chord Sheet no SetSync — guia do editor',
-            'meta_description': 'Aprenda a montar chord sheets no SetSync: compassos, semi-pulsos, simile, transposição, autosave e visualização no palco.',
+            'meta_title': 'Chord Sheet no Uníssono — guia do editor',
+            'meta_description': 'Aprenda a montar chord sheets no Uníssono: compassos, semi-pulsos, simile, transposição, autosave e visualização no palco.',
             'conteudo': _POST_CHORDSHEET,
         },
         {
             'slug': 'como-cadastrar-estudio-ensino-setsync',
-            'titulo': 'Como cadastrar seu estúdio de ensaio no SetSync',
+            'titulo': 'Como cadastrar seu estúdio de ensaio no Uníssono',
             'resumo': 'Passo a passo para donos de sala: perfil, fotos, salas, Google Maps, disponibilidade e confirmação de reservas.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'estúdio, ensaio, cadastro, reservas',
-            'meta_title': 'Cadastrar estúdio no SetSync — tutorial',
-            'meta_description': 'Aprenda a cadastrar seu estúdio de ensaio no SetSync: salas, horários, bloqueios e painel de reservas beta gratuito.',
+            'meta_title': 'Cadastrar estúdio no Uníssono — tutorial',
+            'meta_description': 'Aprenda a cadastrar seu estúdio de ensaio no Uníssono: salas, horários, bloqueios e painel de reservas beta gratuito.',
             'conteudo': _POST_ESTUDIO_CADASTRO,
         },
         {
             'slug': 'como-reservar-sala-ensaio-banda-setsync',
             'titulo': 'Como reservar sala de ensaio para sua banda',
             'resumo': 'Busque estúdios por cidade, escolha horário, acompanhe a solicitação e veja o ensaio na agenda quando confirmado.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'estúdio, reserva, banda, ensaio',
-            'meta_title': 'Reservar sala de ensaio — tutorial SetSync',
-            'meta_description': 'Tutorial para bandas reservarem sala de ensaio no SetSync: busca, solicitação, status e agenda sincronizada.',
+            'meta_title': 'Reservar sala de ensaio — tutorial Uníssono',
+            'meta_description': 'Tutorial para bandas reservarem sala de ensaio no Uníssono: busca, solicitação, status e agenda sincronizada.',
             'conteudo': _POST_ESTUDIO_RESERVA,
         },
         {
             'slug': 'como-cadastrar-instrumentos-perfil-setsync',
             'titulo': 'Como cadastrar seus instrumentos no perfil',
             'resumo': 'Marque violão, guitarra, baixo, vocal, bateria e mais — a banda vê na escalação e na lista de membros.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'perfil, instrumentos, escalação, banda',
-            'meta_title': 'Instrumentos no perfil — tutorial SetSync',
-            'meta_description': 'Cadastre os instrumentos que você toca no SetSync e ajude a banda a montar a escalação sem adivinhar funções.',
+            'meta_title': 'Instrumentos no perfil — tutorial Uníssono',
+            'meta_description': 'Cadastre os instrumentos que você toca no Uníssono e ajude a banda a montar a escalação sem adivinhar funções.',
             'conteudo': _POST_INSTRUMENTOS,
         },
         {
             'slug': 'como-usar-agenda-escalacao-setsync',
-            'titulo': 'Como usar a agenda e escalação no SetSync',
+            'titulo': 'Como usar a agenda e escalação no Uníssono',
             'resumo': 'Crie ensaios e shows, vincule setlist, escale integrantes, confirme por link e receba lembretes automáticos.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'agenda, escalação, ensaio, show',
-            'meta_title': 'Agenda e escalação — tutorial SetSync',
-            'meta_description': 'Tutorial completo da agenda SetSync: eventos, escalação com confirmação, formações e lembretes.',
+            'meta_title': 'Agenda e escalação — tutorial Uníssono',
+            'meta_description': 'Tutorial completo da agenda Uníssono: eventos, escalação com confirmação, formações e lembretes.',
             'conteudo': _POST_AGENDA,
         },
         {
             'slug': 'como-usar-modo-tocar-setsync',
             'titulo': 'Como usar o Modo Tocar no palco',
             'resumo': 'Tela cheia, seções, sync da banda, offline auto, pedal, notas de palco, vocalista e atalhos.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'modo tocar, palco, cifras, setlist, pedal, offline',
-            'meta_title': 'Modo Tocar — tutorial SetSync',
-            'meta_description': 'Modo Tocar no SetSync: seções, sync, offline automático, pedal Bluetooth, notas de palco e atalhos para o culto.',
+            'meta_title': 'Modo Tocar — tutorial Uníssono',
+            'meta_description': 'Modo Tocar no Uníssono: seções, sync, offline automático, pedal Bluetooth, notas de palco e atalhos para o culto.',
             'conteudo': _POST_MODO_TOCAR,
         },
         {
             'slug': 'como-usar-notificacoes-setsync',
             'titulo': 'Como configurar notificações, push e WhatsApp',
             'resumo': 'Alertas imediatos de escalação, resumo diário às 21h, lembretes de agenda e preferências por tipo.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'notificações, whatsapp, push, alertas',
-            'meta_title': 'Notificações SetSync — tutorial',
-            'meta_description': 'Configure push, e-mail e WhatsApp no SetSync: escalação, convites, estúdio e resumo diário.',
+            'meta_title': 'Notificações Uníssono — tutorial',
+            'meta_description': 'Configure push, e-mail e WhatsApp no Uníssono: escalação, convites, estúdio e resumo diário.',
             'conteudo': _POST_NOTIFICACOES,
         },
         {
             'slug': 'como-usar-versao-pessoal-cifras-setsync',
             'titulo': 'Como usar a versão pessoal de cifras',
             'resumo': 'Edite sem alterar a banda na hora, teste no Modo Tocar e publique quando a equipe aprovar.',
-            'autor': 'Equipe SetSync',
+            'autor': 'Equipe Uníssono',
             'tags': 'versão pessoal, cifras, editor, banda',
-            'meta_title': 'Versão pessoal de cifras — tutorial SetSync',
+            'meta_title': 'Versão pessoal de cifras — tutorial Uníssono',
             'meta_description': 'Tutorial da versão pessoal: editar cifras em privado, alternar Banda/Minha e publicar para a equipe.',
             'conteudo': _POST_VERSAO_PESSOAL,
         },
@@ -257,8 +257,8 @@ _POST_TRANSPOSE = """
 <p>Acordes com baixo — como D/F# — também sobem integralmente: em E vira E/G#. Não esqueça extensões (m7, sus4, add9); elas permanecem iguais, só muda a raiz.</p>
 <h2>Capotraste: atalho físico</h2>
 <p>O capo desloca a sonoridade sem reescrever a cifra. Capo na 2ª casa com forma de G soa em A. Útil quando a progressão usa pestanas abertas. Limite: nem toda música aceita capo sem mudar timbre ou dificuldade de solo.</p>
-<h2>Tom do cantor no SetSync</h2>
-<p>No SetSync você cadastra cantores e define transposição por vocalista. Ao montar o setlist, escolhe quem canta e a cifra abre no tom certo — inclusive no Modo Tocar, tela cheia com auto-scroll. Acaba o caderno rabiscado e o "espera, deixa eu transpor".</p>
+<h2>Tom do cantor no Uníssono</h2>
+<p>No Uníssono você cadastra cantores e define transposição por vocalista. Ao montar o setlist, escolhe quem canta e a cifra abre no tom certo — inclusive no Modo Tocar, tela cheia com auto-scroll. Acaba o caderno rabiscado e o "espera, deixa eu transpor".</p>
 <h2>Checklist rápido antes do culto</h2>
 <ul>
 <li>Confirme o tom de cada música com quem vai cantar.</li>
@@ -273,13 +273,13 @@ _POST_SETLIST = """
 <h2>Passo 1: Defina o fluxo do culto</h2>
 <p>Antes de escolher músicas, alinhe com a liderança o fluxo: quantas canções de adoração, transição para palavra, encerramento. O setlist não é só uma lista — é roteiro emocional e litúrgico.</p>
 <h2>Passo 2: Selecione do repertório da banda</h2>
-<p>Use o repertório centralizado no SetSync. Evite músicas que a equipe não ensaiou há meses. Marque tom original e confirme se há versão atualizada da cifra.</p>
+<p>Use o repertório centralizado no Uníssono. Evite músicas que a equipe não ensaiou há meses. Marque tom original e confirme se há versão atualizada da cifra.</p>
 <h2>Passo 3: Tom por cantor</h2>
-<p>Para cada faixa, defina quem canta. No SetSync, o tom do vocalista aplica transposição automática. Isso evita surpresas quando a cantora de turno não é quem ensaiou na semana passada.</p>
+<p>Para cada faixa, defina quem canta. No Uníssono, o tom do vocalista aplica transposição automática. Isso evita surpresas quando a cantora de turno não é quem ensaiou na semana passada.</p>
 <h2>Passo 4: Ordene e teste transições</h2>
 <p>Arraste as músicas na ordem do culto. Pense em tonalidades vizinhas para transições suaves (ex.: de G para D). Faça um ensaio seco só navegando entre as músicas no app.</p>
 <h2>Passo 5: Compartilhe com a equipe</h2>
-<p>Ative o link público ou garanta que todos os membros acessem a banda no SetSync. No culto, abra o Modo Tocar — auto-scroll, tela cheia, tema escuro se o ambiente for escuro.</p>
+<p>Ative o link público ou garanta que todos os membros acessem a banda no Uníssono. No culto, abra o Modo Tocar — auto-scroll, tela cheia, tema escuro se o ambiente for escuro.</p>
 <p>Com esses cinco passos você reduz improviso de última hora e entrega um culto mais fluido. O setlist vira documento vivo: atualize após cada culto com o que funcionou.</p>
 """
 
@@ -290,7 +290,7 @@ _POST_APPS = """
 <p>Excelentes para consulta individual e descoberta de músicas. Para banda, falta gestão de repertório próprio, setlists sincronizados e controle de permissões. Muitas equipes ainda exportam print ou PDF manualmente.</p>
 <h2>Planilhas e PDFs</h2>
 <p>Funcionam até certo ponto. Quebram quando alguém edita a cifra e esquece de avisar, ou quando o cantor muda e ninguém transõe a tempo. Não há Modo Tocar nativo nem transposição automática por vocalista.</p>
-<h2>SetSync em 2026</h2>
+<h2>Uníssono em 2026</h2>
 <p>Feito para bandas e igrejas brasileiras: plano grátis generoso, Pro por banda, Worship para múltiplos ministérios. Destaques: transposição por cantor, setlists, Modo Tocar com auto-scroll, PDF no Pro, PWA offline e convites por link.</p>
 <h2>Como escolher</h2>
 <ul>
@@ -306,13 +306,13 @@ _POST_MINISTERIO = """
 <h2>Estrutura clara de liderança</h2>
 <p>Defina quem decide repertório, quem agenda ensaios e quem cuida da comunicação com a igreja. Ministérios confusos geram cifras duplicadas e integrantes desmotivados.</p>
 <h2>Repertório único e atualizado</h2>
-<p>Centralize músicas aprovadas. No SetSync, cada ministério pode ser uma banda; no plano Worship, várias bandas na mesma conta. Admins editam; membros tocam. Acabou a pasta "Cifras Final FINAL2".</p>
+<p>Centralize músicas aprovadas. No Uníssono, cada ministério pode ser uma banda; no plano Worship, várias bandas na mesma conta. Admins editam; membros tocam. Acabou a pasta "Cifras Final FINAL2".</p>
 <h2>Ensaios com pauta</h2>
 <p>Chegue com setlist pronto, tom confirmado e link enviado antes. Use os primeiros minutos para passar o Modo Tocar com todos — especialmente novos integrantes.</p>
 <h2>Onboarding de voluntários</h2>
 <p>Convite por link, nome de exibição, papel (admin ou membro). Documente tom padrão de cada cantor fixo. Quem entra no meio do mês não deve depender de PDF antigo.</p>
 <h2>Métricas simples</h2>
-<p>Quantas músicas no repertório, quantos ensaios por mês, feedback pós-culto em duas perguntas. Ferramentas como SetSync mostram crescimento do acervo e facilitam upgrade quando o plano grátis aperta.</p>
+<p>Quantas músicas no repertório, quantos ensaios por mês, feedback pós-culto em duas perguntas. Ferramentas como Uníssono mostram crescimento do acervo e facilitam upgrade quando o plano grátis aperta.</p>
 <p>Organizar louvor é servir pessoas, não só notas. Processos leves liberam tempo para pastorear músicos e adorar com excelência.</p>
 """
 
@@ -324,7 +324,7 @@ _POST_TOM_ESCALA = """
 <h2>Na prática da cifra</h2>
 <p>A cifra lista acordes; o tom indica a referência. Transpor muda o tom mantendo funções (I, IV, V). Se a cantora precisa cantar mais agudo, sobe-se o tom inteiro — não misture acordes de tons diferentes.</p>
 <h2>Comunicação na banda</h2>
-<p>Use linguagem comum: "tom G, cantora Juliana" em vez de "tenta um tom mais alto". No SetSync, cadastre vocalistas e deixe explícito na setlist quem canta cada faixa.</p>
+<p>Use linguagem comum: "tom G, cantora Juliana" em vez de "tenta um tom mais alto". No Uníssono, cadastre vocalistas e deixe explícito na setlist quem canta cada faixa.</p>
 <h2>Erros comuns</h2>
 <ul>
 <li>Achar que tom e escala menor/major são sempre a mesma coisa (relative minor confunde).</li>
@@ -337,7 +337,7 @@ _POST_TOM_ESCALA = """
 _POST_COMPARTILHAR_CIFRAS = """
 <h2>O problema do print no WhatsApp</h2>
 <p>Toda banda já viveu isso: alguém manda a cifra errada, uma versão antiga ou um tom que não combina com o cantor do culto. Compartilhar cifras de verdade exige <strong>uma fonte única</strong> que todos confiem.</p>
-<h2>Repertório centralizado no SetSync</h2>
+<h2>Repertório centralizado no Uníssono</h2>
 <p>Cadastre cada música uma vez. Admins editam; membros da banda só tocam a versão aprovada. Cifra, letra e chord sheet ficam na mesma ficha — sem pastas "final_v3".</p>
 <h2>Convite por link</h2>
 <p>Crie a banda e envie o link de convite por WhatsApp ou e-mail. Guitarristas, tecladistas, bateristas e vocalistas entram na mesma equipe com permissões claras.</p>
@@ -345,7 +345,7 @@ _POST_COMPARTILHAR_CIFRAS = """
 <p>Ao montar o culto, escolha quem canta cada música. A transposição abre automaticamente no tom certo — inclusive no Modo Tocar, tela cheia no palco.</p>
 <h2>Link público de letras</h2>
 <p>Para quem não precisa ver acordes (projeção ou equipe de apoio), use o link público de letras da setlist sem expor o repertório inteiro da banda.</p>
-<p>Compartilhar cifras bem é menos sobre tecnologia e mais sobre processo. O SetSync elimina o retrabalho para você focar no ensaio.</p>
+<p>Compartilhar cifras bem é menos sobre tecnologia e mais sobre processo. O Uníssono elimina o retrabalho para você focar no ensaio.</p>
 """
 
 _POST_GERENCIAR_BANDAS = """
@@ -364,8 +364,8 @@ _POST_GERENCIAR_BANDAS = """
 
 _POST_CHORDSHEET = """
 <h2>O que é o Chord Sheet?</h2>
-<p>Além da <strong>cifra com letra</strong>, cada música no SetSync pode ter um <strong>Chord Sheet</strong>: uma folha só com <strong>acordes e compassos</strong>, sem letra — ideal para tecladista, guitarrista e direção musical enxergarem a progressão de relance.</p>
-<p>O formato é compatível com o <a href="https://www.chordsheet.com/manual/" target="_blank" rel="noopener">Chord Sheet Maker</a> (chordsheet.com): grade com barras verticais, seções, simile, repetições e navegação (D.C., coda, voltas). O padrão do SetSync é <strong>4 compassos por linha</strong>, ajustável de 1 a 8.</p>
+<p>Além da <strong>cifra com letra</strong>, cada música no Uníssono pode ter um <strong>Chord Sheet</strong>: uma folha só com <strong>acordes e compassos</strong>, sem letra — ideal para tecladista, guitarrista e direção musical enxergarem a progressão de relance.</p>
+<p>O formato é compatível com o <a href="https://www.chordsheet.com/manual/" target="_blank" rel="noopener">Chord Sheet Maker</a> (chordsheet.com): grade com barras verticais, seções, simile, repetições e navegação (D.C., coda, voltas). O padrão do Uníssono é <strong>4 compassos por linha</strong>, ajustável de 1 a 8.</p>
 
 <h2>Onde encontrar no app</h2>
 <ul>
@@ -426,7 +426,7 @@ Ex.: <code>C&amp;D</code> → dois acordes dividindo o primeiro pulso.</li>
 <li><strong>Internacional</strong> — jazz: <code>CΔ7</code>, <code>Cø7</code>, símbolos musicais.</li>
 <li><strong>Americana</strong> — <code>Cmaj7</code>, <code>Gdim</code>, convenção dos EUA.</li>
 </ul>
-<p>Você também ajusta <strong>compassos por linha</strong>, tamanho da fonte, espaçamento, alinhamento dos acordes e <strong>estilo de barra</strong> (Tab — padrão SetSync — ou Regular, mais próximo do PDF clássico do chordsheet.com).</p>
+<p>Você também ajusta <strong>compassos por linha</strong>, tamanho da fonte, espaçamento, alinhamento dos acordes e <strong>estilo de barra</strong> (Tab — padrão Uníssono — ou Regular, mais próximo do PDF clássico do chordsheet.com).</p>
 
 <h2>No palco e na setlist</h2>
 <p>Na visualização da música ou no <strong>Modo Tocar</strong>, pressione <strong>G</strong> para alternar cifra → chord sheet → letra. O tema claro ou escuro do app se aplica à folha (tecla <strong>T</strong> no Modo Tocar).</p>
@@ -441,16 +441,16 @@ Ex.: <code>C&amp;D</code> → dois acordes dividindo o primeiro pulso.</li>
 <li>No evento, abra o Modo Tocar e use <strong>G</strong> para a vista que cada músico preferir.</li>
 </ol>
 <p>O Chord Sheet não substitui a cifra com letra — <strong>complementa</strong>. Quem canta usa a cifra; quem conduz harmonia usa a grade. Tudo na mesma música, sincronizado com a banda.</p>
-<p>Quer o passo a passo técnico completo? Veja a <a href="/ajuda#chord-sheet">central de ajuda do SetSync</a> ou crie uma conta grátis e teste em uma música da sua banda.</p>
+<p>Quer o passo a passo técnico completo? Veja a <a href="/ajuda#chord-sheet">central de ajuda do Uníssono</a> ou crie uma conta grátis e teste em uma música da sua banda.</p>
 """
 
 _POST_ESTUDIO_CADASTRO = """
 <h2>Para quem é</h2>
-<p>Se você tem <strong>sala de ensaio</strong> e quer receber bandas sem depender só de telefone e Instagram, o módulo <strong>Estúdios</strong> do SetSync centraliza cadastro, agenda e confirmações. O plano <strong>beta é gratuito</strong> com até <strong>2 salas</strong>.</p>
+<p>Se você tem <strong>sala de ensaio</strong> e quer receber bandas sem depender só de telefone e Instagram, o módulo <strong>Estúdios</strong> do Uníssono centraliza cadastro, agenda e confirmações. O plano <strong>beta é gratuito</strong> com até <strong>2 salas</strong>.</p>
 
 <h2>Passo 1: criar conta e cadastrar o estúdio</h2>
 <ol>
-<li>Crie sua conta no SetSync (e-mail ou Google).</li>
+<li>Crie sua conta no Uníssono (e-mail ou Google).</li>
 <li>No menu, acesse <strong>Estúdios → Cadastrar meu estúdio</strong>.</li>
 <li>Preencha nome, descrição, cidade e bairro.</li>
 <li>No campo de endereço, use a <strong>busca do Google Maps</strong> para preencher rua e coordenadas automaticamente.</li>
@@ -458,7 +458,7 @@ _POST_ESTUDIO_CADASTRO = """
 </ol>
 
 <h2>Passo 2: cadastrar salas</h2>
-<p>Cada sala pode ter nome, capacidade e lista de <strong>equipamentos</strong> (PA, bateria, amplis). No plano beta gratuito você cadastra até <strong>duas salas</strong>; precisando de mais, fale com a equipe SetSync sobre o plano premium.</p>
+<p>Cada sala pode ter nome, capacidade e lista de <strong>equipamentos</strong> (PA, bateria, amplis). No plano beta gratuito você cadastra até <strong>duas salas</strong>; precisando de mais, fale com a equipe Uníssono sobre o plano premium.</p>
 
 <h2>Passo 3: disponibilidade e bloqueios</h2>
 <ul>
@@ -480,7 +480,7 @@ _POST_ESTUDIO_CADASTRO = """
 
 _POST_ESTUDIO_RESERVA = """
 <h2>Quando usar</h2>
-<p>Sua banda já organiza cifras e setlists no SetSync — agora dá para <strong>reservar sala de ensaio</strong> no mesmo app, sem ligar para dez estúdios diferentes.</p>
+<p>Sua banda já organiza cifras e setlists no Uníssono — agora dá para <strong>reservar sala de ensaio</strong> no mesmo app, sem ligar para dez estúdios diferentes.</p>
 
 <h2>Passo 1: buscar estúdio</h2>
 <ol>
@@ -612,7 +612,7 @@ _POST_MODO_TOCAR = """
 <h2>Offline e pedal</h2>
 <ul>
 <li>Ao abrir o Modo Tocar, o app <strong>baixa automaticamente</strong> as músicas da setlist — indicador <em>X/Y prontas</em> na barra.</li>
-<li>Instale o SetSync como <strong>PWA</strong> para reforçar o uso sem internet.</li>
+<li>Instale o Uníssono como <strong>PWA</strong> para reforçar o uso sem internet.</li>
 <li><strong>Pedal Bluetooth</strong>: ícone de sapato para mapear teclas; ícone <strong>varinha</strong> para o assistente passo a passo. Padrão: Page Up/Down paginam, ↑↓ trocam música.</li>
 </ul>
 

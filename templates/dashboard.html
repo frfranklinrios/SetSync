@@ -1,6 +1,6 @@
 {% extends "index.html" %}
 
-{% block title %}Dashboard - SetSync{% endblock %}
+{% block title %}Dashboard — Uníssono{% endblock %}
 
 {% block main_class %}container-fluid dashboard-page{% endblock %}
 
@@ -254,7 +254,7 @@
         <div>
             <h1 class="mb-0">Olá, {{ current_user.name }}</h1>
             <p class="lead">
-                {% if is_superadmin %}Administrador do sistema — bandas e estúdios
+                {% if is_superadmin %}Grade de bandas e estúdios — visão global
                 {% elif my_studios %}Seus estúdios{% if owned_bands or bands %} e bandas{% endif %}
                 {% else %}Suas bandas, cifras e setlists{% endif %}
             </p>
@@ -267,10 +267,13 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             {% if is_superadmin %}
-            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-primary btn-sm dashboard-action-btn">
+            <a href="{{ url_for('admin.index') }}" class="btn btn-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-shield-halved me-1"></i> Painel Admin
             </a>
-            {% endif %}
+            <a href="{{ url_for('bands.list_bands') }}" class="btn btn-outline-secondary btn-sm dashboard-action-btn">
+                Lista de bandas
+            </a>
+            {% else %}
             <a href="{{ url_for('agenda.minha_agenda') }}" class="btn btn-outline-secondary btn-sm dashboard-action-btn">
                 <i class="fas fa-calendar-alt me-1"></i> Ver minha agenda
             </a>
@@ -282,17 +285,22 @@
             <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-plus me-1"></i> Nova Banda
             </a>
+            {% endif %}
         </div>
     </div>
 
     <div class="dashboard-grid">
         <div class="dashboard-primary d-flex flex-column gap-3">
+            {% if not is_superadmin %}
             {% include 'partials/activation_hero.html' %}
+            {% endif %}
             {% include 'partials/pending_band_invites.html' %}
             {% include 'partials/pending_scale.html' %}
             {% include 'partials/pending_scale_admin.html' %}
+            {% if not is_superadmin %}
             {% include 'partials/onboarding_checklist.html' %}
-            {% if not needs_activation %}
+            {% endif %}
+            {% if not needs_activation and not is_superadmin %}
             {% include 'partials/dashboard_upsell.html' %}
             {% include 'partials/dashboard_referral.html' %}
             {% include 'partials/pwa_install_prompt.html' %}
@@ -346,6 +354,11 @@
             {% endif %}
 
             {% if is_superadmin %}
+            <div class="mb-2">
+                <a href="{{ url_for('admin.index') }}" class="text-muted text-decoration-none" style="font-size: var(--text-sm);">
+                    <i class="fas fa-arrow-left me-1"></i> Voltar ao painel admin
+                </a>
+            </div>
             <div class="alert alert-info dashboard-compact-alert mb-0">
                 Você tem acesso de <strong>administrador</strong> a todas as bandas, estúdios e cifras.
             </div>

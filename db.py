@@ -1510,6 +1510,53 @@ def get_all_users():
     return [dict(r) for r in rows]
 
 
+def count_users_without_band() -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT COUNT(*) AS n FROM users u
+           WHERE NOT EXISTS (SELECT 1 FROM band_members bm WHERE bm.user_id = u.id)
+             AND COALESCE(u.is_superadmin, 0) = 0'''
+    )
+    row = c.fetchone()
+    db.close()
+    return int(row['n'] if row else 0)
+
+
+def list_users_without_band(limit: int = 12) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT u.* FROM users u
+           WHERE NOT EXISTS (SELECT 1 FROM band_members bm WHERE bm.user_id = u.id)
+             AND COALESCE(u.is_superadmin, 0) = 0
+           ORDER BY u.created_at DESC
+           LIMIT ?''',
+        (max(1, int(limit)),),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def count_user_band_memberships(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM band_members WHERE user_id = ?', (user_id,))
+    row = c.fetchone()
+    db.close()
+    return int(row['n'] if row else 0)
+
+
+def get_recent_bands(limit: int = 8) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM bands ORDER BY created_at DESC LIMIT ?', (max(1, int(limit)),))
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
 def get_all_bands():
     db = get_db()
     c = db.cursor()

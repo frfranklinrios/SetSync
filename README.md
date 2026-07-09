@@ -1,4 +1,4 @@
-# SetSync
+# Uníssono
 
 **[setsync.com.br](https://setsync.com.br)** — gerenciador de cifras e setlists para bandas e ministérios de louvor. Organize músicas, transpose acordes, monte setlists e use o **Modo Tocar** no palco.
 
@@ -88,7 +88,7 @@ docker compose -f docker-compose.postgres.yml up -d --build
 ### Local (uv)
 
 ```bash
-cd SetSync
+cd Uníssono
 uv sync
 cp .env.example .env
 uv run app.py
@@ -96,7 +96,7 @@ uv run app.py
 
 Requisitos do importador: `ffmpeg` no PATH; `playwright install chromium` para colagem/PDF.
 
-**Importador integrado** (`cifras_tool/`, rota `/cifras/import/tool`): em Adicionar/Editar cifra, use **Cifra → SetSync** com link ou colagem.
+**Importador integrado** (`cifras_tool/`, rota `/cifras/import/tool`): em Adicionar/Editar cifra, use **Cifra → Uníssono** com link ou colagem.
 
 ## Variáveis de ambiente (principais)
 

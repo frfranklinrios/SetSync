@@ -1,5 +1,5 @@
 /**
- * SetSync — Web Push (Android PWA + iOS 16.4+ standalone).
+ * Uníssono — Web Push (Android PWA + iOS 16.4+ standalone).
  */
 (function () {
     'use strict';
@@ -69,7 +69,7 @@
         }
         if (isIOS() && !isStandalone()) {
             alert(
-                'No iPhone/iPad, instale o SetSync na Tela de Início (Safari → Compartilhar → '
+                'No iPhone/iPad, instale o Uníssono na Tela de Início (Safari → Compartilhar → '
                 + 'Adicionar à Tela de Início) e abra o app de lá para ativar push.'
             );
             return Promise.reject(new Error('ios_not_standalone'));

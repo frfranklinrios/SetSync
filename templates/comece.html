@@ -1,11 +1,11 @@
 {% extends "index.html" %}
 
-{% block title %}Comece grátis — SetSync Cifras e Setlists{% endblock %}
+{% block title %}Comece grátis — Uníssono — Cifras e Setlists{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('comece') }}">
 <meta name="robots" content="noindex, follow">
-<meta name="description" content="Crie sua conta grátis no SetSync: cifras, setlists e Modo Tocar para sua banda ou projeto musical.">
+<meta name="description" content="Crie sua conta grátis no Uníssono: cifras, setlists e Modo Tocar para sua banda ou projeto musical.">
 {% endblock %}
 
 {% block extra_head %}
@@ -25,7 +25,7 @@
 
 {% block content %}
 <div class="comece-hero">
-    <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync">
+    <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="{{ app_name }}">
     <h1>{% if plano_intent == 'worship' %}Organize o louvor da sua igreja{% else %}Cifras e setlists para sua banda{% endif %}</h1>
     <p class="text-muted mb-0">30 dias de Pro grátis na primeira banda — sem cartão.</p>
 </div>

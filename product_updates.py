@@ -63,7 +63,7 @@ _ANNOUNCEMENTS = {
         'type': 'product_update',
         'title': 'Novidades: diagramas, permissões e escalação',
         'body': (
-            'Atualizamos o SetSync com melhorias pedidas pela comunidade:\n\n'
+            'Atualizamos o Uníssono com melhorias pedidas pela comunidade:\n\n'
             '• Diagramas de acordes reais (dedos e pestana) + escalas no braço — toque em um acorde na cifra\n'
             '• Todos os membros podem editar cifras e eventos da banda\n'
             '• Escalação: aceitar ou recusar com aviso para quem convocou\n'

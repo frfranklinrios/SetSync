@@ -1,5 +1,5 @@
 /**
- * Converte colagem de sites de cifras (HTML ou texto) para o formato SetSync.
+ * Converte colagem de sites de cifras (HTML ou texto) para o formato Uníssono.
  */
 (function (global) {
   "use strict";
@@ -471,7 +471,7 @@
       if (options.onConverted) options.onConverted(converted);
       showPasteHint(
         textarea,
-        "Colagem convertida para o formato SetSync."
+        "Colagem convertida para o formato Uníssono."
       );
     });
   }
@@ -484,7 +484,7 @@
     textarea.value = converted;
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
     if (options && options.onConverted) options.onConverted(converted);
-    showPasteHint(textarea, "Colagem convertida para o formato SetSync.");
+    showPasteHint(textarea, "Colagem convertida para o formato Uníssono.");
     return true;
   }
 

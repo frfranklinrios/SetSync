@@ -66,7 +66,7 @@ NOTIFICATION_CATEGORIES: dict[str, dict[str, Any]] = {
     },
     'produto': {
         'label': 'Novidades',
-        'description': 'Comunicados e atualizações do SetSync',
+        'description': 'Comunicados e atualizações do Uníssono',
         'types': frozenset({'product_update', 'notification_digest'}),
     },
 }

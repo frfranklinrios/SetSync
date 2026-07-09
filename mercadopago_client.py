@@ -133,7 +133,7 @@ def build_preapproval_checkout_body(
         suffix = ''
 
     return {
-        'reason': (reason or f'SetSync {definicao.nome}') + suffix,
+        'reason': (reason or f'Uníssono {definicao.nome}') + suffix,
         'payer_email': payer_email,
         'back_url': back_url,
         'external_reference': external_reference,

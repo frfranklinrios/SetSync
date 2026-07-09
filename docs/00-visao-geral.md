@@ -1,6 +1,6 @@
-# Visão geral — SetSync
+# Visão geral — Uníssono
 
-O SetSync é um gerenciador de **cifras** e **setlists** para bandas, com foco em execução ao vivo:
+O Uníssono é um gerenciador de **cifras** e **setlists** para bandas, com foco em execução ao vivo:
 
 - Cadastro de bandas e músicas
 - Cifras com destaque de acordes e suporte a tablaturas

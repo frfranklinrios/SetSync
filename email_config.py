@@ -9,7 +9,7 @@ load_dotenv(override=False)
 
 def _parse_default_sender(raw: str | None, fallback_email: str) -> tuple[str, str]:
     """Aceita e-mail simples ou formato ``Nome <email@dominio>``."""
-    name_default = (os.getenv('MAIL_SENDER_NAME') or 'SetSync').strip() or 'SetSync'
+    name_default = (os.getenv('MAIL_SENDER_NAME') or 'Uníssono').strip() or 'Uníssono'
     text = (raw or '').strip()
     if not text:
         return name_default, fallback_email or 'noreply@setsync.local'

@@ -1,1 +1,1 @@
-"""Servidor SMTP e armazenamento de e-mail integrado ao SetSync."""
+"""Servidor SMTP e armazenamento de e-mail integrado ao Uníssono."""

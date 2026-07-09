@@ -1,4 +1,4 @@
-// SetSync service worker — app-shell + offline fallback
+// Uníssono service worker — app-shell + offline fallback
 // Bump CACHE_VERSION whenever the app shell changes so old caches are evicted.
 const CACHE_VERSION = 'setsync-v19';
 const STATIC_CACHE = CACHE_VERSION + '-static';
@@ -167,7 +167,7 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-    let data = { title: 'SetSync', body: '', url: '/' };
+    let data = { title: 'Uníssono', body: '', url: '/' };
     try {
         if (event.data) {
             const parsed = event.data.json();
@@ -178,7 +178,7 @@ self.addEventListener('push', (event) => {
             data.body = event.data.text();
         }
     }
-    const title = data.title || 'SetSync';
+    const title = data.title || 'Uníssono';
     const options = {
         body: data.body || '',
         icon: data.icon || NOTIF_ICON,

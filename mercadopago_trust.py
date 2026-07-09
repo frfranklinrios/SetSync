@@ -31,6 +31,6 @@ def mercadopago_trust_email_html() -> str:
     return (
         '<p style="font-size:14px;color:#64748b;margin-top:16px;">'
         '<strong>Pagamento seguro:</strong> ao assinar, você é redirecionado ao '
-        '<strong>Mercado Pago</strong>. Seus dados de cartão não passam pelo SetSync.'
+        '<strong>Mercado Pago</strong>. Seus dados de cartão não passam pelo Uníssono.'
         '</p>'
     )

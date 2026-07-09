@@ -655,7 +655,7 @@ def _public_setlist_json_response(token: str):
     resp = jsonify(payload)
     resp.headers['Cache-Control'] = 'no-store'
     if client_revision and payload.get('revision') == client_revision and len(payload) <= 3:
-        resp.headers['X-SetSync-Poll'] = 'unchanged'
+        resp.headers['X-Uníssono-Poll'] = 'unchanged'
     return resp
 
 

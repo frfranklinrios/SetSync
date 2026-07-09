@@ -23,6 +23,10 @@ def user_has_any_band(user_id: str) -> bool:
 
 def user_needs_band_activation(user_id: str) -> bool:
     """Usuário sem banda e sem convite pendente — precisa criar ou aceitar convite."""
+    from db import is_superadmin
+
+    if is_superadmin(user_id):
+        return False
     if user_has_any_band(user_id):
         return False
     from band_member_invites import list_pending_invites_for_user
@@ -32,6 +36,10 @@ def user_needs_band_activation(user_id: str) -> bool:
 
 def get_onboarding_progress(user_id: str) -> dict | None:
     """Checklist de ativação para o dashboard. None se oculto ou concluído."""
+    from db import is_superadmin
+
+    if is_superadmin(user_id):
+        return None
     if user_onboarding_checklist_dismissed(user_id):
         return None
 

@@ -1,6 +1,6 @@
 # Deploy na Contabo (VPS)
 
-Checklist para subir o SetSync em produção. O schema evolui via `init_db()` → `_run_schema_migrations()` (mesmo caminho em **SQLite** e **PostgreSQL**).
+Checklist para subir o Uníssono em produção. O schema evolui via `init_db()` → `_run_schema_migrations()` (mesmo caminho em **SQLite** e **PostgreSQL**).
 
 ## 1. Servidor
 

@@ -1,6 +1,6 @@
 # Google Ads — monitorar inscrições (cadastros)
 
-O SetSync dispara uma **conversão de inscrição** quando alguém cria conta (formulário ou Google OAuth).
+O Uníssono dispara uma **conversão de inscrição** quando alguém cria conta (formulário ou Google OAuth).
 
 ## URL para o assistente do Google Ads
 

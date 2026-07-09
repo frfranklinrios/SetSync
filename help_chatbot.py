@@ -126,7 +126,7 @@ def default_suggestions(limit: int = 6) -> list[str]:
     curated = [
         'Como usar o Modo Tocar no palco?',
         'Como sincronizar a banda no palco?',
-        'Como configurar pedal Bluetooth no SetSync?',
+        'Como configurar pedal Bluetooth no Uníssono?',
         'Posso usar cifras offline no celular?',
         'Como reservar estúdio de ensaio?',
         'Como gerenciar o financeiro do estúdio?',
@@ -290,7 +290,7 @@ def answer_question(query: str, *, user_id: str | None = None, limit: int = 3) -
             'title': None,
             'links': [
                 {'title': 'Central de Ajuda', 'url': '/ajuda', 'source': 'Ajuda'},
-                {'title': 'Guia SetSync', 'url': '/guia', 'source': 'Guia'},
+                {'title': 'Guia Uníssono', 'url': '/guia', 'source': 'Guia'},
             ],
             'suggestions': default_suggestions(),
         }
@@ -312,7 +312,7 @@ def answer_question(query: str, *, user_id: str | None = None, limit: int = 3) -
             'title': None,
             'links': [
                 {'title': 'Central de Ajuda', 'url': '/ajuda', 'source': 'Ajuda'},
-                {'title': 'Guia SetSync', 'url': '/guia', 'source': 'Guia'},
+                {'title': 'Guia Uníssono', 'url': '/guia', 'source': 'Guia'},
             ],
             'suggestions': default_suggestions(),
         }

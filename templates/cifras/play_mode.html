@@ -1244,7 +1244,7 @@ body.play-mode.edges-hint .tap-zone {
             try {
                 return JSON.parse(raw);
             } catch (jsonErr) {
-                console.error('SetSync: falha ao ler cifras do modo tocar', b64Err, jsonErr);
+                console.error('Uníssono: falha ao ler cifras do modo tocar', b64Err, jsonErr);
                 return [];
             }
         }
@@ -1393,7 +1393,7 @@ body.play-mode.edges-hint .tap-zone {
     function primePlayCaches() {
         CIFRAS.forEach(function (c) {
             try { seedPlayCaches(c); } catch (e) {
-                console.warn('SetSync: falha ao preparar cache da cifra', c && c.id, e);
+                console.warn('Uníssono: falha ao preparar cache da cifra', c && c.id, e);
             }
         });
     }
@@ -1474,7 +1474,7 @@ body.play-mode.edges-hint .tap-zone {
             return Promise.resolve(null);
         }
         if (!offlinePackPromise) {
-            offlinePackPromise = SetSyncOfflineStore.getPack(String(BAND_ID)).catch(function () { return null; });
+            offlinePackPromise = UníssonoOfflineStore.getPack(String(BAND_ID)).catch(function () { return null; });
         }
         return offlinePackPromise;
     }
@@ -2067,7 +2067,7 @@ body.play-mode.edges-hint .tap-zone {
             artista + formatSongMetaExtras(c) + ' · ' + tomLabel + ' · ' + (current + 1) + '/' + CIFRAS.length;
 
         if (window.SetSyncMetronome && SetSyncMetronome.updateSongContext) {
-            SetSyncMetronome.updateSongContext(c);
+            UníssonoMetronome.updateSongContext(c);
         }
 
         document.getElementById('btn-prev').disabled = (current === 0);
@@ -2087,7 +2087,7 @@ body.play-mode.edges-hint .tap-zone {
 
         if (window.SetSyncDrawOverlay && c && c.id) {
             var drawApiTpl2 = {{ url_for('cifras.api_get_play_draw', cifra_id='__ID__') | tojson }};
-            SetSyncDrawOverlay.configure({
+            UníssonoDrawOverlay.configure({
                 apiUrl: drawApiTpl2.replace('__ID__', encodeURIComponent(c.id)),
             });
             window.SetSyncDrawOverlay.onCifraChange(c.id);
@@ -2284,7 +2284,7 @@ body.play-mode.edges-hint .tap-zone {
             }).then(function (data) {
                 if (!data.ok) throw new Error(data.error || 'fail');
             }).catch(function () {
-                console.warn('SetSync: falha ao salvar cantor da setlist');
+                console.warn('Uníssono: falha ao salvar cantor da setlist');
             });
         }
         render();
@@ -2707,10 +2707,10 @@ body.play-mode.edges-hint .tap-zone {
         var countIn = btn ? parseInt(btn.getAttribute('data-count-in') || '0', 10) : 0;
         var ts = (c && c.time_signature) ? c.time_signature : '4/4';
         if (window.SetSyncMetronome) {
-            if (SetSyncMetronome.isActive && SetSyncMetronome.isActive()) {
-                SetSyncMetronome.stop();
+            if (UníssonoMetronome.isActive && UníssonoMetronome.isActive()) {
+                UníssonoMetronome.stop();
             } else {
-                SetSyncMetronome.start(bpm, {
+                UníssonoMetronome.start(bpm, {
                     timeSignature: ts,
                     countIn: countIn,
                     onCountInDone: function () {},
@@ -2783,7 +2783,7 @@ body.play-mode.edges-hint .tap-zone {
 
     // ── Keyboard ────────────────────────────
     if (window.SetSyncPedalConfig) {
-        SetSyncPedalConfig.bindHandlers({
+        UníssonoPedalConfig.bindHandlers({
             pageDown: tapScrollDown,
             pageUp: tapScrollUp,
             prevSong: prevSong,
@@ -2797,7 +2797,7 @@ body.play-mode.edges-hint .tap-zone {
         var pedalModal = document.getElementById('play-pedal-modal');
         if (pedalModal) {
             pedalModal.addEventListener('show.bs.modal', function () {
-                SetSyncPedalConfig.renderModal(pedalModalBody);
+                UníssonoPedalConfig.renderModal(pedalModalBody);
             });
         }
     }
@@ -2819,7 +2819,7 @@ body.play-mode.edges-hint .tap-zone {
             case 'n': case 'N': toggleNashville(); break;
             case 's': case 'S':
                 if (window.SetSyncPlayFeatures && SetSyncPlayFeatures.toggleSectionsPanel) {
-                    SetSyncPlayFeatures.toggleSectionsPanel();
+                    UníssonoPlayFeatures.toggleSectionsPanel();
                 }
                 break;
             case 'p': case 'P':
@@ -2943,7 +2943,7 @@ body.play-mode.edges-hint .tap-zone {
         }
         if (window.SetSyncDrawOverlay && getCurrent()) {
             var drawApiTpl = {{ url_for('cifras.api_get_play_draw', cifra_id='__ID__') | tojson }};
-            SetSyncDrawOverlay.configure({
+            UníssonoDrawOverlay.configure({
                 apiUrl: drawApiTpl.replace('__ID__', encodeURIComponent(getCurrent().id)),
             });
             window.SetSyncDrawOverlay.mount('cifra-scroll', getCurrent().id);
@@ -2968,7 +2968,7 @@ body.play-mode.edges-hint .tap-zone {
             preloadSong: preloadSong,
         };
     } catch (initErr) {
-        console.error('SetSync play mode init:', initErr);
+        console.error('Uníssono play mode init:', initErr);
         try { primePlayCaches(); } catch (cacheErr) {}
         var boot = getCurrent();
         if (boot && boot.html) {

@@ -93,7 +93,7 @@ def cmd_preapproval(email: str, plano: str) -> int:
         payer_email=email,
         external_reference=f'teste-banda:{plano}',
         back_url=os.getenv('MP_TEST_BACK_URL', 'http://127.0.0.1:5000/assinatura/sucesso'),
-        reason=f'SetSync teste {plano}',
+        reason=f'Uníssono teste {plano}',
     )
     result = sdk.preapproval().create(body)
     print(json.dumps(result, indent=2, ensure_ascii=False))
@@ -127,7 +127,7 @@ def cmd_webhook(preapproval_id: str, base_url: str, secret: str) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Testes Mercado Pago sandbox — SetSync')
+    parser = argparse.ArgumentParser(description='Testes Mercado Pago sandbox — Uníssono')
     sub = parser.add_subparsers(dest='cmd', required=True)
 
     sub.add_parser('check', help='Validar .env e API')

@@ -22,7 +22,7 @@ STUDIO_TELEFONE = '(85) 3222-1000'
 STUDIO_WHATSAPP = '85999887766'
 STUDIO_DESCRICAO = (
     'Salas climatizadas com bateria acústica, PA e isolamento acústico. '
-    'Ideal para bandas de rock, MPB e gospel. Conta demo do SetSync.'
+    'Ideal para bandas de rock, MPB e gospel. Conta demo do Uníssono.'
 )
 
 WEEKLY_SLOTS = [

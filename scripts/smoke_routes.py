@@ -173,7 +173,7 @@ def run() -> int:
     app.config['TESTING'] = True
     app.config['WTF_CSRF_ENABLED'] = False
 
-    print('=== Smoke rotas SetSync ===\n')
+    print('=== Smoke rotas Uníssono ===\n')
     ctx = load_context()
     print(f"Usuário: {ctx['user']['username']} | Banda: {ctx['band']['name']}")
     print(f"Cifra: {'sim' if ctx.get('cifra') else 'não'} | Setlist: {'sim' if ctx.get('setlist') else 'não'}\n")

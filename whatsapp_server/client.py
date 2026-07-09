@@ -57,7 +57,7 @@ def instance_exists(name: str | None = None) -> bool:
 
 
 def ensure_instance() -> bool:
-    """Cria a instância SetSync se ainda não existir."""
+    """Cria a instância Uníssono se ainda não existir."""
     inst = evolution_instance()
     if instance_exists(inst):
         return True

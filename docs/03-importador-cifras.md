@@ -1,10 +1,10 @@
 # Importador de cifras (módulo integrado `cifras_tool/`)
 
-O SetSync possui uma ferramenta integrada em `/cifras/import/tool` que:
+O Uníssono possui uma ferramenta integrada em `/cifras/import/tool` que:
 
 1. Raspa a cifra (Cifra Club / Cifras.com.br)
 2. Gera uma **grade harmônica** a partir dos acordes da cifra
-3. Monta o pacote JSON compatível com SetSync
+3. Monta o pacote JSON compatível com Uníssono
 4. Envia o resultado de volta para o formulário (Adicionar/Editar) via `postMessage`
 
 ## Requisitos
@@ -12,7 +12,7 @@ O SetSync possui uma ferramenta integrada em `/cifras/import/tool` que:
 - `ffmpeg` no PATH
 - Dependências Python do projeto instaladas (inclui `yt-dlp`, `librosa`, `curl-cffi`, `beautifulsoup4`, `playwright`)
 
-## Fluxo dentro do SetSync
+## Fluxo dentro do Uníssono
 
 - UI do iframe: `templates/cifras_tool/embed.html` + `static/cifras-tool/embed.js`
 - Endpoint de processamento: `POST /cifras/import/api/processar-cifra`

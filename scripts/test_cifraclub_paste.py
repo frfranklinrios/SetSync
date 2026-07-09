@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Testes rápidos da conversão de colagem Cifra Club → SetSync."""
+"""Testes rápidos da conversão de colagem Cifra Club → Uníssono."""
 from __future__ import annotations
 
 import sys

@@ -129,6 +129,10 @@ def _auth_destination_path(user, invite_token: str | None = None) -> str:
     if studio_home:
         ep, kwargs = studio_home
         return url_for(ep, **kwargs)
+    from db import is_superadmin
+
+    if is_superadmin(user['id']):
+        return url_for('admin.index')
     from onboarding import user_needs_band_activation
 
     if user_needs_band_activation(user['id']):

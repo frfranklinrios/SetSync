@@ -1,5 +1,5 @@
 /**
- * Editor Chord Sheet (formato chordsheet.com) — integrado ao SetSync.
+ * Editor Chord Sheet (formato chordsheet.com) — integrado ao Uníssono.
  * Salvamento automático no servidor + desfazer para o último estado salvo.
  */
 (function () {

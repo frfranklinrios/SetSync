@@ -1,12 +1,12 @@
 {% extends "index.html" %}
 
-{% block title %}Criar conta grátis — SetSync{% endblock %}
+{% block title %}Criar conta grátis — Uníssono{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('auth.register') }}">
-<meta name="description" content="Cadastre-se grátis no SetSync: organize cifras, monte setlists e use transposição de acordes no Modo Tocar. Para bandas e músicos.">
-<meta property="og:title" content="Criar conta grátis — SetSync">
-<meta property="og:description" content="Cadastre-se grátis no SetSync: cifras, setlists e transposição online para sua banda.">
+<meta name="description" content="Cadastre-se grátis no Uníssono: organize cifras, monte setlists e use transposição de acordes no Modo Tocar. Para bandas e músicos.">
+<meta property="og:title" content="Criar conta grátis — Uníssono">
+<meta property="og:description" content="Cadastre-se grátis no Uníssono: cifras, setlists e transposição online para sua banda.">
 <meta property="og:url" content="{{ external_url_for('auth.register') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -17,8 +17,11 @@
 <div class="row justify-content-center py-4">
     <div class="col-sm-10 col-md-6 col-lg-4">
 
-        <div class="text-center mb-5">
-            <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="SetSync" style="height:64px;">
+        <div class="text-center mb-4">
+            <img src="{{ url_for('static', filename='logoSetSync.png') }}" alt="{{ app_name }}" style="height:64px;">
+            <p class="text-muted small mt-3 mb-0">
+                O <strong>SetSync</strong> agora é <strong>{{ app_name }}</strong> — cadastre-se grátis com o mesmo e-mail de sempre.
+            </p>
         </div>
 
         {% if invite_band %}

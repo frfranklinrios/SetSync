@@ -82,7 +82,7 @@ def _notification_link(url_path: str | None) -> str | None:
 
 def _format_notification_text(title: str, body: str, url_path: str | None) -> str:
     """Texto WhatsApp — sem preview de link (linkPreview desligado no envio)."""
-    parts: list[str] = ['*SetSync*']
+    parts: list[str] = ['*Uníssono*']
     clean_title = (title or '').strip()
     if clean_title:
         parts.append(f'*{clean_title}*')
@@ -133,7 +133,7 @@ def send_whatsapp_template(to_phone: str, title: str, body: str, link: str) -> b
     if not phone or not template:
         return False
     params = [
-        {'type': 'text', 'text': (title or 'SetSync')[:200]},
+        {'type': 'text', 'text': (title or 'Uníssono')[:200]},
         {'type': 'text', 'text': (body or ' ')[:800]},
         {'type': 'text', 'text': (link or canonical_app_url() or 'setsync.com.br')[:200]},
     ]

@@ -18,14 +18,14 @@ from security import external_url_for
 
 _CAMPAIGNS = {
     'inactive_7': {
-        'subject': 'Sentimos sua falta no SetSync 🎸',
+        'subject': 'Sentimos sua falta no Uníssono 🎸',
         'body': (
-            'Faz uma semana que você não entra no SetSync.\n'
+            'Faz uma semana que você não entra no Uníssono.\n'
             'Seu repertório e setlists continuam salvos — volte quando quiser.\n\n'
             '{dashboard_url}'
         ),
         'html_body': (
-            '<p>Faz <strong>uma semana</strong> que você não entra no SetSync.</p>'
+            '<p>Faz <strong>uma semana</strong> que você não entra no Uníssono.</p>'
             '<p>Seu repertório e setlists continuam salvos. Que tal abrir o '
             '<strong>Modo Tocar</strong> no próximo ensaio?</p>'
         ),
@@ -35,26 +35,26 @@ _CAMPAIGNS = {
     'inactive_14': {
         'subject': 'Seu repertório está esperando',
         'body': (
-            'Já faz 2 semanas sem acessar o SetSync.\n'
+            'Já faz 2 semanas sem acessar o Uníssono.\n'
             'Atualize uma cifra ou monte um setlist em minutos.\n\n'
             '{dashboard_url}'
         ),
         'html_body': (
-            '<p>Já faz <strong>2 semanas</strong> sem acessar o SetSync.</p>'
+            '<p>Já faz <strong>2 semanas</strong> sem acessar o Uníssono.</p>'
             '<p>Uma cifra nova ou um setlist atualizado faz toda diferença no culto.</p>'
         ),
         'button_label': 'Abrir meu painel',
         'button_key': 'dashboard_url',
     },
     'inactive_30': {
-        'subject': 'Ainda dá tempo de retomar o SetSync',
+        'subject': 'Ainda dá tempo de retomar o Uníssono',
         'body': (
-            'Faz um mês que você não usa o SetSync.\n'
+            'Faz um mês que você não usa o Uníssono.\n'
             'Este é nosso último lembrete por enquanto — estamos aqui quando precisar.\n\n'
             '{dashboard_url}'
         ),
         'html_body': (
-            '<p>Faz <strong>um mês</strong> que você não usa o SetSync.</p>'
+            '<p>Faz <strong>um mês</strong> que você não usa o Uníssono.</p>'
             '<p>Este é nosso último lembrete por enquanto. Sua conta e dados '
             'continuam seguros.</p>'
         ),
@@ -62,14 +62,14 @@ _CAMPAIGNS = {
         'button_key': 'dashboard_url',
     },
     'no_band_3': {
-        'subject': 'Crie sua primeira banda no SetSync',
+        'subject': 'Crie sua primeira banda no Uníssono',
         'body': (
             'Você se cadastrou mas ainda não criou uma banda.\n'
             'Em 2 minutos você organiza o repertório da equipe.\n\n'
             '{bands_url}'
         ),
         'html_body': (
-            '<p>Você se cadastrou no SetSync mas ainda <strong>não criou uma banda</strong>.</p>'
+            '<p>Você se cadastrou no Uníssono mas ainda <strong>não criou uma banda</strong>.</p>'
             '<p>Adicione músicas, convide integrantes e use o Modo Tocar no ensaio.</p>'
         ),
         'button_label': 'Criar minha banda',
@@ -86,7 +86,7 @@ _CAMPAIGNS = {
             '<p>O <strong>trial Pro</strong> da banda <em>{band_name}</em> terminou.</p>'
             '<p>Volte ao Pro por R$ 29/mês e mantenha recursos ilimitados + exportação PDF.</p>'
             '<p style="font-size:14px;color:#64748b;">Ao assinar, você paga pelo <strong>Mercado Pago</strong> — '
-            'seus dados de cartão não passam pelo SetSync.</p>'
+            'seus dados de cartão não passam pelo Uníssono.</p>'
         ),
         'button_label': 'Ver planos Pro',
         'button_key': 'planos_url',
@@ -102,7 +102,7 @@ _CAMPAIGNS = {
             '<p>O <strong>trial Premium</strong> do estúdio <em>{studio_name}</em> terminou.</p>'
             '<p>Volte a ter <strong>salas ilimitadas</strong> por R$ 49/mês.</p>'
             '<p style="font-size:14px;color:#64748b;">Pagamento via <strong>Mercado Pago</strong> — '
-            'cartão não passa pelo SetSync.</p>'
+            'cartão não passa pelo Uníssono.</p>'
         ),
         'button_label': 'Ver planos Estúdio',
         'button_key': 'planos_url',

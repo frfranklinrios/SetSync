@@ -52,7 +52,7 @@ C Am F G
         "title": "★ Galeria — todas as possibilidades gráficas",
         "meta": {
             "title": "Galeria de Notação",
-            "artist": "SetSync Demo",
+            "artist": "Uníssono Demo",
             "key": "Eb",
             "bpm": "128",
             "time_signature": "4/4",

@@ -106,7 +106,7 @@ def send_scale_assignment_channels(
 
             if phone and user_wants_whatsapp_notifications(user):
                 try:
-                    send_whatsapp_text(phone, f'*SetSync*\n\n*{title}*\n\n{wa_body}', link_preview=False)
+                    send_whatsapp_text(phone, f'*Uníssono*\n\n*{title}*\n\n{wa_body}', link_preview=False)
                 except Exception:
                     logger.exception('WhatsApp escalação para %s', uid)
             else:

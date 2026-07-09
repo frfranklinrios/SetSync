@@ -1,4 +1,4 @@
-"""Ponte entre cifras SetSync e o módulo chordsheet (formato chordsheet.com)."""
+"""Ponte entre cifras Uníssono e o módulo chordsheet (formato chordsheet.com)."""
 
 from __future__ import annotations
 
@@ -282,7 +282,7 @@ def _spell_chord_like_cifra(chord: str, target_key: str) -> str:
 
 
 def apply_chart_cifra_spelling(chart, target_key: str):
-    """Reescreve acordes e tom do chart com as regras de grafia da cifra SetSync."""
+    """Reescreve acordes e tom do chart com as regras de grafia da cifra Uníssono."""
     from util import normalize_tom_label
 
     key = normalize_tom_label(target_key or "")

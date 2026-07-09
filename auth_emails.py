@@ -16,15 +16,15 @@ def send_password_reset_email(email: str, token: str) -> bool:
         return False
 
     link = password_reset_link(token)
-    subject = 'Redefinir sua senha — SetSync'
+    subject = 'Redefinir sua senha — Uníssono'
     body = (
-        'Recebemos um pedido para redefinir sua senha no SetSync.\n\n'
+        'Recebemos um pedido para redefinir sua senha no Uníssono.\n\n'
         f'Abra o link abaixo (válido por 1 hora):\n{link}\n\n'
         'Se você não solicitou, ignore este e-mail — sua senha não será alterada.'
     )
     html = (
         '<div style="font-family:system-ui,sans-serif;color:#1c1917;max-width:520px">'
-        '<p style="color:#78716c;font-size:13px;margin:0 0 8px">SetSync</p>'
+        '<p style="color:#78716c;font-size:13px;margin:0 0 8px">Uníssono</p>'
         '<h2 style="margin:0 0 12px;font-size:1.25rem">Redefinir sua senha</h2>'
         '<p>Recebemos um pedido para criar uma nova senha na sua conta.</p>'
         '<p>O link abaixo expira em <strong>1 hora</strong>.</p>'
@@ -53,7 +53,7 @@ def send_password_reset_whatsapp(user: dict, token: str) -> bool:
 
     link = password_reset_link(token)
     text = (
-        '*SetSync*\n'
+        '*Uníssono*\n'
         '*Redefinir sua senha*\n\n'
         'Recebemos um pedido para criar uma nova senha na sua conta.\n'
         'O link abaixo expira em *1 hora*.\n\n'

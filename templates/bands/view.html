@@ -3,7 +3,7 @@
 {% from 'partials/list_row_setlist.html' import setlist_row with context %}
 {% from 'partials/list_row_event.html' import event_row with context %}
 
-{% block title %}{{ band.name }} - SetSync{% endblock %}
+{% block title %}{{ band.name }} — Uníssono{% endblock %}
 
 {% block content %}
 <style>
@@ -152,7 +152,7 @@
                 {% endif %}
                 {% if can_edit %}
                 <button type="button" class="btn btn-outline-primary btn-sm" data-open-cifra-search
-                        title="Procura na biblioteca do SetSync e adiciona à banda">
+                        title="Procura na biblioteca do Uníssono e adiciona à banda">
                     <i class="fas fa-search me-1"></i> Buscar na biblioteca
                 </button>
                 <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">

@@ -135,7 +135,7 @@ def iniciar(plano):
             payer_email=email,
             back_url=external_url_for('assinatura_bp.sucesso'),
             external_reference=f'{banda_id}:{plano}',
-            reason=f'SetSync {PLANOS[plano].nome} — Banda: {band["name"]}',
+            reason=f'Uníssono {PLANOS[plano].nome} — Banda: {band["name"]}',
             billing_period=request.form.get('billing_period', 'monthly'),
         )
         result = sdk.preapproval().create(preapproval_data)
@@ -193,7 +193,7 @@ def iniciar_estudio(plano):
             payer_email=email,
             back_url=external_url_for('assinatura_bp.sucesso_estudio'),
             external_reference=f'studio:{user_id}:{plano}',
-            reason=f'SetSync {definicao.nome}',
+            reason=f'Uníssono {definicao.nome}',
             billing_period=request.form.get('billing_period', 'monthly'),
         )
         result = sdk.preapproval().create(preapproval_data)

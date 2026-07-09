@@ -153,7 +153,7 @@ textarea#source:focus, input:focus, select:focus {
     min-height: 420px;
 }
 
-/* ——— Folha (mesma tipografia dos PDFs SetSync) ——— */
+/* ——— Folha (mesma tipografia dos PDFs Uníssono) ——— */
 .cs-chart {
     background: var(--rb-paper);
     color: var(--rb-ink);
