@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('auth.register') }}">
-<meta name="description" content="Cadastre-se grátis no Uníssono: organize cifras, monte setlists e use transposição de acordes no Modo Tocar. Para bandas e músicos.">
+<meta name="description" content="Cadastre-se grátis no Uníssono: 30 dias Pro sem cartão, cifras, setlists e Modo Tocar para bandas e igrejas.">
 <meta property="og:title" content="Criar conta grátis — Uníssono">
-<meta property="og:description" content="Cadastre-se grátis no Uníssono: cifras, setlists e transposição online para sua banda.">
+<meta property="og:description" content="30 dias Pro grátis. Organize cifras e setlists da sua banda em minutos.">
 <meta property="og:url" content="{{ external_url_for('auth.register') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -17,31 +17,34 @@
 <div class="row justify-content-center py-4">
     <div class="col-sm-10 col-md-6 col-lg-4">
 
-        <div class="text-center mb-4">
+        <div class="text-center mb-3">
             <img src="{{ url_for('static', filename='logoUnissono-stack.png') }}" alt="{{ app_name }}" style="height:88px; width:auto; max-width:220px; object-fit:contain;">
-            <p class="text-muted small mt-3 mb-0">
-                O <strong>SetSync</strong> agora é <strong>{{ app_name }}</strong> — cadastre-se grátis com o mesmo e-mail de sempre.
-            </p>
+            <h1 class="h4 mt-3 mb-1">Comece em menos de 2 minutos</h1>
+            <p class="text-muted small mb-0">30 dias Pro grátis · sem cartão · cancele quando quiser</p>
         </div>
 
         {% if invite_band %}
-        <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
-            Convite para entrar na banda <strong>{{ invite_band.name }}</strong>.
-            Ao criar sua conta, você já entra na banda automaticamente.
+        <div class="alert alert-info mb-3" style="font-size: var(--text-base);">
+            Convite para a banda <strong>{{ invite_band.name }}</strong> — ao criar a conta, você já entra nela.
         </div>
         {% endif %}
 
         {% if plano_intent == 'worship' %}
-        <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
-            Você está criando conta para o <strong>plano Worship</strong> (várias bandas na mesma conta).
-            <a href="{{ url_for('assinatura_bp.igrejas') }}">Saiba mais para igrejas</a>.
+        <div class="alert alert-info mb-3" style="font-size: var(--text-base);">
+            Conta para o <strong>plano Worship</strong> (várias bandas / ministérios).
+            <a href="{{ url_for('assinatura_bp.igrejas') }}">Ver para igrejas</a>.
         </div>
         {% endif %}
 
-        <div class="alert alert-success mb-4" style="font-size: var(--text-base);">
-            <strong>🎸 Experimente o Pro grátis por 30 dias</strong> — sem cartão.
-            Ao criar sua primeira banda, o trial é ativado automaticamente.
+        {% if google_oauth_enabled %}
+        <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}"
+           class="btn btn-outline-dark w-100 mb-3">
+            <i class="fab fa-google me-2" aria-hidden="true"></i>Continuar com Google
+        </a>
+        <div class="d-flex align-items-center mb-3">
+            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size: var(--text-xs);">ou e-mail</span><hr class="flex-grow-1">
         </div>
+        {% endif %}
 
         <form method="POST">
             {% include 'partials/csrf_input.html' %}
@@ -54,73 +57,58 @@
             <div class="mb-3">
                 <label for="username" class="form-label">Usuário</label>
                 <input type="text" class="form-control" id="username" name="username" required autofocus
-                       value="{{ username or '' }}">
-                <div class="form-text">Mínimo 3 caracteres, único</div>
+                       value="{{ username or '' }}" autocomplete="username" minlength="3">
             </div>
             <div class="mb-3">
-                <label for="display_name" class="form-label">Nome (como será exibido)</label>
-                <input type="text" class="form-control" id="display_name" name="display_name" required placeholder="Ex.: Franklin Rios"
-                       value="{{ display_name or '' }}">
-                <div class="form-text">Esse nome aparece no menu e no dashboard.</div>
+                <label for="display_name" class="form-label">Seu nome</label>
+                <input type="text" class="form-control" id="display_name" name="display_name" required
+                       placeholder="Como aparece para a banda"
+                       value="{{ display_name or '' }}" autocomplete="name">
             </div>
             <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
+                <label for="email" class="form-label">E-mail</label>
                 <input type="email" class="form-control" id="email" name="email" required
-                       value="{{ email or '' }}">
+                       value="{{ email or '' }}" autocomplete="email">
             </div>
             <div class="mb-3">
-                <label for="phone" class="form-label">WhatsApp <span class="text-muted">(opcional)</span></label>
+                <label for="phone" class="form-label">WhatsApp <span class="text-muted fw-normal">(opcional)</span></label>
                 <input type="tel" class="form-control" id="phone" name="phone"
-                       placeholder="Ex.: 85 99784-9547" inputmode="tel"
-                       value="{{ phone or '' }}">
-                <div class="form-text">Com DDD. Você pode informar depois no perfil.</div>
+                       placeholder="DDD + número" inputmode="tel"
+                       value="{{ phone or '' }}" autocomplete="tel">
             </div>
-            <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="whatsapp_notify" name="whatsapp_notify"
-                       value="1"{% if whatsapp_notify %} checked{% endif %}>
-                <label class="form-check-label" for="whatsapp_notify">
-                    Receber alertas da banda por WhatsApp
-                </label>
-            </div>
+            <input type="hidden" name="whatsapp_notify" value="{% if whatsapp_notify %}1{% else %}0{% endif %}">
             <div class="form-check mb-3">
                 <input class="form-check-input" type="checkbox" id="aceite_privacidade" name="aceite_privacidade"
                        value="1" required{% if aceite_privacidade %} checked{% endif %}>
-                <label class="form-check-label" for="aceite_privacidade">
-                    Li e aceito a
-                    <a href="{{ url_for('legal.privacidade') }}" target="_blank" rel="noopener">Política de Privacidade</a>
+                <label class="form-check-label" for="aceite_privacidade" style="font-size: var(--text-sm);">
+                    Aceito a
+                    <a href="{{ url_for('legal.privacidade') }}" target="_blank" rel="noopener">Privacidade</a>
                     e os
-                    <a href="{{ url_for('legal.termos') }}" target="_blank" rel="noopener">Termos de Uso</a>.
+                    <a href="{{ url_for('legal.termos') }}" target="_blank" rel="noopener">Termos</a>.
                 </label>
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">Senha</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <input type="password" class="form-control" id="password" name="password" required
+                       autocomplete="new-password" minlength="10">
                 <div class="form-text">Mínimo 10 caracteres</div>
             </div>
             <div class="mb-4">
-                <label for="confirm" class="form-label">Confirmar Senha</label>
-                <input type="password" class="form-control" id="confirm" name="confirm" required>
+                <label for="confirm" class="form-label">Confirmar senha</label>
+                <input type="password" class="form-control" id="confirm" name="confirm" required
+                       autocomplete="new-password">
             </div>
-            <button type="submit" class="btn btn-primary w-100">Criar Conta</button>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">Começar 30 dias grátis</button>
+            <p class="text-center text-muted small mt-2 mb-0">Sem cartão agora. O Pro ativa ao criar a primeira banda.</p>
         </form>
-
-        {% if google_oauth_enabled %}
-        <div class="d-flex align-items-center my-4">
-            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size: var(--text-xs);">OU</span><hr class="flex-grow-1">
-        </div>
-
-        <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Registrar com Google</a>
-        {% endif %}
 
         <p class="text-center text-muted mt-4 mb-1" style="font-size: var(--text-sm);">
             Já tem conta?
-            <a href="{{ url_for('auth.login', convite=invite_token) if invite_token else url_for('auth.login') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Faça login</a>
+            <a href="{{ url_for('auth.login', convite=invite_token) if invite_token else url_for('auth.login') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Entrar</a>
         </p>
         <p class="text-center text-muted mb-0" style="font-size: var(--text-sm);">
-            <a href="{{ url_for('auth.recuperar_senha') }}" style="color:var(--muted);text-decoration:none;">Esqueceu sua senha?</a>
+            <a href="{{ url_for('auth.recuperar_senha') }}" style="color:var(--muted);text-decoration:none;">Esqueceu a senha?</a>
         </p>
     </div>
 </div>
 {% endblock %}
-
-{% block chord_diagram %}{% endblock %}

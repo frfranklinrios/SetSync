@@ -604,38 +604,38 @@
 <section class="home-hero">
     {% include 'partials/audience_bar.html' %}
     <div class="home-hero-inner home-hero-hub">
-        <span class="home-badge"><i class="fas fa-gift me-1"></i> 30 dias grátis · sem cartão</span>
-        <h1>O app completo para música ao vivo</h1>
+        <span class="home-badge"><i class="fas fa-gift me-1"></i> 30 dias Pro grátis · sem cartão</span>
+        <h1>Cifras e setlists prontos para o palco</h1>
         <p class="home-lead">
-            O <strong>Uníssono</strong> reúne <strong>bandas</strong>, <strong>igrejas</strong> e <strong>estúdios de ensaio</strong>
-            em um ecossistema: repertório compartilhado, agenda com escalação, reservas de sala e
-            <strong>Modo Tocar offline</strong> no palco.
+            O <strong>Uníssono</strong> é o app da sua banda, igreja ou estúdio:
+            repertório sincronizado, agenda e <strong>Modo Tocar offline</strong> — sem caos no WhatsApp.
         </p>
+
+        <div class="home-cta justify-content-center mb-4">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
+            <a href="{{ url_for('assinatura_bp.bandas') }}#planos" class="btn btn-outline-secondary btn-lg">Ver planos</a>
+        </div>
+        <p class="text-center text-muted small mb-4">Bandas · igrejas · estúdios · pagamento Mercado Pago</p>
 
         <div class="home-audience-cards">
             <a href="{{ url_for('assinatura_bp.bandas') }}" class="home-audience-card">
                 <div class="home-audience-card-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
                 <h2>Sou banda</h2>
-                <p>Cifras, setlists, agenda, cachês e palco offline para sua banda ou projeto.</p>
+                <p>Cifras, setlists, agenda, cachês e palco offline.</p>
                 <span class="home-audience-card-cta">Ver para bandas →</span>
             </a>
             <a href="{{ url_for('assinatura_bp.igrejas') }}" class="home-audience-card">
                 <div class="home-audience-card-icon"><i class="fas fa-church" aria-hidden="true"></i></div>
                 <h2>Sou igreja</h2>
-                <p>Plano Worship: várias equipes de louvor, um repertório e uma liderança.</p>
+                <p>Worship: várias equipes de louvor numa conta.</p>
                 <span class="home-audience-card-cta">Ver para igrejas →</span>
             </a>
             <a href="{{ url_for('studios.landing') }}" class="home-audience-card">
                 <div class="home-audience-card-icon"><i class="fas fa-door-open" aria-hidden="true"></i></div>
                 <h2>Tenho estúdio</h2>
-                <p>Salas, calendário, reservas online e financeiro para donos de sala de ensaio.</p>
+                <p>Salas, reservas online e financeiro do ensaio.</p>
                 <span class="home-audience-card-cta">Ver para estúdios →</span>
             </a>
-        </div>
-
-        <div class="home-cta justify-content-center">
-            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
-            <a href="{{ url_for('comece') }}" class="btn btn-outline-secondary btn-lg">Como funciona</a>
         </div>
     </div>
 </section>
@@ -730,12 +730,10 @@
 </section>
 
 <section class="home-cta-band">
-    <h2>Escolha seu perfil e comece grátis</h2>
-    <p>Banda, igreja ou estúdio — o Uníssono cresce com o seu projeto musical.</p>
-    <a href="{{ url_for('assinatura_bp.bandas') }}" class="btn btn-primary btn-lg me-2 mb-2">Sou banda</a>
-    <a href="{{ url_for('assinatura_bp.igrejas') }}" class="btn btn-outline-primary btn-lg me-2 mb-2">Sou igreja</a>
-    <a href="{{ url_for('studios.landing') }}" class="btn btn-outline-primary btn-lg me-2 mb-2">Tenho estúdio</a>
-    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary btn-lg mb-2">Criar conta</a>
+    <h2>Pronto para o próximo ensaio?</h2>
+    <p>Crie a conta grátis — o Pro de 30 dias começa na primeira banda, sem cartão.</p>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2 mb-2">Criar conta grátis</a>
+    <a href="{{ url_for('assinatura_bp.bandas') }}#planos" class="btn btn-outline-secondary btn-lg mb-2">Ver planos</a>
 </section>
 {% endblock %}
 

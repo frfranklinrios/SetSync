@@ -82,6 +82,7 @@
                 <a href="{{ url_for('studios.register_studio') }}" class="btn btn-light w-100">{{ p.cta }}</a>
                 {% else %}
                 <a href="{{ url_for('auth.login', next=url_for('assinatura_bp.planos') ~ '#estudio') }}" class="btn btn-light w-100">{{ p.cta }}</a>
+                <p class="small mt-2 mb-0 opacity-75">Já logado? Abre direto em Planos → Estúdio Premium.</p>
                 {% endif %}
             </article>
             {% endfor %}

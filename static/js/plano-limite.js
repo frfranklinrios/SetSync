@@ -1,37 +1,7 @@
 /**
- * Intercepta respostas HTTP 402 (limite de plano) e exibe modal de upgrade.
+ * Compat: toasts + delegação do 402 para modal-upgrade.js (fonte única de upgrade).
  */
 (function () {
-    const UPGRADE_URL = '/assinatura/planos';
-
-    function showUpgradeModal(payload) {
-        const msg = payload.mensagem || payload.erro || 'Limite do plano grátis atingido.';
-        const url = payload.upgrade_url || UPGRADE_URL;
-        let el = document.getElementById('planoLimiteModal');
-        if (!el) {
-            el = document.createElement('div');
-            el.id = 'planoLimiteModal';
-            el.className = 'modal fade';
-            el.innerHTML =
-                '<div class="modal-dialog modal-dialog-centered">' +
-                '<div class="modal-content">' +
-                '<div class="modal-header"><h5 class="modal-title">Upgrade necessário</h5>' +
-                '<button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
-                '<div class="modal-body"><p id="planoLimiteMsg"></p></div>' +
-                '<div class="modal-footer">' +
-                '<a href="' + url + '" class="btn btn-primary">Ver planos</a>' +
-                '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>' +
-                '</div></div></div>';
-            document.body.appendChild(el);
-        }
-        document.getElementById('planoLimiteMsg').textContent = msg;
-        if (typeof bootstrap !== 'undefined') {
-            new bootstrap.Modal(el).show();
-        } else {
-            alert(msg + '\n\n' + url);
-        }
-    }
-
     function showToast(msg, isError) {
         let t = document.getElementById('planoLimiteToast');
         if (!t) {
@@ -49,20 +19,16 @@
         setTimeout(function () { t.innerHTML = ''; }, 5000);
     }
 
-    window.setSyncShowUpgrade = showUpgradeModal;
     window.setSyncShowToast = showToast;
 
-    const origFetch = window.fetch;
-    window.fetch = async function (...args) {
-        const res = await origFetch.apply(this, args);
-        if (res.status === 402) {
-            try {
-                const data = await res.clone().json();
-                if (data.erro === 'limite_plano' || data.erro === 'plano_necessario') {
-                    showUpgradeModal(data);
-                }
-            } catch (e) { /* ignore */ }
-        }
-        return res;
-    };
+    // Se modal-upgrade ainda não carregou, fallback mínimo
+    if (typeof window.setSyncShowUpgrade !== 'function') {
+        window.setSyncShowUpgrade = function (payload) {
+            const msg = (payload && (payload.mensagem || payload.erro)) || 'Limite do plano grátis atingido.';
+            const url = (payload && payload.upgrade_url) || '/assinatura/planos';
+            if (confirm(msg + '\n\nAbrir planos?')) {
+                window.location.href = url;
+            }
+        };
+    }
 })();

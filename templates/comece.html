@@ -1,23 +1,31 @@
 {% extends "index.html" %}
 
-{% block title %}Comece grátis — Uníssono — Cifras e Setlists{% endblock %}
+{% block title %}Como funciona — Uníssono{% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('comece') }}">
-<meta name="robots" content="noindex, follow">
-<meta name="description" content="Crie sua conta grátis no Uníssono: cifras, setlists e Modo Tocar para sua banda ou projeto musical.">
+<meta name="description" content="Em 4 passos: crie a conta, monte a banda, adicione cifras e abra o Modo Tocar. 30 dias Pro grátis sem cartão.">
 {% endblock %}
 
 {% block extra_head %}
 <style>
 .comece-page .navbar, .comece-page footer { display: none !important; }
-.comece-page main { max-width: 520px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+.comece-page main { max-width: 560px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
 .comece-hero { text-align: center; margin-bottom: 1.5rem; }
 .comece-hero img { height: 96px; width: auto; max-width: 240px; object-fit: contain; margin-bottom: 1rem; }
 .comece-hero h1 { font-size: var(--text-xl); font-weight: 800; margin-bottom: 0.5rem; }
-.comece-bullets { text-align: left; font-size: var(--text-base); margin: 1.25rem 0 1.5rem; padding-left: 0; list-style: none; }
-.comece-bullets li { padding: 0.35rem 0; }
-.comece-bullets i { color: var(--accent); width: 1.25rem; }
+.comece-steps { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+.comece-steps li {
+    display: flex; gap: 0.85rem; align-items: flex-start;
+    padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+}
+.comece-steps .num {
+    flex: 0 0 1.75rem; height: 1.75rem; border-radius: 999px;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+}
+.comece-steps strong { display: block; margin-bottom: 0.15rem; }
+.comece-steps span { color: var(--muted); font-size: var(--text-sm); }
 </style>
 {% endblock %}
 
@@ -26,18 +34,32 @@
 {% block content %}
 <div class="comece-hero">
     <img src="{{ url_for('static', filename='logoUnissono-stack.png') }}" alt="{{ app_name }}">
-    <h1>{% if plano_intent == 'worship' %}Organize o louvor da sua igreja{% else %}Cifras e setlists para sua banda{% endif %}</h1>
+    <h1>{% if plano_intent == 'worship' %}Organize o louvor da sua igreja{% else %}Do cadastro ao palco em minutos{% endif %}</h1>
     <p class="text-muted mb-0">30 dias de Pro grátis na primeira banda — sem cartão.</p>
 </div>
-<ul class="comece-bullets">
-    <li><i class="fas fa-check"></i> Repertório compartilhado com a equipe</li>
-    <li><i class="fas fa-check"></i> Setlist com tom por cantor</li>
-    <li><i class="fas fa-check"></i> Modo Tocar offline no palco</li>
-</ul>
+<ol class="comece-steps">
+    <li>
+        <span class="num" aria-hidden="true">1</span>
+        <div><strong>Crie sua conta</strong><span>Google ou e-mail — leva menos de 2 minutos.</span></div>
+    </li>
+    <li>
+        <span class="num" aria-hidden="true">2</span>
+        <div><strong>Crie a banda</strong><span>O trial Pro começa automaticamente.</span></div>
+    </li>
+    <li>
+        <span class="num" aria-hidden="true">3</span>
+        <div><strong>Adicione músicas e monte o setlist</strong><span>Cole cifra ou importe — ordem do ensaio pronta.</span></div>
+    </li>
+    <li>
+        <span class="num" aria-hidden="true">4</span>
+        <div><strong>Abra o Modo Tocar</strong><span>Tela limpa no ensaio, culto ou show — inclusive offline.</span></div>
+    </li>
+</ol>
 <a href="{{ url_for('auth.register', plano=plano_intent) if plano_intent else url_for('auth.register') }}"
-   class="btn btn-primary btn-lg w-100 mb-2">Criar conta grátis</a>
+   class="btn btn-primary btn-lg w-100 mb-2">Começar 30 dias grátis</a>
 <p class="text-center text-muted small mb-0">
     Já tem conta? <a href="{{ url_for('auth.login') }}">Entrar</a>
+    · <a href="{{ url_for('assinatura_bp.bandas') }}#planos">Ver planos</a>
 </p>
 {% endblock %}
 

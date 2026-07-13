@@ -20,6 +20,7 @@
             </ul>
             <div class="igrejas-worship-cta">
                 <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-light btn-lg">Começar grátis</a>
+                <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-outline-light btn-lg">Quero Worship — R$ 69</a>
                 {% if whatsapp %}
                 <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
                    class="btn btn-outline-light btn-lg" target="_blank" rel="noopener">
@@ -28,8 +29,9 @@
                 {% endif %}
             </div>
             <p class="igrejas-worship-note">
-                Teste com uma banda no <strong>plano Grátis</strong>. Quando crescer, um upgrade Worship cobre a igreja inteira.
-                <a href="{{ url_for('assinatura_bp.planos') }}" class="igrejas-link-muted">Músico solo ou banda única? Ver planos Pro</a>
+                <strong>Músicos não pagam.</strong> Uma assinatura pastoral cobre todos os ministérios.
+                Teste grátis com uma banda; no upgrade, o Worship sai mais barato que 3× Pro (R$ 87).
+                <a href="{{ url_for('assinatura_bp.planos') }}" class="igrejas-link-muted">Banda única? Ver Pro</a>
             </p>
             {% with variant='dark' %}
             {% include 'partials/mercadopago_trust.html' %}
@@ -60,8 +62,9 @@
             {% if plano_worship.economia_anual %}
             <p class="igrejas-worship-economia small js-igrejas-economia" hidden">{{ plano_worship.economia_anual }}</p>
             {% endif %}
-            <p class="igrejas-worship-tagline">Congregação inteira · cancele quando quiser</p>
+            <p class="igrejas-worship-tagline">vs 3× Pro = R$ 87 · músicos não pagam · cancele quando quiser</p>
             <a href="{{ url_for('auth.register', plano='worship') }}" class="btn btn-light w-100 mt-3">Criar conta da igreja</a>
+            <a href="{{ url_for('auth.login', next=url_for('assinatura_bp.planos') ) }}" class="btn btn-outline-light w-100 mt-2">Já tenho conta — assinar Worship</a>
         </div>
     </div>
 </section>

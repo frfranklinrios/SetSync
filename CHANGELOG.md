@@ -2,11 +2,11 @@
 
 ## 2026-07-13
 
-### Domínio canônico `unissono.app`
-- `SETSYNC_CANONICAL_URL=https://unissono.app`; hosts legados (`setsync.com.br`) com 301
-- TLS Let's Encrypt cobrindo apex + www + setsync
-- Docs de deploy, monetização (webhook MP) e Google Ads atualizados
-- Onboarding enxuto até Modo Tocar; conversão Ads em assinatura paga
+### Conversão e domínio canônico
+- Funil de venda: CTAs na nav/home, cadastro mais curto, Planos logado com Pro em destaque e preço anual vivo
+- Paywall 402 unificado com copy de valor; upsells do dashboard com preço
+- Landings igrejas/estúdios/comece e CTAs públicos alinhados a trial → Pro/Worship/Premium
+- Domínio canônico `https://unissono.app` (+ TLS, redirects e docs)
 
 ## 2026-07-09
 
