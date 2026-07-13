@@ -1,6 +1,6 @@
 # Uníssono
 
-**[setsync.com.br](https://setsync.com.br)** — gerenciador de cifras e setlists para bandas e ministérios de louvor. Organize músicas, transpose acordes, monte setlists e use o **Modo Tocar** no palco.
+**[unissono.app](https://unissono.app)** — gerenciador de cifras e setlists para bandas e ministérios de louvor. Organize músicas, transpose acordes, monte setlists e use o **Modo Tocar** no palco.
 
 ## Documentação
 
@@ -55,7 +55,7 @@ cp .env.example .env
 # SETSYNC_SUPERADMIN_*, Mercado Pago, etc.
 
 docker compose -f docker-compose.prod.yml up -d --build
-# App em http://127.0.0.1:5001 — proxy HTTPS (Nginx) → setsync.com.br
+# App em http://127.0.0.1:5001 — proxy HTTPS (Nginx) → unissono.app
 ```
 
 Migrar um `banda.db` existente:
@@ -106,7 +106,7 @@ Requisitos do importador: `ffmpeg` no PATH; `playwright install chromium` para c
 | `DATABASE_URL` | `postgresql://user:pass@postgres:5432/setsync` ou `sqlite:///data/banda.db` |
 | `POSTGRES_PASSWORD` | Senha do Postgres (compose de produção) |
 | `FLASK_ENV` | `development` ou `production` |
-| `SETSYNC_CANONICAL_URL` | URL HTTPS pública (ex.: `https://setsync.com.br`) |
+| `SETSYNC_CANONICAL_URL` | URL HTTPS pública (ex.: `https://unissono.app`) |
 | `SETSYNC_SUPERADMIN_USERNAMES` | Admin global (vírgula) |
 | `SETSYNC_INTERNAL_URL` | URL interna para PDF (`http://127.0.0.1:5000` no container) |
 | `MP_*` | Mercado Pago (planos Pro/Worship) — ver `MONETIZACAO.md` |
@@ -131,7 +131,7 @@ Lista completa: **`.env.example`**.
 | `T` | Tema claro / escuro |
 | `A` `G` `F` | Diagrama de acorde, arpejo, fullscreen |
 
-Mais atalhos: **[Ajuda](https://setsync.com.br/ajuda)** no app.
+Mais atalhos: **[Ajuda](https://unissono.app/ajuda)** no app.
 
 ## Estrutura do projeto
 

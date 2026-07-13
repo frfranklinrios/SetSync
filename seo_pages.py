@@ -611,7 +611,7 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Como gerenciar várias bandas no Uníssono?',
-            'a': 'No plano Worship, uma conta administra múltiplas bandas — cada uma com repertório e setlists próprios. Para igrejas e ministérios de louvor, veja setsync.com.br/igrejas.',
+            'a': 'No plano Worship, uma conta administra múltiplas bandas — cada uma com repertório e setlists próprios. Para igrejas e ministérios de louvor, veja unissono.app/igrejas.',
         },
         {
             'q': 'Qual a diferença entre Pro e Worship?',
@@ -635,7 +635,7 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'O Uníssono serve para igrejas e ministérios de louvor?',
-            'a': 'Sim. Temos uma página dedicada com plano Worship, comparativos e rotina de culto em setsync.com.br/igrejas.',
+            'a': 'Sim. Temos uma página dedicada com plano Worship, comparativos e rotina de culto em unissono.app/igrejas.',
         },
         {
             'q': 'Posso usar cifras offline no celular?',

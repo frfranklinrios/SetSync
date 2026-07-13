@@ -1,29 +1,45 @@
 # Deploy na Contabo (VPS)
 
-Checklist para subir o Uníssono em produção. O schema evolui via `init_db()` → `_run_schema_migrations()` (mesmo caminho em **SQLite** e **PostgreSQL**).
+Checklist para subir o Uníssono em produção. Domínio canônico: **`https://unissono.app`**. O schema evolui via `init_db()` → `_run_schema_migrations()` (mesmo caminho em **SQLite** e **PostgreSQL**).
 
 ## 1. Servidor
 
 - Ubuntu 22.04+ (ou similar)
-- Domínio apontando para o IP da VPS (recomendado para OAuth e cookies)
+- Domínio `unissono.app` (e `www`) apontando para o IP da VPS
 - Portas **80/443** abertas no firewall da Contabo
+- Legado: `setsync.com.br` pode permanecer no DNS e redirecionar 301 via app (`SETSYNC_ALLOWED_HOSTS`)
 
 ## 2. Opção A — Docker (recomendado)
 
 ```bash
 cd /opt/setsync   # clone do repositório
 cp .env.example .env
-nano .env         # SECRET_KEY, admin, Google OAuth, etc.
+nano .env         # SECRET_KEY, Postgres, MP, mail, canônico
 mkdir -p data
 
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-O app escuta em **127.0.0.1:5001** (só localhost). Coloque o **Nginx** na frente com HTTPS.
+Serviços típicos no compose: `web`, `postgres`, `mail`, `evolution` (WhatsApp), `api-cifras`.
+
+O app escuta na rede Docker (ex.: porta 5000). Coloque o **Nginx Proxy Manager** (ou Nginx) na frente com HTTPS.
 
 **Não use** o `docker-compose.yml` de desenvolvimento na VPS (ele monta `.:/app` e sobrescreve o código dentro do container).
 
-Persistência: pasta `./data` (banco `data/banda.db`, exports, tmp).
+### Domínio e TLS (Nginx Proxy Manager)
+
+1. Proxy Host com `server_name`: `unissono.app` `www.unissono.app` (+ hosts legados se quiser).
+2. Certificado Let's Encrypt cobrindo **unissono.app** e **www.unissono.app** (e opcionalmente `setsync.com.br`).
+3. Force SSL + HSTS.
+4. No `.env`:
+
+```env
+SETSYNC_CANONICAL_URL=https://unissono.app
+SETSYNC_ALLOWED_HOSTS=unissono.app,www.unissono.app,setsync.com.br,www.setsync.com.br,localhost,127.0.0.1
+TRUST_PROXY=1
+```
+
+Hosts legados em `ALLOWED_HOSTS` recebem **301** para o canônico.
 
 ## 3. Opção B — Sem Docker
 
@@ -44,100 +60,98 @@ export FLASK_ENV=production
 gunicorn --config gunicorn.conf.py app:app
 ```
 
-Para serviço systemd, use `WorkingDirectory=/opt/setsync`, `EnvironmentFile=/opt/setsync/.env` e o mesmo comando `gunicorn`.
+## 4. PostgreSQL (produção)
 
-## 4. Nginx (HTTPS)
+No `.env`:
 
-Exemplo mínimo (Certbot para TLS):
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name setsync.seudominio.com;
-
-    # ssl_certificate ... (certbot)
-
-    client_max_body_size 32M;
-
-    location / {
-        proxy_pass http://127.0.0.1:5001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 120s;
-    }
-}
+```env
+DATABASE_URL=postgresql://setsync:SENHA@postgres:5432/setsync
+POSTGRES_PASSWORD=SENHA
+GUNICORN_WORKERS=2
+GUNICORN_THREADS=4
 ```
 
-Com `FLASK_ENV=production` e `TRUST_PROXY=1`, o OAuth Google usa URLs `https://` corretas.
+Backup: `pg_dump` agendado (não só cópia de arquivo SQLite).
 
 ## 5. Variáveis obrigatórias (.env)
 
 | Variável | Produção |
 |----------|----------|
 | `FLASK_ENV` | `production` |
-| `SECRET_KEY` | string longa e aleatória (nunca o exemplo) |
-| `DATABASE_URL` | `sqlite:///data/banda.db` |
-| `SETSYNC_SUPERADMIN_USERNAMES` | seu login admin |
-| `CIFRAS_YOUTUBE_NO_SERVER` | `1` (recomendado na VPS) |
-| `SESSION_COOKIE_SECURE` | `1` com HTTPS; `0` só para teste em HTTP |
-| `GUNICORN_WORKERS` | `1` (SQLite) |
-| `MAIL_USERNAME` / `MAIL_PASSWORD` | SMTP para recuperação de senha, onboarding e avisos (opcional) |
+| `SECRET_KEY` | string longa e aleatória |
+| `DATABASE_URL` | Postgres (recomendado) ou `sqlite:///data/banda.db` |
+| `SETSYNC_CANONICAL_URL` | `https://unissono.app` |
+| `SETSYNC_ALLOWED_HOSTS` | unissono + legados setsync |
+| `SETSYNC_SUPERADMIN_USERNAMES` / `_EMAILS` | admin |
+| `CIFRAS_YOUTUBE_NO_SERVER` | `1` |
+| `SESSION_COOKIE_SECURE` | `1` com HTTPS |
+| `MAIL_*` | SMTP (container `mail` ou externo) |
+| `MP_ACCESS_TOKEN` / `MP_ENVIRONMENT` | Mercado Pago |
+| `MP_WEBHOOK_SECRET` | validação IPN |
 
-Para Gmail: senha de app em [Google Account](https://myaccount.google.com/apppasswords). Teste:
+## 6. E-mail (`contato@unissono.app`)
+
+DNS no Registro.br (ou provedor):
+
+| Tipo | Nome | Valor |
+|------|------|--------|
+| A | `mail` | IP da VPS |
+| MX | `@` | `mail.unissono.app` (prioridade 10) |
+| TXT | `@` | `v=spf1 ip4:IP_DA_VPS -all` |
+| TXT | `unissono._domainkey` | chave DKIM do `mail_server` |
+
+Teste:
 
 ```bash
-python scripts/send_test_email.py seu@email.com
+docker compose -f docker-compose.prod.yml exec web python3 scripts/send_test_email.py voce@exemplo.com
 ```
 
-## 6. Admin global
+> IPs Contabo podem cair em blocklist Microsoft (S3150). Monitore reputação; se Outlook rejeitar, use relay (Zoho/SES) ou peça delist.
 
-1. Registre o usuário pelo app.
-2. No `.env`:
+## 7. Mercado Pago
 
-```env
-SETSYNC_SUPERADMIN_USERNAMES=seu_usuario
-```
+1. Webhook de produção: `https://unissono.app/assinatura/webhook`
+2. Eventos: `subscription_preapproval`, `payment`
+3. Smoke de credenciais: `python3 scripts/test_mp_sandbox.py check` (também valida token de produção se `MP_ENVIRONMENT=production`)
 
-3. Reinicie o container/serviço.
-4. Menu **Admin** → `/admin`.
+## 8. Google OAuth
+
+No [Google Cloud Console](https://console.cloud.google.com/):
+
+- URIs autorizados: `https://unissono.app`
+- Redirect: `https://unissono.app/google/callback`
+- Mantenha `https://setsync.com.br/...` só enquanto o legado ainda recebe tráfego
+
+## 9. Google Ads / Maps
+
+- Ads: ver `docs/google-ads-inscricoes.md` (URL canônica `unissono.app`)
+- Maps referers: `https://unissono.app/*`, `https://www.unissono.app/*`
+
+## 10. Admin global
 
 ```bash
 uv run python scripts/create_superadmin.py --username seu_usuario
 ```
 
-(só imprime as linhas para colar no `.env`)
+## 11. PWA / cache
 
-## 7. Google OAuth
+Após deploy, usuários podem precisar de atualização forçada ou reinstalar o PWA (`sw.js` com versão nova).
 
-No [Google Cloud Console](https://console.cloud.google.com/):
+## 12. Backup
 
-- Tipo: aplicativo Web
-- URIs autorizados: `https://setsync.seudominio.com`
-- Redirect: `https://setsync.seudominio.com/google/callback`
+- Postgres: `pg_dump`
+- Volumes: `./data` (exports, tmp, uploads)
+- Certificados NPM / Let's Encrypt
 
-## 8. PWA / cache
-
-Após deploy, os usuários podem precisar de **atualização forçada** (Ctrl+Shift+R) ou reinstalar o atalho PWA para ver CSS/JS novos (`sw.js` versão `setsync-v7+`).
-
-## 9. Backup
-
-Agende cópia periódica de:
-
-```text
-/opt/setsync/data/banda.db
-/opt/setsync/data/cifras_exports/
-```
-
-## 10. Problemas comuns
+## 13. Problemas comuns
 
 | Sintoma | Causa provável |
 |---------|----------------|
 | Login não mantém sessão | HTTPS ausente com `SESSION_COOKIE_SECURE=1` |
-| Google OAuth redirect errado | Nginx sem `X-Forwarded-Proto` ou domínio diferente do Console |
-| `database is locked` | `GUNICORN_WORKERS` > 1 com SQLite |
-| Admin não aparece | `SETSYNC_SUPERADMIN_*` vazio ou app não reiniciado |
-| E-mails não chegam | `MAIL_USERNAME`/`MAIL_PASSWORD` vazios ou remetente inválido — teste com `scripts/send_test_email.py` |
+| Google OAuth redirect errado | Domínio diferente do Console / sem `X-Forwarded-Proto` |
+| Host 403 | Falta o host em `SETSYNC_ALLOWED_HOSTS` |
+| TLS `unrecognized name` | Apex/www fora do `server_name` do NPM |
+| E-mails não chegam | MX/DKIM ausentes ou IP em blocklist |
+| Webhook MP não ativa plano | URL antiga (`setsync.dados.tec.br`) — use `unissono.app` |
 
 Ver também `docs/05-troubleshooting.md`.

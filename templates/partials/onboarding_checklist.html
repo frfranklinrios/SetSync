@@ -8,9 +8,11 @@
             </div>
             <div class="text-muted" style="font-size: var(--text-sm);">
                 {% if onboarding.done_count == 0 %}
-                Comece pela banda — depois adicione músicas e monte um setlist
+                Em 4 passos você chega no Modo Tocar — o que importa no ensaio e no culto.
+                {% elif onboarding.next_step %}
+                Próximo: {{ onboarding.next_step.label }}{% if onboarding.next_step.hint %} — {{ onboarding.next_step.hint }}{% endif %}
                 {% else %}
-                {{ onboarding.done_count }}/{{ onboarding.total }} concluídos — ative sua banda em poucos minutos
+                {{ onboarding.done_count }}/{{ onboarding.total }} — quase lá
                 {% endif %}
             </div>
         </div>
@@ -36,7 +38,10 @@
             <span>{{ step.label }}</span>
             {% else %}
             <i class="far fa-circle text-muted" aria-hidden="true"></i>
-            <a href="{{ step.url }}">{{ step.label }}</a>
+            <div>
+                <a href="{{ step.url }}">{{ step.label }}</a>
+                {% if step.hint %}<div class="text-muted" style="font-size:0.85em;font-weight:400;">{{ step.hint }}</div>{% endif %}
+            </div>
             {% endif %}
         </li>
         {% endfor %}

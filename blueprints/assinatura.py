@@ -270,7 +270,9 @@ def sucesso_estudio():
                 next_charge = body.get('next_payment_date')
                 ativar_studio_subscription_mp(user_id, plano, preapproval_id, next_charge)
                 from product_funnel import log_funnel_step
+                from google_ads import mark_funnel_event
                 log_funnel_step(user_id, 'assinatura_paga', meta={'plano': plano, 'tipo': 'studio'})
+                mark_funnel_event('assinatura_paga')
                 flash('Plano Estúdio Premium ativado!', 'success')
             else:
                 flash('Pagamento em processamento. Você receberá confirmação em breve.', 'info')
@@ -328,7 +330,9 @@ def sucesso():
                 next_charge = body.get('next_payment_date') or body.get('auto_recurring', {}).get('end_date')
                 ativar_assinatura_mp(banda_id, plano, preapproval_id, next_charge)
                 from product_funnel import log_funnel_step
+                from google_ads import mark_funnel_event
                 log_funnel_step(session['user_id'], 'assinatura_paga', meta={'plano': plano})
+                mark_funnel_event('assinatura_paga')
                 flash('Assinatura ativada com sucesso!', 'success')
                 try:
                     import admin_notifications as an

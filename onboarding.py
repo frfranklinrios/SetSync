@@ -7,7 +7,6 @@ from db import (
     count_band_setlists,
     get_owned_bands,
     get_user_bands,
-    user_agenda_event_used,
     user_onboarding_checklist_dismissed,
     user_play_mode_used,
 )
@@ -44,7 +43,8 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         return None
 
     owned = get_owned_bands(user_id)
-    member_bands = get_owned_bands(user_id) or get_user_bands(user_id)
+    member_bands = get_user_bands(user_id)
+    # Preferir banda própria; senão a primeira em que participa
     bands = owned or member_bands
 
     has_band = bool(bands)
@@ -60,56 +60,59 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         if rows:
             first_cifra_id = rows[0]['id']
 
+    band_url = (
+        url_for('bands.view', band_id=first_band_id)
+        if has_band
+        else url_for('bands.create', bem_vindo=1)
+    )
+    cifra_url = (
+        url_for('cifras.add', band_id=first_band_id)
+        if first_band_id
+        else url_for('bands.create', bem_vindo=1)
+    )
+    setlist_url = (
+        url_for('setlists.create', band_id=first_band_id)
+        if first_band_id
+        else url_for('bands.create', bem_vindo=1)
+    )
+    if first_band_id and first_cifra_id:
+        tocar_url = url_for('cifras.tocar_band', band_id=first_band_id, start=first_cifra_id)
+    elif first_band_id and total_cifras:
+        tocar_url = url_for('cifras.tocar_band', band_id=first_band_id)
+    elif first_band_id:
+        tocar_url = cifra_url
+    else:
+        tocar_url = url_for('bands.create', bem_vindo=1)
+
+    # Funil curto até o valor principal (tocar no ensaio/culto). Agenda fica opcional.
     steps = [
         {
             'id': 'band',
-            'label': 'Criar sua primeira banda',
+            'label': '1. Criar sua banda',
+            'hint': 'É o espaço da sua equipe — cifras e setlists ficam juntos.',
             'done': has_band,
-            'url': url_for('bands.view', band_id=first_band_id) if has_band else url_for('bands.create', bem_vindo=1),
+            'url': band_url,
         },
         {
             'id': 'cifra',
-            'label': 'Adicionar ou importar uma música',
+            'label': '2. Adicionar a primeira música',
+            'hint': 'Cole uma cifra ou importe — leva menos de um minuto.',
             'done': total_cifras > 0,
-            'url': (
-                url_for('cifras.add', band_id=first_band_id)
-                if first_band_id
-                else url_for('bands.create', bem_vindo=1)
-            ),
+            'url': cifra_url,
         },
         {
             'id': 'setlist',
-            'label': 'Montar uma setlist',
+            'label': '3. Montar um setlist',
+            'hint': 'A ordem das músicas do ensaio ou do culto.',
             'done': total_setlists > 0,
-            'url': (
-                url_for('setlists.create', band_id=first_band_id)
-                if first_band_id
-                else url_for('bands.create', bem_vindo=1)
-            ),
+            'url': setlist_url,
         },
         {
             'id': 'tocar',
-            'label': 'Testar o Modo Tocar',
+            'label': '4. Abrir o Modo Tocar',
+            'hint': 'Tela limpa para o palco — sem distrações.',
             'done': user_play_mode_used(user_id),
-            'url': (
-                url_for('cifras.tocar_band', band_id=first_band_id, start=first_cifra_id)
-                if first_band_id and first_cifra_id
-                else (
-                    url_for('cifras.tocar_band', band_id=first_band_id)
-                    if first_band_id and total_cifras
-                    else (url_for('cifras.add', band_id=first_band_id) if first_band_id else url_for('bands.create'))
-                )
-            ),
-        },
-        {
-            'id': 'agenda',
-            'label': 'Criar um evento na agenda',
-            'done': user_agenda_event_used(user_id),
-            'url': (
-                url_for('agenda.create', band_id=first_band_id)
-                if first_band_id
-                else url_for('bands.create', bem_vindo=1)
-            ),
+            'url': tocar_url,
         },
     ]
 

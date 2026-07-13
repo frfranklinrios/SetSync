@@ -9,16 +9,16 @@ No passo **“Onde você quer medir isso?”** → **URL**:
 | Campo | Valor |
 |-------|--------|
 | **Tipo** | A URL contém |
-| **URL** | `setsync.com.br/auth/cadastro-concluido` |
+| **URL** | `unissono.app/auth/cadastro-concluido` |
 
-URL completa (referência): `https://setsync.com.br/auth/cadastro-concluido`
+URL completa (referência): `https://unissono.app/auth/cadastro-concluido`
 
 Só quem acabou de se cadastrar passa por essa página (uma vez). Quem acessa o link direto é redirecionado sem contar conversão de novo.
 
 ## 1. Obter os IDs no Google Ads
 
 1. Acesse [Google Ads](https://ads.google.com/) → **Objetivos** → **Conversões**.
-2. Crie uma conversão do tipo **Inscrição** (ou **Cadastro**) para `https://setsync.com.br`.
+2. Crie uma conversão do tipo **Inscrição** (ou **Cadastro**) para `https://unissono.app`.
 3. Anote:
    - **ID de conversão** (`AW-XXXXXXXXX`)
    - **Rótulo de conversão** (string após a barra, ex.: `AbCdEfGhIjK`)
@@ -38,44 +38,28 @@ GOOGLE_ADS_CONVERSION_VALUE=1.0         # opcional
 GOOGLE_ADS_CONVERSION_CURRENCY=BRL      # opcional
 ```
 
-### Opção B — Google Tag Manager (recomendado para várias tags)
+### Funil (rótulos opcionais)
+
+Sem rótulo dedicado, o app ainda dispara eventos GA4 `setsync_<evento>` (ex.: `setsync_primeira_banda`). Com rótulo no `.env`, vira conversão Ads:
+
+```env
+GOOGLE_ADS_CONVERSION_PRIMEIRA_BANDA=
+GOOGLE_ADS_CONVERSION_PRIMEIRA_CIFRA=
+GOOGLE_ADS_CONVERSION_TRIAL=
+GOOGLE_ADS_CONVERSION_PAGO=
+```
+
+### Opção B — Google Tag Manager
 
 ```env
 GOOGLE_ADS_ENABLED=1
 GOOGLE_TAG_MANAGER_ID=GTM-XXXXXXX
 ```
 
-No GTM, crie:
+Eventos no dataLayer: `setsync_signup`, `setsync_primeira_banda`, etc.
 
-1. **Acionador** — evento personalizado: `setsync_signup`
-2. **Tag** — Conversão do Google Ads usando esse acionador
+## 3. Conferir
 
-O app envia no `dataLayer`:
-
-```javascript
-{ event: 'setsync_signup', conversion_value: 1.0, conversion_currency: 'BRL' }
-```
-
-## 3. Validar
-
-```bash
-docker compose -f docker-compose.prod.yml exec web python3 scripts/validar_google_ads.py
-```
-
-Teste real: abra o site em aba anônima, conclua um cadastro e verifique em **Google Ads → Conversões** (pode levar algumas horas ou use a extensão **Tag Assistant**).
-
-## 4. Deploy
-
-Após alterar o `.env`:
-
-```bash
-docker compose -f docker-compose.prod.yml up -d web
-```
-
-## Debug
-
-```env
-GOOGLE_ADS_DEBUG=1
-```
-
-No navegador, abra o console após cadastrar — deve aparecer `[SetSync] Google Ads signup conversion` ou `GTM event: setsync_signup`.
+1. Cadastre uma conta de teste em `https://unissono.app/auth/register`.
+2. Você deve cair em `/auth/cadastro-concluido` e o Tag Assistant / debug Ads deve mostrar a conversão.
+3. Em produção, confirme domínio canônico `SETSYNC_CANONICAL_URL=https://unissono.app`.

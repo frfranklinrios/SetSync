@@ -34,9 +34,9 @@ Opcional até configurar SMTP. Sem `MAIL_PASSWORD`, o app funciona — só não 
 | `MAIL_PORT` | `587` (TLS) ou `465` (SSL) |
 | `MAIL_USE_TLS` | `1` na porta 587 |
 | `MAIL_USE_SSL` | `1` na porta 465 |
-| `MAIL_USERNAME` | Ex: `contato@setsync.com.br` |
+| `MAIL_USERNAME` | Ex: `contato@unissono.app` |
 | `MAIL_PASSWORD` | Senha da caixa ou senha de app |
-| `MAIL_DEFAULT_SENDER` | Ex: `SetSync <contato@setsync.com.br>` |
+| `MAIL_DEFAULT_SENDER` | Ex: `Uníssono <contato@unissono.app>` |
 
 Teste: `python scripts/send_test_email.py seu@email.com`
 
@@ -63,13 +63,13 @@ Copie os valores para o `.env`.
 ## 4. Webhook no painel Mercado Pago
 
 1. Em **Suas integrações** → sua aplicação → **Webhooks**.
-2. URL de produção: `https://setsync.dados.tec.br/assinatura/webhook`
+2. URL de produção: `https://unissono.app/assinatura/webhook`
 3. Eventos recomendados:
    - `subscription_preapproval`
    - `payment`
 4. Defina o mesmo valor de `MP_WEBHOOK_SECRET` no painel (assinatura `x-signature`).
 
-Em desenvolvimento local, use [ngrok](https://ngrok.com/) ou similar para expor a porta 5000.
+Hosts legados (`setsync.com.br`) redirecionam 301 para o canônico; configure o webhook **só** em `unissono.app`.
 
 ## 5. Sandbox vs produção
 
@@ -95,7 +95,9 @@ Exemplos comuns:
 |--------|------|-----------|
 | GET | `/assinatura/planos` | Página de planos + resgate de voucher |
 | POST | `/assinatura/iniciar/<plano>` | Inicia checkout MP (`pro` ou `worship`) |
+| POST | `/assinatura/estudio/iniciar/<plano>` | Checkout Estúdio Premium (R$ 49/mês) |
 | GET | `/assinatura/sucesso` | Retorno após aprovação |
+| GET | `/assinatura/estudio/sucesso` | Retorno checkout estúdio |
 | GET | `/assinatura/pendente` | Pagamento pendente |
 | GET | `/assinatura/falha` | Pagamento recusado |
 | POST | `/assinatura/webhook` | IPN Mercado Pago |
@@ -220,12 +222,13 @@ python3 scripts/test_mp_sandbox.py preapproval --email test_user@testuser.com
 
 Abra o `init_point` / `sandbox_init_point` impresso no terminal.
 
-## 11. Produção (setsync.dados.tec.br)
+## 11. Produção (unissono.app)
 
 1. `MP_ENVIRONMENT=production`
 2. `MP_ACCESS_TOKEN=APP_USR-...` (produção)
-3. Webhook: `https://setsync.dados.tec.br/assinatura/webhook` (sem `?secret=` se usar só `x-signature` do painel)
+3. Webhook: `https://unissono.app/assinatura/webhook` (sem `?secret=` se usar só `x-signature` do painel)
 4. Recrie ou use planos criados com token de produção nos IDs do `.env`
+5. Confirme `SETSYNC_CANONICAL_URL=https://unissono.app`
 
 ## 12. Testar fluxo completo no app
 
@@ -263,9 +266,9 @@ Anúncios aparecem **somente** quando a banda em contexto (ou todas as bandas do
 
 ### Ativar em produção
 
-1. Aprove a conta no [Google AdSense](https://www.google.com/adsense/) com o domínio `https://setsync.com.br`.
+1. Aprove a conta no [Google AdSense](https://www.google.com/adsense/) com o domínio `https://unissono.app`.
 2. Copie o **data-ad-client** (`ca-pub-...`) para o `.env` da VPS.
-3. Confirme `https://setsync.com.br/ads.txt` (arquivo na raiz + Nginx na borda). No AdSense → **Sites** → verificar ads.txt → **Verificar novamente** após deploy.
+3. Confirme `https://unissono.app/ads.txt` (arquivo na raiz + Nginx na borda). No AdSense → **Sites** → verificar ads.txt → **Verificar novamente** após deploy.
 4. No AdSense → **Anúncios** → **Por unidade de anúncio** → **Display ads** → responsivo; copie o número de `data-ad-slot` para `ADSENSE_SLOT_FOOTER` no `.env` (melhora preenchimento e relatórios).
 5. Rebuild do container: `docker compose -f docker-compose.prod.yml up -d --build`.
 
@@ -277,14 +280,15 @@ python3 scripts/test_adsense_eligibility.py
 
 > **LGPD:** se exigir consentimento de cookies para publicidade, adicione um banner de opt-in antes de carregar o script — o Uníssono hoje só prepara a carga condicional por plano.
 
-## Plano Estúdio (beta gratuito)
+## Plano Estúdio
 
-Módulo de agendamento de salas de ensaio (`/estudios`). Na v1 **não há cobrança** via Mercado Pago.
+Módulo de agendamento de salas de ensaio (`/estudios`).
 
-| Plano | ID interno | Limite |
-|-------|------------|--------|
-| Estúdio básico | `estudio_basico` | até **2 salas** por dono (padrão no beta) |
-| Estúdio premium | `estudio_premium` | salas ilimitadas (futuro) |
+| Plano | ID interno | Preço | Limite |
+|-------|------------|-------|--------|
+| Estúdio básico | `estudio_basico` | grátis | até **2 salas** por dono |
+| Estúdio premium | `estudio_premium` | **R$ 49/mês** (ou R$ 490/ano) | salas ilimitadas |
 
-- Assinatura em `studio_subscriptions` (por `user_id` do dono), criada automaticamente no cadastro.
-- Checkout MP e taxa sobre agendamentos ficam como item futuro.
+- Assinatura em `studio_subscriptions` (por `user_id` do dono).
+- Checkout: `POST /assinatura/estudio/iniciar/estudio_premium` via Mercado Pago (mesmo webhook de `/assinatura/webhook`).
+- Trial premium pode ser iniciado no app (`iniciar_trial_estudio`).

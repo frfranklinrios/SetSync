@@ -1,12 +1,20 @@
 # Changelog — Uníssono
 
+## 2026-07-13
+
+### Domínio canônico `unissono.app`
+- `SETSYNC_CANONICAL_URL=https://unissono.app`; hosts legados (`setsync.com.br`) com 301
+- TLS Let's Encrypt cobrindo apex + www + setsync
+- Docs de deploy, monetização (webhook MP) e Google Ads atualizados
+- Onboarding enxuto até Modo Tocar; conversão Ads em assinatura paga
+
 ## 2026-07-09
 
 ### Rebrand: SetSync → Uníssono
 - Nome do app atualizado em toda a interface, e-mails, PWA, SEO e documentação
 - Módulo `branding.py` centraliza `app_name` nos templates
 - Aviso na tela de login/cadastro e banner “Entendi” para quem já usa o app
-- Domínio `setsync.com.br` e formatos técnicos internos mantidos por compatibilidade
+- Domínio legado `setsync.com.br` mantido com redirect para `unissono.app`
 
 ### Painel master (superadmin)
 - Login e menu “Painel” levam direto ao `/admin`
