@@ -114,3 +114,44 @@ def list_band_expenses(
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     return rows
+
+
+def list_member_fee_events(
+    user_id: str,
+    *,
+    from_date: str,
+    to_date: str,
+    band_id: str | None = None,
+) -> list[dict]:
+    """Shows com cachê das bandas do músico (para painel pessoal)."""
+    db = get_db()
+    c = db.cursor()
+    start_at = f'{from_date[:10]} 00:00:00'
+    end_at = f'{to_date[:10]} 23:59:59'
+    params: list = [start_at, end_at, user_id, user_id]
+    band_filter = ''
+    if band_id:
+        band_filter = 'AND e.band_id = ?'
+        params.append(band_id)
+    c.execute(
+        f'''SELECT e.*, b.name AS band_name
+            FROM band_events e
+            JOIN bands b ON b.id = e.band_id
+            WHERE e.event_type = 'show'
+              AND COALESCE(e.fee_total, 0) > 0
+              AND e.starts_at >= ?
+              AND e.starts_at <= ?
+              AND (
+                    EXISTS (
+                        SELECT 1 FROM band_members bm
+                        WHERE bm.band_id = e.band_id AND bm.user_id = ?
+                    )
+                    OR b.owner_id = ?
+                  )
+              {band_filter}
+            ORDER BY e.starts_at DESC''',
+        params,
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows

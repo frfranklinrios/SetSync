@@ -88,9 +88,15 @@
     </div>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        {% if can_view_finance %}
         <a href="{{ url_for('bands.finance', band_id=band.id) }}" class="btn btn-outline-primary btn-sm"
-           title="Ver quanto a banda ganhou e gastou no mês">
-            <i class="fas fa-coins me-1"></i> Financeiro
+           title="Financeiro completo da banda">
+            <i class="fas fa-coins me-1"></i> Financeiro da banda
+        </a>
+        {% endif %}
+        <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}" class="btn btn-outline-secondary btn-sm"
+           title="Seus cachês nesta e nas outras bandas">
+            <i class="fas fa-wallet me-1"></i> Meus cachês
         </a>
         {% if is_admin %}
         <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
@@ -104,7 +110,12 @@
     <i class="fas fa-route text-primary me-1" aria-hidden="true"></i>
     <strong>Próximo valor:</strong>
     repertório (Músicas) → roteiro → <strong>Modo Tocar</strong> no ensaio.
-    Use <strong>Agenda</strong> para ensaios e <strong>Financeiro</strong> para cachês.
+    Use <strong>Agenda</strong> para ensaios.
+    {% if can_view_finance %}
+    <strong>Financeiro da banda</strong> é só para admin (ou quem o admin liberar).
+    {% else %}
+    Seus cachês ficam em <strong>Meus cachês</strong>.
+    {% endif %}
 </div>
 
 <ul class="nav nav-tabs mb-1" id="bandTabs" role="tablist">

@@ -1,0 +1,116 @@
+{% extends "index.html" %}
+{% block title %}Meus cachês — Uníssono{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">Meus cachês</h1>
+        <p class="text-muted mb-0 small">
+            Sua parte nos shows das bandas em que você toca.
+            O financeiro completo da banda fica só com o admin (ou quem ele liberar).
+        </p>
+    </div>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-4">
+    <div class="col-sm-4 col-md-3">
+        <label class="form-label small mb-1" for="banda_id">Banda</label>
+        <select name="banda_id" id="banda_id" class="form-select form-select-sm">
+            <option value="">Todas as bandas</option>
+            {% for b in bands %}
+            <option value="{{ b.id }}" {% if band_filter == b.id %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-sm-3 col-md-2">
+        <label class="form-label small mb-1" for="mes">Mês</label>
+        <select name="mes" id="mes" class="form-select form-select-sm">
+            {% for m in range(1, 13) %}
+            <option value="{{ m }}" {% if report.month == m %}selected{% endif %}>{{ '%02d'|format(m) }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-sm-3 col-md-2">
+        <label class="form-label small mb-1" for="ano">Ano</label>
+        <input type="number" name="ano" id="ano" class="form-control form-control-sm"
+               value="{{ report.year }}" min="2000" max="2100">
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+    </div>
+</form>
+
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="border rounded p-2 text-center">
+            <div class="fw-bold">R$ {{ '%.2f'|format(report.stats.total) }}</div>
+            <div class="text-muted small">Sua parte no mês</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="border rounded p-2 text-center">
+            <div class="fw-bold text-success">R$ {{ '%.2f'|format(report.stats.recebido) }}</div>
+            <div class="text-muted small">Recebido / fechado</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="border rounded p-2 text-center">
+            <div class="fw-bold text-warning">R$ {{ '%.2f'|format(report.stats.a_receber) }}</div>
+            <div class="text-muted small">A receber</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="border rounded p-2 text-center">
+            <div class="fw-bold">{{ report.stats.shows }}</div>
+            <div class="text-muted small">Shows com cachê</div>
+        </div>
+    </div>
+</div>
+
+{% if report.rows %}
+<div class="table-responsive">
+    <table class="table table-sm align-middle" style="font-size: var(--text-sm);">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Show</th>
+                <th>Banda</th>
+                <th class="text-end">Sua parte</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.rows %}
+            <tr>
+                <td>{{ (row.starts_at|string)[:10] }}</td>
+                <td>
+                    <a href="{{ url_for('agenda.view', event_id=row.id) }}">{{ row.title or 'Show' }}</a>
+                    {% if not row.included_in_split %}
+                    <div class="text-muted" style="font-size:0.85em;">Você não entrou na divisão (não confirmado na escala).</div>
+                    {% endif %}
+                </td>
+                <td>{{ row.band_name }}</td>
+                <td class="text-end fw-semibold">R$ {{ '%.2f'|format(row.my_amount) }}</td>
+                <td>
+                    {% if row.is_received %}
+                    <span class="badge text-bg-success">Fechado</span>
+                    {% else %}
+                    <span class="badge text-bg-warning">Em aberto</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty">
+    <i class="fas fa-wallet"></i>
+    <p class="mb-2">Nenhum cachê neste período.</p>
+    <p class="text-muted small mb-0">
+        Quando o admin cadastrar o cachê de um show e você estiver na escala (ou na banda),
+        sua parte aparece aqui.
+    </p>
+</div>
+{% endif %}
+{% endblock %}

@@ -7,7 +7,8 @@ from db import (create_band, get_band, get_user_bands, get_owned_bands, get_all_
                 update_band, delete_band, get_band_members, add_band_member, remove_band_member,
                 is_band_member, is_band_admin, is_band_editor, is_superadmin, can_delete_band,
                 can_edit_band_settings, set_band_logo_filename, get_user,
-                update_band_member_role, get_band_member_role,
+                update_band_member_role, get_band_member_role, can_view_band_finance,
+                set_band_member_finance_access,
                 enrich_bands_for_display, user_display_name)
 from band_invites import make_band_invite_token
 from security import external_url_for
@@ -121,6 +122,7 @@ def view(band_id):
     owner = get_user(band['owner_id'])
     admin = is_band_admin(band_id, user_id)
     can_edit = is_band_editor(band_id, user_id)
+    can_finance = can_view_band_finance(band_id, user_id)
     from blueprints.cifras import vocalist_label_for_band
     vocalist_name = vocalist_label_for_band(band_id)
 
@@ -167,6 +169,7 @@ def view(band_id):
         is_admin=admin,
         is_member=True,
         can_edit=can_edit,
+        can_view_finance=can_finance,
         is_superadmin=is_superadmin(user_id),
         band_has_logo=band_has_logo(band),
         band_logo_url=url_for('bands.band_logo', band_id=band_id) if band_has_logo(band) else None,
@@ -449,7 +452,42 @@ def set_member_role(band_id, member_id):
             'success',
         )
     else:
-        flash('Não foi possível atualizar o papel do membro.', 'danger')
+        flash('Não foi possível atualizar o papel.', 'danger')
+    return redirect(url_for('bands.members', band_id=band_id))
+
+
+@bands_bp.route('/<band_id>/members/<member_id>/finance-access', methods=['POST'])
+@login_required
+def set_member_finance_access(band_id, member_id):
+    """Admin libera ou revoga visão do financeiro completo da banda."""
+    user_id = session['user_id']
+    band = get_band(band_id)
+    if not band or not is_band_admin(band_id, user_id):
+        flash('Só administradores podem liberar o financeiro da banda.', 'danger')
+        return redirect(url_for('bands.view', band_id=band_id) if band else url_for('dashboard'))
+    if member_id == band['owner_id'] or is_band_admin(band_id, member_id):
+        flash('Administradores já veem o financeiro completo.', 'info')
+        return redirect(url_for('bands.members', band_id=band_id))
+    if not is_band_member(band_id, member_id):
+        flash('Membro não encontrado.', 'warning')
+        return redirect(url_for('bands.members', band_id=band_id))
+
+    enabled = request.form.get('can_view_finance') in ('1', 'on', 'true', 'yes')
+    if set_band_member_finance_access(band_id, member_id, enabled):
+        target = get_user(member_id)
+        if enabled:
+            flash(
+                f'{user_display_name(target)} agora vê o financeiro completo de {band["name"]}.',
+                'success',
+            )
+        else:
+            flash(
+                f'{user_display_name(target)} deixou de ver o financeiro completo — '
+                'continua vendo só os próprios cachês.',
+                'info',
+            )
+    else:
+        flash('Não foi possível atualizar o acesso.', 'danger')
     return redirect(url_for('bands.members', band_id=band_id))
 
 
@@ -590,13 +628,21 @@ BAND_EXPENSE_CATEGORIES = (
 )
 
 
+def _require_band_finance_viewer(band_id: str):
+    """Financeiro completo da banda — admin ou indicado."""
+    user_id = session.get('user_id')
+    band = get_band(band_id)
+    if not band or not user_id or not can_view_band_finance(band_id, user_id):
+        return None, None
+    return band, user_id
+
+
 def _require_band_member(band_id: str):
     user_id = session.get('user_id')
     band = get_band(band_id)
     if not band or not user_id or not is_band_member(band_id, user_id):
         return None, None
     return band, user_id
-
 
 def _require_band_admin(band_id: str):
     user_id = session['user_id']
@@ -668,20 +714,72 @@ def _resolve_band_finance_user(band_id: str):
         if not uid:
             return None, None
         band = get_band(band_id)
-        if not band or not is_band_member(band_id, uid):
+        if not band or not can_view_band_finance(band_id, uid):
             return None, None
         return band, uid
-    return _require_band_member(band_id)
+    return _require_band_finance_viewer(band_id)
+
+
+@bands_bp.route('/meus-caches')
+@login_required
+def my_fees():
+    """Cachês pessoais do músico em todas as bandas (com filtro)."""
+    from band_finance import build_member_fee_report, month_bounds
+    from models_band_finance import list_member_fee_events
+
+    user_id = session['user_id']
+    year, month = _parse_finance_period()
+    from_date, to_date = month_bounds(year, month)
+    band_filter = (request.args.get('banda_id') or '').strip() or None
+
+    owned = get_owned_bands(user_id)
+    member_of = get_user_bands(user_id)
+    bands_map = {b['id']: b for b in owned}
+    for b in member_of:
+        bands_map.setdefault(b['id'], b)
+    bands = sorted(bands_map.values(), key=lambda b: (b.get('name') or '').lower())
+
+    if band_filter and band_filter not in bands_map:
+        band_filter = None
+
+    events = list_member_fee_events(
+        user_id,
+        from_date=from_date,
+        to_date=to_date,
+        band_id=band_filter,
+    )
+    report = build_member_fee_report(
+        user_id=user_id,
+        events=events,
+        year=year,
+        month=month,
+        name_for_user=user_display_name,
+    )
+    return render_template(
+        'bands/my_fees.html',
+        report=report,
+        bands=bands,
+        band_filter=band_filter,
+        from_date=from_date,
+        to_date=to_date,
+    )
 
 
 @bands_bp.route('/<band_id>/financeiro')
 @login_required
 def finance(band_id):
-    band, uid = _require_band_member(band_id)
+    band, uid = _require_band_finance_viewer(band_id)
     if not band:
         if not get_band(band_id):
             flash('Banda não encontrada.', 'danger')
             return redirect(url_for('dashboard'))
+        if is_band_member(band_id, session.get('user_id')):
+            flash(
+                'O financeiro completo da banda é só para administradores '
+                'ou quem eles liberarem. Veja seus cachês pessoais.',
+                'info',
+            )
+            return redirect(url_for('bands.my_fees', banda_id=band_id))
         flash('Você precisa ser integrante desta banda para ver o financeiro.', 'danger')
         return redirect(url_for('dashboard'))
     is_admin = is_band_admin(band_id, uid)
@@ -702,7 +800,6 @@ def finance(band_id):
         event_type_label=event_type_label,
         is_admin=is_admin,
     )
-
 
 @bands_bp.route('/<band_id>/financeiro/imprimir')
 def finance_print(band_id):
@@ -747,9 +844,9 @@ def finance_export_pdf(band_id):
 
     from band_finance_pdf import build_finance_pdf_download_name, generate_band_finance_pdf_bytes
 
-    band, uid = _require_band_member(band_id)
+    band, uid = _require_band_finance_viewer(band_id)
     if not band:
-        flash('Sem permissão.', 'danger')
+        flash('Sem permissão para o financeiro da banda.', 'danger')
         return redirect(url_for('bands.view', band_id=band_id))
     year, month = _parse_finance_period()
     try:

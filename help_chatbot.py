@@ -207,11 +207,19 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
         ctas.append({'label': 'Buscar estúdios', 'url': url_for('studios.search')})
     if any(t in q for t in ('financeiro', 'receita', 'despesa', 'faturamento', 'liquido', 'lucro', 'cache', 'cachê')):
         from models_studio import list_studios_by_owner
-        from db import get_owned_bands, get_user_bands
+        from db import get_owned_bands, get_user_bands, can_view_band_finance
         owned_studios = list_studios_by_owner(user_id)
         owned_bands = get_owned_bands(user_id)
         member_bands = get_user_bands(user_id)
-        finance_band = owned_bands[0] if owned_bands else (member_bands[0] if member_bands else None)
+        ctas.append({
+            'label': 'Meus cachês',
+            'url': url_for('bands.my_fees'),
+        })
+        finance_band = None
+        for b in list(owned_bands) + list(member_bands):
+            if can_view_band_finance(b['id'], user_id):
+                finance_band = b
+                break
         if finance_band:
             ctas.append({
                 'label': 'Financeiro da banda',
@@ -223,13 +231,13 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
                 'url': url_for('studios.owner_finance', studio_id=owned_studios[0]['id']),
             })
         ctas.append({
-            'label': 'Ajuda financeiro estúdio',
-            'url': url_for('ajuda.index') + '#estudio-financeiro',
+            'label': 'Ajuda financeiro',
+            'url': url_for('ajuda.index') + '#financeiro-banda',
         })
-        if finance_band:
+        if owned_studios:
             ctas.append({
-                'label': 'Ajuda financeiro banda',
-                'url': url_for('ajuda.index') + '#financeiro-banda',
+                'label': 'Ajuda financeiro estúdio',
+                'url': url_for('ajuda.index') + '#estudio-financeiro',
             })
     if any(t in q for t in ('voucher', 'codigo', 'código', 'promoc', 'cupom')):
         from models_studio import list_studios_by_owner

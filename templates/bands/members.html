@@ -66,7 +66,7 @@
                 <span class="row-badge neutral">Membro</span>
                 {% endif %}
                 {% if band.owner_id != member.id %}
-                <div class="row-actions d-flex align-items-center gap-1">
+                <div class="row-actions d-flex align-items-center gap-1 flex-wrap justify-content-end">
                     {% if is_owner or member.role != 'admin' %}
                     <form action="{{ url_for('bands.set_member_role', band_id=band.id, member_id=member.id) }}" method="POST" class="d-inline">
                         {% include 'partials/csrf_input.html' %}
@@ -78,6 +78,18 @@
                             <option value="admin" {% if member.role == 'admin' %}selected{% endif %}>Admin</option>
                             {% endif %}
                         </select>
+                    </form>
+                    {% endif %}
+                    {% if member.role not in ('admin', 'owner') %}
+                    <form action="{{ url_for('bands.set_member_finance_access', band_id=band.id, member_id=member.id) }}"
+                          method="POST" class="d-inline">
+                        {% include 'partials/csrf_input.html' %}
+                        <input type="hidden" name="can_view_finance" value="{% if member.can_view_finance %}0{% else %}1{% endif %}">
+                        <button type="submit" class="btn btn-sm {% if member.can_view_finance %}btn-outline-success{% else %}btn-outline-secondary{% endif %}"
+                                title="{% if member.can_view_finance %}Revogar visão do financeiro da banda{% else %}Liberar financeiro completo da banda{% endif %}"
+                                style="font-size: var(--text-sm);">
+                            <i class="fas fa-coins me-1"></i>{% if member.can_view_finance %}Vê financeiro{% else %}Liberar financeiro{% endif %}
+                        </button>
                     </form>
                     {% endif %}
                     {% if is_owner or member.role != 'admin' %}
@@ -120,7 +132,9 @@
                 <p class="text-muted mb-0" style="font-size: var(--text-sm);">
                     <strong>Membro</strong> — vê cifras, toca no palco e usa setlists.<br>
                     <strong>Editor</strong> — cria, edita e exclui cifras, letras, chord sheets e setlists.<br>
-                    <strong>Admin</strong> — gerencia membros, convites e configurações da banda.<br>
+                    <strong>Admin</strong> — gerencia membros, convites, configurações e <strong>financeiro da banda</strong>.<br>
+                    <strong>Liberar financeiro</strong> — indica um membro para ver o painel completo (totais e despesas), sem virar admin.<br>
+                    <strong>Meus cachês</strong> — todo músico vê a própria fatia dos shows em todas as bandas.<br>
                     <strong>Proprietário</strong> — controle total, incluindo promover admins.
                 </p>
             </div>

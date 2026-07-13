@@ -33,6 +33,7 @@ def _coerce_finance_row(row: dict) -> dict:
 
 __all__ = [
     'build_band_finance_report',
+    'build_member_fee_report',
     'default_finance_period',
     'enrich_event_finance',
     'month_bounds',
@@ -107,5 +108,68 @@ def build_band_finance_report(
             'despesas': total_despesas,
             'custos_totais': total_custos,
             'liquido': liquido,
+        },
+    }
+
+
+def build_member_fee_report(
+    *,
+    user_id: str,
+    events: list[dict],
+    year: int,
+    month: int,
+    name_for_user,
+) -> dict[str, Any]:
+    """Agrega a fatia do músico nos shows com cachê."""
+    from event_fees import compute_event_fee_split
+    from db import get_band_members
+    from models_agenda import get_event_assignments
+
+    rows: list[dict] = []
+    for raw in events:
+        event = enrich_event_finance(raw)
+        band_id = event.get('band_id')
+        if not band_id or not event.get('has_fee'):
+            continue
+        split = compute_event_fee_split(
+            event,
+            get_event_assignments(event['id']),
+            get_band_members(band_id),
+            name_for_user=name_for_user,
+        )
+        mine = next(
+            (p for p in (split.get('payees') or []) if str(p.get('user_id')) == str(user_id)),
+            None,
+        )
+        if not mine:
+            # Músico na banda mas não na divisão (não confirmou) — ainda lista com 0
+            amount = 0.0
+            included = False
+        else:
+            amount = float(mine.get('amount') or 0)
+            included = True
+        rows.append({
+            **event,
+            'my_amount': round(amount, 2),
+            'included_in_split': included,
+            'fee_net_band': split.get('net') or event.get('fee_net') or 0,
+            'payees_count': len(split.get('payees') or []),
+        })
+
+    total = round(sum(r['my_amount'] for r in rows), 2)
+    received = round(sum(r['my_amount'] for r in rows if r.get('is_received')), 2)
+    pending = round(total - received, 2)
+    bands = sorted({(r.get('band_id'), r.get('band_name') or '') for r in rows})
+
+    return {
+        'year': year,
+        'month': month,
+        'rows': rows,
+        'stats': {
+            'shows': len(rows),
+            'total': total,
+            'recebido': received,
+            'a_receber': pending,
+            'bandas': len({b[0] for b in bands if b[0]}),
         },
     }

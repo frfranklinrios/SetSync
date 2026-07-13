@@ -260,9 +260,10 @@ def view(event_id):
     scale_stats = get_assignment_response_stats(event_id)
     gcal_url = google_calendar_url(event, band_name=band.get('name') or '')
     from event_fees import compute_event_fee_split
-    from db import get_band_members
+    from db import get_band_members, can_view_band_finance
 
     fee_split = None
+    can_see_full_fee = can_view_band_finance(band['id'], user_id)
     if event.get('fee_total'):
         fee_split = compute_event_fee_split(
             event,
@@ -270,12 +271,25 @@ def view(event_id):
             get_band_members(band['id']),
             name_for_user=user_display_name,
         )
+        if fee_split and not can_see_full_fee:
+            my_payee = next(
+                (p for p in (fee_split.get('payees') or []) if str(p.get('user_id')) == str(user_id)),
+                None,
+            )
+            fee_split = {
+                **fee_split,
+                'payees': [my_payee] if my_payee else [],
+                'personal_only': True,
+                'my_amount': (my_payee or {}).get('amount'),
+                'payees_count': len(fee_split.get('payees') or []),
+            }
     return render_template(
         'agenda/view.html',
         event=event,
         band=band,
         is_admin=is_band_admin(band['id'], user_id),
         can_edit=is_band_editor(band['id'], user_id),
+        can_view_finance=can_see_full_fee,
         assignments=assignments,
         guests=guests,
         scale_stats=scale_stats,

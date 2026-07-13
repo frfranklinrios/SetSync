@@ -248,6 +248,21 @@
         {% endif %}
 
         {% if fee_split and event.fee_total %}
+        {% if fee_split.personal_only %}
+        <div class="mb-2" style="font-size: var(--text-sm);">
+            {% if fee_split.my_amount is not none %}
+            <p class="mb-1"><strong>Sua parte:</strong> R$ {{ '%.2f'|format(fee_split.my_amount) }}</p>
+            <p class="text-muted mb-0">Líquido do show: R$ {{ '%.2f'|format(fee_split.net) }}
+                {% if fee_split.payees_count or fee_split.share %}· divisão entre a escala{% endif %}
+            </p>
+            {% else %}
+            <p class="text-muted mb-0">Você não entrou na divisão deste cachê (confirme na escala ou fale com o admin).</p>
+            {% endif %}
+            <p class="mb-0 mt-2">
+                <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}">Ver todos os meus cachês →</a>
+            </p>
+        </div>
+        {% else %}
         <div class="table-responsive">
             <table class="table table-sm mb-0" style="font-size: var(--text-sm);">
                 <tbody>
@@ -270,7 +285,8 @@
         {% elif fee_split.warning %}
         <p class="text-warning mb-0 mt-2" style="font-size: var(--text-sm);">{{ fee_split.warning }}</p>
         {% endif %}
-        {% if event.fee_notes %}
+        {% endif %}
+        {% if event.fee_notes and (is_admin or can_view_finance) %}
         <p class="text-muted mb-0 mt-2" style="font-size: var(--text-sm);">{{ event.fee_notes }}</p>
         {% endif %}
         {% endif %}

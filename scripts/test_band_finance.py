@@ -99,6 +99,23 @@ class BandFinanceTest(unittest.TestCase):
         self.assertEqual(report['stats']['despesas'], 50.0)
         self.assertEqual(report['stats']['liquido'], -210.0)
 
+    def test_finance_access_flag(self):
+        from db import (
+            add_band_member,
+            can_view_band_finance,
+            create_user,
+            set_band_member_finance_access,
+        )
+
+        member_id = create_user('band_fin_m', 'band.fin.m@test.com', 'pass', display_name='Mus')
+        add_band_member(self.band_id, member_id, 'member')
+        self.assertTrue(can_view_band_finance(self.band_id, self.user_id))
+        self.assertFalse(can_view_band_finance(self.band_id, member_id))
+        self.assertTrue(set_band_member_finance_access(self.band_id, member_id, True))
+        self.assertTrue(can_view_band_finance(self.band_id, member_id))
+        self.assertTrue(set_band_member_finance_access(self.band_id, member_id, False))
+        self.assertFalse(can_view_band_finance(self.band_id, member_id))
+
 
 if __name__ == '__main__':
     unittest.main()

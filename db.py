@@ -707,6 +707,9 @@ def _migrate_band_finance_schema(c) -> None:
         'CREATE INDEX IF NOT EXISTS idx_band_expenses_band_date '
         'ON band_expenses(band_id, data)'
     )
+    add_column_if_missing(
+        c, 'band_members', 'can_view_finance', 'INTEGER NOT NULL DEFAULT 0',
+    )
 
 
 def _migrate_growth_schema(c) -> None:
@@ -2662,13 +2665,57 @@ def get_band_members(band_id):
     db = get_db()
     c = db.cursor()
     c.execute('''
-        SELECT users.*, band_members.role FROM users
+        SELECT users.*, band_members.role,
+               COALESCE(band_members.can_view_finance, 0) AS can_view_finance
+        FROM users
         JOIN band_members ON users.id = band_members.user_id
         WHERE band_members.band_id = ?
     ''', (band_id,))
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
+
+
+def set_band_member_finance_access(band_id: str, user_id: str, enabled: bool) -> bool:
+    """Admin indica se o membro vê o financeiro completo da banda."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE band_members
+           SET can_view_finance = ?
+           WHERE band_id = ? AND user_id = ? AND role NOT IN ('owner', 'admin')''',
+        (1 if enabled else 0, band_id, user_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
+def member_can_view_finance_flag(band_id: str, user_id: str) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT COALESCE(can_view_finance, 0) AS can_view_finance
+           FROM band_members WHERE band_id = ? AND user_id = ?''',
+        (band_id, user_id),
+    )
+    row = c.fetchone()
+    db.close()
+    return bool(row and int(row['can_view_finance'] or 0) == 1)
+
+
+def can_view_band_finance(band_id: str, user_id: str) -> bool:
+    """Financeiro completo da banda: admin/owner/superadmin ou indicado pelo admin."""
+    if not band_id or not user_id:
+        return False
+    if is_superadmin(user_id):
+        return True
+    if is_band_admin(band_id, user_id):
+        return True
+    if not is_band_member(band_id, user_id):
+        return False
+    return member_can_view_finance_flag(band_id, user_id)
 
 
 def add_band_member(band_id, user_id, role='member'):
