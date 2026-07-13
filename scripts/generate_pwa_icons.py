@@ -8,7 +8,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / 'static'
-LOGO_PATH = STATIC / 'logoSetSync.png'
+LOGO_PATH = STATIC / 'logoUnissono-icon.png'
 ICONS_DIR = STATIC / 'icons'
 
 # Mesmo tom do manifest (splash Android/Chrome)

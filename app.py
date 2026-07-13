@@ -657,7 +657,7 @@ def inject_site_config():
         mail_inbox_url=mail_inbox_url,
         external_url_for=_external_url_for,
         site_url=site_url,
-        site_og_image=_external_url_for('static', filename='logoSetSync.png'),
+        site_og_image=_external_url_for('static', filename='logoUnissono-icon.png'),
         google_oauth_enabled=google_oauth_enabled(),
         show_mercadopago_trust=show_mercadopago_trust(),
         seo_noindex=bool(ep and ep not in _SEO_PUBLIC_ENDPOINTS),

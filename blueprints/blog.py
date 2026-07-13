@@ -34,7 +34,7 @@ def blog_post(slug: str):
         abort(404)
     canonical = external_url_for('blog.blog_post', slug=slug)
     og_image = post.get('imagem_capa') or external_url_for(
-        'static', filename='logoSetSync.png', _external=True,
+        'static', filename='logoUnissono-icon.png', _external=True,
     )
     conteudo_html = _markdown_to_html(post.get('conteudo') or '')
     return render_template(
