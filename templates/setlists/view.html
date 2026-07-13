@@ -489,9 +489,10 @@
 {% else %}
 <div class="empty">
     <i class="fas fa-music"></i>
-    <p class="mb-3" style="font-size: var(--text-base);">Nenhuma música na setlist ainda.</p>
+    <p class="mb-2" style="font-size: var(--text-base);">Roteiro vazio</p>
+    <p class="text-muted small mb-3">Adicione 2–3 músicas e toque <strong>Tocar</strong> — esse é o momento Uníssono.</p>
     <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i> Adicionar Primeira Música
+        <i class="fas fa-plus me-1"></i> Adicionar músicas e tocar
     </a>
 </div>
 {% endif %}

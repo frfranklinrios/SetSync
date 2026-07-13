@@ -9,6 +9,8 @@
             <div class="text-muted" style="font-size: var(--text-sm);">
                 {% if onboarding.done_count == 0 %}
                 Em 4 passos você chega no Modo Tocar — o que importa no ensaio e no culto.
+                {% if onboarding.done_count >= 3 and onboarding.next_step and onboarding.next_step.id == 'tocar' %}
+                Falta só o palco — {{ onboarding.next_step.label }}
                 {% elif onboarding.next_step %}
                 Próximo: {{ onboarding.next_step.label }}{% if onboarding.next_step.hint %} — {{ onboarding.next_step.hint }}{% endif %}
                 {% else %}

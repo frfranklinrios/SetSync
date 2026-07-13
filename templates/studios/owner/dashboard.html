@@ -59,14 +59,18 @@
 {% endif %}
 
 {% if studio_plano_ui and studio_plano_ui.trial %}
-<div class="alert alert-success py-2 mb-4 small">
-    <strong>Trial Premium</strong> — salas ilimitadas durante o período de teste.
-    <a href="{{ url_for('assinatura_bp.planos') }}#estudio" class="alert-link">Ver planos</a>
+<div class="alert alert-success py-2 mb-4 small d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+        <strong>Trial Premium</strong> — salas ilimitadas agora. Cadastre todas as salas antes do fim do teste.
+    </div>
+    <a href="{{ url_for('assinatura_bp.planos') }}#estudio" class="btn btn-sm btn-success">Assinar Premium — R$ 49</a>
 </div>
 {% elif studio_plano_ui and studio_plano_ui.trial_expirado %}
-<div class="alert alert-warning py-2 mb-4 small">
-    Seu trial Premium terminou. O plano básico permite até 2 salas.
-    <a href="{{ url_for('assinatura_bp.planos') }}#estudio" class="alert-link">Assinar Premium</a>
+<div class="alert alert-warning py-2 mb-4 small d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+        Trial terminou. Plano básico = até <strong>2 salas</strong>. 3ª sala = Premium.
+    </div>
+    <a href="{{ url_for('assinatura_bp.planos') }}#estudio" class="btn btn-sm btn-warning">Assinar Premium — R$ 49</a>
 </div>
 {% endif %}
 
@@ -123,7 +127,7 @@
 <p class="text-muted small mb-3">Nenhuma sala ainda. <a href="{{ url_for('studios.new_room', studio_id=studio.id) }}">Criar primeira sala</a></p>
 {% endif %}
 {% if not can_add_room and rooms %}
-<p class="small text-muted mb-4">Limite de salas do plano básico. <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Ver planos Premium</a></p>
+<p class="small text-muted mb-4">Limite do plano básico: <strong>2 salas</strong>. A 3ª sala exige Premium (R$ 49/mês). <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Assinar Premium</a></p>
 {% else %}
 <div class="mb-4"></div>
 {% endif %}

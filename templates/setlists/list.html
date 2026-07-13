@@ -38,10 +38,11 @@
     {% else %}
     <div class="empty">
         <i class="fas fa-list"></i>
-        <p class="mb-3" style="font-size: var(--text-base);">Nenhuma setlist criada ainda.</p>
+        <p class="mb-2" style="font-size: var(--text-base);">O roteiro vira o Modo Tocar</p>
+        <p class="text-muted small mb-3">Monte a ordem do culto ou show e abra no palco.</p>
         {% if can_edit %}
         <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Criar Primeira Setlist
+            <i class="fas fa-plus me-1"></i> Criar setlist e tocar
         </a>
         {% endif %}
     </div>

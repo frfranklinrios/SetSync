@@ -52,13 +52,14 @@
     {% else %}
     <div class="empty">
         <i class="fas fa-music"></i>
-        <p class="mb-3" style="font-size: var(--text-base);">Nenhuma cifra cadastrada ainda.</p>
+        <p class="mb-2" style="font-size: var(--text-base);">Sem repertório compartilhado</p>
+        <p class="text-muted small mb-3">Sem cifras na banda, cada um usa um PDF diferente. Em 1 min você testa o Modo Tocar.</p>
         {% if can_edit %}
-        <button type="button" class="btn btn-outline-primary me-2" data-open-cifra-search>
+        <button type="button" class="btn btn-primary me-2" data-open-cifra-search>
             <i class="fas fa-search me-1"></i> Buscar na biblioteca
         </button>
-        <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Adicionar Primeira Cifra
+        <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-plus me-1"></i> Cadastrar cifra
         </a>
         {% endif %}
     </div>

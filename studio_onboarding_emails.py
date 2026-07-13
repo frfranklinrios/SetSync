@@ -54,13 +54,15 @@ _EMAILS = {
         'body': 'Ajuda: {ajuda_url}',
     },
     5: {
-        'subject': 'Trial Premium — salas ilimitadas',
+        'subject': 'Trial Premium acaba em breve — salas ilimitadas',
         'html': (
-            '<h2>Aproveite o trial</h2>'
-            '<p>Cadastre quantas salas precisar durante o trial Premium de 30 dias.</p>'
-            '<p><a href="{planos_url}">Ver planos Estúdio</a></p>'
+            '<h2>Não perca o Premium</h2>'
+            '<p>Durante o trial você tem <strong>salas ilimitadas</strong>. '
+            'Depois, o básico volta a 2 salas.</p>'
+            '<p>Premium = salas ilimitadas + destaque na busca por <strong>R$ 49/mês</strong>.</p>'
+            '<p><a href="{planos_url}">Assinar Premium — R$ 49</a></p>'
         ),
-        'body': 'Planos: {planos_url}',
+        'body': 'Assine Premium R$ 49/mês: {planos_url}',
     },
 }
 

@@ -38,6 +38,9 @@
             {{ sheets|length }} música{{ '' if sheets|length == 1 else 's' }} · A4
             {% if two_cols %}· 2 colunas{% else %}· 1 coluna{% endif %}
         </span>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-sm ms-auto">
+            Criar conta grátis · 30 dias Pro
+        </a>
         <div class="ms-auto d-flex gap-2 flex-wrap">
             <a href="{{ url_for('setlists.public_imprimir', token=public_token, cols=1) }}"
                class="btn btn-outline-secondary btn-sm {% if not two_cols %}active{% endif %}">1 coluna</a>

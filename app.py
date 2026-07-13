@@ -465,10 +465,10 @@ def dashboard():
         for b in bands_list:
             dias = dias_restantes_trial(b['id'])
             if dias is not None:
-                return {'ativo': True, 'dias': dias, 'band_name': b['name']}
+                return {'ativo': True, 'dias': dias, 'band_name': b['name'], 'band_id': b['id']}
             ass = get_assinatura_banda(b['id'])
             if ass.trial_usado and not ass.trial_ativo():
-                return {'expirado': True, 'band_name': b['name']}
+                return {'expirado': True, 'band_name': b['name'], 'band_id': b['id']}
         return None
 
     from models_agenda import (

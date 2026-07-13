@@ -185,14 +185,20 @@
 
 <div class="help-hero">
   <div>
-    <h2>Ajuda</h2>
-    <p class="help-muted mb-0">
-      Guia do Uníssono em <strong>unissono.app</strong> — bandas, cifras, setlists, agenda com escalação,
-      <strong>estúdios de ensaio</strong>, <strong>instrumentos no perfil</strong> e Modo Tocar.
-      Use o <strong>assistente</strong> <i class="fas fa-comment-dots text-primary"></i> no canto da tela para dúvidas rápidas
-      (com atalhos para cadastrar cifra, estúdio ou ver planos quando você estiver logado).
-      Veja também o <a href="{{ url_for('roadmap.index') }}">roadmap de produto</a>.
+    <h2>Ajuda — em 4 passos até o Modo Tocar</h2>
+    <p class="help-muted mb-2">
+      Conta → banda → música/setlist → <strong>Modo Tocar</strong>.
+      Bandas, igrejas, estúdios e agenda estão documentados abaixo.
     </p>
+    <div class="d-flex flex-wrap gap-2 mb-0">
+      {% if current_user.is_authenticated %}
+      <a class="btn btn-primary btn-sm" href="{{ url_for('dashboard') }}">Ir ao painel</a>
+      <a class="btn btn-outline-secondary btn-sm" href="#primeiros-passos">Primeiros passos</a>
+      {% else %}
+      <a class="btn btn-primary btn-sm" href="{{ url_for('comece') }}">Começar agora</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('auth.register') }}">Criar conta grátis</a>
+      {% endif %}
+    </div>
   </div>
   <a class="btn btn-outline-secondary btn-sm"
      href="{{ url_for('index') if not current_user.is_authenticated else url_for('dashboard') }}">

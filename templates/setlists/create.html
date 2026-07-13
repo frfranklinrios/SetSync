@@ -1,18 +1,25 @@
 {% extends "index.html" %}
-{% block title %}Nova Setlist - {{ band.name }}{% endblock %}
+{% block title %}Novo roteiro — {{ band.name }}{% endblock %}
 {% block content %}
-<h2>Criar Setlist para {{ band.name }}</h2>
-<form method="POST">
-  {% include 'partials/csrf_input.html' %}
-  <div class="mb-3">
-    <label for="name" class="form-label">Nome da Setlist</label>
-    <input type="text" class="form-control" id="name" name="name" required>
-  </div>
-  <div class="mb-3">
-    <label for="description" class="form-label">Descrição</label>
-    <textarea class="form-control" id="description" name="description"></textarea>
-  </div>
-  <button type="submit" class="btn btn-success">Criar</button>
-  <a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div style="max-width: 36rem;">
+  <h2 class="h4 mb-1">Monte o roteiro do ensaio</h2>
+  <p class="text-muted small mb-4">
+    A ordem das músicas vira o <strong>Modo Tocar</strong> no culto ou no show.
+  </p>
+  <form method="POST">
+    {% include 'partials/csrf_input.html' %}
+    <div class="mb-3">
+      <label for="name" class="form-label">Nome do roteiro</label>
+      <input type="text" class="form-control" id="name" name="name" required
+             placeholder="Ex.: Culto domingo / Show 15 · Ensaio sexta" autofocus>
+    </div>
+    <div class="mb-4">
+      <label for="description" class="form-label">Observações <span class="text-muted fw-normal">(opcional)</span></label>
+      <textarea class="form-control" id="description" name="description" rows="2"
+                placeholder="Tom do cantor, intervalo, etc."></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Criar e adicionar músicas</button>
+    <a href="{{ url_for('bands.view', band_id=band.id) }}#tab-setlists" class="btn btn-outline-secondary">Cancelar</a>
+  </form>
+</div>
 {% endblock %}

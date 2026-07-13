@@ -2,11 +2,10 @@
 
 ## 2026-07-13
 
-### Conversão e domínio canônico
-- Funil de venda: CTAs na nav/home, cadastro mais curto, Planos logado com Pro em destaque e preço anual vivo
-- Paywall 402 unificado com copy de valor; upsells do dashboard com preço
-- Landings igrejas/estúdios/comece e CTAs públicos alinhados a trial → Pro/Worship/Premium
-- Domínio canônico `https://unissono.app` (+ TLS, redirects e docs)
+### Camadas de ativação, retenção e conversão in-app
+- Pós-cadastro, login, banda, empty states e setlist pública empurram até o Modo Tocar
+- Trial mid-cycle (7/3 dias) + e-mails de estúdio/Premium; dashboard e checklist com CTAs de preço
+- Funil de marketing (nav, Planos, paywall, landings) e domínio canônico `unissono.app`
 
 ## 2026-07-09
 

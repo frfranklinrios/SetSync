@@ -74,7 +74,7 @@ _EMAILS = {
         'body': (
             'Modo Tocar: tela cheia, auto-scroll, tema escuro, funciona offline (PWA).\n'
             'Perfeito para culto e palco.\n\n'
-            '{ajuda_url}'
+            '{dashboard_url}'
         ),
         'html': (
             '<h2>Modo Tocar</h2>'
@@ -83,24 +83,24 @@ _EMAILS = {
             '<li>Auto-scroll ajustável</li>'
             '<li>PWA offline no celular</li>'
             '</ul>'
-            '<p><a href="{ajuda_url}">Ver guia completo</a></p>'
+            '<p><a href="{dashboard_url}">Abrir painel e tocar</a></p>'
         ),
     },
     5: {
         'subject': 'Você está chegando no limite do plano Grátis',
         'body': (
-            'O plano Grátis tem limites de músicas, setlists e integrantes.\n'
-            'No Pro: ilimitado + PDF por R$ 29/mês.\n\n'
+            'Se o trial acabar, você volta ao Grátis com limites.\n'
+            'Pro mantém o ensaio sem teto + PDF por R$ 29/mês.\n\n'
             '{planos_url}'
         ),
         'html': (
-            '<h2>Conheça o Pro</h2>'
-            '<p>Músicas, setlists e integrantes <strong>ilimitados</strong>, '
-            'exportação PDF e suporte prioritário.</p>'
+            '<h2>Mantenha o Pro</h2>'
+            '<p>Se o trial acabar, você volta ao Grátis com limites. '
+            'No Pro: ilimitado + PDF por <strong>R$ 29/mês</strong>.</p>'
             '<p><em>"Vale cada centavo — nosso ensaio nunca mais voltou ao caderno."</em></p>'
             '<p><a href="{planos_url}" style="display:inline-block;padding:12px 24px;'
             'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
-            'Fazer upgrade para Pro — R$29/mês</a></p>'
+            'Assinar Pro — R$29/mês</a></p>'
         ),
     },
 }

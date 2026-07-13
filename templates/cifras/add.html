@@ -88,15 +88,15 @@
 <p class="text-muted mb-4" style="font-size:.875rem;">{{ band.name }}</p>
 
 {% if welcome %}
-<div class="alert alert-success border-0 mb-4" role="status">
-    <div class="d-flex gap-2 align-items-start">
-        <i class="fas fa-check-circle mt-1" aria-hidden="true"></i>
-        <div>
-            <strong>Banda criada!</strong> Agora cadastre ou importe uma música.
-            Use a <strong>biblioteca de cifras</strong> abaixo para buscar por título — ou cole a cifra manualmente.
-        </div>
-    </div>
+<div class="alert alert-success border-0 mb-3" role="status">
+    <strong>Banda criada · Pro liberado por 30 dias.</strong>
+    Agora cadastre ou busque uma música — em seguida monte o roteiro e abra o Modo Tocar.
 </div>
+<ol class="small text-muted mb-4 ps-3">
+    <li class="mb-1"><strong>Agora:</strong> adicionar a música</li>
+    <li class="mb-1"><strong>Depois:</strong> montar o roteiro (setlist)</li>
+    <li><strong>No ensaio:</strong> Abrir Modo Tocar</li>
+</ol>
 {% endif %}
 
 <form method="POST" id="cifra-form" class="mt-2">
@@ -204,7 +204,7 @@
     </details>
 
     <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Salvar Cifra</button>
+        <button type="submit" class="btn btn-primary">{% if welcome %}Salvar e continuar{% else %}Salvar Cifra{% endif %}</button>
         <a href="{{ url_for('bands.view', band_id=band.id) }}"
            class="btn btn-outline-secondary">Cancelar</a>
     </div>

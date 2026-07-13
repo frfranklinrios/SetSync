@@ -91,12 +91,15 @@ def get_studio_onboarding_progress(studio: dict) -> dict | None:
     if done_count == len(steps):
         return None
 
+    next_step = next((s for s in steps if not s['done']), None)
+
     return {
         'steps': steps,
         'done_count': done_count,
         'total': len(steps),
         'percent': round(100 * done_count / len(steps)) if steps else 0,
         'ready_to_share': ready_to_share,
+        'next_step': next_step,
         'public_page_url': url_for('studios.detail', studio_id=studio_id),
         'search_url': url_for('studios.search'),
     }

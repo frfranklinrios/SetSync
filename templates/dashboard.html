@@ -307,15 +307,24 @@
             {% endif %}
 
             {% if trial_ui and trial_ui.ativo %}
-            <div class="alert alert-success dashboard-compact-alert mb-0">
-                🎸 <strong>Período de teste grátis</strong> — faltam {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %}
-                na banda <strong>{{ trial_ui.band_name }}</strong> (recursos Pro liberados).
-                <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Ver planos depois do teste</a>
+            <div class="alert alert-success dashboard-compact-alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    🎸 <strong>Pro liberado no trial</strong> — faltam {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %}
+                    em <strong>{{ trial_ui.band_name }}</strong>. Use PDF e Modo Tocar agora.
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if trial_ui.band_id %}
+                    <a href="{{ url_for('cifras.tocar_band', band_id=trial_ui.band_id) }}" class="btn btn-sm btn-success">Abrir Modo Tocar</a>
+                    {% endif %}
+                    <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id) if trial_ui.band_id else url_for('assinatura_bp.planos') }}" class="btn btn-sm btn-outline-success">Assinar Pro — R$ 29</a>
+                </div>
             </div>
             {% elif trial_ui and trial_ui.expirado %}
-            <div class="alert alert-warning dashboard-compact-alert mb-0">
-                O teste grátis da banda <strong>{{ trial_ui.band_name }}</strong> terminou.
-                <a href="{{ url_for('assinatura_bp.planos') }}" class="alert-link">Ver planos para continuar sem limites</a>
+            <div class="alert alert-warning dashboard-compact-alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    O trial Pro de <strong>{{ trial_ui.band_name }}</strong> terminou — PDF e limites ilimitados voltam com o Pro.
+                </div>
+                <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id) if trial_ui.band_id else url_for('assinatura_bp.planos') }}" class="btn btn-sm btn-warning">Assinar Pro — R$ 29</a>
             </div>
             {% endif %}
 

@@ -101,13 +101,10 @@
 </div>
 
 <div class="alert alert-light border small mb-3 ux-band-guide" role="note">
-    <i class="fas fa-info-circle text-primary me-1" aria-hidden="true"></i>
-    <strong>Como usar:</strong> escolha uma aba abaixo —
-    <strong>Músicas</strong> (cifras da banda),
-    <strong>Roteiro</strong> (ordem das músicas no show),
-    <strong>Agenda</strong> (ensaios e apresentações),
-    <strong>Integrantes</strong>.
-    O botão <strong>Financeiro</strong> resume entradas e gastos do mês.
+    <i class="fas fa-route text-primary me-1" aria-hidden="true"></i>
+    <strong>Próximo valor:</strong>
+    repertório (Músicas) → roteiro → <strong>Modo Tocar</strong> no ensaio.
+    Use <strong>Agenda</strong> para ensaios e <strong>Financeiro</strong> para cachês.
 </div>
 
 <ul class="nav nav-tabs mb-1" id="bandTabs" role="tablist">
@@ -145,7 +142,7 @@
             <p class="tab-count">{{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }} no repertório</p>
             <div class="d-flex gap-2 flex-wrap">
                 {% if cifras %}
-                <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm"
+                <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="btn btn-primary btn-sm"
                    title="Abre as cifras em tela cheia para tocar no palco">
                     <i class="fas fa-play me-1"></i> Abrir no palco
                 </a>
@@ -155,7 +152,7 @@
                         title="Procura na biblioteca do Uníssono e adiciona à banda">
                     <i class="fas fa-search me-1"></i> Buscar na biblioteca
                 </button>
-                <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
+                <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-plus me-1"></i> Cadastrar música
                 </a>
                 {% endif %}
@@ -175,14 +172,14 @@
         {% else %}
         <div class="empty">
             <i class="fas fa-music"></i>
-            <p class="mb-2" style="font-size: var(--text-base);">Ainda não há músicas nesta banda.</p>
-            <p class="text-muted small mb-3">Comece buscando na biblioteca (milhares de cifras prontas) ou cadastre manualmente.</p>
+            <p class="mb-2" style="font-size: var(--text-base);">Sem repertório ainda</p>
+            <p class="text-muted small mb-3">Em 1 minuto você adiciona uma música e já testa o <strong>Modo Tocar</strong>.</p>
             {% if can_edit %}
-            <button type="button" class="btn btn-outline-primary btn-sm me-2" data-open-cifra-search>
+            <button type="button" class="btn btn-primary btn-sm me-2" data-open-cifra-search>
                 <i class="fas fa-search me-1"></i> Buscar na biblioteca
             </button>
-            <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Cadastrar primeira música
+            <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-plus me-1"></i> Cadastrar manualmente
             </a>
             {% else %}
             <p class="text-muted small mb-0">Peça a um administrador da banda para adicionar músicas.</p>
@@ -211,11 +208,11 @@
         {% else %}
         <div class="empty">
             <i class="fas fa-list"></i>
-            <p class="mb-2" style="font-size: var(--text-base);">Nenhum roteiro criado ainda.</p>
-            <p class="text-muted small mb-3">O roteiro é a lista de músicas na ordem do ensaio ou do show.</p>
+            <p class="mb-2" style="font-size: var(--text-base);">Sem roteiro, o palco vira WhatsApp</p>
+            <p class="text-muted small mb-3">Monte a ordem das músicas e abra o <strong>Modo Tocar</strong> no ensaio.</p>
             {% if can_edit %}
             <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Criar primeiro roteiro
+                <i class="fas fa-plus me-1"></i> Criar roteiro e tocar
             </a>
             {% else %}
             <p class="text-muted small mb-0">Peça a um administrador para montar o roteiro.</p>

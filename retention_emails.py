@@ -8,6 +8,8 @@ from db import (
     get_user,
     list_retention_candidates_trial_expired,
     list_retention_candidates_studio_trial_expired,
+    list_trials_expiring_soon,
+    list_studio_trials_expiring_soon,
     mark_retention_sent,
     retention_was_sent,
     user_wants_email_notifications,
@@ -29,7 +31,7 @@ _CAMPAIGNS = {
             '<p>Seu repertório e setlists continuam salvos. Que tal abrir o '
             '<strong>Modo Tocar</strong> no próximo ensaio?</p>'
         ),
-        'button_label': 'Voltar ao painel',
+        'button_label': 'Abrir Modo Tocar',
         'button_key': 'dashboard_url',
     },
     'inactive_14': {
@@ -41,9 +43,9 @@ _CAMPAIGNS = {
         ),
         'html_body': (
             '<p>Já faz <strong>2 semanas</strong> sem acessar o Uníssono.</p>'
-            '<p>Uma cifra nova ou um setlist atualizado faz toda diferença no culto.</p>'
+            '<p>Abra sua setlist e use o <strong>Modo Tocar</strong> no próximo ensaio.</p>'
         ),
-        'button_label': 'Abrir meu painel',
+        'button_label': 'Abrir minha setlist',
         'button_key': 'dashboard_url',
     },
     'inactive_30': {
@@ -58,37 +60,80 @@ _CAMPAIGNS = {
             '<p>Este é nosso último lembrete por enquanto. Sua conta e dados '
             'continuam seguros.</p>'
         ),
-        'button_label': 'Retomar agora',
+        'button_label': 'Retomar e tocar',
         'button_key': 'dashboard_url',
     },
     'no_band_3': {
         'subject': 'Crie sua primeira banda no Uníssono',
         'body': (
             'Você se cadastrou mas ainda não criou uma banda.\n'
-            'Em 2 minutos você organiza o repertório da equipe.\n\n'
+            'Em 2 minutos você organiza o repertório e libera 30 dias de Pro.\n\n'
             '{bands_url}'
         ),
         'html_body': (
             '<p>Você se cadastrou no Uníssono mas ainda <strong>não criou uma banda</strong>.</p>'
-            '<p>Adicione músicas, convide integrantes e use o Modo Tocar no ensaio.</p>'
+            '<p>Crie agora, liberamos <strong>30 dias de Pro</strong> e você chega no Modo Tocar.</p>'
         ),
-        'button_label': 'Criar minha banda',
+        'button_label': 'Criar banda · liberar Pro',
         'button_key': 'bands_url',
+    },
+    'trial_ending_7': {
+        'subject': 'Faltam 7 dias de Pro — não perca o ensaio sem limites',
+        'body': (
+            'O trial Pro da banda {band_name} acaba em cerca de 7 dias.\n'
+            'Assine por R$ 29/mês e mantenha PDF + músicas ilimitadas.\n\n'
+            '{planos_url}'
+        ),
+        'html_body': (
+            '<p>O <strong>trial Pro</strong> da banda <em>{band_name}</em> acaba em cerca de <strong>7 dias</strong>.</p>'
+            '<p>Assine Pro por <strong>R$ 29/mês</strong> e mantenha PDF, setlists e integrantes ilimitados.</p>'
+            '<p style="font-size:14px;color:#64748b;">Pagamento via Mercado Pago — cancele quando quiser.</p>'
+        ),
+        'button_label': 'Assinar Pro — R$ 29',
+        'button_key': 'planos_url',
+    },
+    'trial_ending_3': {
+        'subject': 'Últimos 3 dias de Pro — continue sem limites',
+        'body': (
+            'Faltam cerca de 3 dias do trial Pro da banda {band_name}.\n'
+            'Assine agora por R$ 29/mês.\n\n'
+            '{planos_url}'
+        ),
+        'html_body': (
+            '<p>Faltam cerca de <strong>3 dias</strong> do trial Pro em <em>{band_name}</em>.</p>'
+            '<p>Sem o Pro, voltam os limites do Grátis e o PDF some. Continue por <strong>R$ 29/mês</strong>.</p>'
+        ),
+        'button_label': 'Assinar Pro agora — R$ 29',
+        'button_key': 'planos_url',
     },
     'trial_expired': {
         'subject': 'Seu trial Pro acabou — continue sem limites',
         'body': (
             'O trial Pro da banda {band_name} terminou.\n'
-            'Assine para manter músicas, setlists e integrantes ilimitados.\n\n'
+            'Sem Pro: limites do Grátis e sem PDF. Assine por R$ 29/mês.\n\n'
             '{planos_url}'
         ),
         'html_body': (
             '<p>O <strong>trial Pro</strong> da banda <em>{band_name}</em> terminou.</p>'
-            '<p>Volte ao Pro por R$ 29/mês e mantenha recursos ilimitados + exportação PDF.</p>'
+            '<p>Volte ao Pro por <strong>R$ 29/mês</strong> e mantenha recursos ilimitados + exportação PDF.</p>'
             '<p style="font-size:14px;color:#64748b;">Ao assinar, você paga pelo <strong>Mercado Pago</strong> — '
             'seus dados de cartão não passam pelo Uníssono.</p>'
         ),
-        'button_label': 'Ver planos Pro',
+        'button_label': 'Assinar Pro — R$ 29/mês',
+        'button_key': 'planos_url',
+    },
+    'studio_trial_ending_3': {
+        'subject': 'Trial Premium do estúdio acaba em 3 dias',
+        'body': (
+            'O trial Premium de {studio_name} acaba em breve.\n'
+            'Premium = salas ilimitadas + destaque na busca por R$ 49/mês.\n\n'
+            '{planos_url}'
+        ),
+        'html_body': (
+            '<p>O <strong>trial Premium</strong> do estúdio <em>{studio_name}</em> acaba em cerca de 3 dias.</p>'
+            '<p>Assine Premium por <strong>R$ 49/mês</strong>: salas ilimitadas e mais visibilidade na busca.</p>'
+        ),
+        'button_label': 'Assinar Premium — R$ 49',
         'button_key': 'planos_url',
     },
     'studio_trial_expired': {
@@ -100,11 +145,11 @@ _CAMPAIGNS = {
         ),
         'html_body': (
             '<p>O <strong>trial Premium</strong> do estúdio <em>{studio_name}</em> terminou.</p>'
-            '<p>Volte a ter <strong>salas ilimitadas</strong> por R$ 49/mês.</p>'
+            '<p>Volte a ter <strong>salas ilimitadas</strong> e destaque na busca por R$ 49/mês.</p>'
             '<p style="font-size:14px;color:#64748b;">Pagamento via <strong>Mercado Pago</strong> — '
             'cartão não passa pelo Uníssono.</p>'
         ),
-        'button_label': 'Ver planos Estúdio',
+        'button_label': 'Assinar Premium — R$ 49',
         'button_key': 'planos_url',
     },
 }
@@ -170,6 +215,44 @@ def verificar_e_disparar_retencao() -> int:
         if not email:
             continue
         if _send_campaign(email, campaign):
+            mark_retention_sent(uid, campaign, 'enviado')
+            enviados += 1
+        else:
+            mark_retention_sent(uid, campaign, 'erro')
+
+    for days, campaign_key in ((7, 'trial_ending_7'), (3, 'trial_ending_3')):
+        for row in list_trials_expiring_soon(days):
+            uid = row['owner_id']
+            campaign = f"{campaign_key}:{row['banda_id']}"
+            if retention_was_sent(uid, campaign):
+                continue
+            if not user_wants_email_notifications(get_user(uid)):
+                continue
+            email = (row.get('owner_email') or '').strip()
+            if not email:
+                continue
+            extra = {'band_name': row.get('band_name') or 'sua banda'}
+            if _send_campaign(email, campaign_key, extra=extra):
+                mark_retention_sent(uid, campaign, 'enviado')
+                enviados += 1
+            else:
+                mark_retention_sent(uid, campaign, 'erro')
+
+    for row in list_studio_trials_expiring_soon(3):
+        uid = row['user_id']
+        campaign = f"studio_trial_ending_3:{uid}"
+        if retention_was_sent(uid, campaign):
+            continue
+        if not user_wants_email_notifications(get_user(uid)):
+            continue
+        email = (row.get('owner_email') or '').strip()
+        if not email:
+            continue
+        extra = {
+            'studio_name': 'seu estúdio',
+            'planos_url': _urls()['planos_estudio_url'],
+        }
+        if _send_campaign(email, 'studio_trial_ending_3', extra=extra):
             mark_retention_sent(uid, campaign, 'enviado')
             enviados += 1
         else:

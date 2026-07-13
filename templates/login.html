@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('auth.login') }}">
-<meta name="description" content="Acesse sua conta Uníssono para ver cifras, setlists e o Modo Tocar da sua banda.">
+<meta name="description" content="Entre no Uníssono para abrir cifras, setlists e o Modo Tocar da sua banda.">
 <meta property="og:title" content="Entrar — Uníssono">
-<meta property="og:description" content="Acesse sua conta Uníssono — cifras e setlists da sua banda.">
+<meta property="og:description" content="Acesse cifras, setlists e Modo Tocar da sua banda.">
 <meta property="og:url" content="{{ external_url_for('auth.login') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -19,8 +19,12 @@
 
         <div class="text-center mb-4">
             <img src="{{ url_for('static', filename='logoUnissono-stack.png') }}" alt="{{ app_name }}" style="height:88px; width:auto; max-width:220px; object-fit:contain;">
-            <p class="text-muted small mt-3 mb-0">
-                O <strong>SetSync</strong> agora se chama <strong>{{ app_name }}</strong> — mesma conta, mesmo app.
+            <h1 class="h5 mt-3 mb-1">Entrar no Uníssono</h1>
+            <p class="text-muted small mb-0">
+                Abra cifras, setlists e o <strong>Modo Tocar</strong> da sua banda.
+            </p>
+            <p class="text-muted small mt-2 mb-0" style="opacity:0.85;">
+                Usava SetSync? Mesma conta — só o nome mudou.
             </p>
         </div>
 
@@ -28,6 +32,16 @@
         <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
             Convite para a banda <strong>{{ invite_band.name }}</strong>.
             Após entrar, você será adicionado à banda.
+        </div>
+        {% endif %}
+
+        {% if google_oauth_enabled %}
+        <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}"
+           class="btn btn-outline-dark w-100 mb-3">
+            <i class="fab fa-google me-2" aria-hidden="true"></i>Continuar com Google
+        </a>
+        <div class="d-flex align-items-center mb-3">
+            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size: var(--text-xs);">ou e-mail</span><hr class="flex-grow-1">
         </div>
         {% endif %}
 
@@ -43,34 +57,27 @@
                        inputmode="email"
                        placeholder="seu_usuario ou voce@email.com"
                        aria-describedby="login_id_help">
-                <div id="login_id_help" class="form-text">Use o mesmo usuário do cadastro ou o e-mail da conta.</div>
+                <div id="login_id_help" class="form-text">O mesmo do cadastro.</div>
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">Senha</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
             </div>
             <p class="text-muted mb-4" style="font-size: var(--text-sm);">
-                Você permanece logado neste celular ou computador por até 2 dias enquanto usar o app.
+                Você permanece logado neste aparelho por até 2 dias enquanto usar o app.
             </p>
             <button type="submit" class="btn btn-primary w-100 btn-lg">Entrar</button>
         </form>
-
-        {% if google_oauth_enabled %}
-        <div class="d-flex align-items-center my-4">
-            <hr class="flex-grow-1"><span class="px-3 text-muted" style="font-size: var(--text-xs);">OU</span><hr class="flex-grow-1">
-        </div>
-
-        <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}" class="btn btn-outline-secondary w-100">Entrar com Google</a>
-        {% endif %}
 
         <p class="text-center mt-3 mb-0" style="font-size: var(--text-sm);">
             <a href="{{ url_for('auth.recuperar_senha') }}">Esqueci minha senha</a>
         </p>
 
-        <p class="text-center text-muted mt-4" style="font-size: var(--text-sm);">
+        <p class="text-center text-muted mt-4 mb-1" style="font-size: var(--text-sm);">
             Novo por aqui?
             <a href="{{ url_for('auth.register', convite=invite_token) if invite_token else url_for('auth.register') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Criar conta grátis</a>
         </p>
+        <p class="text-center text-muted small mb-0">Primeira banda = 30 dias Pro grátis · sem cartão</p>
     </div>
 </div>
 {% endblock %}
