@@ -6,7 +6,7 @@ from mail_server.config import DATA_DIR, DOMAIN
 
 logger = logging.getLogger(__name__)
 
-DKIM_SELECTOR = "setsync"
+DKIM_SELECTOR = "unissono"
 DKIM_DIR = DATA_DIR / "dkim"
 PRIVATE_KEY_PATH = DKIM_DIR / f"{DKIM_SELECTOR}.private"
 PUBLIC_KEY_PATH = DKIM_DIR / f"{DKIM_SELECTOR}.public"

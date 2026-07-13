@@ -22,7 +22,7 @@
       <div class="card-body">
         <h3 class="h6 mb-2">E-mail da conta</h3>
         <p class="mb-2"><strong>{{ user.email }}</strong></p>
-        {% if mail_inbox_url and user.email.endswith('@setsync.com.br') %}
+        {% if mail_inbox_url and (user.email.endswith('@unissono.app') or user.email.endswith('@setsync.com.br')) %}
         <p class="text-muted mb-2" style="font-size: var(--text-sm);">
           Caixa corporativa integrada — abre direto com sua sessão do Uníssono.
         </p>

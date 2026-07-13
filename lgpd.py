@@ -8,7 +8,7 @@ from flask import session
 
 
 def privacy_contact_email() -> str:
-    return (os.getenv('PRIVACY_CONTACT_EMAIL') or 'contato@setsync.com.br').strip()
+    return (os.getenv('PRIVACY_CONTACT_EMAIL') or 'contato@unissono.app').strip()
 
 
 def dpo_label() -> str:

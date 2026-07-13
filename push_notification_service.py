@@ -26,7 +26,7 @@ def vapid_public_key() -> str:
 
 
 def vapid_subject() -> str:
-    return (os.getenv('VAPID_SUBJECT') or 'mailto:contato@setsync.com.br').strip()
+    return (os.getenv('VAPID_SUBJECT') or 'mailto:contato@unissono.app').strip()
 
 
 def _notification_url(url_path: str | None) -> str:

@@ -25,15 +25,18 @@ def _storage_instance() -> EmailStorage:
 
 
 def mailbox_for_user(user_id: int | None) -> str:
-    """Caixa @setsync.com.br do usuário master ou contato padrão do .env."""
-    fallback = (os.getenv("MAIL_USERNAME") or "contato@setsync.com.br").strip().lower()
+    """Caixa do domínio Uníssono do usuário master ou contato padrão do .env."""
+    from email_config import MAIL_DOMAIN, contact_email
+
+    fallback = contact_email().strip().lower()
     if not user_id:
         return fallback
     user = get_user(user_id)
     if not user:
         return fallback
     email = (user.get("email") or "").strip().lower()
-    if email.endswith("@setsync.com.br"):
+    domains = {MAIL_DOMAIN, "unissono.app", "setsync.com.br"}
+    if any(email.endswith(f"@{d}") for d in domains if d):
         return email
     return fallback
 

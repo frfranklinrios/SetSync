@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).parent
 DATA_DIR = Path(os.getenv("MAIL_DATA_DIR", str(BASE_DIR.parent / "data" / "mail")))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-DOMAIN = os.getenv("MAIL_DOMAIN", os.getenv("DOMAIN", "setsync.com.br"))
+DOMAIN = os.getenv("MAIL_DOMAIN", os.getenv("DOMAIN", "unissono.app"))
 MAIL_HOSTNAME = os.getenv("MAIL_HOSTNAME", f"mail.{DOMAIN}")
 
 SMTP_BIND_HOST = os.getenv("SMTP_BIND_HOST", "0.0.0.0")

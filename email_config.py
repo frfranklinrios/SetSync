@@ -12,7 +12,7 @@ def _parse_default_sender(raw: str | None, fallback_email: str) -> tuple[str, st
     name_default = (os.getenv('MAIL_SENDER_NAME') or 'Uníssono').strip() or 'Uníssono'
     text = (raw or '').strip()
     if not text:
-        return name_default, fallback_email or 'noreply@setsync.local'
+        return name_default, fallback_email or 'noreply@unissono.app'
     match = re.match(r'^(.+?)\s*<([^>]+)>$', text)
     if match:
         return match.group(1).strip(), match.group(2).strip()
@@ -22,7 +22,7 @@ def _parse_default_sender(raw: str | None, fallback_email: str) -> tuple[str, st
 
 
 # Configurações de e-mail (Flask-Mail) — use .env em produção
-# Padrão Gmail; produção SetSync usa Zoho (contato@setsync.com.br) — ver .env.example
+# Produção Uníssono: SMTP interno (mail) ou provedor externo — ver .env.example
 MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.zoho.com')
 MAIL_PORT = int(os.getenv('MAIL_PORT', '587'))
 MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', '1').lower() in ('1', 'true', 'yes')
@@ -33,6 +33,17 @@ MAIL_DEFAULT_SENDER = _parse_default_sender(
     os.getenv('MAIL_DEFAULT_SENDER'),
     MAIL_USERNAME,
 )
+
+MAIL_DOMAIN = (os.getenv('MAIL_DOMAIN') or 'unissono.app').strip().lower()
+
+
+def contact_email() -> str:
+    """E-mail público de contato (remetente / LGPD)."""
+    return (
+        (os.getenv('PRIVACY_CONTACT_EMAIL') or '').strip()
+        or MAIL_USERNAME
+        or f'contato@{MAIL_DOMAIN}'
+    )
 
 
 def webmail_url() -> str | None:

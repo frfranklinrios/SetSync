@@ -19,7 +19,7 @@ _ANNOUNCEMENTS = {
             'Agora você recebe alertas da banda por e-mail e WhatsApp — novas cifras, '
             'setlists, convites e mudanças na equipe.\n\n'
             'No próximo login, cadastre seu WhatsApp em Meu perfil para não perder nada. '
-            'Os e-mails saem de contato@setsync.com.br.'
+            'Os e-mails saem de contato@unissono.app.'
         ),
         'url_path': '/auth/perfil',
     },
@@ -30,7 +30,7 @@ _ANNOUNCEMENTS = {
             'Agora você recebe alertas da banda por e-mail e WhatsApp — novas cifras, '
             'setlists, convites e mudanças na equipe.\n\n'
             'Cadastre seu WhatsApp em Meu perfil para não perder nada. '
-            'Os e-mails saem de contato@setsync.com.br.'
+            'Os e-mails saem de contato@unissono.app.'
         ),
         'url_path': '/auth/perfil',
     },
