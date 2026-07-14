@@ -34,6 +34,24 @@ import email_config
 
 app = Flask(__name__)
 env = os.getenv('FLASK_ENV', 'development')
+
+# Monitoramento de erros opcional (no-op sem SENTRY_DSN ou sem o pacote instalado).
+_sentry_dsn = os.getenv('SENTRY_DSN', '').strip()
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            environment=env,
+            integrations=[FlaskIntegration()],
+            traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0') or 0),
+            send_default_pii=False,
+        )
+    except Exception:
+        app.logger.warning('SENTRY_DSN definido mas sentry-sdk indisponível — sem monitoramento.')
+
 app.config.from_object(config.get(env, config['default']))
 app.config.from_object('email_config')
 
@@ -441,7 +459,7 @@ def dismiss_onboarding_checklist():
 def dashboard():
     from db import (
         get_user_bands, get_owned_bands, get_all_bands,
-        enrich_bands_for_display, is_superadmin,
+        enrich_bands_for_display, is_superadmin, count_user_personal_cifras,
     )
     from monetizacao import enrich_bands_plano, resumo_planos_usuario, dias_restantes_trial, get_assinatura_banda
 
@@ -547,11 +565,19 @@ def dashboard():
     bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
     upcoming_events = _enrich_upcoming(get_upcoming_events_for_user(user_id, limit=8))
     growth = _growth_ctx(owned_bands)
+    _band_ids = {b['id'] for b in owned_bands} | {b['id'] for b in bands}
+    dashboard_summary = {
+        'events': len(upcoming_events),
+        'cifras': count_user_personal_cifras(user_id),
+        'bands': len(_band_ids),
+        'pending': len(pending_scale) + len(pending_scale_admin) + len(pending_band_invites),
+    }
     return render_template(
         'dashboard.html',
         bands=bands,
         owned_bands=owned_bands,
         upcoming_events=upcoming_events,
+        dashboard_summary=dashboard_summary,
         is_superadmin=False,
         planos_resumo=resumo_planos_usuario(owned_bands),
         trial_ui=_trial_ctx(owned_bands),

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from datetime import timedelta
 from typing import Any
@@ -272,6 +273,8 @@ def _compute_retention_metrics() -> dict[str, Any]:
         'mau': mau,
         'wau_pct': round(100.0 * wau / users_total, 1) if users_total else 0.0,
         'mau_pct': round(100.0 * mau / users_total, 1) if users_total else 0.0,
+        # Stickiness = WAU/MAU: quantos dos ativos no mês voltam na semana (~50% é ótimo).
+        'stickiness': round(100.0 * wau / mau, 1) if mau else 0.0,
         'users_total': users_total,
         'activation_d7': d7,
         'trial_churn': trial,
@@ -279,3 +282,117 @@ def _compute_retention_metrics() -> dict[str, Any]:
         'incomplete_events_7d': incomplete,
         'campaigns': campaigns,
     }
+
+
+# ── Snapshot diário + tendência (sparklines/deltas do painel) ──────────────
+
+# Métricas rastreadas ao longo do tempo: (chave no snapshot, como extrair do dict)
+def _snapshot_payload(metrics: dict[str, Any]) -> dict[str, Any]:
+    return {
+        'wau': metrics.get('wau'),
+        'mau': metrics.get('mau'),
+        'stickiness': metrics.get('stickiness'),
+        'activation_d7': (metrics.get('activation_d7') or {}).get('pct'),
+        'nps': (metrics.get('nps') or {}).get('nps'),
+        'churn': (metrics.get('trial_churn') or {}).get('churn_pct'),
+        'users_total': metrics.get('users_total'),
+    }
+
+
+def record_metrics_snapshot(metrics: dict[str, Any] | None = None, *, on_date: str | None = None) -> None:
+    """Grava (upsert) o snapshot do dia. Idempotente — pode chamar a cada load."""
+    metrics = metrics or build_retention_metrics()
+    day = on_date or app_now_naive().strftime('%Y-%m-%d')
+    payload = json.dumps(_snapshot_payload(metrics), ensure_ascii=False)
+    db = get_db()
+    c = db.cursor()
+    try:
+        c.execute(
+            '''INSERT INTO metric_snapshots (snapshot_date, payload_json)
+               VALUES (?, ?)
+               ON CONFLICT(snapshot_date) DO UPDATE SET payload_json = excluded.payload_json''',
+            (day, payload),
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+
+
+def get_metrics_history(*, days: int = 30) -> list[dict[str, Any]]:
+    """Últimos N snapshots em ordem cronológica (antigo → recente)."""
+    cutoff = (app_now_naive() - timedelta(days=days)).strftime('%Y-%m-%d')
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT snapshot_date, payload_json FROM metric_snapshots
+           WHERE snapshot_date >= ? ORDER BY snapshot_date ASC''',
+        (cutoff,),
+    )
+    rows = c.fetchall()
+    db.close()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        try:
+            payload = json.loads(r['payload_json'])
+        except (TypeError, ValueError):
+            continue
+        payload['date'] = r['snapshot_date']
+        out.append(payload)
+    return out
+
+
+def _sparkline_points(series: list[float], *, width: int = 72, height: int = 20, pad: int = 2) -> str:
+    """Pontos 'x,y x,y …' para um <polyline> SVG (série de valores)."""
+    vals = [float(v) for v in series if v is not None]
+    if len(vals) < 2:
+        return ''
+    lo, hi = min(vals), max(vals)
+    span = (hi - lo) or 1.0
+    n = len(vals)
+    inner_w = width - 2 * pad
+    inner_h = height - 2 * pad
+    pts = []
+    for i, v in enumerate(vals):
+        x = pad + (inner_w * i / (n - 1))
+        y = pad + inner_h * (1 - (v - lo) / span)
+        pts.append(f'{x:.1f},{y:.1f}')
+    return ' '.join(pts)
+
+
+def build_metrics_trend(*, days: int = 30) -> dict[str, Any]:
+    """Por métrica: série, pontos do sparkline e delta vs ~7 dias atrás."""
+    history = get_metrics_history(days=days)
+    keys = ('wau', 'mau', 'stickiness', 'activation_d7', 'nps', 'churn')
+    trend: dict[str, Any] = {'has_history': len(history) >= 2}
+    if len(history) < 2:
+        return trend
+
+    ref_date = (app_now_naive() - timedelta(days=7)).strftime('%Y-%m-%d')
+    for key in keys:
+        series = [h.get(key) for h in history if h.get(key) is not None]
+        if len(series) < 2:
+            trend[key] = None
+            continue
+        current = series[-1]
+        # referência: último ponto com data <= hoje-7d; senão o mais antigo
+        ref_val = None
+        for h in history:
+            if h.get(key) is None:
+                continue
+            if h['date'] <= ref_date:
+                ref_val = h[key]
+        if ref_val is None:
+            ref_val = series[0]
+        delta_abs = round(current - ref_val, 1)
+        delta_pct = round(100.0 * (current - ref_val) / ref_val, 1) if ref_val else None
+        trend[key] = {
+            'points': _sparkline_points(series),
+            'current': current,
+            'delta_abs': delta_abs,
+            'delta_pct': delta_pct,
+            'delta_pct_abs': abs(delta_pct) if delta_pct is not None else None,
+            'dir': 'up' if delta_abs > 0 else ('down' if delta_abs < 0 else 'flat'),
+        }
+    return trend

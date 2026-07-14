@@ -1,0 +1,55 @@
+{# Faixa de resumo: orientação em 1 segundo. Só quando há algo a resumir. #}
+{% if dashboard_summary and (dashboard_summary.bands or dashboard_summary.cifras or dashboard_summary.events or dashboard_summary.pending) %}
+<div class="dash-summary">
+    <a href="{{ url_for('agenda.minha_agenda') }}" class="dash-summary-tile">
+        <span class="dst-icon"><i class="fas fa-calendar-alt"></i></span>
+        <span class="dst-num">{{ dashboard_summary.events }}</span>
+        <span class="dst-lbl">próximo{{ 's' if dashboard_summary.events != 1 else '' }} evento{{ 's' if dashboard_summary.events != 1 else '' }}</span>
+    </a>
+    <a href="{{ url_for('cifras.my_library') }}" class="dash-summary-tile">
+        <span class="dst-icon"><i class="fas fa-folder-open"></i></span>
+        <span class="dst-num">{{ dashboard_summary.cifras }}</span>
+        <span class="dst-lbl">música{{ 's' if dashboard_summary.cifras != 1 else '' }} na coleção</span>
+    </a>
+    <a href="{{ url_for('bands.list_bands') }}" class="dash-summary-tile">
+        <span class="dst-icon"><i class="fas fa-users"></i></span>
+        <span class="dst-num">{{ dashboard_summary.bands }}</span>
+        <span class="dst-lbl">banda{{ 's' if dashboard_summary.bands != 1 else '' }}</span>
+    </a>
+    <a href="{{ url_for('agenda.minha_agenda') }}" class="dash-summary-tile{% if dashboard_summary.pending %} has-pending{% endif %}">
+        <span class="dst-icon"><i class="fas {% if dashboard_summary.pending %}fa-bell{% else %}fa-circle-check{% endif %}"></i></span>
+        <span class="dst-num">{{ dashboard_summary.pending }}</span>
+        <span class="dst-lbl">pendência{{ 's' if dashboard_summary.pending != 1 else '' }}</span>
+    </a>
+</div>
+<style>
+.dash-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 0.25rem;
+}
+@media (max-width: 575.98px) { .dash-summary { grid-template-columns: repeat(2, 1fr); } }
+.dash-summary-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .12s, transform .12s;
+}
+[data-theme="dark"] .dash-summary-tile { background: #0b1422; }
+.dash-summary-tile:hover { border-color: var(--accent); transform: translateY(-1px); color: inherit; }
+.dst-icon { font-size: 0.95rem; color: var(--muted); }
+.dst-num { font-size: 1.6rem; font-weight: 700; line-height: 1.05; color: var(--text); }
+.dst-lbl { font-size: var(--text-xs); color: var(--muted); line-height: 1.25; }
+.dash-summary-tile.has-pending { border-color: rgba(180,83,9,0.4); background: rgba(234,88,12,0.06); }
+.dash-summary-tile.has-pending .dst-icon,
+.dash-summary-tile.has-pending .dst-num { color: #b45309; }
+[data-theme="dark"] .dash-summary-tile.has-pending { background: rgba(234,88,12,0.12); }
+</style>
+{% endif %}

@@ -151,6 +151,12 @@ def run_event_prep_jobs() -> None:
     verificar_e_enviar_alertas_evento_incompleto()
 
 
+def run_metrics_snapshot_job() -> None:
+    """Grava o snapshot diário de métricas (tendência/sparklines do painel)."""
+    from retention_metrics import record_metrics_snapshot
+    record_metrics_snapshot()
+
+
 def run_whatsapp_cifra_digest_jobs() -> None:
     """Legado: resumos antigos só de cifra (WhatsApp)."""
     from whatsapp_cifra_digest import send_pending_cifra_digests

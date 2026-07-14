@@ -23,8 +23,12 @@ def _request(method: str, path: str, **kwargs) -> requests.Response | None:
     url = f'{evolution_api_url()}{path}'
     try:
         return requests.request(method, url, headers=_headers(), timeout=_TIMEOUT, **kwargs)
+    except requests.exceptions.RequestException as exc:
+        # Evolution offline é operacional (não é bug): 1 linha, sem stack trace.
+        logger.warning('Evolution API indisponível (%s %s): %s', method, path, exc.__class__.__name__)
+        return None
     except Exception:
-        logger.exception('Evolution API indisponível: %s %s', method, path)
+        logger.exception('Evolution API erro inesperado: %s %s', method, path)
         return None
 
 

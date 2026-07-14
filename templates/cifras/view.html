@@ -321,11 +321,6 @@
                 <a href="{{ url_for('cifras.tocar_colecao', start=cifra.id) }}"
                    class="btn btn-sm btn-primary" title="Tecla P">▶ Modo Tocar</a>
                 {% endif %}
-                {% if cifra.apple_music_url %}
-                <a href="{{ cifra.apple_music_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary" title="Abrir no Apple Music">
-                    <i class="fab fa-apple me-1"></i> Apple Music
-                </a>
-                {% endif %}
                 {% if is_owner %}
                 <a href="{{ url_for('cifras.share_cifra', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-primary"
                    title="{% if share_unlocked %}Compartilhar{% else %}Assine para compartilhar{% endif %}">

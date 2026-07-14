@@ -24,11 +24,15 @@ def init_scheduler(app) -> None:
 
     def _job():
         with app.app_context():
-            from scheduler_jobs import run_daily_voucher_jobs
+            from scheduler_jobs import run_daily_voucher_jobs, run_metrics_snapshot_job
             try:
                 run_daily_voucher_jobs()
             except Exception as exc:
                 app.logger.exception('Erro no job de vouchers: %s', exc)
+            try:
+                run_metrics_snapshot_job()
+            except Exception as exc:
+                app.logger.exception('Erro no snapshot de métricas: %s', exc)
 
     _scheduler.add_job(_job, 'cron', hour=6, minute=0, timezone=_tz, id='voucher_daily')
     _scheduler.start()

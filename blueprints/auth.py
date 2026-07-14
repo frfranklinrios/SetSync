@@ -82,8 +82,7 @@ def _auth_setup_redirect(next_page: str):
         return redirect(url_for('auth.aceitar_termos', next=next_page))
     if not session.get('display_name'):
         return redirect(url_for('auth.definir_nome', next=next_page))
-    if _should_prompt_phone():
-        return redirect(url_for('auth.definir_whatsapp', next=next_page))
+    # WhatsApp deixou de ser obrigatório no fluxo — é opcional/contextual.
     return redirect(next_page)
 
 
@@ -133,10 +132,8 @@ def _auth_destination_path(user, invite_token: str | None = None) -> str:
 
     if is_superadmin(user['id']):
         return url_for('admin.index')
-    from onboarding import user_needs_band_activation
-
-    if user_needs_band_activation(user['id']):
-        return url_for('bands.create', bem_vindo=1)
+    # Novato vai ao dashboard (hero "1ª música grátis" + checklist valor-primeiro),
+    # em vez de cair direto no formulário de criar banda.
     return url_for('dashboard')
 
 
@@ -290,8 +287,8 @@ def login_required(f):
             nxt = safe_redirect_path(request.path) or url_for('dashboard')
             if _should_prompt_display_name():
                 return redirect(url_for('auth.definir_nome', next=nxt))
-            if _should_prompt_phone():
-                return redirect(url_for('auth.definir_whatsapp', next=nxt))
+            # Telefone/WhatsApp é opcional e contextual (cadastrável em Meu perfil,
+            # sugerido ao criar banda / ao ser escalado) — nunca bloqueia o uso.
         return f(*args, **kwargs)
     return decorated_function
 
@@ -601,13 +598,9 @@ def definir_nome():
         update_user_display_name(session['user_id'], nome)
         session['display_name'] = nome
         flash(f'Perfeito, {nome}!', 'success')
-        if _should_prompt_phone():
-            return redirect(url_for('auth.definir_whatsapp', next=next_page))
         return redirect(next_page)
 
     if session.get('display_name'):
-        if _should_prompt_phone():
-            return redirect(url_for('auth.definir_whatsapp', next=next_page))
         return redirect(next_page)
     return render_template('definir_nome.html', next=next_page, suggested=session.get('username') or '')
 

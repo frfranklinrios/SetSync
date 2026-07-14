@@ -93,6 +93,7 @@ def index():
         funnel_stats=funnel_stats,
         funnel_rows=admin_ctx['funnel_rows'],
         retention=admin_ctx.get('retention') or {},
+        metrics_trend=admin_ctx.get('metrics_trend') or {},
         stuck_users=admin_ctx['stuck_users'],
         invite_log=invite_log,
         whatsapp_configured=whatsapp_configured(),

@@ -3,45 +3,46 @@
 from __future__ import annotations
 
 from db import (
+    count_bands,
+    count_cifras,
+    count_studios,
+    count_users,
     count_users_without_band,
-    get_all_bands,
-    get_all_cifras,
-    get_all_users,
-    get_band_cifras,
-    get_band_members,
-    get_user,
     list_users_without_band,
 )
-from models_studio import enrich_studios_for_admin, list_all_studios
 from product_funnel import funnel_activation_rows
-from retention_metrics import build_retention_metrics
+from retention_metrics import build_metrics_trend, build_retention_metrics, record_metrics_snapshot
 from whatsapp_service import is_configured as whatsapp_configured
 
 
 def build_admin_dashboard_context() -> dict:
-    users = get_all_users()
-    bands = get_all_bands()
-    cifras = get_all_cifras()
-    studios = enrich_studios_for_admin(list_all_studios())
-    users_no_band = count_users_without_band()
+    """Contexto agregado (métricas/contagens) do painel admin.
+
+    Usa COUNT(*) em vez de carregar todas as tabelas na memória — o blueprint
+    já busca as listas que renderiza; aqui só precisamos de números e métricas.
+    """
+    users_total = count_users()
     stuck_users = list_users_without_band(10)
 
-    for band in bands:
-        owner = get_user(band['owner_id'])
-        band['owner'] = owner or {}
-        band['members_count'] = len(get_band_members(band['id']))
-        band['cifras_count'] = len(get_band_cifras(band['id']))
+    _retention = build_retention_metrics()
+    # Registra o ponto de hoje (idempotente) e monta a série p/ deltas/sparklines.
+    try:
+        record_metrics_snapshot(_retention)
+    except Exception:
+        pass
+    _trend = build_metrics_trend()
 
     return {
         'stats': {
-            'bands': len(bands),
-            'cifras': len(cifras),
-            'users': len(users),
-            'studios': len(studios),
-            'users_no_band': users_no_band,
+            'bands': count_bands(),
+            'cifras': count_cifras(),
+            'users': users_total,
+            'studios': count_studios(),
+            'users_no_band': count_users_without_band(),
         },
-        'funnel_rows': funnel_activation_rows(users_total=len(users)),
-        'retention': build_retention_metrics(),
+        'funnel_rows': funnel_activation_rows(users_total=users_total),
+        'retention': _retention,
+        'metrics_trend': _trend,
         'stuck_users': stuck_users,
         'whatsapp_configured': whatsapp_configured(),
     }

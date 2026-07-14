@@ -204,14 +204,6 @@ def _parse_extra_fields(form):
     return cifra_json, grade_json, bpm, duracao_seg
 
 
-def _parse_streaming_urls(form):
-    apple = (form.get('apple_music_url') or '').strip()
-    if apple and not apple.startswith(('http://', 'https://')):
-        flash('URL do Apple Music inválida — use link completo (https://…)', 'danger')
-        return False
-    return apple or None
-
-
 def _finalize_referencia_json(form, *, titulo, artista, tom_original):
     """Normaliza snapshot da biblioteca enviado pelo formulário (import api-cifras)."""
     raw = (form.get('referencia_json') or '').strip()
@@ -894,17 +886,11 @@ def add_personal():
             artista=artista,
             tom_original=tom_original,
         )
-        streaming = _parse_streaming_urls(request.form)
-        if streaming is False:
-            return render_template('cifras/add.html', band=None, personal=True)
         cifra_id = create_personal_cifra(
             user_id, titulo, artista, tom_original, conteudo or '',
             cifra_json, grade_json, None, bpm, duracao_seg,
             referencia_json=referencia_json,
         )
-        if streaming:
-            from db import update_cifra_streaming
-            update_cifra_streaming(cifra_id, streaming)
         if count_user_personal_cifras(user_id) == 1:
             from google_ads import mark_funnel_event
             from product_funnel import log_funnel_step
@@ -955,9 +941,6 @@ def share_cifra(cifra_id):
                 if resp:
                     return resp
             new_id = copy_cifra_to_band(cifra, band_id, owner_user_id=user_id)
-            if cifra.get('apple_music_url'):
-                from db import update_cifra_streaming
-                update_cifra_streaming(new_id, cifra.get('apple_music_url'))
             bn.cifra_created(band_id, user_id, new_id, cifra['titulo'])
             flash(f'“{cifra["titulo"]}” copiada para {band["name"]}.', 'success')
             return redirect(url_for('cifras.view', cifra_id=new_id))
@@ -1299,11 +1282,6 @@ def add(band_id):
         cifra_id = create_cifra(titulo, artista, tom_original, conteudo or '',
                                 band_id, cifra_json, grade_json, None, bpm, duracao_seg,
                                 referencia_json=referencia_json)
-        streaming = _parse_streaming_urls(request.form)
-        if streaming is False:
-            return render_template('cifras/add.html', band=band)
-        from db import update_cifra_streaming
-        update_cifra_streaming(cifra_id, streaming)
         if cifras_antes == 0:
             from google_ads import mark_funnel_event
             from product_funnel import log_funnel_step
@@ -1417,13 +1395,6 @@ def edit(cifra_id):
 
         update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
                      cifra_json, grade_json, leadsheet_json, bpm, duracao_seg)
-
-        streaming = _parse_streaming_urls(request.form)
-        if streaming is False:
-            return render_template('cifras/edit.html', **_edit_page_context(cifra, band, user_id=user_id))
-        from db import update_cifra_streaming
-        update_cifra_streaming(cifra_id, streaming)
-        cifra['apple_music_url'] = streaming
 
         referencia_json = _finalize_referencia_json(
             request.form,

@@ -24,3 +24,6 @@ psycopg2-binary>=2.9.9
 pywebpush>=2.0.0
 # Opcional: cache da API musical (REDIS_URL=redis://localhost:6379/0)
 redis>=5.0.0
+
+# Monitoramento de erros (opcional): instale e defina SENTRY_DSN no .env
+# sentry-sdk[flask]>=2.0

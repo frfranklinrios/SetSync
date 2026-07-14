@@ -441,7 +441,19 @@ def _run_schema_migrations(c) -> None:
     _migrate_admin_outreach_schema(c)
     _migrate_lgpd_schema(c)
     _migrate_personal_cifras_schema(c)
+    _migrate_metric_snapshots_schema(c)
     _ensure_perf_indexes(c)
+
+
+def _migrate_metric_snapshots_schema(c) -> None:
+    """Snapshot diário de métricas do painel admin (para tendência/sparkline)."""
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS metric_snapshots (
+            snapshot_date TEXT PRIMARY KEY,
+            payload_json TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
 
 
 def _migrate_personal_cifras_schema(c) -> None:
@@ -2681,6 +2693,11 @@ def _ensure_perf_indexes(c) -> None:
         'CREATE INDEX IF NOT EXISTS idx_band_event_assignments_event ON band_event_assignments(event_id)',
         'CREATE INDEX IF NOT EXISTS idx_setlist_cifras_setlist ON setlist_cifras(setlist_id)',
         'CREATE INDEX IF NOT EXISTS idx_assinaturas_banda ON assinaturas(banda_id)',
+        # Funil/ativação: dedup em log_funnel_step (user_id+step) e contagens por step.
+        'CREATE INDEX IF NOT EXISTS idx_funnel_events_user_step ON product_funnel_events(user_id, step)',
+        'CREATE INDEX IF NOT EXISTS idx_funnel_events_step ON product_funnel_events(step)',
+        # Escala do músico: "minhas pendências" e alertas de preparação (por usuário).
+        'CREATE INDEX IF NOT EXISTS idx_band_event_assignments_user ON band_event_assignments(user_id)',
     ):
         c.execute(sql)
 
@@ -3911,10 +3928,28 @@ def mark_all_notifications_read(user_id: str) -> int:
 
 # ── Estatísticas públicas ───────────────────────────────────────────────────
 
+def count_users() -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM users')
+    n = int(c.fetchone()['n'] or 0)
+    db.close()
+    return n
+
+
 def count_bands() -> int:
     db = get_db()
     c = db.cursor()
     c.execute('SELECT COUNT(*) AS n FROM bands')
+    n = int(c.fetchone()['n'] or 0)
+    db.close()
+    return n
+
+
+def count_studios() -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT COUNT(*) AS n FROM studios')
     n = int(c.fetchone()['n'] or 0)
     db.close()
     return n

@@ -295,6 +295,7 @@
     <div class="dashboard-grid">
         <div class="dashboard-primary d-flex flex-column gap-3">
             {% if not is_superadmin %}
+            {% include 'partials/dashboard_summary.html' %}
             {% include 'partials/activation_hero.html' %}
             {% endif %}
             {% include 'partials/pending_band_invites.html' %}

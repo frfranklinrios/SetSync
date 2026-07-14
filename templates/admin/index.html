@@ -18,6 +18,21 @@
 .admin-stat .sub { font-size: var(--text-xs); color: var(--muted); line-height: 1.3; }
 .admin-stat .num.is-good { color: #15803d; }
 .admin-stat .num.is-warn { color: #b45309; }
+/* Sparkline + delta de tendência nos KPIs */
+.kpi-spark { display: flex; align-items: center; gap: 6px; margin-top: 2px; min-height: 20px; }
+.kpi-spark svg { display: block; color: var(--accent); opacity: .8; }
+.kpi-delta { font-size: var(--text-xs); font-weight: 600; color: var(--muted); white-space: nowrap; }
+.kpi-spark-empty { font-size: var(--text-xs); color: var(--muted); opacity: .7; }
+/* Funil de ativação: barras decrescentes (largura = % do topo) + vazamento entre etapas */
+.funnel { display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
+.funnel-row { display: grid; grid-template-columns: 8.5rem 1fr auto; align-items: center; gap: 0.6rem; }
+.funnel-label { font-size: var(--text-sm); font-weight: 600; color: var(--text); text-align: right; line-height: 1.2; }
+.funnel-track { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; height: 24px; overflow: hidden; }
+.funnel-fill { height: 100%; background: var(--accent); border-radius: 6px; min-width: 3px; transition: width .3s ease; }
+.funnel-value { font-size: var(--text-sm); font-weight: 700; color: var(--text); white-space: nowrap; }
+.funnel-value small { color: var(--muted); font-weight: 500; }
+.funnel-value .drop { font-size: var(--text-xs); font-weight: 600; color: var(--muted); margin-left: 4px; }
+.funnel-value .drop.leak { color: #b45309; }
 .admin-table { font-size: var(--text-sm); }
 .admin-table th { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .admin-badge-sa {
@@ -48,6 +63,21 @@
     width: 100%;
 }
 </style>
+
+{% macro spark(t) %}
+{% if t and t.points %}
+<span class="kpi-spark">
+    <svg viewBox="0 0 72 20" width="72" height="20" aria-hidden="true">
+        <polyline points="{{ t.points }}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    {% if t.delta_pct is not none %}
+    <span class="kpi-delta" title="vs ~7 dias atrás">{% if t.dir == 'up' %}▲{% elif t.dir == 'down' %}▼{% else %}→{% endif %}{{ t.delta_pct_abs }}%</span>
+    {% endif %}
+</span>
+{% elif metrics_trend and not metrics_trend.has_history %}
+<span class="kpi-spark"><span class="kpi-spark-empty">coletando histórico…</span></span>
+{% endif %}
+{% endmacro %}
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
@@ -122,17 +152,26 @@
 {% if funnel_rows %}
 <div class="mb-4">
     <h2 class="h6 text-muted mb-2">Funil de ativação</h2>
-    <div class="row g-2">
+    <div class="funnel">
         {% for row in funnel_rows %}
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat kpi">
-                <div class="num">{{ row.count }}</div>
-                <div class="lbl">{{ row.label }}</div>
-                <div class="sub">{{ row.pct_of_users }}% dos usuários</div>
+        <div class="funnel-row">
+            <div class="funnel-label">{{ row.label }}</div>
+            <div class="funnel-track" title="{{ row.pct_of_users }}% dos cadastros">
+                <div class="funnel-fill" style="width: {{ row.pct_of_users }}%;"></div>
+            </div>
+            <div class="funnel-value">
+                {{ row.count }} <small>· {{ row.pct_of_users }}%</small>
+                {% if not loop.first and row.pct_of_prev < 100 %}
+                <span class="drop{% if row.pct_of_prev <= 60 %} leak{% endif %}"
+                      title="Conversão da etapa anterior: {{ row.pct_of_prev }}%">↓{{ 100 - row.pct_of_prev }}%</span>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
+    <p class="text-muted mb-0 mt-2" style="font-size: var(--text-xs);">
+        Barra = % dos cadastros que chegaram à etapa · <span style="color:#b45309;">↓</span> = maior queda entre etapas (onde o usuário desiste).
+    </p>
 </div>
 {% endif %}
 
@@ -145,6 +184,7 @@
                 <div class="num">{{ retention.wau }}</div>
                 <div class="lbl">WAU (7 dias)</div>
                 <div class="sub">{{ retention.wau_pct }}% dos usuários</div>
+                {{ spark(metrics_trend.wau) }}
             </div>
         </div>
         <div class="col-6 col-md-4 col-lg-2">
@@ -152,6 +192,15 @@
                 <div class="num">{{ retention.mau }}</div>
                 <div class="lbl">MAU (30 dias)</div>
                 <div class="sub">{{ retention.mau_pct }}% dos usuários</div>
+                {{ spark(metrics_trend.mau) }}
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="admin-stat kpi">
+                <div class="num{% if retention.stickiness >= 40 %} is-good{% elif retention.mau and retention.stickiness < 20 %} is-warn{% endif %}">{{ retention.stickiness }}%</div>
+                <div class="lbl">Stickiness</div>
+                <div class="sub">WAU/MAU · quanto voltam na semana</div>
+                {{ spark(metrics_trend.stickiness) }}
             </div>
         </div>
         <div class="col-6 col-md-4 col-lg-2">
@@ -159,6 +208,7 @@
                 <div class="num{% if retention.activation_d7.pct >= 40 %} is-good{% elif retention.activation_d7.cohort and retention.activation_d7.pct < 20 %} is-warn{% endif %}">{{ retention.activation_d7.pct }}%</div>
                 <div class="lbl">Ativação D7</div>
                 <div class="sub">{{ retention.activation_d7.activated }}/{{ retention.activation_d7.cohort }} Modo Tocar ≤7d</div>
+                {{ spark(metrics_trend.activation_d7) }}
             </div>
         </div>
         <div class="col-6 col-md-4 col-lg-2">
@@ -170,6 +220,7 @@
                     média {{ retention.nps.avg }} · {{ retention.nps.total }} resp.
                     {% else %}sem respostas{% endif %}
                 </div>
+                {{ spark(metrics_trend.nps) }}
             </div>
         </div>
         <div class="col-6 col-md-4 col-lg-2">
@@ -177,6 +228,7 @@
                 <div class="num{% if retention.trial_churn.expired and retention.trial_churn.churn_pct > 50 %} is-warn{% endif %}">{{ retention.trial_churn.churn_pct }}%</div>
                 <div class="lbl">Churn pós-trial</div>
                 <div class="sub">{{ retention.trial_churn.churned }}/{{ retention.trial_churn.expired }} sem converter</div>
+                {{ spark(metrics_trend.churn) }}
             </div>
         </div>
         <div class="col-6 col-md-4 col-lg-2">
