@@ -45,10 +45,21 @@ def cookie_consent():
 def inject_lgpd():
     from lgpd import may_load_tracking, session_tracking_consent
 
+    pdfgen = (request.args.get('pdfgen') or '').lower() in ('1', 'true', 'yes')
+    path = request.path or ''
+    is_print_view = (
+        '/imprimir' in path
+        or path.rstrip('/').endswith('/print')
+    )
+    hide_chrome = pdfgen or is_print_view
+    tracking_ok = may_load_tracking() and not hide_chrome
     return dict(
         privacy_email=privacy_contact_email(),
         dpo_name=dpo_label(),
         tracking_requires_consent=tracking_requires_consent(),
-        may_load_tracking=may_load_tracking(),
+        may_load_tracking=tracking_ok,
         cookie_consent_choice=session_tracking_consent(),
+        hide_cookie_banner=hide_chrome,
+        is_print_view=is_print_view,
+        pdfgen=pdfgen,
     )

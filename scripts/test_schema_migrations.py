@@ -17,7 +17,8 @@ os.environ['FLASK_ENV'] = 'development'
 # Colunas/tabelas que já causaram divergência SQLite vs Postgres
 _REQUIRED = {
     'vouchers': {'destino', 'eh_vitalicio'},
-    'cifras': {'play_notes', 'referencia_json', 'spotify_url'},
+    'cifras': {'play_notes', 'referencia_json', 'spotify_url', 'owner_user_id'},
+    'cifra_shares': {'cifra_id', 'shared_with_user_id'},
     'setlist_cifras': {'play_notes', 'vocalist_id'},
     'studio_bookings': {'valor_cobrado', 'pago_em', 'finance_notes'},
     'studio_rooms': {'preco_hora'},

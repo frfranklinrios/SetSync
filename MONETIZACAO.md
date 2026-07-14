@@ -119,7 +119,7 @@ Exemplos comuns:
 
 - Admin: `/admin/vouchers` (requer `SETSYNC_SUPERADMIN_*` no `.env`).
 - **Vitalício:** marque a opção ao criar — acesso ao plano sem vencimento (ignorado pelo job de expiração).
-- Indicação: `/voucher/indicar` — até 5 vouchers ativos por usuário (Pro, 15 dias, uso único).
+- Indicação: `/voucher/indicar` — até 5 vouchers ativos por usuário (banda Pro ou estúdio Premium, 3 meses / 90 dias, uso único).
 - Job diário (06:00 UTC): expira vouchers e envia e-mails de aviso (3 dias antes e no vencimento).
 
 ## 9. Dependências de sistema

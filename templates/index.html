@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    {% include 'partials/google_analytics.html' %}
+    {% if not pdfgen and not is_print_view %}{% include 'partials/google_analytics.html' %}{% endif %}
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>
     (function () {
@@ -466,10 +466,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=15">
     {% block extra_head %}{% endblock %}
-    {% include 'partials/google_ads_head.html' %}
+    {% if not pdfgen and not is_print_view %}{% include 'partials/google_ads_head.html' %}{% endif %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
-    {% include 'partials/google_ads_body.html' %}
+    {% if not pdfgen and not is_print_view %}{% include 'partials/google_ads_body.html' %}{% endif %}
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-4">
             <a class="navbar-brand" href="{{ nav_home_url if current_user.is_authenticated else url_for('index') }}">
@@ -505,13 +505,17 @@
                             <a class="nav-link" href="{{ url_for('bands.list_bands') }}">Bandas</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('bands.my_fees') }}">Meus cachês</a>
+                            <a class="nav-link" href="{{ url_for('cifras.my_library') }}" title="Sua coleção pessoal de músicas">
+                                Coleção
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('bands.my_fees') }}" title="Seus cachês em todas as bandas">
+                                <i class="fas fa-wallet me-1 d-none d-xl-inline"></i>Meu financeiro
+                            </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('studios.search') }}">Estúdios</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('assinatura_bp.planos') }}">Planos</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('ajuda.index') }}">Ajuda</a>
@@ -557,6 +561,11 @@
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('auth.perfil') }}">
                                         <i class="fas fa-user-circle me-1"></i> Meu perfil
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('assinatura_bp.planos') }}">
+                                        <i class="fas fa-star me-1"></i> Planos e assinatura
                                     </a>
                                 </li>
                                 {% if current_user.is_superadmin and mail_inbox_url %}
@@ -626,6 +635,8 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    {% block bottom_nav %}{% include 'partials/mobile_tabbar.html' %}{% endblock %}
 
     <footer>
         <img class="logo-light" src="{{ url_for('static', filename='logoUnissono.png') }}" alt="{{ app_name_full }} — app de cifras e setlists para bandas">
@@ -703,8 +714,10 @@
     </div>
 
     {% include 'partials/pwa_ios_modal.html' %}
+    {% if not hide_cookie_banner %}
     {% include 'partials/help_chatbot.html' %}
     {% include 'partials/whatsapp_floating.html' %}
+    {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/csrf.js') }}?v=1"></script>
     {% if current_user.is_authenticated %}
@@ -731,8 +744,10 @@
     <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=7"></script>
     <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=2"></script>
     {% endblock %}
+    {% if not pdfgen and not is_print_view %}
     {% include 'partials/google_ads_signup_event.html' %}
     {% include 'partials/google_ads_funnel.html' %}
+    {% endif %}
     {% include 'partials/cookie_consent.html' %}
     {% block scripts %}{% endblock %}
 </body>

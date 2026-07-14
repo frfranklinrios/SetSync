@@ -12,6 +12,12 @@
 }
 .admin-stat .num { font-size: 1.75rem; font-weight: 700; color: var(--chord-highlight, var(--accent)); }
 .admin-stat .lbl { font-size: var(--text-sm); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+/* Variante KPI (retenção): rótulo em caixa normal + legenda tokenizada, sem px cravado */
+.admin-stat.kpi { display: flex; flex-direction: column; gap: 2px; }
+.admin-stat.kpi .lbl { text-transform: none; letter-spacing: 0; line-height: 1.25; }
+.admin-stat .sub { font-size: var(--text-xs); color: var(--muted); line-height: 1.3; }
+.admin-stat .num.is-good { color: #15803d; }
+.admin-stat .num.is-warn { color: #b45309; }
 .admin-table { font-size: var(--text-sm); }
 .admin-table th { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .admin-badge-sa {
@@ -79,7 +85,7 @@
         <strong>{{ stats.users_no_band }}</strong> usuário{% if stats.users_no_band != 1 %}s{% endif %}
         cadastrado{% if stats.users_no_band != 1 %}s{% endif %} sem banda — risco de abandono pós-cadastro.
     </div>
-    <a href="#tab-users" class="btn btn-sm btn-warning" data-bs-toggle="tab" data-bs-target="#tab-users">Ver na aba Usuários</a>
+    <a href="#tab-users" class="btn btn-sm btn-warning" id="admin-goto-users-tab">Ver na aba Usuários</a>
 </div>
 {% endif %}
 
@@ -119,14 +125,105 @@
     <div class="row g-2">
         {% for row in funnel_rows %}
         <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat">
+            <div class="admin-stat kpi">
                 <div class="num">{{ row.count }}</div>
-                <div class="lbl" style="font-size:11px;line-height:1.3;text-transform:none;letter-spacing:0;">{{ row.label }}</div>
-                <div class="text-muted" style="font-size:10px;">{{ row.pct_of_users }}% dos usuários</div>
+                <div class="lbl">{{ row.label }}</div>
+                <div class="sub">{{ row.pct_of_users }}% dos usuários</div>
             </div>
         </div>
         {% endfor %}
     </div>
+</div>
+{% endif %}
+
+{% if retention %}
+<div class="mb-4" id="admin-retencao">
+    <h2 class="h6 text-muted mb-2">Retenção</h2>
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="admin-stat kpi">
+                <div class="num">{{ retention.wau }}</div>
+                <div class="lbl">WAU (7 dias)</div>
+                <div class="sub">{{ retention.wau_pct }}% dos usuários</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="admin-stat kpi">
+                <div class="num">{{ retention.mau }}</div>
+                <div class="lbl">MAU (30 dias)</div>
+                <div class="sub">{{ retention.mau_pct }}% dos usuários</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="admin-stat kpi">
+                <div class="num{% if retention.activation_d7.pct >= 40 %} is-good{% elif retention.activation_d7.cohort and retention.activation_d7.pct < 20 %} is-warn{% endif %}">{{ retention.activation_d7.pct }}%</div>
+                <div class="lbl">Ativação D7</div>
+                <div class="sub">{{ retention.activation_d7.activated }}/{{ retention.activation_d7.cohort }} Modo Tocar ≤7d</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="admin-stat kpi">
+                <div class="num">{% if retention.nps.nps is not none %}{{ retention.nps.nps }}{% else %}—{% endif %}</div>
+                <div class="lbl">NPS</div>
+                <div class="sub">
+                    {% if retention.nps.total %}
+                    média {{ retention.nps.avg }} · {{ retention.nps.total }} resp.
+                    {% else %}sem respostas{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="admin-stat kpi">
+                <div class="num{% if retention.trial_churn.expired and retention.trial_churn.churn_pct > 50 %} is-warn{% endif %}">{{ retention.trial_churn.churn_pct }}%</div>
+                <div class="lbl">Churn pós-trial</div>
+                <div class="sub">{{ retention.trial_churn.churned }}/{{ retention.trial_churn.expired }} sem converter</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="admin-stat kpi">
+                <div class="num{% if retention.incomplete_events_7d %} is-warn{% endif %}">{{ retention.incomplete_events_7d }}</div>
+                <div class="lbl">Eventos incompletos</div>
+                <div class="sub">próximos 7 dias · setlist/escala</div>
+            </div>
+        </div>
+    </div>
+    {% if retention.nps.detractor_list %}
+    <div class="card mb-3">
+        <div class="card-header py-2" style="font-size: var(--text-sm);">Detratores NPS (≤6) — follow-up</div>
+        <div class="table-responsive">
+            <table class="table table-sm admin-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Nota</th>
+                        <th>Quando</th>
+                        <th>Contato</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in retention.nps.detractor_list %}
+                    <tr>
+                        <td>{{ u.display_name or u.username }}</td>
+                        <td><strong>{{ u.nps_score }}</strong></td>
+                        <td>{{ (u.nps_submitted_at or '')[:16] }}</td>
+                        <td class="text-muted">{{ u.email or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% if retention.campaigns %}
+    <p class="text-muted mb-1" style="font-size: var(--text-xs);">Campanhas de retenção enviadas (top)</p>
+    <div class="d-flex flex-wrap gap-2 mb-0">
+        {% for c in retention.campaigns %}
+        <span class="badge text-bg-light border" style="font-weight:500;font-size:var(--text-xs);">
+            {{ c.campaign }} · {{ c.count }}
+        </span>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 
@@ -476,18 +573,53 @@
 </div>
 <script>
 (function () {
+    function showAdminTab(hash) {
+        if (!hash) return;
+        if (hash === 'admin-convites') {
+            var el = document.getElementById('admin-convites');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+        if (!hash.startsWith('tab-')) return;
+        var btn = document.querySelector('.nav-tabs [data-bs-target="#' + hash + '"]');
+        if (btn && window.bootstrap && bootstrap.Tab) {
+            bootstrap.Tab.getOrCreateInstance(btn).show();
+        }
+        var pane = document.getElementById(hash);
+        if (pane) {
+            // Espera o tab ativar e rola até a barra de abas
+            var tabs = document.querySelector('.nav-tabs');
+            if (tabs) tabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (hash === 'tab-users') {
+            var search = document.getElementById('admin-user-search');
+            // Destaca quem está sem banda (badge 0) filtrando bandas=0 na busca visual
+            var table = document.getElementById('admin-users-table');
+            if (table) {
+                table.querySelectorAll('tbody tr').forEach(function (row) {
+                    var badge = row.querySelector('.badge.bg-warning');
+                    row.classList.toggle('table-warning', !!badge);
+                });
+            }
+            if (search) setTimeout(function () { search.focus(); }, 300);
+        }
+    }
+
     var hash = (window.location.hash || '').replace('#', '');
-    if (!hash) return;
-    if (hash === 'admin-convites') {
-        var el = document.getElementById('admin-convites');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
+    if (hash) showAdminTab(hash);
+
+    var gotoUsers = document.getElementById('admin-goto-users-tab');
+    if (gotoUsers) {
+        gotoUsers.addEventListener('click', function (e) {
+            e.preventDefault();
+            history.replaceState(null, '', '#tab-users');
+            showAdminTab('tab-users');
+        });
     }
-    if (!hash.startsWith('tab-')) return;
-    var btn = document.querySelector('[data-bs-target="#' + hash + '"]');
-    if (btn && window.bootstrap && bootstrap.Tab) {
-        bootstrap.Tab.getOrCreateInstance(btn).show();
-    }
+
+    window.addEventListener('hashchange', function () {
+        showAdminTab((window.location.hash || '').replace('#', ''));
+    });
 })();
 (function () {
     var input = document.getElementById('admin-user-search');

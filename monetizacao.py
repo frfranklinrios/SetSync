@@ -158,10 +158,11 @@ def planos_para_site() -> list[PlanoSite]:
             sufixo='',
             destaque=False,
             features=(
-                f'Até {lim["musica"]} músicas',
+                'Coleção pessoal ilimitada',
+                f'Até {lim["musica"]} músicas no repertório da banda',
                 f'Até {lim["integrante"]} integrantes',
-                f'Até {lim["setlist"]} setlists',
-                f'{lim["banda"]} banda por conta',
+                f'Até {lim["setlist"]} setlists · {lim["banda"]} banda',
+                'Compartilhar cifras: com assinatura',
             ),
             cta='Começar grátis',
             cta_outline=True,
@@ -174,6 +175,7 @@ def planos_para_site() -> list[PlanoSite]:
             destaque=False,
             features=(
                 'Para quem toca sozinho',
+                'Coleção pessoal + compartilhar',
                 '1 banda · só você no elenco',
                 'Músicas e setlists ilimitados',
                 'Exportar setlist em PDF',
@@ -194,6 +196,7 @@ def planos_para_site() -> list[PlanoSite]:
             destaque=True,
             features=(
                 'Banda com vários integrantes',
+                'Coleção pessoal + compartilhar com a banda',
                 'Músicas, setlists e membros ilimitados',
                 'Exportar setlist em PDF',
             ),
@@ -819,6 +822,39 @@ def resposta_plano_necessario():
         'erro': 'plano_necessario',
         'upgrade_url': '/assinatura/planos',
     }), 402
+
+
+def user_pode_compartilhar_cifras(user_id: str) -> bool:
+    """Compartilhar coleção (com banda ou outro usuário) exige assinatura paga/trial/voucher."""
+    if not user_id:
+        return False
+    from db import get_owned_bands, is_superadmin
+
+    if is_superadmin(user_id):
+        return True
+    for band in get_owned_bands(user_id):
+        assinatura = get_assinatura_banda(band['id'])
+        if assinatura.tem_acesso_premium() or assinatura.trial_ativo():
+            return True
+    return False
+
+
+def resposta_compartilhar_cifra_paywall():
+    """Paywall amigável para compartilhamento de cifras."""
+    from flask import flash, redirect, url_for, jsonify, request
+
+    msg = (
+        'Sua coleção pessoal é gratuita. Para compartilhar músicas com outros '
+        'músicos ou com uma banda, assine Individual, Pro ou Worship.'
+    )
+    if request.accept_mimetypes.best == 'application/json' or request.is_json:
+        return jsonify({
+            'erro': 'plano_necessario',
+            'mensagem': msg,
+            'upgrade_url': '/assinatura/planos',
+        }), 402
+    flash(msg, 'warning')
+    return redirect(url_for('assinatura_bp.planos'))
 
 
 # ── Plano Estúdio (beta gratuito) ─────────────────────────────────────────

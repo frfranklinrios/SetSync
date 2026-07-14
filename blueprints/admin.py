@@ -92,6 +92,7 @@ def index():
         env_emails=env_emails,
         funnel_stats=funnel_stats,
         funnel_rows=admin_ctx['funnel_rows'],
+        retention=admin_ctx.get('retention') or {},
         stuck_users=admin_ctx['stuck_users'],
         invite_log=invite_log,
         whatsapp_configured=whatsapp_configured(),

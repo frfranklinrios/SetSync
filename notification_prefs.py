@@ -26,6 +26,7 @@ NOTIFICATION_CATEGORIES: dict[str, dict[str, Any]] = {
             'event_updated',
             'event_deleted',
             'event_reminder',
+            'event_prep_reminder',
             'studio_booking_confirmed',
             'studio_booking_rejected',
             'studio_booking_cancelled',

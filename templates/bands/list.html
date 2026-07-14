@@ -98,9 +98,14 @@
             <h2 class="mb-0">Bandas</h2>
             <p class="lead">Gerencie suas bandas, cifras e setlists</p>
         </div>
-        <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus me-1"></i> Nova Banda
-        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('bands.my_fees') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-wallet me-1"></i> Meu financeiro
+            </a>
+            <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Nova Banda
+            </a>
+        </div>
     </div>
 
     {% set extra = member_of|selectattr('owner_id','ne',current_user.id)|list %}

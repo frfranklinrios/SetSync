@@ -365,6 +365,39 @@ def get_assignment_response_stats(event_id: str) -> dict:
     return stats
 
 
+def get_assignment_stats_by_events(event_ids: list) -> dict:
+    """Estatísticas de resposta por evento (uma query só, evita N+1).
+
+    Retorna {event_id: {pending, accepted, declined, total}} apenas para
+    eventos que tenham ao menos um assignment.
+    """
+    result: dict = {}
+    if not event_ids:
+        return result
+    db = get_db()
+    c = db.cursor()
+    placeholders = ','.join('?' * len(event_ids))
+    c.execute(
+        f'''SELECT event_id, response_status, COUNT(*) AS n
+            FROM band_event_assignments
+            WHERE event_id IN ({placeholders})
+            GROUP BY event_id, response_status''',
+        tuple(event_ids),
+    )
+    for row in c.fetchall():
+        eid = row['event_id']
+        stats = result.setdefault(
+            eid, {'pending': 0, 'accepted': 0, 'declined': 0, 'total': 0}
+        )
+        st = (row['response_status'] or 'pending').lower()
+        n = int(row['n'])
+        if st in stats:
+            stats[st] = n
+        stats['total'] += n
+    db.close()
+    return result
+
+
 def list_pending_assignments_for_user(user_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()

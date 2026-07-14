@@ -11,7 +11,12 @@ html.studio-finance-print-root {
 
 html.studio-finance-print-root.pdfgen .navbar,
 html.studio-finance-print-root.pdfgen .no-print,
-html.studio-finance-print-root.pdfgen footer {
+html.studio-finance-print-root.pdfgen footer,
+html.studio-finance-print-root.pdfgen .ss-cookie-banner,
+html.studio-finance-print-root.pdfgen .help-chat-fab,
+html.studio-finance-print-root.pdfgen .help-chat-panel,
+html.studio-finance-print-root.pdfgen .alert,
+html.studio-finance-print-root .ss-cookie-banner {
     display: none !important;
 }
 
@@ -72,9 +77,10 @@ html.studio-finance-print-root.pdfgen main.container {
     color: var(--sf-muted);
 }
 
+/* A4 retrato: 2 colunas no resumo (evita estourar largura) */
 .sf-summary-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.55rem;
     margin-bottom: 1.25rem;
 }
@@ -162,7 +168,27 @@ html.studio-finance-print-root.pdfgen main.container {
     color: var(--sf-muted);
 }
 
-@media print {
-    .no-print { display: none !important; }
-    .studio-finance-print-doc { font-size: 10pt; }
+@page {
+    size: A4 portrait;
+    margin: 12mm 10mm;
 }
+
+@media print {
+    html.studio-finance-print-root .navbar,
+    html.studio-finance-print-root footer,
+    html.studio-finance-print-root .ss-cookie-banner,
+    html.studio-finance-print-root .help-chat-fab,
+    html.studio-finance-print-root .help-chat-panel,
+    html.studio-finance-print-root .alert,
+    html.studio-finance-print-root .no-print,
+    .no-print {
+        display: none !important;
+    }
+    .studio-finance-print-doc { font-size: 10pt; }
+    html.studio-finance-print-root main.container {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+

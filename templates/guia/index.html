@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('guia.guia_index') }}">
-<meta name="description" content="Guias Uníssono: cifras, grade harmônica, setlists, escalação, estúdios de ensaio, instrumentos no perfil, Modo Tocar e app para bandas.">
-<meta property="og:title" content="Guia Uníssono — Cifras, agenda, estúdios e escalação">
-<meta property="og:description" content="Guias Uníssono: cifras, setlists, estúdios de ensaio, escalação com confirmação, instrumentos no perfil e Modo Tocar para bandas.">
+<meta name="description" content="Guias Uníssono: coleção pessoal grátis, compartilhar cifras, financeiro da banda, indicação com 3 meses, setlists, estúdios e Modo Tocar.">
+<meta property="og:title" content="Guia Uníssono — Coleção, cifras, financeiro e palco">
+<meta property="og:description" content="Guarde cifras na coleção, compartilhe com a banda, acompanhe cachês, indique e ganhe 3 meses Pro, reserve estúdio e use o Modo Tocar.">
 <meta property="og:url" content="{{ external_url_for('guia.guia_index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -47,14 +47,15 @@
 <div class="guia-hero">
     <h1>Guia Uníssono</h1>
     <p>
-        Encontre como <strong>compartilhar cifras</strong>, <strong>gerenciar bandas</strong>,
+        Encontre como <strong>guardar cifras na coleção pessoal</strong>,
+        <strong>compartilhar com a banda</strong>, <strong>gerenciar membros</strong>,
         <strong>montar setlists</strong>, <strong>escalar a equipe</strong>,
-        <strong>reservar estúdio de ensaio</strong> e usar o <strong>Modo Tocar</strong> —
-        tudo o que músicos e bandas buscam: grade harmônica, instrumentos no perfil,
+        <strong>acompanhar cachês</strong>, <strong>reservar estúdio</strong> e usar o
+        <strong>Modo Tocar</strong> — grade harmônica, instrumentos no perfil,
         confirmação de escala por link e palco com Nashville.
     </p>
     <p class="text-muted small" style="max-width: 42rem;">
-        Para o passo a passo completo do app (grade harmônica, extrair da cifra, escalação, estúdios, perfil com instrumentos e planos),
+        Para o passo a passo completo do app (coleção, financeiro, grade harmônica, escalação, estúdios e planos),
         use a <a href="{{ url_for('ajuda.index') }}">central de ajuda</a>.
         Igrejas e ministérios de louvor: <a href="{{ url_for('assinatura_bp.igrejas') }}">Uníssono para Igrejas</a>.
         Donos de estúdio: <a href="{{ url_for('studios.landing') }}">Uníssono para Estúdios</a>.
@@ -68,13 +69,25 @@
 
 <h2 class="h5 mt-2 mb-2">Novidades no Uníssono</h2>
 <div class="guia-grid mb-4">
+    <a class="guia-link" href="{{ url_for('ajuda.index') }}#colecao">
+        <strong>Minha coleção</strong>
+        <span>Músicas pessoais grátis e ilimitadas · compartilhar com assinatura</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('ajuda.index') }}#financeiro-banda">
+        <strong>Meu financeiro e da banda</strong>
+        <span>Cachês pessoais, caixa da banda e PDF em A4 retrato</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('assinatura_bp.voucher_indicar') }}">
+        <strong>Indicar e ganhar 3 meses</strong>
+        <span>Convide uma banda ou o estúdio onde ensaia — você e o convidado ganham</span>
+    </a>
     <a class="guia-link" href="{{ url_for('ajuda.index') }}#modo-tocar">
         <strong>Modo Tocar no palco</strong>
         <span>Seções, sync da banda, offline auto, pedal, notas de palco e modo vocalista</span>
     </a>
     <a class="guia-link" href="{{ url_for('ajuda.index') }}#dashboard">
         <strong>Painel, checklist e indicação</strong>
-        <span>Upsell inteligente, trial, NPS, PWA e voucher de 15 dias Pro</span>
+        <span>Upsell inteligente, trial, NPS, PWA e indicação com 3 meses Pro</span>
     </a>
     <a class="guia-link" href="{{ url_for('roadmap.index') }}">
         <strong>Roadmap de produto</strong>
@@ -95,6 +108,10 @@
     <a class="guia-link" href="{{ url_for('guia.guia_page', slug='gerenciar-financeiro-do-estudio') }}">
         <strong>Financeiro do estúdio</strong>
         <span>Receita de reservas, pagamentos, despesas e líquido mensal</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('guia.guia_page', slug='compartilhar-cifras') }}">
+        <strong>Compartilhar cifras</strong>
+        <span>Coleção pessoal + enviar para a banda ou outro músico</span>
     </a>
     <a class="guia-link" href="{{ url_for('guia.guia_page', slug='resgatar-voucher-estudio-premium') }}">
         <strong>Voucher Estúdio Premium</strong>

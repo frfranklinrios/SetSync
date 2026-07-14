@@ -720,14 +720,10 @@ def _resolve_band_finance_user(band_id: str):
     return _require_band_finance_viewer(band_id)
 
 
-@bands_bp.route('/meus-caches')
-@login_required
-def my_fees():
-    """Cachês pessoais do músico em todas as bandas (com filtro)."""
+def _load_my_fees_context(user_id: str):
     from band_finance import build_member_fee_report, month_bounds
     from models_band_finance import list_member_fee_events
 
-    user_id = session['user_id']
     year, month = _parse_finance_period()
     from_date, to_date = month_bounds(year, month)
     band_filter = (request.args.get('banda_id') or '').strip() or None
@@ -755,13 +751,104 @@ def my_fees():
         month=month,
         name_for_user=user_display_name,
     )
+    return {
+        'report': report,
+        'bands': bands,
+        'band_filter': band_filter,
+        'from_date': from_date,
+        'to_date': to_date,
+        'year': year,
+        'month': month,
+        'band_name': (bands_map.get(band_filter) or {}).get('name') if band_filter else None,
+    }
+
+
+def _resolve_my_fees_user():
+    pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
+    if pdfgen:
+        from security import verify_my_fees_pdf_token
+
+        uid = verify_my_fees_pdf_token(request.args.get('pdf_token', ''))
+        return uid
+    return session.get('user_id')
+
+
+def _my_fees_query_args(year: int, month: int, band_filter: str | None = None) -> dict:
+    args = {'ano': year, 'mes': month}
+    if band_filter:
+        args['banda_id'] = band_filter
+    return args
+
+
+@bands_bp.route('/meus-caches')
+@login_required
+def my_fees():
+    """Cachês pessoais do músico em todas as bandas (com filtro)."""
+    ctx = _load_my_fees_context(session['user_id'])
     return render_template(
         'bands/my_fees.html',
-        report=report,
-        bands=bands,
-        band_filter=band_filter,
-        from_date=from_date,
-        to_date=to_date,
+        report=ctx['report'],
+        bands=ctx['bands'],
+        band_filter=ctx['band_filter'],
+        from_date=ctx['from_date'],
+        to_date=ctx['to_date'],
+        query_args=_my_fees_query_args(ctx['year'], ctx['month'], ctx['band_filter']),
+    )
+
+
+@bands_bp.route('/meus-caches/imprimir')
+def my_fees_print():
+    uid = _resolve_my_fees_user()
+    if not uid:
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login', next=request.path))
+        flash('Sem acesso.', 'danger')
+        return redirect(url_for('bands.my_fees'))
+
+    from config import app_now_str
+    from studio_finance_pdf import period_label
+
+    ctx = _load_my_fees_context(uid)
+    pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
+    return render_template(
+        'bands/my_fees_print.html',
+        report=ctx['report'],
+        band_filter=ctx['band_filter'],
+        band_name=ctx['band_name'],
+        from_date=ctx['from_date'],
+        to_date=ctx['to_date'],
+        period_label=period_label(ctx['year'], ctx['month']),
+        generated_at=app_now_str()[:16].replace('T', ' '),
+        pdfgen=pdfgen,
+        query_args=_my_fees_query_args(ctx['year'], ctx['month'], ctx['band_filter']),
+    )
+
+
+@bands_bp.route('/meus-caches/exportar-pdf')
+@login_required
+def my_fees_export_pdf():
+    from io import BytesIO
+
+    from my_fees_pdf import build_my_fees_pdf_download_name, generate_my_fees_pdf_bytes
+
+    uid = session['user_id']
+    ctx = _load_my_fees_context(uid)
+    year, month = ctx['year'], ctx['month']
+    band_filter = ctx['band_filter']
+    try:
+        pdf_bytes = generate_my_fees_pdf_bytes(
+            uid, year=year, month=month, band_id=band_filter,
+        )
+    except Exception as exc:
+        current_app.logger.exception('PDF meus cachês falhou: %s', exc)
+        flash('Não foi possível gerar o PDF agora. Tente imprimir pelo navegador.', 'danger')
+        return redirect(url_for('bands.my_fees_print', **_my_fees_query_args(year, month, band_filter)))
+    filename = build_my_fees_pdf_download_name(year, month, ctx['band_name'])
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename,
     )
 
 
@@ -776,13 +863,15 @@ def finance(band_id):
         if is_band_member(band_id, session.get('user_id')):
             flash(
                 'O financeiro completo da banda é só para administradores '
-                'ou quem eles liberarem. Veja seus cachês pessoais.',
+                'ou quem eles liberarem. Abra Meu financeiro para ver sua parte.',
                 'info',
             )
             return redirect(url_for('bands.my_fees', banda_id=band_id))
         flash('Você precisa ser integrante desta banda para ver o financeiro.', 'danger')
         return redirect(url_for('dashboard'))
-    is_admin = is_band_admin(band_id, uid)
+    # Admin real da banda (não superadmin global) — controla formulários de edição
+    role = get_band_member_role(band_id, uid)
+    is_admin = bool(band.get('owner_id') == uid or role in ('owner', 'admin'))
     year, month = _parse_finance_period()
     loaded = _load_band_finance_report(band_id, year, month)
     if not loaded:
@@ -821,7 +910,6 @@ def finance_print(band_id):
 
     pdfgen = request.args.get('pdfgen', '').lower() in ('1', 'true', 'yes')
     expense_labels = dict(BAND_EXPENSE_CATEGORIES)
-    is_admin = is_band_admin(band_id, uid)
     return render_template(
         'bands/finance_print.html',
         band=band,
@@ -833,7 +921,6 @@ def finance_print(band_id):
         expense_labels=expense_labels,
         event_type_label=event_type_label,
         pdfgen=pdfgen,
-        is_admin=is_admin,
     )
 
 

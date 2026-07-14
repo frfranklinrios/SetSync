@@ -1,6 +1,6 @@
 {% extends "index.html" %}
 
-{% block title %}Adicionar Cifra - {{ band.name }}{% endblock %}
+{% block title %}{% if personal %}Nova música — Minha coleção{% else %}Adicionar Cifra - {{ band.name }}{% endif %}{% endblock %}
 
 {% block content %}
 <style>
@@ -84,8 +84,11 @@
 }
 </style>
 
-<h2 class="mb-1">{% if welcome %}Adicione sua primeira música{% else %}Adicionar Nova Cifra{% endif %}</h2>
-<p class="text-muted mb-4" style="font-size:.875rem;">{{ band.name }}</p>
+<h2 class="mb-1">{% if personal %}{% if welcome %}Adicione sua primeira música{% else %}Nova música na coleção{% endif %}{% elif welcome %}Adicione sua primeira música{% else %}Adicionar Nova Cifra{% endif %}</h2>
+<p class="text-muted mb-4" style="font-size:.875rem;">
+    {% if personal %}Minha coleção · grátis e ilimitada
+    {% else %}{{ band.name }}{% endif %}
+</p>
 
 {% if welcome %}
 <div class="alert alert-success border-0 mb-3" role="status">
@@ -139,7 +142,7 @@
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div>
                 <strong class="d-block">Buscar na biblioteca de cifras</strong>
-                <span class="text-muted small">Preview no popup e importação com um clique para {{ band.name }}</span>
+                <span class="text-muted small">Preview no popup e importação com um clique{% if not personal %} para {{ band.name }}{% endif %}</span>
             </div>
             <button type="button" class="btn btn-primary" data-open-cifra-search>
                 <i class="fas fa-search me-1"></i> Buscar e importar

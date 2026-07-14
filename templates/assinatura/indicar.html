@@ -1,28 +1,71 @@
 {% extends "index.html" %}
-{% block title %}Indicar — Uníssono{% endblock %}
+{% block title %}Indicar e ganhar — Uníssono{% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-3">Indique uma banda</h1>
-<p class="text-muted">Gere um voucher de 15 dias Pro (uso único). Quando alguém usar, você ganha mais 15 dias.</p>
+<h1 class="h3 mb-2">Indique e ganhe {{ meses_indicacao }} meses Pro</h1>
+<p class="text-muted mb-4">
+    Você e quem você convidar ganham <strong>{{ meses_indicacao }} meses</strong>
+    ({{ dias_indicacao }} dias). Uso único por código.
+</p>
 
 {% if erro %}
 <div class="alert alert-warning">{{ erro }}</div>
 {% endif %}
 
 {% if codigo %}
-<div class="card mb-3">
+<div class="card mb-4 border-success">
     <div class="card-body">
-        <p class="mb-1">Seu código:</p>
-        <p class="fs-4 fw-bold font-monospace">{{ codigo }}</p>
-        <p class="small text-muted mb-0">Compartilhe com outra banda para ela se cadastrar e resgatar em Planos.</p>
+        <p class="mb-1 text-success fw-semibold">
+            {% if tipo == 'estudio' %}Código para o estúdio{% else %}Código para a banda{% endif %}
+        </p>
+        <p class="fs-4 fw-bold font-monospace mb-2">{{ codigo }}</p>
+        <p class="small text-muted mb-0">
+            {% if tipo == 'estudio' %}
+            Peça ao dono do estúdio para resgatar em <strong>Planos → Tem um voucher?</strong> (seção estúdio).
+            Quando ele usar, você ganha {{ meses_indicacao }} meses de <strong>Pro</strong> na sua banda
+            e o estúdio ganha {{ meses_indicacao }} meses de <strong>Premium</strong>.
+            {% else %}
+            Peça à outra banda para se cadastrar e resgatar em <strong>Planos</strong>.
+            Quando usarem, você e a banda ganham {{ meses_indicacao }} meses de <strong>Pro</strong>.
+            {% endif %}
+        </p>
     </div>
 </div>
 {% endif %}
 
-<form method="post" class="mb-3">
-    {% include 'partials/csrf_input.html' %}
-    <button type="submit" class="btn btn-primary">Gerar código de indicação</button>
-</form>
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+                <h2 class="h5"><i class="fas fa-users me-1 text-muted"></i> Convidar uma banda</h2>
+                <p class="small text-muted flex-grow-1">
+                    Você e a banda convidada ganham <strong>{{ meses_indicacao }} meses do plano Pro</strong>.
+                </p>
+                <form method="post">
+                    {% include 'partials/csrf_input.html' %}
+                    <input type="hidden" name="tipo" value="banda">
+                    <button type="submit" class="btn btn-primary w-100">Gerar código para banda</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+                <h2 class="h5"><i class="fas fa-building me-1 text-muted"></i> Convidar o estúdio</h2>
+                <p class="small text-muted flex-grow-1">
+                    Convide o estúdio onde você ensaia: <strong>você ganha {{ meses_indicacao }} meses Pro</strong>
+                    e o estúdio ganha <strong>{{ meses_indicacao }} meses Premium</strong>.
+                </p>
+                <form method="post">
+                    {% include 'partials/csrf_input.html' %}
+                    <input type="hidden" name="tipo" value="estudio">
+                    <button type="submit" class="btn btn-outline-primary w-100">Gerar código para estúdio</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-<a href="{{ url_for('assinatura_bp.planos') }}" class="btn btn-link">Voltar aos planos</a>
+<a href="{{ url_for('assinatura_bp.planos') }}" class="btn btn-link px-0">Voltar aos planos</a>
 {% endblock %}

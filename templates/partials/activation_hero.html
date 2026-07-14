@@ -1,24 +1,26 @@
-{# Estado vazio: usuário sem banda — CTA principal de ativação #}
-{% if needs_activation %}
+{# Recém-chegado (nada feito ainda): um único próximo passo — o caminho grátis até o palco. #}
+{% if onboarding and onboarding.done_count == 0 %}
 <div class="activation-hero mb-4">
     <div class="activation-hero-icon" aria-hidden="true">
         <i class="fas fa-guitar"></i>
     </div>
-    <h2 class="activation-hero-title">Crie a banda e liberamos 30 dias de Pro</h2>
+    <h2 class="activation-hero-title">Comece grátis: uma música e você já toca</h2>
     <p class="activation-hero-lead">
-        O Uníssono organiza cifras, setlists e ensaios <strong>por banda</strong>.
-        Em minutos você chega no <strong>Modo Tocar</strong> — o que importa no ensaio e no culto.
+        Guarde sua primeira cifra na <strong>coleção pessoal</strong> — grátis, ilimitada,
+        sem precisar montar banda. Em seguida abra o <strong>Modo Tocar</strong>: tela limpa
+        e transposição no tom certo para o palco.
     </p>
     <ol class="activation-hero-steps">
-        <li><strong>1.</strong> Nome da banda ou ministério</li>
-        <li><strong>2.</strong> Adicione a primeira música</li>
-        <li><strong>3.</strong> Monte o roteiro e abra o Modo Tocar</li>
+        <li><strong>1.</strong> Adicione uma música (cole a cifra ou importe)</li>
+        <li><strong>2.</strong> Abra o Modo Tocar e veja no tom certo</li>
+        <li><strong>3.</strong> Quando quiser tocar junto, crie a banda (30 dias Pro)</li>
     </ol>
-    <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary btn-lg activation-hero-cta">
-        <i class="fas fa-plus me-2"></i>Criar banda · liberar Pro
+    <a href="{{ url_for('cifras.add_personal') }}" class="btn btn-primary btn-lg activation-hero-cta">
+        <i class="fas fa-plus me-2"></i>Adicionar 1ª música · grátis
     </a>
     <p class="activation-hero-note text-muted small mb-0">
-        Pro grátis 30 dias nesta primeira banda — sem cartão. Cancele quando quiser.
+        Sem cartão. Ou <a href="{{ url_for('bands.create', bem_vindo=1) }}">crie sua banda direto</a>
+        e libere 30 dias de Pro.
     </p>
 </div>
 <style>

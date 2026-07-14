@@ -5,6 +5,7 @@ from __future__ import annotations
 from db import (
     count_band_cifras,
     count_band_setlists,
+    count_user_personal_cifras,
     get_owned_bands,
     get_user_bands,
     user_onboarding_checklist_dismissed,
@@ -48,26 +49,30 @@ def get_onboarding_progress(user_id: str) -> dict | None:
     bands = owned or member_bands
 
     has_band = bool(bands)
-    total_cifras = sum(count_band_cifras(b['id']) for b in bands) if bands else 0
+    total_band_cifras = sum(count_band_cifras(b['id']) for b in bands) if bands else 0
     total_setlists = sum(count_band_setlists(b['id']) for b in bands) if bands else 0
+    total_personal = count_user_personal_cifras(user_id)
+    any_cifra = total_band_cifras > 0 or total_personal > 0
+    played = user_play_mode_used(user_id)
 
     first_band_id = bands[0]['id'] if bands else None
-    first_cifra_id = None
-    if first_band_id and total_cifras:
-        from db import get_band_cifras
 
-        rows = get_band_cifras(first_band_id)
-        if rows:
-            first_cifra_id = rows[0]['id']
-
+    # 1ª música: coleção pessoal (grátis, sem banda) para quem ainda não tem banda.
+    add_url = (
+        url_for('cifras.add', band_id=first_band_id)
+        if first_band_id
+        else url_for('cifras.add_personal')
+    )
+    # Modo Tocar: banda com cifras; senão a coleção pessoal (mesmo 'aha', sem banda).
+    if first_band_id and total_band_cifras:
+        tocar_url = url_for('cifras.tocar_band', band_id=first_band_id)
+    elif total_personal:
+        tocar_url = url_for('cifras.tocar_colecao')
+    else:
+        tocar_url = add_url
     band_url = (
         url_for('bands.view', band_id=first_band_id)
         if has_band
-        else url_for('bands.create', bem_vindo=1)
-    )
-    cifra_url = (
-        url_for('cifras.add', band_id=first_band_id)
-        if first_band_id
         else url_for('bands.create', bem_vindo=1)
     )
     setlist_url = (
@@ -75,44 +80,36 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         if first_band_id
         else url_for('bands.create', bem_vindo=1)
     )
-    if first_band_id and first_cifra_id:
-        tocar_url = url_for('cifras.tocar_band', band_id=first_band_id, start=first_cifra_id)
-    elif first_band_id and total_cifras:
-        tocar_url = url_for('cifras.tocar_band', band_id=first_band_id)
-    elif first_band_id:
-        tocar_url = cifra_url
-    else:
-        tocar_url = url_for('bands.create', bem_vindo=1)
 
-    # Funil curto até o valor principal (tocar no ensaio/culto). Agenda fica opcional.
+    # Funil de valor primeiro: música + Modo Tocar (grátis, solo) antes de banda/setlist.
     steps = [
         {
+            'id': 'cifra',
+            'label': '1. Adicionar sua primeira música',
+            'hint': 'Guarde na sua coleção — grátis e ilimitado, sem precisar de banda.',
+            'done': any_cifra,
+            'url': add_url,
+        },
+        {
+            'id': 'tocar',
+            'label': '2. Abrir o Modo Tocar',
+            'hint': 'Tela limpa para o palco, com transposição — o coração do app.',
+            'done': played,
+            'url': tocar_url,
+        },
+        {
             'id': 'band',
-            'label': '1. Criar sua banda',
-            'hint': 'É o espaço da sua equipe — cifras e setlists ficam juntos.',
+            'label': '3. Criar ou entrar numa banda',
+            'hint': 'Toque junto: repertório compartilhado, escalas e 30 dias de Pro.',
             'done': has_band,
             'url': band_url,
         },
         {
-            'id': 'cifra',
-            'label': '2. Adicionar a primeira música',
-            'hint': 'Cole uma cifra ou importe — leva menos de um minuto.',
-            'done': total_cifras > 0,
-            'url': cifra_url,
-        },
-        {
             'id': 'setlist',
-            'label': '3. Montar um setlist',
+            'label': '4. Montar um setlist',
             'hint': 'A ordem das músicas do ensaio ou do culto.',
             'done': total_setlists > 0,
             'url': setlist_url,
-        },
-        {
-            'id': 'tocar',
-            'label': '4. Abrir o Modo Tocar',
-            'hint': 'Tela limpa para o palco — sem distrações.',
-            'done': user_play_mode_used(user_id),
-            'url': tocar_url,
         },
     ]
 
@@ -128,7 +125,7 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         'total': len(steps),
         'percent': round(100 * done_count / len(steps)) if steps else 0,
         'complete': False,
-        'activated': has_band and total_cifras > 0,
+        'activated': played,
         'next_step': next_step,
-        'can_dismiss': has_band,
+        'can_dismiss': has_band or played,
     }

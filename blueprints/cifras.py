@@ -25,7 +25,12 @@ from db import (get_band, get_cifra, get_band_cifras, count_band_cifras, create_
                 vocalist_entry_display_name, update_cifra_referencia,
                 restore_cifra_from_referencia,
                 get_cifra_user_draft, upsert_cifra_user_draft, delete_cifra_user_draft,
-                publish_cifra_user_draft)
+                publish_cifra_user_draft,
+                create_personal_cifra, get_user_personal_cifras, count_user_personal_cifras,
+                cifra_is_personal, user_owns_personal_cifra, user_can_access_cifra,
+                user_can_edit_cifra, list_cifra_shares, list_cifras_shared_with_user,
+                share_cifra_with_user, unshare_cifra_with_user, copy_cifra_to_band,
+                get_user_bands, get_owned_bands, get_user_by_login, user_display_name)
 import band_notifications as bn
 
 def _notify_band_realtime(band_id, event: str, **data) -> None:
@@ -833,12 +838,158 @@ def save_cifra_play_notes(cifra_id):
     cifra = get_cifra(cifra_id)
     if not cifra:
         return jsonify({'ok': False, 'error': 'Cifra não encontrada'}), 404
-    if not is_band_editor(cifra['band_id'], user_id):
+    if not user_can_edit_cifra(cifra, user_id):
         return jsonify({'ok': False, 'error': 'Sem permissão'}), 403
     data = request.get_json(silent=True) or {}
     notes = (data.get('play_notes') or '').strip()
     set_cifra_play_notes(cifra_id, notes or None)
     return jsonify({'ok': True, 'play_notes': notes})
+
+
+@cifras_bp.route('/minha-colecao')
+@login_required
+def my_library():
+    user_id = session['user_id']
+    from monetizacao import user_pode_compartilhar_cifras
+
+    own = get_user_personal_cifras(user_id)
+    shared = list_cifras_shared_with_user(user_id)
+    return render_template(
+        'cifras/library.html',
+        cifras=own,
+        shared_cifras=shared,
+        can_share=user_pode_compartilhar_cifras(user_id),
+        total=len(own),
+    )
+
+
+@cifras_bp.route('/minha-colecao/add', methods=['GET', 'POST'])
+@login_required
+def add_personal():
+    """Adicionar música à coleção pessoal — sempre gratuito."""
+    user_id = session['user_id']
+    if request.method == 'POST':
+        titulo = request.form.get('titulo', '').strip()
+        artista = request.form.get('artista', '').strip()
+        tom_original = request.form.get('tom_original', 'C').strip()
+        conteudo = request.form.get('conteudo', '').strip()
+        if not titulo or not artista:
+            flash('Preencha título e artista', 'danger')
+            return render_template('cifras/add.html', band=None, personal=True)
+
+        cifra_json, grade_json, bpm, duracao_seg = _parse_extra_fields(request.form)
+        if cifra_json is False or grade_json is False:
+            return render_template('cifras/add.html', band=None, personal=True)
+
+        conteudo, cifra_json = _prepare_conteudo_for_save(
+            conteudo,
+            titulo=titulo,
+            artista=artista,
+            tom_original=tom_original,
+            cifra_json_raw=cifra_json,
+        )
+        referencia_json = _finalize_referencia_json(
+            request.form,
+            titulo=titulo,
+            artista=artista,
+            tom_original=tom_original,
+        )
+        streaming = _parse_streaming_urls(request.form)
+        if streaming is False:
+            return render_template('cifras/add.html', band=None, personal=True)
+        cifra_id = create_personal_cifra(
+            user_id, titulo, artista, tom_original, conteudo or '',
+            cifra_json, grade_json, None, bpm, duracao_seg,
+            referencia_json=referencia_json,
+        )
+        if streaming:
+            from db import update_cifra_streaming
+            update_cifra_streaming(cifra_id, streaming)
+        if count_user_personal_cifras(user_id) == 1:
+            from google_ads import mark_funnel_event
+            from product_funnel import log_funnel_step
+            mark_funnel_event('primeira_cifra')
+            log_funnel_step(user_id, 'primeira_cifra')
+        flash(f'“{titulo}” salva na sua coleção.', 'success')
+        return redirect(url_for('cifras.view', cifra_id=cifra_id))
+
+    return render_template('cifras/add.html', band=None, personal=True)
+
+
+@cifras_bp.route('/<cifra_id>/compartilhar', methods=['GET', 'POST'])
+@login_required
+def share_cifra(cifra_id):
+    user_id = session['user_id']
+    cifra = get_cifra(cifra_id)
+    if not cifra or not user_owns_personal_cifra(cifra, user_id):
+        flash('Só o dono da coleção pode compartilhar esta música.', 'danger')
+        return redirect(url_for('cifras.my_library'))
+
+    from monetizacao import user_pode_compartilhar_cifras, resposta_compartilhar_cifra_paywall
+
+    if not user_pode_compartilhar_cifras(user_id):
+        return resposta_compartilhar_cifra_paywall()
+
+    editable_bands = []
+    seen = set()
+    for b in list(get_owned_bands(user_id)) + list(get_user_bands(user_id)):
+        if b['id'] in seen:
+            continue
+        seen.add(b['id'])
+        if is_band_editor(b['id'], user_id):
+            editable_bands.append(b)
+
+    shares = list_cifra_shares(cifra_id)
+
+    if request.method == 'POST':
+        action = (request.form.get('action') or '').strip()
+        if action == 'band':
+            band_id = (request.form.get('band_id') or '').strip()
+            band = get_band(band_id) if band_id else None
+            if not band or not is_band_editor(band_id, user_id):
+                flash('Escolha uma banda em que você pode editar o repertório.', 'warning')
+                return redirect(url_for('cifras.share_cifra', cifra_id=cifra_id))
+            from monetizacao import check_limite, resposta_limite_plano, LIMITES_GRATIS
+            if not check_limite(band, 'musica'):
+                resp = resposta_limite_plano('músicas', LIMITES_GRATIS['musica'])
+                if resp:
+                    return resp
+            new_id = copy_cifra_to_band(cifra, band_id, owner_user_id=user_id)
+            if cifra.get('apple_music_url'):
+                from db import update_cifra_streaming
+                update_cifra_streaming(new_id, cifra.get('apple_music_url'))
+            bn.cifra_created(band_id, user_id, new_id, cifra['titulo'])
+            flash(f'“{cifra["titulo"]}” copiada para {band["name"]}.', 'success')
+            return redirect(url_for('cifras.view', cifra_id=new_id))
+
+        if action == 'user':
+            ident = (request.form.get('user_login') or '').strip()
+            target = get_user_by_login(ident) if ident else None
+            if not target:
+                flash('Usuário não encontrado (use e-mail ou username cadastrado).', 'warning')
+                return redirect(url_for('cifras.share_cifra', cifra_id=cifra_id))
+            if str(target['id']) == str(user_id):
+                flash('Não dá para compartilhar consigo mesmo.', 'warning')
+                return redirect(url_for('cifras.share_cifra', cifra_id=cifra_id))
+            if share_cifra_with_user(cifra_id, target['id'], user_id):
+                flash(f'Compartilhada com {user_display_name(target)}.', 'success')
+            else:
+                flash('Já estava compartilhada com essa pessoa.', 'info')
+            return redirect(url_for('cifras.share_cifra', cifra_id=cifra_id))
+
+        if action == 'unshare':
+            other_id = (request.form.get('user_id') or '').strip()
+            if other_id and unshare_cifra_with_user(cifra_id, other_id):
+                flash('Acesso removido.', 'success')
+            return redirect(url_for('cifras.share_cifra', cifra_id=cifra_id))
+
+    return render_template(
+        'cifras/share.html',
+        cifra=cifra,
+        bands=editable_bands,
+        shares=shares,
+        user_display_name=user_display_name,
+    )
 
 
 @cifras_bp.route('/band/<band_id>')
@@ -871,15 +1022,16 @@ def view(cifra_id):
         flash('Cifra não encontrada', 'danger')
         return redirect(url_for('dashboard'))
 
-    band = get_band(cifra['band_id'])
-
-    if not is_band_member(cifra['band_id'], user_id):
+    if not user_can_access_cifra(cifra, user_id):
         flash('Sem acesso', 'danger')
         return redirect(url_for('dashboard'))
 
+    personal = cifra_is_personal(cifra)
+    band = get_band(cifra['band_id']) if cifra.get('band_id') else None
+
     from cifra_user_draft import draft_differs_from_band, merge_cifra_with_draft
 
-    draft = get_cifra_user_draft(cifra_id, user_id)
+    draft = get_cifra_user_draft(cifra_id, user_id) if band else None
     viewing_personal = request.args.get('versao') == 'minha' and draft
     display_source = merge_cifra_with_draft(cifra, draft) if viewing_personal else cifra
     has_personal_draft = bool(draft and draft_differs_from_band(draft, cifra))
@@ -905,27 +1057,38 @@ def view(cifra_id):
         conteudo_html = render_grouped_cifra_html(grouped_cifra)
     elif (conteudo or '').strip():
         conteudo_html = highlight_chords_play_html(conteudo)
-    setlist = get_band_cifras(cifra['band_id'])
+    if band:
+        setlist = get_band_cifras(cifra['band_id'])
+    elif user_owns_personal_cifra(cifra, user_id):
+        setlist = get_user_personal_cifras(user_id)
+    else:
+        setlist = [cifra]
     cifra_index = next((i for i, c in enumerate(setlist) if c['id'] == cifra_id), 0)
     prev_cifra = setlist[cifra_index - 1] if cifra_index > 0 else None
     next_cifra = setlist[cifra_index + 1] if cifra_index < len(setlist) - 1 else None
 
-    vocalists = get_band_vocalists(band['id'])
-    active_vocalist_id = get_active_vocalist_id(band['id'])
+    vocalists = get_band_vocalists(band['id']) if band else []
+    active_vocalist_id = get_active_vocalist_id(band['id']) if band else None
     active_vocalist = get_band_vocalist(active_vocalist_id) if active_vocalist_id else None
     vocalist_name = vocalist_entry_display_name(active_vocalist) if active_vocalist else None
     vocalist_linked = bool(active_vocalist and active_vocalist.get('user_id'))
 
     from chordsheet_bridge import cifra_has_chordsheet
     from setlist_public import lyrics_from_cifra
+    from monetizacao import user_pode_compartilhar_cifras
 
     active_tab = (request.args.get('tab') or 'cifra').strip().lower()
     if active_tab not in ('cifra', 'chordsheet', 'letra'):
         active_tab = 'cifra'
 
+    can_edit = user_can_edit_cifra(cifra, user_id)
     return render_template('cifras/view.html',
                            cifra=display_source,
                            band=band,
+                           personal=personal,
+                           is_owner=user_owns_personal_cifra(cifra, user_id),
+                           can_share=user_owns_personal_cifra(cifra, user_id),
+                           share_unlocked=user_pode_compartilhar_cifras(user_id),
                            conteudo=conteudo,
                            conteudo_html=conteudo_html,
                            cifra_data=cifra_data,
@@ -946,12 +1109,12 @@ def view(cifra_id):
                            active_vocalist_id=active_vocalist_id,
                            vocalist_name=vocalist_name,
                            vocalist_linked=vocalist_linked,
-                           is_admin=is_band_admin(cifra['band_id'], user_id),
-                           is_member=is_band_member(cifra['band_id'], user_id),
-                           can_edit=is_band_editor(cifra['band_id'], user_id),
+                           is_admin=bool(band and is_band_admin(band['id'], user_id)),
+                           is_member=bool(band and is_band_member(band['id'], user_id)),
+                           can_edit=can_edit,
                            viewing_personal=viewing_personal,
                            has_personal_draft=has_personal_draft,
-                           can_publish_draft=is_band_editor(cifra['band_id'], user_id),
+                           can_publish_draft=bool(band and is_band_editor(band['id'], user_id)),
                            **_referencia_context(cifra))
 
 def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, exit_url=None, event_context=None):
@@ -1054,6 +1217,40 @@ def tocar_band(band_id):
     )
 
 
+@cifras_bp.route('/minha-colecao/tocar')
+@login_required
+def tocar_colecao():
+    """Modo Tocar da coleção pessoal — o 'aha' do usuário solo, sem precisar de banda."""
+    user_id = session['user_id']
+
+    all_cifras = [
+        enrich_cifra_for_tocar(c, user_id=user_id)
+        for c in get_user_personal_cifras(user_id)
+    ]
+    if not all_cifras:
+        flash('Adicione uma música à sua coleção para abrir o Modo Tocar.', 'warning')
+        return redirect(url_for('cifras.add_personal'))
+
+    from db import mark_user_play_mode_used
+    from product_funnel import log_funnel_step
+    mark_user_play_mode_used(user_id)
+    log_funnel_step(user_id, 'play_mode')
+
+    start_id = request.args.get('start')
+    start_idx = 0
+    if start_id:
+        for i, c in enumerate(all_cifras):
+            if str(c['id']) == str(start_id):
+                start_idx = i
+                break
+
+    virtual_setlist = {'id': None, 'band_id': None, 'name': 'Minha coleção'}
+    return render_play_mode(
+        virtual_setlist, None, all_cifras, start_idx=start_idx,
+        is_virtual=True, exit_url=url_for('cifras.my_library'),
+    )
+
+
 @cifras_bp.route('/band/<band_id>/add', methods=['GET', 'POST'])
 @login_required
 def add(band_id):
@@ -1128,7 +1325,7 @@ def _edit_page_context(cifra, band, active_tab=None, user_id=None):
     tab = (active_tab or request.args.get('tab') or 'cifra').strip().lower()
     if tab not in ('cifra', 'chordsheet', 'letra'):
         tab = 'cifra'
-    draft = get_cifra_user_draft(cifra['id'], user_id) if user_id else None
+    draft = get_cifra_user_draft(cifra['id'], user_id) if (user_id and band) else None
     display_cifra = merge_cifra_with_draft(cifra, draft) if draft else cifra
     initial = load_editor_initial(display_cifra, user_id=user_id)
     examples_public = {
@@ -1146,8 +1343,9 @@ def _edit_page_context(cifra, band, active_tab=None, user_id=None):
         'lyrics_plain': lyrics_from_cifra(display_cifra),
         'chordsheet_initial': initial,
         'chordsheet_examples': examples_public,
-        'has_personal_draft': bool(draft and draft_differs_from_band(draft, cifra)),
-        'can_publish_draft': is_band_editor(band['id'], user_id) if user_id else False,
+        'has_personal_draft': bool(draft and band and draft_differs_from_band(draft, cifra)),
+        'can_publish_draft': bool(band and user_id and is_band_editor(band['id'], user_id)),
+        'personal': bool(band is None),
         **_referencia_context(cifra),
     }
 
@@ -1162,9 +1360,9 @@ def edit(cifra_id):
         flash('Cifra não encontrada', 'danger')
         return redirect(url_for('dashboard'))
     
-    band = get_band(cifra['band_id'])
+    band = get_band(cifra['band_id']) if cifra.get('band_id') else None
     
-    if not is_band_editor(cifra['band_id'], user_id):
+    if not user_can_edit_cifra(cifra, user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
     
@@ -1236,8 +1434,9 @@ def edit(cifra_id):
         if referencia_json:
             update_cifra_referencia(cifra_id, referencia_json)
 
-        bn.cifra_updated(cifra['band_id'], user_id, cifra_id, titulo)
-        _notify_band_realtime(cifra['band_id'], 'cifra_updated', cifra_id=cifra_id, titulo=titulo)
+        if cifra.get('band_id'):
+            bn.cifra_updated(cifra['band_id'], user_id, cifra_id, titulo)
+            _notify_band_realtime(cifra['band_id'], 'cifra_updated', cifra_id=cifra_id, titulo=titulo)
         flash('Cifra atualizada!', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
@@ -1281,19 +1480,21 @@ def delete(cifra_id):
         flash('Cifra não encontrada', 'danger')
         return redirect(url_for('dashboard'))
     
-    band = get_band(cifra['band_id'])
-    
-    if not is_band_editor(cifra['band_id'], user_id):
+    if not user_can_edit_cifra(cifra, user_id):
         flash('Sem permissão', 'danger')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
     
     titulo = cifra['titulo']
-    band_id = cifra['band_id']
+    band_id = cifra.get('band_id')
+    personal = cifra_is_personal(cifra)
     delete_cifra(cifra_id)
-    bn.cifra_deleted(band_id, user_id, titulo)
-    _notify_band_realtime(band_id, 'cifra_deleted', cifra_id=cifra_id, titulo=titulo)
-    flash('Cifra deletada', 'success')
-    return redirect(url_for('cifras.list_by_band', band_id=band_id))
+    if band_id:
+        bn.cifra_deleted(band_id, user_id, titulo)
+        _notify_band_realtime(band_id, 'cifra_deleted', cifra_id=cifra_id, titulo=titulo)
+        flash('Cifra deletada', 'success')
+        return redirect(url_for('cifras.list_by_band', band_id=band_id))
+    flash('Música removida da coleção.', 'success')
+    return redirect(url_for('cifras.my_library'))
 
 @cifras_bp.route('/<cifra_id>/transpose', methods=['POST'])
 @login_required

@@ -59,7 +59,12 @@ def render_url_to_pdf(
             )
         page.wait_for_timeout(250)
 
-        host = parsed.netloc.split(':')[0] or 'Uníssono'
+        host = parsed.netloc.split(':')[0] or ''
+        # URL interna (ex.: 127.0.0.1) não deve aparecer no PDF do usuário
+        if not host or host in ('127.0.0.1', 'localhost', '0.0.0.0') or host.startswith('172.') or host.startswith('10.'):
+            brand_host = 'unissono.app'
+        else:
+            brand_host = host
         pdf = page.pdf(
             format='A4',
             landscape=landscape,
@@ -69,7 +74,7 @@ def render_url_to_pdf(
             header_template=(
                 '<div style="width:100%;font-size:8px;color:#64748b;padding:0 12mm;'
                 'font-family:Inter,Helvetica,Arial,sans-serif;text-align:center;">'
-                f'Uníssono · {host}</div>'
+                f'Uníssono · {brand_host}</div>'
             ),
             footer_template=(
                 '<div style="width:100%;font-size:8px;color:#94a3b8;padding:0 12mm;'

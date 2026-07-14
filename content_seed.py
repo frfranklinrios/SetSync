@@ -109,11 +109,11 @@ def _blog_posts_data() -> list[dict]:
         {
             'slug': 'compartilhar-cifras-com-a-banda',
             'titulo': 'Como compartilhar cifras com a banda sem perder a versão certa',
-            'resumo': 'Pare de mandar print no WhatsApp: repertório único, convites por link, setlist sincronizada e letras públicas para a equipe.',
+            'resumo': 'Coleção pessoal grátis, compartilhar com assinatura, repertório da banda, convites, setlist e link público de letras.',
             'autor': 'Equipe Uníssono',
-            'tags': 'compartilhar cifras, banda, repertório, setlist',
+            'tags': 'compartilhar cifras, coleção, banda, repertório, setlist',
             'meta_title': 'Compartilhar cifras com a banda — guia Uníssono',
-            'meta_description': 'Aprenda a compartilhar cifras com sua banda: repertório centralizado, convites, setlists e link público de letras.',
+            'meta_description': 'Guarde cifras na coleção pessoal grátis e compartilhe com a banda ou outros músicos no Uníssono. Repertório, convites e setlists.',
             'conteudo': _POST_COMPARTILHAR_CIFRAS,
         },
         {
@@ -214,7 +214,10 @@ def _blog_posts_data() -> list[dict]:
 
 
 # Posts cujo conteúdo no seed deve sobrescrever o banco (tutoriais atualizados)
-_REFRESH_CONTENT_SLUGS = frozenset({'como-usar-modo-tocar-setsync'})
+_REFRESH_CONTENT_SLUGS = frozenset({
+    'como-usar-modo-tocar-setsync',
+    'compartilhar-cifras-com-a-banda',
+})
 
 
 def seed_blog_posts(c) -> None:
@@ -336,16 +339,31 @@ _POST_TOM_ESCALA = """
 
 _POST_COMPARTILHAR_CIFRAS = """
 <h2>O problema do print no WhatsApp</h2>
-<p>Toda banda já viveu isso: alguém manda a cifra errada, uma versão antiga ou um tom que não combina com o cantor do culto. Compartilhar cifras de verdade exige <strong>uma fonte única</strong> que todos confiem.</p>
-<h2>Repertório centralizado no Uníssono</h2>
-<p>Cadastre cada música uma vez. Admins editam; membros da banda só tocam a versão aprovada. Cifra, letra e chord sheet ficam na mesma ficha — sem pastas "final_v3".</p>
+<p>Toda banda já viveu isso: alguém manda a cifra errada, uma versão antiga ou um tom que não combina com o cantor do culto. Compartilhar cifras de verdade exige <strong>uma fonte única</strong> que todos confiem — e um lugar pessoal para guardar o que ainda não vai para a equipe.</p>
+
+<h2>Coleção pessoal (grátis)</h2>
+<p>No menu <strong>Coleção</strong> você guarda músicas só suas: <strong>ilimitadas e gratuitas</strong>. Cadastre, cole de sites ou importe da biblioteca sem gastar o limite do repertório da banda.</p>
+
+<h2>Compartilhar com assinatura</h2>
+<p>Quando estiver pronto, abra a música → <strong>Compartilhar</strong>:</p>
+<ul>
+<li><strong>Cópia para a banda</strong> — a equipe passa a ter a própria versão no repertório.</li>
+<li><strong>Outro usuário</strong> — libere por e-mail ou username; a pessoa vê em «Compartilhadas comigo».</li>
+</ul>
+<p>Esse passo precisa de plano Individual, Pro ou Worship (ou trial/voucher). Guardar na coleção continua grátis.</p>
+
+<h2>Repertório centralizado na banda</h2>
+<p>Admins também cadastram cifras direto na banda. Membros tocam a versão aprovada. Cifra, letra e chord sheet ficam na mesma ficha — sem pastas «final_v3».</p>
+
 <h2>Convite por link</h2>
 <p>Crie a banda e envie o link de convite por WhatsApp ou e-mail. Guitarristas, tecladistas, bateristas e vocalistas entram na mesma equipe com permissões claras.</p>
+
 <h2>Setlist + tom por cantor</h2>
 <p>Ao montar o culto, escolha quem canta cada música. A transposição abre automaticamente no tom certo — inclusive no Modo Tocar, tela cheia no palco.</p>
+
 <h2>Link público de letras</h2>
 <p>Para quem não precisa ver acordes (projeção ou equipe de apoio), use o link público de letras da setlist sem expor o repertório inteiro da banda.</p>
-<p>Compartilhar cifras bem é menos sobre tecnologia e mais sobre processo. O Uníssono elimina o retrabalho para você focar no ensaio.</p>
+<p>Compartilhar cifras bem é menos sobre tecnologia e mais sobre processo. O Uníssono elimina o retrabalho para você focar no ensaio. Veja também a <a href="/ajuda#colecao">Ajuda → Minha coleção</a>.</p>
 """
 
 _POST_GERENCIAR_BANDAS = """

@@ -187,8 +187,8 @@
   <div>
     <h2>Ajuda — em 4 passos até o Modo Tocar</h2>
     <p class="help-muted mb-2">
-      Conta → banda → música/setlist → <strong>Modo Tocar</strong>.
-      Bandas, igrejas, estúdios e agenda estão documentados abaixo.
+      Conta → <strong>coleção</strong> ou banda → música/setlist → <strong>Modo Tocar</strong>.
+      Coleção pessoal, financeiro, indicação, estúdios e agenda estão documentados abaixo.
     </p>
     <div class="d-flex flex-wrap gap-2 mb-0">
       {% if current_user.is_authenticated %}
@@ -228,7 +228,7 @@
       </a>
       <a class="list-group-item" href="#planos">
         <strong>Planos</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Grátis, Pro, Worship, cobrança MP</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Coleção grátis, Pro, indicação 3 meses</div>
       </a>
       <a class="list-group-item" href="#bandas">
         <strong>Bandas e membros</strong>
@@ -236,7 +236,11 @@
       </a>
       <a class="list-group-item" href="#cifras">
         <strong>Cifras</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Buscar, colar, versão pessoal, grade</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Coleção, buscar, colar, grade</div>
+      </a>
+      <a class="list-group-item" href="#colecao">
+        <strong>Minha coleção</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Grátis e ilimitada · share com assinatura</div>
       </a>
       <a class="list-group-item" href="#versao-pessoal">
         <strong>Versão pessoal</strong>
@@ -255,8 +259,8 @@
         <div class="text-muted" style="font-size: var(--text-sm);">Ensaios, calendário, equipe por evento</div>
       </a>
       <a class="list-group-item" href="#financeiro-banda">
-        <strong>Financeiro da banda</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Cachês, ensaios em estúdio e despesas</div>
+        <strong>Financeiro</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">Meu financeiro + caixa da banda + PDF</div>
       </a>
       <a class="list-group-item" href="#estudios">
         <strong>Estúdios de ensaio</strong>
@@ -340,9 +344,10 @@
       <div class="card-body">
         <ol>
           <li>Acesse o Uníssono e <strong>entre</strong> ou <strong>crie sua conta</strong>.</li>
+          <li>Opcional: em <span class="code">Coleção</span>, guarde cifras pessoais (grátis e ilimitado) — veja <a href="#colecao">Minha coleção</a>.</li>
           <li>Em <span class="code">Bandas</span>, crie uma banda (ex.: nome do grupo ou projeto).</li>
           <li>Em <strong>Configurações da banda</strong>, cadastre <strong>cantoras/cantores</strong> se mais de uma pessoa canta em tons diferentes.</li>
-          <li>Adicione <strong>cifras</strong> com <strong>Buscar cifra</strong> (preview antes de importar), colando texto no formulário ou pelo importador <span class="code">Cifra → Uníssono</span>.</li>
+          <li>Adicione <strong>cifras</strong> com <strong>Buscar cifra</strong> (preview antes de importar), colando texto no formulário ou pelo importador <span class="code">Cifra → Uníssono</span>. Também dá para trazer da <a href="#colecao">coleção</a> com assinatura.</li>
           <li>Na aba <strong>Grade harmônica</strong>, use <strong>Extrair da cifra</strong> para montar a progressão a partir dos acordes — ou edite à mão.</li>
           <li>Monte um <strong>setlist</strong> com a ordem do show ou ensaio.</li>
           <li>Em <a href="{{ url_for('auth.perfil') }}">Meu perfil</a>, cadastre seus <strong>instrumentos</strong> e o <strong>WhatsApp</strong> para alertas.</li>
@@ -377,8 +382,8 @@
         </ul>
         <h3>Indique uma banda</h3>
         <ul>
-          <li>Depois de montar a <strong>primeira setlist</strong>, o painel pode mostrar um card para <strong>indicar outra banda</strong>.</li>
-          <li>Gere um voucher de <strong>15 dias Pro</strong> em <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">Indicar banda</a>. Quando alguém usar, você ganha mais 15 dias na sua banda principal.</li>
+          <li>Depois de montar a <strong>primeira setlist</strong>, o painel pode mostrar um card para <strong>indicar</strong>.</li>
+          <li>Em <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">Indicar e ganhar</a>: convide uma <strong>banda</strong> (você e ela ganham <strong>3 meses Pro</strong>) ou o <strong>estúdio onde ensaia</strong> (você ganha 3 meses Pro; o estúdio, 3 meses Premium).</li>
         </ul>
         <h3>Pesquisa rápida (NPS)</h3>
         <ul>
@@ -393,7 +398,7 @@
         <h3>Assistente de ajuda</h3>
         <p class="mb-0">
           O ícone <i class="fas fa-comment-dots"></i> no canto da tela abre o chatbot com respostas da Ajuda, Guia e FAQ.
-          Logado, as respostas podem incluir botões como <em>Adicionar cifra</em>, <em>Cadastrar estúdio</em> ou <em>Ver planos</em>.
+          Logado, as respostas podem incluir botões como <em>Minha coleção</em>, <em>Meu financeiro</em>, <em>Indicar e ganhar</em> ou <em>Ver planos</em>.
         </p>
       </div>
     </section>
@@ -407,9 +412,9 @@
           {% if current_user.is_authenticated %} (menu superior){% endif %}.
         </p>
         <table class="help-table">
-          <tr><th>Grátis</th><td>Até 30 músicas, 5 integrantes, 10 setlists e 1 banda por conta. Trial Pro de 30 dias na primeira banda.</td></tr>
-          <tr><th>Individual</th><td>Para quem toca sozinho: 1 banda, só você no elenco, repertório ilimitado e PDF.</td></tr>
-          <tr><th>Pro</th><td>Músicas, integrantes e setlists ilimitados <em>na banda</em>; exportação em PDF.</td></tr>
+          <tr><th>Grátis</th><td><strong>Coleção pessoal ilimitada</strong>. Na banda: até 30 músicas, 5 integrantes, 10 setlists e 1 banda. Compartilhar cifras (com outros ou com a banda) exige assinatura. Trial Pro de 30 dias na primeira banda.</td></tr>
+          <tr><th>Individual</th><td>Para quem toca sozinho: coleção + compartilhar, 1 banda, só você no elenco, repertório ilimitado e PDF.</td></tr>
+          <tr><th>Pro</th><td>Músicas, integrantes e setlists ilimitados <em>na banda</em>; compartilhar da coleção; exportação em PDF.</td></tr>
           <tr><th>Worship</th><td>Tudo do Pro em <strong>várias bandas</strong> da mesma conta — para quem administra mais de um grupo.</td></tr>
           <tr><th>Estúdio básico</th><td>Para donos de estúdio: cadastro, fotos, salas e agendamentos — <strong>grátis</strong> com até <strong>2 salas</strong>.</td></tr>
           <tr><th>Estúdio Premium</th><td><strong>R$ 49/mês</strong> ou <strong>R$ 490/ano</strong> (equivalente a 10 meses). Salas ilimitadas e trial Premium de 30 dias no primeiro cadastro.</td></tr>
@@ -493,7 +498,17 @@
     <section class="card help-section" id="cifras">
       <div class="card-header">Cifras</div>
       <div class="card-body">
-        <h3>Cadastro</h3>
+        <h3 id="colecao">Minha coleção (grátis)</h3>
+        <ul>
+          <li>No menu <strong>Coleção</strong> você guarda músicas pessoais — <strong>ilimitadas e gratuitas</strong>, sem contar no limite da banda.</li>
+          <li>Use <strong>Nova música</strong> para cadastrar, colar de sites ou importar da biblioteca.</li>
+          <li><strong>Compartilhar</strong> com outro usuário (e-mail/username) ou enviar <strong>cópia para uma banda</strong> exige assinatura (Individual, Pro, Worship, trial ou voucher).</li>
+          <li>Quem recebe o compartilhamento vê a música em <strong>Compartilhadas comigo</strong> na mesma tela da Coleção.</li>
+          <li>O repertório da banda continua separado: no plano grátis a banda tem limite de músicas no acervo compartilhado.</li>
+          <li>Não confundir com <a href="#versao-pessoal">versão pessoal</a>: a versão pessoal é um rascunho em cima de uma cifra <em>já da banda</em>; a coleção é a sua biblioteca própria.</li>
+        </ul>
+
+        <h3>Cadastro na banda</h3>
         <ul>
           <li><strong>Título</strong> e <strong>artista</strong> aparecem nas listas e no Modo Tocar.</li>
           <li><strong>Tom</strong> é a referência original (ex.: <span class="code">G</span>, <span class="code">Bm</span>, <span class="code">C#m</span>).</li>
@@ -683,21 +698,24 @@
     </section>
 
     <section class="card help-section" id="financeiro-banda">
-      <div class="card-header">Financeiro da banda e meus cachês</div>
+      <div class="card-header">Financeiro da banda e meu financeiro</div>
       <div class="card-body">
         <p>
-          Há dois modos: o <strong>financeiro completo da banda</strong> (admin ou quem ele liberar)
-          e <strong>Meus cachês</strong> (todo músico — a própria fatia nos shows).
+          Há dois modos: o <strong>financeiro completo da banda</strong> (dono/admin ou quem ele liberar)
+          e <strong>Meu financeiro</strong> (todo músico — a própria fatia nos shows).
         </p>
         <h3 class="h6">Financeiro da banda</h3>
         <ul>
-          <li>Só <strong>administradores</strong> (e membros com <strong>Liberar financeiro</strong> em Integrantes) veem totais, despesas e PDF.</li>
-          <li>Admins cadastram cachês e despesas; filtre por mês/ano e exporte PDF.</li>
+          <li>Só <strong>dono/administradores</strong> (e membros com <strong>Liberar financeiro</strong> em Integrantes) veem totais, despesas e PDF.</li>
+          <li>Superadmin do app <strong>não</strong> vê o caixa só por ser suporte — precisa ser dono/admin daquela banda.</li>
+          <li>Admins cadastram cachês e despesas; filtre por mês/ano.</li>
+          <li>Relatório em <strong>PDF A4 retrato</strong> (pré-visualizar ou baixar). Na impressão não aparece banner de cookies nem menu.</li>
         </ul>
-        <h3 class="h6">Meus cachês</h3>
+        <h3 class="h6">Meu financeiro</h3>
         <ul>
-          <li>No menu <strong>Meus cachês</strong> (ou na página da banda) você vê sua parte em <strong>todas as bandas</strong>.</li>
+          <li>No menu <strong>Meu financeiro</strong> (ou na página da banda) você vê sua parte em <strong>todas as bandas</strong>.</li>
           <li>Filtre por banda, mês e ano. Status <strong>Fechado</strong> / <strong>Em aberto</strong> acompanha o fechamento do show.</li>
+          <li>Gere <strong>Relatório PDF</strong> (pré-visualizar ou baixar) do seu período filtrado.</li>
         </ul>
         <h3 class="h6">No evento (show)</h3>
         <ul>
@@ -848,6 +866,7 @@
           <li>Você pode ligar ou desligar cada <strong>tipo de alerta</strong> por canal (push, e-mail, WhatsApp) na tabela do perfil.</li>
           <li>Reservas de <strong>estúdio</strong> (solicitação, confirmação ou recusa) também geram notificação.</li>
           <li>Lembretes de evento saem cerca de <strong>24 horas antes</strong> para quem está na escalação.</li>
+          <li>Se o evento próximo (2–7 dias) estiver <strong>sem setlist</strong> ou com <strong>escala incompleta</strong>, editores/admins recebem um alerta de preparação (push, e-mail e WhatsApp).</li>
           <li>E-mails saem de <span class="code">contato@unissono.app</span>.</li>
           <li>Contas <span class="code">@unissono.app</span> também podem usar o webmail interno (superadmin).</li>
         </ul>

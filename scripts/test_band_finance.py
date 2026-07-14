@@ -116,6 +116,23 @@ class BandFinanceTest(unittest.TestCase):
         self.assertTrue(set_band_member_finance_access(self.band_id, member_id, False))
         self.assertFalse(can_view_band_finance(self.band_id, member_id))
 
+    def test_superadmin_does_not_auto_see_band_finance(self):
+        from db import (
+            add_band_member,
+            can_view_band_finance,
+            create_band,
+            create_user,
+            set_user_superadmin,
+        )
+
+        other_owner = create_user('band_fin_o', 'band.fin.o@test.com', 'pass', display_name='Owner2')
+        other_band_id = create_band('Outra Banda', 'desc', other_owner)
+        sa = create_user('band_fin_sa', 'band.fin.sa@test.com', 'pass', display_name='SA')
+        set_user_superadmin(sa, True)
+        add_band_member(other_band_id, sa, 'member')
+        self.assertFalse(can_view_band_finance(other_band_id, sa))
+        self.assertTrue(can_view_band_finance(other_band_id, other_owner))
+
 
 if __name__ == '__main__':
     unittest.main()

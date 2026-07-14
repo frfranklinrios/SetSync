@@ -14,6 +14,7 @@ from db import (
 )
 from models_studio import enrich_studios_for_admin, list_all_studios
 from product_funnel import funnel_activation_rows
+from retention_metrics import build_retention_metrics
 from whatsapp_service import is_configured as whatsapp_configured
 
 
@@ -40,6 +41,7 @@ def build_admin_dashboard_context() -> dict:
             'users_no_band': users_no_band,
         },
         'funnel_rows': funnel_activation_rows(users_total=len(users)),
+        'retention': build_retention_metrics(),
         'stuck_users': stuck_users,
         'whatsapp_configured': whatsapp_configured(),
     }

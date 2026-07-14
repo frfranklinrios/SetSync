@@ -1,0 +1,138 @@
+{% extends "index.html" %}
+{% block title %}Meu financeiro — PDF{% endblock %}
+
+{% block extra_head %}
+<script>
+(function () {
+    if (window.setSetSyncTheme) {
+        window.setSetSyncTheme('light', { persist: false });
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+    document.documentElement.classList.add('studio-finance-print-root');
+    {% if pdfgen %}document.documentElement.classList.add('pdfgen');{% endif %}
+})();
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/studio-finance-print.css') }}?v=4">
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3 no-print">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('bands.my_fees', **query_args) }}">Meu financeiro</a></li>
+        <li class="breadcrumb-item active">Relatório PDF</li>
+    </ol>
+</nav>
+
+<div class="studio-finance-print-toolbar no-print">
+    <a href="{{ url_for('bands.my_fees_export_pdf', **query_args) }}"
+       class="btn btn-primary btn-sm">
+        <i class="fas fa-file-pdf me-1"></i> Baixar PDF
+    </a>
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+        <i class="fas fa-print me-1"></i> Imprimir
+    </button>
+    <a href="{{ url_for('bands.my_fees', **query_args) }}"
+       class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Voltar
+    </a>
+    <span class="text-muted toolbar-hint">A4 retrato · {{ period_label }}</span>
+</div>
+
+<div class="studio-finance-print-doc">
+    <header class="sf-print-header">
+        <div>
+            <h1 class="sf-print-title">Meu financeiro</h1>
+            <p class="sf-print-sub">
+                Seus cachês{% if band_name %} em {{ band_name }}{% else %} em todas as bandas{% endif %}
+                · {{ from_date }} a {{ to_date }}
+            </p>
+        </div>
+        <div class="sf-print-meta">
+            <div><strong>{{ period_label }}</strong></div>
+            <div>Gerado em {{ generated_at }}</div>
+            <div>Uníssono</div>
+        </div>
+    </header>
+
+    <div class="sf-summary-grid">
+        <div class="sf-summary-card">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.total) }}</div>
+            <div class="lbl">Sua parte no mês</div>
+        </div>
+        <div class="sf-summary-card val-success">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.recebido) }}</div>
+            <div class="lbl">Recebido / fechado</div>
+        </div>
+        <div class="sf-summary-card val-warning">
+            <div class="val">R$ {{ '%.2f'|format(report.stats.a_receber) }}</div>
+            <div class="lbl">A receber</div>
+        </div>
+        <div class="sf-summary-card">
+            <div class="val">{{ report.stats.shows }}</div>
+            <div class="lbl">Shows com cachê</div>
+        </div>
+    </div>
+
+    <h2 class="sf-section-title">Detalhamento</h2>
+    {% if report.rows %}
+    <table class="sf-table">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Show</th>
+                <th>Banda</th>
+                <th class="num">Sua parte</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.rows %}
+            <tr>
+                <td>{{ (row.starts_at|string)[:10] }}</td>
+                <td>
+                    {{ row.title or 'Show' }}
+                    {% if not row.included_in_split %}
+                    <div class="text-muted" style="font-size:0.85em;">Fora da divisão</div>
+                    {% endif %}
+                </td>
+                <td>{{ row.band_name }}</td>
+                <td class="num">R$ {{ '%.2f'|format(row.my_amount) }}</td>
+                <td>
+                    {% if row.is_received %}
+                    <span class="sf-badge sf-badge-paid">Fechado</span>
+                    {% else %}
+                    <span class="sf-badge sf-badge-pending">Em aberto</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="sf-empty">Nenhum cachê neste período.</p>
+    {% endif %}
+
+    <p class="sf-footnote">
+        Relatório pessoal gerado pelo Uníssono. Valores refletem sua fatia nos shows com cachê cadastrado.
+    </p>
+</div>
+
+<script>
+(function () {
+    function signalPdfReady() {
+        document.body.setAttribute('data-pdf-ready', '1');
+    }
+    window.addEventListener('load', function () {
+        {% if pdfgen %}
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(signalPdfReady).catch(signalPdfReady);
+        } else {
+            setTimeout(signalPdfReady, 300);
+        }
+        {% endif %}
+    });
+})();
+</script>
+{% endblock %}

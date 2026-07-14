@@ -61,7 +61,7 @@ Menu **Ajuda** no site: `/ajuda` — inclui painel/checklist, planos (anual), es
 
 - Checklist de primeiros passos (banda) e onboarding de estúdio no painel do dono
 - Alertas de limite grátis e fim de trial
-- Indicação de banda (15 dias Pro) após primeira setlist
+- Indicação de banda ou estúdio (3 meses Pro/Premium) após primeira setlist
 - NPS pós-trial e sugestão de instalar PWA
 - Assistente de ajuda com CTAs quando logado
 

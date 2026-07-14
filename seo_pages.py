@@ -26,10 +26,20 @@ def _title_page(verb: str, obj: str) -> str:
 
 
 def _meta_desc(verb: str, obj: str) -> str:
-    if 'financeiro' in obj:
+    if 'financeiro do estúdio' in obj or obj.endswith('estúdio') and 'financeiro' in obj:
         return (
             'Controle receita de reservas confirmadas, pagamentos e despesas do seu estúdio '
             'de ensaio no Uníssono. Preço/hora, resumo mensal e líquido no painel do dono.'
+        )
+    if 'financeiro da banda' in obj or 'meu financeiro' in obj or 'cachês' in obj:
+        return (
+            'Acompanhe cachês no Uníssono: Meu financeiro (sua fatia nos shows) e o caixa '
+            'completo da banda para admins, com relatório PDF em A4 retrato.'
+        )
+    if 'coleção' in obj or 'colecao' in obj:
+        return (
+            'Guarde cifras na coleção pessoal grátis e ilimitada do Uníssono. '
+            'Compartilhe com outros músicos ou envie para a banda com assinatura.'
         )
     if 'voucher' in obj and ('estudio' in obj or 'estúdio' in obj):
         return (
@@ -47,7 +57,64 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
     phrase = _phrase(verb, obj)
     obj_cap = obj[0].upper() + obj[1:] if obj else ''
 
-    if 'financeiro' in obj:
+    if 'coleção' in obj or 'colecao' in obj:
+        return [
+            {
+                'html': (
+                    '<p>No Uníssono cada músico tem uma <strong>coleção pessoal</strong>: '
+                    'guarde quantas cifras quiser, <strong>grátis e sem limite</strong>. '
+                    'O repertório da banda fica separado — e compartilhar exige assinatura.</p>'
+                ),
+            },
+            {
+                'h2': 'Como usar a coleção',
+                'html': (
+                    '<ol>'
+                    '<li>Abra o menu <strong>Coleção</strong>.</li>'
+                    '<li>Toque em <strong>Nova música</strong> — cadastre, cole de um site ou importe da biblioteca.</li>'
+                    '<li>Edite e organize só para você, sem afetar nenhuma banda.</li>'
+                    '<li>Quando quiser enviar à equipe, use <strong>Compartilhar</strong> '
+                    '(assinatura Individual, Pro ou Worship).</li>'
+                    '</ol>'
+                    '<p>Detalhes na <a href="/ajuda#colecao">Ajuda → Minha coleção</a>.</p>'
+                ),
+            },
+        ]
+
+    if 'financeiro da banda' in obj or 'meu financeiro' in obj or (
+        'cachê' in obj or 'cachês' in obj
+    ):
+        return [
+            {
+                'html': (
+                    '<p>O Uníssono separa <strong>Meu financeiro</strong> (sua fatia nos shows de todas as bandas) '
+                    'do <strong>financeiro da banda</strong> (caixa completo: cachês, ensaios em estúdio e despesas).</p>'
+                ),
+            },
+            {
+                'h2': 'Meu financeiro',
+                'html': (
+                    '<ul>'
+                    '<li>Menu <strong>Meu financeiro</strong> — filtre por banda, mês e ano.</li>'
+                    '<li>Veja o que já fechou e o que está em aberto.</li>'
+                    '<li>Gere <strong>PDF A4 retrato</strong> do período.</li>'
+                    '</ul>'
+                ),
+            },
+            {
+                'h2': 'Financeiro da banda',
+                'html': (
+                    '<ul>'
+                    '<li>Só <strong>dono/admin</strong> (ou quem o admin liberar em Integrantes).</li>'
+                    '<li>Cadastre cachê no evento, despesas do mês e exporte PDF.</li>'
+                    '<li>Músicos sem acesso ao caixa veem apenas a própria fatia no show.</li>'
+                    '</ul>'
+                    '<p>Guia na <a href="/ajuda#financeiro-banda">Ajuda → Financeiro</a>.</p>'
+                ),
+            },
+        ]
+
+    if 'financeiro' in obj and 'estúdio' in obj:
         return [
             {
                 'html': (
@@ -97,6 +164,37 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
                     'usa os mesmos horários da reserva — não precisa digitar de novo. Bandas acompanham em '
                     '<strong>Minhas reservas</strong>; o controle de pagamento é visível só para o dono do estúdio.</p>'
                     '<p>Detalhes na <a href="/ajuda#estudio-financeiro">Ajuda → Financeiro do estúdio</a>.</p>'
+                ),
+            },
+        ]
+
+    if obj == 'cifras' and verb == 'compartilhar':
+        return [
+            {
+                'html': (
+                    '<p>No Uníssono você pode <strong>guardar cifras na coleção pessoal</strong> (grátis) '
+                    'e <strong>compartilhar</strong> com outros músicos ou com a banda quando tiver assinatura. '
+                    'Também dá para centralizar o repertório direto na banda e convidar a equipe por link.</p>'
+                ),
+            },
+            {
+                'h2': 'Coleção pessoal → compartilhar',
+                'html': (
+                    '<ol>'
+                    '<li>Menu <strong>Coleção</strong> → adicione suas músicas (ilimitado no plano grátis).</li>'
+                    '<li>Abra a música → <strong>Compartilhar</strong>.</li>'
+                    '<li>Envie <strong>cópia para uma banda</strong> (ela edita a própria versão) '
+                    'ou libere para outro usuário por e-mail/username.</li>'
+                    '<li>Sem assinatura, o app mostra o upgrade — guardar na coleção continua grátis.</li>'
+                    '</ol>'
+                ),
+            },
+            {
+                'h2': 'Repertório da banda',
+                'html': (
+                    '<p>Admins cadastram cifras no repertório da banda; membros veem a mesma versão. '
+                    'Use convites por link, setlist com tom por cantor e link público de letras. '
+                    'Veja também a <a href="/ajuda#colecao">Ajuda → Minha coleção</a>.</p>'
                 ),
             },
         ]
@@ -338,6 +436,8 @@ _KEYWORD_PAIRS: list[tuple[str, str]] = [
     ('compartilhar', 'chord sheet'),
     ('compartilhar', 'grade harmônica'),
     ('compartilhar', 'link público'),
+    ('guardar', 'cifras na coleção'),
+    ('organizar', 'coleção pessoal'),
     # gerenciar
     ('gerenciar', 'bandas'),
     ('gerenciar', 'ministério de louvor'),
@@ -345,6 +445,9 @@ _KEYWORD_PAIRS: list[tuple[str, str]] = [
     ('gerenciar', 'músicos'),
     ('gerenciar', 'ensaios'),
     ('gerenciar', 'escalação'),
+    ('gerenciar', 'financeiro da banda'),
+    ('acompanhar', 'meu financeiro'),
+    ('acompanhar', 'cachês'),
     ('reservar', 'sala de ensaio'),
     ('buscar', 'estúdio de ensaio'),
     ('cadastrar', 'estúdio de ensaio'),
@@ -457,6 +560,11 @@ _PREMIUM_SLUGS = frozenset({
     'instrumentos-musico-perfil',
     'gerenciar-financeiro-do-estudio',
     'financeiro-estudio-ensaio',
+    'gerenciar-financeiro-da-banda',
+    'acompanhar-meu-financeiro',
+    'acompanhar-caches',
+    'guardar-cifras-na-colecao',
+    'organizar-colecao-pessoal',
     'resgatar-voucher-estudio-premium',
 })
 
@@ -493,7 +601,8 @@ _COMPARISON_PAGES: dict[str, dict[str, Any]] = {
             {'h2': 'Comparativo', 'html': (
                 '<table><thead><tr><th></th><th>Cifra Club</th><th>Uníssono</th></tr></thead><tbody>'
                 '<tr><td>Público</td><td>Músico solo</td><td>Banda / equipe</td></tr>'
-                '<tr><td>Repertório compartilhado</td><td>Listas pessoais</td><td>Por banda</td></tr>'
+                '<tr><td>Coleção pessoal</td><td>Listas no app</td><td>Grátis e ilimitada + compartilhar pago</td></tr>'
+                '<tr><td>Repertório compartilhado</td><td>Limitado</td><td>Por banda</td></tr>'
                 '<tr><td>Setlist ao vivo</td><td>Limitado</td><td>Tom por cantor</td></tr>'
                 '<tr><td>Modo palco</td><td>Scroll PRO</td><td>Modo Tocar + offline</td></tr>'
                 '<tr><td>Várias bandas</td><td>Não</td><td>Worship</td></tr>'
@@ -694,8 +803,8 @@ def faq_entries() -> list[dict[str, str]]:
             'a': 'Sim. Em Planos, alterne Mensal/Anual para Pro, Worship, Individual e Estúdio Premium. O anual equivale a pagar 10 meses e usar 12.',
         },
         {
-            'q': 'Como indicar outra banda e ganhar Pro grátis?',
-            'a': 'Após montar sua primeira setlist, o painel pode mostrar indicação. Em Planos → Indicar banda, gere um voucher de 15 dias Pro; quando alguém usar, você ganha mais 15 dias na sua banda principal.',
+            'q': 'Como indicar outra banda ou estúdio e ganhar Pro grátis?',
+            'a': 'Em Planos → Indicar e ganhar: convide uma banda (você e ela ganham 3 meses Pro) ou o estúdio onde ensaia (você ganha 3 meses Pro e o estúdio 3 meses Premium). Quando o código for resgatado, a recompensa cai na sua banda principal.',
         },
         {
             'q': 'O que é o selo Verificado do estúdio?',
@@ -707,7 +816,15 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Quantas músicas posso cadastrar?',
-            'a': 'O plano grátis tem limites generosos para começar. Planos pagos ampliam repertório, bandas e recursos como PDF e Worship multi-bandas.',
+            'a': 'A coleção pessoal é grátis e ilimitada. No repertório da banda, o plano grátis tem limite (30 músicas); Individual, Pro e Worship liberam o repertório da banda. Compartilhar da coleção com outros ou com a banda exige assinatura.',
+        },
+        {
+            'q': 'O que é Minha coleção?',
+            'a': 'É a sua biblioteca pessoal de cifras no menu Coleção: grátis e sem limite. Para enviar cópia a uma banda ou liberar para outro usuário, use Compartilhar — recurso de planos pagos (ou trial/voucher).',
+        },
+        {
+            'q': 'Como ver meus cachês?',
+            'a': 'No menu Meu financeiro você vê sua fatia nos shows de todas as bandas, com filtro e PDF. O caixa completo da banda (totais e despesas) fica só com o dono/admin ou quem ele liberar.',
         },
         {
             'q': 'Como funciona a cobrança no Uníssono?',

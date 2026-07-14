@@ -45,6 +45,27 @@ def init_scheduler(app) -> None:
     _scheduler.add_job(_agenda_job, 'cron', minute=0, timezone=_tz, id='agenda_reminders_hourly')
     app.logger.info('APScheduler: lembretes de agenda a cada hora (%s)', _tz_name)
 
+    def _prep_job():
+        with app.app_context():
+            from scheduler_jobs import run_event_prep_jobs
+            try:
+                run_event_prep_jobs()
+            except Exception as exc:
+                app.logger.exception('Erro no job de preparação de eventos: %s', exc)
+
+    _scheduler.add_job(
+        _prep_job,
+        'cron',
+        hour=10,
+        minute=0,
+        timezone=_tz,
+        id='event_prep_daily',
+    )
+    app.logger.info(
+        'APScheduler: alertas de evento incompleto às 10:00 (%s)',
+        _tz_name,
+    )
+
     def _digest_job():
         with app.app_context():
             from scheduler_jobs import run_notification_digest_jobs

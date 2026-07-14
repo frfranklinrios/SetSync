@@ -1,14 +1,24 @@
 {% extends "index.html" %}
-{% block title %}Meus cachês — Uníssono{% endblock %}
+{% block title %}Meu financeiro — Uníssono{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
     <div>
-        <h1 class="h4 mb-1">Meus cachês</h1>
+        <h1 class="h4 mb-1"><i class="fas fa-wallet me-1 text-muted"></i> Meu financeiro</h1>
         <p class="text-muted mb-0 small">
-            Sua parte nos shows das bandas em que você toca.
-            O financeiro completo da banda fica só com o admin (ou quem ele liberar).
+            Seus cachês nos shows de todas as bandas em que você toca.
+            O <strong>financeiro da banda</strong> (caixa completo) só aparece para o dono/admin — ou quem ele liberar.
         </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('bands.my_fees_print', **query_args) }}"
+           class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-eye me-1"></i> Pré-visualizar
+        </a>
+        <a href="{{ url_for('bands.my_fees_export_pdf', **query_args) }}"
+           class="btn btn-primary btn-sm">
+            <i class="fas fa-file-pdf me-1"></i> Baixar PDF
+        </a>
     </div>
 </div>
 
@@ -26,7 +36,9 @@
         <label class="form-label small mb-1" for="mes">Mês</label>
         <select name="mes" id="mes" class="form-select form-select-sm">
             {% for m in range(1, 13) %}
-            <option value="{{ m }}" {% if report.month == m %}selected{% endif %}>{{ '%02d'|format(m) }}</option>
+            <option value="{{ m }}" {% if report.month == m %}selected{% endif %}>
+                {{ ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m] }}
+            </option>
             {% endfor %}
         </select>
     </div>

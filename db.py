@@ -77,7 +77,8 @@ def _init_postgres_schema(c) -> None:
             artista TEXT NOT NULL,
             tom_original TEXT DEFAULT 'C',
             conteudo TEXT NOT NULL DEFAULT '',
-            band_id TEXT NOT NULL,
+            band_id TEXT,
+            owner_user_id TEXT,
             cifra_json TEXT,
             grade_json TEXT,
             leadsheet_json TEXT,
@@ -87,7 +88,18 @@ def _init_postgres_schema(c) -> None:
             referencia_json TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (band_id) REFERENCES bands(id)
+            FOREIGN KEY (band_id) REFERENCES bands(id),
+            FOREIGN KEY (owner_user_id) REFERENCES users(id)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS cifra_shares (
+            cifra_id TEXT NOT NULL,
+            shared_with_user_id TEXT NOT NULL,
+            shared_by_user_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (cifra_id, shared_with_user_id),
+            FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
+            FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (shared_by_user_id) REFERENCES users(id)
         )''',
         '''CREATE TABLE IF NOT EXISTS setlists (
             id SERIAL PRIMARY KEY,
@@ -428,7 +440,97 @@ def _run_schema_migrations(c) -> None:
     _migrate_user_instruments_schema(c)
     _migrate_admin_outreach_schema(c)
     _migrate_lgpd_schema(c)
+    _migrate_personal_cifras_schema(c)
     _ensure_perf_indexes(c)
+
+
+def _migrate_personal_cifras_schema(c) -> None:
+    """Coleção pessoal (owner_user_id) e compartilhamento entre usuários."""
+    from database import IS_POSTGRES
+
+    add_column_if_missing(c, 'cifras', 'owner_user_id', 'TEXT')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS cifra_shares (
+            cifra_id TEXT NOT NULL,
+            shared_with_user_id TEXT NOT NULL,
+            shared_by_user_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (cifra_id, shared_with_user_id),
+            FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
+            FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (shared_by_user_id) REFERENCES users(id)
+        )
+    ''')
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_cifras_owner_user '
+        'ON cifras(owner_user_id)'
+    )
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_cifra_shares_with '
+        'ON cifra_shares(shared_with_user_id)'
+    )
+    if IS_POSTGRES:
+        try:
+            c.execute('ALTER TABLE cifras ALTER COLUMN band_id DROP NOT NULL')
+        except Exception:
+            pass
+    else:
+        _sqlite_relax_cifras_band_id_not_null(c)
+    try:
+        c.connection.commit()
+    except Exception:
+        pass
+
+
+def _sqlite_relax_cifras_band_id_not_null(c) -> None:
+    """SQLite não permite DROP NOT NULL — recria a tabela se necessário."""
+    c.execute('PRAGMA table_info(cifras)')
+    cols = c.fetchall()
+    band_col = next((r for r in cols if r['name'] == 'band_id'), None)
+    if not band_col or int(band_col['notnull'] or 0) == 0:
+        return
+    names = [r['name'] for r in cols]
+    if 'owner_user_id' not in names:
+        names.append('owner_user_id')
+    col_defs = []
+    for r in cols:
+        name = r['name']
+        ctype = r['type'] or 'TEXT'
+        if name == 'id':
+            col_defs.append('id TEXT PRIMARY KEY')
+        elif name == 'band_id':
+            col_defs.append('band_id TEXT')
+        elif name in ('titulo', 'artista'):
+            col_defs.append(f'{name} TEXT NOT NULL')
+        elif name == 'conteudo':
+            col_defs.append("conteudo TEXT NOT NULL DEFAULT ''")
+        else:
+            # Preserva o DEFAULT original (ex.: created_at/updated_at
+            # DEFAULT CURRENT_TIMESTAMP) — sem isso os novos inserts ficariam NULL.
+            default = r['dflt_value'] if 'dflt_value' in r.keys() else None
+            col_def = f'{name} {ctype}'
+            if default is not None:
+                col_def += f' DEFAULT {default}'
+            col_defs.append(col_def)
+    if 'owner_user_id' not in {r['name'] for r in cols}:
+        col_defs.append('owner_user_id TEXT')
+    c.execute('PRAGMA foreign_keys=OFF')
+    c.execute(f'CREATE TABLE cifras__personal_mig ({", ".join(col_defs)})')
+    src_names = [r['name'] for r in cols]
+    select_parts = []
+    insert_names = list(src_names)
+    for name in src_names:
+        select_parts.append(name)
+    if 'owner_user_id' not in src_names:
+        insert_names.append('owner_user_id')
+        select_parts.append('NULL')
+    c.execute(
+        f'INSERT INTO cifras__personal_mig ({", ".join(insert_names)}) '
+        f'SELECT {", ".join(select_parts)} FROM cifras'
+    )
+    c.execute('DROP TABLE cifras')
+    c.execute('ALTER TABLE cifras__personal_mig RENAME TO cifras')
+    c.execute('PRAGMA foreign_keys=ON')
 
 
 def _migrate_lgpd_schema(c) -> None:
@@ -2706,14 +2808,22 @@ def member_can_view_finance_flag(band_id: str, user_id: str) -> bool:
 
 
 def can_view_band_finance(band_id: str, user_id: str) -> bool:
-    """Financeiro completo da banda: admin/owner/superadmin ou indicado pelo admin."""
+    """Financeiro completo da banda: só owner/admin real ou membro indicado.
+
+    Não usa is_band_admin/is_band_member: esses tratam superadmin como admin
+    de qualquer banda — o que misturava suporte com a conta pessoal.
+    """
     if not band_id or not user_id:
         return False
-    if is_superadmin(user_id):
+    band = get_band(band_id)
+    if not band:
+        return False
+    if band.get('owner_id') == user_id:
         return True
-    if is_band_admin(band_id, user_id):
+    role = get_band_member_role(band_id, user_id)
+    if role in ('owner', 'admin'):
         return True
-    if not is_band_member(band_id, user_id):
+    if role is None:
         return False
     return member_can_view_finance_flag(band_id, user_id)
 
@@ -2836,21 +2946,34 @@ def is_band_editor(band_id, user_id) -> bool:
 
 def create_cifra(titulo, artista, tom_original, conteudo, band_id,
                  cifra_json=None, grade_json=None, leadsheet_json=None,
-                 bpm=None, duracao_seg=None, referencia_json=None):
+                 bpm=None, duracao_seg=None, referencia_json=None,
+                 owner_user_id=None):
     db = get_db()
     c = db.cursor()
     cifra_id = str(uuid.uuid4())
     c.execute(
         '''INSERT INTO cifras
-           (id, titulo, artista, tom_original, conteudo, band_id,
+           (id, titulo, artista, tom_original, conteudo, band_id, owner_user_id,
             cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, referencia_json)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (cifra_id, titulo, artista, tom_original, conteudo or '', band_id,
-         cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, referencia_json)
+         owner_user_id, cifra_json, grade_json, leadsheet_json, bpm, duracao_seg,
+         referencia_json)
     )
     db.commit()
     db.close()
     return cifra_id
+
+
+def create_personal_cifra(user_id, titulo, artista, tom_original, conteudo,
+                          cifra_json=None, grade_json=None, leadsheet_json=None,
+                          bpm=None, duracao_seg=None, referencia_json=None):
+    """Cria cifra na coleção pessoal (grátis, sem banda)."""
+    return create_cifra(
+        titulo, artista, tom_original, conteudo, None,
+        cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, referencia_json,
+        owner_user_id=user_id,
+    )
 
 
 def get_cifra(cifra_id):
@@ -2865,10 +2988,173 @@ def get_cifra(cifra_id):
 def get_band_cifras(band_id):
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM cifras WHERE band_id = ? ORDER BY titulo', (band_id,))
+    c.execute(
+        'SELECT * FROM cifras WHERE band_id = ? ORDER BY titulo',
+        (band_id,),
+    )
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
+
+
+def get_user_personal_cifras(user_id: str) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT * FROM cifras
+           WHERE owner_user_id = ? AND band_id IS NULL
+           ORDER BY titulo''',
+        (user_id,),
+    )
+    rows = c.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
+def count_user_personal_cifras(user_id: str) -> int:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT COUNT(*) AS n FROM cifras
+           WHERE owner_user_id = ? AND band_id IS NULL''',
+        (user_id,),
+    )
+    n = c.fetchone()['n']
+    db.close()
+    return int(n or 0)
+
+
+def cifra_is_personal(cifra: dict | None) -> bool:
+    return bool(cifra and cifra.get('owner_user_id') and not cifra.get('band_id'))
+
+
+def user_owns_personal_cifra(cifra: dict | None, user_id: str) -> bool:
+    return bool(
+        cifra
+        and cifra_is_personal(cifra)
+        and str(cifra.get('owner_user_id')) == str(user_id)
+    )
+
+
+def user_has_cifra_share(cifra_id: str, user_id: str) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT 1 FROM cifra_shares
+           WHERE cifra_id = ? AND shared_with_user_id = ?''',
+        (cifra_id, user_id),
+    )
+    ok = c.fetchone() is not None
+    db.close()
+    return ok
+
+
+def user_can_access_cifra(cifra: dict | None, user_id: str) -> bool:
+    if not cifra or not user_id:
+        return False
+    if is_superadmin(user_id):
+        return True
+    if cifra.get('band_id') and is_band_member(cifra['band_id'], user_id):
+        return True
+    if str(cifra.get('owner_user_id') or '') == str(user_id):
+        return True
+    return user_has_cifra_share(cifra['id'], user_id)
+
+
+def user_can_edit_cifra(cifra: dict | None, user_id: str) -> bool:
+    if not cifra or not user_id:
+        return False
+    if user_owns_personal_cifra(cifra, user_id):
+        return True
+    if cifra.get('band_id') and is_band_editor(cifra['band_id'], user_id):
+        return True
+    return False
+
+
+def list_cifra_shares(cifra_id: str) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT cs.*, u.email AS user_email, u.username AS user_username,
+                  u.display_name AS user_display_name
+           FROM cifra_shares cs
+           JOIN users u ON u.id = cs.shared_with_user_id
+           WHERE cs.cifra_id = ?
+           ORDER BY cs.created_at DESC''',
+        (cifra_id,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def list_cifras_shared_with_user(user_id: str) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT c.*, u.display_name AS shared_by_name, u.username AS shared_by_username
+           FROM cifra_shares cs
+           JOIN cifras c ON c.id = cs.cifra_id
+           JOIN users u ON u.id = cs.shared_by_user_id
+           WHERE cs.shared_with_user_id = ?
+           ORDER BY c.titulo''',
+        (user_id,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def share_cifra_with_user(cifra_id: str, shared_with_user_id: str, shared_by_user_id: str) -> bool:
+    if str(shared_with_user_id) == str(shared_by_user_id):
+        return False
+    db = get_db()
+    c = db.cursor()
+    try:
+        c.execute(
+            '''INSERT INTO cifra_shares (cifra_id, shared_with_user_id, shared_by_user_id)
+               VALUES (?, ?, ?)''',
+            (cifra_id, shared_with_user_id, shared_by_user_id),
+        )
+        db.commit()
+        ok = True
+    except IntegrityError:
+        ok = False
+    finally:
+        db.close()
+    return ok
+
+
+def unshare_cifra_with_user(cifra_id: str, shared_with_user_id: str) -> bool:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''DELETE FROM cifra_shares
+           WHERE cifra_id = ? AND shared_with_user_id = ?''',
+        (cifra_id, shared_with_user_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
+def copy_cifra_to_band(cifra: dict, band_id: str, *, owner_user_id: str | None = None) -> str:
+    """Duplica uma cifra (pessoal ou de outra banda) no repertório da banda."""
+    return create_cifra(
+        cifra.get('titulo') or 'Sem título',
+        cifra.get('artista') or '—',
+        cifra.get('tom_original') or 'C',
+        cifra.get('conteudo') or '',
+        band_id,
+        cifra.get('cifra_json'),
+        cifra.get('grade_json'),
+        cifra.get('leadsheet_json'),
+        cifra.get('bpm'),
+        cifra.get('duracao_seg'),
+        cifra.get('referencia_json'),
+        owner_user_id=owner_user_id,
+    )
 
 
 def update_cifra_referencia(cifra_id, referencia_json):

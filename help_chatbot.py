@@ -124,16 +124,16 @@ def clear_knowledge_base_cache() -> None:
 
 def default_suggestions(limit: int = 6) -> list[str]:
     curated = [
+        'Como usar a coleção pessoal de cifras?',
+        'Como compartilhar cifras com a banda?',
+        'Como ver meu financeiro e cachês?',
+        'Como indicar e ganhar 3 meses Pro?',
         'Como usar o Modo Tocar no palco?',
-        'Como sincronizar a banda no palco?',
-        'Como configurar pedal Bluetooth no Uníssono?',
-        'Posso usar cifras offline no celular?',
         'Como reservar estúdio de ensaio?',
         'Como gerenciar o financeiro do estúdio?',
-        'Como resgatar voucher Estúdio Premium?',
         'Qual a diferença entre Pro e Worship?',
+        'Posso usar cifras offline no celular?',
         'Como montar setlist online para show ou ensaio?',
-        'O que são notas de palco na setlist?',
     ]
     return curated[:limit]
 
@@ -212,7 +212,7 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
         owned_bands = get_owned_bands(user_id)
         member_bands = get_user_bands(user_id)
         ctas.append({
-            'label': 'Meus cachês',
+            'label': 'Meu financeiro',
             'url': url_for('bands.my_fees'),
         })
         finance_band = None
@@ -270,8 +270,14 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
         ctas.append({'label': 'Offline e PWA', 'url': url_for('ajuda.index') + '#pwa'})
     if any(t in q for t in ('sync', 'sincron', 'lider', 'banda no palco')):
         ctas.append({'label': 'Sync no palco', 'url': url_for('ajuda.index') + '#modo-tocar'})
-    if any(t in q for t in ('indic', 'convid', 'voucher', 'referr', 'ganhar')):
-        ctas.append({'label': 'Indicar banda', 'url': url_for('assinatura_bp.voucher_indicar')})
+    if any(t in q for t in (
+        'coleção', 'colecao', 'minhas músicas', 'minhas musicas',
+        'biblioteca pessoal', 'compartilhar cifra', 'compartilhar cifras',
+    )):
+        ctas.append({'label': 'Minha coleção', 'url': url_for('cifras.my_library')})
+        ctas.append({'label': 'Ajuda coleção', 'url': url_for('ajuda.index') + '#colecao'})
+    if any(t in q for t in ('indic', 'convid', 'referr', 'ganhar', '3 meses')):
+        ctas.append({'label': 'Indicar e ganhar', 'url': url_for('assinatura_bp.voucher_indicar')})
     if any(t in q for t in ('ajuda', 'roadmap', 'novidade')):
         ctas.append({'label': 'Roadmap', 'url': url_for('roadmap.index')})
     return ctas[:3]

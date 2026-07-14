@@ -8,6 +8,7 @@ URGENT_NOTIFICATION_TYPES = frozenset({
     'event_scale_substitute_offer',
     'band_invite',
     'event_reminder',
+    'event_prep_reminder',
     'studio_booking_requested',
     'studio_booking_confirmed',
     'studio_booking_rejected',

@@ -295,10 +295,14 @@
 </style>
 
 <div id="normal-header" class="mb-3">
+    {% if band %}
     <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">← {{ band.name }}</a>
+    {% else %}
+    <a href="{{ url_for('cifras.my_library') }}" class="btn btn-outline-secondary btn-sm">← Minha coleção</a>
+    {% endif %}
 </div>
 
-<div class="row g-4" data-realtime-band="{{ band.id }}" data-cifra-id="{{ cifra.id }}">
+<div class="row g-4" {% if band %}data-realtime-band="{{ band.id }}"{% endif %} data-cifra-id="{{ cifra.id }}">
     <div id="cifra-col" class="col-lg-8">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
             <div>
@@ -310,11 +314,22 @@
                 </p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
+                {% if band %}
                 <a href="{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id, versao='minha' if viewing_personal else none) }}"
                    class="btn btn-sm btn-primary" title="Tecla P">▶ Modo Tocar</a>
+                {% elif is_owner %}
+                <a href="{{ url_for('cifras.tocar_colecao', start=cifra.id) }}"
+                   class="btn btn-sm btn-primary" title="Tecla P">▶ Modo Tocar</a>
+                {% endif %}
                 {% if cifra.apple_music_url %}
                 <a href="{{ cifra.apple_music_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary" title="Abrir no Apple Music">
                     <i class="fab fa-apple me-1"></i> Apple Music
+                </a>
+                {% endif %}
+                {% if is_owner %}
+                <a href="{{ url_for('cifras.share_cifra', cifra_id=cifra.id) }}" class="btn btn-sm btn-outline-primary"
+                   title="{% if share_unlocked %}Compartilhar{% else %}Assine para compartilhar{% endif %}">
+                    <i class="fas fa-share-alt me-1"></i> Compartilhar
                 </a>
                 {% endif %}
                 {% if can_edit %}
@@ -512,8 +527,8 @@
                 {% if current_transpose != 0 %}
                 <p class="mb-3 text-muted" style="font-size: var(--text-sm);">Cadastro: {{ cifra.tom_original|normalize_tom }}</p>
                 {% endif %}
-                <p class="mb-1 text-muted">Banda</p>
-                <p class="fw-semibold mb-3">{{ band.name }}</p>
+                <p class="mb-1 text-muted">{% if band %}Banda{% else %}Coleção{% endif %}</p>
+                <p class="fw-semibold mb-3">{% if band %}{{ band.name }}{% else %}Pessoal{% endif %}</p>
                 <p class="mb-1 text-muted">Adicionada</p>
                 <p class="mb-0">{{ cifra.created_at|date_short }}</p>
             </div>
@@ -530,7 +545,7 @@
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=15"></script>
 <script>
 const CIFRA_BASE = "{{ url_for('cifras.view', cifra_id=cifra.id) }}";
-const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id, versao='minha' if viewing_personal else none) }}";
+const TOCAR_URL  = {% if band %}"{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra.id, versao='minha' if viewing_personal else none) }}"{% elif is_owner %}"{{ url_for('cifras.tocar_colecao', start=cifra.id) }}"{% else %}null{% endif %};
 (function () {
     var stepper = document.getElementById('transpose-stepper');
     if (!stepper) return;
@@ -564,7 +579,7 @@ const TOCAR_URL  = "{{ url_for('cifras.tocar_band', band_id=band.id, start=cifra
     }
 })();
 
-{% if can_edit %}
+{% if can_edit and band %}
 (function () {
     var ADD_URL = {{ url_for('bands.add_vocalist_api', band_id=band.id)|tojson }};
     var toggle = document.getElementById('vocalist-add-toggle');
@@ -716,6 +731,7 @@ document.addEventListener('keydown', function (e) {
     var tag = e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (e.key === 'p' || e.key === 'P') {
+        if (!TOCAR_URL) return;
         e.preventDefault();
         window.location.href = TOCAR_URL;
     }

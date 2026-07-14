@@ -54,7 +54,16 @@ from mp_webhook import (
     webhook_autentico,
 )
 from security import external_url_for
-from vouchers import criar_voucher_indicacao, gerar_codigo_voucher, resgatar_voucher, resgatar_voucher_estudio, voucher_destino, VOUCHER_DESTINO_ESTUDIO
+from vouchers import (
+    VOUCHER_INDICACAO_DIAS,
+    VOUCHER_DESTINO_ESTUDIO,
+    criar_voucher_indicacao,
+    criar_voucher_indicacao_estudio,
+    gerar_codigo_voucher,
+    resgatar_voucher,
+    resgatar_voucher_estudio,
+    voucher_destino,
+)
 
 assinatura_bp = Blueprint('assinatura_bp', __name__)
 
@@ -434,14 +443,22 @@ def voucher_resgatar():
 @assinatura_bp.route('/voucher/indicar', methods=['GET', 'POST'])
 @login_required
 def voucher_indicar():
-    """Página para gerar voucher de indicação."""
-    codigo, erro = None, None
+    """Página para gerar voucher de indicação (banda ou estúdio)."""
+    codigo, erro, tipo = None, None, None
     if request.method == 'POST':
-        codigo, erro = criar_voucher_indicacao(session['user_id'])
+        tipo = (request.form.get('tipo') or 'banda').strip().lower()
+        if tipo == 'estudio':
+            codigo, erro = criar_voucher_indicacao_estudio(session['user_id'])
+        else:
+            tipo = 'banda'
+            codigo, erro = criar_voucher_indicacao(session['user_id'])
     return render_template(
         'assinatura/indicar.html',
         codigo=codigo,
         erro=erro,
+        tipo=tipo,
+        dias_indicacao=VOUCHER_INDICACAO_DIAS,
+        meses_indicacao=max(1, VOUCHER_INDICACAO_DIAS // 30),
     )
 
 

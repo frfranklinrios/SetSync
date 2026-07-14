@@ -71,6 +71,9 @@ def delete_user_account(user_id: str) -> tuple[bool, str]:
         'DELETE FROM user_availability_blockouts WHERE user_id = ?',
         'DELETE FROM cifra_user_drafts WHERE user_id = ?',
         'DELETE FROM cifra_play_drawings WHERE user_id = ?',
+        'DELETE FROM cifra_shares WHERE shared_with_user_id = ?',
+        'DELETE FROM cifra_shares WHERE shared_by_user_id = ?',
+        'DELETE FROM cifras WHERE owner_user_id = ? AND band_id IS NULL',
         'DELETE FROM push_subscriptions WHERE user_id = ?',
         'DELETE FROM studio_voucher_usos WHERE user_id = ?',
         'DELETE FROM studio_subscriptions WHERE user_id = ?',
@@ -85,6 +88,18 @@ def delete_user_account(user_id: str) -> tuple[bool, str]:
             c.execute(sql, (user_id,))
         except Exception:
             pass
+
+    # Cifras copiadas para o repertório de bandas que não são do usuário
+    # continuam existindo; solta a autoria para não deixar FK/refs órfãs
+    # (senão o DELETE FROM users falha ou aponta para usuário inexistente).
+    try:
+        c.execute(
+            'UPDATE cifras SET owner_user_id = NULL '
+            'WHERE owner_user_id = ? AND band_id IS NOT NULL',
+            (user_id,),
+        )
+    except Exception:
+        pass
 
     c.execute('DELETE FROM users WHERE id = ?', (user_id,))
     deleted = c.rowcount

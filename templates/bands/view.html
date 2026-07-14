@@ -94,9 +94,9 @@
             <i class="fas fa-coins me-1"></i> Financeiro da banda
         </a>
         {% endif %}
-        <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}" class="btn btn-outline-secondary btn-sm"
+        <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}" class="btn btn-primary btn-sm"
            title="Seus cachês nesta e nas outras bandas">
-            <i class="fas fa-wallet me-1"></i> Meus cachês
+            <i class="fas fa-wallet me-1"></i> Meu financeiro
         </a>
         {% if is_admin %}
         <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
@@ -112,9 +112,9 @@
     repertório (Músicas) → roteiro → <strong>Modo Tocar</strong> no ensaio.
     Use <strong>Agenda</strong> para ensaios.
     {% if can_view_finance %}
-    <strong>Financeiro da banda</strong> é só para admin (ou quem o admin liberar).
+    <strong>Financeiro da banda</strong> é o caixa completo — só dono/admin (ou liberado).
     {% else %}
-    Seus cachês ficam em <strong>Meus cachês</strong>.
+    Seus valores ficam em <strong>Meu financeiro</strong> (menu do topo).
     {% endif %}
 </div>
 

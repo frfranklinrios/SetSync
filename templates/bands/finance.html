@@ -10,14 +10,15 @@
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
     <div>
-        <h1 class="h5 mb-1"><i class="fas fa-coins me-1"></i> Financeiro</h1>
+        <h1 class="h5 mb-1"><i class="fas fa-coins me-1"></i> Financeiro da banda</h1>
         <p class="text-muted mb-0 small">
-            Cachês, ensaios em estúdio e despesas de {{ from_date }} a {{ to_date }}.
+            Caixa completo de {{ band.name }} ({{ from_date }} a {{ to_date }}).
             {% if is_admin %}
             Cadastre o cachê em cada evento da agenda ou aqui abaixo.
             {% else %}
-            Visualização para todos os integrantes — edição apenas para administradores.
+            Você vê porque o admin liberou o acesso.
             {% endif %}
+            Seus valores pessoais: <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}">Meu financeiro</a>.
         </p>
     </div>
     <form method="get" class="d-flex gap-2 align-items-end">

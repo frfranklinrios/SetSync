@@ -8,14 +8,18 @@ import re
 from studio_finance_pdf import period_label
 
 
-def _safe_filename(name: str, max_len: int = 72) -> str:
+def safe_filename(name: str, max_len: int = 72) -> str:
     s = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '', (name or 'banda').strip())
     s = re.sub(r'\s+', ' ', s).strip()
     return (s[:max_len] if len(s) > max_len else s) or 'banda'
 
 
+# Alias legado
+_safe_filename = safe_filename
+
+
 def build_finance_pdf_download_name(band_name: str, year: int, month: int) -> str:
-    return f'{_safe_filename(band_name)} — Financeiro {period_label(year, month)}.pdf'
+    return f'{safe_filename(band_name)} — Financeiro {period_label(year, month)}.pdf'
 
 
 def build_band_finance_pdf_url(
@@ -47,5 +51,5 @@ def generate_band_finance_pdf_bytes(
 
     return render_url_to_pdf(
         build_band_finance_pdf_url(band_id, user_id, year=year, month=month),
-        landscape=True,
+        landscape=False,
     )

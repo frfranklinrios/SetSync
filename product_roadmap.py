@@ -92,7 +92,7 @@ def roadmap_phases() -> list[dict[str, Any]]:
                 {
                     'icon': 'fa-user-plus',
                     'title': 'Indicação visível',
-                    'desc': 'Card no dashboard após primeira setlist — convide banda e ganhe 15 dias Pro.',
+                    'desc': 'Card no dashboard após primeira setlist — convide banda ou estúdio e ganhe 3 meses Pro.',
                     'tags': ['Viral', 'Pro'],
                     'status': STATUS_DONE,
                 },

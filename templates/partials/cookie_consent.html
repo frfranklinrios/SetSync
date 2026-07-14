@@ -1,5 +1,5 @@
-{% if tracking_requires_consent and cookie_consent_choice is none %}
-<div id="ss-cookie-banner" class="ss-cookie-banner" role="dialog" aria-live="polite"
+{% if tracking_requires_consent and cookie_consent_choice is none and not hide_cookie_banner %}
+<div id="ss-cookie-banner" class="ss-cookie-banner no-print" role="dialog" aria-live="polite"
      aria-label="Consentimento de cookies"
      data-consent-url="{{ url_for('legal.cookie_consent') }}">
   <div class="ss-cookie-banner__inner">
@@ -37,6 +37,13 @@
 }
 .ss-cookie-banner__text { font-size: var(--text-sm, .875rem); max-width: 640px; }
 .ss-cookie-banner__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media print {
+  .ss-cookie-banner { display: none !important; }
+}
+html.studio-finance-print-root .ss-cookie-banner,
+html.pdfgen .ss-cookie-banner {
+  display: none !important;
+}
 </style>
 <script src="{{ url_for('static', filename='js/cookie-consent.js') }}?v=1"></script>
 {% endif %}

@@ -31,7 +31,7 @@ from monetizacao import (
 from config import app_now_naive, app_now_str
 
 
-VOUCHER_INDICACAO_DIAS = 15
+VOUCHER_INDICACAO_DIAS = 90  # 3 meses
 VOUCHER_INDICACAO_MAX_ATIVOS = 5
 VOUCHER_DESTINO_BANDA = 'banda'
 VOUCHER_DESTINO_ESTUDIO = 'estudio'
@@ -263,6 +263,9 @@ def resgatar_voucher_estudio(
         'destino': VOUCHER_DESTINO_ESTUDIO,
         'user_nome': user_nome,
     }
+    if _is_voucher_indicacao(voucher):
+        _recompensa_indicacao(voucher)
+
     if vitalicio:
         msg = f'Acesso vitalício ao {plano_nome} ativado para sua conta de estúdio!'
     else:
@@ -275,7 +278,7 @@ def _is_voucher_indicacao(voucher: dict) -> bool:
 
 
 def _recompensa_indicacao(voucher: dict) -> None:
-    """Quem indicou ganha 15 dias na banda principal."""
+    """Quem indicou ganha 3 meses Pro na banda principal."""
     criador_id = voucher.get('criado_por_id')
     if not criador_id:
         return
@@ -310,10 +313,10 @@ def _recompensa_indicacao(voucher: dict) -> None:
 
 
 def criar_voucher_indicacao(criado_por_id: str) -> tuple[str | None, str]:
-    """Cria voucher de indicação (Pro, 15 dias, uso único)."""
+    """Cria voucher de indicação de banda (Pro, 3 meses, uso único)."""
     if count_vouchers_indicacao_ativos(criado_por_id) >= VOUCHER_INDICACAO_MAX_ATIVOS:
         return None, f'Limite de {VOUCHER_INDICACAO_MAX_ATIVOS} vouchers de indicação ativos'
-    codigo = gerar_codigo_voucher('SETSYNC')
+    codigo = gerar_codigo_voucher('BANDA')
     create_voucher(
         codigo=codigo,
         plano=PLANO_PRO,
@@ -321,6 +324,24 @@ def criar_voucher_indicacao(criado_por_id: str) -> tuple[str | None, str]:
         criado_por_id=criado_por_id,
         max_usos=1,
         eh_indicacao=True,
+        destino=VOUCHER_DESTINO_BANDA,
+    )
+    return codigo, ''
+
+
+def criar_voucher_indicacao_estudio(criado_por_id: str) -> tuple[str | None, str]:
+    """Convite ao estúdio: Premium 3 meses para o estúdio; quem indicou ganha Pro 3 meses."""
+    if count_vouchers_indicacao_ativos(criado_por_id) >= VOUCHER_INDICACAO_MAX_ATIVOS:
+        return None, f'Limite de {VOUCHER_INDICACAO_MAX_ATIVOS} vouchers de indicação ativos'
+    codigo = gerar_codigo_voucher('ESTUDIO')
+    create_voucher(
+        codigo=codigo,
+        plano=PLANO_ESTUDIO_PREMIUM,
+        dias=VOUCHER_INDICACAO_DIAS,
+        criado_por_id=criado_por_id,
+        max_usos=1,
+        eh_indicacao=True,
+        destino=VOUCHER_DESTINO_ESTUDIO,
     )
     return codigo, ''
 

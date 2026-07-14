@@ -22,6 +22,7 @@ from monetizacao_emails import send_voucher_aviso_email, send_voucher_expirado_e
 from onboarding_emails import verificar_e_disparar_onboarding
 from retention_emails import verificar_e_disparar_retencao
 from agenda_reminders import verificar_e_enviar_lembretes_agenda
+from event_prep_reminders import verificar_e_enviar_alertas_evento_incompleto
 from security import external_url_for
 from vouchers import STATUS_EXPIRADO
 from config import app_now_naive, app_now_str
@@ -143,6 +144,11 @@ def run_daily_voucher_jobs() -> None:
 
 def run_agenda_reminder_jobs() -> None:
     verificar_e_enviar_lembretes_agenda()
+
+
+def run_event_prep_jobs() -> None:
+    """Alertas de setlist/escala incompleta (próximos 7 dias)."""
+    verificar_e_enviar_alertas_evento_incompleto()
 
 
 def run_whatsapp_cifra_digest_jobs() -> None:

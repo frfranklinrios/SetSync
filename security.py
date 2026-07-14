@@ -188,6 +188,21 @@ def verify_band_finance_pdf_token(token: str, band_id: str) -> str | None:
     return str(uid) if uid else None
 
 
+def make_my_fees_pdf_token(user_id: str) -> str:
+    return _serializer('my-fees-pdf').dumps({'user_id': str(user_id)})
+
+
+def verify_my_fees_pdf_token(token: str) -> str | None:
+    if not token:
+        return None
+    try:
+        data = _serializer('my-fees-pdf').loads(token, max_age=180)
+    except (BadSignature, SignatureExpired, TypeError):
+        return None
+    uid = data.get('user_id')
+    return str(uid) if uid else None
+
+
 def make_oauth_state() -> str:
     import secrets
     return secrets.token_urlsafe(32)
