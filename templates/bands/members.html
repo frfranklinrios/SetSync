@@ -91,6 +91,12 @@
                             <i class="fas fa-coins me-1"></i>{% if member.can_view_finance %}Vê financeiro{% else %}Liberar financeiro{% endif %}
                         </button>
                     </form>
+                    {% else %}
+                    <span class="btn btn-sm btn-outline-success disabled" aria-disabled="true"
+                          title="{% if member.role == 'admin' %}Administradores{% else %}O proprietário{% endif %} já veem o financeiro completo da banda — não é preciso liberar."
+                          style="font-size: var(--text-sm); opacity: .65; pointer-events: none;">
+                        <i class="fas fa-coins me-1"></i>Vê financeiro ({% if member.role == 'admin' %}admin{% else %}dono{% endif %})
+                    </span>
                     {% endif %}
                     {% if is_owner or member.role != 'admin' %}
                     <form action="{{ url_for('bands.remove_member', band_id=band.id, user_id_to_remove=member.id) }}"
@@ -123,6 +129,11 @@
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>
+                <a class="btn btn-success w-100 mb-2"
+                   href="https://wa.me/?text={{ ('Entra na banda ' ~ band.name ~ ' no Uníssono (cifras + Modo Tocar): ' ~ invite_url)|urlencode }}"
+                   target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp me-1" aria-hidden="true"></i> Mandar convite no WhatsApp
+                </a>
                 <small class="text-muted">Válido por 14 dias.</small>
             </div>
         </div>
@@ -135,6 +146,7 @@
                     <strong>Admin</strong> — gerencia membros, convites, configurações e <strong>financeiro da banda</strong>.<br>
                     <strong>Liberar financeiro</strong> — indica um membro para ver o painel completo (totais e despesas), sem virar admin.<br>
                     <strong>Meu financeiro</strong> — todo músico vê a própria fatia dos shows em todas as bandas.<br>
+                    <strong>Fechamento de noite</strong> — no show, o admin marca cada um como <em>fundador</em> (divide o líquido) ou <em>sideman</em> (taxa fixa).<br>
                     <strong>Proprietário</strong> — controle total, incluindo promover admins.
                 </p>
             </div>

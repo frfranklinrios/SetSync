@@ -442,7 +442,38 @@ def _run_schema_migrations(c) -> None:
     _migrate_lgpd_schema(c)
     _migrate_personal_cifras_schema(c)
     _migrate_metric_snapshots_schema(c)
+    _migrate_admin_activity_log_schema(c)
     _ensure_perf_indexes(c)
+
+
+def _migrate_admin_activity_log_schema(c) -> None:
+    """Histórico append-only de alterações para o painel Master."""
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS admin_activity_log (
+            id TEXT PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            actor_user_id TEXT,
+            action TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT,
+            band_id TEXT,
+            summary TEXT NOT NULL,
+            meta_json TEXT,
+            FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+        )
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_activity_log_created
+        ON admin_activity_log(created_at DESC)
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_activity_log_actor
+        ON admin_activity_log(actor_user_id, created_at DESC)
+    ''')
+    c.execute('''
+        CREATE INDEX IF NOT EXISTS idx_activity_log_entity
+        ON admin_activity_log(entity_type, created_at DESC)
+    ''')
 
 
 def _migrate_metric_snapshots_schema(c) -> None:
@@ -824,6 +855,35 @@ def _migrate_band_finance_schema(c) -> None:
     add_column_if_missing(
         c, 'band_members', 'can_view_finance', 'INTEGER NOT NULL DEFAULT 0',
     )
+    # Fechamento de noite: fundador (divide o líquido) vs sideman (taxa fixa)
+    add_column_if_missing(
+        c, 'band_members', 'settlement_role', "TEXT NOT NULL DEFAULT 'founder'",
+    )
+    add_column_if_missing(c, 'band_members', 'default_fixed_fee', 'REAL')
+    add_column_if_missing(c, 'band_expenses', 'event_id', 'TEXT')
+    add_column_if_missing(c, 'band_event_guests', 'fixed_fee', 'REAL')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_event_fee_lines (
+            id TEXT PRIMARY KEY,
+            event_id TEXT NOT NULL,
+            user_id TEXT,
+            guest_id TEXT,
+            display_name TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            amount REAL NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_band_event_fee_lines_event '
+        'ON band_event_fee_lines(event_id)'
+    )
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_band_expenses_event '
+        'ON band_expenses(event_id)'
+    )
 
 
 def _migrate_growth_schema(c) -> None:
@@ -834,6 +894,7 @@ def _migrate_growth_schema(c) -> None:
     add_column_if_missing(c, 'users', 'nps_submitted_at', 'TIMESTAMP')
     add_column_if_missing(c, 'users', 'nps_dismissed', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'users', 'pwa_prompt_dismissed', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'is_demo', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'studios', 'page_views', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'studios', 'booking_clicks', 'INTEGER NOT NULL DEFAULT 0')
     if IS_POSTGRES:
@@ -1269,37 +1330,28 @@ def dismiss_onboarding_checklist(user_id: str) -> None:
 
 
 def user_wants_whatsapp_notifications(user: dict | None) -> bool:
-    if not user:
-        return False
-    return int(user.get('whatsapp_notify') or 0) == 1
+    from notification_prefs import user_wants_whatsapp_notifications as _fn
+    return _fn(user)
 
 
 def user_has_phone(user: dict | None) -> bool:
-    if not user:
-        return False
-    return bool((user.get('phone') or '').strip())
+    from notification_prefs import user_has_phone as _fn
+    return _fn(user)
 
 
 def user_wants_email_notifications(user: dict | None) -> bool:
-    if not user:
-        return False
-    if user.get('email_notify') is None:
-        return True
-    return int(user.get('email_notify') or 0) == 1
+    from notification_prefs import user_wants_email_notifications as _fn
+    return _fn(user)
 
 
 def user_wants_push_notifications(user: dict | None) -> bool:
-    if not user:
-        return False
-    return int(user.get('push_notify') or 0) == 1
+    from notification_prefs import user_wants_push_notifications as _fn
+    return _fn(user)
 
 
 def get_user_notification_prefs(user: dict | None) -> dict:
-    from notification_prefs import parse_notification_prefs
-
-    if not user:
-        return parse_notification_prefs(None)
-    return parse_notification_prefs(user.get('notification_prefs_json'))
+    from notification_prefs import get_user_notification_prefs as _fn
+    return _fn(user)
 
 
 def user_wants_notification_channel(
@@ -1307,24 +1359,8 @@ def user_wants_notification_channel(
     channel: str,
     notification_type: str,
 ) -> bool:
-    """Respeita toggle global do canal + preferência por categoria."""
-    from notification_prefs import notification_category, category_channel_enabled
-
-    if not user:
-        return False
-    if channel == 'email' and not user_wants_email_notifications(user):
-        return False
-    if channel == 'whatsapp':
-        if not user_wants_whatsapp_notifications(user) or not user_has_phone(user):
-            return False
-    if channel == 'push' and not user_wants_push_notifications(user):
-        return False
-
-    cat = notification_category(notification_type)
-    if not cat:
-        return True
-    prefs = get_user_notification_prefs(user)
-    return category_channel_enabled(prefs, cat, channel)
+    from notification_prefs import user_wants_notification_channel as _fn
+    return _fn(user, channel, notification_type)
 
 
 def save_push_subscription(
@@ -1618,10 +1654,24 @@ def set_user_superadmin(user_id: str, enabled: bool) -> bool:
     return ok
 
 
+def set_user_is_demo(user_id: str, enabled: bool) -> bool:
+    """Marca ou desmarca conta como teste/demo no painel Master."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE users SET is_demo = ? WHERE id = ?',
+        (1 if enabled else 0, user_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
 def get_all_users():
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM users ORDER BY username')
+    c.execute('SELECT * FROM users ORDER BY created_at DESC, username ASC')
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
@@ -2698,6 +2748,13 @@ def _ensure_perf_indexes(c) -> None:
         'CREATE INDEX IF NOT EXISTS idx_funnel_events_step ON product_funnel_events(step)',
         # Escala do músico: "minhas pendências" e alertas de preparação (por usuário).
         'CREATE INDEX IF NOT EXISTS idx_band_event_assignments_user ON band_event_assignments(user_id)',
+        # Login / superadmin por e-mail.
+        'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+        'CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)',
+        # Versão pessoal da cifra.
+        'CREATE INDEX IF NOT EXISTS idx_cifra_user_drafts_user ON cifra_user_drafts(user_id)',
+        'CREATE INDEX IF NOT EXISTS idx_cifra_user_drafts_cifra ON cifra_user_drafts(cifra_id)',
+        'CREATE INDEX IF NOT EXISTS idx_cifra_play_drawings_user ON cifra_play_drawings(user_id)',
     ):
         c.execute(sql)
 
@@ -2829,6 +2886,7 @@ def can_view_band_finance(band_id: str, user_id: str) -> bool:
 
     Não usa is_band_admin/is_band_member: esses tratam superadmin como admin
     de qualquer banda — o que misturava suporte com a conta pessoal.
+    O master (superadmin) vê só totais agregados no painel admin.
     """
     if not band_id or not user_id:
         return False
@@ -2843,6 +2901,20 @@ def can_view_band_finance(band_id: str, user_id: str) -> bool:
     if role is None:
         return False
     return member_can_view_finance_flag(band_id, user_id)
+
+
+def is_band_finance_admin(band_id: str, user_id: str) -> bool:
+    """Pode editar cachês/despesas: dono ou admin real da banda (não master global)."""
+    if not band_id or not user_id:
+        return False
+    band = get_band(band_id)
+    if not band:
+        return False
+    if band.get('owner_id') == user_id:
+        return True
+    role = get_band_member_role(band_id, user_id)
+    return role in ('owner', 'admin')
+
 
 
 def add_band_member(band_id, user_id, role='member'):
@@ -2878,6 +2950,39 @@ def update_band_member_role(band_id: str, user_id: str, role: str) -> bool:
     c.execute(
         "UPDATE band_members SET role = ? WHERE band_id = ? AND user_id = ? AND role != 'owner'",
         (role, band_id, user_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
+def set_member_settlement_role(
+    band_id: str,
+    user_id: str,
+    *,
+    settlement_role: str = 'founder',
+    default_fixed_fee: float | None = None,
+) -> bool:
+    """Fundador divide o líquido; sideman recebe taxa fixa no fechamento de noite."""
+    role = (settlement_role or 'founder').strip().lower()
+    if role not in ('founder', 'sideman'):
+        role = 'founder'
+    fee = None
+    if default_fixed_fee is not None:
+        try:
+            fee = max(0.0, float(default_fixed_fee))
+        except (TypeError, ValueError):
+            fee = 0.0
+        if role == 'founder':
+            fee = None
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE band_members
+           SET settlement_role = ?, default_fixed_fee = ?
+           WHERE band_id = ? AND user_id = ?''',
+        (role, fee, band_id, user_id),
     )
     ok = c.rowcount > 0
     db.commit()
@@ -4264,18 +4369,29 @@ def mark_retention_sent(usuario_id: str, campaign: str, status: str = 'enviado')
     db = get_db()
     c = db.cursor()
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
-    try:
+    if IS_POSTGRES:
+        # ON CONFLICT evita UniqueViolation; após erro no PG a tx fica abortada
+        # e um UPDATE no except sem rollback falha com InFailedSqlTransaction.
         c.execute(
             '''INSERT INTO retention_emails (usuario_id, campaign, status, enviado_em)
-               VALUES (?, ?, ?, ?)''',
+               VALUES (?, ?, ?, ?)
+               ON CONFLICT (usuario_id, campaign)
+               DO UPDATE SET status = EXCLUDED.status, enviado_em = EXCLUDED.enviado_em''',
             (usuario_id, campaign, status, now),
         )
-    except IntegrityError:
-        c.execute(
-            '''UPDATE retention_emails SET status = ?, enviado_em = ?
-               WHERE usuario_id = ? AND campaign = ?''',
-            (status, now, usuario_id, campaign),
-        )
+    else:
+        try:
+            c.execute(
+                '''INSERT INTO retention_emails (usuario_id, campaign, status, enviado_em)
+                   VALUES (?, ?, ?, ?)''',
+                (usuario_id, campaign, status, now),
+            )
+        except IntegrityError:
+            c.execute(
+                '''UPDATE retention_emails SET status = ?, enviado_em = ?
+                   WHERE usuario_id = ? AND campaign = ?''',
+                (status, now, usuario_id, campaign),
+            )
     db.commit()
     db.close()
 

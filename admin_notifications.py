@@ -27,9 +27,26 @@ def notify_superadmins(
     actor_user_id: str | None = None,
     band_id: str | None = None,
     url_path: str | None = None,
+    entity_type: str | None = None,
+    entity_id: str | None = None,
     exclude_actor: bool = True,
 ) -> int:
     """Envia notificação a todos os superadmins. Retorna quantidade criada."""
+    try:
+        from activity_log import log_activity
+
+        log_activity(
+            actor_user_id=actor_user_id,
+            action=event_type,
+            title=title,
+            summary=body,
+            entity_type=entity_type,
+            entity_id=entity_id if entity_id is not None else band_id,
+            band_id=band_id,
+            url_path=url_path or '/admin/',
+        )
+    except Exception:
+        pass
     exclude = actor_user_id if exclude_actor else None
     recipients = superadmin_user_ids(exclude=exclude)
     if not recipients:
@@ -63,7 +80,9 @@ def user_registered(user_id: str):
         'Novo usuário no app',
         f'{name} (@{login}) criou conta via {via}.',
         actor_user_id=user_id,
-        url_path='/admin/',
+        entity_type='user',
+        entity_id=user_id,
+        url_path=f'/admin/usuarios/{user_id}',
         exclude_actor=True,
     )
 

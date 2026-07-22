@@ -137,6 +137,64 @@
     margin-bottom: 0;
   }
 
+  .help-shot {
+    margin: 1rem 0 1.25rem;
+    text-align: center;
+  }
+  .help-shot-zoom {
+    display: inline-block;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: zoom-in;
+  }
+  .help-shot-mobile-frame {
+    width: min(100%, 220px);
+    margin: 0 auto;
+    padding: 8px;
+    border: 1px solid #334155;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #1e293b 0%, #0b1422 100%);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
+  }
+  .help-shot-mobile-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 14px;
+  }
+  .help-shot-desktop-frame {
+    width: min(100%, 640px);
+    margin: 0 auto;
+    padding: 10px 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #0f172a;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+  }
+  [data-theme="light"] .help-shot-desktop-frame {
+    background: #e2e8f0;
+  }
+  .help-shot-desktop-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+  .help-shot-caption {
+    margin-top: 0.55rem;
+    font-size: var(--text-sm);
+    color: var(--muted);
+  }
+  .help-shot-hint {
+    display: block;
+    font-size: var(--text-xs);
+    opacity: 0.8;
+  }
+  @media (max-width: 576px) {
+    .help-shot-desktop-frame { width: 100%; }
+  }
+
   .kbd {
     font-family: var(--cifra-mono-font, ui-monospace, monospace);
     font-size: 0.82em;
@@ -359,6 +417,11 @@
           No palco: use <strong>2 colunas</strong> (<span class="kbd">C</span>) ou <strong>caber na tela</strong> (<span class="kbd">A</span>) em cifras longas.
           O <strong>auto-scroll</strong> (<span class="kbd">Espaço</span>) funciona na cifra e na <strong>grade harmônica</strong> — na grade, a velocidade inicial segue o <strong>BPM</strong> da música quando cadastrado.
         </div>
+        {% with pack=marketing_pack_br, name='modo-tocar-mobile', frame='mobile',
+                caption='Modo Tocar no celular — cifra em tela cheia',
+                alt='Músico no Uníssono Modo Tocar com cifra em tela cheia' %}
+          {% include 'partials/help_shot.html' %}
+        {% endwith %}
       </div>
     </section>
 
@@ -632,6 +695,11 @@
           <li><strong>Gerar novo link</strong> invalida o anterior — use se o link vazou.</li>
           <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio), com opção de incluir <strong>cifras</strong>, <strong>letras</strong> e <strong>grades harmônicas</strong> por música.</li>
         </ul>
+        {% with pack=marketing_pack_br, name='setlist-desktop', frame='desktop',
+                caption='Setlist / roteiro no desktop — tom por cantor',
+                alt='Painel Uníssono com setlist e tom por cantor' %}
+          {% include 'partials/help_shot.html' %}
+        {% endwith %}
       </div>
     </section>
 
@@ -706,23 +774,31 @@
         <h3 class="h6">Financeiro da banda</h3>
         <ul>
           <li>Só <strong>dono/administradores</strong> (e membros com <strong>Liberar financeiro</strong> em Integrantes) veem totais, despesas e PDF.</li>
-          <li>Superadmin do app <strong>não</strong> vê o caixa só por ser suporte — precisa ser dono/admin daquela banda.</li>
+          <li>Superadmin do app vê só o <strong>montante total</strong> no painel Admin — sem lançamentos nem divisão por banda.</li>
           <li>Admins cadastram cachês e despesas; filtre por mês/ano.</li>
           <li>Relatório em <strong>PDF A4 retrato</strong> (pré-visualizar ou baixar). Na impressão não aparece banner de cookies nem menu.</li>
         </ul>
+        {% with pack=marketing_pack_br, name='financeiro-banda-desktop', frame='desktop',
+                caption='Financeiro da banda — cachês e despesas',
+                alt='Tela de financeiro da banda no Uníssono' %}
+          {% include 'partials/help_shot.html' %}
+        {% endwith %}
         <h3 class="h6">Meu financeiro</h3>
         <ul>
           <li>No menu <strong>Meu financeiro</strong> (ou na página da banda) você vê sua parte em <strong>todas as bandas</strong>.</li>
           <li>Filtre por banda, mês e ano. Status <strong>Fechado</strong> / <strong>Em aberto</strong> acompanha o fechamento do show.</li>
           <li>Gere <strong>Relatório PDF</strong> (pré-visualizar ou baixar) do seu período filtrado.</li>
         </ul>
-        <h3 class="h6">No evento (show)</h3>
+        <h3 class="h6">No evento (show) — Fechamento de noite</h3>
         <ul>
-          <li>Admin vê a divisão completa entre a escala.</li>
-          <li>Demais músicos veem só <strong>sua parte</strong> + líquido do show.</li>
+          <li>No show, use <strong>Fechamento de noite</strong>: informe o valor que a casa pagou, despesas da noite (combustível, alimentação…) e quem é <strong>fundador</strong> (divide o resto) ou <strong>sideman</strong> (taxa fixa).</li>
+          <li>Convidados/subs também podem receber taxa fixa no mesmo fechamento.</li>
+          <li>Ao marcar <strong>liquidado</strong>, o Uníssono grava quem recebe o quê — cada músico vê a própria parte em Meu financeiro.</li>
+          <li>Admin vê a liquidação completa; demais músicos veem só a própria fatia.</li>
         </ul>
         <p class="mb-0">
-          O <strong>líquido da banda</strong> (recebido − custos) aparece só no financeiro completo.
+          O <strong>líquido da banda</strong> (recebido − custos de ensaio/despesas mensais) aparece no financeiro completo.
+          Despesas lançadas no fechamento da noite já entram no cálculo do show.
         </p>
       </div>
     </section>
@@ -734,6 +810,11 @@
           O Uníssono permite <strong>buscar estúdios</strong> por cidade/bairro e <strong>solicitar reservas</strong> de salas de ensaio.
           Donos de estúdio cadastram o espaço, definem disponibilidade e confirmam ou recusam pedidos — com endereço no <strong>Google Maps</strong>.
         </p>
+        {% with pack=marketing_pack_estudio, name='estudio-painel-mobile', frame='mobile',
+                caption='Painel do estúdio no celular',
+                alt='Painel do estúdio Uníssono no celular' %}
+          {% include 'partials/help_shot.html' %}
+        {% endwith %}
         <h3>Para bandas</h3>
         <ul>
           <li>Menu <strong>Estúdios</strong> → busque por cidade ou bairro.</li>
@@ -771,6 +852,11 @@
           Donos de estúdio controlam <strong>receita</strong>, <strong>pagamentos</strong> e <strong>despesas</strong>
           no painel — sem planilha separada. Só entram reservas com status <strong>confirmado</strong>.
         </p>
+        {% with pack=marketing_pack_estudio, name='estudio-financeiro-desktop', frame='desktop',
+                caption='Financeiro do estúdio — receita e reservas',
+                alt='Financeiro do estúdio no Uníssono' %}
+          {% include 'partials/help_shot.html' %}
+        {% endwith %}
         <h4 class="h6">Antes de começar</h4>
         <ul>
           <li>Cadastre o <strong>preço por hora</strong> no financeiro → link <strong>Cadastre o preço/hora</strong> (lista todas as salas de uma vez) ou em cada sala em Editar.</li>
@@ -875,6 +961,11 @@
     <section class="card help-section" id="modo-tocar">
       <div class="card-header">Modo Tocar</div>
       <div class="card-body">
+        {% with pack=marketing_pack_br, name='modo-tocar-mobile', frame='mobile',
+                caption='Modo Tocar — palco no bolso',
+                alt='Modo Tocar do Uníssono no celular' %}
+          {% include 'partials/help_shot.html' %}
+        {% endwith %}
         <h3>Navegar na cifra (não pular música por engano)</h3>
         <ul>
           <li><strong>Toque nas bordas</strong> (esquerda/direita) ou use <span class="kbd">←</span> <span class="kbd">→</span> para <strong>paginar</strong> a cifra (uma tela por toque).</li>
@@ -893,7 +984,7 @@
           <li>No menu superior, escolha <strong>Cifra</strong>, <strong>Grade harmônica</strong> ou <strong>Letra</strong> (quando disponíveis na música).</li>
           <li>Tecla <span class="kbd">G</span> alterna entre os modos na ordem: cifra → grade → letra.</li>
           <li>A <strong>cifra</strong> usa o mesmo layout de <strong>folha</strong> do preview e da visualização normal: fundo escuro (ou claro no tema claro), seções com rótulo (Intro, Refrão…), acordes destacados e letra legível.</li>
-          <li>Tecla <span class="kbd">N</span> liga o modo <strong>Nashville</strong> (números 1–7) na grade harmônica.</li>
+          <li>Tecla <span class="kbd">N</span> liga o modo <strong>Nashville</strong> (números 1–7) na cifra e na grade harmônica.</li>
           <li>A <strong>grade</strong> usa a mesma transposição da cifra (cantora/cantor e tom do palco).</li>
           <li><strong>Auto-scroll</strong> funciona na cifra e na grade; na grade, a velocidade inicial segue o <strong>BPM</strong> da música quando cadastrado.</li>
           <li>Se a grade parecer desatualizada após editar, force atualização (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>) — o palco guarda cache do HTML renderizado.</li>
@@ -956,7 +1047,7 @@
           <tr><th><span class="kbd">R</span></th><td>Loop de trecho (A/B)</td></tr>
           <tr><th><span class="kbd">M</span></th><td>Liga / pausa metrônomo</td></tr>
           <tr><th><span class="kbd">D</span></th><td>Liga / pausa desenho sobre a cifra</td></tr>
-          <tr><th><span class="kbd">N</span></th><td>Nashville (1–7) na grade harmônica</td></tr>
+          <tr><th><span class="kbd">N</span></th><td>Nashville (1–7) na cifra e na grade</td></tr>
           <tr><th><span class="kbd">↑</span> / <span class="kbd">↓</span></th><td>Música anterior / próxima (pedal ou teclado)</td></tr>
           <tr><th><span class="kbd">F</span></th><td>Tela cheia</td></tr>
           <tr><th><span class="kbd">T</span></th><td>Tema claro / escuro</td></tr>
@@ -1054,7 +1145,7 @@
         <h3>Onde ver no app</h3>
         <ul>
           <li><strong>Visualização da cifra</strong> — abas <strong>Cifra</strong>, <strong>Grade harmônica</strong> e <strong>Letra</strong>, já transpostas conforme o tom escolhido.</li>
-          <li><strong>Modo Tocar</strong> — menu <strong>Cifra / Grade / Letra</strong> ou tecla <span class="kbd">G</span>; <span class="kbd">N</span> para Nashville na grade.</li>
+          <li><strong>Modo Tocar</strong> — menu <strong>Cifra / Grade / Letra</strong> ou tecla <span class="kbd">G</span>; <span class="kbd">N</span> para Nashville na cifra e na grade.</li>
           <li><strong>PDF da setlist</strong> (Pro/Worship) — seções opcionais: cifras, letras, grades harmônicas e <strong>ficha técnica</strong> (escalas por tom).</li>
         </ul>
 
@@ -1229,4 +1320,5 @@
     </section>
   </div>
 </div>
+{% include 'partials/image_lightbox_assets.html' %}
 {% endblock %}

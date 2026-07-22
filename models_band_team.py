@@ -345,6 +345,26 @@ def remove_event_guest(guest_id: str) -> None:
     db.close()
 
 
+def set_event_guest_fixed_fee(guest_id: str, event_id: str, fixed_fee: float | None) -> bool:
+    """Taxa fixa do convidado no fechamento de noite."""
+    try:
+        fee = None if fixed_fee is None else max(0.0, float(fixed_fee))
+    except (TypeError, ValueError):
+        fee = None
+    if fee is not None and fee <= 0:
+        fee = None
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'UPDATE band_event_guests SET fixed_fee = ? WHERE id = ? AND event_id = ?',
+        (fee, guest_id, event_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
 def get_assignment_response_stats(event_id: str) -> dict:
     db = get_db()
     c = db.cursor()

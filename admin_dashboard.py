@@ -32,6 +32,15 @@ def build_admin_dashboard_context() -> dict:
         pass
     _trend = build_metrics_trend()
 
+    platform_finance = None
+    try:
+        from band_finance import build_platform_finance_totals, default_finance_period
+
+        y, m, _, _ = default_finance_period()
+        platform_finance = build_platform_finance_totals(year=y, month=m)
+    except Exception:
+        platform_finance = None
+
     return {
         'stats': {
             'bands': count_bands(),
@@ -45,4 +54,5 @@ def build_admin_dashboard_context() -> dict:
         'metrics_trend': _trend,
         'stuck_users': stuck_users,
         'whatsapp_configured': whatsapp_configured(),
+        'platform_finance': platform_finance,
     }

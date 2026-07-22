@@ -44,6 +44,22 @@
     border-radius: 999px;
     padding: 0.12rem 0.45rem;
 }
+.admin-badge-demo {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+    background: #fffbeb;
+    border-radius: 6px;
+    padding: 0.12rem 0.45rem;
+    white-space: nowrap;
+}
+tr.admin-row-demo {
+    background: rgba(245, 158, 11, 0.08) !important;
+}
+tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
 .admin-wa-form {
     display: flex;
     flex-wrap: wrap;
@@ -99,6 +115,12 @@
         <a href="#admin-convites" class="btn btn-outline-success btn-sm">
             <i class="fas fa-paper-plane me-1"></i> Convidar
         </a>
+        <a href="{{ url_for('admin.api_cifras') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-database me-1"></i> API Cifras
+        </a>
+        <a href="{{ url_for('admin.historico') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-clock-rotate-left me-1"></i> Histórico
+        </a>
         <a href="{{ url_for('admin.depoimentos') }}" class="btn btn-outline-primary btn-sm">Depoimentos</a>
         <a href="{{ url_for('assinatura_bp.admin_vouchers') }}" class="btn btn-outline-primary btn-sm">Vouchers</a>
         <a href="{{ url_for('dashboard', view='bands') }}" class="btn btn-outline-secondary btn-sm">
@@ -148,6 +170,57 @@
         </div>
     </div>
 </div>
+
+{% if platform_finance and platform_finance.stats %}
+{% set pf = platform_finance.stats %}
+{% set meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'] %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <div>
+                <h2 class="h6 mb-1"><i class="fas fa-coins me-1"></i> Financeiro (montante total)</h2>
+                <p class="text-muted mb-0" style="font-size: var(--text-sm);">
+                    {{ meses[platform_finance.month] }} / {{ platform_finance.year }} —
+                    visão agregada da plataforma. O master <strong>não</strong> vê lançamentos, divisões nem detalhes por banda.
+                    {% if pf.demo_excluded_bands %}
+                    Contas <span class="admin-badge-demo">Demo</span> excluídas dos totais.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="row g-2">
+            <div class="col-6 col-md-3">
+                <div class="border rounded p-2 text-center small h-100">
+                    <div class="fw-bold">R$ {{ '%.2f'|format(pf.receita_confirmada) }}</div>
+                    <div class="text-muted">Cachês confirmados</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="border rounded p-2 text-center small h-100">
+                    <div class="fw-bold text-success">R$ {{ '%.2f'|format(pf.recebido) }}</div>
+                    <div class="text-muted">Já recebido</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="border rounded p-2 text-center small h-100">
+                    <div class="fw-bold text-warning">R$ {{ '%.2f'|format(pf.a_receber) }}</div>
+                    <div class="text-muted">A receber</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="border rounded p-2 text-center small h-100">
+                    <div class="fw-bold text-danger">R$ {{ '%.2f'|format(pf.despesas) }}</div>
+                    <div class="text-muted">Despesas cadastradas</div>
+                </div>
+            </div>
+        </div>
+        <p class="text-muted mt-2 mb-0" style="font-size: var(--text-xs);">
+            {{ pf.shows_com_cache }} show{{ 's' if pf.shows_com_cache != 1 else '' }} com cachê ·
+            {{ pf.bandas_com_movimento }} banda{{ 's' if pf.bandas_com_movimento != 1 else '' }} com movimento.
+        </p>
+    </div>
+</div>
+{% endif %}
 
 {% if funnel_rows %}
 <div class="mb-4">
@@ -300,9 +373,18 @@
 
 <div class="tab-content">
     <div class="tab-pane fade show active" id="tab-bands">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="bands">
+            <span class="text-muted" style="font-size: var(--text-sm);">Exibir:</span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo bandas">
+                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="all">Todos</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="real">Só reais</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
+            </div>
+            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
+        </div>
         <div class="card">
             <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0">
+                <table class="table table-hover admin-table mb-0" id="admin-bands-table">
                     <thead>
                         <tr>
                             <th>Banda</th>
@@ -314,8 +396,11 @@
                     </thead>
                     <tbody>
                         {% for band in bands %}
-                        <tr>
-                            <td><strong>{{ band.name }}</strong></td>
+                        <tr class="{% if band.is_demo %}admin-row-demo{% endif %}" data-demo="{{ '1' if band.is_demo else '0' }}">
+                            <td>
+                                <strong>{{ band.name }}</strong>
+                                {% if band.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
+                            </td>
                             <td>{{ user_display_name(band.owner) if band.owner else '—' }}</td>
                             <td>{{ band.members_count }}</td>
                             <td>{{ band.cifras_count }}</td>
@@ -324,7 +409,7 @@
                             </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="5" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
+                        <tr data-demo-empty="1"><td colspan="5" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -333,9 +418,18 @@
     </div>
 
     <div class="tab-pane fade" id="tab-studios">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="studios">
+            <span class="text-muted" style="font-size: var(--text-sm);">Exibir:</span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo estúdios">
+                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="all">Todos</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="real">Só reais</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
+            </div>
+            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
+        </div>
         <div class="card">
             <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0">
+                <table class="table table-hover admin-table mb-0" id="admin-studios-table">
                     <thead>
                         <tr>
                             <th>Estúdio</th>
@@ -350,8 +444,11 @@
                     </thead>
                     <tbody>
                         {% for s in studios %}
-                        <tr>
-                            <td><strong>{{ s.nome }}</strong></td>
+                        <tr class="{% if s.is_demo %}admin-row-demo{% endif %}" data-demo="{{ '1' if s.is_demo else '0' }}">
+                            <td>
+                                <strong>{{ s.nome }}</strong>
+                                {% if s.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
+                            </td>
                             <td>{{ s.cidade }}{% if s.bairro %}, {{ s.bairro }}{% endif %}</td>
                             <td>{{ user_display_name(s.owner) if s.owner else '—' }}</td>
                             <td>{{ s.rooms_count }}</td>
@@ -382,7 +479,7 @@
                             </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="8" class="text-muted text-center py-4">Nenhum estúdio.</td></tr>
+                        <tr data-demo-empty="1"><td colspan="8" class="text-muted text-center py-4">Nenhum estúdio.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -535,11 +632,17 @@
         <div class="alert alert-light border py-2 mb-3" style="font-size: var(--text-sm);">
             <strong>Superadmin</strong> vê todo o app. <strong>Admin de banda</strong> é o titular em Membros.
             Promoção via <code>SETSYNC_SUPERADMIN_*</code> ou coluna <code>is_superadmin</code>.
+            Use <strong>Marcar como teste</strong> para separar QA de usuários reais (badge Demo + exclusão dos totais financeiros).
         </div>
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="users">
             <input type="search" class="form-control form-control-sm" id="admin-user-search"
                    placeholder="Buscar por nome, usuário ou e-mail…" style="max-width: 320px;">
-            <span class="text-muted" style="font-size: var(--text-sm);">{{ users|length }} conta{% if users|length != 1 %}s{% endif %}</span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo usuários">
+                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="all">Todos</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="real">Só reais</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
+            </div>
+            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
         </div>
         <div class="card">
             <div class="table-responsive">
@@ -551,16 +654,22 @@
                             <th>Bandas</th>
                             <th>WhatsApp</th>
                             <th>Cadastro</th>
+                            <th>Último login</th>
                             <th>Superadmin</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for u in users %}
-                        <tr data-search="{{ (user_display_name(u) ~ ' ' ~ u.username ~ ' ' ~ u.email)|lower }}">
+                        <tr class="{% if u.is_demo %}admin-row-demo{% endif %}"
+                            data-demo="{{ '1' if u.is_demo else '0' }}"
+                            data-search="{{ (user_display_name(u) ~ ' ' ~ u.username ~ ' ' ~ u.email ~ (' demo' if u.is_demo else ''))|lower }}">
                             <td>
-                                <strong>{{ user_display_name(u) }}</strong>
+                                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="text-decoration-none">
+                                    <strong>{{ user_display_name(u) }}</strong>
+                                </a>
                                 <span class="text-muted" style="font-size: var(--text-sm);">@{{ u.username }}</span>
+                                {% if u.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
                             </td>
                             <td>{{ u.email }}</td>
                             <td>
@@ -585,7 +694,11 @@
                                 <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
-                            <td>{{ u.created_at|date_short }}</td>
+                            <td class="text-nowrap">{{ u.created_at|date_short }}</td>
+                            <td class="text-nowrap">
+                                {% if u.last_login_at %}{{ u.last_login_at|date_short }}{% else %}
+                                <span class="text-muted">—</span>{% endif %}
+                            </td>
                             <td>
                                 {% if u.is_env_admin %}
                                 <span class="admin-badge-sa">Sim</span>
@@ -598,7 +711,27 @@
                                 <span class="text-muted">Não</span>
                                 {% endif %}
                             </td>
-                            <td class="text-end">
+                            <td class="text-end text-nowrap">
+                                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}"
+                                   class="btn btn-sm btn-outline-primary" title="Ficha e histórico">Histórico</a>
+                                {% if u.is_demo_manual %}
+                                <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="enabled" value="0">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                            title="Remove a marcação manual de teste">Desmarcar teste</button>
+                                </form>
+                                {% elif not u.is_demo %}
+                                <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="enabled" value="1">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                                            title="Marca como conta de teste/QA">Marcar como teste</button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted" style="font-size: var(--text-sm);"
+                                      title="Detectada por username/e-mail showcase ou SETSYNC_DEMO_*">Demo automática</span>
+                                {% endif %}
                                 {% if u.is_superadmin_db %}
                                 <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
                                     {% include 'partials/csrf_input.html' %}
@@ -674,16 +807,80 @@
     });
 })();
 (function () {
-    var input = document.getElementById('admin-user-search');
-    var table = document.getElementById('admin-users-table');
-    if (!input || !table) return;
-    input.addEventListener('input', function () {
-        var q = (input.value || '').trim().toLowerCase();
+    var STORAGE_KEY = 'adminDemoFilter';
+    var tables = {
+        bands: document.getElementById('admin-bands-table'),
+        studios: document.getElementById('admin-studios-table'),
+        users: document.getElementById('admin-users-table')
+    };
+
+    function currentFilter() {
+        try {
+            var v = sessionStorage.getItem(STORAGE_KEY);
+            if (v === 'real' || v === 'demo' || v === 'all') return v;
+        } catch (e) {}
+        return 'all';
+    }
+
+    function setFilter(mode) {
+        try { sessionStorage.setItem(STORAGE_KEY, mode); } catch (e) {}
+        document.querySelectorAll('[data-admin-demo-filter]').forEach(function (bar) {
+            bar.querySelectorAll('[data-demo-filter]').forEach(function (btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-demo-filter') === mode);
+            });
+            var key = bar.getAttribute('data-admin-demo-filter');
+            applyTable(key, mode, bar.querySelector('.js-admin-demo-count'));
+        });
+    }
+
+    function applyTable(key, mode, countEl) {
+        var table = tables[key];
+        if (!table) return;
+        var searchQ = '';
+        if (key === 'users') {
+            var input = document.getElementById('admin-user-search');
+            searchQ = (input && input.value || '').trim().toLowerCase();
+        }
+        var visible = 0;
+        var total = 0;
         table.querySelectorAll('tbody tr').forEach(function (row) {
-            var hay = row.getAttribute('data-search') || '';
-            row.style.display = !q || hay.indexOf(q) !== -1 ? '' : 'none';
+            if (row.getAttribute('data-demo-empty') === '1') {
+                row.style.display = mode === 'all' && !searchQ ? '' : 'none';
+                return;
+            }
+            total += 1;
+            var isDemo = row.getAttribute('data-demo') === '1';
+            var demoOk = mode === 'all' || (mode === 'demo' && isDemo) || (mode === 'real' && !isDemo);
+            var searchOk = true;
+            if (searchQ) {
+                var hay = row.getAttribute('data-search') || '';
+                searchOk = hay.indexOf(searchQ) !== -1;
+            }
+            var show = demoOk && searchOk;
+            row.style.display = show ? '' : 'none';
+            if (show) visible += 1;
+        });
+        if (countEl) {
+            countEl.textContent = visible + ' de ' + total;
+        }
+    }
+
+    document.querySelectorAll('[data-admin-demo-filter]').forEach(function (bar) {
+        bar.querySelectorAll('[data-demo-filter]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                setFilter(btn.getAttribute('data-demo-filter') || 'all');
+            });
         });
     });
+
+    var input = document.getElementById('admin-user-search');
+    if (input) {
+        input.addEventListener('input', function () {
+            setFilter(currentFilter());
+        });
+    }
+
+    setFilter(currentFilter());
 })();
 </script>
 {% endblock %}

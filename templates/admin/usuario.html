@@ -1,0 +1,135 @@
+{% extends "index.html" %}
+{% block title %}{{ user_display_name(user) }} — Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <p class="mb-1" style="font-size: var(--text-sm);">
+            <a href="{{ url_for('admin.index') }}#tab-users" class="text-muted text-decoration-none">
+                ← Usuários
+            </a>
+            ·
+            <a href="{{ url_for('admin.historico') }}" class="text-muted text-decoration-none">Histórico geral</a>
+        </p>
+        <h1 class="h4 mb-1">
+            {{ user_display_name(user) }}
+            {% if user.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
+            {% if user.is_env_admin %}<span class="admin-badge-sa ms-1">Superadmin</span>{% endif %}
+        </h1>
+        <p class="text-muted mb-0" style="font-size: var(--text-sm);">
+            @{{ user.username }} · {{ user.email }}
+        </p>
+    </div>
+    <a href="{{ url_for('admin.historico', ator=user.id) }}" class="btn btn-outline-primary btn-sm">
+        Filtrar histórico geral
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body" style="font-size: var(--text-sm);">
+                <div class="text-muted mb-2">Cadastro</div>
+                <div class="fw-semibold mb-3">{{ user.created_at|datetime_br }}</div>
+                <div class="text-muted mb-2">Último login</div>
+                <div class="fw-semibold mb-3">
+                    {% if user.last_login_at %}{{ user.last_login_at|datetime_br }}{% else %}
+                    <span class="text-muted">Nunca / sem registro</span>{% endif %}
+                </div>
+                <div class="text-muted mb-2">WhatsApp</div>
+                <div class="fw-semibold mb-0">
+                    {% if user.phone %}
+                    <a href="https://wa.me/{{ user.phone }}" target="_blank" rel="noopener noreferrer">
+                        {{ user.phone|whatsapp_display }}
+                    </a>
+                    {% else %}—{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2 class="h6 mb-0">Bandas ({{ user.bands_count or 0 }})</h2>
+                </div>
+                {% if owned_bands or member_bands %}
+                <ul class="list-unstyled mb-0" style="font-size: var(--text-sm);">
+                    {% for b in owned_bands %}
+                    <li class="d-flex justify-content-between border-bottom py-1">
+                        <span><strong>{{ b.name }}</strong> <span class="text-muted">· titular</span></span>
+                        <a href="{{ url_for('bands.view', band_id=b.id) }}">Abrir</a>
+                    </li>
+                    {% endfor %}
+                    {% for b in member_bands %}
+                    {% if b.owner_id != user.id %}
+                    <li class="d-flex justify-content-between border-bottom py-1">
+                        <span>{{ b.name }} <span class="text-muted">· membro</span></span>
+                        <a href="{{ url_for('bands.view', band_id=b.id) }}">Abrir</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-warning mb-0" style="font-size: var(--text-sm);">
+                    Sem banda — risco de abandono pós-cadastro.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <span style="font-size: var(--text-sm); font-weight:600;">Histórico deste usuário</span>
+        <span class="text-muted" style="font-size: var(--text-xs);">{{ activity_total }} ação{% if activity_total != 1 %}ões{% endif %}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 admin-table" style="font-size: var(--text-sm);">
+            <thead>
+                <tr>
+                    <th>Data / hora</th>
+                    <th>Tipo</th>
+                    <th>O que aconteceu</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in entries %}
+                <tr>
+                    <td class="text-nowrap text-muted">{{ e.created_at|datetime_br }}</td>
+                    <td>
+                        <span class="badge text-bg-light border">
+                            {% set labels = {
+                                'user':'Usuário','band':'Banda','cifra':'Cifra','setlist':'Setlist',
+                                'event':'Agenda','member':'Membro','assinatura':'Assinatura',
+                                'voucher':'Voucher','whatsapp':'WhatsApp','studio':'Estúdio'
+                            } %}
+                            {{ labels.get(e.entity_type, e.entity_type or '—') }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if e.title %}
+                        <div class="text-muted" style="font-size: var(--text-xs);">{{ e.title }}</div>
+                        {% endif %}
+                        {{ e.summary }}
+                    </td>
+                    <td class="text-end">
+                        {% if e.url_path and not e.url_path.startswith('/admin/usuarios/') %}
+                        <a href="{{ e.url_path }}" class="btn btn-sm btn-outline-secondary">Abrir</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">
+                        Nenhuma ação registrada para este usuário ainda.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

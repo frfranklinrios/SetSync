@@ -1,0 +1,179 @@
+{% extends "index.html" %}
+{% block title %}Histórico — Admin{% endblock %}
+
+{% block content %}
+{% set type_labels = {
+    'user':'Usuário','band':'Banda','cifra':'Cifra','setlist':'Setlist',
+    'event':'Agenda','member':'Membro','assinatura':'Assinatura',
+    'voucher':'Voucher','testimonial':'Depoimento','whatsapp':'WhatsApp',
+    'studio':'Estúdio','invite':'Convite','system':'Sistema'
+} %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">Histórico de alterações</h1>
+        <p class="text-muted mb-0" style="font-size: var(--text-sm);">
+            Ações de todos os usuários — mais recentes primeiro
+            {% if total %} · {{ total }} registro{% if total != 1 %}s{% endif %}{% endif %}
+            {% if backfill_info and backfill_info.get('inserted') %}
+            · importados agora: {{ backfill_info.inserted }}
+            {% endif %}
+        </p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary btn-sm">← Admin</a>
+</div>
+
+{% if filtro_ator_user %}
+<div class="alert alert-info py-2 mb-3" style="font-size: var(--text-sm);">
+    Filtrando ações de
+    <strong>{{ user_display_name(filtro_ator_user) }}</strong>
+    (@{{ filtro_ator_user.username }})
+    —
+    <a href="{{ url_for('admin.usuario_detalhe', user_id=filtro_ator_user.id) }}">ver ficha</a>
+    ·
+    <a href="{{ url_for('admin.historico', tipo=filtro_tipo or none, q=filtro_q or none) }}">limpar filtro de pessoa</a>
+</div>
+{% endif %}
+
+{% if counts_by_type %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{{ url_for('admin.historico', ator=filtro_ator or none, q=filtro_q or none) }}"
+       class="btn btn-sm {% if not filtro_tipo %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        Todos
+    </a>
+    {% for t, label in [
+        ('user', 'Usuário'),
+        ('band', 'Banda'),
+        ('cifra', 'Cifra'),
+        ('setlist', 'Setlist'),
+        ('event', 'Agenda'),
+        ('member', 'Membro'),
+        ('assinatura', 'Assinatura'),
+        ('whatsapp', 'WhatsApp'),
+    ] %}
+    {% if counts_by_type.get(t) %}
+    <a href="{{ url_for('admin.historico', tipo=t, ator=filtro_ator or none, q=filtro_q or none) }}"
+       class="btn btn-sm {% if filtro_tipo == t %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        {{ label }}
+        <span class="badge {% if filtro_tipo == t %}text-bg-light{% else %}text-bg-secondary{% endif %} ms-1">{{ counts_by_type[t] }}</span>
+    </a>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+<form method="get" class="d-flex flex-wrap gap-2 mb-3 align-items-end">
+    {% if filtro_ator %}
+    <input type="hidden" name="ator" value="{{ filtro_ator }}">
+    {% endif %}
+    <div>
+        <label class="form-label mb-1" style="font-size: var(--text-sm);" for="q">Buscar</label>
+        <input type="search" class="form-control form-control-sm" id="q" name="q"
+               value="{{ filtro_q }}" placeholder="texto da ação…" style="min-width: 12rem;">
+    </div>
+    <div>
+        <label class="form-label mb-1" style="font-size: var(--text-sm);" for="tipo">Tipo</label>
+        <select class="form-select form-select-sm" id="tipo" name="tipo">
+            <option value="">Todos</option>
+            {% for t, label in [
+                ('user', 'Usuário'),
+                ('band', 'Banda'),
+                ('cifra', 'Cifra'),
+                ('setlist', 'Setlist'),
+                ('event', 'Agenda'),
+                ('member', 'Membro'),
+                ('assinatura', 'Assinatura'),
+                ('voucher', 'Voucher'),
+                ('testimonial', 'Depoimento'),
+                ('whatsapp', 'WhatsApp'),
+            ] %}
+            <option value="{{ t }}" {% if filtro_tipo == t %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
+    {% if filtro_q or filtro_tipo %}
+    <a href="{{ url_for('admin.historico', ator=filtro_ator or none) }}" class="btn btn-sm btn-outline-secondary">Limpar</a>
+    {% endif %}
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 admin-table" style="font-size: var(--text-sm);">
+            <thead>
+                <tr>
+                    <th style="white-space: nowrap;">Data / hora</th>
+                    <th>Quem</th>
+                    <th>Tipo</th>
+                    <th>O que aconteceu</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in entries %}
+                <tr class="{% if e.is_demo %}admin-row-demo{% endif %}" style="{% if e.is_demo %}background: rgba(245, 158, 11, 0.08);{% endif %}">
+                    <td class="text-nowrap text-muted">{{ e.created_at|datetime_br }}</td>
+                    <td>
+                        {% if e.actor_user_id %}
+                        <a href="{{ url_for('admin.usuario_detalhe', user_id=e.actor_user_id) }}" class="text-decoration-none">
+                            <strong>{{ e.actor_name }}</strong>
+                        </a>
+                        {% else %}
+                        <strong>{{ e.actor_name }}</strong>
+                        {% endif %}
+                        {% if e.is_demo %}<span class="admin-badge-demo ms-1" style="font-size: var(--text-xs); font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#92400e; border:1px solid #f59e0b; background:#fffbeb; border-radius:6px; padding:0.12rem 0.45rem;">Demo</span>{% endif %}
+                        {% if e.actor_username %}
+                        <br><span class="text-muted">@{{ e.actor_username }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge text-bg-light border" style="font-weight:600;">
+                            {{ type_labels.get(e.entity_type, e.entity_type or '—') }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if e.title %}
+                        <div class="text-muted" style="font-size: var(--text-xs);">{{ e.title }}</div>
+                        {% endif %}
+                        {{ e.summary }}
+                    </td>
+                    <td class="text-end text-nowrap">
+                        {% if e.entity_type == 'user' and e.entity_id %}
+                        <a href="{{ url_for('admin.usuario_detalhe', user_id=e.entity_id) }}" class="btn btn-sm btn-outline-primary">Ficha</a>
+                        {% elif e.url_path %}
+                        <a href="{{ e.url_path }}" class="btn btn-sm btn-outline-secondary">Abrir</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-5">
+                        Nenhuma alteração neste filtro.
+                        {% if filtro_tipo == 'user' %}
+                        Cadastros de usuários passam a aparecer aqui — use o backfill automático ao abrir esta página.
+                        {% else %}
+                        O histórico cobre cifras, setlists, agenda, bandas e <strong>cadastros de usuários</strong>.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if total_pages > 1 %}
+<nav class="d-flex justify-content-between align-items-center mt-3" style="font-size: var(--text-sm);">
+    <span class="text-muted">Página {{ page }} de {{ total_pages }}</span>
+    <div class="d-flex gap-2">
+        {% if page > 1 %}
+        <a class="btn btn-sm btn-outline-secondary"
+           href="{{ url_for('admin.historico', page=page-1, tipo=filtro_tipo or none, q=filtro_q or none, ator=filtro_ator or none) }}">← Anterior</a>
+        {% endif %}
+        {% if page < total_pages %}
+        <a class="btn btn-sm btn-outline-secondary"
+           href="{{ url_for('admin.historico', page=page+1, tipo=filtro_tipo or none, q=filtro_q or none, ator=filtro_ator or none) }}">Próxima →</a>
+        {% endif %}
+    </div>
+</nav>
+{% endif %}
+{% endblock %}

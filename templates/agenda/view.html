@@ -201,98 +201,7 @@
     </div>
 </div>
 
-{% if event.event_type == 'show' %}
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-            <h3 class="h6 mb-0"><i class="fas fa-coins me-1"></i> Cachê do evento</h3>
-            {% if event.fee_settled_at %}
-            <span class="badge text-bg-success">Fechado</span>
-            {% endif %}
-        </div>
-
-        {% if is_admin %}
-        <form method="POST" action="{{ url_for('agenda.save_event_fee', event_id=event.id) }}" class="row g-2 align-items-end mb-3">
-            {% include 'partials/csrf_input.html' %}
-            <div class="col-md-3">
-                <label class="form-label mb-1" style="font-size: var(--text-sm);">Valor total (R$)</label>
-                <input type="text" name="fee_total" class="form-control form-control-sm" inputmode="decimal"
-                       value="{{ event.fee_total or '' }}" placeholder="1500.00">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label mb-1" style="font-size: var(--text-sm);">Desconto transporte</label>
-                <input type="text" name="fee_transport_discount" class="form-control form-control-sm" inputmode="decimal"
-                       value="{{ event.fee_transport_discount or '' }}" placeholder="0">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label mb-1" style="font-size: var(--text-sm);">Desconto equipamento</label>
-                <input type="text" name="fee_equipment_discount" class="form-control form-control-sm" inputmode="decimal"
-                       value="{{ event.fee_equipment_discount or '' }}" placeholder="0">
-            </div>
-            <div class="col-md-3">
-                <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" name="fee_settled" value="1" id="fee-settled"
-                           {% if event.fee_settled_at %}checked{% endif %}>
-                    <label class="form-check-label" for="fee-settled" style="font-size: var(--text-sm);">Marcar como fechado</label>
-                </div>
-                <button type="submit" class="btn btn-primary btn-sm w-100">Salvar cachê</button>
-            </div>
-            <div class="col-12">
-                <label class="form-label mb-1" style="font-size: var(--text-sm);">Observações</label>
-                <input type="text" name="fee_notes" class="form-control form-control-sm" maxlength="500"
-                       value="{{ event.fee_notes or '' }}" placeholder="Ex.: desconto de combustível dividido entre todos">
-            </div>
-        </form>
-        {% elif not event.fee_total %}
-        <p class="text-muted mb-0" style="font-size: var(--text-sm);">O administrador ainda não cadastrou o cachê deste show.</p>
-        {% endif %}
-
-        {% if fee_split and event.fee_total %}
-        {% if fee_split.personal_only %}
-        <div class="mb-2" style="font-size: var(--text-sm);">
-            {% if fee_split.my_amount is not none %}
-            <p class="mb-1"><strong>Sua parte:</strong> R$ {{ '%.2f'|format(fee_split.my_amount) }}</p>
-            <p class="text-muted mb-0">Líquido do show: R$ {{ '%.2f'|format(fee_split.net) }}
-                {% if fee_split.payees_count or fee_split.share %}· divisão entre a escala{% endif %}
-            </p>
-            {% else %}
-            <p class="text-muted mb-0">Você não entrou na divisão deste cachê (confirme na escala ou fale com o admin).</p>
-            {% endif %}
-            <p class="mb-0 mt-2">
-                <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}">Ver todos os meus cachês →</a>
-            </p>
-        </div>
-        {% else %}
-        <div class="table-responsive">
-            <table class="table table-sm mb-0" style="font-size: var(--text-sm);">
-                <tbody>
-                    <tr><th>Bruto</th><td>R$ {{ '%.2f'|format(fee_split.total) }}</td></tr>
-                    {% if fee_split.transport_discount %}<tr><th>Transporte</th><td>− R$ {{ '%.2f'|format(fee_split.transport_discount) }}</td></tr>{% endif %}
-                    {% if fee_split.equipment_discount %}<tr><th>Equipamento</th><td>− R$ {{ '%.2f'|format(fee_split.equipment_discount) }}</td></tr>{% endif %}
-                    <tr><th>Líquido</th><td><strong>R$ {{ '%.2f'|format(fee_split.net) }}</strong></td></tr>
-                </tbody>
-            </table>
-        </div>
-        {% if fee_split.payees %}
-        <ul class="list-unstyled mb-0 mt-2" style="font-size: var(--text-sm);">
-            {% for p in fee_split.payees %}
-            <li class="d-flex justify-content-between border-top py-1">
-                <span>{{ p.name }}{% if p.role_label %} · {{ p.role_label }}{% endif %}</span>
-                <strong>R$ {{ '%.2f'|format(p.amount) }}</strong>
-            </li>
-            {% endfor %}
-        </ul>
-        {% elif fee_split.warning %}
-        <p class="text-warning mb-0 mt-2" style="font-size: var(--text-sm);">{{ fee_split.warning }}</p>
-        {% endif %}
-        {% endif %}
-        {% if event.fee_notes and (is_admin or can_view_finance) %}
-        <p class="text-muted mb-0 mt-2" style="font-size: var(--text-sm);">{{ event.fee_notes }}</p>
-        {% endif %}
-        {% endif %}
-    </div>
-</div>
-{% endif %}
+{% include 'partials/fechamento_noite.html' %}
 
 {% if event.location and maps_embed_url %}
 <div class="agenda-map-embed mb-4">
@@ -340,14 +249,14 @@
     </div>
 </div>
 {% else %}
-<div class="empty" style="margin-top:1rem;">
-    <i class="fas fa-list"></i>
-    <p class="mb-0" style="font-size: var(--text-base);">Nenhuma setlist vinculada a este evento.</p>
-    {% if can_edit %}
-    <a href="{{ url_for('agenda.edit', event_id=event.id) }}" class="btn btn-outline-primary btn-sm mt-3">
-        Vincular setlist
-    </a>
-    {% endif %}
+<div class="mt-3">
+{% with icon='fa-list',
+        title='Nenhuma setlist neste evento',
+        text='Vincule o roteiro do ensaio ou show para a banda abrir o Modo Tocar no local certo.',
+        cta_url=(url_for('agenda.edit', event_id=event.id) if can_edit else none),
+        cta_label=('Vincular setlist' if can_edit else none) %}
+{% include 'partials/empty_state.html' %}
+{% endwith %}
 </div>
 {% endif %}
 

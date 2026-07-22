@@ -22,7 +22,7 @@ from agenda_util import (
     split_event_datetime,
 )
 from blueprints.auth import login_required
-from db import get_band, get_band_members, is_band_admin, is_band_editor, is_band_member, is_superadmin, user_display_name
+from db import get_band, get_band_members, is_band_admin, is_band_editor, is_band_finance_admin, is_band_member, is_superadmin, user_display_name
 from models_agenda import (
     EVENT_ENSAIO,
     EVENT_SHOW,
@@ -261,15 +261,23 @@ def view(event_id):
     gcal_url = google_calendar_url(event, band_name=band.get('name') or '')
     from event_fees import compute_event_fee_split
     from db import get_band_members, can_view_band_finance
+    from models_band_finance import list_event_expenses, list_event_fee_lines
 
     fee_split = None
+    event_expenses = list_event_expenses(event_id) if event.get('event_type') == 'show' else []
+    fee_lines = list_event_fee_lines(event_id) if event.get('event_type') == 'show' else []
     can_see_full_fee = can_view_band_finance(band['id'], user_id)
-    if event.get('fee_total'):
+    can_edit_finance = is_band_finance_admin(band['id'], user_id)
+    members = get_band_members(band['id'])
+    if event.get('fee_total') or event_expenses or fee_lines:
         fee_split = compute_event_fee_split(
             event,
             assignments,
-            get_band_members(band['id']),
+            members,
             name_for_user=user_display_name,
+            guests=guests,
+            event_expenses=event_expenses,
+            fee_lines=fee_lines or None,
         )
         if fee_split and not can_see_full_fee:
             my_payee = next(
@@ -279,6 +287,8 @@ def view(event_id):
             fee_split = {
                 **fee_split,
                 'payees': [my_payee] if my_payee else [],
+                'fixed_payees': [p for p in (fee_split.get('fixed_payees') or []) if str(p.get('user_id')) == str(user_id)],
+                'founder_payees': [p for p in (fee_split.get('founder_payees') or []) if str(p.get('user_id')) == str(user_id)],
                 'personal_only': True,
                 'my_amount': (my_payee or {}).get('amount'),
                 'payees_count': len(fee_split.get('payees') or []),
@@ -290,8 +300,11 @@ def view(event_id):
         is_admin=is_band_admin(band['id'], user_id),
         can_edit=is_band_editor(band['id'], user_id),
         can_view_finance=can_see_full_fee,
+        can_edit_finance=can_edit_finance,
         assignments=assignments,
         guests=guests,
+        members=members,
+        event_expenses=event_expenses,
         scale_stats=scale_stats,
         user_assignment=user_assignment,
         user_is_scaled=user_assignment is not None,
@@ -338,8 +351,9 @@ def event_ics(event_id):
 @login_required
 def save_event_fee(event_id):
     event, band, user_id = _require_event_access(event_id)
-    if not event or not is_band_admin(band['id'], user_id):
-        abort(404)
+    if not event or not is_band_finance_admin(band['id'], user_id):
+        flash('Somente o administrador da banda pode alterar o cachê.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
 
     def _parse_money(name):
         raw = (request.form.get(name) or '').strip().replace(',', '.')
@@ -355,12 +369,23 @@ def save_event_fee(event_id):
     fee_equipment = _parse_money('fee_equipment_discount')
     fee_notes = (request.form.get('fee_notes') or '').strip() or None
     fee_settled = request.form.get('fee_settled') == '1'
+    use_night = request.form.get('settlement_mode') == 'night'
 
     if fee_total is None:
-        flash('Informe o valor total do cachê.', 'warning')
+        flash('Informe o valor total do cachê (o que a casa pagou).', 'warning')
         return redirect(url_for('agenda.view', event_id=event_id))
 
-    from db import update_event_fees
+    from db import update_event_fees, get_band_members
+    from models_band_finance import (
+        replace_event_expenses,
+        replace_event_fee_lines,
+        clear_event_fee_lines,
+        list_event_expenses,
+    )
+    from models_band_team import set_event_guest_fixed_fee, list_event_guests
+    from event_fees import compute_night_settlement
+    from models_agenda import get_event_assignments
+
     update_event_fees(
         event_id,
         fee_total=fee_total,
@@ -369,7 +394,87 @@ def save_event_fee(event_id):
         fee_notes=fee_notes,
         fee_settled=fee_settled,
     )
-    flash('Cachê do evento atualizado.', 'success')
+
+    event_date = (event.get('starts_at') or '')[:10] or app_now_str()[:10]
+
+    if use_night:
+        # Despesas da noite (linhas dinâmicas)
+        exp_descs = request.form.getlist('expense_desc')
+        exp_vals = request.form.getlist('expense_valor')
+        items = []
+        for desc, val in zip(exp_descs, exp_vals):
+            items.append({'descricao': desc, 'valor': val, 'categoria': 'transporte'})
+        replace_event_expenses(
+            band['id'],
+            event_id,
+            data=event_date,
+            items=items,
+            created_by_user_id=user_id,
+        )
+
+        # Taxas fixas de convidados neste show
+        for g in list_event_guests(event_id):
+            raw = (request.form.get(f'guest_fee_{g["id"]}') or '').strip().replace(',', '.')
+            fee = None
+            if raw:
+                try:
+                    fee = max(0.0, float(raw))
+                except ValueError:
+                    fee = None
+            set_event_guest_fixed_fee(g['id'], event_id, fee)
+
+        # Overrides de taxa fixa por membro na escala (opcional)
+        from db import set_member_settlement_role
+        for m in get_band_members(band['id']):
+            uid = m.get('user_id')
+            if not uid:
+                continue
+            role_key = f'member_role_{uid}'
+            fee_key = f'member_fee_{uid}'
+            if role_key not in request.form and fee_key not in request.form:
+                continue
+            role = (request.form.get(role_key) or m.get('settlement_role') or 'founder').strip()
+            raw_fee = (request.form.get(fee_key) or '').strip().replace(',', '.')
+            fee_val = None
+            if raw_fee:
+                try:
+                    fee_val = max(0.0, float(raw_fee))
+                except ValueError:
+                    fee_val = m.get('default_fixed_fee')
+            elif role == 'sideman':
+                fee_val = m.get('default_fixed_fee') or 0
+            set_member_settlement_role(
+                band['id'], uid,
+                settlement_role=role,
+                default_fixed_fee=fee_val if role == 'sideman' else None,
+            )
+
+        event_row = dict(event)
+        event_row['fee_total'] = fee_total
+        event_row['fee_transport_discount'] = fee_transport or 0
+        event_row['fee_equipment_discount'] = fee_equipment or 0
+        settlement = compute_night_settlement(
+            event_row,
+            get_event_assignments(event_id),
+            get_band_members(band['id']),
+            guests=list_event_guests(event_id),
+            event_expenses=list_event_expenses(event_id),
+            fee_lines=None,
+            name_for_user=user_display_name,
+        )
+        if fee_settled:
+            replace_event_fee_lines(event_id, settlement.get('payees') or [])
+        else:
+            clear_event_fee_lines(event_id)
+        flash(
+            'Fechamento de noite salvo'
+            + (' e liquidação registrada.' if fee_settled else '.'),
+            'success',
+        )
+    else:
+        clear_event_fee_lines(event_id)
+        flash('Cachê do evento atualizado.', 'success')
+
     return redirect(url_for('agenda.view', event_id=event_id))
 
 
