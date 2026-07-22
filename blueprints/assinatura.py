@@ -90,6 +90,37 @@ def _mp_notification_url() -> str:
     return f'{url}{sep}secret={secret}'
 
 
+def _ensure_banda_para_individual(user_id: str) -> dict | None:
+    """
+    Plano Individual é por banda (1 integrante). Sem banda, cria uma solo
+    automaticamente — sem trial Pro (o usuário está indo pagar Individual).
+    """
+    owned = get_owned_bands(user_id)
+    if owned:
+        return owned[0]
+    from db import create_band
+
+    user = get_user(user_id) or {}
+    nome = (user.get('name') or 'Solo').strip() or 'Solo'
+    band_name = f'{nome} (solo)'[:80]
+    band_id = create_band(band_name, 'Banda solo — plano Individual', user_id)
+    try:
+        from product_funnel import log_funnel_step
+        from google_ads import mark_funnel_event
+
+        log_funnel_step(user_id, 'primeira_banda', meta={'origem': 'checkout_individual'})
+        mark_funnel_event('primeira_banda')
+    except Exception:
+        pass
+    try:
+        import admin_notifications as an
+
+        an.band_created(band_id, user_id)
+    except Exception:
+        current_app.logger.exception('Notificação admin (banda solo Individual) falhou')
+    return get_band(band_id)
+
+
 @assinatura_bp.route('/planos')
 def planos_redirect():
     """Atalho legado usado em guias SEO e conteúdo antigo."""
@@ -132,9 +163,16 @@ def iniciar(plano):
         return redirect(url_for('assinatura_bp.planos'))
 
     banda_id = request.form.get('banda_id', '').strip()
-    band = _banda_do_usuario(banda_id, session['user_id'])
+    band = _banda_do_usuario(banda_id, session['user_id']) if banda_id else None
+    # Individual: usuário sem banda (coleção pessoal com limites de PDF/compartilhar)
+    if not band and plano == PLANO_INDIVIDUAL:
+        band = _ensure_banda_para_individual(session['user_id'])
+        banda_id = (band or {}).get('id') or ''
     if not band:
-        flash('Selecione uma banda da qual você é dona/dono', 'danger')
+        if plano == PLANO_INDIVIDUAL:
+            flash('Não foi possível preparar sua banda solo. Tente de novo.', 'danger')
+        else:
+            flash('Selecione uma banda da qual você é dona/dono', 'danger')
         return redirect(url_for('assinatura_bp.planos'))
 
     email = _user_email(session['user_id'])

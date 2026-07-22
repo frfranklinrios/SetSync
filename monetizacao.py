@@ -386,7 +386,32 @@ def _texto_dias_restantes(dias: int, fim: datetime | None) -> str:
     return f'Venceu há {abs(dias)} dias ({fim_txt})'
 
 
+def _texto_renovacao(dias: int, fim: datetime | None) -> str:
+    """Copy para assinatura paga (não reutiliza Vence→Renova — gerava 'Renovau')."""
+    fim_txt = _formatar_data_curta(fim)
+    if dias > 7:
+        return f'Próxima cobrança em {fim_txt}'
+    if dias > 1:
+        return f'Renova em {dias} dias ({fim_txt})'
+    if dias == 1:
+        return f'Renova amanhã ({fim_txt})'
+    if dias == 0:
+        return f'Renova hoje ({fim_txt})'
+    if dias == -1:
+        return f'Renovação pendente desde ontem ({fim_txt})'
+    return f'Renovação pendente desde {fim_txt} (há {abs(dias)} dias)'
+
+
 def _urgencia_periodo(dias_restantes: int, status: str) -> str:
+    # Assinatura paga ativa: data de cobrança no passado ≠ voltou ao Grátis.
+    if status == STATUS_ATIVA:
+        if dias_restantes < 0:
+            return 'atencao'
+        if dias_restantes <= 3:
+            return 'critico'
+        if dias_restantes <= 14:
+            return 'atencao'
+        return 'ok'
     if status == 'expirado' or dias_restantes < 0:
         return 'expirado'
     if dias_restantes <= 3:
@@ -394,6 +419,7 @@ def _urgencia_periodo(dias_restantes: int, status: str) -> str:
     if dias_restantes <= 14:
         return 'atencao'
     return 'ok'
+
 
 
 def sincronizar_voucher_vencido(assinatura: Assinatura) -> Assinatura:
@@ -495,11 +521,7 @@ def periodo_assinatura_ui(assinatura: Assinatura) -> dict[str, Any]:
             'dias_totais': None,
             'progresso_pct': None,
             'urgencia': _urgencia_periodo(dias_restantes, status),
-            'texto_restante': (
-                f'Próxima cobrança em {_formatar_data_curta(proxima)}'
-                if dias_restantes > 7
-                else _texto_dias_restantes(dias_restantes, proxima).replace('Vence', 'Renova')
-            ),
+            'texto_restante': _texto_renovacao(dias_restantes, proxima),
             'texto_detalhe': f'Assinatura {nome} ativa',
         }
 
@@ -845,7 +867,7 @@ def resposta_compartilhar_cifra_paywall():
 
     msg = (
         'Sua coleção pessoal é gratuita. Para compartilhar músicas com outros '
-        'músicos ou com uma banda, assine Individual, Pro ou Worship.'
+        'músicos ou com uma banda, assine o plano Individual (ou Pro/Worship).'
     )
     if request.accept_mimetypes.best == 'application/json' or request.is_json:
         return jsonify({
