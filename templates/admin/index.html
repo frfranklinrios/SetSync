@@ -652,6 +652,7 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                             <th>Usuário</th>
                             <th>E-mail</th>
                             <th>Bandas</th>
+                            <th>Cifras</th>
                             <th>WhatsApp</th>
                             <th>Cadastro</th>
                             <th>Último login</th>
@@ -677,6 +678,13 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                                 <span class="badge bg-light text-dark border">{{ u.bands_count }}</span>
                                 {% else %}
                                 <span class="badge bg-warning text-dark">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.cifras_count %}
+                                <span class="badge bg-light text-dark border" title="Coleção pessoal">{{ u.cifras_count }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark" title="Sem cifras na coleção pessoal">0</span>
                                 {% endif %}
                             </td>
                             <td>

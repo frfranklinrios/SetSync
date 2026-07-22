@@ -64,7 +64,7 @@ def index():
     from product_funnel import funnel_counts
     from whatsapp_service import is_configured as whatsapp_configured
     from admin_dashboard import build_admin_dashboard_context
-    from db import count_user_band_memberships
+    from db import count_user_band_memberships, count_personal_cifras_by_user_ids
 
     admin_ctx = build_admin_dashboard_context()
     funnel_stats = funnel_counts()
@@ -77,11 +77,13 @@ def index():
 
     from demo_accounts import is_demo_band, is_demo_heuristic, is_demo_manual, is_demo_user
 
+    cifras_by_user = count_personal_cifras_by_user_ids([u['id'] for u in users])
     for u in users:
         u['is_superadmin_db'] = bool(u.get('is_superadmin'))
         u['is_superadmin_env'] = is_superadmin_env_only(u['id'])
         u['is_env_admin'] = is_superadmin(u['id'])
         u['bands_count'] = count_user_band_memberships(u['id'])
+        u['cifras_count'] = cifras_by_user.get(str(u['id']), 0)
         u['is_demo_manual'] = is_demo_manual(u)
         u['is_demo_auto'] = is_demo_heuristic(u)
         u['is_demo'] = is_demo_user(u)
@@ -227,7 +229,7 @@ def historico():
 def usuario_detalhe(user_id):
     """Ficha do usuário + histórico de ações (cadastro, bandas, cifras…)."""
     from activity_log import backfill_admin_activity, count_admin_activity, list_admin_activity
-    from db import count_user_band_memberships, get_owned_bands, get_user_bands
+    from db import count_user_band_memberships, count_user_personal_cifras, get_owned_bands, get_user_bands
     from demo_accounts import is_demo_user
 
     backfill_admin_activity()
@@ -237,6 +239,7 @@ def usuario_detalhe(user_id):
         return redirect(url_for('admin.index') + '#tab-users')
 
     user['bands_count'] = count_user_band_memberships(user_id)
+    user['cifras_count'] = count_user_personal_cifras(user_id)
     user['is_demo'] = is_demo_user(user)
     user['is_superadmin_db'] = bool(user.get('is_superadmin'))
     user['is_env_admin'] = is_superadmin(user_id)

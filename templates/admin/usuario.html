@@ -47,6 +47,8 @@
                     {% if user.last_login_at %}{{ user.last_login_at|datetime_br }}{% else %}
                     <span class="text-muted">Nunca / sem registro</span>{% endif %}
                 </div>
+                <div class="text-muted mb-2">Cifras (coleção pessoal)</div>
+                <div class="fw-semibold mb-3">{{ user.cifras_count or 0 }}</div>
                 <div class="text-muted mb-2">WhatsApp</div>
                 <div class="fw-semibold mb-0">
                     {% if user.phone %}

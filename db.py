@@ -3146,6 +3146,33 @@ def count_user_personal_cifras(user_id: str) -> int:
     return int(n or 0)
 
 
+def count_personal_cifras_by_user_ids(user_ids: list[str] | None = None) -> dict[str, int]:
+    """Contagem de cifras da coleção pessoal por usuário (uma query)."""
+    db = get_db()
+    c = db.cursor()
+    if user_ids is not None:
+        ids = [str(uid) for uid in user_ids if uid]
+        if not ids:
+            db.close()
+            return {}
+        placeholders = ','.join('?' * len(ids))
+        c.execute(
+            f'''SELECT owner_user_id, COUNT(*) AS n FROM cifras
+                WHERE band_id IS NULL AND owner_user_id IN ({placeholders})
+                GROUP BY owner_user_id''',
+            tuple(ids),
+        )
+    else:
+        c.execute(
+            '''SELECT owner_user_id, COUNT(*) AS n FROM cifras
+               WHERE band_id IS NULL AND owner_user_id IS NOT NULL
+               GROUP BY owner_user_id'''
+        )
+    out = {str(r['owner_user_id']): int(r['n'] or 0) for r in c.fetchall()}
+    db.close()
+    return out
+
+
 def cifra_is_personal(cifra: dict | None) -> bool:
     return bool(cifra and cifra.get('owner_user_id') and not cifra.get('band_id'))
 
