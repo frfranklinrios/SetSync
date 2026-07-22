@@ -2841,8 +2841,12 @@ def get_band_members(band_id):
     db = get_db()
     c = db.cursor()
     c.execute('''
-        SELECT users.*, band_members.role,
-               COALESCE(band_members.can_view_finance, 0) AS can_view_finance
+        SELECT users.*,
+               band_members.user_id AS user_id,
+               band_members.role,
+               COALESCE(band_members.can_view_finance, 0) AS can_view_finance,
+               COALESCE(band_members.settlement_role, 'founder') AS settlement_role,
+               band_members.default_fixed_fee
         FROM users
         JOIN band_members ON users.id = band_members.user_id
         WHERE band_members.band_id = ?

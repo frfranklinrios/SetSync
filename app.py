@@ -445,12 +445,13 @@ def comece():
 @login_required
 def dismiss_onboarding_checklist():
     from db import dismiss_onboarding_checklist as _dismiss
-    from onboarding import user_has_any_band
+    from onboarding import get_onboarding_progress
 
     user_id = session['user_id']
-    if not user_has_any_band(user_id):
-        flash('Crie sua primeira banda para concluir a configuração inicial.', 'info')
-        return redirect(url_for('bands.create', bem_vindo=1))
+    progress = get_onboarding_progress(user_id) or {}
+    if not progress.get('can_dismiss'):
+        flash('Complete ao menos o Modo Tocar (ou crie uma banda) para ocultar o checklist.', 'info')
+        return redirect(url_for('dashboard'))
     _dismiss(user_id)
     return redirect(url_for('dashboard'))
 

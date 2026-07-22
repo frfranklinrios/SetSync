@@ -439,6 +439,11 @@ def register():
         _login_user_session(user)
         from google_ads import mark_signup_conversion_pending
         mark_signup_conversion_pending()
+        try:
+            from product_funnel import log_funnel_step
+            log_funnel_step(user_id, 'signup')
+        except Exception:
+            pass
         from onboarding_emails import registrar_onboarding_usuario
         registrar_onboarding_usuario(user_id)
         import admin_notifications as an
@@ -478,11 +483,14 @@ def cadastro_concluido():
     user = get_user(session.get('user_id'))
     from onboarding import user_needs_band_activation
 
-    needs_band = user_needs_band_activation(user['id']) if user else False
+    needs_activation = user_needs_band_activation(user['id']) if user else False
+    # Conversão Ads → caminho valor-primeiro (cifra), não “criar banda”
+    if needs_activation:
+        next_path = url_for('cifras.add_personal', welcome=1)
     return render_template(
         'cadastro_concluido.html',
         next_url=next_path,
-        needs_band=needs_band,
+        needs_activation=needs_activation,
         google_ads_enhanced_data=enhanced_user_data(user),
     )
 
@@ -609,6 +617,11 @@ def google_callback():
     if new_signup:
         from google_ads import mark_signup_conversion_pending
         mark_signup_conversion_pending()
+        try:
+            from product_funnel import log_funnel_step
+            log_funnel_step(user['id'], 'signup')
+        except Exception:
+            pass
     flash(f'Bem-vindo, {session.get("display_name") or user["username"]}!', 'success')
     pending = session.pop('pending_band_invite', None)
     if new_signup:

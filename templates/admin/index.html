@@ -130,7 +130,41 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     </div>
 </div>
 
-{% if stats.users_no_band %}
+{% if stuck_users %}
+<div class="alert alert-warning py-2 mb-3" style="font-size: var(--text-sm);">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+        <div>
+            <i class="fas fa-user-clock me-1"></i>
+            <strong>{{ stats.users_no_band }}</strong> usuário{% if stats.users_no_band != 1 %}s{% endif %}
+            sem banda — próximos a acompanhar:
+        </div>
+        <a href="#tab-users" class="btn btn-sm btn-warning" id="admin-goto-users-tab">Ver na aba Usuários</a>
+    </div>
+    <ul class="list-unstyled mb-0 d-flex flex-column gap-1">
+        {% for u in stuck_users %}
+        <li class="d-flex flex-wrap align-items-center justify-content-between gap-2 border-top pt-1">
+            <span>
+                <strong>{{ user_display_name(u) }}</strong>
+                <span class="text-muted">@{{ u.username }}</span>
+                · {{ u.created_at|date_short }}
+            </span>
+            <span class="text-nowrap">
+                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary">Ficha</a>
+                {% if u.phone %}
+                <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">WA</a>
+                {% endif %}
+                {% if u.id != current_user.id %}
+                <form method="post" action="{{ url_for('admin.impersonate_user', user_id=u.id) }}" class="d-inline">
+                    {% include 'partials/csrf_input.html' %}
+                    <button type="submit" class="btn btn-sm btn-primary">Entrar</button>
+                </form>
+                {% endif %}
+            </span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% elif stats.users_no_band %}
 <div class="alert alert-warning py-2 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" style="font-size: var(--text-sm);">
     <div>
         <i class="fas fa-user-clock me-1"></i>

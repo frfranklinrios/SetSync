@@ -426,7 +426,7 @@ def save_event_fee(event_id):
         # Overrides de taxa fixa por membro na escala (opcional)
         from db import set_member_settlement_role
         for m in get_band_members(band['id']):
-            uid = m.get('user_id')
+            uid = m.get('user_id') or m.get('id')
             if not uid:
                 continue
             role_key = f'member_role_{uid}'

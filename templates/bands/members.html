@@ -175,20 +175,24 @@
     var btn = document.getElementById('copy-invite-btn');
     var input = document.getElementById('invite-link');
     if (!btn || !input) return;
+    function markOk(ok) {
+        var icon = btn.querySelector('i');
+        if (!icon) return;
+        icon.className = ok ? 'fas fa-check' : 'fas fa-copy';
+        if (ok) setTimeout(function () { icon.className = 'fas fa-copy'; }, 1500);
+    }
     btn.addEventListener('click', function () {
         input.select();
         input.setSelectionRange(0, 99999);
-        var ok = false;
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(input.value).then(function () { ok = true; });
-        } else {
-            try { ok = document.execCommand('copy'); } catch (e) {}
+            navigator.clipboard.writeText(input.value).then(function () {
+                markOk(true);
+            }).catch(function () {
+                try { markOk(document.execCommand('copy')); } catch (e) { markOk(false); }
+            });
+            return;
         }
-        var icon = btn.querySelector('i');
-        if (icon) {
-            icon.className = ok ? 'fas fa-check' : 'fas fa-copy';
-            setTimeout(function () { icon.className = 'fas fa-copy'; }, 1500);
-        }
+        try { markOk(document.execCommand('copy')); } catch (e) { markOk(false); }
     });
 })();
 </script>

@@ -16,6 +16,17 @@
             {% endif %}
         </div>
 
+        {% set pending_scale = (scale_stats.pending if scale_stats else 0) or 0 %}
+        {% if pending_scale and can_edit_finance %}
+        <div class="alert alert-warning py-2 mb-3" style="font-size: var(--text-sm);">
+            <i class="fas fa-user-clock me-1"></i>
+            <strong>{{ pending_scale }}</strong> músico{% if pending_scale != 1 %}s{% endif %} ainda
+            pendente{% if pending_scale != 1 %}s{% endif %} na escala — ficam
+            <strong>fora da divisão</strong> até confirmar.
+            <a href="#escala" class="alert-link">Ver escala</a>
+        </div>
+        {% endif %}
+
         {% if can_edit_finance %}
         <form method="POST" action="{{ url_for('agenda.save_event_fee', event_id=event.id) }}" id="night-settle-form">
             {% include 'partials/csrf_input.html' %}

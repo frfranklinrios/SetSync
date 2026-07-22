@@ -896,10 +896,13 @@ def add_personal():
             from product_funnel import log_funnel_step
             mark_funnel_event('primeira_cifra')
             log_funnel_step(user_id, 'primeira_cifra')
+            flash(f'“{titulo}” salva. Abra o Modo Tocar para ver no palco.', 'success')
+            return redirect(url_for('cifras.tocar_colecao'))
         flash(f'“{titulo}” salva na sua coleção.', 'success')
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
-    return render_template('cifras/add.html', band=None, personal=True)
+    welcome = request.args.get('welcome') == '1'
+    return render_template('cifras/add.html', band=None, personal=True, welcome=welcome)
 
 
 @cifras_bp.route('/<cifra_id>/compartilhar', methods=['GET', 'POST'])
@@ -1130,6 +1133,13 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         if share_token:
             from setlist_public import public_share_urls
             public_letras_url = public_share_urls(share_token)['letras']
+    band_invite_url = None
+    if band and can_edit and band.get('id'):
+        from band_invites import make_band_invite_token
+        from security import external_url_for
+        band_invite_url = external_url_for(
+            'auth.convite', token=make_band_invite_token(band['id']),
+        )
     return render_template(
         'cifras/play_mode.html',
         setlist=setlist,
@@ -1156,6 +1166,7 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         user_id=user_id,
         auto_follow_leader=bool(event_context),
         public_letras_url=public_letras_url,
+        band_invite_url=band_invite_url,
     )
 
 
@@ -1521,23 +1532,28 @@ def get_transposed(cifra_id):
     want_structured = request.args.get('structured', '0') == '1'
     want_grade = request.args.get('grade', '0') == '1'
     want_lyrics = request.args.get('lyrics', '0') == '1'
+    want_nashville = request.args.get('nashville', '').lower() in ('1', 'true', 'yes')
 
     raw = sanitize_tab_html_artifacts(cifra['conteudo'] or '')
     transposed = pychord_transpose_text(raw, semitones, cifra['tom_original']) if semitones else raw
     transposed = format_text_chords_br(transposed, key_at_transpose(cifra['tom_original'], semitones))
 
+    display_key = key_at_transpose(cifra['tom_original'], semitones)
+    nashville_key = display_key if want_nashville else None
+
     payload = {
         'tom_original': cifra['tom_original'],
         'semitones': semitones,
-        'display_key': key_at_transpose(cifra['tom_original'], semitones),
+        'display_key': display_key,
+        'nashville': bool(want_nashville),
     }
     if want_html:
         structured_data = _load_best_structured_cifra(cifra, semitones)
         grouped = _group_cifra_data(structured_data) if structured_data else None
         if grouped:
-            payload['html'] = render_grouped_cifra_html(grouped)
+            payload['html'] = render_grouped_cifra_html(grouped, nashville_key=nashville_key)
         else:
-            payload['html'] = highlight_chords_play_html(transposed)
+            payload['html'] = highlight_chords_play_html(transposed, nashville_key=nashville_key)
     else:
         payload['conteudo'] = transposed
 

@@ -64,6 +64,30 @@
         <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2 class="h6 mb-0">Ativação</h2>
+                    {% if funnel and funnel.next_step %}
+                    <span class="badge text-bg-warning text-dark">
+                        Próximo: {{ funnel.steps|selectattr('step','equalto',funnel.next_step)|map(attribute='label')|first }}
+                    </span>
+                    {% elif funnel %}
+                    <span class="badge text-bg-success">Funil completo</span>
+                    {% endif %}
+                </div>
+                {% if funnel and funnel.steps %}
+                <ul class="list-unstyled mb-3" style="font-size: var(--text-sm);">
+                    {% for s in funnel.steps %}
+                    <li class="d-flex align-items-center gap-2 py-1 border-bottom">
+                        {% if s.done %}
+                        <i class="fas fa-circle-check text-success"></i>
+                        {% else %}
+                        <i class="far fa-circle text-muted"></i>
+                        {% endif %}
+                        <span class="{% if not s.done %}text-muted{% endif %}">{{ s.label }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <h2 class="h6 mb-0">Bandas ({{ user.bands_count or 0 }})</h2>
                 </div>
                 {% if owned_bands or member_bands %}

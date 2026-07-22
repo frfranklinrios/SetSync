@@ -231,6 +231,7 @@ def usuario_detalhe(user_id):
     from activity_log import backfill_admin_activity, count_admin_activity, list_admin_activity
     from db import count_user_band_memberships, count_user_personal_cifras, get_owned_bands, get_user_bands
     from demo_accounts import is_demo_user
+    from product_funnel import get_user_funnel_steps
 
     backfill_admin_activity()
     user = get_user(user_id)
@@ -247,6 +248,7 @@ def usuario_detalhe(user_id):
     owned = get_owned_bands(user_id)
     member_of = get_user_bands(user_id)
     entries = list_admin_activity(limit=100, related_user_id=user_id)
+    funnel = get_user_funnel_steps(user_id)
 
     return render_template(
         'admin/usuario.html',
@@ -255,6 +257,7 @@ def usuario_detalhe(user_id):
         member_bands=member_of,
         entries=entries,
         activity_total=count_admin_activity(related_user_id=user_id),
+        funnel=funnel,
     )
 
 

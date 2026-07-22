@@ -34,11 +34,13 @@ FUNNEL_LABELS: dict[str, str] = {
 }
 
 # Funil principal de ativação (ordem de exibição no painel admin)
+# Alinhado ao produto: cifra → tocar → banda → setlist → trial → pago
 ACTIVATION_FUNNEL = (
-    'primeira_banda',
+    'signup',
     'primeira_cifra',
-    'primeira_setlist',
     'play_mode',
+    'primeira_banda',
+    'primeira_setlist',
     'trial_iniciado',
     'assinatura_paga',
 )
@@ -95,3 +97,29 @@ def funnel_activation_rows(*, users_total: int) -> list[dict[str, Any]]:
         if n > 0:
             prev = n
     return rows
+
+
+def get_user_funnel_steps(user_id: str) -> dict[str, Any]:
+    """Checklist de ativação de um usuário (ficha admin)."""
+    if not user_id:
+        return {'done': set(), 'steps': [], 'next_step': None}
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT step FROM product_funnel_events WHERE user_id = ?',
+        (user_id,),
+    )
+    done = {str(r['step']) for r in c.fetchall()}
+    db.close()
+    steps = []
+    next_step = None
+    for step in ACTIVATION_FUNNEL:
+        ok = step in done
+        steps.append({
+            'step': step,
+            'label': FUNNEL_LABELS.get(step, step),
+            'done': ok,
+        })
+        if not ok and next_step is None:
+            next_step = step
+    return {'done': done, 'steps': steps, 'next_step': next_step}
