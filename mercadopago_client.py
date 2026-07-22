@@ -27,7 +27,7 @@ def get_mp_sdk() -> mercadopago.SDK:
 
 
 def plan_id_for(plano: str) -> str:
-    """ID do plano de recorrência no MP."""
+    """ID do plano de recorrência no MP (referência / painel — não usado no checkout redirect)."""
     key = 'MP_PLAN_PRO_ID' if plano == 'pro' else 'MP_PLAN_WORSHIP_ID'
     plan_id = (os.getenv(key) or '').strip()
     if not plan_id:
@@ -46,6 +46,9 @@ def _valor_preenchido(valor: str | None) -> bool:
 def mp_config_status() -> dict:
     """
     Estado da configuração MP para a UI e scripts de teste.
+
+    Checkout redirect (preapproval sem plan_id) exige só o Access Token.
+    MP_PLAN_* são opcionais (referência no painel).
     """
     env = mp_environment()
     token_var = 'MP_ACCESS_TOKEN' if env == 'production' else 'MP_ACCESS_TOKEN_TEST'
@@ -56,13 +59,19 @@ def mp_config_status() -> dict:
 
     token_ok = _valor_preenchido(token)
     planos_ok = _valor_preenchido(pro_id) and _valor_preenchido(worship_id)
-    pronto = token_ok and planos_ok
+    # Pronto para cobrar: basta token — o checkout não usa preapproval_plan_id
+    pronto = token_ok
 
     faltando = []
     if not token_ok:
         faltando.append(f'Preencha {token_var} no .env (Access Token de teste ou produção)')
-    if not _valor_preenchido(pro_id) or not _valor_preenchido(worship_id):
-        faltando.append('Rode: uv run python scripts/criar_planos_mp.py e copie MP_PLAN_PRO_ID / MP_PLAN_WORSHIP_ID')
+    avisos = []
+    if not planos_ok:
+        avisos.append(
+            'Opcional: rode scripts/criar_planos_mp.py para MP_PLAN_PRO_ID / MP_PLAN_WORSHIP_ID (referência no painel)'
+        )
+    if not _valor_preenchido(webhook):
+        avisos.append('Configure MP_WEBHOOK_SECRET para ativação automática via webhook')
 
     return {
         'environment': env,
@@ -73,6 +82,7 @@ def mp_config_status() -> dict:
         'pronto_checkout': pronto,
         'pronto_checkout_estudio': token_ok,
         'faltando': faltando,
+        'avisos': avisos,
     }
 
 
@@ -92,6 +102,7 @@ def build_preapproval_checkout_body(
     external_reference: str,
     reason: str | None = None,
     billing_period: str = 'monthly',
+    notification_url: str | None = None,
 ) -> dict:
     """
   Corpo para POST /preapproval com pagamento pendente (redirect ao checkout MP).
@@ -132,7 +143,7 @@ def build_preapproval_checkout_body(
         }
         suffix = ''
 
-    return {
+    body = {
         'reason': (reason or f'Uníssono {definicao.nome}') + suffix,
         'payer_email': payer_email,
         'back_url': back_url,
@@ -140,6 +151,9 @@ def build_preapproval_checkout_body(
         'status': 'pending',
         'auto_recurring': recurring,
     }
+    if notification_url:
+        body['notification_url'] = notification_url
+    return body
 
 
 def mp_error_message(result: dict) -> str:

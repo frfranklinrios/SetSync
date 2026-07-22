@@ -80,6 +80,16 @@ def _banda_do_usuario(banda_id: str, user_id: str) -> dict | None:
     return band
 
 
+def _mp_notification_url() -> str:
+    """URL de webhook; inclui ?secret= quando MP_WEBHOOK_SECRET está definido."""
+    url = external_url_for('assinatura_bp.webhook')
+    secret = (os.getenv('MP_WEBHOOK_SECRET') or '').strip()
+    if not secret:
+        return url
+    sep = '&' if '?' in url else '?'
+    return f'{url}{sep}secret={secret}'
+
+
 @assinatura_bp.route('/planos')
 def planos_redirect():
     """Atalho legado usado em guias SEO e conteúdo antigo."""
@@ -146,6 +156,7 @@ def iniciar(plano):
             external_reference=f'{banda_id}:{plano}',
             reason=f'Uníssono {PLANOS[plano].nome} — Banda: {band["name"]}',
             billing_period=request.form.get('billing_period', 'monthly'),
+            notification_url=_mp_notification_url(),
         )
         result = sdk.preapproval().create(preapproval_data)
         if result.get('status') not in (200, 201):
@@ -166,6 +177,7 @@ def iniciar(plano):
         mp_id = (result.get('response') or {}).get('id')
         if mp_id:
             update_assinatura(banda_id, mp_preapproval_id=mp_id)
+            session['mp_checkout']['preapproval_id'] = str(mp_id)
         return redirect(init_point)
     except Exception as exc:
         current_app.logger.exception('Erro ao iniciar assinatura: %s', exc)
@@ -204,6 +216,7 @@ def iniciar_estudio(plano):
             external_reference=f'studio:{user_id}:{plano}',
             reason=f'Uníssono {definicao.nome}',
             billing_period=request.form.get('billing_period', 'monthly'),
+            notification_url=_mp_notification_url(),
         )
         result = sdk.preapproval().create(preapproval_data)
         if result.get('status') not in (200, 201):
@@ -220,6 +233,7 @@ def iniciar_estudio(plano):
         mp_id = (result.get('response') or {}).get('id')
         if mp_id:
             update_studio_subscription(user_id, mp_preapproval_id=mp_id)
+            session['mp_checkout']['preapproval_id'] = str(mp_id)
         return redirect(init_point)
     except Exception as exc:
         current_app.logger.exception('Erro ao iniciar assinatura estúdio: %s', exc)
@@ -231,41 +245,32 @@ def iniciar_estudio(plano):
 @login_required
 def sucesso_estudio():
     """Retorno do MP após checkout do plano Estúdio."""
-    status_retorno = (request.args.get('status') or request.args.get('collection_status') or '').lower()
-    if status_retorno == 'pending':
-        flash('Pagamento pendente. Assim que for confirmado, seu plano Premium será ativado.', 'warning')
-        return redirect(url_for('assinatura_bp.planos') + '#estudio')
-    if status_retorno in ('failure', 'rejected', 'null'):
-        flash('Pagamento não aprovado. Tente novamente.', 'danger')
-        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+    from models_studio import get_or_create_studio_subscription
+    from mp_webhook import ativar_studio_subscription_mp
 
-    checkout = session.pop('mp_checkout', None)
-    preapproval_id = (
-        request.args.get('preapproval_id')
-        or request.args.get('collection_id')
-        or request.args.get('payment_id')
-    )
+    status_retorno = (request.args.get('status') or request.args.get('collection_status') or '').lower()
+    checkout = session.get('mp_checkout') or {}
     user_id = session['user_id']
     plano = PLANO_ESTUDIO_PREMIUM
-
-    if checkout and checkout.get('tipo') == 'studio':
+    if checkout.get('tipo') == 'studio':
         user_id = checkout.get('user_id', user_id)
         plano = checkout.get('plano', plano)
-    elif preapproval_id:
-        from models_studio import get_studio_subscription_by_mp_id
-        row = get_studio_subscription_by_mp_id(preapproval_id)
-        if row:
-            user_id = row['user_id']
-            plano = row.get('plano', PLANO_ESTUDIO_PREMIUM)
 
     if user_id != session['user_id']:
         flash('Sem permissão para ativar este plano.', 'danger')
         return redirect(url_for('assinatura_bp.planos') + '#estudio')
 
+    if status_retorno in ('failure', 'rejected', 'null'):
+        flash('Pagamento não aprovado. Tente novamente.', 'danger')
+        return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+    preapproval_id = (checkout.get('preapproval_id') or request.args.get('preapproval_id') or '').strip()
+    if not preapproval_id:
+        row = get_or_create_studio_subscription(user_id)
+        preapproval_id = (row.get('mp_preapproval_id') or '').strip()
+
     if preapproval_id:
         try:
-            from mp_webhook import ativar_studio_subscription_mp
-
             sdk = get_mp_sdk()
             info = sdk.preapproval().get(preapproval_id)
             body = info.get('response') or {}
@@ -274,7 +279,7 @@ def sucesso_estudio():
                 parts = ref.split(':', 2)
                 if len(parts) >= 3:
                     plano = parts[2]
-            status_mp = body.get('status', '')
+            status_mp = (body.get('status') or '').lower()
             if status_mp in ('authorized', 'active', 'approved'):
                 next_charge = body.get('next_payment_date')
                 ativar_studio_subscription_mp(user_id, plano, preapproval_id, next_charge)
@@ -282,16 +287,70 @@ def sucesso_estudio():
                 from google_ads import mark_funnel_event
                 log_funnel_step(user_id, 'assinatura_paga', meta={'plano': plano, 'tipo': 'studio'})
                 mark_funnel_event('assinatura_paga')
+                session.pop('mp_checkout', None)
                 flash('Plano Estúdio Premium ativado!', 'success')
             else:
-                flash('Pagamento em processamento. Você receberá confirmação em breve.', 'info')
+                flash(
+                    'Pagamento em processamento (PIX/cartão). Assim que o Mercado Pago confirmar, '
+                    'o Premium libera automaticamente.',
+                    'info',
+                )
         except Exception as exc:
             current_app.logger.exception('Erro ao confirmar sucesso MP estúdio: %s', exc)
-            flash('Checkout concluído. Aguarde a confirmação por e-mail.', 'info')
+            flash('Checkout concluído. Aguarde a confirmação automática.', 'info')
     else:
         flash('Assinatura registrada. Aguarde a confirmação.', 'info')
 
     return redirect(url_for('assinatura_bp.planos') + '#estudio')
+
+
+def _resolve_band_preapproval_id(banda_id: str | None, checkout: dict | None) -> str | None:
+    """ID real de preapproval (nunca payment_id/collection_id)."""
+    pid = None
+    if checkout:
+        pid = (checkout.get('preapproval_id') or '').strip() or None
+    if not pid:
+        pid = (request.args.get('preapproval_id') or '').strip() or None
+    if not pid and banda_id:
+        row = get_assinatura(banda_id)
+        pid = ((row or {}).get('mp_preapproval_id') or '').strip() or None
+    return pid
+
+
+def _try_activate_band_preapproval(banda_id: str, plano: str, preapproval_id: str) -> str:
+    """
+    Consulta MP e tenta ativar. Retorna: 'ativa' | 'pendente' | 'erro'.
+    """
+    try:
+        sdk = get_mp_sdk()
+        info = sdk.preapproval().get(preapproval_id)
+        if info.get('status') not in (200, 201):
+            return 'erro'
+        body = info.get('response') or {}
+        ref = body.get('external_reference', '')
+        if ':' in ref and not str(ref).startswith('studio:'):
+            banda_id, plano = ref.split(':', 1)
+        status_mp = (body.get('status') or '').lower()
+        if status_mp in ('authorized', 'active', 'approved'):
+            next_charge = body.get('next_payment_date') or body.get('auto_recurring', {}).get('end_date')
+            ativar_assinatura_mp(banda_id, plano, preapproval_id, next_charge)
+            try:
+                from product_funnel import log_funnel_step
+                from google_ads import mark_funnel_event
+                log_funnel_step(session['user_id'], 'assinatura_paga', meta={'plano': plano})
+                mark_funnel_event('assinatura_paga')
+            except Exception:
+                pass
+            try:
+                import admin_notifications as an
+                an.subscription_activated(banda_id, plano, source='checkout')
+            except Exception:
+                current_app.logger.exception('Notificação admin (sucesso checkout) falhou')
+            return 'ativa'
+        return 'pendente'
+    except Exception as exc:
+        current_app.logger.exception('Erro ao confirmar preapproval: %s', exc)
+        return 'erro'
 
 
 @assinatura_bp.route('/assinatura/sucesso')
@@ -299,78 +358,135 @@ def sucesso_estudio():
 def sucesso():
     """Retorno do MP após checkout de assinatura."""
     status_retorno = (request.args.get('status') or request.args.get('collection_status') or '').lower()
+    checkout = session.get('mp_checkout') or {}
+    if checkout.get('tipo') == 'studio':
+        return redirect(url_for('assinatura_bp.sucesso_estudio', **request.args))
+
+    banda_id = checkout.get('banda_id') or request.args.get('banda_id')
+    plano = checkout.get('plano') or PLANO_PRO
+
     if status_retorno == 'pending':
-        return redirect(url_for('assinatura_bp.pendente'))
+        return redirect(url_for(
+            'assinatura_bp.pendente',
+            banda_id=banda_id or '',
+            plano=plano,
+        ))
     if status_retorno in ('failure', 'rejected', 'null'):
-        return redirect(url_for('assinatura_bp.falha'))
+        return redirect(url_for(
+            'assinatura_bp.falha',
+            banda_id=banda_id or '',
+            plano=plano,
+        ))
 
-    checkout = session.pop('mp_checkout', None)
-    preapproval_id = (
-        request.args.get('preapproval_id')
-        or request.args.get('collection_id')
-        or request.args.get('payment_id')
-    )
-    banda_id = None
-    plano = PLANO_PRO
-
-    if checkout:
-        banda_id = checkout.get('banda_id')
-        plano = checkout.get('plano', PLANO_PRO)
-    elif preapproval_id:
-        row = get_assinatura_by_mp_id(preapproval_id)
+    if not banda_id and checkout.get('preapproval_id'):
+        row = get_assinatura_by_mp_id(checkout['preapproval_id'])
         if row:
             banda_id = row['banda_id']
-            plano = row.get('plano', PLANO_PRO)
+            if row.get('plano') and row['plano'] != 'gratis':
+                plano = row['plano']
+
+    preapproval_id = _resolve_band_preapproval_id(banda_id, checkout)
 
     if preapproval_id and banda_id:
         band = get_band(banda_id)
         if not band or band['owner_id'] != session['user_id']:
             flash('Sem permissão para ativar plano desta banda.', 'danger')
             return redirect(url_for('assinatura_bp.planos'))
-        try:
-            sdk = get_mp_sdk()
-            info = sdk.preapproval().get(preapproval_id)
-            body = info.get('response') or {}
-            ref = body.get('external_reference', '')
-            if ':' in ref:
-                banda_id, plano = ref.split(':', 1)
-            status_mp = body.get('status', '')
-            if status_mp in ('authorized', 'active', 'approved'):
-                next_charge = body.get('next_payment_date') or body.get('auto_recurring', {}).get('end_date')
-                ativar_assinatura_mp(banda_id, plano, preapproval_id, next_charge)
-                from product_funnel import log_funnel_step
-                from google_ads import mark_funnel_event
-                log_funnel_step(session['user_id'], 'assinatura_paga', meta={'plano': plano})
-                mark_funnel_event('assinatura_paga')
-                flash('Assinatura ativada com sucesso!', 'success')
-                try:
-                    import admin_notifications as an
-                    an.subscription_activated(banda_id, plano, source='checkout')
-                except Exception:
-                    current_app.logger.exception('Notificação admin (sucesso checkout) falhou')
-            else:
-                flash('Pagamento em processamento. Você receberá confirmação em breve.', 'info')
-        except Exception as exc:
-            current_app.logger.exception('Erro ao confirmar sucesso MP: %s', exc)
-            flash('Checkout concluído. Aguarde a confirmação por e-mail.', 'info')
-    else:
-        flash('Assinatura registrada. Aguarde a confirmação.', 'info')
+        resultado = _try_activate_band_preapproval(banda_id, plano, preapproval_id)
+        if resultado == 'ativa':
+            session.pop('mp_checkout', None)
+            flash('Assinatura ativada com sucesso!', 'success')
+            return redirect(url_for('assinatura_bp.planos', banda_id=banda_id))
+        if resultado == 'pendente':
+            return redirect(url_for(
+                'assinatura_bp.pendente',
+                banda_id=banda_id,
+                plano=plano,
+            ))
 
-    return redirect(url_for('assinatura_bp.planos', banda_id=banda_id or ''))
+    flash('Assinatura registrada. Confirmando pagamento…', 'info')
+    return redirect(url_for(
+        'assinatura_bp.pendente',
+        banda_id=banda_id or '',
+        plano=plano,
+    ))
 
 
 @assinatura_bp.route('/assinatura/pendente')
 @login_required
 def pendente():
-    flash('Pagamento pendente. Assim que for confirmado, seu plano será ativado.', 'warning')
-    return redirect(url_for('assinatura_bp.planos'))
+    checkout = session.get('mp_checkout') or {}
+    banda_id = request.args.get('banda_id') or checkout.get('banda_id') or ''
+    plano = request.args.get('plano') or checkout.get('plano') or PLANO_PRO
+    band = get_band(banda_id) if banda_id else None
+    if band and band['owner_id'] != session['user_id']:
+        band = None
+        banda_id = ''
+    return render_template(
+        'assinatura/pendente.html',
+        banda_id=banda_id,
+        plano=plano,
+        band=band,
+        plano_nome=(PLANOS.get(plano).nome if plano in PLANOS else plano),
+    )
 
 
 @assinatura_bp.route('/assinatura/falha')
 @login_required
 def falha():
-    flash('Pagamento não aprovado. Tente novamente ou use outro método.', 'danger')
-    return redirect(url_for('assinatura_bp.planos'))
+    checkout = session.get('mp_checkout') or {}
+    banda_id = request.args.get('banda_id') or checkout.get('banda_id') or ''
+    plano = request.args.get('plano') or checkout.get('plano') or PLANO_PRO
+    band = get_band(banda_id) if banda_id else None
+    if band and band['owner_id'] != session['user_id']:
+        band = None
+        banda_id = ''
+    return render_template(
+        'assinatura/falha.html',
+        banda_id=banda_id,
+        plano=plano,
+        band=band,
+        plano_nome=(PLANOS.get(plano).nome if plano in PLANOS else plano),
+    )
+
+
+@assinatura_bp.route('/assinatura/status.json')
+@login_required
+def status_json():
+    """Polling leve após PIX/boleto/cartão pendente."""
+    checkout = session.get('mp_checkout') or {}
+    banda_id = request.args.get('banda_id') or checkout.get('banda_id')
+    if not banda_id:
+        return jsonify({'ok': False, 'status': 'unknown'}), 400
+    band = get_band(banda_id)
+    if not band or band['owner_id'] != session['user_id']:
+        return jsonify({'ok': False, 'status': 'forbidden'}), 403
+
+    row = get_assinatura(banda_id) or {}
+    if (row.get('status') or '').lower() == 'ativa' and (row.get('plano') or '') not in ('', 'gratis'):
+        session.pop('mp_checkout', None)
+        return jsonify({
+            'ok': True,
+            'status': 'ativa',
+            'plano': row.get('plano'),
+            'redirect': url_for('assinatura_bp.planos', banda_id=banda_id),
+        })
+
+    preapproval_id = _resolve_band_preapproval_id(banda_id, checkout)
+    plano = checkout.get('plano') or row.get('plano') or PLANO_PRO
+    if preapproval_id:
+        resultado = _try_activate_band_preapproval(banda_id, plano, preapproval_id)
+        if resultado == 'ativa':
+            session.pop('mp_checkout', None)
+            return jsonify({
+                'ok': True,
+                'status': 'ativa',
+                'plano': plano,
+                'redirect': url_for('assinatura_bp.planos', banda_id=banda_id),
+            })
+        return jsonify({'ok': True, 'status': resultado})
+
+    return jsonify({'ok': True, 'status': 'pendente'})
 
 
 @assinatura_bp.route('/assinatura/webhook', methods=['POST', 'GET'])
@@ -452,6 +568,8 @@ def voucher_indicar():
         else:
             tipo = 'banda'
             codigo, erro = criar_voucher_indicacao(session['user_id'])
+    from security import external_url_for
+
     return render_template(
         'assinatura/indicar.html',
         codigo=codigo,
@@ -459,6 +577,7 @@ def voucher_indicar():
         tipo=tipo,
         dias_indicacao=VOUCHER_INDICACAO_DIAS,
         meses_indicacao=max(1, VOUCHER_INDICACAO_DIAS // 30),
+        site_url=external_url_for('index'),
     )
 
 

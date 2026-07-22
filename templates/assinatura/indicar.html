@@ -4,8 +4,8 @@
 {% block content %}
 <h1 class="h3 mb-2">Indique e ganhe {{ meses_indicacao }} meses Pro</h1>
 <p class="text-muted mb-4">
-    Você e quem você convidar ganham <strong>{{ meses_indicacao }} meses</strong>
-    ({{ dias_indicacao }} dias). Uso único por código.
+    Gere o código uma vez e mande no WhatsApp. Você e quem resgatar ganham
+    <strong>{{ meses_indicacao }} meses</strong> ({{ dias_indicacao }} dias). Uso único por código.
 </p>
 
 {% if erro %}
@@ -18,19 +18,50 @@
         <p class="mb-1 text-success fw-semibold">
             {% if tipo == 'estudio' %}Código para o estúdio{% else %}Código para a banda{% endif %}
         </p>
-        <p class="fs-4 fw-bold font-monospace mb-2">{{ codigo }}</p>
-        <p class="small text-muted mb-0">
+        <p class="fs-4 fw-bold font-monospace mb-2" id="indicar-codigo">{{ codigo }}</p>
+        <p class="small text-muted mb-3">
             {% if tipo == 'estudio' %}
             Peça ao dono do estúdio para resgatar em <strong>Planos → Tem um voucher?</strong> (seção estúdio).
-            Quando ele usar, você ganha {{ meses_indicacao }} meses de <strong>Pro</strong> na sua banda
+            Quando ele usar, você ganha {{ meses_indicacao }} meses de <strong>Pro</strong>
             e o estúdio ganha {{ meses_indicacao }} meses de <strong>Premium</strong>.
             {% else %}
             Peça à outra banda para se cadastrar e resgatar em <strong>Planos</strong>.
             Quando usarem, você e a banda ganham {{ meses_indicacao }} meses de <strong>Pro</strong>.
             {% endif %}
         </p>
+        {% set wa_text = 'Código Uníssono ' ~ codigo ~ ' — ' ~ meses_indicacao ~ ' meses Pro grátis. Cadastre em ' ~ site_url ~ ' e resgate em Planos.' if tipo != 'estudio' else 'Código Uníssono ' ~ codigo ~ ' — ' ~ meses_indicacao ~ ' meses Premium pro estúdio (e quem indicou ganha Pro). Cadastre/resgate em ' ~ site_url ~ ' → Planos.' %}
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-success"
+               href="https://wa.me/?text={{ wa_text|urlencode }}"
+               target="_blank" rel="noopener">
+                <i class="fab fa-whatsapp me-1" aria-hidden="true"></i> Mandar no WhatsApp
+            </a>
+            <button type="button" class="btn btn-outline-secondary" id="copiar-codigo-btn">
+                <i class="fas fa-copy me-1" aria-hidden="true"></i> Copiar código
+            </button>
+        </div>
+        <p class="small text-muted mt-2 mb-0" id="copiar-codigo-status" role="status"></p>
     </div>
 </div>
+<script>
+(function () {
+    var btn = document.getElementById('copiar-codigo-btn');
+    var code = document.getElementById('indicar-codigo');
+    var status = document.getElementById('copiar-codigo-status');
+    if (!btn || !code) return;
+    btn.addEventListener('click', function () {
+        var text = (code.textContent || '').trim();
+        function done(ok) {
+            if (status) status.textContent = ok ? 'Código copiado.' : 'Selecione e copie manualmente.';
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { done(true); }).catch(function () { done(false); });
+        } else {
+            done(false);
+        }
+    });
+})();
+</script>
 {% endif %}
 
 <div class="row g-3 mb-4">
@@ -40,6 +71,7 @@
                 <h2 class="h5"><i class="fas fa-users me-1 text-muted"></i> Convidar uma banda</h2>
                 <p class="small text-muted flex-grow-1">
                     Você e a banda convidada ganham <strong>{{ meses_indicacao }} meses do plano Pro</strong>.
+                    Depois é só mandar o código no WhatsApp.
                 </p>
                 <form method="post">
                     {% include 'partials/csrf_input.html' %}

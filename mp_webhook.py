@@ -5,18 +5,29 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-from db import get_assinatura_by_mp_id, update_assinatura
+from db import get_assinatura, get_assinatura_by_mp_id, update_assinatura
 from mercadopago_client import get_mp_sdk
-from monetizacao import PLANO_PRO, PLANO_ESTUDIO_PREMIUM, STATUS_ATIVA, STATUS_CANCELADA, STATUS_INADIMPLENTE
+from monetizacao import (
+    PLANO_ESTUDIO_PREMIUM,
+    PLANO_GRATIS,
+    PLANO_PRO,
+    PLANOS,
+    PLANOS_ESTUDIO,
+    STATUS_ATIVA,
+    STATUS_CANCELADA,
+    STATUS_INADIMPLENTE,
+)
 from config import app_now_naive, app_now_str
 
 logger = logging.getLogger(__name__)
 
+_PLANOS_PAGOS = frozenset(PLANOS.keys()) | frozenset(PLANOS_ESTUDIO.keys())
+
 
 def webhook_autentico(req, secret: str) -> bool:
-    """Valida notificação via X-Webhook-Secret ou cabeçalho x-signature."""
+    """Valida notificação via query ?secret=, X-Webhook-Secret ou x-signature."""
     import os
     secret = (secret or '').strip()
     if not secret:
@@ -25,6 +36,10 @@ def webhook_autentico(req, secret: str) -> bool:
             return False
         logger.warning('MP_WEBHOOK_SECRET não definido (dev) — webhook rejeitado')
         return False
+
+    # Compatível com docs/ngrok: /assinatura/webhook?secret=...
+    if (req.args.get('secret') or '').strip() == secret:
+        return True
 
     if req.headers.get('X-Webhook-Secret') == secret:
         return True
@@ -48,10 +63,22 @@ def webhook_autentico(req, secret: str) -> bool:
         or payload.get('id')
         or ''
     )
-    request_id = req.headers.get('x-request-id', '')
-    manifest = f'id:{data_id};request-id:{request_id};ts:{ts};'
-    expected = hmac.new(secret.encode(), manifest.encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, v1)
+    request_id = req.headers.get('x-request-id', '') or req.headers.get('X-Request-Id', '')
+    # MP: IDs alfanuméricos no manifest usam lowercase
+    id_candidates = []
+    raw = str(data_id)
+    if raw:
+        id_candidates.append(raw)
+        if raw.lower() != raw:
+            id_candidates.append(raw.lower())
+    else:
+        id_candidates.append('')
+    for did in id_candidates:
+        manifest = f'id:{did};request-id:{request_id};ts:{ts};'
+        expected = hmac.new(secret.encode(), manifest.encode(), hashlib.sha256).hexdigest()
+        if hmac.compare_digest(expected, v1):
+            return True
+    return False
 
 
 def extrair_topic_id(req) -> tuple[str, str]:
@@ -77,9 +104,11 @@ def extrair_topic_id(req) -> tuple[str, str]:
 
 
 def ativar_assinatura_mp(banda_id: str, plano: str, mp_id: str, proxima_cobranca: str | None = None) -> None:
-    agora = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
+    agora = app_now_str()
     if not proxima_cobranca:
         proxima_cobranca = (app_now_naive() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+    if plano not in PLANOS or plano == PLANO_GRATIS:
+        plano = PLANO_PRO
     update_assinatura(
         banda_id,
         plano=plano,
@@ -102,6 +131,8 @@ def ativar_studio_subscription_mp(
 
     if not proxima_cobranca:
         proxima_cobranca = (app_now_naive() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+    if plano not in PLANOS_ESTUDIO:
+        plano = PLANO_ESTUDIO_PREMIUM
     update_studio_subscription(
         user_id,
         plano=plano,
@@ -110,6 +141,19 @@ def ativar_studio_subscription_mp(
         mp_preapproval_id=mp_id,
         data_proxima_cobranca=proxima_cobranca,
     )
+
+
+def _parse_band_ref(ref: str) -> tuple[str | None, str]:
+    ref = (ref or '').strip()
+    if not ref or ref.startswith('studio:'):
+        return None, PLANO_PRO
+    if ':' in ref:
+        banda_id, plano = ref.split(':', 1)
+        plano = (plano or PLANO_PRO).strip()
+        if plano not in PLANOS:
+            plano = PLANO_PRO
+        return banda_id.strip() or None, plano
+    return ref, PLANO_PRO
 
 
 def _processar_preapproval_studio(body: dict, data_id: str) -> bool:
@@ -146,6 +190,73 @@ def _processar_preapproval_studio(body: dict, data_id: str) -> bool:
     return True
 
 
+def _ativar_de_pagamento_aprovado(pbody: dict, data_id: str) -> None:
+    """Ativa/renova assinatura a partir de um payment approved (com plano correto)."""
+    meta = pbody.get('metadata') or {}
+    preapproval_id = (
+        meta.get('preapproval_id')
+        or meta.get('preapprovalId')
+        or ''
+    )
+    ref = str(pbody.get('external_reference') or '')
+
+    # Estúdio
+    if ref.startswith('studio:'):
+        parts = ref.split(':', 2)
+        user_id = parts[1] if len(parts) > 1 else ''
+        plano = parts[2] if len(parts) > 2 else PLANO_ESTUDIO_PREMIUM
+        if user_id:
+            mp_id = str(preapproval_id or data_id)
+            ativar_studio_subscription_mp(user_id, plano, mp_id)
+            logger.info('Pagamento estúdio aprovado user=%s plano=%s', user_id, plano)
+            return
+        from models_studio import get_studio_subscription_by_mp_id
+        row = get_studio_subscription_by_mp_id(str(preapproval_id)) if preapproval_id else None
+        if row:
+            ativar_studio_subscription_mp(
+                row['user_id'],
+                row.get('plano') or PLANO_ESTUDIO_PREMIUM,
+                str(preapproval_id or data_id),
+            )
+            return
+
+    row = get_assinatura_by_mp_id(str(preapproval_id)) if preapproval_id else None
+    banda_id, plano = _parse_band_ref(ref)
+    if not row and banda_id:
+        row = get_assinatura(banda_id)
+        if row:
+            row = dict(row)
+            row['banda_id'] = banda_id
+
+    if not row:
+        logger.warning(
+            'Pagamento aprovado sem assinatura local (payment=%s preapproval=%s ref=%s)',
+            data_id,
+            preapproval_id,
+            ref,
+        )
+        return
+
+    banda_id = row['banda_id']
+    plano_local = (row.get('plano') or '').strip()
+    if plano in _PLANOS_PAGOS and plano != PLANO_GRATIS:
+        pass
+    elif plano_local in PLANOS and plano_local != PLANO_GRATIS:
+        plano = plano_local
+    else:
+        plano = PLANO_PRO
+
+    mp_id = str(preapproval_id or row.get('mp_preapproval_id') or data_id)
+    next_dt = (app_now_naive() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+    ativar_assinatura_mp(banda_id, plano, mp_id, next_dt)
+    logger.info('Pagamento aprovado: ativou banda=%s plano=%s', banda_id, plano)
+    try:
+        import admin_notifications as an
+        an.subscription_activated(banda_id, plano, source='payment')
+    except Exception:
+        logger.exception('Notificação admin (pagamento) falhou')
+
+
 def processar_notificacao_mp(topic: str, data_id: str) -> None:
     """Busca recurso no MP e atualiza assinatura local."""
     if not data_id:
@@ -155,7 +266,12 @@ def processar_notificacao_mp(topic: str, data_id: str) -> None:
     sdk = get_mp_sdk()
     topic_l = topic.lower()
 
-    if 'preapproval' in topic_l or topic_l in ('subscription_preapproval', 'subscription_authorized_payment'):
+    # authorized_payment NÃO é preapproval — o data.id é outro recurso
+    if topic_l == 'subscription_authorized_payment':
+        logger.info('Webhook MP authorized_payment id=%s — ignorado (usa payment/preapproval)', data_id)
+        return
+
+    if 'preapproval' in topic_l or topic_l == 'subscription_preapproval':
         info = sdk.preapproval().get(data_id)
         if info.get('status') not in (200, 201):
             logger.error('MP preapproval.get(%s): %s', data_id, info)
@@ -164,14 +280,15 @@ def processar_notificacao_mp(topic: str, data_id: str) -> None:
         if _processar_preapproval_studio(body, data_id):
             return
 
-        ref = body.get('external_reference', '')
-        banda_id, plano = (ref.split(':', 1) + [PLANO_PRO])[:2] if ':' in ref else (None, PLANO_PRO)
+        banda_id, plano = _parse_band_ref(body.get('external_reference', ''))
         status_mp = (body.get('status') or '').lower()
         if not banda_id:
             row = get_assinatura_by_mp_id(data_id)
             if row:
                 banda_id = row['banda_id']
-                plano = row.get('plano', PLANO_PRO)
+                local_plano = (row.get('plano') or '').strip()
+                if local_plano in PLANOS and local_plano != PLANO_GRATIS:
+                    plano = local_plano
 
         if not banda_id:
             logger.warning('Webhook preapproval sem banda_id (id=%s)', data_id)
@@ -190,7 +307,7 @@ def processar_notificacao_mp(topic: str, data_id: str) -> None:
             update_assinatura(
                 banda_id,
                 status=STATUS_CANCELADA,
-                data_cancelamento=app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S'),
+                data_cancelamento=app_now_str(),
             )
             try:
                 import admin_notifications as an
@@ -212,13 +329,6 @@ def processar_notificacao_mp(topic: str, data_id: str) -> None:
             return
         pbody = pay.get('response') or {}
         if pbody.get('status') == 'approved':
-            preapproval_id = (
-                pbody.get('metadata', {}).get('preapproval_id')
-                or pbody.get('external_reference')
-            )
-            row = get_assinatura_by_mp_id(str(preapproval_id)) if preapproval_id else None
-            if row:
-                next_dt = (app_now_naive() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
-                update_assinatura(row['banda_id'], data_proxima_cobranca=next_dt, status=STATUS_ATIVA)
+            _ativar_de_pagamento_aprovado(pbody, data_id)
     else:
         logger.info('Webhook MP ignorado: topic=%s id=%s', topic, data_id)

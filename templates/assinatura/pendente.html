@@ -1,0 +1,72 @@
+{% extends "index.html" %}
+{% block title %}Pagamento pendente — Uníssono{% endblock %}
+
+{% block content %}
+<div class="text-center py-5 px-3" style="max-width: 28rem; margin: 0 auto;">
+    <div class="mb-3" style="font-size: 2.25rem; color: #d97706;">
+        <i class="fas fa-clock" aria-hidden="true"></i>
+    </div>
+    <h1 class="h4 mb-2">Pagamento em processamento</h1>
+    <p class="text-muted mb-3">
+        {% if plano_nome %}Plano <strong>{{ plano_nome }}</strong>{% if band %} · {{ band.name }}{% endif %}.{% endif %}
+        Se você pagou com <strong>PIX</strong> ou cartão, a confirmação pode levar alguns segundos.
+        Esta página atualiza sozinha.
+    </p>
+    <div class="alert alert-light border small text-start mb-4">
+        <div class="fw-semibold mb-1">O que acontece agora</div>
+        <ol class="mb-0 ps-3">
+            <li>O Mercado Pago confirma o pagamento</li>
+            <li>O Uníssono libera o plano automaticamente</li>
+            <li>Você volta para a página de planos</li>
+        </ol>
+    </div>
+    <p class="text-muted small mb-3" id="poll-status">Aguardando confirmação…</p>
+    <div class="d-flex flex-wrap gap-2 justify-content-center">
+        {% if banda_id and plano %}
+        <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano=plano) }}">
+            {% include 'partials/csrf_input.html' %}
+            <input type="hidden" name="banda_id" value="{{ banda_id }}">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Tentar de novo</button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('assinatura_bp.planos', banda_id=banda_id or none) }}" class="btn btn-outline-secondary btn-sm">
+            Voltar aos planos
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if banda_id %}
+<script>
+(function () {
+    var statusEl = document.getElementById('poll-status');
+    var tries = 0;
+    var maxTries = 12;
+    var url = {{ url_for('assinatura_bp.status_json', banda_id=banda_id)|tojson }};
+    function tick() {
+        tries += 1;
+        fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && data.status === 'ativa' && data.redirect) {
+                    if (statusEl) statusEl.textContent = 'Plano ativado! Redirecionando…';
+                    window.location.replace(data.redirect);
+                    return;
+                }
+                if (statusEl) {
+                    statusEl.textContent = tries >= maxTries
+                        ? 'Ainda pendente. Você pode fechar esta página — ativamos quando o PIX/cartão confirmar.'
+                        : 'Aguardando confirmação… (' + tries + '/' + maxTries + ')';
+                }
+                if (tries < maxTries) setTimeout(tick, 5000);
+            })
+            .catch(function () {
+                if (tries < maxTries) setTimeout(tick, 5000);
+            });
+    }
+    setTimeout(tick, 2000);
+})();
+</script>
+{% endif %}
+{% endblock %}

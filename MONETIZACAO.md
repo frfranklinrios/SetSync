@@ -58,7 +58,7 @@ MP_PLAN_WORSHIP_ID=2c938084...
 
 Copie os valores para o `.env`.
 
-> **Checkout:** o Uníssono cria a assinatura **sem** `preapproval_plan_id` (valores R$ 29 / R$ 69 em `monetizacao.py`) e redireciona ao `init_point` do MP. Com plano associado na API, o MP exige `card_token_id` (checkout transparente). Os `MP_PLAN_*` servem para validação e referência no painel.
+> **Checkout:** o Uníssono cria a assinatura **sem** `preapproval_plan_id` (valores em `monetizacao.py`) e redireciona ao `init_point` do MP. Com plano associado na API, o MP exige `card_token_id` (checkout transparente). Os `MP_PLAN_*` são **opcionais** (referência no painel). O checkout liberado exige só Access Token (`pronto_checkout`).
 
 ## 4. Webhook no painel Mercado Pago
 
@@ -196,7 +196,7 @@ https://SEU-ID.ngrok-free.app/assinatura/webhook?secret=minha-chave-secreta-test
 
 Eventos: `subscription_preapproval`, `payment`.
 
-> O parâmetro `?secret=` equivale ao header `X-Webhook-Secret` e deve ser igual a `MP_WEBHOOK_SECRET`.
+> O parâmetro `?secret=` é aceito e equivale ao header `X-Webhook-Secret` (deve ser igual a `MP_WEBHOOK_SECRET`). Em produção preferimos `x-signature` do painel MP.
 
 ### 10.5 Simular webhook localmente (sem ngrok)
 

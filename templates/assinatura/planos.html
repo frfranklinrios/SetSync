@@ -5,8 +5,8 @@
 {% include 'partials/plano_periodo_styles.html' %}
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-        <h1 class="h3 mb-1">Escolha o plano da sua banda</h1>
-        <p class="text-muted mb-0">Pro é o mais escolhido. Trial de 30 dias sem cartão na primeira banda.</p>
+        <h1 class="h3 mb-1">Planos para a sua banda</h1>
+        <p class="text-muted mb-0">Escolha simples: <strong>Pro</strong> para a banda inteira, ou Individual se toca só.</p>
         <div class="mt-2">
             {% with variant='inline' %}
             {% include 'partials/mercadopago_trust.html' %}
@@ -51,22 +51,50 @@
 </div>
 {% endif %}
 
-<div class="row g-3 mb-4 align-items-stretch">
-    <div class="col-md-6 col-lg-3">
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-md-4">
         <div class="card h-100">
             <div class="card-body d-flex flex-column">
                 <h2 class="h5">Grátis</h2>
                 <p class="display-6 fw-bold mb-1">R$ 0</p>
-                <p class="small text-muted">Pra começar sozinho, sem cartão</p>
+                <p class="small text-muted">Solo · coleção ilimitada + Modo Tocar</p>
                 <ul class="small text-muted mb-0">
-                    <li><strong>Coleção pessoal ilimitada</strong> + Modo Tocar</li>
-                    <li>Banda: até 30 músicas · 5 integrantes · 10 setlists</li>
-                    <li>Compartilhar cifras: com assinatura</li>
+                    <li>Banda: até 30 músicas · 5 integrantes</li>
+                    <li>Compartilhar: com assinatura</li>
                 </ul>
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-3">
+    <div class="col-md-4">
+        <div class="card h-100 border-primary shadow-sm position-relative js-plan-card"
+             data-monthly-label="R$ 29/mês"
+             data-annual-label="R$ 21/mês"
+             data-annual-hint="Cobrado R$ 249/ano · 2 meses grátis">
+            <span class="badge text-bg-primary position-absolute top-0 start-50 translate-middle">Recomendado</span>
+            <div class="card-body d-flex flex-column pt-4">
+                <h2 class="h5">Pro</h2>
+                <p class="display-6 fw-bold mb-1 js-plan-price">R$ 29<small class="fs-6 text-muted">/mês</small></p>
+                <p class="small js-plan-hint text-muted mb-2">Por banda · sem limites · PDF</p>
+                <ul class="small mb-3">
+                    <li>Músicas, setlists e integrantes ilimitados</li>
+                    <li>Exportar PDF e Modo Tocar limpo</li>
+                    <li>Trial 30 dias na 1ª banda (sem cartão)</li>
+                </ul>
+                {% if banda_id %}
+                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}" class="js-checkout-form mt-auto">
+                    {% include 'partials/csrf_input.html' %}
+                    <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    {% include 'partials/billing_period_toggle.html' %}
+                    <button type="submit" class="btn btn-primary w-100"
+                            {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
+                        Assinar Pro
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
         <div class="card h-100 border-secondary js-plan-card"
              data-monthly-label="R$ 15/mês"
              data-annual-label="R$ 12/mês"
@@ -74,7 +102,7 @@
             <div class="card-body d-flex flex-column">
                 <h2 class="h5">Individual</h2>
                 <p class="display-6 fw-bold mb-1 js-plan-price">R$ 15<small class="fs-6 text-muted">/mês</small></p>
-                <p class="small js-plan-hint text-muted">Solo · 1 integrante · PDF</p>
+                <p class="small js-plan-hint text-muted">1 integrante · PDF · compartilhar</p>
                 {% if banda_id %}
                 <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='individual') }}" class="js-checkout-form mt-auto">
                     {% include 'partials/csrf_input.html' %}
@@ -89,36 +117,12 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border-primary shadow-sm position-relative js-plan-card"
-             data-monthly-label="R$ 29/mês"
-             data-annual-label="R$ 21/mês"
-             data-annual-hint="Cobrado R$ 249/ano · 2 meses grátis">
-            <span class="badge text-bg-primary position-absolute top-0 start-50 translate-middle">Mais popular</span>
-            <div class="card-body d-flex flex-column pt-4">
-                <h2 class="h5">Pro</h2>
-                <p class="display-6 fw-bold mb-1 js-plan-price">R$ 29<small class="fs-6 text-muted">/mês</small></p>
-                <p class="small js-plan-hint text-muted mb-2">Por banda · sem limites · PDF</p>
-                <ul class="small mb-3">
-                    <li>Músicas, setlists e integrantes ilimitados</li>
-                    <li>Exportar PDF e Modo Tocar limpo</li>
-                    <li>Ideal para ensaio e show</li>
-                </ul>
-                {% if banda_id %}
-                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}" class="js-checkout-form mt-auto">
-                    {% include 'partials/csrf_input.html' %}
-                    <input type="hidden" name="banda_id" value="{{ banda_id }}">
-                    {% include 'partials/billing_period_toggle.html' %}
-                    <button type="submit" class="btn btn-primary w-100"
-                            {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
-                        Assinar Pro — R$ 29
-                    </button>
-                </form>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
+</div>
+
+<details class="mb-4">
+    <summary class="text-muted" style="cursor:pointer;font-size:var(--text-sm);">Igreja (Worship), estúdio ou voucher?</summary>
+    <div class="row g-3 mt-2 align-items-stretch">
+    <div class="col-md-6">
         <div class="card h-100 js-plan-card"
              data-monthly-label="R$ 69/mês"
              data-annual-label="R$ 50/mês"
@@ -149,50 +153,57 @@
             </div>
         </div>
     </div>
-</div>
-
-{% include 'partials/mercadopago_trust.html' %}
-
-<div class="mb-2">
-<p class="small text-muted mb-3">
-    <a href="{{ url_for('studios.landing') }}">Uníssono para Estúdios</a> — salas, reservas e financeiro (Premium R$ 49/mês).
-</p>
-{% if studio_plano_ui %}
-<div class="planos-resumo-card mb-3" style="border:1px solid var(--border);border-radius:10px;padding:0.85rem 1rem;background:var(--bg);">
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-        {% if studio_plano_ui.logo %}
-        <img src="{{ url_for('static', filename=studio_plano_ui.logo) }}" alt="" width="40" height="40" style="border-radius:8px;">
-        {% endif %}
-        <div>
-            <span class="small text-muted">Seu plano estúdio</span>
-            <div class="fw-semibold">{{ studio_plano_ui.label }}
-                <span class="badge bg-{{ studio_plano_ui.badge }}">{{ studio_plano_ui.label_curto }}</span>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Estúdios</h2>
+                <p class="small text-muted mb-2">Salas, reservas e financeiro — plano separado do produto de banda.</p>
+                <a href="{{ url_for('studios.landing') }}" class="btn btn-outline-secondary btn-sm">Ver Uníssono para Estúdios</a>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
-{% include 'partials/planos_estudio_cards.html' %}
-</div>
+    </div>
 
-<div class="card">
-    <div class="card-body">
-        <h3 class="h6">Tem um voucher?</h3>
-        <p class="small text-muted mb-2">
-            Vouchers de <strong>banda</strong> aplicam no plano da banda selecionada acima.
-            {% if tem_estudio %}
-            Vouchers de <strong>estúdio</strong> ativam Premium na sua conta de estúdio.
-            {% else %}
-            Para vouchers de estúdio, <a href="{{ url_for('studios.landing') }}">cadastre um estúdio</a> primeiro.
+    {% include 'partials/mercadopago_trust.html' %}
+
+    <div class="mt-3 mb-2">
+    {% if studio_plano_ui %}
+    <div class="planos-resumo-card mb-3" style="border:1px solid var(--border);border-radius:10px;padding:0.85rem 1rem;background:var(--bg);">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            {% if studio_plano_ui.logo %}
+            <img src="{{ url_for('static', filename=studio_plano_ui.logo) }}" alt="" width="40" height="40" style="border-radius:8px;">
             {% endif %}
-        </p>
-        <div class="input-group">
+            <div>
+                <span class="small text-muted">Seu plano estúdio</span>
+                <div class="fw-semibold">{{ studio_plano_ui.label }}
+                    <span class="badge bg-{{ studio_plano_ui.badge }}">{{ studio_plano_ui.label_curto }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'partials/planos_estudio_cards.html' %}
+    {% endif %}
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <h3 class="h6">Tem um voucher?</h3>
+            <p class="small text-muted mb-2">
+                Vouchers de <strong>banda</strong> aplicam no plano da banda selecionada acima.
+                {% if tem_estudio %}
+                Vouchers de <strong>estúdio</strong> ativam Premium na sua conta de estúdio.
+                {% else %}
+                Para vouchers de estúdio, <a href="{{ url_for('studios.landing') }}">cadastre um estúdio</a> primeiro.
+                {% endif %}
+            </p>
+            <div class="input-group">
             <input type="text" id="voucher-codigo" class="form-control" placeholder="Digite o código aqui" autocomplete="off">
             <button type="button" class="btn btn-success" id="voucher-resgatar-btn">Resgatar</button>
         </div>
         <div id="voucher-toast" class="mt-2 small" role="status"></div>
     </div>
 </div>
+</details>
 
 <p class="mt-3 small">
     <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">Indique uma banda ou o estúdio e ganhe 3 meses Pro</a>
