@@ -17,6 +17,18 @@ def format_date_short(value) -> str:
     return str(value)[:10]
 
 
+def format_datetime_br(value) -> str:
+    """Data e hora para histórico admin (YYYY-MM-DD HH:MM)."""
+    if not value:
+        return ''
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d %H:%M')
+    text = str(value).replace('T', ' ')
+    return text[:16]
+
+
+
+
 def _to_br_note(note):
     if not note:
         return note

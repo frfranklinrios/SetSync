@@ -1,0 +1,195 @@
+{% extends "index.html" %}
+{% block title %}API Cifras — Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1"><i class="fas fa-database me-2"></i>API Cifras</h1>
+        <p class="text-muted mb-0" style="font-size: var(--text-sm);">
+            Biblioteca local + sync com o Cifra Club
+        </p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary btn-sm">← Admin</a>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+{% set sync = (report.sync if report else {}) or {} %}
+{% set running = sync.running %}
+{% set progress = (sync.progress if sync else {}) or {} %}
+{% set last = (sync.last_result if sync else {}) or {} %}
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: var(--text-sm);">Cifras em cache</div>
+                <div class="fs-3 fw-bold" id="stat-songs">
+                    {% if report and report.songs_cached is not none %}
+                    {{ '{:,}'.format(report.songs_cached).replace(',', '.') }}
+                    {% else %}—{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: var(--text-sm);">Status do sync</div>
+                <div class="fs-5 fw-semibold" id="stat-phase">
+                    {% if running %}
+                    <span class="text-warning">Em andamento</span>
+                    {% elif sync.phase == 'error' %}
+                    <span class="text-danger">Erro</span>
+                    {% else %}
+                    <span class="text-success">Ocioso</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted" style="font-size: var(--text-sm);" id="stat-mode">
+                    {% if sync.mode %}modo: {{ sync.mode }}{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: var(--text-sm);">Progresso</div>
+                <div style="font-size: var(--text-sm);" id="stat-progress">
+                    processadas <strong id="p-processed">{{ progress.processed or 0 }}</strong>
+                    · baixadas <strong id="p-downloaded">{{ progress.downloaded or 0 }}</strong>
+                    · ignoradas <strong id="p-skipped">{{ progress.skipped or 0 }}</strong>
+                    · erros <strong id="p-errors">{{ progress.errors or 0 }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h2 class="h6 mb-3">Rodar sync</h2>
+        <form method="post" action="{{ url_for('admin.api_cifras_sync') }}" class="d-flex flex-wrap gap-2 align-items-end">
+            {% include 'partials/csrf_input.html' %}
+            <div>
+                <label class="form-label mb-1" style="font-size: var(--text-sm);" for="mode">Modo</label>
+                <select class="form-select form-select-sm" name="mode" id="mode" {% if running %}disabled{% endif %}>
+                    <option value="incremental" selected>Incremental (novas)</option>
+                    <option value="full">Full (tudo — demora dias)</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label mb-1" style="font-size: var(--text-sm);" for="limit">Limite (opcional)</label>
+                <input type="number" class="form-control form-control-sm" name="limit" id="limit"
+                       min="1" max="50000" placeholder="ex.: 100" style="width: 7rem;"
+                       {% if running %}disabled{% endif %}>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" id="btn-sync" {% if running %}disabled{% endif %}>
+                <i class="fas fa-sync me-1"></i>
+                {% if running %}Sync em andamento…{% else %}Sincronizar agora{% endif %}
+            </button>
+        </form>
+        <p class="text-muted mt-2 mb-0" style="font-size: var(--text-sm);">
+            Incremental para quando novas entradas do sitemap. Full varre o catálogo inteiro.
+        </p>
+        {% if sync.error %}
+        <pre class="mt-3 p-2 border rounded bg-light text-danger" style="font-size: var(--text-xs); white-space: pre-wrap;">{{ sync.error }}</pre>
+        {% endif %}
+        {% if last %}
+        <div class="mt-3" style="font-size: var(--text-sm);">
+            <strong>Último resultado:</strong>
+            modo {{ last.mode }} · processadas {{ last.processed }} · baixadas {{ last.downloaded }}
+            · ignoradas {{ last.skipped }} · erros {{ last.errors }}
+            {% if last.songs_cached is defined %} · cache {{ '{:,}'.format(last.songs_cached).replace(',', '.') }}{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h2 class="h6 mb-3">Histórico de execuções</h2>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0" style="font-size: var(--text-sm);">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Modo</th>
+                        <th>Início</th>
+                        <th>Fim</th>
+                        <th>Processadas</th>
+                        <th>Baixadas</th>
+                        <th>Ignoradas</th>
+                        <th>Erros</th>
+                    </tr>
+                </thead>
+                <tbody id="runs-body">
+                    {% for r in (report.recent_runs if report else []) %}
+                    <tr>
+                        <td>{{ r.id }}</td>
+                        <td>{{ r.mode }}</td>
+                        <td>{{ r.started_at|datetime_br if r.started_at else '—' }}</td>
+                        <td>{{ r.finished_at|datetime_br if r.finished_at else '—' }}</td>
+                        <td>{{ r.processed or 0 }}</td>
+                        <td>{{ r.downloaded or 0 }}</td>
+                        <td>{{ r.skipped or 0 }}</td>
+                        <td>{{ r.errors or 0 }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-muted text-center py-3">Nenhuma execução registrada.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+  var statusUrl = {{ url_for('admin.api_cifras_status_json')|tojson }};
+  var btn = document.getElementById('btn-sync');
+  var phaseEl = document.getElementById('stat-phase');
+  var songsEl = document.getElementById('stat-songs');
+  function fmt(n) {
+    try { return Number(n).toLocaleString('pt-BR'); } catch (e) { return n; }
+  }
+  function paint(report) {
+    if (!report) return;
+    if (report.songs_cached != null && songsEl) songsEl.textContent = fmt(report.songs_cached);
+    var sync = report.sync || {};
+    var p = sync.progress || {};
+    document.getElementById('p-processed').textContent = p.processed || 0;
+    document.getElementById('p-downloaded').textContent = p.downloaded || 0;
+    document.getElementById('p-skipped').textContent = p.skipped || 0;
+    document.getElementById('p-errors').textContent = p.errors || 0;
+    if (phaseEl) {
+      if (sync.running) phaseEl.innerHTML = '<span class="text-warning">Em andamento</span>';
+      else if (sync.phase === 'error') phaseEl.innerHTML = '<span class="text-danger">Erro</span>';
+      else phaseEl.innerHTML = '<span class="text-success">Ocioso</span>';
+    }
+    if (btn) {
+      btn.disabled = !!sync.running;
+      btn.innerHTML = sync.running
+        ? '<i class="fas fa-sync fa-spin me-1"></i> Sync em andamento…'
+        : '<i class="fas fa-sync me-1"></i> Sincronizar agora';
+    }
+    var mode = document.getElementById('mode');
+    var limit = document.getElementById('limit');
+    if (mode) mode.disabled = !!sync.running;
+    if (limit) limit.disabled = !!sync.running;
+  }
+  function tick() {
+    fetch(statusUrl, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.ok) paint(data.report);
+      })
+      .catch(function () {});
+  }
+  tick();
+  setInterval(tick, 3000);
+})();
+</script>
+{% endblock %}

@@ -725,12 +725,49 @@ def list_admin_activity(
             except (TypeError, ValueError, json.JSONDecodeError):
                 meta = {}
         row['meta'] = meta
-        row['url_path'] = meta.get('url_path') or ''
+        row['url_path'] = _resolve_activity_url(row, meta)
         row['title'] = meta.get('title') or ''
         from demo_accounts import is_demo_user
 
         row['is_demo'] = is_demo_user(actor)
     return rows
+
+
+def _resolve_activity_url(row: dict[str, Any], meta: dict | None = None) -> str:
+    """URL clicável; reconstrói quando o meta antigo aponta só para /admin/."""
+    meta = meta or {}
+    raw = (meta.get('url_path') or '').strip()
+    entity = (row.get('entity_type') or '').strip()
+    eid = str(row.get('entity_id') or '').strip()
+    band_id = str(row.get('band_id') or '').strip()
+    actor = str(row.get('actor_user_id') or '').strip()
+
+    def _ok(path: str) -> bool:
+        p = (path or '').split('?', 1)[0].rstrip('/')
+        return bool(p) and p not in ('/admin',)
+
+    if _ok(raw):
+        return raw
+
+    if entity == 'user' and (eid or actor):
+        return f'/admin/usuarios/{eid or actor}'
+    if entity == 'band' and (eid or band_id):
+        return f'/bands/{eid or band_id}'
+    if entity == 'cifra' and eid:
+        return f'/cifras/{eid}'
+    if entity == 'setlist' and eid:
+        return f'/setlists/{eid}'
+    if entity == 'event' and eid:
+        return f'/agenda/{eid}'
+    if entity == 'member' and band_id:
+        return f'/bands/{band_id}/members'
+    if entity == 'assinatura':
+        return '/admin/'
+    if entity == 'whatsapp':
+        return '/admin/#tab-convites'
+    if band_id:
+        return f'/bands/{band_id}'
+    return raw or ''
 
 
 def count_admin_activity(

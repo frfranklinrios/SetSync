@@ -30,13 +30,13 @@
     —
     <a href="{{ url_for('admin.usuario_detalhe', user_id=filtro_ator_user.id) }}">ver ficha</a>
     ·
-    <a href="{{ url_for('admin.historico', tipo=filtro_tipo or none, q=filtro_q or none) }}">limpar filtro de pessoa</a>
+    <a href="{{ url_for('admin.historico', **({'tipo': filtro_tipo} if filtro_tipo else {}), **({'q': filtro_q} if filtro_q else {})) }}">limpar filtro de pessoa</a>
 </div>
 {% endif %}
 
 {% if counts_by_type %}
 <div class="d-flex flex-wrap gap-2 mb-3">
-    <a href="{{ url_for('admin.historico', ator=filtro_ator or none, q=filtro_q or none) }}"
+    <a href="{{ url_for('admin.historico', **({'ator': filtro_ator} if filtro_ator else {}), **({'q': filtro_q} if filtro_q else {})) }}"
        class="btn btn-sm {% if not filtro_tipo %}btn-primary{% else %}btn-outline-secondary{% endif %}">
         Todos
     </a>
@@ -51,7 +51,7 @@
         ('whatsapp', 'WhatsApp'),
     ] %}
     {% if counts_by_type.get(t) %}
-    <a href="{{ url_for('admin.historico', tipo=t, ator=filtro_ator or none, q=filtro_q or none) }}"
+    <a href="{{ url_for('admin.historico', tipo=t, **({'ator': filtro_ator} if filtro_ator else {}), **({'q': filtro_q} if filtro_q else {})) }}"
        class="btn btn-sm {% if filtro_tipo == t %}btn-primary{% else %}btn-outline-secondary{% endif %}">
         {{ label }}
         <span class="badge {% if filtro_tipo == t %}text-bg-light{% else %}text-bg-secondary{% endif %} ms-1">{{ counts_by_type[t] }}</span>
@@ -92,7 +92,7 @@
     </div>
     <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
     {% if filtro_q or filtro_tipo %}
-    <a href="{{ url_for('admin.historico', ator=filtro_ator or none) }}" class="btn btn-sm btn-outline-secondary">Limpar</a>
+    <a href="{{ url_for('admin.historico', **({'ator': filtro_ator} if filtro_ator else {})) }}" class="btn btn-sm btn-outline-secondary">Limpar</a>
     {% endif %}
 </form>
 
@@ -137,9 +137,9 @@
                         {{ e.summary }}
                     </td>
                     <td class="text-end text-nowrap">
-                        {% if e.entity_type == 'user' and e.entity_id %}
-                        <a href="{{ url_for('admin.usuario_detalhe', user_id=e.entity_id) }}" class="btn btn-sm btn-outline-primary">Ficha</a>
-                        {% elif e.url_path %}
+                        {% if e.entity_type == 'user' and (e.entity_id or e.actor_user_id) %}
+                        <a href="{{ url_for('admin.usuario_detalhe', user_id=e.entity_id or e.actor_user_id) }}" class="btn btn-sm btn-outline-primary">Ficha</a>
+                        {% elif e.url_path and e.url_path.rstrip('/') not in ('/admin',) %}
                         <a href="{{ e.url_path }}" class="btn btn-sm btn-outline-secondary">Abrir</a>
                         {% endif %}
                     </td>
@@ -167,11 +167,11 @@
     <div class="d-flex gap-2">
         {% if page > 1 %}
         <a class="btn btn-sm btn-outline-secondary"
-           href="{{ url_for('admin.historico', page=page-1, tipo=filtro_tipo or none, q=filtro_q or none, ator=filtro_ator or none) }}">← Anterior</a>
+           href="{{ url_for('admin.historico', page=page-1, **({'tipo': filtro_tipo} if filtro_tipo else {}), **({'q': filtro_q} if filtro_q else {}), **({'ator': filtro_ator} if filtro_ator else {})) }}">← Anterior</a>
         {% endif %}
         {% if page < total_pages %}
         <a class="btn btn-sm btn-outline-secondary"
-           href="{{ url_for('admin.historico', page=page+1, tipo=filtro_tipo or none, q=filtro_q or none, ator=filtro_ator or none) }}">Próxima →</a>
+           href="{{ url_for('admin.historico', page=page+1, **({'tipo': filtro_tipo} if filtro_tipo else {}), **({'q': filtro_q} if filtro_q else {}), **({'ator': filtro_ator} if filtro_ator else {})) }}">Próxima →</a>
         {% endif %}
     </div>
 </nav>

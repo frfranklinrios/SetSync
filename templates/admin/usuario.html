@@ -116,7 +116,7 @@
                         {{ e.summary }}
                     </td>
                     <td class="text-end">
-                        {% if e.url_path and not e.url_path.startswith('/admin/usuarios/') %}
+                        {% if e.url_path and e.url_path.rstrip('/') not in ('/admin',) and not e.url_path.startswith('/admin/usuarios/') %}
                         <a href="{{ e.url_path }}" class="btn btn-sm btn-outline-secondary">Abrir</a>
                         {% endif %}
                     </td>
