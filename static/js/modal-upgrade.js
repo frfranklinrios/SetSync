@@ -1,10 +1,11 @@
 /**
  * Modal de upgrade ao atingir limite do plano Grátis (HTTP 402).
  * Fonte única — plano-limite.js delega para cá.
+ * Payload pode sugerir Individual (solo) ou Pro (banda).
  */
 (function () {
     const UPGRADE_URL = '/assinatura/planos';
-    const PRO_FEATURES = [
+    const DEFAULT_PRO_FEATURES = [
         'Músicas, setlists e integrantes ilimitados',
         'Exportar setlist em PDF para o ensaio',
         'Sem anúncios no Modo Tocar',
@@ -28,8 +29,8 @@
             '</div>' +
             '<div class="modal-body">' +
             '<p id="upgradeModalMsg" class="text-muted mb-2"></p>' +
-            '<p class="small mb-3"><strong>Pro — R$ 29/mês</strong> por banda · anual sai ~R$ 21/mês</p>' +
-            '<p class="fw-semibold mb-2">No Pro você libera:</p>' +
+            '<p id="upgradeModalPreco" class="small mb-3"></p>' +
+            '<p class="fw-semibold mb-2" id="upgradeModalFeaturesLead">No plano você libera:</p>' +
             '<ul id="upgradeModalFeatures" class="list-unstyled mb-0"></ul>' +
             '</div>' +
             '<div class="modal-footer border-0 flex-column flex-sm-row gap-2">' +
@@ -39,29 +40,56 @@
             'Agora não</button>' +
             '</div></div></div>';
         document.body.appendChild(el);
-        const ul = el.querySelector('#upgradeModalFeatures');
-        PRO_FEATURES.forEach(function (f) {
-            const li = document.createElement('li');
+        return el;
+    }
+
+    function fillFeatures(ul, features) {
+        ul.innerHTML = '';
+        (features || DEFAULT_PRO_FEATURES).forEach(function (f) {
+            var li = document.createElement('li');
             li.className = 'mb-1';
             li.textContent = '✓ ' + f;
             ul.appendChild(li);
         });
-        return el;
     }
 
     function showUpgradeModal(payload) {
         payload = payload || {};
-        const el = buildModal();
-        const recurso = payload.recurso || 'recursos';
-        const limite = payload.limite != null ? payload.limite : '';
-        const msg = payload.mensagem || (
+        var el = buildModal();
+        var recurso = payload.recurso || 'recursos';
+        var limite = payload.limite != null ? payload.limite : '';
+        var msg = payload.mensagem || (
             'Você atingiu o limite de ' + limite + ' ' + recurso + ' no plano Grátis.'
         );
         document.getElementById('upgradeModalMsg').textContent = msg;
-        const url = payload.upgrade_url || UPGRADE_URL;
-        const cta = document.getElementById('upgradeModalCta');
+
+        var titulo = payload.titulo || (
+            payload.plano_sugerido === 'individual' ? 'Continue com o Individual' : 'Continue com o Pro'
+        );
+        document.getElementById('upgradeModalTitle').textContent = titulo;
+
+        var precoEl = document.getElementById('upgradeModalPreco');
+        var precoLinha = payload.preco_linha || (
+            payload.plano_sugerido === 'individual'
+                ? 'Individual — R$ 15/mês · PDF e compartilhar'
+                : 'Pro — R$ 29/mês por banda · anual sai ~R$ 21/mês'
+        );
+        precoEl.innerHTML = '<strong>' + precoLinha.split(' · ')[0] + '</strong>' +
+            (precoLinha.indexOf(' · ') >= 0 ? ' · ' + precoLinha.split(' · ').slice(1).join(' · ') : '');
+
+        fillFeatures(
+            document.getElementById('upgradeModalFeatures'),
+            payload.features
+        );
+
+        var url = payload.upgrade_url || UPGRADE_URL;
+        var cta = document.getElementById('upgradeModalCta');
         cta.href = url;
-        cta.textContent = payload.cta_label || 'Assinar Pro — R$ 29/mês';
+        cta.textContent = payload.cta_label || (
+            payload.plano_sugerido === 'individual'
+                ? 'Assinar Individual — R$ 15/mês'
+                : 'Assinar Pro — R$ 29/mês'
+        );
         if (typeof bootstrap !== 'undefined') {
             bootstrap.Modal.getOrCreateInstance(el).show();
         } else {
@@ -71,12 +99,13 @@
 
     window.setSyncShowUpgrade = showUpgradeModal;
 
-    const origFetch = window.fetch;
-    window.fetch = async function (...args) {
-        const res = await origFetch.apply(this, args);
+    var origFetch = window.fetch;
+    window.fetch = async function () {
+        var args = arguments;
+        var res = await origFetch.apply(this, args);
         if (res.status === 402) {
             try {
-                const data = await res.clone().json();
+                var data = await res.clone().json();
                 if (
                     data.status === 'limite_atingido' ||
                     data.erro === 'limite_plano' ||

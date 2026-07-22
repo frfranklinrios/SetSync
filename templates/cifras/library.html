@@ -25,7 +25,7 @@
         {% endif %}
         {% if not can_share %}
         <a href="{{ url_for('assinatura_bp.planos') }}" class="btn btn-outline-secondary btn-sm">
-            Assinar para compartilhar
+            Individual — compartilhar
         </a>
         {% endif %}
     </div>
@@ -35,7 +35,8 @@
 <div class="alert alert-light border small mb-3">
     <i class="fas fa-info-circle text-primary me-1"></i>
     Guarde quantas cifras quiser aqui. Para enviar à banda ou liberar para outro usuário,
-    <a href="{{ url_for('assinatura_bp.planos') }}">assine Individual, Pro ou Worship</a>.
+    <a href="{{ url_for('assinatura_bp.planos') }}">assine Individual</a>
+    (ou Pro/Worship se já tem banda).
 </div>
 {% endif %}
 
@@ -75,11 +76,13 @@
     </table>
 </div>
 {% else %}
-<div class="empty mb-4">
-    <i class="fas fa-music"></i>
-    <p class="mb-2">Sua coleção está vazia.</p>
-    <a href="{{ url_for('cifras.add_personal') }}" class="btn btn-primary btn-sm">Adicionar primeira música</a>
-</div>
+{% with icon='fa-music',
+        title='Sua coleção está vazia',
+        text='Adicione a primeira música (grátis) e abra o Modo Tocar — esse é o “aha” do Uníssono.',
+        cta_url=url_for('cifras.add_personal'),
+        cta_label='Adicionar primeira música' %}
+{% include 'partials/empty_state.html' %}
+{% endwith %}
 {% endif %}
 
 {% if shared_cifras %}

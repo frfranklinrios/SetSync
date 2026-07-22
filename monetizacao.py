@@ -818,9 +818,10 @@ def iniciar_trial_estudio(user_id: str) -> bool:
 
 def resposta_limite_plano(recurso: str = 'recursos', limite: int | None = None):
     """Resposta HTTP 402 padronizada (JSON ou redirect)."""
-    from flask import jsonify, redirect, flash, request
+    from flask import jsonify, redirect, flash, request, session
 
     limite_val = limite if limite is not None else LIMITES_GRATIS.get(recurso.rstrip('s'), 0)
+    cta = sugerir_upgrade(session.get('user_id'), motivo='limite')
     payload = {
         'status': 'limite_atingido',
         'erro': 'limite_plano',
@@ -828,7 +829,7 @@ def resposta_limite_plano(recurso: str = 'recursos', limite: int | None = None):
         'limite': limite_val,
         'plano_atual': 'Grátis',
         'mensagem': f'Você atingiu o limite do plano Grátis ({limite_val} {recurso}).',
-        'upgrade_url': '/assinatura/planos',
+        **cta,
     }
     if request.accept_mimetypes.best == 'application/json' or request.is_json:
         return jsonify(payload), 402
@@ -837,12 +838,17 @@ def resposta_limite_plano(recurso: str = 'recursos', limite: int | None = None):
 
 
 def resposta_plano_necessario():
-    """Resposta HTTP 402 para feature premium."""
-    from flask import jsonify
+    """Resposta HTTP 402 para feature premium (ex.: PDF de setlist)."""
+    from flask import jsonify, session
 
+    cta = sugerir_upgrade(session.get('user_id'), motivo='pdf')
     return jsonify({
         'erro': 'plano_necessario',
-        'upgrade_url': '/assinatura/planos',
+        'mensagem': (
+            'Exportar PDF faz parte dos planos pagos. '
+            f'{cta["preco_linha"]}.'
+        ),
+        **cta,
     }), 402
 
 
@@ -863,20 +869,85 @@ def user_pode_compartilhar_cifras(user_id: str) -> bool:
 
 def resposta_compartilhar_cifra_paywall():
     """Paywall amigável para compartilhamento de cifras."""
-    from flask import flash, redirect, url_for, jsonify, request
+    from flask import flash, redirect, url_for, jsonify, request, session
 
-    msg = (
-        'Sua coleção pessoal é gratuita. Para compartilhar músicas com outros '
-        'músicos ou com uma banda, assine o plano Individual (ou Pro/Worship).'
-    )
+    cta = sugerir_upgrade(session.get('user_id'), motivo='compartilhar')
+    preco_i = int(PLANOS[PLANO_INDIVIDUAL].preco_mensal or 15)
+    if cta.get('plano_sugerido') == PLANO_INDIVIDUAL:
+        msg = (
+            'Sua coleção pessoal é gratuita. Para compartilhar cifras, '
+            f'assine o plano Individual (R$ {preco_i}/mês).'
+        )
+    else:
+        msg = (
+            'Sua coleção pessoal é gratuita. Para compartilhar músicas com outros '
+            'músicos ou com uma banda, assine Individual, Pro ou Worship.'
+        )
+    payload = {
+        'erro': 'plano_necessario',
+        'mensagem': msg,
+        **cta,
+    }
     if request.accept_mimetypes.best == 'application/json' or request.is_json:
-        return jsonify({
-            'erro': 'plano_necessario',
-            'mensagem': msg,
-            'upgrade_url': '/assinatura/planos',
-        }), 402
+        return jsonify(payload), 402
     flash(msg, 'warning')
-    return redirect(url_for('assinatura_bp.planos'))
+    return redirect(cta.get('upgrade_url') or url_for('assinatura_bp.planos'))
+
+
+def sugerir_upgrade(user_id: str | None, *, motivo: str = 'limite') -> dict:
+    """
+    CTA de upgrade conforme contexto.
+
+    motivo:
+      - limite: limites da banda grátis → Pro
+      - compartilhar: solo sem banda → Individual; com banda → Pro
+      - pdf / premium: sem banda própria → Individual; senão Pro
+    """
+    from flask import url_for
+    from db import get_owned_bands
+
+    owned = get_owned_bands(user_id) if user_id else []
+    banda_id = owned[0]['id'] if owned else None
+    preco_i = int(PLANOS[PLANO_INDIVIDUAL].preco_mensal or 15)
+    preco_p = int(PLANOS[PLANO_PRO].preco_mensal or 29)
+
+    quer_individual = motivo == 'compartilhar' and not owned
+    if motivo in ('pdf', 'premium') and not owned:
+        quer_individual = True
+
+    if quer_individual:
+        return {
+            'plano_sugerido': PLANO_INDIVIDUAL,
+            'cta_label': f'Assinar Individual — R$ {preco_i}/mês',
+            'upgrade_url': url_for('assinatura_bp.planos'),
+            'titulo': 'Continue com o Individual',
+            'preco_linha': f'Individual — R$ {preco_i}/mês · PDF e compartilhar',
+            'features': [
+                'Compartilhar cifras da coleção',
+                'Exportar PDF',
+                '1 banda solo · 1 integrante',
+                'Cancele quando quiser · Mercado Pago',
+            ],
+        }
+
+    planos_url = (
+        url_for('assinatura_bp.planos', banda_id=banda_id)
+        if banda_id
+        else url_for('assinatura_bp.planos')
+    )
+    return {
+        'plano_sugerido': PLANO_PRO,
+        'cta_label': f'Assinar Pro — R$ {preco_p}/mês',
+        'upgrade_url': planos_url,
+        'titulo': 'Continue com o Pro',
+        'preco_linha': f'Pro — R$ {preco_p}/mês por banda · anual sai ~R$ 21/mês',
+        'features': [
+            'Músicas, setlists e integrantes ilimitados',
+            'Exportar setlist em PDF para o ensaio',
+            'Sem anúncios no Modo Tocar',
+            'Cancele quando quiser · Mercado Pago',
+        ],
+    }
 
 
 # ── Plano Estúdio (beta gratuito) ─────────────────────────────────────────

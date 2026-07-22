@@ -8,15 +8,18 @@ from db import count_band_cifras, count_band_members, count_band_setlists, get_o
 from monetizacao import (
     LIMITES_GRATIS,
     PLANOS,
+    PLANO_INDIVIDUAL,
     PLANO_PRO,
     PRECO_ESTUDIO_PREMIUM,
     dias_restantes_trial,
     dias_restantes_trial_estudio,
     get_plano_efetivo,
     studio_tem_premium,
+    user_pode_compartilhar_cifras,
 )
 
 _PRECO_PRO = int(PLANOS[PLANO_PRO].preco_mensal or 29)
+_PRECO_INDIVIDUAL = int(PLANOS[PLANO_INDIVIDUAL].preco_mensal or 15)
 _PRECO_ESTUDIO = int(PRECO_ESTUDIO_PREMIUM)
 
 
@@ -38,6 +41,24 @@ def get_dashboard_upsells(user_id: str, *, owned_bands: list | None = None) -> l
     """Banners de conversão baseados em uso real."""
     bands = owned_bands if owned_bands is not None else get_owned_bands(user_id)
     alerts: list[dict] = []
+
+    # Solo sem banda: coleção grátis, mas PDF/compartilhar pedem Individual
+    if not bands and not user_pode_compartilhar_cifras(user_id):
+        from db import count_user_personal_cifras
+
+        n_cifras = count_user_personal_cifras(user_id)
+        if n_cifras >= 1:
+            alerts.append({
+                'level': 'info',
+                'title': 'Plano Individual — toca só',
+                'message': (
+                    f'Você já tem {n_cifras} música(s) na coleção. '
+                    f'Individual (R$ {_PRECO_INDIVIDUAL}/mês) libera compartilhar e PDF — '
+                    'sem precisar montar banda de ensaio.'
+                ),
+                'cta_label': f'Assinar Individual — R$ {_PRECO_INDIVIDUAL}',
+                'cta_url': url_for('assinatura_bp.planos'),
+            })
 
     for band in bands:
         band_id = band['id']
@@ -107,8 +128,20 @@ def get_dashboard_upsells(user_id: str, *, owned_bands: list | None = None) -> l
 
 
 def show_referral_card(user_id: str) -> bool:
-    """Indicação após primeira setlist montada."""
+    """Indicação após primeira setlist OU após usar Modo Tocar."""
+    from db import user_play_mode_used
+
+    if user_play_mode_used(user_id):
+        return True
     for band in get_owned_bands(user_id):
         if count_band_setlists(band['id']) > 0:
             return True
     return False
+
+
+def referral_members_url(user_id: str) -> str | None:
+    """Primeira banda própria para atalho de convite."""
+    bands = get_owned_bands(user_id)
+    if not bands:
+        return None
+    return url_for('bands.members', band_id=bands[0]['id'])
