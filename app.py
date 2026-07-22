@@ -696,6 +696,7 @@ def inject_user():
     user_id = session.get('user_id')
     username = session.get('username')
     display_name = (session.get('display_name') or '').strip()
+    impersonator_id = (session.get('impersonator_id') or '').strip() or None
     try:
         cifras_import_tool_url = url_for('cifras_import.embed_tool')
     except RuntimeError:
@@ -708,7 +709,7 @@ def inject_user():
     is_studio_primary = bool(user_id and is_studio_primary_user(user_id))
     nav_home_url = url_for('dashboard')
     if user_id:
-        if _is_superadmin(user_id):
+        if _is_superadmin(user_id) and not impersonator_id:
             nav_home_url = url_for('admin.index')
         else:
             studio_home = studio_primary_home_endpoint(user_id)
@@ -722,10 +723,17 @@ def inject_user():
         notifications_unread=unread,
         is_studio_primary=is_studio_primary,
         nav_home_url=nav_home_url,
+        impersonating=bool(impersonator_id),
+        impersonator={
+            'id': impersonator_id,
+            'username': session.get('impersonator_username') or '',
+            'name': session.get('impersonator_name') or 'Master',
+        } if impersonator_id else None,
         current_user={
             'id': user_id, 'username': username, 'display_name': display_name,
             'name': display_name or username, 'is_authenticated': user_id is not None,
-            'is_superadmin': bool(user_id and _is_superadmin(user_id)),
+            'is_superadmin': bool(user_id and _is_superadmin(user_id) and not impersonator_id),
+            'is_impersonating': bool(impersonator_id),
         },
         cifras_import_tool_url=cifras_import_tool_url,
     )

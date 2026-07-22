@@ -20,9 +20,20 @@
             @{{ user.username }} · {{ user.email }}
         </p>
     </div>
-    <a href="{{ url_for('admin.historico', ator=user.id) }}" class="btn btn-outline-primary btn-sm">
-        Filtrar histórico geral
-    </a>
+    <div class="d-flex flex-wrap gap-2">
+        {% if not user.is_env_admin and user.id != current_user.id %}
+        <form method="post" action="{{ url_for('admin.impersonate_user', user_id=user.id) }}">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-primary btn-sm"
+                    title="Abre o app como este usuário (bandas, cifras, financeiro)">
+                <i class="fas fa-right-to-bracket me-1"></i> Entrar como usuário
+            </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('admin.historico', ator=user.id) }}" class="btn btn-outline-primary btn-sm">
+            Filtrar histórico geral
+        </a>
+    </div>
 </div>
 
 <div class="row g-3 mb-4">

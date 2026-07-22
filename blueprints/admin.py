@@ -441,6 +441,68 @@ def toggle_superadmin(user_id: str):
     return redirect(url_for('admin.index') + '#tab-users')
 
 
+@admin_bp.route('/usuarios/<user_id>/entrar', methods=['POST'])
+@superadmin_required
+def impersonate_user(user_id: str):
+    """Master assume a sessão do usuário para ver o app como ele."""
+    from blueprints.auth import is_impersonating, start_impersonation
+    from db import user_display_name
+
+    if is_impersonating():
+        flash('Já está como outro usuário. Volte ao master antes de entrar em outra conta.', 'warning')
+        return redirect(url_for('dashboard'))
+
+    master_id = session.get('user_id')
+    if not master_id or user_id == master_id:
+        flash('Não é possível entrar na própria conta.', 'warning')
+        return redirect(url_for('admin.usuario_detalhe', user_id=user_id))
+
+    target = get_user(user_id)
+    if not target:
+        flash('Usuário não encontrado.', 'warning')
+        return redirect(url_for('admin.index') + '#tab-users')
+
+    start_impersonation(target, impersonator_id=master_id)
+    try:
+        from activity_log import log_activity
+
+        log_activity(
+            actor_user_id=master_id,
+            action='user_impersonated',
+            title='Entrar como usuário',
+            summary=(
+                f'Master entrou como {user_display_name(target)} '
+                f'(@{target.get("username") or ""}).'
+            ),
+            entity_type='user',
+            entity_id=user_id,
+            url_path=f'/admin/usuarios/{user_id}',
+        )
+    except Exception:
+        pass
+
+    flash(
+        f'Você está vendo o app como {user_display_name(target)}. '
+        'Use “Voltar ao master” na barra amarela para sair.',
+        'info',
+    )
+    return redirect(url_for('dashboard'))
+
+
+@admin_bp.route('/impersonate/parar', methods=['POST'])
+@login_required
+def stop_impersonate():
+    """Sai da sessão do usuário e volta para o master."""
+    from blueprints.auth import stop_impersonation
+
+    master = stop_impersonation()
+    if not master:
+        flash('Nenhuma sessão de master para restaurar.', 'warning')
+        return redirect(url_for('dashboard'))
+    flash('Voltou à conta master.', 'success')
+    return redirect(url_for('admin.index') + '#tab-users')
+
+
 @admin_bp.route('/usuarios/<user_id>/demo', methods=['POST'])
 @superadmin_required
 def toggle_user_demo(user_id: str):

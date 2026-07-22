@@ -713,7 +713,14 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                             </td>
                             <td class="text-end text-nowrap">
                                 <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}"
-                                   class="btn btn-sm btn-outline-primary" title="Ficha e histórico">Histórico</a>
+                                   class="btn btn-sm btn-outline-primary" title="Ficha e histórico">Ficha</a>
+                                {% if not u.is_env_admin and u.id != current_user.id %}
+                                <form method="post" action="{{ url_for('admin.impersonate_user', user_id=u.id) }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <button type="submit" class="btn btn-sm btn-primary"
+                                            title="Ver o app como este usuário">Entrar</button>
+                                </form>
+                                {% endif %}
                                 {% if u.is_demo_manual %}
                                 <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
                                     {% include 'partials/csrf_input.html' %}

@@ -54,44 +54,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}?v=1">
     <style>
-        :root {
-            --accent: #ea580c;
-            --accent-dark: #c2410c;
-            --text: #1a1a1a;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --bg: #f8f9fa;
-            --card-bg: #ffffff;
-            --surface-elevated: #ffffff;
-            /* tipografia: static/css/typography.css (--font-sans, --font-mono) */
-            /* Destaque de acordes / elementos em evidência (tema claro: laranja) */
-            --chord-highlight: #c2410c;
-            --chord-highlight-soft: #ea580c;
-            --chord-highlight-bg: rgba(234, 88, 12, 0.1);
-            --chord-highlight-border: rgba(234, 88, 12, 0.4);
-            --chord-highlight-ring: rgba(234, 88, 12, 0.2);
-            --chord-highlight-ghost: rgba(234, 88, 12, 0.08);
-            --chord-highlight-ghost-strong: rgba(234, 88, 12, 0.32);
-            --chord-highlight-fade: rgba(234, 88, 12, 0.7);
-        }
-
-        [data-theme="light"] {
-            color-scheme: light;
-            --accent: #ea580c;
-            --accent-dark: #c2410c;
-            --chord-highlight: #c2410c;
-            --chord-highlight-soft: #ea580c;
-            --chord-highlight-bg: rgba(234, 88, 12, 0.1);
-            --chord-highlight-border: rgba(234, 88, 12, 0.4);
-            --chord-highlight-ring: rgba(234, 88, 12, 0.2);
-            --chord-highlight-ghost: rgba(234, 88, 12, 0.08);
-            --chord-highlight-ghost-strong: rgba(234, 88, 12, 0.32);
-            --chord-highlight-fade: rgba(234, 88, 12, 0.7);
-        }
-
         body {
             display: flex;
             flex-direction: column;
@@ -458,7 +424,9 @@
         [data-theme="dark"] #install-btn:hover { background: var(--chord-highlight-ghost-strong); }
 
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}?v=4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/a11y.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/empty-state.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/setsync-theme.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/list-rows.css') }}?v=4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app-wide-layout.css') }}?v=1">
@@ -469,14 +437,18 @@
     {% if not pdfgen and not is_print_view %}{% include 'partials/google_ads_head.html' %}{% endif %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
+    <a class="skip-to-content" href="#conteudo-principal">Ir para o conteúdo</a>
+    {% include 'partials/impersonation_banner.html' %}
     {% if not pdfgen and not is_print_view %}{% include 'partials/google_ads_body.html' %}{% endif %}
-    <nav class="navbar navbar-expand-lg sticky-top">
+    <nav class="navbar navbar-expand-lg sticky-top" aria-label="Principal">
         <div class="container-fluid px-4">
             <a class="navbar-brand" href="{{ nav_home_url if current_user.is_authenticated else url_for('index') }}">
                 <img class="logo-light" src="{{ url_for('static', filename='logoUnissono.png') }}" alt="{{ app_name_full }}">
                 <img class="logo-dark" src="{{ url_for('static', filename='logoUnissono-light.png') }}" alt="{{ app_name_full }}">
             </a>
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav" aria-controls="navbarNav"
+                    aria-expanded="false" aria-label="Abrir menu">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -588,12 +560,6 @@
                             <a class="nav-link" href="{{ url_for('assinatura_bp.bandas') }}#planos">Planos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('studios.landing') }}">Estúdios</a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('guia.guia_index') }}">Guia</a>
                         </li>
                         <li class="nav-item">
@@ -621,7 +587,7 @@
         </div>
     </nav>
     {% include 'partials/rebrand_notice.html' %}
-    <main class="{% block main_class %}container my-4{% endblock %}">
+    <main id="conteudo-principal" class="{% block main_class %}container my-4{% endblock %}" tabindex="-1">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -647,6 +613,8 @@
         {% if not current_user.is_authenticated %}
         · <a href="{{ url_for('auth.register') }}" class="text-muted">Criar conta grátis</a>
         · <a href="{{ url_for('assinatura_bp.bandas') }}#planos" class="text-muted">Planos</a>
+        · <a href="{{ url_for('assinatura_bp.igrejas') }}" class="text-muted">Igrejas</a>
+        · <a href="{{ url_for('studios.landing') }}" class="text-muted">Estúdios</a>
         · <a href="{{ url_for('guia.guia_index') }}" class="text-muted">Guia</a>
         · <a href="{{ url_for('ajuda.index') }}" class="text-muted">Ajuda</a>
         {% endif %}
@@ -741,7 +709,7 @@
     <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio-transpose.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/bass-arpeggio.js') }}?v=9"></script>
     <script src="{{ url_for('static', filename='js/chord-diagram/api-client.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=7"></script>
+    <script src="{{ url_for('static', filename='js/chord-diagram/modal.js') }}?v=8"></script>
     <script src="{{ url_for('static', filename='js/modal-upgrade.js') }}?v=2"></script>
     {% endblock %}
     {% if not pdfgen and not is_print_view %}

@@ -1,0 +1,38 @@
+{# Barra fixa quando o master está vendo o app como outro usuário #}
+{% if impersonating and current_user.is_authenticated %}
+<div class="impersonation-banner" role="status">
+    <div class="impersonation-banner-inner">
+        <span>
+            <i class="fas fa-user-secret me-1"></i>
+            Vendo como <strong>{{ current_user.name }}</strong>
+            <span class="text-muted">(@{{ current_user.username }})</span>
+            · master: {{ impersonator.name if impersonator else '—' }}
+        </span>
+        <form method="post" action="{{ url_for('admin.stop_impersonate') }}" class="m-0">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-sm btn-dark">Voltar ao master</button>
+        </form>
+    </div>
+</div>
+<style>
+.impersonation-banner {
+    position: sticky;
+    top: 0;
+    z-index: 1080;
+    background: #fef3c7;
+    border-bottom: 1px solid #f59e0b;
+    color: #78350f;
+    font-size: var(--text-sm, 0.875rem);
+}
+.impersonation-banner-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0.45rem 1rem;
+}
+</style>
+{% endif %}

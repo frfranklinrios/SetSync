@@ -38,6 +38,7 @@ _SETUP_PROMPT_EXEMPT = frozenset({
     'auth.aceitar_termos',
     'auth.meus_dados',
     'auth.excluir_conta',
+    'admin.stop_impersonate',
     'legal.privacidade',
     'legal.termos',
     'legal.cookie_consent',
@@ -73,6 +74,43 @@ def _login_user_session(user):
     session['is_superadmin'] = is_superadmin(user['id'])
     session.permanent = True
     touch_user_last_login(user['id'])
+
+
+def start_impersonation(target_user: dict, *, impersonator_id: str) -> None:
+    """Troca a sessão para o usuário-alvo sem alterar last_login_at."""
+    impersonator = get_user(impersonator_id) or {}
+    session['impersonator_id'] = impersonator_id
+    session['impersonator_username'] = (impersonator.get('username') or '').strip()
+    session['impersonator_name'] = (
+        (impersonator.get('display_name') or '').strip()
+        or impersonator.get('username')
+        or 'Master'
+    )
+    session['user_id'] = target_user['id']
+    session['username'] = target_user['username']
+    session['display_name'] = (target_user.get('display_name') or '').strip()
+    session['is_superadmin'] = is_superadmin(target_user['id'])
+    session.permanent = True
+    session.modified = True
+
+
+def stop_impersonation() -> dict | None:
+    """Restaura a sessão do master. Retorna o usuário master ou None."""
+    impersonator_id = (session.get('impersonator_id') or '').strip()
+    if not impersonator_id:
+        return None
+    master = get_user(impersonator_id)
+    if not master or not is_superadmin(impersonator_id):
+        session.pop('impersonator_id', None)
+        session.pop('impersonator_username', None)
+        session.pop('impersonator_name', None)
+        return None
+    _login_user_session(master)
+    return master
+
+
+def is_impersonating() -> bool:
+    return bool((session.get('impersonator_id') or '').strip())
 
 
 def _auth_setup_redirect(next_page: str):
@@ -283,7 +321,7 @@ def login_required(f):
                 return redirect(url_for('auth.login', next=nxt))
             return redirect(url_for('auth.login'))
         endpoint = request.endpoint or ''
-        if endpoint not in _SETUP_PROMPT_EXEMPT:
+        if endpoint not in _SETUP_PROMPT_EXEMPT and not session.get('impersonator_id'):
             nxt = safe_redirect_path(request.path) or url_for('dashboard')
             if _should_prompt_display_name():
                 return redirect(url_for('auth.definir_nome', next=nxt))
