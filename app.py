@@ -231,6 +231,11 @@ app.register_blueprint(convites_bp)
 app.register_blueprint(music_api_bp)
 app.register_blueprint(realtime_bp)
 app.register_blueprint(studios_bp)
+try:
+    from blueprints.marketing_shots import marketing_shots_bp
+    app.register_blueprint(marketing_shots_bp)
+except Exception:
+    pass
 init_scheduler(app)
 
 # Webhook Mercado Pago: POST externo sem CSRF de formulário
@@ -631,6 +636,25 @@ _SEO_PUBLIC_ENDPOINTS = frozenset({
     'robots_txt',
     'google_site_verification',
 })
+
+
+@app.context_processor
+def inject_marketing_shots():
+    try:
+        from marketing_shots import (
+            PACK_BR,
+            PACK_ESTUDIO,
+            PACK_GOSPEL,
+            marketing_shot_url,
+        )
+        return {
+            'marketing_shot_url': marketing_shot_url,
+            'marketing_pack_br': PACK_BR,
+            'marketing_pack_gospel': PACK_GOSPEL,
+            'marketing_pack_estudio': PACK_ESTUDIO,
+        }
+    except Exception:
+        return {}
 
 
 @app.context_processor

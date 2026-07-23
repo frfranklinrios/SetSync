@@ -256,7 +256,7 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                     <li class="d-flex flex-wrap justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
                         <span>
                             <strong>{{ t.band_name }}</strong>
-                            <span class="text-muted">· {{ t.trial_fim[:10] if t.trial_fim else '—' }}</span>
+                            <span class="text-muted">· {% if t.trial_fim %}{{ (t.trial_fim|string)[:10] }}{% else %}—{% endif %}</span>
                         </span>
                         {% if t.user_id %}
                         <a href="{{ url_for('admin.usuario_detalhe', user_id=t.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>

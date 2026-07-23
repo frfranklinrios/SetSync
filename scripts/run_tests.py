@@ -24,6 +24,7 @@ EXCLUDE = {
     'test_admin_outreach.py': 'Evolution/WhatsApp (rede)',
     'test_notification_digest.py': 'requer contexto de app/scheduler',
     'test_onboarding_urls.py': 'requer dados demo semeados',
+    'test_draw_overlay_fix.py': 'Playwright E2E contra produção (showcase)',
     'run_tests.py': '(este runner)',
 }
 

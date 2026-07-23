@@ -1,0 +1,36 @@
+{# Figura ilustrativa para Ajuda / Guia — usa screenshots de marketing.
+   Params:
+     pack: 'br' | 'gospel' | 'estudio' (default br)
+     name: chave do screenshot (ex.: modo-tocar-mobile)
+     caption: legenda
+     alt: texto alternativo
+     frame: 'mobile' | 'desktop' (default desktop)
+#}
+{% set _pack = pack|default(marketing_pack_br|default('br')) %}
+{% set _frame = frame|default('desktop') %}
+{% if marketing_shot_url is defined %}
+  {% set _src = marketing_shot_url(_pack, name) %}
+{% else %}
+  {% set _src = url_for('static', filename='screenshots/' ~ name ~ '.png') %}
+{% endif %}
+{% set _alt = alt|default(caption|default('Captura de tela do Uníssono')) %}
+<figure class="help-shot help-shot--{{ _frame }}">
+    <button type="button" class="help-shot-zoom mockup-zoom-trigger"
+            data-lightbox-src="{{ _src }}"
+            data-lightbox-alt="{{ _alt }}"
+            data-lightbox-caption="{{ caption|default('') }}"
+            aria-label="Ampliar: {{ caption|default(_alt) }}">
+        {% if _frame == 'mobile' %}
+        <div class="help-shot-mobile-frame">
+            <img src="{{ _src }}" alt="" width="540" height="1170" loading="lazy" decoding="async">
+        </div>
+        {% else %}
+        <div class="help-shot-desktop-frame">
+            <img src="{{ _src }}" alt="" width="1389" height="822" loading="lazy" decoding="async">
+        </div>
+        {% endif %}
+    </button>
+    {% if caption %}
+    <figcaption class="help-shot-caption">{{ caption }} <span class="help-shot-hint">Clique para ampliar</span></figcaption>
+    {% endif %}
+</figure>
