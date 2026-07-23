@@ -8,11 +8,10 @@ from blueprints.auth import login_required
 from db import (
     is_superadmin,
     get_all_bands,
-    get_all_cifras,
     get_all_users,
     get_user,
-    get_band_members,
-    get_band_cifras,
+    count_band_members,
+    count_band_cifras,
     get_latest_admin_whatsapp_invites,
     list_band_prospects,
     list_studio_prospects,
@@ -51,29 +50,22 @@ def index():
     from models_studio import enrich_studios_for_admin, list_all_studios
 
     bands = get_all_bands()
-    cifras = get_all_cifras()
     users = get_all_users()
     studios = enrich_studios_for_admin(list_all_studios())
 
     for band in bands:
         owner = get_user(band['owner_id'])
         band['owner'] = owner or {}
-        band['members_count'] = len(get_band_members(band['id']))
-        band['cifras_count'] = len(get_band_cifras(band['id']))
+        band['members_count'] = count_band_members(band['id'])
+        band['cifras_count'] = count_band_cifras(band['id'])
 
-    from product_funnel import funnel_counts
-    from whatsapp_service import is_configured as whatsapp_configured
     from admin_dashboard import build_admin_dashboard_context
     from db import count_user_band_memberships, count_personal_cifras_by_user_ids
 
     admin_ctx = build_admin_dashboard_context()
-    funnel_stats = funnel_counts()
     invite_log = get_latest_admin_whatsapp_invites()
     studio_prospects = list_studio_prospects()
     band_prospects = list_band_prospects()
-
-    env_users = os.getenv('SETSYNC_SUPERADMIN_USERNAMES', '').strip()
-    env_emails = os.getenv('SETSYNC_SUPERADMIN_EMAILS', '').strip()
 
     from demo_accounts import is_demo_band, is_demo_heuristic, is_demo_manual, is_demo_user
 
@@ -94,24 +86,41 @@ def index():
     for s in studios:
         s['is_demo'] = is_demo_user(s.get('owner'))
 
+    # Listagem leve (inventário): só as mais recentes — evita carregar o catálogo inteiro
+    from db import get_db
+    from database import IS_POSTGRES
+    db = get_db()
+    c = db.cursor()
+    order = 'cifras.created_at DESC NULLS LAST' if IS_POSTGRES else 'cifras.created_at DESC'
+    c.execute(
+        f'''SELECT cifras.id, cifras.titulo, cifras.artista, bands.name AS band_name
+            FROM cifras
+            LEFT JOIN bands ON bands.id = cifras.band_id
+            ORDER BY {order}
+            LIMIT 40'''
+    )
+    cifras_recent = [dict(r) for r in c.fetchall()]
+    db.close()
+
     return render_template(
         'admin/index.html',
         bands=bands,
-        cifras=cifras,
+        cifras_recent=cifras_recent,
         users=users,
         studios=studios,
         studio_prospects=studio_prospects,
         band_prospects=band_prospects,
-        env_users=env_users,
-        env_emails=env_emails,
-        funnel_stats=funnel_stats,
         funnel_rows=admin_ctx['funnel_rows'],
+        funnel_extra=admin_ctx.get('funnel_extra') or {},
+        funnel_leak=admin_ctx.get('funnel_leak'),
         retention=admin_ctx.get('retention') or {},
         metrics_trend=admin_ctx.get('metrics_trend') or {},
-        stuck_users=admin_ctx['stuck_users'],
+        monetization=admin_ctx.get('monetization') or {},
+        engagement_queues=admin_ctx.get('engagement_queues') or {},
+        cohort_7d=admin_ctx.get('cohort_7d') or {},
         platform_finance=admin_ctx.get('platform_finance'),
         invite_log=invite_log,
-        whatsapp_configured=whatsapp_configured(),
+        whatsapp_configured=admin_ctx.get('whatsapp_configured', False),
         stats=admin_ctx['stats'],
     )
 
@@ -249,6 +258,16 @@ def usuario_detalhe(user_id):
     member_of = get_user_bands(user_id)
     entries = list_admin_activity(limit=100, related_user_id=user_id)
     funnel = get_user_funnel_steps(user_id)
+
+    from monetizacao import get_assinatura_banda, get_plano_efetivo
+    for b in owned:
+        try:
+            a = get_assinatura_banda(b['id'])
+            b['plano_efetivo'] = get_plano_efetivo(b['id'])
+            b['plano_status'] = a.status if a else '—'
+        except Exception:
+            b['plano_efetivo'] = '—'
+            b['plano_status'] = '—'
 
     return render_template(
         'admin/usuario.html',

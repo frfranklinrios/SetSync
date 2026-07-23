@@ -94,7 +94,13 @@
                 <ul class="list-unstyled mb-0" style="font-size: var(--text-sm);">
                     {% for b in owned_bands %}
                     <li class="d-flex justify-content-between border-bottom py-1">
-                        <span><strong>{{ b.name }}</strong> <span class="text-muted">· titular</span></span>
+                        <span>
+                            <strong>{{ b.name }}</strong>
+                            <span class="text-muted">· titular</span>
+                            {% if b.plano_efetivo %}
+                            <span class="badge text-bg-light border ms-1">{{ b.plano_efetivo }}{% if b.plano_status %} · {{ b.plano_status }}{% endif %}</span>
+                            {% endif %}
+                        </span>
                         <a href="{{ url_for('bands.view', band_id=b.id) }}">Abrir</a>
                     </li>
                     {% endfor %}

@@ -11,73 +11,59 @@
     height: 100%;
 }
 .admin-stat .num { font-size: 1.75rem; font-weight: 700; color: var(--chord-highlight, var(--accent)); }
-.admin-stat .lbl { font-size: var(--text-sm); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-/* Variante KPI (retenção): rótulo em caixa normal + legenda tokenizada, sem px cravado */
+.admin-stat .lbl { font-size: var(--text-sm); color: var(--muted); }
 .admin-stat.kpi { display: flex; flex-direction: column; gap: 2px; }
-.admin-stat.kpi .lbl { text-transform: none; letter-spacing: 0; line-height: 1.25; }
 .admin-stat .sub { font-size: var(--text-xs); color: var(--muted); line-height: 1.3; }
 .admin-stat .num.is-good { color: #15803d; }
 .admin-stat .num.is-warn { color: #b45309; }
-/* Sparkline + delta de tendência nos KPIs */
 .kpi-spark { display: flex; align-items: center; gap: 6px; margin-top: 2px; min-height: 20px; }
 .kpi-spark svg { display: block; color: var(--accent); opacity: .8; }
 .kpi-delta { font-size: var(--text-xs); font-weight: 600; color: var(--muted); white-space: nowrap; }
 .kpi-spark-empty { font-size: var(--text-xs); color: var(--muted); opacity: .7; }
-/* Funil de ativação: barras decrescentes (largura = % do topo) + vazamento entre etapas */
 .funnel { display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
 .funnel-row { display: grid; grid-template-columns: 8.5rem 1fr auto; align-items: center; gap: 0.6rem; }
-.funnel-label { font-size: var(--text-sm); font-weight: 600; color: var(--text); text-align: right; line-height: 1.2; }
+.funnel-label { font-size: var(--text-sm); font-weight: 600; text-align: right; line-height: 1.2; }
 .funnel-track { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; height: 24px; overflow: hidden; }
-.funnel-fill { height: 100%; background: var(--accent); border-radius: 6px; min-width: 3px; transition: width .3s ease; }
-.funnel-value { font-size: var(--text-sm); font-weight: 700; color: var(--text); white-space: nowrap; }
+.funnel-fill { height: 100%; background: var(--accent); border-radius: 6px; min-width: 3px; }
+.funnel-value { font-size: var(--text-sm); font-weight: 700; white-space: nowrap; }
 .funnel-value small { color: var(--muted); font-weight: 500; }
 .funnel-value .drop { font-size: var(--text-xs); font-weight: 600; color: var(--muted); margin-left: 4px; }
 .funnel-value .drop.leak { color: #b45309; }
 .admin-table { font-size: var(--text-sm); }
 .admin-table th { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .admin-badge-sa {
-    font-size: var(--text-xs);
-    font-weight: 700;
+    font-size: var(--text-xs); font-weight: 700;
     color: var(--chord-highlight, var(--accent));
     border: 1px solid var(--chord-highlight-border, rgba(42,181,160,0.35));
     background: var(--chord-highlight-bg, rgba(42,181,160,0.08));
-    border-radius: 999px;
-    padding: 0.12rem 0.45rem;
+    border-radius: 999px; padding: 0.12rem 0.45rem;
 }
 .admin-badge-demo {
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #92400e;
-    border: 1px solid #f59e0b;
-    background: #fffbeb;
-    border-radius: 6px;
-    padding: 0.12rem 0.45rem;
-    white-space: nowrap;
+    font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: #92400e; border: 1px solid #f59e0b; background: #fffbeb;
+    border-radius: 6px; padding: 0.12rem 0.45rem; white-space: nowrap;
 }
-tr.admin-row-demo {
-    background: rgba(245, 158, 11, 0.08) !important;
-}
+tr.admin-row-demo { background: rgba(245, 158, 11, 0.08) !important; }
 tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
-.admin-wa-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    align-items: center;
-    min-width: 220px;
+.admin-wa-form { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; min-width: 220px; }
+.admin-wa-form input[type="tel"] { flex: 1 1 120px; min-width: 110px; font-size: var(--text-sm); padding: 0.2rem 0.45rem; }
+.admin-wa-meta { font-size: var(--text-xs); color: var(--muted); width: 100%; }
+.admin-section-title {
+    font-size: var(--text-sm); font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); margin: 0 0 0.75rem;
 }
-.admin-wa-form input[type="tel"] {
-    flex: 1 1 120px;
-    min-width: 110px;
-    font-size: var(--text-sm);
-    padding: 0.2rem 0.45rem;
+.admin-queue-card {
+    border: 1px solid var(--border); border-radius: 10px; background: var(--bg);
+    height: 100%; display: flex; flex-direction: column;
 }
-.admin-wa-meta {
-    font-size: var(--text-xs);
-    color: var(--muted);
-    width: 100%;
+.admin-queue-card .qh {
+    padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border);
+    font-size: var(--text-sm); font-weight: 600;
 }
+.admin-queue-card .qb { padding: 0.5rem 0.85rem; flex: 1; }
+.admin-queue-card .qf { padding: 0.4rem 0.85rem 0.65rem; border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--muted); }
+.admin-nav-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.admin-nav-links .btn { font-size: var(--text-sm); }
 </style>
 
 {% macro spark(t) %}
@@ -91,727 +77,396 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     {% endif %}
 </span>
 {% elif metrics_trend and not metrics_trend.has_history %}
-<span class="kpi-spark"><span class="kpi-spark-empty">coletando histórico…</span></span>
+<span class="kpi-spark"><span class="kpi-spark-empty">coletando…</span></span>
 {% endif %}
 {% endmacro %}
 
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+{% macro user_action_row(u) %}
+<li class="d-flex flex-wrap align-items-center justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
+    <span>
+        <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="text-decoration-none fw-semibold">{{ user_display_name(u) }}</a>
+        <span class="text-muted">@{{ u.username }}</span>
+    </span>
+    <span class="text-nowrap">
+        <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
+        {% if u.phone %}
+        <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+        {% endif %}
+        {% if u.id != current_user.id %}
+        <form method="post" action="{{ url_for('admin.impersonate_user', user_id=u.id) }}" class="d-inline">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-sm btn-primary py-0">Entrar</button>
+        </form>
+        {% endif %}
+    </span>
+</li>
+{% endmacro %}
+
+{# ── Header ─────────────────────────────────────────────────────────────── #}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
     <div>
         <h1 class="mb-1" style="font-size: var(--text-xl); font-weight:700;">
             <i class="fas fa-shield-halved me-2" style="color:var(--chord-highlight,var(--accent));"></i>
-            Administração
+            Painel master
         </h1>
-        <p class="text-muted mb-0" style="font-size: var(--text-base);">
-            Visão geral do {{ app_name }} — usuários, ativação, bandas e estúdios
+        <p class="text-muted mb-0" style="font-size: var(--text-sm);">
+            Diagnóstico de engajamento · {{ stats.users }} contas · {{ stats.signups_7d }} novos em 7 dias
         </p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ url_for('mail_web.inbox') }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-inbox me-1"></i> E-mail
-        </a>
-        <a href="{{ url_for('whatsapp_admin.index') }}" class="btn btn-success btn-sm">
-            <i class="fab fa-whatsapp me-1"></i> WhatsApp
-        </a>
-        <a href="#admin-convites" class="btn btn-outline-success btn-sm">
-            <i class="fas fa-paper-plane me-1"></i> Convidar
-        </a>
-        <a href="{{ url_for('admin.api_cifras') }}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-database me-1"></i> API Cifras
-        </a>
-        <a href="{{ url_for('admin.historico') }}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-clock-rotate-left me-1"></i> Histórico
-        </a>
-        <a href="{{ url_for('admin.depoimentos') }}" class="btn btn-outline-primary btn-sm">Depoimentos</a>
-        <a href="{{ url_for('assinatura_bp.admin_vouchers') }}" class="btn btn-outline-primary btn-sm">Vouchers</a>
-        <a href="{{ url_for('dashboard', view='bands') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-guitar me-1"></i> Grade de bandas
-        </a>
-        <a href="{{ url_for('bands.list_bands') }}" class="btn btn-outline-secondary btn-sm">Lista bandas</a>
-    </div>
-</div>
-
-{% if stuck_users %}
-<div class="alert alert-warning py-2 mb-3" style="font-size: var(--text-sm);">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-        <div>
-            <i class="fas fa-user-clock me-1"></i>
-            <strong>{{ stats.users_no_band }}</strong> usuário{% if stats.users_no_band != 1 %}s{% endif %}
-            sem banda — próximos a acompanhar:
-        </div>
-        <a href="#tab-users" class="btn btn-sm btn-warning" id="admin-goto-users-tab">Ver na aba Usuários</a>
-    </div>
-    <ul class="list-unstyled mb-0 d-flex flex-column gap-1">
-        {% for u in stuck_users %}
-        <li class="d-flex flex-wrap align-items-center justify-content-between gap-2 border-top pt-1">
-            <span>
-                <strong>{{ user_display_name(u) }}</strong>
-                <span class="text-muted">@{{ u.username }}</span>
-                · {{ u.created_at|date_short }}
-            </span>
-            <span class="text-nowrap">
-                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary">Ficha</a>
-                {% if u.phone %}
-                <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">WA</a>
-                {% endif %}
-                {% if u.id != current_user.id %}
-                <form method="post" action="{{ url_for('admin.impersonate_user', user_id=u.id) }}" class="d-inline">
-                    {% include 'partials/csrf_input.html' %}
-                    <button type="submit" class="btn btn-sm btn-primary">Entrar</button>
-                </form>
-                {% endif %}
-            </span>
-        </li>
-        {% endfor %}
-    </ul>
-</div>
-{% elif stats.users_no_band %}
-<div class="alert alert-warning py-2 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" style="font-size: var(--text-sm);">
-    <div>
-        <i class="fas fa-user-clock me-1"></i>
-        <strong>{{ stats.users_no_band }}</strong> usuário{% if stats.users_no_band != 1 %}s{% endif %}
-        cadastrado{% if stats.users_no_band != 1 %}s{% endif %} sem banda — risco de abandono pós-cadastro.
-    </div>
-    <a href="#tab-users" class="btn btn-sm btn-warning" id="admin-goto-users-tab">Ver na aba Usuários</a>
-</div>
-{% endif %}
-
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <div class="admin-stat">
-            <div class="num">{{ stats.bands }}</div>
-            <div class="lbl">Bandas</div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="admin-stat">
-            <div class="num">{{ stats.studios }}</div>
-            <div class="lbl">Estúdios</div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="admin-stat">
-            <div class="num">{{ stats.cifras }}</div>
-            <div class="lbl">Cifras</div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="admin-stat">
-            <div class="num">{{ stats.users }}</div>
-            <div class="lbl">Usuários</div>
-            {% if stats.users_no_band %}
-            <div class="text-warning mt-1" style="font-size: var(--text-xs);">{{ stats.users_no_band }} sem banda</div>
-            {% endif %}
+    <div class="admin-nav-links">
+        <a href="{{ url_for('mail_web.inbox') }}" class="btn btn-primary btn-sm"><i class="fas fa-inbox me-1"></i>E-mail</a>
+        <a href="{{ url_for('whatsapp_admin.index') }}" class="btn btn-success btn-sm"><i class="fab fa-whatsapp me-1"></i>WhatsApp</a>
+        <a href="{{ url_for('admin.historico') }}" class="btn btn-outline-primary btn-sm">Histórico</a>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">Mais</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#admin-convites">Convidar (WA)</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('admin.api_cifras') }}">API Cifras</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('admin.depoimentos') }}">Depoimentos</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('assinatura_bp.admin_vouchers') }}">Vouchers</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('dashboard', view='bands') }}">Grade de bandas</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('bands.list_bands') }}">Lista bandas</a></li>
+            </ul>
         </div>
     </div>
 </div>
-
-{% if platform_finance and platform_finance.stats %}
-{% set pf = platform_finance.stats %}
-{% set meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'] %}
-<div class="card mb-4 border-0 shadow-sm">
-    <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-            <div>
-                <h2 class="h6 mb-1"><i class="fas fa-coins me-1"></i> Financeiro (montante total)</h2>
-                <p class="text-muted mb-0" style="font-size: var(--text-sm);">
-                    {{ meses[platform_finance.month] }} / {{ platform_finance.year }} —
-                    visão agregada da plataforma. O master <strong>não</strong> vê lançamentos, divisões nem detalhes por banda.
-                    {% if pf.demo_excluded_bands %}
-                    Contas <span class="admin-badge-demo">Demo</span> excluídas dos totais.
-                    {% endif %}
-                </p>
-            </div>
-        </div>
-        <div class="row g-2">
-            <div class="col-6 col-md-3">
-                <div class="border rounded p-2 text-center small h-100">
-                    <div class="fw-bold">R$ {{ '%.2f'|format(pf.receita_confirmada) }}</div>
-                    <div class="text-muted">Cachês confirmados</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="border rounded p-2 text-center small h-100">
-                    <div class="fw-bold text-success">R$ {{ '%.2f'|format(pf.recebido) }}</div>
-                    <div class="text-muted">Já recebido</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="border rounded p-2 text-center small h-100">
-                    <div class="fw-bold text-warning">R$ {{ '%.2f'|format(pf.a_receber) }}</div>
-                    <div class="text-muted">A receber</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="border rounded p-2 text-center small h-100">
-                    <div class="fw-bold text-danger">R$ {{ '%.2f'|format(pf.despesas) }}</div>
-                    <div class="text-muted">Despesas cadastradas</div>
-                </div>
-            </div>
-        </div>
-        <p class="text-muted mt-2 mb-0" style="font-size: var(--text-xs);">
-            {{ pf.shows_com_cache }} show{{ 's' if pf.shows_com_cache != 1 else '' }} com cachê ·
-            {{ pf.bandas_com_movimento }} banda{{ 's' if pf.bandas_com_movimento != 1 else '' }} com movimento.
-        </p>
-    </div>
-</div>
-{% endif %}
-
-{% if funnel_rows %}
-<div class="mb-4">
-    <h2 class="h6 text-muted mb-2">Funil de ativação</h2>
-    <div class="funnel">
-        {% for row in funnel_rows %}
-        <div class="funnel-row">
-            <div class="funnel-label">{{ row.label }}</div>
-            <div class="funnel-track" title="{{ row.pct_of_users }}% dos cadastros">
-                <div class="funnel-fill" style="width: {{ row.pct_of_users }}%;"></div>
-            </div>
-            <div class="funnel-value">
-                {{ row.count }} <small>· {{ row.pct_of_users }}%</small>
-                {% if not loop.first and row.pct_of_prev < 100 %}
-                <span class="drop{% if row.pct_of_prev <= 60 %} leak{% endif %}"
-                      title="Conversão da etapa anterior: {{ row.pct_of_prev }}%">↓{{ 100 - row.pct_of_prev }}%</span>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    <p class="text-muted mb-0 mt-2" style="font-size: var(--text-xs);">
-        Barra = % dos cadastros que chegaram à etapa · <span style="color:#b45309;">↓</span> = maior queda entre etapas (onde o usuário desiste).
-    </p>
-</div>
-{% endif %}
-
-{% if retention %}
-<div class="mb-4" id="admin-retencao">
-    <h2 class="h6 text-muted mb-2">Retenção</h2>
-    <div class="row g-2 mb-3">
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat kpi">
-                <div class="num">{{ retention.wau }}</div>
-                <div class="lbl">WAU (7 dias)</div>
-                <div class="sub">{{ retention.wau_pct }}% dos usuários</div>
-                {{ spark(metrics_trend.wau) }}
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat kpi">
-                <div class="num">{{ retention.mau }}</div>
-                <div class="lbl">MAU (30 dias)</div>
-                <div class="sub">{{ retention.mau_pct }}% dos usuários</div>
-                {{ spark(metrics_trend.mau) }}
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat kpi">
-                <div class="num{% if retention.stickiness >= 40 %} is-good{% elif retention.mau and retention.stickiness < 20 %} is-warn{% endif %}">{{ retention.stickiness }}%</div>
-                <div class="lbl">Stickiness</div>
-                <div class="sub">WAU/MAU · quanto voltam na semana</div>
-                {{ spark(metrics_trend.stickiness) }}
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat kpi">
-                <div class="num{% if retention.activation_d7.pct >= 40 %} is-good{% elif retention.activation_d7.cohort and retention.activation_d7.pct < 20 %} is-warn{% endif %}">{{ retention.activation_d7.pct }}%</div>
-                <div class="lbl">Ativação D7</div>
-                <div class="sub">{{ retention.activation_d7.activated }}/{{ retention.activation_d7.cohort }} Modo Tocar ≤7d</div>
-                {{ spark(metrics_trend.activation_d7) }}
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat kpi">
-                <div class="num">{% if retention.nps.nps is not none %}{{ retention.nps.nps }}{% else %}—{% endif %}</div>
-                <div class="lbl">NPS</div>
-                <div class="sub">
-                    {% if retention.nps.total %}
-                    média {{ retention.nps.avg }} · {{ retention.nps.total }} resp.
-                    {% else %}sem respostas{% endif %}
-                </div>
-                {{ spark(metrics_trend.nps) }}
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat kpi">
-                <div class="num{% if retention.trial_churn.expired and retention.trial_churn.churn_pct > 50 %} is-warn{% endif %}">{{ retention.trial_churn.churn_pct }}%</div>
-                <div class="lbl">Churn pós-trial</div>
-                <div class="sub">{{ retention.trial_churn.churned }}/{{ retention.trial_churn.expired }} sem converter</div>
-                {{ spark(metrics_trend.churn) }}
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="admin-stat kpi">
-                <div class="num{% if retention.incomplete_events_7d %} is-warn{% endif %}">{{ retention.incomplete_events_7d }}</div>
-                <div class="lbl">Eventos incompletos</div>
-                <div class="sub">próximos 7 dias · setlist/escala</div>
-            </div>
-        </div>
-    </div>
-    {% if retention.nps.detractor_list %}
-    <div class="card mb-3">
-        <div class="card-header py-2" style="font-size: var(--text-sm);">Detratores NPS (≤6) — follow-up</div>
-        <div class="table-responsive">
-            <table class="table table-sm admin-table mb-0">
-                <thead>
-                    <tr>
-                        <th>Usuário</th>
-                        <th>Nota</th>
-                        <th>Quando</th>
-                        <th>Contato</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in retention.nps.detractor_list %}
-                    <tr>
-                        <td>{{ u.display_name or u.username }}</td>
-                        <td><strong>{{ u.nps_score }}</strong></td>
-                        <td>{{ (u.nps_submitted_at or '')[:16] }}</td>
-                        <td class="text-muted">{{ u.email or '—' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endif %}
-    {% if retention.campaigns %}
-    <p class="text-muted mb-1" style="font-size: var(--text-xs);">Campanhas de retenção enviadas (top)</p>
-    <div class="d-flex flex-wrap gap-2 mb-0">
-        {% for c in retention.campaigns %}
-        <span class="badge text-bg-light border" style="font-weight:500;font-size:var(--text-xs);">
-            {{ c.campaign }} · {{ c.count }}
-        </span>
-        {% endfor %}
-    </div>
-    {% endif %}
-</div>
-{% endif %}
 
 {% if not whatsapp_configured %}
 <div class="alert alert-warning py-2 mb-3" style="font-size: var(--text-sm);">
-    <i class="fab fa-whatsapp me-1"></i>
-    WhatsApp não está conectado — configure em
-    <a href="{{ url_for('whatsapp_admin.index') }}">Admin → WhatsApp</a>
-    antes de enviar convites automáticos.
+    WhatsApp desconectado —
+    <a href="{{ url_for('whatsapp_admin.index') }}">configurar</a> antes de convites automáticos.
 </div>
 {% endif %}
 
-{% include 'admin/partials/convite_forms.html' %}
-
-<ul class="nav nav-tabs mb-3" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-bands" type="button">Bandas</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-studios" type="button">Estúdios</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-convites" type="button">Histórico convites</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cifras" type="button">Cifras</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">Usuários</button></li>
-</ul>
-
-<div class="tab-content">
-    <div class="tab-pane fade show active" id="tab-bands">
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="bands">
-            <span class="text-muted" style="font-size: var(--text-sm);">Exibir:</span>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo bandas">
-                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="all">Todos</button>
-                <button type="button" class="btn btn-outline-secondary" data-demo-filter="real">Só reais</button>
-                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
-            </div>
-            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
-        </div>
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0" id="admin-bands-table">
-                    <thead>
-                        <tr>
-                            <th>Banda</th>
-                            <th>Titular</th>
-                            <th>Membros</th>
-                            <th>Cifras</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for band in bands %}
-                        <tr class="{% if band.is_demo %}admin-row-demo{% endif %}" data-demo="{{ '1' if band.is_demo else '0' }}">
-                            <td>
-                                <strong>{{ band.name }}</strong>
-                                {% if band.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
-                            </td>
-                            <td>{{ user_display_name(band.owner) if band.owner else '—' }}</td>
-                            <td>{{ band.members_count }}</td>
-                            <td>{{ band.cifras_count }}</td>
-                            <td class="text-end">
-                                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-sm btn-outline-primary">Abrir</a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr data-demo-empty="1"><td colspan="5" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+{# ── A. PULSE ───────────────────────────────────────────────────────────── #}
+<p class="admin-section-title">Pulse</p>
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="admin-stat kpi">
+            <div class="num">{{ stats.signups_7d }}</div>
+            <div class="lbl">Novos (7d)</div>
+            <div class="sub">{{ cohort_7d.cifra_pct }}% com cifra · {{ cohort_7d.play_pct }}% tocaram</div>
         </div>
     </div>
-
-    <div class="tab-pane fade" id="tab-studios">
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="studios">
-            <span class="text-muted" style="font-size: var(--text-sm);">Exibir:</span>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo estúdios">
-                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="all">Todos</button>
-                <button type="button" class="btn btn-outline-secondary" data-demo-filter="real">Só reais</button>
-                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
-            </div>
-            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
-        </div>
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0" id="admin-studios-table">
-                    <thead>
-                        <tr>
-                            <th>Estúdio</th>
-                            <th>Cidade</th>
-                            <th>Dono</th>
-                            <th>Salas</th>
-                            <th>Pendentes</th>
-                            <th>Plano</th>
-                            <th>Status</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for s in studios %}
-                        <tr class="{% if s.is_demo %}admin-row-demo{% endif %}" data-demo="{{ '1' if s.is_demo else '0' }}">
-                            <td>
-                                <strong>{{ s.nome }}</strong>
-                                {% if s.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
-                            </td>
-                            <td>{{ s.cidade }}{% if s.bairro %}, {{ s.bairro }}{% endif %}</td>
-                            <td>{{ user_display_name(s.owner) if s.owner else '—' }}</td>
-                            <td>{{ s.rooms_count }}</td>
-                            <td>
-                                {% if s.pending_count %}
-                                <span class="badge bg-warning text-dark">{{ s.pending_count }}</span>
-                                {% else %}
-                                <span class="text-muted">0</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if s.plano_ui %}
-                                <span class="badge bg-{{ s.plano_ui.badge }}">{{ s.plano_ui.label_curto|default(s.plano_ui.label) }}</span>
-                                {% else %}
-                                <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if s.ativo %}
-                                <span class="text-success">Ativo</span>
-                                {% else %}
-                                <span class="text-muted">Oculto</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end text-nowrap">
-                                <a href="{{ url_for('studios.owner_dashboard', studio_id=s.id) }}" class="btn btn-sm btn-outline-primary">Painel</a>
-                                <a href="{{ url_for('studios.detail', studio_id=s.id) }}" class="btn btn-sm btn-outline-secondary">Público</a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr data-demo-empty="1"><td colspan="8" class="text-muted text-center py-4">Nenhum estúdio.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="admin-stat kpi">
+            <div class="num">{{ retention.wau }}</div>
+            <div class="lbl">WAU</div>
+            <div class="sub">{{ retention.wau_pct }}% das contas</div>
+            {{ spark(metrics_trend.wau) }}
         </div>
     </div>
-
-    <div class="tab-pane fade" id="tab-convites">
-        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
-            Convites enviados para quem ainda não se cadastrou.
-            <a href="#admin-convites">Enviar novo convite</a>
-        </p>
-
-        {% if band_prospects %}
-        <div class="card mb-3">
-            <div class="card-header py-2" style="font-size: var(--text-sm);">Bandas convidadas</div>
-            <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>Banda</th>
-                            <th>Cidade</th>
-                            <th>WhatsApp</th>
-                            <th>Último convite</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for p in band_prospects %}
-                        {% set inv = invite_log.get(('band_prospect', p.id)) %}
-                        <tr>
-                            <td><strong>{{ p.nome }}</strong></td>
-                            <td>{{ p.cidade or '—' }}</td>
-                            <td>{{ p.phone|whatsapp_display }}</td>
-                            <td>
-                                {% if p.last_invite_at %}
-                                {{ p.last_invite_at|date_short }}
-                                {% elif inv and inv.success %}
-                                {{ inv.created_at|date_short }}
-                                {% else %}
-                                <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="target_type" value="band_prospect">
-                                    <input type="hidden" name="target_id" value="{{ p.id }}">
-                                    <button type="submit" name="action" value="resend" class="btn btn-sm btn-outline-primary">
-                                        <i class="fab fa-whatsapp"></i> Reenviar
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if studio_prospects %}
-        <div class="card mb-3">
-            <div class="card-header py-2" style="font-size: var(--text-sm);">Estúdios convidados</div>
-            <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>Estúdio</th>
-                            <th>Cidade</th>
-                            <th>WhatsApp</th>
-                            <th>Último convite</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for p in studio_prospects %}
-                        {% set inv = invite_log.get(('studio_prospect', p.id)) %}
-                        <tr>
-                            <td><strong>{{ p.nome }}</strong></td>
-                            <td>{{ p.cidade or '—' }}</td>
-                            <td>{{ p.phone|whatsapp_display }}</td>
-                            <td>
-                                {% if p.last_invite_at %}
-                                {{ p.last_invite_at|date_short }}
-                                {% elif inv and inv.success %}
-                                {{ inv.created_at|date_short }}
-                                {% else %}
-                                <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="target_type" value="studio_prospect">
-                                    <input type="hidden" name="target_id" value="{{ p.id }}">
-                                    <button type="submit" name="action" value="resend" class="btn btn-sm btn-outline-success">
-                                        <i class="fab fa-whatsapp"></i> Reenviar
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if not band_prospects and not studio_prospects %}
-        <div class="text-muted text-center py-4">Nenhum convite enviado ainda.</div>
-        {% endif %}
-    </div>
-
-    <div class="tab-pane fade" id="tab-cifras">
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>Música</th>
-                            <th>Artista</th>
-                            <th>Banda</th>
-                            <th>Tom</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for c in cifras %}
-                        <tr>
-                            <td><strong>{{ c.titulo }}</strong></td>
-                            <td>{{ c.artista }}</td>
-                            <td>{{ c.band_name }}</td>
-                            <td>{{ c.tom_original|normalize_tom }}</td>
-                            <td class="text-end">
-                                <a href="{{ url_for('cifras.view', cifra_id=c.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
-                                <a href="{{ url_for('cifras.edit', cifra_id=c.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="5" class="text-muted text-center py-4">Nenhuma cifra.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="admin-stat kpi">
+            <div class="num{% if retention.activation_d7.pct >= 40 %} is-good{% elif retention.activation_d7.cohort and retention.activation_d7.pct < 20 %} is-warn{% endif %}">{{ retention.activation_d7.pct }}%</div>
+            <div class="lbl">Ativação D7</div>
+            <div class="sub">{{ retention.activation_d7.activated }}/{{ retention.activation_d7.cohort }} tocar ≤7d</div>
+            {{ spark(metrics_trend.activation_d7) }}
         </div>
     </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="admin-stat kpi">
+            {% if funnel_leak %}
+            <div class="num is-warn">↓{{ funnel_leak.drop_pct }}%</div>
+            <div class="lbl">Maior vazamento</div>
+            <div class="sub">{{ funnel_leak.from_label }} → {{ funnel_leak.to_label }}</div>
+            {% else %}
+            <div class="num">—</div>
+            <div class="lbl">Maior vazamento</div>
+            <div class="sub">funil sem queda</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="admin-stat kpi">
+            <div class="num">{{ monetization.trials_active }}</div>
+            <div class="lbl">Trials ativos</div>
+            <div class="sub">{{ monetization.paid_total }} pagantes · churn {{ monetization.trial_churn.churn_pct }}%</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="admin-stat kpi">
+            <div class="num{% if retention.stickiness >= 40 %} is-good{% elif retention.mau and retention.stickiness < 20 %} is-warn{% endif %}">{{ retention.stickiness }}%</div>
+            <div class="lbl">Stickiness</div>
+            <div class="sub">WAU/MAU · {{ retention.mau }} MAU</div>
+            {{ spark(metrics_trend.stickiness) }}
+        </div>
+    </div>
+</div>
 
-    <div class="tab-pane fade" id="tab-users">
-        <div class="alert alert-light border py-2 mb-3" style="font-size: var(--text-sm);">
-            <strong>Superadmin</strong> vê todo o app. <strong>Admin de banda</strong> é o titular em Membros.
-            Promoção via <code>SETSYNC_SUPERADMIN_*</code> ou coluna <code>is_superadmin</code>.
-            Use <strong>Marcar como teste</strong> para separar QA de usuários reais (badge Demo + exclusão dos totais financeiros).
-        </div>
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="users">
-            <input type="search" class="form-control form-control-sm" id="admin-user-search"
-                   placeholder="Buscar por nome, usuário ou e-mail…" style="max-width: 320px;">
-            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo usuários">
-                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="all">Todos</button>
-                <button type="button" class="btn btn-outline-secondary" data-demo-filter="real">Só reais</button>
-                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
+{# ── B. FILA DE AÇÃO ────────────────────────────────────────────────────── #}
+<p class="admin-section-title">Fila de ação</p>
+{% set eq = engagement_queues %}
+{% set et = eq.totals or {} %}
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-queue-card">
+            <div class="qh text-warning">
+                Sem 1ª música <span class="badge bg-warning text-dark">{{ et.needs_cifra }}</span>
             </div>
-            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
+            <div class="qb">
+                <ul class="list-unstyled mb-0">
+                    {% for u in eq.needs_cifra %}{{ user_action_row(u) }}{% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Ninguém nesta fila.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="qf">Prioridade #1 — sem cifra não ativa</div>
         </div>
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover admin-table mb-0" id="admin-users-table">
-                    <thead>
-                        <tr>
-                            <th>Usuário</th>
-                            <th>E-mail</th>
-                            <th>Bandas</th>
-                            <th>Cifras</th>
-                            <th>WhatsApp</th>
-                            <th>Cadastro</th>
-                            <th>Último login</th>
-                            <th>Superadmin</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for u in users %}
-                        <tr class="{% if u.is_demo %}admin-row-demo{% endif %}"
-                            data-demo="{{ '1' if u.is_demo else '0' }}"
-                            data-search="{{ (user_display_name(u) ~ ' ' ~ u.username ~ ' ' ~ u.email ~ (' demo' if u.is_demo else ''))|lower }}">
-                            <td>
-                                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="text-decoration-none">
-                                    <strong>{{ user_display_name(u) }}</strong>
-                                </a>
-                                <span class="text-muted" style="font-size: var(--text-sm);">@{{ u.username }}</span>
-                                {% if u.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
-                            </td>
-                            <td>{{ u.email }}</td>
-                            <td>
-                                {% if u.bands_count %}
-                                <span class="badge bg-light text-dark border">{{ u.bands_count }}</span>
-                                {% else %}
-                                <span class="badge bg-warning text-dark">0</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if u.cifras_count %}
-                                <span class="badge bg-light text-dark border" title="Coleção pessoal">{{ u.cifras_count }}</span>
-                                {% else %}
-                                <span class="badge bg-warning text-dark" title="Sem cifras na coleção pessoal">0</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if u.phone %}
-                                <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener noreferrer"
-                                   class="text-decoration-none" title="Abrir no WhatsApp">
-                                    <i class="fab fa-whatsapp text-success me-1"></i>{{ u.phone|whatsapp_display }}
-                                </a>
-                                {% if u.whatsapp_notify %}
-                                <span class="text-muted" style="font-size: var(--text-sm);" title="Alertas WhatsApp ativos">· alertas</span>
-                                {% else %}
-                                <span class="text-muted" style="font-size: var(--text-sm);" title="Sem opt-in de alertas">· sem alertas</span>
-                                {% endif %}
-                                {% else %}
-                                <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-nowrap">{{ u.created_at|date_short }}</td>
-                            <td class="text-nowrap">
-                                {% if u.last_login_at %}{{ u.last_login_at|date_short }}{% else %}
-                                <span class="text-muted">—</span>{% endif %}
-                            </td>
-                            <td>
-                                {% if u.is_env_admin %}
-                                <span class="admin-badge-sa">Sim</span>
-                                {% if u.is_superadmin_env %}
-                                <span class="text-muted" style="font-size: var(--text-xs);"> (.env)</span>
-                                {% elif u.is_superadmin_db %}
-                                <span class="text-muted" style="font-size: var(--text-xs);"> (banco)</span>
-                                {% endif %}
-                                {% else %}
-                                <span class="text-muted">Não</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end text-nowrap">
-                                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}"
-                                   class="btn btn-sm btn-outline-primary" title="Ficha e histórico">Ficha</a>
-                                {% if not u.is_env_admin and u.id != current_user.id %}
-                                <form method="post" action="{{ url_for('admin.impersonate_user', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <button type="submit" class="btn btn-sm btn-primary"
-                                            title="Ver o app como este usuário">Entrar</button>
-                                </form>
-                                {% endif %}
-                                {% if u.is_demo_manual %}
-                                <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="enabled" value="0">
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
-                                            title="Remove a marcação manual de teste">Desmarcar teste</button>
-                                </form>
-                                {% elif not u.is_demo %}
-                                <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="enabled" value="1">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning"
-                                            title="Marca como conta de teste/QA">Marcar como teste</button>
-                                </form>
-                                {% else %}
-                                <span class="text-muted" style="font-size: var(--text-sm);"
-                                      title="Detectada por username/e-mail showcase ou SETSYNC_DEMO_*">Demo automática</span>
-                                {% endif %}
-                                {% if u.is_superadmin_db %}
-                                <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="enabled" value="0">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">Revogar superadmin</button>
-                                </form>
-                                {% elif u.is_superadmin_env %}
-                                <span class="text-muted" style="font-size: var(--text-sm);">Definido no .env</span>
-                                {% else %}
-                                <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="enabled" value="1">
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Tornar superadmin</button>
-                                </form>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-queue-card">
+            <div class="qh" style="color:#b45309;">
+                Tem cifra, não tocou <span class="badge text-bg-light border">{{ et.needs_play }}</span>
+            </div>
+            <div class="qb">
+                <ul class="list-unstyled mb-0">
+                    {% for u in eq.needs_play %}{{ user_action_row(u) }}{% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Ninguém nesta fila.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="qf">Aha do produto = Modo Tocar</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-queue-card">
+            <div class="qh text-success">
+                Solo ativado <span class="badge bg-success">{{ et.solo_activated }}</span>
+            </div>
+            <div class="qb">
+                <ul class="list-unstyled mb-0">
+                    {% for u in eq.solo_activated %}{{ user_action_row(u) }}{% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nenhum solo ativo.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="qf">Sem banda, mas engajado — upsell Individual</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-queue-card">
+            <div class="qh">
+                Trial a vencer (7d) <span class="badge text-bg-light border">{{ eq.trials_ending|length }}</span>
+            </div>
+            <div class="qb">
+                <ul class="list-unstyled mb-0">
+                    {% for t in eq.trials_ending %}
+                    <li class="d-flex flex-wrap justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
+                        <span>
+                            <strong>{{ t.band_name }}</strong>
+                            <span class="text-muted">· {{ t.trial_fim[:10] if t.trial_fim else '—' }}</span>
+                        </span>
+                        {% if t.user_id %}
+                        <a href="{{ url_for('admin.usuario_detalhe', user_id=t.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
+                        {% endif %}
+                    </li>
+                    {% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nenhum trial acabando.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="qf">
+                {% if retention.nps.detractors %}
+                NPS detratores: {{ retention.nps.detractors }} —
+                <a href="#admin-nps">ver</a>
+                {% else %}
+                Sem detratores NPS recentes
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+<p class="text-muted mb-4" style="font-size: var(--text-xs);">
+    {{ et.users_no_band }} contas sem banda no total —
+    {{ et.solo_activated }} já ativaram solo (não contar como abandono).
+</p>
+
+{# ── C. DIAGNÓSTICO ─────────────────────────────────────────────────────── #}
+<p class="admin-section-title">Diagnóstico</p>
+<ul class="nav nav-pills mb-3 flex-wrap gap-1" role="tablist" style="font-size: var(--text-sm);">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#diag-funil" type="button">Funil</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#diag-retencao" type="button">Retenção</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#diag-monetizacao" type="button">Monetização</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#diag-ops" type="button">Ops</button></li>
+</ul>
+
+<div class="tab-content mb-4">
+    <div class="tab-pane fade show active" id="diag-funil">
+        {% if funnel_rows %}
+        <div class="funnel mb-2">
+            {% for row in funnel_rows %}
+            <div class="funnel-row">
+                <div class="funnel-label">{{ row.label }}</div>
+                <div class="funnel-track" title="{{ row.pct_of_users }}% dos cadastros">
+                    <div class="funnel-fill" style="width: {{ row.pct_of_users }}%;"></div>
+                </div>
+                <div class="funnel-value">
+                    {{ row.count }} <small>· {{ row.pct_of_users }}%</small>
+                    {% if not loop.first and row.pct_of_prev < 100 %}
+                    <span class="drop{% if row.pct_of_prev <= 60 %} leak{% endif %}"
+                          title="Conversão da etapa anterior: {{ row.pct_of_prev }}%">↓{{ 100 - row.pct_of_prev }}%</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="text-muted mb-0" style="font-size: var(--text-xs);">
+            Ordem do produto: cifra → Modo Tocar → banda. Extensões:
+            agenda {{ funnel_extra.agenda }} · estúdio {{ funnel_extra.estudio }} · reserva {{ funnel_extra.reserva }}.
+            Cohort 7d: {{ cohort_7d.signups }} cadastros → {{ cohort_7d.with_cifra }} cifra ({{ cohort_7d.cifra_pct }}%) → {{ cohort_7d.played }} tocar ({{ cohort_7d.play_pct }}%).
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="diag-retencao">
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="admin-stat kpi">
+                    <div class="num">{{ retention.mau }}</div>
+                    <div class="lbl">MAU (30d)</div>
+                    {{ spark(metrics_trend.mau) }}
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat kpi">
+                    <div class="num">{% if retention.nps.nps is not none %}{{ retention.nps.nps }}{% else %}—{% endif %}</div>
+                    <div class="lbl">NPS</div>
+                    <div class="sub">{% if retention.nps.total %}média {{ retention.nps.avg }} · {{ retention.nps.total }} resp.{% else %}sem respostas{% endif %}</div>
+                    {{ spark(metrics_trend.nps) }}
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat kpi">
+                    <div class="num{% if retention.trial_churn.expired and retention.trial_churn.churn_pct > 50 %} is-warn{% endif %}">{{ retention.trial_churn.churn_pct }}%</div>
+                    <div class="lbl">Churn pós-trial</div>
+                    <div class="sub">{{ retention.trial_churn.churned }}/{{ retention.trial_churn.expired }}</div>
+                    {{ spark(metrics_trend.churn) }}
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat kpi">
+                    <div class="num{% if retention.incomplete_events_7d %} is-warn{% endif %}">{{ retention.incomplete_events_7d }}</div>
+                    <div class="lbl">Eventos incompletos</div>
+                    <div class="sub">próx. 7d · setlist/escala</div>
+                </div>
+            </div>
+        </div>
+        {% if retention.nps.detractor_list %}
+        <div class="card mb-2" id="admin-nps">
+            <div class="card-header py-2" style="font-size: var(--text-sm);">Detratores NPS (≤6)</div>
+            <div class="table-responsive">
+                <table class="table table-sm admin-table mb-0">
+                    <thead><tr><th>Usuário</th><th>Nota</th><th>Quando</th><th></th></tr></thead>
+                    <tbody>
+                        {% for u in retention.nps.detractor_list %}
+                        <tr>
+                            <td>{{ u.display_name or u.username }}</td>
+                            <td><strong>{{ u.nps_score }}</strong></td>
+                            <td>{{ (u.nps_submitted_at or '')[:16] }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary">Ficha</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        {% if retention.campaigns %}
+        <div class="d-flex flex-wrap gap-2">
+            {% for c in retention.campaigns %}
+            <span class="badge text-bg-light border" style="font-weight:500;">{{ c.campaign }} · {{ c.count }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="diag-monetizacao">
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="admin-stat kpi">
+                    <div class="num">{{ monetization.paid_total }}</div>
+                    <div class="lbl">Assinaturas pagas</div>
+                    <div class="sub">ativa / voucher</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat kpi">
+                    <div class="num">{{ monetization.individual }}</div>
+                    <div class="lbl">Individual</div>
+                    <div class="sub">solo</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat kpi">
+                    <div class="num">{{ monetization.pro }}</div>
+                    <div class="lbl">Pro</div>
+                    <div class="sub">banda</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat kpi">
+                    <div class="num">{{ monetization.worship }}</div>
+                    <div class="lbl">Worship</div>
+                    <div class="sub">+ {{ monetization.studio_premium }} estúdio Premium</div>
+                </div>
+            </div>
+        </div>
+        <p class="text-muted mb-2" style="font-size: var(--text-sm);">
+            Trials ativos: <strong>{{ monetization.trials_active }}</strong>
+            · Conversão pós-trial: <strong>{{ monetization.trial_churn.convert_pct }}%</strong>
+            · Inadimplentes: <strong>{{ monetization.inadimplente }}</strong>
+        </p>
+        <p class="text-muted mb-0" style="font-size: var(--text-xs);">
+            Inventário: {{ stats.bands }} bandas · {{ stats.studios }} estúdios · {{ stats.cifras }} cifras · {{ stats.users }} usuários.
+        </p>
+    </div>
+
+    <div class="tab-pane fade" id="diag-ops">
+        <details class="mb-3">
+            <summary class="text-muted" style="cursor:pointer;font-size:var(--text-sm);">Financeiro de cachês das bandas (plataforma)</summary>
+            {% if platform_finance and platform_finance.stats %}
+            {% set pf = platform_finance.stats %}
+            {% set meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'] %}
+            <div class="card border-0 shadow-sm mt-2">
+                <div class="card-body">
+                    <p class="text-muted small mb-2">
+                        {{ meses[platform_finance.month] }}/{{ platform_finance.year }} — totais agregados (não é MRR SaaS).
+                    </p>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3"><div class="border rounded p-2 text-center small"><div class="fw-bold">R$ {{ '%.2f'|format(pf.receita_confirmada) }}</div><div class="text-muted">Confirmados</div></div></div>
+                        <div class="col-6 col-md-3"><div class="border rounded p-2 text-center small"><div class="fw-bold text-success">R$ {{ '%.2f'|format(pf.recebido) }}</div><div class="text-muted">Recebido</div></div></div>
+                        <div class="col-6 col-md-3"><div class="border rounded p-2 text-center small"><div class="fw-bold text-warning">R$ {{ '%.2f'|format(pf.a_receber) }}</div><div class="text-muted">A receber</div></div></div>
+                        <div class="col-6 col-md-3"><div class="border rounded p-2 text-center small"><div class="fw-bold text-danger">R$ {{ '%.2f'|format(pf.despesas) }}</div><div class="text-muted">Despesas</div></div></div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-muted small mt-2 mb-0">Sem dados de financeiro de banda neste mês.</p>
+            {% endif %}
+        </details>
+        <div id="admin-convites">
+            {% include 'admin/partials/convite_forms.html' %}
+        </div>
+    </div>
+</div>
+
+{# ── D. INVENTÁRIO ──────────────────────────────────────────────────────── #}
+<p class="admin-section-title">Inventário</p>
+{% include 'admin/partials/inventory_tabs.html' %}
+
 <script>
 (function () {
     function showAdminTab(hash) {
         if (!hash) return;
         if (hash === 'admin-convites') {
+            var opsBtn = document.querySelector('[data-bs-target="#diag-ops"]');
+            if (opsBtn && window.bootstrap) bootstrap.Tab.getOrCreateInstance(opsBtn).show();
             var el = document.getElementById('admin-convites');
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
             return;
         }
         if (!hash.startsWith('tab-')) return;
@@ -819,38 +474,15 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         if (btn && window.bootstrap && bootstrap.Tab) {
             bootstrap.Tab.getOrCreateInstance(btn).show();
         }
-        var pane = document.getElementById(hash);
-        if (pane) {
-            // Espera o tab ativar e rola até a barra de abas
-            var tabs = document.querySelector('.nav-tabs');
-            if (tabs) tabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        var tabs = document.querySelector('.nav-tabs');
+        if (tabs) tabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
         if (hash === 'tab-users') {
             var search = document.getElementById('admin-user-search');
-            // Destaca quem está sem banda (badge 0) filtrando bandas=0 na busca visual
-            var table = document.getElementById('admin-users-table');
-            if (table) {
-                table.querySelectorAll('tbody tr').forEach(function (row) {
-                    var badge = row.querySelector('.badge.bg-warning');
-                    row.classList.toggle('table-warning', !!badge);
-                });
-            }
-            if (search) setTimeout(function () { search.focus(); }, 300);
+            if (search) setTimeout(function () { search.focus(); }, 200);
         }
     }
-
     var hash = (window.location.hash || '').replace('#', '');
     if (hash) showAdminTab(hash);
-
-    var gotoUsers = document.getElementById('admin-goto-users-tab');
-    if (gotoUsers) {
-        gotoUsers.addEventListener('click', function (e) {
-            e.preventDefault();
-            history.replaceState(null, '', '#tab-users');
-            showAdminTab('tab-users');
-        });
-    }
-
     window.addEventListener('hashchange', function () {
         showAdminTab((window.location.hash || '').replace('#', ''));
     });
@@ -862,15 +494,13 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         studios: document.getElementById('admin-studios-table'),
         users: document.getElementById('admin-users-table')
     };
-
     function currentFilter() {
         try {
             var v = sessionStorage.getItem(STORAGE_KEY);
             if (v === 'real' || v === 'demo' || v === 'all') return v;
         } catch (e) {}
-        return 'all';
+        return 'real';
     }
-
     function setFilter(mode) {
         try { sessionStorage.setItem(STORAGE_KEY, mode); } catch (e) {}
         document.querySelectorAll('[data-admin-demo-filter]').forEach(function (bar) {
@@ -881,7 +511,6 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
             applyTable(key, mode, bar.querySelector('.js-admin-demo-count'));
         });
     }
-
     function applyTable(key, mode, countEl) {
         var table = tables[key];
         if (!table) return;
@@ -902,33 +531,26 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
             var demoOk = mode === 'all' || (mode === 'demo' && isDemo) || (mode === 'real' && !isDemo);
             var searchOk = true;
             if (searchQ) {
-                var hay = row.getAttribute('data-search') || '';
-                searchOk = hay.indexOf(searchQ) !== -1;
+                var hay = (row.getAttribute('data-search') || row.textContent || '').toLowerCase();
+                searchOk = hay.indexOf(searchQ) >= 0;
             }
             var show = demoOk && searchOk;
             row.style.display = show ? '' : 'none';
             if (show) visible += 1;
         });
-        if (countEl) {
-            countEl.textContent = visible + ' de ' + total;
-        }
+        if (countEl) countEl.textContent = visible + ' / ' + total;
     }
-
-    document.querySelectorAll('[data-admin-demo-filter]').forEach(function (bar) {
-        bar.querySelectorAll('[data-demo-filter]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                setFilter(btn.getAttribute('data-demo-filter') || 'all');
-            });
+    document.querySelectorAll('[data-admin-demo-filter] [data-demo-filter]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            setFilter(btn.getAttribute('data-demo-filter'));
         });
     });
-
-    var input = document.getElementById('admin-user-search');
-    if (input) {
-        input.addEventListener('input', function () {
+    var userSearch = document.getElementById('admin-user-search');
+    if (userSearch) {
+        userSearch.addEventListener('input', function () {
             setFilter(currentFilter());
         });
     }
-
     setFilter(currentFilter());
 })();
 </script>

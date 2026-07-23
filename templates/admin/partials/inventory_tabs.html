@@ -1,0 +1,402 @@
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bands" type="button">Bandas</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-studios" type="button">Estúdios</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-convites" type="button">Histórico convites</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cifras" type="button">Cifras</button></li>
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">Usuários</button></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade" id="tab-bands">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="bands">
+            <span class="text-muted" style="font-size: var(--text-sm);">Exibir:</span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo bandas">
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="all">Todos</button>
+                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="real">Só reais</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
+            </div>
+            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
+        </div>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0" id="admin-bands-table">
+                    <thead>
+                        <tr>
+                            <th>Banda</th>
+                            <th>Titular</th>
+                            <th>Membros</th>
+                            <th>Cifras</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for band in bands %}
+                        <tr class="{% if band.is_demo %}admin-row-demo{% endif %}" data-demo="{{ '1' if band.is_demo else '0' }}">
+                            <td>
+                                <strong>{{ band.name }}</strong>
+                                {% if band.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
+                            </td>
+                            <td>{{ user_display_name(band.owner) if band.owner else '—' }}</td>
+                            <td>{{ band.members_count }}</td>
+                            <td>{{ band.cifras_count }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-sm btn-outline-primary">Abrir</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr data-demo-empty="1"><td colspan="5" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-studios">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="studios">
+            <span class="text-muted" style="font-size: var(--text-sm);">Exibir:</span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo estúdios">
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="all">Todos</button>
+                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="real">Só reais</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
+            </div>
+            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
+        </div>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0" id="admin-studios-table">
+                    <thead>
+                        <tr>
+                            <th>Estúdio</th>
+                            <th>Cidade</th>
+                            <th>Dono</th>
+                            <th>Salas</th>
+                            <th>Pendentes</th>
+                            <th>Plano</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in studios %}
+                        <tr class="{% if s.is_demo %}admin-row-demo{% endif %}" data-demo="{{ '1' if s.is_demo else '0' }}">
+                            <td>
+                                <strong>{{ s.nome }}</strong>
+                                {% if s.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
+                            </td>
+                            <td>{{ s.cidade }}{% if s.bairro %}, {{ s.bairro }}{% endif %}</td>
+                            <td>{{ user_display_name(s.owner) if s.owner else '—' }}</td>
+                            <td>{{ s.rooms_count }}</td>
+                            <td>
+                                {% if s.pending_count %}
+                                <span class="badge bg-warning text-dark">{{ s.pending_count }}</span>
+                                {% else %}
+                                <span class="text-muted">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if s.plano_ui %}
+                                <span class="badge bg-{{ s.plano_ui.badge }}">{{ s.plano_ui.label_curto|default(s.plano_ui.label) }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if s.ativo %}
+                                <span class="text-success">Ativo</span>
+                                {% else %}
+                                <span class="text-muted">Oculto</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a href="{{ url_for('studios.owner_dashboard', studio_id=s.id) }}" class="btn btn-sm btn-outline-primary">Painel</a>
+                                <a href="{{ url_for('studios.detail', studio_id=s.id) }}" class="btn btn-sm btn-outline-secondary">Público</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr data-demo-empty="1"><td colspan="8" class="text-muted text-center py-4">Nenhum estúdio.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-convites">
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+            Convites enviados para quem ainda não se cadastrou.
+            <a href="#admin-convites">Enviar novo convite</a>
+        </p>
+
+        {% if band_prospects %}
+        <div class="card mb-3">
+            <div class="card-header py-2" style="font-size: var(--text-sm);">Bandas convidadas</div>
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Banda</th>
+                            <th>Cidade</th>
+                            <th>WhatsApp</th>
+                            <th>Último convite</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in band_prospects %}
+                        {% set inv = invite_log.get(('band_prospect', p.id)) %}
+                        <tr>
+                            <td><strong>{{ p.nome }}</strong></td>
+                            <td>{{ p.cidade or '—' }}</td>
+                            <td>{{ p.phone|whatsapp_display }}</td>
+                            <td>
+                                {% if p.last_invite_at %}
+                                {{ p.last_invite_at|date_short }}
+                                {% elif inv and inv.success %}
+                                {{ inv.created_at|date_short }}
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="target_type" value="band_prospect">
+                                    <input type="hidden" name="target_id" value="{{ p.id }}">
+                                    <button type="submit" name="action" value="resend" class="btn btn-sm btn-outline-primary">
+                                        <i class="fab fa-whatsapp"></i> Reenviar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if studio_prospects %}
+        <div class="card mb-3">
+            <div class="card-header py-2" style="font-size: var(--text-sm);">Estúdios convidados</div>
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Estúdio</th>
+                            <th>Cidade</th>
+                            <th>WhatsApp</th>
+                            <th>Último convite</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in studio_prospects %}
+                        {% set inv = invite_log.get(('studio_prospect', p.id)) %}
+                        <tr>
+                            <td><strong>{{ p.nome }}</strong></td>
+                            <td>{{ p.cidade or '—' }}</td>
+                            <td>{{ p.phone|whatsapp_display }}</td>
+                            <td>
+                                {% if p.last_invite_at %}
+                                {{ p.last_invite_at|date_short }}
+                                {% elif inv and inv.success %}
+                                {{ inv.created_at|date_short }}
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="post" action="{{ url_for('admin.convite_whatsapp') }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="target_type" value="studio_prospect">
+                                    <input type="hidden" name="target_id" value="{{ p.id }}">
+                                    <button type="submit" name="action" value="resend" class="btn btn-sm btn-outline-success">
+                                        <i class="fab fa-whatsapp"></i> Reenviar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not band_prospects and not studio_prospects %}
+        <div class="text-muted text-center py-4">Nenhum convite enviado ainda.</div>
+        {% endif %}
+    </div>
+
+        <div class="tab-pane fade" id="tab-cifras">
+        <div class="alert alert-light border" style="font-size: var(--text-sm);">
+            Há <strong>{{ stats.cifras }}</strong> cifras no sistema.
+            Use a <a href="{{ url_for('admin.api_cifras') }}">API Cifras</a> ou abra bandas/coleções pelas fichas de usuário —
+            a listagem completa foi removida deste painel (pesada e pouco diagnóstica).
+        </div>
+        {% if cifras_recent %}
+        <div class="card">
+            <div class="card-header py-2" style="font-size: var(--text-sm);">Últimas {{ cifras_recent|length }} cifras</div>
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead><tr><th>Música</th><th>Artista</th><th>Banda</th><th></th></tr></thead>
+                    <tbody>
+                        {% for c in cifras_recent %}
+                        <tr>
+                            <td><strong>{{ c.titulo }}</strong></td>
+                            <td>{{ c.artista }}</td>
+                            <td>{{ c.band_name or '—' }}</td>
+                            <td class="text-end"><a href="{{ url_for('cifras.view', cifra_id=c.id) }}" class="btn btn-sm btn-outline-primary">Ver</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+<div class="tab-pane fade show active" id="tab-users">
+        <div class="alert alert-light border py-2 mb-3" style="font-size: var(--text-sm);">
+            <strong>Superadmin</strong> vê todo o app. <strong>Admin de banda</strong> é o titular em Membros.
+            Promoção via <code>SETSYNC_SUPERADMIN_*</code> ou coluna <code>is_superadmin</code>.
+            Use <strong>Marcar como teste</strong> para separar QA de usuários reais (badge Demo + exclusão dos totais financeiros).
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="users">
+            <input type="search" class="form-control form-control-sm" id="admin-user-search"
+                   placeholder="Buscar por nome, usuário ou e-mail…" style="max-width: 320px;">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo usuários">
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="all">Todos</button>
+                <button type="button" class="btn btn-outline-secondary active" data-demo-filter="real">Só reais</button>
+                <button type="button" class="btn btn-outline-secondary" data-demo-filter="demo">Só demos</button>
+            </div>
+            <span class="text-muted js-admin-demo-count" style="font-size: var(--text-sm);"></span>
+        </div>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0" id="admin-users-table">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>E-mail</th>
+                            <th>Bandas</th>
+                            <th>Cifras</th>
+                            <th>WhatsApp</th>
+                            <th>Cadastro</th>
+                            <th>Último login</th>
+                            <th>Superadmin</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr class="{% if u.is_demo %}admin-row-demo{% endif %}"
+                            data-demo="{{ '1' if u.is_demo else '0' }}"
+                            data-search="{{ (user_display_name(u) ~ ' ' ~ u.username ~ ' ' ~ u.email ~ (' demo' if u.is_demo else ''))|lower }}">
+                            <td>
+                                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="text-decoration-none">
+                                    <strong>{{ user_display_name(u) }}</strong>
+                                </a>
+                                <span class="text-muted" style="font-size: var(--text-sm);">@{{ u.username }}</span>
+                                {% if u.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
+                            </td>
+                            <td>{{ u.email }}</td>
+                            <td>
+                                {% if u.bands_count %}
+                                <span class="badge bg-light text-dark border">{{ u.bands_count }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.cifras_count %}
+                                <span class="badge bg-light text-dark border" title="Coleção pessoal">{{ u.cifras_count }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark" title="Sem cifras na coleção pessoal">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.phone %}
+                                <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener noreferrer"
+                                   class="text-decoration-none" title="Abrir no WhatsApp">
+                                    <i class="fab fa-whatsapp text-success me-1"></i>{{ u.phone|whatsapp_display }}
+                                </a>
+                                {% if u.whatsapp_notify %}
+                                <span class="text-muted" style="font-size: var(--text-sm);" title="Alertas WhatsApp ativos">· alertas</span>
+                                {% else %}
+                                <span class="text-muted" style="font-size: var(--text-sm);" title="Sem opt-in de alertas">· sem alertas</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-nowrap">{{ u.created_at|date_short }}</td>
+                            <td class="text-nowrap">
+                                {% if u.last_login_at %}{{ u.last_login_at|date_short }}{% else %}
+                                <span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_env_admin %}
+                                <span class="admin-badge-sa">Sim</span>
+                                {% if u.is_superadmin_env %}
+                                <span class="text-muted" style="font-size: var(--text-xs);"> (.env)</span>
+                                {% elif u.is_superadmin_db %}
+                                <span class="text-muted" style="font-size: var(--text-xs);"> (banco)</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">Não</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}"
+                                   class="btn btn-sm btn-outline-primary" title="Ficha e histórico">Ficha</a>
+                                {% if not u.is_env_admin and u.id != current_user.id %}
+                                <form method="post" action="{{ url_for('admin.impersonate_user', user_id=u.id) }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <button type="submit" class="btn btn-sm btn-primary"
+                                            title="Ver o app como este usuário">Entrar</button>
+                                </form>
+                                {% endif %}
+                                {% if u.is_demo_manual %}
+                                <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="enabled" value="0">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                            title="Remove a marcação manual de teste">Desmarcar teste</button>
+                                </form>
+                                {% elif not u.is_demo %}
+                                <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="enabled" value="1">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                                            title="Marca como conta de teste/QA">Marcar como teste</button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted" style="font-size: var(--text-sm);"
+                                      title="Detectada por username/e-mail showcase ou SETSYNC_DEMO_*">Demo automática</span>
+                                {% endif %}
+                                {% if u.is_superadmin_db %}
+                                <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="enabled" value="0">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Revogar superadmin</button>
+                                </form>
+                                {% elif u.is_superadmin_env %}
+                                <span class="text-muted" style="font-size: var(--text-sm);">Definido no .env</span>
+                                {% else %}
+                                <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
+                                    {% include 'partials/csrf_input.html' %}
+                                    <input type="hidden" name="enabled" value="1">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Tornar superadmin</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
