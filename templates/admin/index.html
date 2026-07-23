@@ -364,7 +364,7 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                         <tr>
                             <td>{{ u.display_name or u.username }}</td>
                             <td><strong>{{ u.nps_score }}</strong></td>
-                            <td>{{ (u.nps_submitted_at or '')[:16] }}</td>
+                            <td>{{ (u.nps_submitted_at|string)[:16] if u.nps_submitted_at else '—' }}</td>
                             <td class="text-end">
                                 <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary">Ficha</a>
                             </td>
