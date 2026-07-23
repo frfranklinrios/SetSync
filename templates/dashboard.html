@@ -335,6 +335,7 @@
                 </div>
                 <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id) if trial_ui.band_id else url_for('assinatura_bp.planos') }}" class="btn btn-sm btn-warning">{% if trial_ui.solo %}Assinar Individual — R$ 15{% else %}Assinar Pro — R$ 29{% endif %}</a>
             </div>
+            {% include 'partials/churn_survey.html' %}
             {% endif %}
 
             {% if planos_resumo and planos_resumo.tem_banda and not is_superadmin %}

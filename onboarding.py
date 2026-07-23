@@ -100,14 +100,14 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         {
             'id': 'band',
             'label': '3. Criar ou entrar numa banda',
-            'hint': 'Toque junto: repertório compartilhado, escalas e 30 dias de Pro.',
+            'hint': 'Toque junto: repertório compartilhado e escalas. Trial Pro libera no 1º Modo Tocar ou setlist.',
             'done': has_band,
             'url': band_url,
         },
         {
             'id': 'setlist',
             'label': '4. Montar um setlist',
-            'hint': 'A ordem das músicas do ensaio ou do culto.',
+            'hint': 'A ordem das músicas do ensaio ou do culto — ativa o trial Pro se ainda não usou o Modo Tocar.',
             'done': total_setlists > 0,
             'url': setlist_url,
         },

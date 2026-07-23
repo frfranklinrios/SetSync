@@ -7,14 +7,19 @@
     <div class="mb-3" style="font-size: 2.5rem; color: var(--accent);">
         <i class="fas fa-circle-check" aria-hidden="true"></i>
     </div>
-    <h1 class="h4 mb-2">Conta criada — hora da 1ª música</h1>
+    <h1 class="h4 mb-2">Conta criada — vamos tocar</h1>
     {% if needs_activation %}
     <p class="text-muted mb-3">
-        Próximo passo: <strong>adicione uma cifra</strong> na coleção pessoal (grátis)
-        e abra o <strong>Modo Tocar</strong>. Quando for tocar junto, crie a banda e liberamos 30 dias Pro.
+        {% if test_drive %}
+        Preparámos um <strong>setlist de demonstração</strong>. Em segundos você vê
+        transposição e diagramas no <strong>Modo Tocar</strong>.
+        {% else %}
+        Próximo passo: abra o <strong>Modo Tocar</strong> com cifras de demonstração
+        ou adicione a sua primeira música.
+        {% endif %}
     </p>
     <a href="{{ next_url }}" class="btn btn-primary btn-lg mb-3">
-        <i class="fas fa-plus me-2"></i>Adicionar 1ª música · grátis
+        <i class="fas fa-play me-2"></i>Testar Modo Tocar
     </a>
     <p class="text-muted small mb-0">Redirecionando automaticamente em instantes…</p>
     {% else %}
@@ -28,7 +33,7 @@
 <script>
 (function () {
     var dest = {{ next_url|tojson }};
-    var delay = {{ 2500 if needs_activation else 1200 }};
+    var delay = {{ 2200 if needs_activation else 1200 }};
     setTimeout(function () { window.location.replace(dest); }, delay);
 })();
 </script>

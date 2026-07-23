@@ -61,7 +61,6 @@ def create():
         
         band_id = create_band(name, description, user_id)
         from db import get_owned_bands
-        from monetizacao import iniciar_trial_banda
         from google_ads import mark_funnel_event
         from product_funnel import log_funnel_step
 
@@ -69,18 +68,16 @@ def create():
         if is_first_band:
             mark_funnel_event('primeira_banda')
             log_funnel_step(user_id, 'primeira_banda')
-        if iniciar_trial_banda(band_id):
-            mark_funnel_event('trial_iniciado')
-            log_funnel_step(user_id, 'trial_iniciado')
-            flash(
-                f'Trial Pro de 30 dias ativado nesta banda — sem cartão. '
-                'Aproveite recursos ilimitados!',
-                'info',
-            )
+        # Trial Pro começa no 1º Modo Tocar / setlist real (demo_onboarding.maybe_start_trial_on_value)
         import admin_notifications as an
         an.band_created(band_id, user_id)
         flash(f'Banda "{name}" criada com sucesso!', 'success')
         if is_first_band:
+            flash(
+                'Trial Pro de 30 dias libera quando você abrir o Modo Tocar ou criar um setlist — '
+                'sem pressa no setup.',
+                'info',
+            )
             return redirect(url_for('cifras.add', band_id=band_id, welcome=1))
         return redirect(url_for('bands.view', band_id=band_id))
     

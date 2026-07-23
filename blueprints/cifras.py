@@ -1167,7 +1167,27 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         auto_follow_leader=bool(event_context),
         public_letras_url=public_letras_url,
         band_invite_url=band_invite_url,
+        show_play_csat=_should_show_play_csat(user_id),
+        show_play_pwa=_should_show_play_pwa(user_id),
     )
+
+
+def _should_show_play_csat(user_id: str | None) -> bool:
+    if not user_id:
+        return False
+    from db import get_user
+    u = get_user(user_id) or {}
+    return not u.get('play_csat_submitted_at')
+
+
+def _should_show_play_pwa(user_id: str | None) -> bool:
+    if not user_id:
+        return False
+    try:
+        from db import user_should_see_pwa_prompt
+        return user_should_see_pwa_prompt(user_id)
+    except Exception:
+        return False
 
 
 @cifras_bp.route('/band/<band_id>/tocar')
@@ -1185,6 +1205,13 @@ def tocar_band(band_id):
     from product_funnel import log_funnel_step
     mark_user_play_mode_used(user_id)
     log_funnel_step(user_id, 'play_mode')
+    try:
+        from demo_onboarding import maybe_start_trial_on_value
+        started = maybe_start_trial_on_value(user_id, reason='play_mode')
+        if started:
+            flash('Trial Pro de 30 dias ativado — PDF e limites liberados nesta banda.', 'info')
+    except Exception:
+        pass
 
     all_cifras = [
         enrich_cifra_for_tocar(c, user_id=user_id) for c in get_band_cifras(band_id)
@@ -1229,6 +1256,13 @@ def tocar_colecao():
     from product_funnel import log_funnel_step
     mark_user_play_mode_used(user_id)
     log_funnel_step(user_id, 'play_mode')
+    try:
+        from demo_onboarding import maybe_start_trial_on_value
+        started = maybe_start_trial_on_value(user_id, reason='play_mode_colecao')
+        if started:
+            flash('Trial Pro de 30 dias ativado na sua banda.', 'info')
+    except Exception:
+        pass
 
     start_id = request.args.get('start')
     start_idx = 0

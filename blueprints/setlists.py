@@ -250,6 +250,19 @@ def tocar(setlist_id):
     if not ok:
         flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
+
+    from db import mark_user_play_mode_used
+    from product_funnel import log_funnel_step
+    mark_user_play_mode_used(user_id)
+    log_funnel_step(user_id, 'play_mode')
+    try:
+        from demo_onboarding import maybe_start_trial_on_value
+        started = maybe_start_trial_on_value(user_id, reason='play_mode_setlist')
+        if started:
+            flash('Trial Pro de 30 dias ativado — PDF e limites liberados.', 'info')
+    except Exception:
+        pass
+
     all_cifras = [
         enrich_cifra_for_tocar(dict(c), setlist_id=setlist_id, user_id=user_id)
         for c in get_setlist_cifras(setlist_id)
@@ -414,6 +427,16 @@ def create(band_id):
         if antes == 0:
             from product_funnel import log_funnel_step
             log_funnel_step(user_id, 'primeira_setlist')
+            try:
+                from demo_onboarding import maybe_start_trial_on_value
+                started = maybe_start_trial_on_value(user_id, reason='primeira_setlist')
+                if started:
+                    flash(
+                        'Trial Pro de 30 dias ativado — PDF e limites liberados nesta banda.',
+                        'info',
+                    )
+            except Exception:
+                pass
         bn.setlist_created(band_id, user_id, setlist_id, name)
         flash('Setlist criada!', 'success')
         return redirect(url_for('setlists.view', setlist_id=setlist_id))

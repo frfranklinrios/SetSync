@@ -20,10 +20,34 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-features.css') }}?v=3">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-a11y.css') }}?v=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-shell.css') }}?v=1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-share-prompt.css') }}?v=1">
-
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-share-prompt.css') }}?v=2">
 <style>
 #cifra-content.grade-mode .cs-play-embed.setsync-cs-sheet { padding: 0; }
+.play-pwa-banner {
+  display: none;
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  z-index: 15000;
+  background: rgba(15, 23, 42, 0.94);
+  color: #f8fafc;
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  align-items: center;
+  gap: 0.65rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.play-pwa-banner.is-visible { display: flex; }
+.play-pwa-banner strong { font-weight: 700; }
+.play-pwa-banner .btn { white-space: nowrap; }
+.play-pwa-banner .play-pwa-dismiss {
+  border: 0; background: transparent; color: #94a3b8; font-size: 1.25rem; line-height: 1; cursor: pointer;
+}
 </style>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -335,6 +359,10 @@
     'bandInviteUrl': band_invite_url if band_invite_url is defined else none,
     'indicarUrl': url_for('assinatura_bp.voucher_indicar'),
     'siteUrl': external_url_for('index'),
+    'showPlayCsat': show_play_csat|default(false),
+    'playCsatUrl': url_for('ajuda.play_csat_submit'),
+    'showPlayPwa': show_play_pwa|default(false),
+    'pwaDismissUrl': url_for('ajuda.pwa_dismiss'),
 }|tojson }}</script>
 <script id="cifras-data" type="application/json">{{ play_cifras_json | safe }}</script>
 
@@ -2073,5 +2101,71 @@
 })();
 </script>
 <script src="{{ url_for('static', filename='js/play-mode-features.js') }}?v=5"></script>
-<script src="{{ url_for('static', filename='js/play-share-prompt.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/play-share-prompt.js') }}?v=2"></script>
+<script>
+(function () {
+  /* Banner PWA no Modo Tocar: só depois de ~30s ou após tela cheia */
+  var boot = (window.SetSyncPlayBoot && window.SetSyncPlayBoot.readBootConfig)
+    ? (window.SetSyncPlayBoot.readBootConfig('play-boot-config') || {})
+    : {};
+  if (!boot.showPlayPwa) return;
+
+  var shownKey = 'setsync.play.pwaBanner.shown';
+  try {
+    if (sessionStorage.getItem(shownKey)) return;
+  } catch (e) {}
+
+  var banner = document.createElement('div');
+  banner.id = 'play-pwa-banner';
+  banner.className = 'play-pwa-banner';
+  banner.setAttribute('role', 'status');
+  banner.innerHTML =
+    '<span><strong>Leve o ensaio offline.</strong> Instale o Uníssono na tela inicial (Safari no iPhone: Compartilhar → Adicionar à Tela de Início).</span>' +
+    '<div class="d-flex gap-2 align-items-center">' +
+    '<button type="button" class="btn btn-sm btn-light" id="play-pwa-install">Instalar</button>' +
+    '<button type="button" class="play-pwa-dismiss" id="play-pwa-dismiss" aria-label="Dispensar">&times;</button>' +
+    '</div>';
+  document.body.appendChild(banner);
+
+  function reveal() {
+    banner.classList.add('is-visible');
+    try { sessionStorage.setItem(shownKey, '1'); } catch (e) {}
+  }
+
+  var revealed = false;
+  function maybeReveal() {
+    if (revealed) return;
+    revealed = true;
+    reveal();
+  }
+
+  setTimeout(maybeReveal, 30000);
+  document.addEventListener('fullscreenchange', function () {
+    if (document.fullscreenElement || document.webkitFullscreenElement) maybeReveal();
+  });
+  document.addEventListener('webkitfullscreenchange', function () {
+    if (document.fullscreenElement || document.webkitFullscreenElement) maybeReveal();
+  });
+
+  document.getElementById('play-pwa-install').addEventListener('click', function () {
+    if (typeof window.installPWA === 'function') window.installPWA();
+  });
+  document.getElementById('play-pwa-dismiss').addEventListener('click', function () {
+    banner.classList.remove('is-visible');
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = boot.pwaDismissUrl || '/ajuda/pwa/dismiss';
+    form.style.display = 'none';
+    if (window.csrfToken) {
+      var inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'csrf_token';
+      inp.value = window.csrfToken;
+      form.appendChild(inp);
+    }
+    document.body.appendChild(form);
+    form.submit();
+  });
+})();
+</script>
 {% endblock %}

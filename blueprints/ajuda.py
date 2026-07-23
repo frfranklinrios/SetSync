@@ -59,3 +59,42 @@ def pwa_dismiss():
         dismiss_pwa_prompt(session["user_id"])
     return redirect(request.referrer or url_for("dashboard"))
 
+
+@ajuda_bp.route("/ajuda/play-csat", methods=["POST"])
+def play_csat_submit():
+    """Micro-survey após sair do Modo Tocar."""
+    from flask import session
+    from db import save_user_play_csat
+
+    if "user_id" not in session:
+        return jsonify({"ok": False}), 401
+    data = request.get_json(silent=True) or {}
+    answer = (data.get("answer") or "").strip()
+    if not save_user_play_csat(session["user_id"], answer):
+        return jsonify({"ok": False, "error": "Resposta inválida"}), 400
+    return jsonify({"ok": True})
+
+
+@ajuda_bp.route("/ajuda/churn-survey", methods=["POST"])
+def churn_survey_submit():
+    from flask import session
+    from db import save_user_churn_survey
+
+    if "user_id" not in session:
+        return jsonify({"ok": False}), 401
+    data = request.get_json(silent=True) or {}
+    reason = (data.get("reason") or "").strip()
+    if not save_user_churn_survey(session["user_id"], reason):
+        return jsonify({"ok": False, "error": "Motivo inválido"}), 400
+    return jsonify({"ok": True})
+
+
+@ajuda_bp.route("/ajuda/churn-survey/dismiss", methods=["POST"])
+def churn_survey_dismiss():
+    from flask import redirect, session, url_for
+    from db import dismiss_user_churn_survey
+
+    if "user_id" in session:
+        dismiss_user_churn_survey(session["user_id"])
+    return redirect(request.referrer or url_for("dashboard"))
+

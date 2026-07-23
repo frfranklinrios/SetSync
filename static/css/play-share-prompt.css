@@ -1,0 +1,78 @@
+/* Prompt pós-Modo Tocar — convidar / indicar */
+.play-share-prompt {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(11, 20, 34, 0.72);
+  backdrop-filter: blur(4px);
+}
+.play-share-prompt.is-open {
+  display: flex;
+}
+.play-share-card {
+  position: relative;
+  width: min(420px, 100%);
+  background: var(--bg, #fff);
+  color: var(--text, #0f172a);
+  border-radius: 16px;
+  padding: 1.5rem 1.35rem 1.25rem;
+  border: 1px solid var(--border, #e2e8f0);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+.play-share-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.65rem;
+  border: 0;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+}
+.play-share-kicker {
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent, #ea580c);
+  margin: 0 0 0.4rem;
+}
+.play-share-card h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+.play-share-lead {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--muted, #64748b);
+  margin: 0 0 1.15rem;
+  line-height: 1.45;
+}
+.play-share-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.play-share-actions .btn {
+  width: 100%;
+}
+.play-share-skip {
+  margin-top: 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted, #64748b);
+  font-size: var(--text-sm, 0.875rem);
+  text-decoration: underline;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .play-share-prompt {
+    backdrop-filter: none;
+  }
+}

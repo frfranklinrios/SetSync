@@ -1,27 +1,43 @@
-{# Recém-chegado (nada feito ainda): um único próximo passo — o caminho grátis até o palco. #}
-{% if onboarding and onboarding.done_count == 0 %}
+{# Ativação: aha moment — se já tem demo/cifras, CTA direto no Modo Tocar. #}
+{% set played = onboarding and onboarding.activated %}
+{% set has_cifras = dashboard_summary and dashboard_summary.cifras %}
+{% if onboarding and not played %}
 <div class="activation-hero mb-4">
     <div class="activation-hero-icon" aria-hidden="true">
         <i class="fas fa-guitar"></i>
     </div>
+    {% if has_cifras %}
+    <h2 class="activation-hero-title">Pronto: experimente o Modo Tocar agora</h2>
+    <p class="activation-hero-lead">
+        Já deixamos um <strong>setlist de demonstração</strong> na sua coleção.
+        Em segundos você vê transposição de cifras e diagramas — o coração do Uníssono.
+    </p>
+    <a href="{{ url_for('cifras.tocar_colecao', welcome=1) }}" class="btn btn-primary btn-lg activation-hero-cta">
+        <i class="fas fa-play me-2"></i>Testar Modo Tocar
+    </a>
+    <p class="activation-hero-note text-muted small mb-0">
+        Depois, monte sua banda quando for tocar junto.
+        O trial Pro começa só quando você usar o Modo Tocar ou criar um setlist real.
+    </p>
+    {% else %}
     <h2 class="activation-hero-title">Comece grátis: uma música e você já toca</h2>
     <p class="activation-hero-lead">
         Guarde sua primeira cifra na <strong>coleção pessoal</strong> — grátis, ilimitada.
-        Em seguida abra o <strong>Modo Tocar</strong>. Quando for tocar junto, monte a
-        <strong>banda</strong> e ganhe 30 dias Pro.
+        Em seguida abra o <strong>Modo Tocar</strong>.
     </p>
     <ol class="activation-hero-steps">
         <li><strong>1.</strong> Adicione uma música (cole a cifra ou importe)</li>
         <li><strong>2.</strong> Abra o Modo Tocar e veja no tom certo</li>
-        <li><strong>3.</strong> Quando quiser tocar junto, crie a banda (30 dias Pro)</li>
+        <li><strong>3.</strong> Quando quiser tocar junto, crie a banda</li>
     </ol>
     <a href="{{ url_for('cifras.add_personal', welcome=1) }}" class="btn btn-primary btn-lg activation-hero-cta">
         <i class="fas fa-plus me-2"></i>Adicionar 1ª música · grátis
     </a>
     <p class="activation-hero-note text-muted small mb-0">
-        Sem cartão. Ou <a href="{{ url_for('bands.create', bem_vindo=1) }}">crie sua banda direto</a>
-        e libere 30 dias de Pro.
+        Sem cartão. Ou <a href="{{ url_for('bands.create', bem_vindo=1) }}">crie sua banda</a>
+        — o trial Pro libera no primeiro Modo Tocar ou setlist.
     </p>
+    {% endif %}
 </div>
 <style>
 .activation-hero {

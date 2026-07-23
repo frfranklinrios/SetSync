@@ -108,6 +108,24 @@ _CAMPAIGNS = {
         'button_label': 'Ver planos e assinar',
         'button_key': 'planos_url',
     },
+    'trial_ending_5': {
+        'subject': 'Seu próximo ensaio pode ficar sem Modo Tocar offline',
+        'body': (
+            'Faltam cerca de 5 dias do trial Pro da banda {band_name}.\n'
+            'Sem Pro, o Modo Tocar offline e o PDF do ensaio deixam de ficar liberados.\n'
+            'Assine antes do próximo culto/ensaio: Pro R$ 29 ou Individual R$ 15.\n\n'
+            '{planos_url}'
+        ),
+        'html_body': (
+            '<p>Faltam cerca de <strong>5 dias</strong> do trial Pro em <em>{band_name}</em>.</p>'
+            '<p><strong>Seu próximo ensaio corre o risco de ficar sem o Modo Tocar offline</strong> '
+            '(e sem PDF do ensaio com diagramas).</p>'
+            '<p>Assine <strong>Pro R$ 29</strong> (banda) ou <strong>Individual R$ 15</strong> (solo) '
+            'antes do compromisso.</p>'
+        ),
+        'button_label': 'Manter Modo Tocar offline',
+        'button_key': 'planos_url',
+    },
     'trial_ending_3': {
         'subject': 'Últimos 3 dias de Pro — continue sem limites',
         'body': (
@@ -300,7 +318,12 @@ def verificar_e_disparar_retencao() -> int:
         else:
             mark_retention_sent(uid, campaign, 'erro')
 
-    for days, campaign_key in ((7, 'trial_ending_7'), (3, 'trial_ending_3'), (1, 'trial_ending_1')):
+    for days, campaign_key in (
+        (7, 'trial_ending_7'),
+        (5, 'trial_ending_5'),
+        (3, 'trial_ending_3'),
+        (1, 'trial_ending_1'),
+    ):
         for row in list_trials_expiring_soon(days):
             uid = row['owner_id']
             campaign = f"{campaign_key}:{row['banda_id']}"

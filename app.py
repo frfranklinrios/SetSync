@@ -263,6 +263,8 @@ for _csrf_json_endpoint in (
     'studios.api_room_slots',
     'ajuda.chat',
     'ajuda.nps_submit',
+    'ajuda.play_csat_submit',
+    'ajuda.churn_survey_submit',
     'legal.cookie_consent',
 ):
     _view = app.view_functions.get(_csrf_json_endpoint)
@@ -543,13 +545,14 @@ def dashboard():
     def _growth_ctx(owned):
         if sa:
             return {}
-        from db import user_should_see_nps, user_should_see_pwa_prompt
+        from db import user_should_see_nps, user_should_see_pwa_prompt, user_should_see_churn_survey
         from growth_upsell import get_dashboard_upsells, show_referral_card
         return {
             'upsell_alerts': get_dashboard_upsells(user_id, owned_bands=owned),
             'show_referral_card': show_referral_card(user_id),
             'show_nps_modal': user_should_see_nps(user_id),
             'show_pwa_prompt': user_should_see_pwa_prompt(user_id),
+            'show_churn_survey': user_should_see_churn_survey(user_id),
         }
 
     if sa:

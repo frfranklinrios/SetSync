@@ -895,6 +895,11 @@ def _migrate_growth_schema(c) -> None:
     add_column_if_missing(c, 'users', 'nps_dismissed', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'users', 'pwa_prompt_dismissed', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'users', 'is_demo', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'users', 'play_csat_answer', 'TEXT')
+    add_column_if_missing(c, 'users', 'play_csat_submitted_at', 'TIMESTAMP')
+    add_column_if_missing(c, 'users', 'churn_reason', 'TEXT')
+    add_column_if_missing(c, 'users', 'churn_survey_at', 'TIMESTAMP')
+    add_column_if_missing(c, 'users', 'churn_survey_dismissed', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'studios', 'page_views', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(c, 'studios', 'booking_clicks', 'INTEGER NOT NULL DEFAULT 0')
     if IS_POSTGRES:
@@ -4682,6 +4687,70 @@ def user_should_see_pwa_prompt(user_id: str) -> bool:
     if not user or user.get('pwa_prompt_dismissed'):
         return False
     return bool(user.get('play_mode_used') or user.get('agenda_event_used'))
+
+
+_PLAY_CSAT_ANSWERS = frozenset({'excelente', 'problemas', 'nao_usei'})
+_CHURN_REASONS = frozenset({'caro', 'dificil', 'nao_precisou', 'outro'})
+
+
+def save_user_play_csat(user_id: str, answer: str) -> bool:
+    """Micro-survey pós-Modo Tocar. Retorna True se salvou."""
+    ans = (answer or '').strip().lower()
+    if ans not in _PLAY_CSAT_ANSWERS:
+        return False
+    from config import app_now_str
+
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE users SET play_csat_answer = ?, play_csat_submitted_at = ?
+           WHERE id = ? AND play_csat_submitted_at IS NULL''',
+        (ans, app_now_str(), user_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
+def save_user_churn_survey(user_id: str, reason: str) -> bool:
+    reason_n = (reason or '').strip().lower()
+    if reason_n not in _CHURN_REASONS:
+        return False
+    from config import app_now_str
+
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE users SET churn_reason = ?, churn_survey_at = ?, churn_survey_dismissed = 1
+           WHERE id = ?''',
+        (reason_n, app_now_str(), user_id),
+    )
+    db.commit()
+    db.close()
+    return True
+
+
+def dismiss_user_churn_survey(user_id: str) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('UPDATE users SET churn_survey_dismissed = 1 WHERE id = ?', (user_id,))
+    db.commit()
+    db.close()
+
+
+def user_should_see_churn_survey(user_id: str) -> bool:
+    """Após trial expirado, uma pergunta amigável de churn (se ainda não respondeu)."""
+    user = get_user(user_id)
+    if not user or user.get('churn_survey_at') or user.get('churn_survey_dismissed'):
+        return False
+    from monetizacao import get_assinatura_banda
+
+    for b in get_owned_bands(user_id):
+        ass = get_assinatura_banda(b['id'])
+        if ass.trial_usado and not ass.trial_ativo() and not ass.tem_acesso_premium():
+            return True
+    return False
 
 
 def ensure_studio_onboarding_rows(owner_user_id: str, studio_id: str) -> None:

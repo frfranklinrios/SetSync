@@ -1,0 +1,44 @@
+{% if show_churn_survey %}
+<div class="alert alert-light border dashboard-compact-alert mb-0" id="churn-survey-box" role="region" aria-label="Ajude-nos a melhorar">
+    <div class="fw-semibold mb-1">Ajude-nos a melhorar</div>
+    <p class="small text-muted mb-2 mb-md-3">O trial acabou — o que mais pesou na decisão de não renovar agora?</p>
+    <div class="d-flex flex-wrap gap-2" id="churn-survey-options">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-churn="caro">Achei caro</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-churn="dificil">Muito difícil de configurar</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-churn="nao_precisou">Não precisei</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-churn="outro">Outro motivo</button>
+    </div>
+    <form method="post" action="{{ url_for('ajuda.churn_survey_dismiss') }}" class="mt-2 mb-0">
+        {% include 'partials/csrf_input.html' %}
+        <button type="submit" class="btn btn-link btn-sm text-muted px-0">Agora não</button>
+    </form>
+    <div id="churn-survey-toast" class="small text-success mt-1 d-none">Obrigado — isso nos ajuda muito.</div>
+</div>
+<script>
+(function () {
+    var box = document.getElementById('churn-survey-box');
+    if (!box) return;
+    box.querySelectorAll('[data-churn]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var reason = btn.getAttribute('data-churn');
+            var headers = { 'Content-Type': 'application/json' };
+            if (window.csrfToken) headers['X-CSRFToken'] = window.csrfToken;
+            fetch('{{ url_for("ajuda.churn_survey_submit") }}', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: headers,
+                body: JSON.stringify({ reason: reason }),
+            }).then(function () {
+                var opts = document.getElementById('churn-survey-options');
+                if (opts) opts.classList.add('d-none');
+                var toast = document.getElementById('churn-survey-toast');
+                if (toast) toast.classList.remove('d-none');
+                setTimeout(function () {
+                    box.style.display = 'none';
+                }, 1600);
+            });
+        });
+    });
+})();
+</script>
+{% endif %}
