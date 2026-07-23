@@ -1,0 +1,104 @@
+/* Modo Tocar — acessibilidade e touch targets (WCAG 2.5.5 / foco / reduced motion) */
+
+/* Touch targets mínimos (44×44 CSS px) nos controles do play */
+body.play-mode .pb-btn,
+body.play-mode .font-ctrl button,
+body.play-mode .transpose-mini,
+body.play-mode #speed-pill button,
+body.play-mode .play-sections-item {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+body.play-mode .font-ctrl button {
+    width: 44px;
+    height: 44px;
+}
+
+/* Controles só-ícone na barra: caixa tocável adequada sem alterar layout além do mínimo */
+body.play-mode .pb-btn {
+    box-sizing: border-box;
+}
+
+/* :focus-visible — outlines claros (não compete com :focus em mouse) */
+body.play-mode .pb-btn:focus-visible,
+body.play-mode .font-ctrl button:focus-visible,
+body.play-mode .transpose-mini:focus-visible,
+body.play-mode #speed-pill button:focus-visible,
+body.play-mode .play-sections-item:focus-visible,
+body.play-mode .tap-zone:focus-visible,
+body.play-mode .dropdown-item:focus-visible,
+body.play-mode a.pb-btn:focus-visible {
+    outline: 3px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+[data-theme="light"] body.play-mode .pb-btn:focus-visible,
+[data-theme="light"] body.play-mode .font-ctrl button:focus-visible,
+[data-theme="light"] body.play-mode .transpose-mini:focus-visible,
+[data-theme="light"] body.play-mode #speed-pill button:focus-visible,
+[data-theme="light"] body.play-mode .play-sections-item:focus-visible,
+[data-theme="light"] body.play-mode .tap-zone:focus-visible,
+[data-theme="light"] body.play-mode .dropdown-item:focus-visible,
+[data-theme="light"] body.play-mode a.pb-btn:focus-visible {
+    outline-color: #0284c7;
+}
+
+/* Preferência de menos movimento: corta animações/transições e scroll suave via CSS */
+@media (prefers-reduced-motion: reduce) {
+    body.play-mode,
+    body.play-mode *,
+    body.play-mode *::before,
+    body.play-mode *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    body.play-mode #cifra-scroll,
+    body.play-mode #cifra-wrap {
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Contraste alto no modo tocar (texto/chrome; não sobrescreve pb-exit / lápis / pb-on) */
+body.play-mode {
+    color: #f1f5f9;
+}
+
+body.play-mode #play-bar .pb-title {
+    color: #f8fafc;
+}
+
+body.play-mode #play-bar .pb-meta,
+body.play-mode .font-ctrl span,
+body.play-mode .play-sections-hd,
+body.play-mode .play-next-peek-label,
+body.play-mode .play-offline-status {
+    color: #cbd5e1;
+}
+
+body.play-mode .play-sections-item {
+    color: #f1f5f9;
+}
+
+[data-theme="light"] body.play-mode {
+    color: #0f172a;
+}
+
+[data-theme="light"] body.play-mode #play-bar .pb-title {
+    color: #0f172a;
+}
+
+[data-theme="light"] body.play-mode #play-bar .pb-meta,
+[data-theme="light"] body.play-mode .font-ctrl span,
+[data-theme="light"] body.play-mode .play-sections-hd,
+[data-theme="light"] body.play-mode .play-next-peek-label,
+[data-theme="light"] body.play-mode .play-offline-status {
+    color: #334155;
+}
+
+[data-theme="light"] body.play-mode .play-sections-item {
+    color: #0f172a;
+}
