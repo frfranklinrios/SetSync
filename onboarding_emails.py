@@ -20,61 +20,43 @@ _ONBOARDING_SCHEDULE = {
 
 _EMAILS = {
     1: {
-        'subject': 'Bem-vindo ao Uníssono! Veja como começar 🎸',
+        'subject': 'Bem-vindo ao Uníssono — adicione sua 1ª música 🎸',
         'body': (
             'Olá! Sua conta no Uníssono está pronta.\n\n'
-            'Próximo passo: crie sua primeira banda e adicione uma música.\n'
-            'Assista ao tour rápido e experimente o Modo Tocar.\n\n'
-            'Criar banda: {bands_url}'
+            'Próximo passo (2 min): adicione uma cifra na coleção pessoal — grátis.\n'
+            'Depois abra o Modo Tocar e veja a magia no ensaio.\n\n'
+            'Adicionar música: {cifra_url}'
         ),
         'html': (
             '<h2>Bem-vindo ao Uníssono!</h2>'
-            '<p>Sua conta está pronta. Comece criando sua <strong>primeira banda</strong> '
-            'e cadastrando uma cifra.</p>'
-            '<p><a href="{bands_url}" style="display:inline-block;padding:12px 24px;'
+            '<p>Sua conta está pronta. O primeiro passo é <strong>adicionar uma música</strong> '
+            'na coleção pessoal (grátis e ilimitada).</p>'
+            '<p><a href="{cifra_url}" style="display:inline-block;padding:12px 24px;'
             'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
-            'Criar minha banda</a></p>'
-            '<p>Depois, abra o <strong>Modo Tocar</strong> para ver a cifra em tela cheia '
-            'com auto-scroll — ideal no ensaio.</p>'
+            'Adicionar 1ª música</a></p>'
+            '<p>Depois, abra o <strong>Modo Tocar</strong> — tela cheia, tom e auto-scroll.</p>'
         ),
     },
     2: {
-        'subject': 'Sua banda já está no Uníssono?',
+        'subject': 'Ainda sem cifra? Leva 2 minutos',
         'body': (
-            'Convide integrantes pelo link de convite da banda.\n'
-            'Todos compartilham o mesmo repertório — sem PDF desatualizado.\n\n'
-            '{bands_url}'
+            'Você se cadastrou no Uníssono e ainda não adicionou uma música.\n'
+            'Coleção pessoal é grátis. Depois é só abrir o Modo Tocar.\n\n'
+            '{cifra_url}'
         ),
         'html': (
-            '<h2>Monte sua equipe</h2>'
-            '<p>Em <strong>Membros</strong>, copie o link de convite e envie no WhatsApp.</p>'
-            '<p>Benefício: repertório único, tom por cantor e setlists sincronizados.</p>'
-            '<p><a href="{bands_url}">Ver minhas bandas</a></p>'
+            '<h2>Sua 1ª música</h2>'
+            '<p>Quem adiciona uma cifra e abre o <strong>Modo Tocar</strong> costuma ficar.</p>'
+            '<p><a href="{cifra_url}" style="display:inline-block;padding:12px 24px;'
+            'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
+            'Adicionar música agora</a></p>'
         ),
     },
     3: {
-        'subject': 'Monte seu primeiro setlist em 2 minutos',
+        'subject': 'Abra o Modo Tocar no ensaio',
         'body': (
-            'Escolha músicas, ordene o roteiro e defina cantor/tom em cada faixa.\n'
-            'Transposição automática por vocalista.\n\n'
-            '{dashboard_url}'
-        ),
-        'html': (
-            '<h2>Seu primeiro setlist</h2>'
-            '<ol>'
-            '<li>Abra uma banda</li>'
-            '<li>Crie setlist → adicione músicas</li>'
-            '<li>Defina cantor e tom por faixa</li>'
-            '</ol>'
-            '<p><a href="{dashboard_url}">Ir ao painel</a></p>'
-        ),
-    },
-    4: {
-        'subject': 'O Modo Tocar vai mudar seu ensaio',
-        'body': (
-            'Modo Tocar: tela cheia, auto-scroll, tema escuro, funciona offline (PWA).\n'
-            'Perfeito para culto e palco.\n\n'
-            '{dashboard_url}'
+            'Com uma cifra salva, o Modo Tocar libera tela cheia, auto-scroll e funciona offline.\n\n'
+            '{colecao_url}'
         ),
         'html': (
             '<h2>Modo Tocar</h2>'
@@ -83,24 +65,38 @@ _EMAILS = {
             '<li>Auto-scroll ajustável</li>'
             '<li>PWA offline no celular</li>'
             '</ul>'
-            '<p><a href="{dashboard_url}">Abrir painel e tocar</a></p>'
+            '<p><a href="{colecao_url}">Abrir minha coleção e tocar</a></p>'
+        ),
+    },
+    4: {
+        'subject': 'Ensaio em grupo? Crie uma banda (trial Pro)',
+        'body': (
+            'Se toca com outras pessoas, crie uma banda e ganhe 30 dias de Pro sem cartão.\n'
+            'Se toca só, o plano Individual libera PDF e compartilhar.\n\n'
+            '{bands_url}'
+        ),
+        'html': (
+            '<h2>Banda ou solo?</h2>'
+            '<p><strong>Banda:</strong> 30 dias de Pro grátis ao criar a primeira.</p>'
+            '<p><strong>Solo:</strong> Individual libera PDF e compartilhar cifras.</p>'
+            '<p><a href="{bands_url}">Criar banda</a> · '
+            '<a href="{planos_url}">Ver planos</a></p>'
         ),
     },
     5: {
-        'subject': 'Você está chegando no limite do plano Grátis',
+        'subject': 'Mantenha o Pro (ou Individual se toca só)',
         'body': (
             'Se o trial acabar, você volta ao Grátis com limites.\n'
-            'Pro mantém o ensaio sem teto + PDF por R$ 29/mês.\n\n'
+            'Pro: R$ 29/mês para a banda · Individual: R$ 15/mês para solo.\n\n'
             '{planos_url}'
         ),
         'html': (
-            '<h2>Mantenha o Pro</h2>'
-            '<p>Se o trial acabar, você volta ao Grátis com limites. '
-            'No Pro: ilimitado + PDF por <strong>R$ 29/mês</strong>.</p>'
-            '<p><em>"Vale cada centavo — nosso ensaio nunca mais voltou ao caderno."</em></p>'
+            '<h2>Continue sem limites</h2>'
+            '<p><strong>Pro</strong> — R$ 29/mês (banda) · '
+            '<strong>Individual</strong> — R$ 15/mês (solo, PDF e compartilhar).</p>'
             '<p><a href="{planos_url}" style="display:inline-block;padding:12px 24px;'
             'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
-            'Assinar Pro — R$29/mês</a></p>'
+            'Ver planos</a></p>'
         ),
     },
 }
@@ -112,6 +108,8 @@ def _urls() -> dict[str, str]:
         'dashboard_url': external_url_for('dashboard'),
         'ajuda_url': external_url_for('ajuda.index'),
         'planos_url': external_url_for('assinatura_bp.planos'),
+        'cifra_url': external_url_for('cifras.add_personal', welcome=1),
+        'colecao_url': external_url_for('cifras.library'),
     }
 
 

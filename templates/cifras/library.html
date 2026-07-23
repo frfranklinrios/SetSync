@@ -78,8 +78,8 @@
 {% else %}
 {% with icon='fa-music',
         title='Sua coleção está vazia',
-        text='Adicione a primeira música (grátis) e abra o Modo Tocar — esse é o “aha” do Uníssono.',
-        cta_url=url_for('cifras.add_personal'),
+        text='Adicione a primeira música (grátis, 2 min) e abra o Modo Tocar — esse é o “aha” do Uníssono.',
+        cta_url=url_for('cifras.add_personal', welcome=1),
         cta_label='Adicionar primeira música' %}
 {% include 'partials/empty_state.html' %}
 {% endwith %}

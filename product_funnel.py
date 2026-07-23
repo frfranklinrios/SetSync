@@ -46,9 +46,10 @@ ACTIVATION_FUNNEL = (
 )
 
 
-def log_funnel_step(user_id: str | None, step: str, *, meta: dict | None = None) -> None:
+def log_funnel_step(user_id: str | None, step: str, *, meta: dict | None = None) -> bool:
+    """Registra step uma vez por usuário. Retorna True se inseriu."""
     if not user_id or step not in STEPS:
-        return
+        return False
     db = get_db()
     c = db.cursor()
     c.execute(
@@ -57,7 +58,7 @@ def log_funnel_step(user_id: str | None, step: str, *, meta: dict | None = None)
     )
     if c.fetchone():
         db.close()
-        return
+        return False
     c.execute(
         '''INSERT INTO product_funnel_events (user_id, step, meta_json)
            VALUES (?, ?, ?)''',
@@ -65,6 +66,7 @@ def log_funnel_step(user_id: str | None, step: str, *, meta: dict | None = None)
     )
     db.commit()
     db.close()
+    return True
 
 
 def funnel_counts() -> dict[str, int]:
@@ -123,3 +125,101 @@ def get_user_funnel_steps(user_id: str) -> dict[str, Any]:
         if not ok and next_step is None:
             next_step = step
     return {'done': done, 'steps': steps, 'next_step': next_step}
+
+
+_backfill_ran = False
+
+
+def backfill_product_funnel(*, force: bool = False) -> dict[str, int]:
+    """
+    Preenche eventos faltantes a partir do banco (idempotente via log_funnel_step).
+    """
+    global _backfill_ran
+    if _backfill_ran and not force:
+        return {'skipped': 1}
+    _backfill_ran = True
+
+    meta = {'source': 'backfill'}
+    inserted: dict[str, int] = {s: 0 for s in STEPS}
+
+    def _bump(step: str, ok: bool) -> None:
+        if ok:
+            inserted[step] += 1
+
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT id FROM users')
+    user_ids = [r['id'] for r in c.fetchall()]
+    c.execute('SELECT id FROM users WHERE COALESCE(play_mode_used, 0) = 1')
+    play_ids = [r['id'] for r in c.fetchall()]
+    c.execute(
+        '''SELECT DISTINCT owner_user_id AS uid FROM cifras
+           WHERE band_id IS NULL AND owner_user_id IS NOT NULL'''
+    )
+    personal_cifra = [r['uid'] for r in c.fetchall()]
+    c.execute(
+        '''SELECT DISTINCT b.owner_id AS uid
+           FROM cifras cif JOIN bands b ON b.id = cif.band_id
+           WHERE b.owner_id IS NOT NULL'''
+    )
+    band_cifra = [r['uid'] for r in c.fetchall()]
+    c.execute('SELECT DISTINCT owner_id AS uid FROM bands WHERE owner_id IS NOT NULL')
+    band_owners = [r['uid'] for r in c.fetchall()]
+    c.execute(
+        '''SELECT DISTINCT b.owner_id AS uid
+           FROM setlists s JOIN bands b ON b.id = s.band_id
+           WHERE b.owner_id IS NOT NULL'''
+    )
+    setlist_owners = [r['uid'] for r in c.fetchall()]
+    c.execute(
+        '''SELECT DISTINCT b.owner_id AS uid
+           FROM assinaturas a JOIN bands b ON b.id = a.banda_id
+           WHERE a.trial_usado = 1 AND b.owner_id IS NOT NULL'''
+    )
+    trial_owners = [r['uid'] for r in c.fetchall()]
+    c.execute(
+        '''SELECT DISTINCT b.owner_id AS uid, a.plano
+           FROM assinaturas a JOIN bands b ON b.id = a.banda_id
+           WHERE a.status IN ('ativa', 'voucher')
+             AND a.plano IN ('individual', 'pro', 'worship')
+             AND b.owner_id IS NOT NULL'''
+    )
+    paid_rows = [(r['uid'], r['plano']) for r in c.fetchall()]
+    agenda_owners: list = []
+    try:
+        c.execute(
+            '''SELECT DISTINCT b.owner_id AS uid
+               FROM band_events e JOIN bands b ON b.id = e.band_id
+               WHERE b.owner_id IS NOT NULL'''
+        )
+        agenda_owners = [r['uid'] for r in c.fetchall()]
+    except Exception:
+        pass
+    studio_owners: list = []
+    try:
+        c.execute('SELECT DISTINCT owner_user_id AS uid FROM studios WHERE owner_user_id IS NOT NULL')
+        studio_owners = [r['uid'] for r in c.fetchall()]
+    except Exception:
+        pass
+    db.close()
+
+    for uid in user_ids:
+        _bump('signup', log_funnel_step(uid, 'signup', meta=meta))
+    for uid in play_ids:
+        _bump('play_mode', log_funnel_step(uid, 'play_mode', meta=meta))
+    for uid in set(personal_cifra + band_cifra):
+        _bump('primeira_cifra', log_funnel_step(uid, 'primeira_cifra', meta=meta))
+    for uid in band_owners:
+        _bump('primeira_banda', log_funnel_step(uid, 'primeira_banda', meta=meta))
+    for uid in setlist_owners:
+        _bump('primeira_setlist', log_funnel_step(uid, 'primeira_setlist', meta=meta))
+    for uid in trial_owners:
+        _bump('trial_iniciado', log_funnel_step(uid, 'trial_iniciado', meta=meta))
+    for uid, plano in paid_rows:
+        _bump('assinatura_paga', log_funnel_step(uid, 'assinatura_paga', meta={**meta, 'plano': plano}))
+    for uid in agenda_owners:
+        _bump('primeiro_evento_agenda', log_funnel_step(uid, 'primeiro_evento_agenda', meta=meta))
+    for uid in studio_owners:
+        _bump('estudio_cadastrado', log_funnel_step(uid, 'estudio_cadastrado', meta=meta))
+
+    return inserted

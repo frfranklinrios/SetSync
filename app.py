@@ -482,13 +482,26 @@ def dashboard():
     sa = is_superadmin(user_id)
 
     def _trial_ctx(bands_list):
+        from db import count_band_members
         for b in bands_list:
             dias = dias_restantes_trial(b['id'])
+            solo = count_band_members(b['id']) <= 1
             if dias is not None:
-                return {'ativo': True, 'dias': dias, 'band_name': b['name'], 'band_id': b['id']}
+                return {
+                    'ativo': True,
+                    'dias': dias,
+                    'band_name': b['name'],
+                    'band_id': b['id'],
+                    'solo': solo,
+                }
             ass = get_assinatura_banda(b['id'])
             if ass.trial_usado and not ass.trial_ativo():
-                return {'expirado': True, 'band_name': b['name'], 'band_id': b['id']}
+                return {
+                    'expirado': True,
+                    'band_name': b['name'],
+                    'band_id': b['id'],
+                    'solo': solo,
+                }
         return None
 
     from models_agenda import (

@@ -244,7 +244,9 @@ def api_import_para_banda(band_id: str):
     )
     if cifras_antes == 0:
         from google_ads import mark_funnel_event
+        from product_funnel import log_funnel_step
         mark_funnel_event('primeira_cifra')
+        log_funnel_step(user_id, 'primeira_cifra', meta={'via': 'import'})
     bn.cifra_created(band_id, user_id, cifra_id, titulo)
     try:
         from blueprints.realtime import notify_band

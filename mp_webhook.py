@@ -119,6 +119,19 @@ def ativar_assinatura_mp(banda_id: str, plano: str, mp_id: str, proxima_cobranca
         data_proxima_cobranca=proxima_cobranca,
         data_cancelamento=None,
     )
+    try:
+        from db import get_band
+        from product_funnel import log_funnel_step
+
+        band = get_band(banda_id)
+        if band and band.get('owner_id'):
+            log_funnel_step(
+                band['owner_id'],
+                'assinatura_paga',
+                meta={'plano': plano, 'source': 'mp_webhook'},
+            )
+    except Exception:
+        logger.exception('Funnel assinatura_paga (banda) falhou')
 
 
 def ativar_studio_subscription_mp(
@@ -141,6 +154,16 @@ def ativar_studio_subscription_mp(
         mp_preapproval_id=mp_id,
         data_proxima_cobranca=proxima_cobranca,
     )
+    try:
+        from product_funnel import log_funnel_step
+
+        log_funnel_step(
+            user_id,
+            'assinatura_paga',
+            meta={'plano': plano, 'tipo': 'studio', 'source': 'mp_webhook'},
+        )
+    except Exception:
+        logger.exception('Funnel assinatura_paga (estúdio) falhou')
 
 
 def _parse_band_ref(ref: str) -> tuple[str | None, str]:

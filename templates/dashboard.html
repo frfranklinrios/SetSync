@@ -320,15 +320,20 @@
                     {% if trial_ui.band_id %}
                     <a href="{{ url_for('cifras.tocar_band', band_id=trial_ui.band_id) }}" class="btn btn-sm btn-success">Abrir Modo Tocar</a>
                     {% endif %}
-                    <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id) if trial_ui.band_id else url_for('assinatura_bp.planos') }}" class="btn btn-sm btn-outline-success">Assinar Pro — R$ 29</a>
+                    <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id) if trial_ui.band_id else url_for('assinatura_bp.planos') }}" class="btn btn-sm btn-outline-success">{% if trial_ui.solo %}Assinar Individual — R$ 15{% else %}Assinar Pro — R$ 29{% endif %}</a>
                 </div>
             </div>
             {% elif trial_ui and trial_ui.expirado %}
             <div class="alert alert-warning dashboard-compact-alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <div>
-                    O trial Pro de <strong>{{ trial_ui.band_name }}</strong> terminou — PDF e limites ilimitados voltam com o Pro.
+                    O trial Pro de <strong>{{ trial_ui.band_name }}</strong> terminou —
+                    {% if trial_ui.solo %}
+                    no solo, o <strong>Individual (R$ 15)</strong> libera PDF e compartilhar.
+                    {% else %}
+                    PDF e limites ilimitados voltam com o Pro.
+                    {% endif %}
                 </div>
-                <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id) if trial_ui.band_id else url_for('assinatura_bp.planos') }}" class="btn btn-sm btn-warning">Assinar Pro — R$ 29</a>
+                <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id) if trial_ui.band_id else url_for('assinatura_bp.planos') }}" class="btn btn-sm btn-warning">{% if trial_ui.solo %}Assinar Individual — R$ 15{% else %}Assinar Pro — R$ 29{% endif %}</a>
             </div>
             {% endif %}
 
@@ -465,19 +470,14 @@
             {% endif %}
 
             {% if not owned_bands and not member_only %}
-            {# Empty state compacto — o hero de ativação já cobre o caso principal #}
             {% if not needs_activation %}
-            <div class="empty">
-                <i class="fas fa-guitar"></i>
-                <p class="mb-2" style="font-size: var(--text-base);">Você ainda não está em nenhuma banda.</p>
-                <p class="text-muted small mb-3">
-                    Crie uma banda para começar — ou aceite um convite que chegou por e-mail ou WhatsApp
-                    (aparece no card azul acima, se houver).
-                </p>
-                <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i> Criar minha banda
-                </a>
-            </div>
+            {% with icon='fa-guitar',
+                    title='Você ainda não está em nenhuma banda',
+                    text='Crie uma banda para começar — ou aceite um convite por e-mail ou WhatsApp.',
+                    cta_url=url_for('bands.create', bem_vindo=1),
+                    cta_label='Criar minha banda' %}
+            {% include 'partials/empty_state.html' %}
+            {% endwith %}
             {% endif %}
             {% endif %}
             {% endif %}

@@ -4381,6 +4381,64 @@ def list_expired_trials() -> list[dict]:
     return rows
 
 
+def list_retention_candidates_no_cifra(*, min_days: int = 2) -> list[dict]:
+    """Usuários com conta há ≥N dias sem cifra pessoal e sem evento primeira_cifra."""
+    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    db = get_db()
+    c = db.cursor()
+    if IS_POSTGRES:
+        c.execute(
+            '''SELECT u.*
+               FROM users u
+               WHERE COALESCE(u.email, '') != ''
+                 AND COALESCE(u.email_notify, 1) = 1
+                 AND COALESCE(u.is_superadmin, 0) = 0
+                 AND u.created_at <= ?::timestamp
+                 AND NOT EXISTS (
+                     SELECT 1 FROM cifras c
+                     WHERE c.owner_user_id = u.id AND c.band_id IS NULL
+                 )
+                 AND NOT EXISTS (
+                     SELECT 1 FROM cifras c
+                     JOIN bands b ON b.id = c.band_id
+                     WHERE b.owner_id = u.id
+                 )
+                 AND NOT EXISTS (
+                     SELECT 1 FROM product_funnel_events f
+                     WHERE f.user_id = u.id AND f.step = 'primeira_cifra'
+                 )
+               ORDER BY u.created_at''',
+            (cutoff,),
+        )
+    else:
+        c.execute(
+            '''SELECT u.*
+               FROM users u
+               WHERE COALESCE(u.email, '') != ''
+                 AND COALESCE(u.email_notify, 1) = 1
+                 AND COALESCE(u.is_superadmin, 0) = 0
+                 AND datetime(u.created_at) <= datetime(?)
+                 AND NOT EXISTS (
+                     SELECT 1 FROM cifras c
+                     WHERE c.owner_user_id = u.id AND c.band_id IS NULL
+                 )
+                 AND NOT EXISTS (
+                     SELECT 1 FROM cifras c
+                     JOIN bands b ON b.id = c.band_id
+                     WHERE b.owner_id = u.id
+                 )
+                 AND NOT EXISTS (
+                     SELECT 1 FROM product_funnel_events f
+                     WHERE f.user_id = u.id AND f.step = 'primeira_cifra'
+                 )
+               ORDER BY u.created_at''',
+            (cutoff,),
+        )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
 # ── Retenção anti-churn ───────────────────────────────────────────────────────
 
 def retention_was_sent(usuario_id: str, campaign: str) -> bool:

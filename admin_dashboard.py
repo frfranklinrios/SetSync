@@ -309,6 +309,13 @@ def _engagement_totals() -> dict[str, int]:
 
 def build_admin_dashboard_context() -> dict:
     """Contexto agregado (métricas/contagens) do painel admin."""
+    try:
+        from product_funnel import backfill_product_funnel
+
+        backfill_product_funnel()
+    except Exception:
+        pass
+
     users_total = count_users()
     funnel_rows = funnel_activation_rows(users_total=users_total)
     all_funnel = funnel_counts()

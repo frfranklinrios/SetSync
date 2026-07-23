@@ -64,62 +64,92 @@ _CAMPAIGNS = {
         'button_key': 'dashboard_url',
     },
     'no_band_3': {
-        'subject': 'Crie sua primeira banda no Uníssono',
+        'subject': 'Comece pelo Uníssono: 1ª música (2 min)',
         'body': (
-            'Você se cadastrou mas ainda não criou uma banda.\n'
-            'Em 2 minutos você organiza o repertório e libera 30 dias de Pro.\n\n'
-            '{bands_url}'
+            'Você se cadastrou mas ainda não adicionou uma cifra.\n'
+            'Coleção pessoal é grátis. Depois abra o Modo Tocar.\n'
+            'Se for ensaio em grupo, aí sim crie a banda (trial Pro 30 dias).\n\n'
+            '{cifra_url}'
         ),
         'html_body': (
-            '<p>Você se cadastrou no Uníssono mas ainda <strong>não criou uma banda</strong>.</p>'
-            '<p>Crie agora, liberamos <strong>30 dias de Pro</strong> e você chega no Modo Tocar.</p>'
+            '<p>Você se cadastrou no Uníssono mas ainda <strong>não adicionou uma música</strong>.</p>'
+            '<p>Comece pela coleção pessoal (grátis). Se for tocar em grupo, crie a banda depois e ganhe '
+            '<strong>30 dias de Pro</strong>.</p>'
         ),
-        'button_label': 'Criar banda · liberar Pro',
-        'button_key': 'bands_url',
+        'button_label': 'Adicionar 1ª música',
+        'button_key': 'cifra_url',
+    },
+    'no_cifra_2': {
+        'subject': 'Falta só a 1ª cifra no Uníssono',
+        'body': (
+            'Já faz uns dias desde o cadastro e você ainda não salvou uma música.\n'
+            'Leva 2 minutos — depois o Modo Tocar faz o resto.\n\n'
+            '{cifra_url}'
+        ),
+        'html_body': (
+            '<p>Quem adiciona a <strong>primeira cifra</strong> e abre o Modo Tocar costuma ficar no Uníssono.</p>'
+            '<p>Coleção pessoal é grátis e ilimitada.</p>'
+        ),
+        'button_label': 'Adicionar música agora',
+        'button_key': 'cifra_url',
     },
     'trial_ending_7': {
         'subject': 'Faltam 7 dias de Pro — não perca o ensaio sem limites',
         'body': (
             'O trial Pro da banda {band_name} acaba em cerca de 7 dias.\n'
-            'Assine por R$ 29/mês e mantenha PDF + músicas ilimitadas.\n\n'
+            'Assine Pro (R$ 29) ou Individual (R$ 15) se toca só.\n\n'
             '{planos_url}'
         ),
         'html_body': (
             '<p>O <strong>trial Pro</strong> da banda <em>{band_name}</em> acaba em cerca de <strong>7 dias</strong>.</p>'
-            '<p>Assine Pro por <strong>R$ 29/mês</strong> e mantenha PDF, setlists e integrantes ilimitados.</p>'
+            '<p><strong>Pro</strong> R$ 29/mês (banda) · <strong>Individual</strong> R$ 15/mês (solo · PDF · compartilhar).</p>'
             '<p style="font-size:14px;color:#64748b;">Pagamento via Mercado Pago — cancele quando quiser.</p>'
         ),
-        'button_label': 'Assinar Pro — R$ 29',
+        'button_label': 'Ver planos e assinar',
         'button_key': 'planos_url',
     },
     'trial_ending_3': {
         'subject': 'Últimos 3 dias de Pro — continue sem limites',
         'body': (
             'Faltam cerca de 3 dias do trial Pro da banda {band_name}.\n'
-            'Assine agora por R$ 29/mês.\n\n'
+            'Assine agora: Pro R$ 29 ou Individual R$ 15 (solo).\n\n'
             '{planos_url}'
         ),
         'html_body': (
             '<p>Faltam cerca de <strong>3 dias</strong> do trial Pro em <em>{band_name}</em>.</p>'
-            '<p>Sem o Pro, voltam os limites do Grátis e o PDF some. Continue por <strong>R$ 29/mês</strong>.</p>'
+            '<p>Sem plano pago voltam os limites do Grátis e o PDF some.</p>'
         ),
-        'button_label': 'Assinar Pro agora — R$ 29',
+        'button_label': 'Assinar agora',
+        'button_key': 'planos_url',
+    },
+    'trial_ending_1': {
+        'subject': 'Último dia de Pro — {band_name}',
+        'body': (
+            'O trial Pro da banda {band_name} termina amanhã.\n'
+            '{offer_line}\n\n'
+            '{planos_url}'
+        ),
+        'html_body': (
+            '<p>O <strong>trial Pro</strong> de <em>{band_name}</em> termina <strong>amanhã</strong>.</p>'
+            '<p>{offer_line}</p>'
+        ),
+        'button_label': '{button_label}',
         'button_key': 'planos_url',
     },
     'trial_expired': {
-        'subject': 'Seu trial Pro acabou — continue sem limites',
+        'subject': 'Trial Pro acabou — {offer_short}',
         'body': (
             'O trial Pro da banda {band_name} terminou.\n'
-            'Sem Pro: limites do Grátis e sem PDF. Assine por R$ 29/mês.\n\n'
+            '{offer_line}\n\n'
             '{planos_url}'
         ),
         'html_body': (
             '<p>O <strong>trial Pro</strong> da banda <em>{band_name}</em> terminou.</p>'
-            '<p>Volte ao Pro por <strong>R$ 29/mês</strong> e mantenha recursos ilimitados + exportação PDF.</p>'
-            '<p style="font-size:14px;color:#64748b;">Ao assinar, você paga pelo <strong>Mercado Pago</strong> — '
-            'seus dados de cartão não passam pelo Uníssono.</p>'
+            '<p>{offer_line}</p>'
+            '<p style="font-size:14px;color:#64748b;">Pagamento via <strong>Mercado Pago</strong> — '
+            'cartão não passa pelo Uníssono.</p>'
         ),
-        'button_label': 'Assinar Pro — R$ 29/mês',
+        'button_label': '{button_label}',
         'button_key': 'planos_url',
     },
     'studio_trial_ending_3': {
@@ -161,6 +191,35 @@ def _urls() -> dict[str, str]:
         'bands_url': external_url_for('bands.list_bands'),
         'planos_url': external_url_for('assinatura_bp.planos'),
         'planos_estudio_url': external_url_for('assinatura_bp.planos') + '#estudio',
+        'cifra_url': external_url_for('cifras.add_personal', welcome=1),
+        'colecao_url': external_url_for('cifras.library'),
+    }
+
+
+def _trial_offer_extra(banda_id: str, band_name: str) -> dict:
+    """Solo (1 integrante) → Individual; senão Pro."""
+    from db import count_band_members
+
+    members = count_band_members(banda_id) if banda_id else 1
+    solo = members <= 1
+    if solo:
+        return {
+            'band_name': band_name or 'sua banda',
+            'offer_short': 'assine Individual (R$ 15)',
+            'offer_line': (
+                'Como você toca só, o plano <strong>Individual (R$ 15/mês)</strong> '
+                'libera PDF e compartilhar — sem precisar de elenco.'
+            ),
+            'button_label': 'Assinar Individual — R$ 15/mês',
+        }
+    return {
+        'band_name': band_name or 'sua banda',
+        'offer_short': 'assine Pro (R$ 29)',
+        'offer_line': (
+            'Volte ao <strong>Pro (R$ 29/mês)</strong> e mantenha músicas, setlists '
+            'e integrantes ilimitados + PDF.'
+        ),
+        'button_label': 'Assinar Pro — R$ 29/mês',
     }
 
 
@@ -181,7 +240,12 @@ def _send_campaign(
     subject = tpl['subject'].format(**body_fmt)
     body = tpl['body'].format(**body_fmt)
     html_inner = tpl['html_body'].format(**body_fmt)
-    html = _html_wrapper(subject, html_inner, button_url, tpl['button_label'])
+    raw_btn = tpl['button_label']
+    try:
+        button_label = raw_btn.format(**body_fmt)
+    except (KeyError, ValueError):
+        button_label = body_fmt.get('button_label') or raw_btn
+    html = _html_wrapper(subject, html_inner, button_url, button_label)
     return send_email([email], subject, html, body)
 
 
@@ -220,7 +284,23 @@ def verificar_e_disparar_retencao() -> int:
         else:
             mark_retention_sent(uid, campaign, 'erro')
 
-    for days, campaign_key in ((7, 'trial_ending_7'), (3, 'trial_ending_3')):
+    from db import list_retention_candidates_no_cifra
+
+    for row in list_retention_candidates_no_cifra(min_days=2):
+        uid = row['id']
+        campaign = 'no_cifra_2'
+        if retention_was_sent(uid, campaign):
+            continue
+        email = (row.get('email') or '').strip()
+        if not email:
+            continue
+        if _send_campaign(email, campaign):
+            mark_retention_sent(uid, campaign, 'enviado')
+            enviados += 1
+        else:
+            mark_retention_sent(uid, campaign, 'erro')
+
+    for days, campaign_key in ((7, 'trial_ending_7'), (3, 'trial_ending_3'), (1, 'trial_ending_1')):
         for row in list_trials_expiring_soon(days):
             uid = row['owner_id']
             campaign = f"{campaign_key}:{row['banda_id']}"
@@ -231,7 +311,7 @@ def verificar_e_disparar_retencao() -> int:
             email = (row.get('owner_email') or '').strip()
             if not email:
                 continue
-            extra = {'band_name': row.get('band_name') or 'sua banda'}
+            extra = _trial_offer_extra(row['banda_id'], row.get('band_name') or 'sua banda')
             if _send_campaign(email, campaign_key, extra=extra):
                 mark_retention_sent(uid, campaign, 'enviado')
                 enviados += 1
@@ -268,7 +348,7 @@ def verificar_e_disparar_retencao() -> int:
         email = (row.get('owner_email') or '').strip()
         if not email:
             continue
-        extra = {'band_name': row.get('band_name') or 'sua banda'}
+        extra = _trial_offer_extra(row['banda_id'], row.get('band_name') or 'sua banda')
         if _send_campaign(email, 'trial_expired', extra=extra):
             mark_retention_sent(uid, campaign, 'enviado')
             enviados += 1

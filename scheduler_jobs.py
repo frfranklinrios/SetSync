@@ -134,8 +134,7 @@ def run_daily_voucher_jobs() -> None:
     avisar_studio_vouchers_proximo_vencimento()
     verificar_vouchers_vencidos()
     verificar_studio_vouchers_vencidos()
-    avisar_trials_proximo_vencimento()
-    avisar_studio_trials_proximo_vencimento()
+    # Trial: só via retention_emails (dedup) — evita double-send D-3
     verificar_e_disparar_onboarding()
     verificar_e_disparar_retencao()
     from studio_onboarding_emails import verificar_e_disparar_onboarding_estudio
@@ -149,6 +148,30 @@ def run_agenda_reminder_jobs() -> None:
 def run_event_prep_jobs() -> None:
     """Alertas de setlist/escala incompleta (próximos 7 dias)."""
     verificar_e_enviar_alertas_evento_incompleto()
+
+
+def run_marketing_screenshots_job() -> None:
+    """Regenera screenshots de marketing (BR / gospel / financeiro) do dia."""
+    import logging
+    import os
+    import importlib.util
+    from pathlib import Path
+
+    log = logging.getLogger('setsync.marketing_shots')
+    script = Path(__file__).resolve().parent / 'scripts' / 'capture_marketing_screenshots.py'
+    if not script.is_file():
+        log.warning('Script de captura não encontrado: %s', script)
+        return
+    os.environ.setdefault('SCREENSHOT_BASE_URL', 'https://unissono.app')
+    spec = importlib.util.spec_from_file_location('capture_marketing_screenshots', script)
+    if not spec or not spec.loader:
+        raise RuntimeError('Não foi possível carregar capture_marketing_screenshots')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    code = mod.main()
+    if code not in (0, None):
+        raise RuntimeError(f'Captura de marketing retornou código {code}')
+    log.info('Screenshots de marketing atualizados')
 
 
 def run_metrics_snapshot_job() -> None:
