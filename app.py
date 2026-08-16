@@ -484,7 +484,7 @@ def dashboard():
     if sa and request.args.get('view') != 'bands':
         return redirect(url_for('admin.index'))
 
-    if not sa:
+    if not sa and not session.get('impersonator_id'):
         from demo_onboarding import user_needs_first_real_song
         if request.args.get('pular') == '1':
             session['skip_comecar'] = True

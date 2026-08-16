@@ -511,7 +511,7 @@ def impersonate_user(user_id: str):
         'Use “Voltar ao master” na barra amarela para sair.',
         'info',
     )
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('dashboard', pular=1))
 
 
 @admin_bp.route('/impersonate/parar', methods=['POST'])
