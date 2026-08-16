@@ -1,5 +1,7 @@
 /**
  * Busca cifras na API local (api-cifras) e preenche o formulário add/edit.
+ * Suporta bloco clássico [data-api-cifras-search] e modo título
+ * [data-api-cifras-title-search] (dropdown sob o campo Título).
  */
 (function () {
   "use strict";
@@ -22,6 +24,12 @@
     el.classList.toggle("text-muted", !isError);
   }
 
+  function hideResults(container) {
+    if (!container) return;
+    container.innerHTML = "";
+    container.classList.add("d-none");
+  }
+
   function renderResults(container, items, onPick) {
     if (!container) return;
     container.innerHTML = "";
@@ -33,6 +41,7 @@
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "api-cifras-result";
+      btn.setAttribute("role", "option");
       btn.dataset.artistSlug = item.artist_slug || "";
       btn.dataset.songSlug = item.song_slug || "";
       btn.dataset.cached = item.cached ? "1" : "0";
@@ -113,7 +122,10 @@
     set("tom_original", payload.tom_original);
 
     var ta = document.getElementById("conteudo");
-    if (ta && payload.conteudo) ta.value = payload.conteudo;
+    if (ta && payload.conteudo) {
+      ta.value = payload.conteudo;
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    }
 
     if (payload.cifra_json) {
       var cj = document.getElementById("cifra_json_hidden");
@@ -135,10 +147,9 @@
     }
   }
 
-  function importCifra(item, statusEl, btn) {
+  function importCifra(item, statusEl, btn, resultsEl) {
     if (!item.artist_slug || !item.song_slug) return;
 
-    var prev = btn.textContent;
     btn.disabled = true;
     setStatus(statusEl, "Importando cifra…");
 
@@ -161,12 +172,18 @@
       .then(function (data) {
         applyPayload(data);
         setReferenciaSnapshot(data);
+        hideResults(resultsEl);
         setStatus(
           statusEl,
           data.cached
-            ? "Cifra importada do cache local."
-            : "Cifra baixada online (ainda não estava no cache local)."
+            ? "Cifra importada da biblioteca."
+            : "Cifra baixada online e preenchida no formulário."
         );
+        try {
+          document.dispatchEvent(
+            new CustomEvent("setsync:cifra-imported", { detail: data || {} })
+          );
+        } catch (e) {}
       })
       .catch(function (err) {
         setStatus(statusEl, err.message || String(err), true);
@@ -182,8 +199,8 @@
     var resultsEl = root.querySelector("[data-api-cifras-results]");
     var q = (input && input.value || "").trim();
     if (q.length < 2) {
-      setStatus(statusEl, "Digite pelo menos 2 caracteres.", true);
-      renderResults(resultsEl, [], function () {});
+      setStatus(statusEl, "");
+      hideResults(resultsEl);
       return;
     }
 
@@ -202,17 +219,17 @@
         var items = data.items || [];
         if (!items.length) {
           setStatus(statusEl, "Nenhum resultado para «" + q + "».");
-          renderResults(resultsEl, [], function () {});
+          hideResults(resultsEl);
           return;
         }
-        setStatus(statusEl, items.length + " resultado(s). Toque para importar.");
+        setStatus(statusEl, items.length + " resultado(s). Toque para preencher.");
         renderResults(resultsEl, items, function (item, btn) {
-          importCifra(item, statusEl, btn);
+          importCifra(item, statusEl, btn, resultsEl);
         });
       })
       .catch(function (err) {
         setStatus(statusEl, err.message || String(err), true);
-        renderResults(resultsEl, [], function () {});
+        hideResults(resultsEl);
       });
   }
 
@@ -222,6 +239,8 @@
 
     var input = root.querySelector("[data-api-cifras-input]");
     var submit = root.querySelector("[data-api-cifras-submit]");
+    var resultsEl = root.querySelector("[data-api-cifras-results]");
+    var titleMode = root.hasAttribute("data-api-cifras-title-search");
 
     function scheduleSearch() {
       clearTimeout(debounceTimer);
@@ -238,11 +257,29 @@
     if (input) {
       input.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter") {
-          ev.preventDefault();
-          runSearch(root);
+          // No modo título, Enter no formulário não deve submeter cedo se há resultados
+          if (titleMode && resultsEl && !resultsEl.classList.contains("d-none")) {
+            ev.preventDefault();
+            var first = resultsEl.querySelector(".api-cifras-result");
+            if (first) first.click();
+            return;
+          }
+          if (!titleMode) {
+            ev.preventDefault();
+            runSearch(root);
+          }
+        }
+        if (ev.key === "Escape") {
+          hideResults(resultsEl);
         }
       });
       input.addEventListener("input", scheduleSearch);
+    }
+
+    if (titleMode) {
+      document.addEventListener("click", function (ev) {
+        if (!root.contains(ev.target)) hideResults(resultsEl);
+      });
     }
   }
 

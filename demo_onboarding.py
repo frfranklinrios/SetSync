@@ -98,23 +98,50 @@ def demo_songs() -> list[dict]:
 
 
 def user_has_demo_library(user_id: str) -> bool:
-    from db import get_user_personal_cifras
+    return bool(list_demo_cifra_ids_for_user(user_id))
 
-    for c in get_user_personal_cifras(user_id):
-        raw = c.get('referencia_json') or ''
-        if isinstance(raw, dict):
-            if raw.get('is_demo'):
-                return True
-            continue
+
+def cifra_is_demo(c: dict) -> bool:
+    raw = c.get('referencia_json') or ''
+    if isinstance(raw, dict):
+        if raw.get('is_demo'):
+            return True
+    else:
         try:
             meta = json.loads(raw) if raw else {}
         except (TypeError, ValueError):
             meta = {}
         if meta.get('is_demo'):
             return True
-        if (c.get('titulo') or '') in {s['titulo'] for s in demo_songs()}:
-            return True
-    return False
+    titulo = (c.get('titulo') or '').strip()
+    return titulo in {s['titulo'] for s in demo_songs()}
+
+
+def list_demo_cifra_ids_for_user(user_id: str) -> list[str]:
+    from db import get_user_personal_cifras
+
+    return [str(c['id']) for c in get_user_personal_cifras(user_id) if cifra_is_demo(c)]
+
+
+def delete_demo_library_for_user(user_id: str) -> int:
+    """Remove cifras de onboarding da coleção pessoal. Retorna quantas apagou."""
+    if not user_id:
+        return 0
+    from db import delete_cifra, user_owns_personal_cifra, get_cifra
+
+    removed = 0
+    for cid in list_demo_cifra_ids_for_user(user_id):
+        cifra = get_cifra(cid)
+        if not cifra or not user_owns_personal_cifra(cifra, user_id):
+            continue
+        if not cifra_is_demo(cifra):
+            continue
+        try:
+            delete_cifra(cid)
+            removed += 1
+        except Exception:
+            logger.exception('Falha ao apagar demo cifra=%s user=%s', cid, user_id)
+    return removed
 
 
 def seed_demo_library_for_user(user_id: str) -> list[str]:
@@ -149,6 +176,64 @@ def seed_demo_library_for_user(user_id: str) -> list[str]:
     except Exception:
         logger.exception('Falha ao seedar biblioteca demo user=%s', user_id)
     return created
+
+
+def count_real_personal_cifras(user_id: str) -> int:
+    if not user_id:
+        return 0
+    from db import get_user_personal_cifras
+
+    return sum(1 for c in get_user_personal_cifras(user_id) if not cifra_is_demo(c))
+
+
+def user_needs_first_real_song(user_id: str) -> bool:
+    """True enquanto a conta só tem demo (ou nada) — o job é salvar uma música real."""
+    if not user_id:
+        return False
+    from db import (
+        count_band_cifras,
+        get_owned_bands,
+        get_user_bands,
+        is_superadmin,
+    )
+
+    if is_superadmin(user_id):
+        return False
+    if count_real_personal_cifras(user_id) > 0:
+        return False
+    for b in list(get_owned_bands(user_id) or []) + list(get_user_bands(user_id) or []):
+        if count_band_cifras(b['id']) > 0:
+            return False
+    return True
+
+
+def play_list_is_demo_only(cifras: list[dict] | None) -> bool:
+    rows = list(cifras or [])
+    if not rows:
+        return True
+    return all(cifra_is_demo(c) for c in rows)
+
+
+def log_primeira_cifra_real(user_id: str, *, source: str, cifra_id: str | None = None) -> None:
+    from product_funnel import log_funnel_step
+
+    meta = {'source': source}
+    if cifra_id:
+        meta['cifra_id'] = str(cifra_id)
+    log_funnel_step(user_id, 'primeira_cifra')
+    log_funnel_step(user_id, 'primeira_cifra_real', meta=meta)
+    try:
+        from google_ads import mark_funnel_event
+
+        mark_funnel_event('primeira_cifra')
+    except Exception:
+        pass
+
+
+def log_play_mode_real(user_id: str, *, source: str = 'play') -> None:
+    from product_funnel import log_funnel_step
+
+    log_funnel_step(user_id, 'play_mode_real', meta={'source': source})
 
 
 def maybe_start_trial_on_value(user_id: str, *, reason: str = 'play_mode') -> str | None:

@@ -76,7 +76,7 @@ _CAMPAIGNS = {
             '<p>Comece pela coleção pessoal (grátis). Se for tocar em grupo, crie a banda depois e ganhe '
             '<strong>30 dias de Pro</strong>.</p>'
         ),
-        'button_label': 'Adicionar 1ª música',
+        'button_label': 'Escolher minha música',
         'button_key': 'cifra_url',
     },
     'no_cifra_2': {
@@ -90,7 +90,7 @@ _CAMPAIGNS = {
             '<p>Quem adiciona a <strong>primeira cifra</strong> e abre o Modo Tocar costuma ficar no Uníssono.</p>'
             '<p>Coleção pessoal é grátis e ilimitada.</p>'
         ),
-        'button_label': 'Adicionar música agora',
+        'button_label': 'Escolher minha música agora',
         'button_key': 'cifra_url',
     },
     'trial_ending_7': {
@@ -155,15 +155,19 @@ _CAMPAIGNS = {
         'button_key': 'planos_url',
     },
     'trial_expired': {
-        'subject': 'Trial Pro acabou — {offer_short}',
+        'subject': 'Trial acabou — marque o próximo show no Uníssono',
         'body': (
             'O trial Pro da banda {band_name} terminou.\n'
             '{offer_line}\n\n'
-            '{planos_url}'
+            'Enquanto isso, o Comando do show continua: escala, freela por WhatsApp e fechamento de cachê.\n'
+            '{planos_url}\n'
+            '{dashboard_url}'
         ),
         'html_body': (
             '<p>O <strong>trial Pro</strong> da banda <em>{band_name}</em> terminou.</p>'
             '<p>{offer_line}</p>'
+            '<p>Mesmo no Grátis você pode <strong>escalar o show</strong>, convidar freela e fechar a noite — '
+            'é aí que a banda sente o Uníssono.</p>'
             '<p style="font-size:14px;color:#64748b;">Pagamento via <strong>Mercado Pago</strong> — '
             'cartão não passa pelo Uníssono.</p>'
         ),
@@ -209,7 +213,7 @@ def _urls() -> dict[str, str]:
         'bands_url': external_url_for('bands.list_bands'),
         'planos_url': external_url_for('assinatura_bp.planos'),
         'planos_estudio_url': external_url_for('assinatura_bp.planos') + '#estudio',
-        'cifra_url': external_url_for('cifras.add_personal', welcome=1),
+        'cifra_url': external_url_for('cifras.comecar'),
         'colecao_url': external_url_for('cifras.library'),
     }
 

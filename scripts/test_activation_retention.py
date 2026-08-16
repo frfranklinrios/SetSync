@@ -48,6 +48,24 @@ class DemoOnboardingTest(unittest.TestCase):
         cifras = get_user_personal_cifras(uid)
         self.assertTrue(any('Porque Ele Vive' in (c.get('titulo') or '') for c in cifras))
 
+    def test_delete_demo_library(self):
+        from db import count_user_personal_cifras, create_personal_cifra, create_user
+        from demo_onboarding import (
+            delete_demo_library_for_user,
+            seed_demo_library_for_user,
+            user_has_demo_library,
+        )
+
+        uid = create_user('demo_del', 'demo_del@test.com', 'senha1234567', display_name='Del')
+        seed_demo_library_for_user(uid)
+        create_personal_cifra(uid, 'Minha Real', 'Eu', 'C', '[C] oi')
+        self.assertEqual(count_user_personal_cifras(uid), 5)
+        removed = delete_demo_library_for_user(uid)
+        self.assertEqual(removed, 4)
+        self.assertFalse(user_has_demo_library(uid))
+        self.assertEqual(count_user_personal_cifras(uid), 1)
+        self.assertEqual(delete_demo_library_for_user(uid), 0)
+
     def test_seed_skips_when_user_already_has_cifras(self):
         from db import create_personal_cifra, create_user
         from demo_onboarding import seed_demo_library_for_user
@@ -151,45 +169,160 @@ class ActivationHttpTest(unittest.TestCase):
         app.config['WTF_CSRF_ENABLED'] = False
         cls.app = app
 
-    def test_register_seeds_demo_and_tocar_colecao(self):
+    def test_register_goes_to_comecar_without_demo(self):
+        from unittest.mock import patch
+
         from db import count_user_personal_cifras, get_user_by_username
 
         client = self.app.test_client()
-        r = client.post(
-            '/auth/register',
-            data={
-                'username': 'httpdemo',
-                'email': 'httpdemo@test.com',
-                'password': 'senha1234567',
-                'confirm': 'senha1234567',
-                'display_name': 'Http Demo',
-                'aceite_privacidade': '1',
-            },
-            base_url=self.BASE,
-            follow_redirects=False,
-        )
+        with patch('signup_guard.signup_filled_too_fast', return_value=False):
+            r = client.post(
+                '/auth/register',
+                data={
+                    'username': 'httpdemo',
+                    'email': 'httpdemo@test.com',
+                    'password': 'senha1234567',
+                    'confirm': 'senha1234567',
+                    'display_name': 'Http Demo',
+                    'aceite_privacidade': '1',
+                    'website': '',
+                    'company_url': '',
+                    'fax_number': '',
+                },
+                base_url=self.BASE,
+                follow_redirects=False,
+            )
         self.assertIn(r.status_code, (302, 303), r.get_data(as_text=True)[:300])
+        loc = r.headers.get('Location') or ''
+        self.assertTrue(
+            'cadastro' in loc or 'comecar' in loc,
+            f'register não foi para primeiro uso: {loc}',
+        )
         user = get_user_by_username('httpdemo')
         self.assertTrue(user)
-        self.assertGreaterEqual(count_user_personal_cifras(user['id']), 4)
+        self.assertEqual(count_user_personal_cifras(user['id']), 0)
 
         with client.session_transaction() as sess:
             sess['user_id'] = user['id']
             sess['username'] = user['username']
+
+        r2 = client.get('/cifras/comecar', base_url=self.BASE)
+        self.assertEqual(r2.status_code, 200, r2.get_data(as_text=True)[:400])
+        body = r2.get_data(as_text=True)
+        self.assertIn('Qual música', body)
+
+        r3 = client.get('/dashboard', base_url=self.BASE, follow_redirects=False)
+        self.assertIn(r3.status_code, (302, 303))
+        self.assertIn('/cifras/comecar', r3.headers.get('Location') or '')
+
+    def test_comecar_saves_real_song_and_opens_play(self):
+        from db import count_user_personal_cifras, create_user
+        from product_funnel import get_user_funnel_steps
+
+        uid = create_user('comecar1', 'comecar1@test.com', 'senha1234567', display_name='C1')
+        client = self.app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = uid
+            sess['username'] = 'comecar1'
+
+        r = client.post(
+            '/cifras/comecar',
+            data={
+                'titulo': 'Evidências',
+                'artista': 'Chitãozinho & Xororó',
+                'tom_original': 'D',
+                'conteudo': '[D] Quando eu digo que deixei de te [A]amar',
+            },
+            base_url=self.BASE,
+            follow_redirects=False,
+        )
+        self.assertIn(r.status_code, (302, 303), r.get_data(as_text=True)[:400])
+        loc = r.headers.get('Location') or ''
+        self.assertIn('/cifras/minha-colecao/tocar', loc)
+        self.assertEqual(count_user_personal_cifras(uid), 1)
+        steps = get_user_funnel_steps(uid).get('done') or set()
+        self.assertIn('primeira_cifra_real', steps)
+
+        r2 = client.get(loc, base_url=self.BASE, follow_redirects=True)
+        self.assertLess(r2.status_code, 400, r2.get_data(as_text=True)[:400])
+        play = r2.get_data(as_text=True)
+        self.assertTrue('play-mode' in play.lower() or 'pb-exit' in play)
+        self.assertIn('"showRealSongCta": false', play)
+
+    def test_exemplo_seeds_demo_and_cta_on_play(self):
+        from db import count_user_personal_cifras, create_user
+        from demo_onboarding import user_needs_first_real_song
+
+        uid = create_user('exdemo', 'exdemo@test.com', 'senha1234567', display_name='Ex')
+        client = self.app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = uid
+            sess['username'] = 'exdemo'
+
+        r = client.get(
+            '/cifras/comecar?exemplo=1',
+            base_url=self.BASE,
+            follow_redirects=False,
+        )
+        self.assertIn(r.status_code, (302, 303))
+        self.assertIn('/cifras/minha-colecao/tocar', r.headers.get('Location') or '')
+        self.assertEqual(count_user_personal_cifras(uid), 4)
+        self.assertTrue(user_needs_first_real_song(uid))
 
         r2 = client.get(
             '/cifras/minha-colecao/tocar',
             base_url=self.BASE,
             follow_redirects=True,
         )
-        self.assertLess(r2.status_code, 400, r2.get_data(as_text=True)[:400])
         body = r2.get_data(as_text=True)
-        self.assertTrue(
-            'play-mode' in body.lower()
-            or 'cifras-data' in body
-            or 'pb-exit' in body,
-            'página de tocar sem markers esperados',
+        self.assertIn('"showRealSongCta": true', body)
+
+    def test_primeira_cifra_real_despite_existing_demos(self):
+        from db import create_personal_cifra, create_user
+        from demo_onboarding import (
+            count_real_personal_cifras,
+            log_primeira_cifra_real,
+            seed_demo_library_for_user,
+            user_needs_first_real_song,
         )
+        from product_funnel import get_user_funnel_steps
+
+        uid = create_user('realdemo', 'realdemo@test.com', 'senha1234567', display_name='R')
+        seed_demo_library_for_user(uid)
+        self.assertEqual(count_real_personal_cifras(uid), 0)
+        self.assertTrue(user_needs_first_real_song(uid))
+
+        cid = create_personal_cifra(uid, 'Minha Real', 'Eu', 'C', '[C] oi')
+        self.assertEqual(count_real_personal_cifras(uid), 1)
+        self.assertFalse(user_needs_first_real_song(uid))
+        log_primeira_cifra_real(uid, source='test', cifra_id=str(cid))
+        done = get_user_funnel_steps(uid).get('done') or set()
+        self.assertIn('primeira_cifra_real', done)
+
+    def test_comecar_json_saves_and_returns_play_url(self):
+        from db import create_user
+
+        uid = create_user('jsondemo', 'jsondemo@test.com', 'senha1234567', display_name='J')
+        client = self.app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = uid
+            sess['username'] = 'jsondemo'
+
+        r = client.post(
+            '/cifras/minha-colecao/comecar.json',
+            json={
+                'titulo': 'Tempo Perdido',
+                'artista': 'Legião Urbana',
+                'tom_original': 'E',
+                'conteudo': '[E] Todos os dias quando acordo',
+            },
+            content_type='application/json',
+            base_url=self.BASE,
+        )
+        self.assertEqual(r.status_code, 200, r.get_data(as_text=True)[:300])
+        data = r.get_json()
+        self.assertTrue(data.get('ok'))
+        self.assertIn('/cifras/minha-colecao/tocar', data.get('play_url') or '')
 
     def test_play_csat_endpoint(self):
         from db import create_user, get_user

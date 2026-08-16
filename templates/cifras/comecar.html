@@ -1,0 +1,212 @@
+{% extends "index.html" %}
+{% block title %}Sua primeira música · Uníssono{% endblock %}
+{% block body_class %}first-run{% endblock %}
+
+{% block content %}
+<style>
+body.first-run .ss-tabbar { display: none !important; }
+body.first-run { padding-bottom: 0 !important; }
+.first-run-wrap { max-width: 40rem; margin: 1.25rem auto 3rem; }
+.first-run-kicker {
+    font-size: var(--text-xs, 0.75rem); font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.35rem;
+}
+.first-run-wrap h1 { font-size: var(--text-xl, 1.5rem); font-weight: 800; margin-bottom: 0.5rem; }
+.first-run-lead { color: var(--muted); margin-bottom: 1.25rem; line-height: 1.45; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+.chip-row button {
+    border: 1px solid var(--border, #e2e8f0); background: transparent; border-radius: 999px;
+    padding: 0.3rem 0.7rem; font-size: var(--text-sm); cursor: pointer; color: inherit;
+}
+.chip-row button:hover { border-color: var(--accent); color: var(--accent); }
+.paste-toggle { font-size: var(--text-sm); cursor: pointer; }
+#conteudo { font-family: var(--cifra-mono-font, ui-monospace, monospace); min-height: 180px; }
+.api-cifras-title-results {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--bg, #fff);
+    margin-top: 0.15rem;
+}
+.api-cifras-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+}
+.api-cifras-result:last-child { border-bottom: 0; }
+.api-cifras-result:hover,
+.api-cifras-result:focus {
+    background: var(--chord-highlight-bg, rgba(13, 148, 136, 0.08));
+    outline: none;
+}
+.api-cifras-result-title { font-weight: 600; font-size: var(--text-sm); }
+.api-cifras-result-artist { font-size: var(--text-xs); color: var(--muted); }
+</style>
+
+<div class="first-run-wrap">
+    <p class="first-run-kicker">Primeiro passo · 60 segundos</p>
+    <h1>Qual música você toca no próximo ensaio?</h1>
+    <p class="first-run-lead">
+        Não é um exemplo. Busque o título na biblioteca ou cole a cifra —
+        a gente abre o <strong>Modo Tocar</strong> nessa música agora.
+    </p>
+
+    <form method="POST" id="comecar-form" autocomplete="off">
+        {% include 'partials/csrf_input.html' %}
+        <input type="hidden" name="cifra_json" id="cifra_json_hidden">
+        <input type="hidden" name="grade_json" id="grade_json_hidden">
+        <input type="hidden" name="referencia_json" id="referencia_json_hidden" value="">
+        <input type="hidden" name="duracao_seg" id="duracao_seg_hidden">
+
+        <div class="mb-3 position-relative" data-api-cifras-search data-api-cifras-title-search>
+            <label class="form-label" for="cifra-titulo-input">Título</label>
+            <input type="text" class="form-control form-control-lg" name="titulo" id="cifra-titulo-input"
+                   required autofocus autocomplete="off" data-api-cifras-input
+                   placeholder="Ex.: Evidências, Bondade de Deus, Tempo Perdido"
+                   aria-autocomplete="list" aria-controls="cifra-titulo-results">
+            <p class="form-text mb-1" data-api-cifras-status role="status"></p>
+            <div class="api-cifras-title-results list-group border rounded shadow-sm d-none"
+                 id="cifra-titulo-results" data-api-cifras-results role="listbox"></div>
+        </div>
+
+        <p class="form-text mb-2">Atalhos — toque para buscar:</p>
+        <div class="chip-row" id="comecar-chips">
+            <button type="button" data-q="Evidências">Evidências</button>
+            <button type="button" data-q="Tempo Perdido">Tempo Perdido</button>
+            <button type="button" data-q="Bondade de Deus">Bondade de Deus</button>
+            <button type="button" data-q="Reckless Love">Reckless Love</button>
+            <button type="button" data-q="Saudade da minha terra">Saudade da Minha Terra</button>
+            <button type="button" data-q="Me Atraiu">Me Atraiu</button>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Artista</label>
+            <input type="text" class="form-control" name="artista" required placeholder="Quem grava / canta">
+        </div>
+        <div class="row g-2 mb-3">
+            <div class="col-4">
+                <label class="form-label">Tom</label>
+                <input type="text" class="form-control" name="tom_original" value="C">
+            </div>
+            <div class="col-4">
+                <label class="form-label">BPM <span class="text-muted">(opcional)</span></label>
+                <input type="number" class="form-control" name="bpm" step="0.1">
+            </div>
+        </div>
+
+        <details class="mb-3" id="paste-box">
+            <summary class="paste-toggle mb-2">Ou cole a cifra de um site</summary>
+            <textarea class="form-control" id="conteudo" name="conteudo" rows="8"
+                      placeholder="Cole aqui (Cifra Club, etc.). Depois: Tocar agora."></textarea>
+        </details>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100 mb-2" id="comecar-submit">
+            Tocar essa música agora
+        </button>
+        <p class="text-muted small text-center mb-2">
+            Toque um resultado da busca: a cifra entra sozinha e vai para o palco.
+        </p>
+    </form>
+
+    <p class="text-center small text-muted mb-0">
+        <a href="{{ url_for('cifras.comecar', exemplo=1) }}">Só quero ver um exemplo</a>
+        ·
+        <a href="{{ url_for('cifras.comecar', pular=1) }}">Ir ao painel</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/api-cifras-search.js') }}?v=4"></script>
+<script>
+(function () {
+  var form = document.getElementById('comecar-form');
+  var input = document.getElementById('cifra-titulo-input');
+  var saveUrl = {{ url_for('cifras.comecar_salvar_json')|tojson }};
+  var submitting = false;
+  var btn = document.getElementById('comecar-submit');
+
+  document.getElementById('comecar-chips').addEventListener('click', function (e) {
+    var chip = e.target.closest('[data-q]');
+    if (!chip || !input) return;
+    input.value = chip.getAttribute('data-q');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+  });
+
+  function setBusy(on) {
+    submitting = !!on;
+    if (btn) {
+      btn.disabled = !!on;
+      btn.textContent = on ? 'Abrindo o palco…' : 'Tocar essa música agora';
+    }
+  }
+
+  function payloadFromForm() {
+    var ref = (document.getElementById('referencia_json_hidden') || {}).value || '';
+    var cj = (document.getElementById('cifra_json_hidden') || {}).value || '';
+    var gj = (document.getElementById('grade_json_hidden') || {}).value || '';
+    var body = {
+      titulo: (form.titulo.value || '').trim(),
+      artista: (form.artista.value || '').trim(),
+      tom_original: (form.tom_original.value || 'C').trim(),
+      bpm: form.bpm.value || null,
+      conteudo: (document.getElementById('conteudo') || {}).value || '',
+    };
+    try { if (ref) body.referencia_json = JSON.parse(ref); } catch (e) {}
+    try { if (cj) body.cifra_json = JSON.parse(cj); } catch (e) { body.cifra_json = cj; }
+    try { if (gj) body.grade_json = JSON.parse(gj); } catch (e) { body.grade_json = gj; }
+    return body;
+  }
+
+  function saveAndPlay() {
+    if (submitting) return;
+    var body = payloadFromForm();
+    if (!body.titulo || !body.artista || !body.conteudo) {
+      if (typeof form.requestSubmit === 'function') form.requestSubmit();
+      else form.submit();
+      return;
+    }
+    setBusy(true);
+    var headers = { 'Content-Type': 'application/json' };
+    if (window.csrfToken) headers['X-CSRFToken'] = window.csrfToken;
+    fetch(saveUrl, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers,
+      body: JSON.stringify(body),
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d && res.d.play_url) {
+          window.location.href = res.d.play_url;
+          return;
+        }
+        setBusy(false);
+        form.submit();
+      })
+      .catch(function () {
+        setBusy(false);
+        form.submit();
+      });
+  }
+
+  document.addEventListener('setsync:cifra-imported', function () {
+    var box = document.getElementById('paste-box');
+    if (box) box.open = true;
+    saveAndPlay();
+  });
+})();
+</script>
+{% endblock %}

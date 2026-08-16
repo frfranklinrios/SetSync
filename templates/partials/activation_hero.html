@@ -1,43 +1,22 @@
-{# Ativação: aha moment — se já tem demo/cifras, CTA direto no Modo Tocar. #}
+{# Primeiro uso: uma cifra REAL — demo não conta como ativação. #}
 {% set played = onboarding and onboarding.activated %}
-{% set has_cifras = dashboard_summary and dashboard_summary.cifras %}
 {% if onboarding and not played %}
 <div class="activation-hero mb-4">
     <div class="activation-hero-icon" aria-hidden="true">
         <i class="fas fa-guitar"></i>
     </div>
-    {% if has_cifras %}
-    <h2 class="activation-hero-title">Pronto: experimente o Modo Tocar agora</h2>
+    <h2 class="activation-hero-title">Qual música você toca no próximo ensaio?</h2>
     <p class="activation-hero-lead">
-        Já deixamos um <strong>setlist de demonstração</strong> na sua coleção.
-        Em segundos você vê transposição de cifras e diagramas — o coração do Uníssono.
+        O exemplo na coleção não vale. Busque ou cole <strong>a cifra de vocês</strong>
+        e abra o Modo Tocar nela — é isso que faz o Uníssono virar hábito.
     </p>
-    <a href="{{ url_for('cifras.tocar_colecao', welcome=1) }}" class="btn btn-primary btn-lg activation-hero-cta">
-        <i class="fas fa-play me-2"></i>Testar Modo Tocar
+    <a href="{{ url_for('cifras.comecar') }}" class="btn btn-primary btn-lg activation-hero-cta">
+        <i class="fas fa-search me-2"></i>Escolher minha música
     </a>
     <p class="activation-hero-note text-muted small mb-0">
-        Depois, monte sua banda quando for tocar junto.
-        O trial Pro começa só quando você usar o Modo Tocar ou criar um setlist real.
+        Sem banda, sem cartão. Palco grátis na coleção pessoal.
+        <a href="{{ url_for('cifras.comecar', exemplo=1) }}">Ver um exemplo primeiro</a>
     </p>
-    {% else %}
-    <h2 class="activation-hero-title">Comece grátis: uma música e você já toca</h2>
-    <p class="activation-hero-lead">
-        Guarde sua primeira cifra na <strong>coleção pessoal</strong> — grátis, ilimitada.
-        Em seguida abra o <strong>Modo Tocar</strong>.
-    </p>
-    <ol class="activation-hero-steps">
-        <li><strong>1.</strong> Adicione uma música (cole a cifra ou importe)</li>
-        <li><strong>2.</strong> Abra o Modo Tocar e veja no tom certo</li>
-        <li><strong>3.</strong> Quando quiser tocar junto, crie a banda</li>
-    </ol>
-    <a href="{{ url_for('cifras.add_personal', welcome=1) }}" class="btn btn-primary btn-lg activation-hero-cta">
-        <i class="fas fa-plus me-2"></i>Adicionar 1ª música · grátis
-    </a>
-    <p class="activation-hero-note text-muted small mb-0">
-        Sem cartão. Ou <a href="{{ url_for('bands.create', bem_vindo=1) }}">crie sua banda</a>
-        — o trial Pro libera no primeiro Modo Tocar ou setlist.
-    </p>
-    {% endif %}
 </div>
 <style>
 .activation-hero {
@@ -50,31 +29,9 @@
 [data-theme="dark"] .activation-hero {
     background: linear-gradient(160deg, rgba(234,88,12,0.15), #0b1422);
 }
-.activation-hero-icon {
-    font-size: 2.25rem;
-    color: var(--accent);
-    margin-bottom: 0.65rem;
-}
-.activation-hero-title {
-    font-size: var(--text-lg);
-    font-weight: 800;
-    margin-bottom: 0.5rem;
-}
-.activation-hero-lead {
-    font-size: var(--text-base);
-    max-width: 36rem;
-    margin: 0 auto 1rem;
-    line-height: 1.5;
-}
-.activation-hero-steps {
-    text-align: left;
-    max-width: 22rem;
-    margin: 0 auto 1.25rem;
-    padding-left: 1.1rem;
-    font-size: var(--text-sm);
-    color: var(--muted);
-}
-.activation-hero-steps li { padding: 0.2rem 0; }
+.activation-hero-icon { font-size: 2.25rem; color: var(--accent); margin-bottom: 0.65rem; }
+.activation-hero-title { font-size: var(--text-lg); font-weight: 800; margin-bottom: 0.5rem; }
+.activation-hero-lead { font-size: var(--text-base); max-width: 36rem; margin: 0 auto 1rem; line-height: 1.5; }
 .activation-hero-cta { min-width: 16rem; }
 .activation-hero-note { margin-top: 0.75rem; }
 </style>

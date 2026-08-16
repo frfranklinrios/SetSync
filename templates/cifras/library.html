@@ -12,14 +12,23 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
         {% if cifras %}
-        <a href="{{ url_for('cifras.tocar_colecao') }}" class="btn btn-primary btn-sm" title="Toque no palco: fonte grande, transposição e destaque de acordes">
+        <a href="{{ url_for('cifras.tocar_colecao') }}" class="btn btn-primary btn-sm" title="Toque no palco: fonte grande, transposição e diagramas">
             <i class="fas fa-play me-1"></i> Modo Tocar
         </a>
         <a href="{{ url_for('cifras.add_personal') }}" class="btn btn-outline-primary btn-sm">
             <i class="fas fa-plus me-1"></i> Nova música
         </a>
+        {% if demo_count %}
+        <form method="post" action="{{ url_for('cifras.delete_demo_library') }}" class="d-inline"
+              onsubmit="return confirm('Apagar as {{ demo_count }} música{% if demo_count != 1 %}s{% endif %} de demonstração? Suas cifras próprias não são afetadas.');">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Remove só as cifras de exemplo do cadastro">
+                <i class="fas fa-trash-alt me-1"></i> Apagar demos
+            </button>
+        </form>
+        {% endif %}
         {% else %}
-        <a href="{{ url_for('cifras.add_personal') }}" class="btn btn-primary btn-sm">
+        <a href="{{ url_for('cifras.comecar') }}" class="btn btn-primary btn-sm">
             <i class="fas fa-plus me-1"></i> Nova música
         </a>
         {% endif %}
@@ -30,6 +39,14 @@
         {% endif %}
     </div>
 </div>
+
+{% if demo_count %}
+<div class="alert alert-warning border small mb-3">
+    Há <strong>{{ demo_count }}</strong> exemplo{% if demo_count != 1 %}s{% endif %} na coleção.
+    O Uníssono cola quando você toca <strong>a cifra do seu ensaio</strong> —
+    <a href="{{ url_for('cifras.comecar') }}" class="alert-link">escolher minha música</a>.
+</div>
+{% endif %}
 
 {% if not can_share %}
 <div class="alert alert-light border small mb-3">
@@ -54,7 +71,10 @@
         <tbody>
             {% for c in cifras %}
             <tr>
-                <td><a href="{{ url_for('cifras.view', cifra_id=c.id) }}">{{ c.titulo }}</a></td>
+                <td>
+                    <a href="{{ url_for('cifras.view', cifra_id=c.id) }}">{{ c.titulo }}</a>
+                    {% if c.is_demo %}<span class="badge text-bg-light border text-muted ms-1">Demo</span>{% endif %}
+                </td>
                 <td>{{ c.artista }}</td>
                 <td>{{ c.tom_original or '—' }}</td>
                 <td class="text-end text-nowrap">
@@ -78,9 +98,9 @@
 {% else %}
 {% with icon='fa-music',
         title='Sua coleção está vazia',
-        text='Adicione a primeira música (grátis, 2 min) e abra o Modo Tocar — esse é o “aha” do Uníssono.',
-        cta_url=url_for('cifras.add_personal', welcome=1),
-        cta_label='Adicionar primeira música' %}
+        text='Qual música do próximo ensaio? Busque ou cole a cifra — o palco abre nela.',
+        cta_url=url_for('cifras.comecar'),
+        cta_label='Escolher minha música' %}
 {% include 'partials/empty_state.html' %}
 {% endwith %}
 {% endif %}

@@ -170,8 +170,12 @@ def _auth_destination_path(user, invite_token: str | None = None) -> str:
 
     if is_superadmin(user['id']):
         return url_for('admin.index')
-    # Novato vai ao dashboard (hero "1ª música grátis" + checklist valor-primeiro),
-    # em vez de cair direto no formulário de criar banda.
+    try:
+        from demo_onboarding import user_needs_first_real_song
+        if user_needs_first_real_song(user['id']):
+            return url_for('cifras.comecar')
+    except Exception:
+        pass
     return url_for('dashboard')
 
 
@@ -446,11 +450,6 @@ def register():
             pass
         from onboarding_emails import registrar_onboarding_usuario
         registrar_onboarding_usuario(user_id)
-        try:
-            from demo_onboarding import seed_demo_library_for_user
-            seed_demo_library_for_user(user_id)
-        except Exception:
-            pass
         import admin_notifications as an
         an.user_registered(user_id)
         if invite_band:
@@ -489,18 +488,8 @@ def cadastro_concluido():
     from onboarding import user_needs_band_activation
 
     needs_activation = user_needs_band_activation(user['id']) if user else False
-    # Aha moment: se tem (ou acabou de ganhar) cifras demo → Modo Tocar direto
-    if needs_activation and user:
-        try:
-            from demo_onboarding import seed_demo_library_for_user
-            from db import count_user_personal_cifras
-            seed_demo_library_for_user(user['id'])
-            if count_user_personal_cifras(user['id']) > 0:
-                next_path = url_for('cifras.tocar_colecao', welcome=1)
-            else:
-                next_path = url_for('cifras.add_personal', welcome=1)
-        except Exception:
-            next_path = url_for('cifras.add_personal', welcome=1)
+    if user:
+        next_path = url_for('cifras.comecar')
     return render_template(
         'cadastro_concluido.html',
         next_url=next_path,
@@ -624,11 +613,6 @@ def google_callback():
             user = get_user(user_id)
             from onboarding_emails import registrar_onboarding_usuario
             registrar_onboarding_usuario(user_id)
-            try:
-                from demo_onboarding import seed_demo_library_for_user
-                seed_demo_library_for_user(user_id)
-            except Exception:
-                pass
             import admin_notifications as an
             an.user_registered(user_id)
             new_signup = True

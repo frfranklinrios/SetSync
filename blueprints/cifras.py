@@ -843,8 +843,12 @@ def save_cifra_play_notes(cifra_id):
 def my_library():
     user_id = session['user_id']
     from monetizacao import user_pode_compartilhar_cifras
+    from demo_onboarding import list_demo_cifra_ids_for_user, cifra_is_demo
 
     own = get_user_personal_cifras(user_id)
+    demo_ids = set(list_demo_cifra_ids_for_user(user_id))
+    for c in own:
+        c['is_demo'] = str(c.get('id')) in demo_ids or cifra_is_demo(c)
     shared = list_cifras_shared_with_user(user_id)
     return render_template(
         'cifras/library.html',
@@ -852,7 +856,25 @@ def my_library():
         shared_cifras=shared,
         can_share=user_pode_compartilhar_cifras(user_id),
         total=len(own),
+        demo_count=len(demo_ids),
     )
+
+
+@cifras_bp.route('/minha-colecao/apagar-demos', methods=['POST'])
+@login_required
+def delete_demo_library():
+    user_id = session['user_id']
+    from demo_onboarding import delete_demo_library_for_user
+
+    n = delete_demo_library_for_user(user_id)
+    if n:
+        flash(
+            f'{n} música{"s" if n != 1 else ""} de demonstração removida{"s" if n != 1 else ""}.',
+            'success',
+        )
+    else:
+        flash('Não havia músicas de demonstração na coleção.', 'info')
+    return redirect(url_for('cifras.my_library'))
 
 
 @cifras_bp.route('/minha-colecao/add', methods=['GET', 'POST'])
@@ -891,18 +913,143 @@ def add_personal():
             cifra_json, grade_json, None, bpm, duracao_seg,
             referencia_json=referencia_json,
         )
-        if count_user_personal_cifras(user_id) == 1:
-            from google_ads import mark_funnel_event
-            from product_funnel import log_funnel_step
-            mark_funnel_event('primeira_cifra')
-            log_funnel_step(user_id, 'primeira_cifra')
-            flash(f'“{titulo}” salva. Abra o Modo Tocar para ver no palco.', 'success')
-            return redirect(url_for('cifras.tocar_colecao'))
+        from demo_onboarding import count_real_personal_cifras, log_primeira_cifra_real
+
+        log_primeira_cifra_real(user_id, source='add_personal', cifra_id=str(cifra_id))
+        if count_real_personal_cifras(user_id) == 1:
+            flash(f'“{titulo}” no palco — essa é a sua, não um exemplo.', 'success')
+            return redirect(url_for('cifras.tocar_colecao', start=cifra_id, real=1))
         flash(f'“{titulo}” salva na sua coleção.', 'success')
+        nxt = (request.form.get('next') or '').strip()
+        if nxt == 'tocar':
+            return redirect(url_for('cifras.tocar_colecao', start=cifra_id, real=1))
         return redirect(url_for('cifras.view', cifra_id=cifra_id))
 
     welcome = request.args.get('welcome') == '1'
     return render_template('cifras/add.html', band=None, personal=True, welcome=welcome)
+
+
+@cifras_bp.route('/comecar', methods=['GET', 'POST'])
+@login_required
+def comecar():
+    """Primeiro uso: uma música real → Modo Tocar. Demo é opcional."""
+    user_id = session['user_id']
+    from demo_onboarding import (
+        log_primeira_cifra_real,
+        user_needs_first_real_song,
+        seed_demo_library_for_user,
+    )
+
+    if request.args.get('exemplo') == '1':
+        seed_demo_library_for_user(user_id)
+        return redirect(url_for('cifras.tocar_colecao', welcome=1, demo=1))
+
+    if request.args.get('pular') == '1':
+        session['skip_comecar'] = True
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        titulo = request.form.get('titulo', '').strip()
+        artista = request.form.get('artista', '').strip()
+        tom_original = request.form.get('tom_original', 'C').strip() or 'C'
+        conteudo = request.form.get('conteudo', '').strip()
+        if not titulo or not artista:
+            flash('Digite título e artista — ou busque na biblioteca.', 'danger')
+            return render_template('cifras/comecar.html', needs_real=user_needs_first_real_song(user_id))
+        if not conteudo:
+            flash('Cole a cifra ou escolha um resultado da biblioteca.', 'danger')
+            return render_template('cifras/comecar.html', needs_real=user_needs_first_real_song(user_id))
+
+        cifra_json, grade_json, bpm, duracao_seg = _parse_extra_fields(request.form)
+        if cifra_json is False or grade_json is False:
+            return render_template('cifras/comecar.html', needs_real=True)
+
+        conteudo, cifra_json = _prepare_conteudo_for_save(
+            conteudo,
+            titulo=titulo,
+            artista=artista,
+            tom_original=tom_original,
+            cifra_json_raw=cifra_json,
+        )
+        referencia_json = _finalize_referencia_json(
+            request.form,
+            titulo=titulo,
+            artista=artista,
+            tom_original=tom_original,
+        )
+        cifra_id = create_personal_cifra(
+            user_id, titulo, artista, tom_original, conteudo or '',
+            cifra_json, grade_json, None, bpm, duracao_seg,
+            referencia_json=referencia_json,
+        )
+        log_primeira_cifra_real(user_id, source='comecar', cifra_id=str(cifra_id))
+        flash(f'Agora é a sua: “{titulo}”.', 'success')
+        return redirect(url_for('cifras.tocar_colecao', start=cifra_id, real=1))
+
+    return render_template(
+        'cifras/comecar.html',
+        needs_real=user_needs_first_real_song(user_id),
+    )
+
+
+@cifras_bp.route('/minha-colecao/comecar.json', methods=['POST'])
+@login_required
+def comecar_salvar_json():
+    """1 toque na busca: salva na coleção e devolve a URL do palco."""
+    user_id = session['user_id']
+    from demo_onboarding import log_primeira_cifra_real
+
+    data = request.get_json(silent=True) or {}
+    titulo = (data.get('titulo') or '').strip()
+    artista = (data.get('artista') or '').strip()
+    if not titulo or not artista:
+        return jsonify({'ok': False, 'error': 'Título e artista obrigatórios'}), 400
+    tom_original = (data.get('tom_original') or data.get('tom') or 'C').strip() or 'C'
+    conteudo = data.get('conteudo') or ''
+    cifra_json = data.get('cifra_json')
+    grade_json = data.get('grade_json')
+    if cifra_json is not None and not isinstance(cifra_json, str):
+        cifra_json = json.dumps(cifra_json, ensure_ascii=False)
+    if grade_json is not None and not isinstance(grade_json, str):
+        grade_json = json.dumps(grade_json, ensure_ascii=False)
+
+    referencia_raw = data.get('referencia_json')
+    if isinstance(referencia_raw, dict):
+        referencia_raw = json.dumps(referencia_raw, ensure_ascii=False)
+    referencia_json = _finalize_referencia_json(
+        {'referencia_json': referencia_raw or ''},
+        titulo=titulo,
+        artista=artista,
+        tom_original=tom_original,
+    )
+    conteudo, cifra_json = _prepare_conteudo_for_save(
+        conteudo,
+        titulo=titulo,
+        artista=artista,
+        tom_original=tom_original,
+        cifra_json_raw=cifra_json,
+    )
+    bpm = data.get('bpm')
+    try:
+        bpm = float(bpm) if bpm not in (None, '') else None
+    except (TypeError, ValueError):
+        bpm = None
+    duracao_seg = data.get('duracao_seg')
+    try:
+        duracao_seg = int(float(duracao_seg)) if duracao_seg not in (None, '') else None
+    except (TypeError, ValueError):
+        duracao_seg = None
+    cifra_id = create_personal_cifra(
+        user_id, titulo, artista, tom_original, conteudo or '',
+        cifra_json, grade_json, None, bpm, duracao_seg,
+        referencia_json=referencia_json,
+    )
+    log_primeira_cifra_real(user_id, source='comecar_json', cifra_id=str(cifra_id))
+    return jsonify({
+        'ok': True,
+        'cifra_id': cifra_id,
+        'play_url': url_for('cifras.tocar_colecao', start=cifra_id, real=1),
+    })
 
 
 @cifras_bp.route('/<cifra_id>/compartilhar', methods=['GET', 'POST'])
@@ -1140,6 +1287,11 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         band_invite_url = external_url_for(
             'auth.convite', token=make_band_invite_token(band['id']),
         )
+    from demo_onboarding import play_list_is_demo_only, log_play_mode_real
+
+    demo_only = play_list_is_demo_only(all_cifras)
+    if user_id and not demo_only:
+        log_play_mode_real(user_id, source='play_render')
     return render_template(
         'cifras/play_mode.html',
         setlist=setlist,
@@ -1167,8 +1319,10 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         auto_follow_leader=bool(event_context),
         public_letras_url=public_letras_url,
         band_invite_url=band_invite_url,
-        show_play_csat=_should_show_play_csat(user_id),
-        show_play_pwa=_should_show_play_pwa(user_id),
+        show_play_csat=_should_show_play_csat(user_id) and not demo_only,
+        show_play_pwa=_should_show_play_pwa(user_id) and not demo_only,
+        show_real_song_cta=demo_only,
+        real_song_url=url_for('cifras.comecar') if user_id else None,
     )
 
 
@@ -1250,19 +1404,22 @@ def tocar_colecao():
     ]
     if not all_cifras:
         flash('Adicione uma música à sua coleção para abrir o Modo Tocar.', 'warning')
-        return redirect(url_for('cifras.add_personal'))
+        return redirect(url_for('cifras.comecar'))
 
     from db import mark_user_play_mode_used
     from product_funnel import log_funnel_step
+    from demo_onboarding import play_list_is_demo_only, maybe_start_trial_on_value
+
     mark_user_play_mode_used(user_id)
     log_funnel_step(user_id, 'play_mode')
-    try:
-        from demo_onboarding import maybe_start_trial_on_value
-        started = maybe_start_trial_on_value(user_id, reason='play_mode_colecao')
-        if started:
-            flash('Trial Pro de 30 dias ativado na sua banda.', 'info')
-    except Exception:
-        pass
+    demo_only = play_list_is_demo_only(all_cifras)
+    if not demo_only:
+        try:
+            started = maybe_start_trial_on_value(user_id, reason='play_mode_colecao')
+            if started:
+                flash('Trial Pro de 30 dias ativado na sua banda.', 'info')
+        except Exception:
+            pass
 
     start_id = request.args.get('start')
     start_idx = 0

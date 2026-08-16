@@ -7,19 +7,14 @@
     <div class="mb-3" style="font-size: 2.5rem; color: var(--accent);">
         <i class="fas fa-circle-check" aria-hidden="true"></i>
     </div>
-    <h1 class="h4 mb-2">Conta criada — vamos tocar</h1>
+    <h1 class="h4 mb-2">Conta criada — agora a sua música</h1>
     {% if needs_activation %}
     <p class="text-muted mb-3">
-        {% if test_drive %}
-        Preparámos um <strong>setlist de demonstração</strong>. Em segundos você vê
-        transposição e diagramas no <strong>Modo Tocar</strong>.
-        {% else %}
-        Próximo passo: abra o <strong>Modo Tocar</strong> com cifras de demonstração
-        ou adicione a sua primeira música.
-        {% endif %}
+        Não vamos te mostrar um exemplo no palco. O Uníssono só cola quando você
+        toca <strong>a cifra do próximo ensaio</strong>.
     </p>
     <a href="{{ next_url }}" class="btn btn-primary btn-lg mb-3">
-        <i class="fas fa-play me-2"></i>Testar Modo Tocar
+        <i class="fas fa-search me-2"></i>Escolher minha música
     </a>
     <p class="text-muted small mb-0">Redirecionando automaticamente em instantes…</p>
     {% else %}
@@ -33,7 +28,7 @@
 <script>
 (function () {
     var dest = {{ next_url|tojson }};
-    var delay = {{ 2200 if needs_activation else 1200 }};
+    var delay = {{ 2800 if needs_activation else 2200 }};
     setTimeout(function () { window.location.replace(dest); }, delay);
 })();
 </script>

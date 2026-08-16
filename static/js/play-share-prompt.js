@@ -1,5 +1,5 @@
 /**
- * Pós-Modo Tocar: micro-CSAT → (opcional) share/convidar.
+ * Pós-Modo Tocar: cifra real? CSAT → share. Só demo? manda buscar a música do ensaio.
  * CSAT: 1× por conta (servidor). Share: cooldown local 7d após ~45s no palco.
  * API: SetSyncPlayShare.tryExit(url)
  */
@@ -197,8 +197,58 @@
     goExit(pendingExit);
   }
 
+  function buildRealSongOverlay(boot) {
+    var existing = document.getElementById('play-real-song-prompt');
+    if (existing) return existing;
+
+    var dest = boot.realSongUrl || '/cifras/comecar';
+    var root = document.createElement('div');
+    root.id = 'play-real-song-prompt';
+    root.className = 'play-share-prompt';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-labelledby', 'play-real-song-title');
+    root.innerHTML =
+      '<div class="play-share-card">' +
+      '<p class="play-share-kicker">Isso era um exemplo</p>' +
+      '<h2 id="play-real-song-title">Qual música você toca no próximo ensaio?</h2>' +
+      '<p class="play-share-lead">O demo não conta. Busque ou cole a cifra de vocês — o palco abre nela agora.</p>' +
+      '<div class="play-share-actions">' +
+      '<a class="btn btn-primary" href="' +
+      dest +
+      '">Escolher minha música</a>' +
+      '<a class="btn btn-outline-secondary" href="' +
+      dest +
+      '?pular=1">Ir ao painel</a>' +
+      '</div>' +
+      '</div>';
+    document.body.appendChild(root);
+    return root;
+  }
+
+  function installDemoBanner(boot) {
+    if (!boot.showRealSongCta || document.getElementById('play-real-song-banner')) return;
+    var dest = boot.realSongUrl || '/cifras/comecar';
+    var banner = document.createElement('div');
+    banner.id = 'play-real-song-banner';
+    banner.className = 'play-real-song-banner';
+    banner.setAttribute('role', 'status');
+    banner.innerHTML =
+      '<span><strong>Essa é um exemplo.</strong> O Uníssono cola quando você toca a cifra do seu ensaio.</span>' +
+      '<a class="btn btn-sm btn-light" href="' +
+      dest +
+      '">Escolher minha música</a>';
+    document.body.appendChild(banner);
+  }
+
   function tryExit(exitHref) {
     var boot = readBoot();
+    if (boot.showRealSongCta) {
+      pendingExit = boot.realSongUrl || '/cifras/comecar';
+      var overlay = buildRealSongOverlay(boot);
+      overlay.classList.add('is-open');
+      return true;
+    }
     var dest = exitHref || boot.exitUrl || '/';
     pendingExit = dest;
 
@@ -219,6 +269,7 @@
   }
 
   function install() {
+    installDemoBanner(readBoot());
     document.addEventListener('click', function (e) {
       var exitBtn = e.target.closest && e.target.closest('a.pb-exit');
       if (!exitBtn) return;

@@ -20,36 +20,36 @@ _ONBOARDING_SCHEDULE = {
 
 _EMAILS = {
     1: {
-        'subject': 'Bem-vindo ao Uníssono — adicione sua 1ª música 🎸',
+        'subject': 'Bem-vindo ao Uníssono — qual música do seu ensaio?',
         'body': (
             'Olá! Sua conta no Uníssono está pronta.\n\n'
-            'Próximo passo (2 min): adicione uma cifra na coleção pessoal — grátis.\n'
-            'Depois abra o Modo Tocar e veja a magia no ensaio.\n\n'
-            'Adicionar música: {cifra_url}'
+            'Próximo passo (1 min): busque ou cole a cifra que você toca de verdade.\n'
+            'O palco abre nessa música — exemplo não conta.\n\n'
+            'Escolher minha música: {cifra_url}'
         ),
         'html': (
-            '<h2>Bem-vindo ao Uníssono!</h2>'
-            '<p>Sua conta está pronta. O primeiro passo é <strong>adicionar uma música</strong> '
-            'na coleção pessoal (grátis e ilimitada).</p>'
+            '<h2>Qual música você toca no próximo ensaio?</h2>'
+            '<p>Sua conta está pronta. Busque ou cole <strong>a cifra de vocês</strong> '
+            '— o Modo Tocar abre nela agora.</p>'
             '<p><a href="{cifra_url}" style="display:inline-block;padding:12px 24px;'
             'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
-            'Adicionar 1ª música</a></p>'
-            '<p>Depois, abra o <strong>Modo Tocar</strong> — tela cheia, tom e auto-scroll.</p>'
+            'Escolher minha música</a></p>'
+            '<p>Tela cheia, tom e auto-scroll. Sem banda, sem cartão.</p>'
         ),
     },
     2: {
-        'subject': 'Ainda sem cifra? Leva 2 minutos',
+        'subject': 'Qual música do seu ensaio ainda faltou?',
         'body': (
-            'Você se cadastrou no Uníssono e ainda não adicionou uma música.\n'
-            'Coleção pessoal é grátis. Depois é só abrir o Modo Tocar.\n\n'
+            'Você se cadastrou no Uníssono e ainda não salvou a cifra que toca de verdade.\n'
+            'Busque o título ou cole a letra — o palco abre nela.\n\n'
             '{cifra_url}'
         ),
         'html': (
-            '<h2>Sua 1ª música</h2>'
-            '<p>Quem adiciona uma cifra e abre o <strong>Modo Tocar</strong> costuma ficar.</p>'
+            '<h2>A música do ensaio, não o exemplo</h2>'
+            '<p>Quem toca <strong>a própria cifra</strong> no Modo Tocar costuma voltar.</p>'
             '<p><a href="{cifra_url}" style="display:inline-block;padding:12px 24px;'
             'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
-            'Adicionar música agora</a></p>'
+            'Escolher minha música</a></p>'
         ),
     },
     3: {
@@ -69,31 +69,38 @@ _EMAILS = {
         ),
     },
     4: {
-        'subject': 'Ensaio em grupo? Crie uma banda (trial Pro)',
+        'subject': 'Tem show? Marque no Uníssono (escala + freela)',
         'body': (
-            'Se toca com outras pessoas, crie uma banda e ganhe 30 dias de Pro sem cartão.\n'
-            'Se toca só, o plano Individual libera PDF e compartilhar.\n\n'
-            '{bands_url}'
+            'Com banda (ou sozinho ainda), o salto é marcar o próximo show:\n'
+            'data → quem toca → freela por WhatsApp → setlist → fechamento de cachê.\n\n'
+            'Criar banda e show: {bands_url}\n'
+            'Painel: {dashboard_url}'
         ),
         'html': (
-            '<h2>Banda ou solo?</h2>'
-            '<p><strong>Banda:</strong> 30 dias de Pro grátis ao criar a primeira.</p>'
-            '<p><strong>Solo:</strong> Individual libera PDF e compartilhar cifras.</p>'
-            '<p><a href="{bands_url}">Criar banda</a> · '
-            '<a href="{planos_url}">Ver planos</a></p>'
+            '<h2>Do ensaio ao cachê</h2>'
+            '<p>O Uníssono não é só cifra. No <strong>Comando do show</strong> você:</p>'
+            '<ul>'
+            '<li>Escala quem toca e confirma por link</li>'
+            '<li>Convida freela avulso no WhatsApp</li>'
+            '<li>Fecha o cachê da noite sem planilha</li>'
+            '</ul>'
+            '<p><a href="{bands_url}" style="display:inline-block;padding:12px 24px;'
+            'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
+            'Criar banda / marcar show</a></p>'
+            '<p><a href="{dashboard_url}">Abrir meu painel</a></p>'
         ),
     },
     5: {
-        'subject': 'Mantenha o Pro (ou Individual se toca só)',
+        'subject': 'Fechou o show? Assine e continue sem limites',
         'body': (
-            'Se o trial acabar, você volta ao Grátis com limites.\n'
-            'Pro: R$ 29/mês para a banda · Individual: R$ 15/mês para solo.\n\n'
+            'Se já escalou ou fechou cachê, o Pro (R$ 29) ou Individual (R$ 15) '
+            'libera PDF e limites.\n\n'
             '{planos_url}'
         ),
         'html': (
-            '<h2>Continue sem limites</h2>'
-            '<p><strong>Pro</strong> — R$ 29/mês (banda) · '
-            '<strong>Individual</strong> — R$ 15/mês (solo, PDF e compartilhar).</p>'
+            '<h2>Continue depois do trial</h2>'
+            '<p>Quem usa escala e freela sente o valor no dia do show. '
+            '<strong>Pro</strong> R$ 29/mês (banda) · <strong>Individual</strong> R$ 15/mês (solo).</p>'
             '<p><a href="{planos_url}" style="display:inline-block;padding:12px 24px;'
             'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
             'Ver planos</a></p>'
@@ -108,7 +115,7 @@ def _urls() -> dict[str, str]:
         'dashboard_url': external_url_for('dashboard'),
         'ajuda_url': external_url_for('ajuda.index'),
         'planos_url': external_url_for('assinatura_bp.planos'),
-        'cifra_url': external_url_for('cifras.add_personal', welcome=1),
+        'cifra_url': external_url_for('cifras.comecar'),
         'colecao_url': external_url_for('cifras.library'),
     }
 

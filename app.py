@@ -271,6 +271,7 @@ for _csrf_json_endpoint in (
     'ajuda.play_csat_submit',
     'ajuda.churn_survey_submit',
     'legal.cookie_consent',
+    'cifras.comecar_salvar_json',
 ):
     _view = app.view_functions.get(_csrf_json_endpoint)
     if _view:
@@ -482,6 +483,13 @@ def dashboard():
     sa = is_superadmin(user_id)
     if sa and request.args.get('view') != 'bands':
         return redirect(url_for('admin.index'))
+
+    if not sa:
+        from demo_onboarding import user_needs_first_real_song
+        if request.args.get('pular') == '1':
+            session['skip_comecar'] = True
+        elif user_needs_first_real_song(user_id) and not session.get('skip_comecar'):
+            return redirect(url_for('cifras.comecar'))
 
     onboarding = get_onboarding_progress(user_id)
     needs_activation = user_needs_band_activation(user_id)

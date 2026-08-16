@@ -11,8 +11,10 @@ STEPS = (
     'signup',
     'primeira_banda',
     'primeira_cifra',
+    'primeira_cifra_real',
     'primeira_setlist',
     'play_mode',
+    'play_mode_real',
     'primeiro_evento_agenda',
     'trial_iniciado',
     'assinatura_paga',
@@ -23,9 +25,11 @@ STEPS = (
 FUNNEL_LABELS: dict[str, str] = {
     'signup': 'Cadastros',
     'primeira_banda': '1ª banda',
-    'primeira_cifra': '1ª música',
+    'primeira_cifra': '1ª música (inclui demo)',
+    'primeira_cifra_real': '1ª cifra real',
     'primeira_setlist': '1ª setlist',
-    'play_mode': 'Modo Tocar',
+    'play_mode': 'Modo Tocar (inclui demo)',
+    'play_mode_real': 'Tocou cifra real',
     'primeiro_evento_agenda': '1º evento',
     'trial_iniciado': 'Trial Pro',
     'assinatura_paga': 'Assinatura paga',
@@ -33,12 +37,11 @@ FUNNEL_LABELS: dict[str, str] = {
     'estudio_reserva_confirmada': 'Reserva confirmada',
 }
 
-# Funil principal de ativação (ordem de exibição no painel admin)
-# Alinhado ao produto: cifra → tocar → banda → setlist → trial → pago
+# Ativação de verdade: cifra que não é demo + palco dessa cifra
 ACTIVATION_FUNNEL = (
     'signup',
-    'primeira_cifra',
-    'play_mode',
+    'primeira_cifra_real',
+    'play_mode_real',
     'primeira_banda',
     'primeira_setlist',
     'trial_iniciado',
@@ -201,6 +204,17 @@ def backfill_product_funnel(*, force: bool = False) -> dict[str, int]:
         studio_owners = [r['uid'] for r in c.fetchall()]
     except Exception:
         pass
+    real_personal: list = []
+    try:
+        c.execute(
+            '''SELECT DISTINCT owner_user_id AS uid FROM cifras
+               WHERE band_id IS NULL AND owner_user_id IS NOT NULL
+                 AND COALESCE(referencia_json, '') NOT LIKE '%"is_demo": true%'
+                 AND COALESCE(referencia_json, '') NOT LIKE '%"is_demo":true%' '''
+        )
+        real_personal = [r['uid'] for r in c.fetchall()]
+    except Exception:
+        real_personal = []
     db.close()
 
     for uid in user_ids:
@@ -209,6 +223,8 @@ def backfill_product_funnel(*, force: bool = False) -> dict[str, int]:
         _bump('play_mode', log_funnel_step(uid, 'play_mode', meta=meta))
     for uid in set(personal_cifra + band_cifra):
         _bump('primeira_cifra', log_funnel_step(uid, 'primeira_cifra', meta=meta))
+    for uid in set(real_personal + band_cifra):
+        _bump('primeira_cifra_real', log_funnel_step(uid, 'primeira_cifra_real', meta=meta))
     for uid in band_owners:
         _bump('primeira_banda', log_funnel_step(uid, 'primeira_banda', meta=meta))
     for uid in setlist_owners:

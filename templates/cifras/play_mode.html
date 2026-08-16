@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-features.css') }}?v=3">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-a11y.css') }}?v=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-shell.css') }}?v=1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-share-prompt.css') }}?v=2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-share-prompt.css') }}?v=3">
 <style>
 #cifra-content.grade-mode .cs-play-embed.setsync-cs-sheet { padding: 0; }
 .play-pwa-banner {
@@ -362,6 +362,8 @@
     'showPlayCsat': show_play_csat|default(false),
     'playCsatUrl': url_for('ajuda.play_csat_submit'),
     'showPlayPwa': show_play_pwa|default(false),
+    'showRealSongCta': show_real_song_cta|default(false),
+    'realSongUrl': real_song_url if real_song_url is defined else none,
     'pwaDismissUrl': url_for('ajuda.pwa_dismiss'),
 }|tojson }}</script>
 <script id="cifras-data" type="application/json">{{ play_cifras_json | safe }}</script>
@@ -2101,7 +2103,7 @@
 })();
 </script>
 <script src="{{ url_for('static', filename='js/play-mode-features.js') }}?v=5"></script>
-<script src="{{ url_for('static', filename='js/play-share-prompt.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/play-share-prompt.js') }}?v=3"></script>
 <script>
 (function () {
   /* Banner PWA no Modo Tocar: só depois de ~30s ou após tela cheia */

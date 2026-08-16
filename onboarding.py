@@ -52,8 +52,17 @@ def get_onboarding_progress(user_id: str) -> dict | None:
     total_band_cifras = sum(count_band_cifras(b['id']) for b in bands) if bands else 0
     total_setlists = sum(count_band_setlists(b['id']) for b in bands) if bands else 0
     total_personal = count_user_personal_cifras(user_id)
-    any_cifra = total_band_cifras > 0 or total_personal > 0
     played = user_play_mode_used(user_id)
+    from demo_onboarding import count_real_personal_cifras
+
+    real_songs = count_real_personal_cifras(user_id) + total_band_cifras
+    played_real = False
+    try:
+        from product_funnel import get_user_funnel_steps
+        played_real = 'play_mode_real' in (get_user_funnel_steps(user_id).get('done') or set())
+    except Exception:
+        played_real = bool(played and real_songs > 0)
+
 
     first_band_id = bands[0]['id'] if bands else None
 
@@ -61,7 +70,7 @@ def get_onboarding_progress(user_id: str) -> dict | None:
     add_url = (
         url_for('cifras.add', band_id=first_band_id)
         if first_band_id
-        else url_for('cifras.add_personal')
+        else url_for('cifras.comecar')
     )
     # Modo Tocar: banda com cifras; senão a coleção pessoal (mesmo 'aha', sem banda).
     if first_band_id and total_band_cifras:
@@ -80,36 +89,50 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         if first_band_id
         else url_for('bands.create', bem_vindo=1)
     )
+    show_url = (
+        url_for('agenda.create', band_id=first_band_id, tipo='show', kit=1)
+        if first_band_id
+        else url_for('bands.create', bem_vindo=1)
+    )
 
-    # Funil de valor primeiro: música + Modo Tocar (grátis, solo) antes de banda/setlist.
+    # Funil: música + tocar; depois banda; o "aha" de pagamento é o show (escala/freela/cachê).
+    has_show = False
+    if first_band_id:
+        try:
+            from models_agenda import count_band_events
+            has_show = count_band_events(first_band_id) > 0
+        except Exception:
+            from models_agenda import get_upcoming_events_for_user
+            has_show = bool(get_upcoming_events_for_user(user_id, limit=1))
+
     steps = [
         {
             'id': 'cifra',
-            'label': '1. Adicionar sua primeira música',
-            'hint': 'Guarde na sua coleção — grátis e ilimitado, sem precisar de banda.',
-            'done': any_cifra,
-            'url': add_url,
+            'label': '1. Adicionar a música do seu ensaio',
+            'hint': 'Busque na biblioteca ou cole a cifra — não use o exemplo como se fosse sua.',
+            'done': real_songs > 0,
+            'url': url_for('cifras.comecar'),
         },
         {
             'id': 'tocar',
-            'label': '2. Abrir o Modo Tocar',
-            'hint': 'Tela limpa para o palco, com transposição — o coração do app.',
-            'done': played,
-            'url': tocar_url,
+            'label': '2. Tocar essa música no palco',
+            'hint': 'Transposição e diagramas na tela cheia — com a cifra que você vai usar de verdade.',
+            'done': played_real,
+            'url': tocar_url if real_songs else url_for('cifras.comecar'),
         },
         {
             'id': 'band',
             'label': '3. Criar ou entrar numa banda',
-            'hint': 'Toque junto: repertório compartilhado e escalas. Trial Pro libera no 1º Modo Tocar ou setlist.',
+            'hint': 'Toque junto: repertório, escala e freelas. Trial Pro no Modo Tocar ou setlist.',
             'done': has_band,
             'url': band_url,
         },
         {
-            'id': 'setlist',
-            'label': '4. Montar um setlist',
-            'hint': 'A ordem das músicas do ensaio ou do culto — ativa o trial Pro se ainda não usou o Modo Tocar.',
-            'done': total_setlists > 0,
-            'url': setlist_url,
+            'id': 'show',
+            'label': '4. Marcar o próximo show',
+            'hint': 'Data → escala → freela → setlist → cachê. É o Comando do show.',
+            'done': has_show,
+            'url': show_url,
         },
     ]
 
@@ -125,7 +148,7 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         'total': len(steps),
         'percent': round(100 * done_count / len(steps)) if steps else 0,
         'complete': False,
-        'activated': played,
+        'activated': played_real,
         'next_step': next_step,
         'can_dismiss': has_band or played,
     }
