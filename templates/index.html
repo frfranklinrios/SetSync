@@ -426,6 +426,7 @@
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}?v=4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/a11y.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skip-to-content.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/empty-state.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/setsync-theme.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/list-rows.css') }}?v=4">
@@ -682,10 +683,12 @@
     </div>
 
     {% include 'partials/pwa_ios_modal.html' %}
-    {% if not hide_cookie_banner %}
+    {% block floating_support %}
+    {% if not hide_cookie_banner and 'play-mode' not in (self.body_class()|default('')) %}
     {% include 'partials/help_chatbot.html' %}
     {% include 'partials/whatsapp_floating.html' %}
     {% endif %}
+    {% endblock %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/csrf.js') }}?v=1"></script>
     {% if current_user.is_authenticated %}

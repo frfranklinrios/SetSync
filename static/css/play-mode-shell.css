@@ -4,6 +4,13 @@
    ============================================================ */
 body.play-mode .navbar,
 body.play-mode footer { display: none !important; }
+body.play-mode .skip-to-content,
+body.play-mode .help-chat-fab,
+body.play-mode .help-chat-panel,
+body.play-mode .wa-floating-btn,
+.play-mode .ss-tabbar {
+    display: none !important;
+}
 body.play-mode main.container {
     max-width: 100% !important;
     padding: 0 !important;

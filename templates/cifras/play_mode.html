@@ -7,6 +7,7 @@
 {% block adsense_content %}{% endblock %}
 {% block chord_diagram %}{{ super() }}{% endblock %}
 {% block bottom_nav %}{% endblock %}
+{% block floating_support %}{% endblock %}
 
 {% block content %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +20,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=17">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-features.css') }}?v=3">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-a11y.css') }}?v=1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-shell.css') }}?v=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-shell.css') }}?v=2">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-share-prompt.css') }}?v=3">
 <style>
 #cifra-content.grade-mode .cs-play-embed.setsync-cs-sheet { padding: 0; }
