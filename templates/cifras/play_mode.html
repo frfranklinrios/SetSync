@@ -323,49 +323,8 @@
 <script src="{{ url_for('static', filename='js/play-metronome.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/play-draw-overlay.js') }}?v=5"></script>
 <script src="{{ url_for('static', filename='js/play-mode-boot.js') }}?v=1"></script>
-<script id="play-features-config" type="application/json">{{ {
-    'bandId': band.id if band else none,
-    'bandName': band.name if band else '',
-    'setlistId': setlist.id if setlist and not is_virtual|default(false) else none,
-    'songCount': all_cifras|length,
-    'playStateUrl': play_state_url,
-    'offlinePackUrl': offline_pack_url,
-    'playNotesUrlTpl': play_notes_url_tpl,
-    'canEdit': can_edit|default(false),
-    'userId': user_id,
-    'event': event_context,
-    'autoFollowLeader': auto_follow_leader|default(false),
-}|tojson }}</script>
-<script id="play-boot-config" type="application/json">{{ {
-    'startIdx': start_idx|default(0),
-    'bandId': band.id if band else none,
-    'exitUrl': exit_url if exit_url else (url_for('bands.view', band_id=band.id) if is_virtual|default(false) else url_for('setlists.view', setlist_id=setlist.id)),
-    'publicLetrasUrl': public_letras_url,
-    'setlistId': setlist.id if setlist and not is_virtual|default(false) else none,
-    'setlistVocalistUrl': url_for('setlists.set_vocalist', setlist_id=setlist.id) if setlist and not is_virtual|default(false) else none,
-    'addVocalistUrl': url_for('bands.add_vocalist_api', band_id=band.id) if band else none,
-    'vocalistIds': vocalists|map(attribute='id')|list,
-    'activeVocalistId': active_vocalist_id or '',
-    'vocalistName': vocalist_name or '',
-    'playTargetKey': play_target_key or '',
-    'startVersao': start_versao|default(''),
-    'chordsheetRenderUrlTpl': url_for('cifras.chordsheet_render', cifra_id='__ID__'),
-    'transposedUrlTpl': url_for('cifras.get_transposed', cifra_id='__ID__'),
-    'saveTransposeUrlTpl': url_for('cifras.save_transpose', cifra_id='__ID__'),
-    'drawApiUrlTpl': url_for('cifras.api_get_play_draw', cifra_id='__ID__'),
-    'bandName': band.name if band else '',
-    'canEdit': can_edit|default(false),
-    'membersUrl': url_for('bands.members', band_id=band.id) if band and can_edit|default(false) else none,
-    'bandInviteUrl': band_invite_url if band_invite_url is defined else none,
-    'indicarUrl': url_for('assinatura_bp.voucher_indicar'),
-    'siteUrl': external_url_for('index'),
-    'showPlayCsat': show_play_csat|default(false),
-    'playCsatUrl': url_for('ajuda.play_csat_submit'),
-    'showPlayPwa': show_play_pwa|default(false),
-    'showRealSongCta': show_real_song_cta|default(false),
-    'realSongUrl': real_song_url if real_song_url is defined else none,
-    'pwaDismissUrl': url_for('ajuda.pwa_dismiss'),
-}|tojson }}</script>
+<script id="play-features-config" type="application/json">{{ play_features_json | safe }}</script>
+<script id="play-boot-config" type="application/json">{{ play_boot_json | safe }}</script>
 <script id="cifras-data" type="application/json">{{ play_cifras_json | safe }}</script>
 
 <script>

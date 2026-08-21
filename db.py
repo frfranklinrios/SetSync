@@ -4604,14 +4604,24 @@ def list_retention_candidates_studio_trial_expired() -> list[dict]:
 
 
 def mark_user_play_mode_used(user_id: str) -> None:
-    db = get_db()
-    c = db.cursor()
-    c.execute(
-        'UPDATE users SET play_mode_used = 1 WHERE id = ? AND play_mode_used = 0',
-        (user_id,),
-    )
-    db.commit()
-    db.close()
+    """Marca que o usuário já usou o Modo Tocar. Nunca deve derrubar a rota."""
+    db = None
+    try:
+        db = get_db()
+        c = db.cursor()
+        c.execute(
+            'UPDATE users SET play_mode_used = 1 WHERE id = ? AND play_mode_used = 0',
+            (user_id,),
+        )
+        db.commit()
+    except Exception:
+        pass
+    finally:
+        if db is not None:
+            try:
+                db.close()
+            except Exception:
+                pass
 
 
 def user_play_mode_used(user_id: str) -> bool:

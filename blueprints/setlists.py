@@ -244,6 +244,8 @@ def download_pdf(setlist_id):
 @login_required
 def tocar(setlist_id):
     from blueprints.cifras import enrich_cifra_for_tocar, render_play_mode
+    from flask import current_app
+
     user_id = session['user_id']
     setlist = get_setlist(setlist_id)
     ok, band = _require_setlist_access(setlist, user_id)
@@ -251,10 +253,14 @@ def tocar(setlist_id):
         flash('Setlist não encontrada' if not setlist else 'Sem permissão', 'danger')
         return redirect(url_for('dashboard'))
 
-    from db import mark_user_play_mode_used
-    from product_funnel import log_funnel_step
-    mark_user_play_mode_used(user_id)
-    log_funnel_step(user_id, 'play_mode')
+    try:
+        from db import mark_user_play_mode_used
+        from product_funnel import log_funnel_step
+        mark_user_play_mode_used(user_id)
+        log_funnel_step(user_id, 'play_mode')
+    except Exception:
+        current_app.logger.exception('Telemetria pré-tocar falhou (setlist)')
+
     try:
         from demo_onboarding import maybe_start_trial_on_value
         started = maybe_start_trial_on_value(user_id, reason='play_mode_setlist')
@@ -263,10 +269,20 @@ def tocar(setlist_id):
     except Exception:
         pass
 
-    all_cifras = [
-        enrich_cifra_for_tocar(dict(c), setlist_id=setlist_id, user_id=user_id)
-        for c in get_setlist_cifras(setlist_id)
-    ]
+    all_cifras = []
+    for c in get_setlist_cifras(setlist_id):
+        try:
+            all_cifras.append(
+                enrich_cifra_for_tocar(dict(c), setlist_id=setlist_id, user_id=user_id)
+            )
+        except Exception:
+            current_app.logger.exception(
+                'Cifra %s ignorada no Modo Tocar (setlist=%s)', c.get('id'), setlist_id,
+            )
+    if not all_cifras:
+        flash('Esta setlist está vazia ou sem cifras tocáveis.', 'warning')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
+
     start_id = request.args.get('start')
     start_idx = 0
     if start_id:
@@ -290,7 +306,15 @@ def tocar(setlist_id):
                 'event_type': event_type_label(ev.get('event_type')),
                 'notes': (ev.get('notes') or '').strip(),
             }
-    return render_play_mode(setlist, band, all_cifras, start_idx=start_idx, is_virtual=False, event_context=event_context)
+    try:
+        return render_play_mode(
+            setlist, band, all_cifras, start_idx=start_idx,
+            is_virtual=False, event_context=event_context,
+        )
+    except Exception:
+        current_app.logger.exception('Modo Tocar falhou (setlist=%s)', setlist_id)
+        flash('Não foi possível abrir o Modo Tocar. Tente de novo.', 'danger')
+        return redirect(url_for('setlists.view', setlist_id=setlist_id))
 
 # Ordenar músicas da setlist via AJAX (drag-and-drop inline)
 @setlists_bp.route('/<setlist_id>/reorder', methods=['POST'])
