@@ -6,6 +6,8 @@ O Uníssono é um gerenciador de **cifras** e **setlists** para bandas, com foco
 - Cifras com destaque de acordes e suporte a tablaturas
 - Transposição de tom sem reescrever a cifra
 - **Modo Tocar** (tela cheia, atalhos, 2 colunas, auto-scroll)
+- **Gorjeta Pix** no QR do show (100% para a banda) + pedidos de música do público
+- **Fechamento de noite** com cachê, couvert e divisão entre músicos
 - Importação assistida de cifras e grade harmônica via módulo integrado `cifras_tool/`
 
 ## Conceitos

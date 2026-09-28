@@ -122,6 +122,7 @@ class BandFinanceTest(unittest.TestCase):
             can_view_band_finance,
             create_band,
             create_user,
+            is_band_finance_admin,
             set_user_superadmin,
         )
 
@@ -131,7 +132,39 @@ class BandFinanceTest(unittest.TestCase):
         set_user_superadmin(sa, True)
         add_band_member(other_band_id, sa, 'member')
         self.assertFalse(can_view_band_finance(other_band_id, sa))
+        self.assertFalse(is_band_finance_admin(other_band_id, sa))
         self.assertTrue(can_view_band_finance(other_band_id, other_owner))
+        self.assertTrue(is_band_finance_admin(other_band_id, other_owner))
+
+    def test_platform_finance_totals_have_no_details(self):
+        from band_finance import build_platform_finance_totals, default_finance_period
+        from config import app_now_naive
+        from db import update_event_fees
+        from models_agenda import create_band_event
+
+        y, m, _, _ = default_finance_period()
+        starts = app_now_naive().strftime('%Y-%m-%d 20:00:00')
+        event_id = create_band_event(
+            self.band_id,
+            title='Show Totais',
+            event_type='show',
+            starts_at=starts,
+            created_by=self.user_id,
+        )
+        update_event_fees(
+            event_id,
+            fee_total=1000.0,
+            fee_transport_discount=0,
+            fee_equipment_discount=0,
+            fee_notes=None,
+            fee_settled=True,
+        )
+        totals = build_platform_finance_totals(year=y, month=m)
+        self.assertIn('stats', totals)
+        self.assertNotIn('events', totals)
+        self.assertNotIn('expenses', totals)
+        self.assertGreaterEqual(totals['stats']['receita_confirmada'], 1000.0)
+        self.assertGreaterEqual(totals['stats']['recebido'], 1000.0)
 
 
 if __name__ == '__main__':

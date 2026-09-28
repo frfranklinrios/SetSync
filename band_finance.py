@@ -26,7 +26,7 @@ def _coerce_db_value(value):
 
 def _coerce_finance_row(row: dict) -> dict:
     out = dict(row)
-    for key in ('starts_at', 'ends_at', 'data', 'created_at', 'fee_settled_at'):
+    for key in ('starts_at', 'ends_at', 'data', 'created_at', 'fee_settled_at', 'paid_at'):
         if key in out:
             out[key] = _coerce_db_value(out[key])
     return out
@@ -37,6 +37,7 @@ __all__ = [
     'build_platform_finance_totals',
     'default_finance_period',
     'enrich_event_finance',
+    'fee_share_whatsapp_text',
     'month_bounds',
     'parse_money_field',
 ]
@@ -44,14 +45,18 @@ __all__ = [
 
 def enrich_event_finance(event: dict) -> dict:
     total = _money(event.get('fee_total'))
+    couvert = _money(event.get('fee_couvert'))
     transport = _money(event.get('fee_transport_discount'))
     equipment = _money(event.get('fee_equipment_discount'))
     # Despesas ligadas ao evento entram no líquido do show quando disponíveis
     night = _money(event.get('fee_night_expenses'))
-    net = max(0.0, total - transport - equipment - night) if total > 0 else 0.0
+    gross = total + couvert
+    net = max(0.0, gross - transport - equipment - night) if gross > 0 else 0.0
     row = _coerce_finance_row(event)
+    row['fee_couvert'] = round(couvert, 2)
+    row['fee_gross'] = round(gross, 2)
     row['fee_net'] = round(net, 2)
-    row['has_fee'] = total > 0
+    row['has_fee'] = gross > 0
     row['is_received'] = bool(row.get('fee_settled_at'))
     return row
 
@@ -64,13 +69,15 @@ def build_band_finance_report(
     expenses: list[dict],
     year: int,
     month: int,
+    gorjetas_total: float = 0.0,
+    gorjetas: list[dict] | None = None,
 ) -> dict[str, Any]:
     from models_band_finance import list_event_expenses
 
     enriched_events = []
     for e in events:
         night = 0.0
-        if e.get('id') and e.get('fee_total'):
+        if e.get('id') and (e.get('fee_total') or e.get('fee_couvert')):
             night = sum(_money(x.get('valor')) for x in list_event_expenses(e['id']))
         e = dict(e)
         e['fee_night_expenses'] = night
@@ -83,6 +90,7 @@ def build_band_finance_report(
         2,
     )
     a_receber = round(receita_confirmada - recebido, 2)
+    tips = round(_money(gorjetas_total), 2)
 
     enriched_bookings = [
         _coerce_finance_row(
@@ -107,7 +115,7 @@ def build_band_finance_report(
     ]
     total_despesas = round(sum(_money(e.get('valor')) for e in despesas_banda), 2)
     total_custos = round(custos_ensaio + total_despesas, 2)
-    liquido = round(recebido - total_custos, 2)
+    liquido = round(recebido + tips - total_custos, 2)
 
     return {
         'year': year,
@@ -116,12 +124,14 @@ def build_band_finance_report(
         'bookings': enriched_bookings,
         'expenses': [_coerce_finance_row(e) for e in despesas_banda],
         'night_expenses': [_coerce_finance_row(e) for e in despesas_noite],
+        'gorjetas': [_coerce_finance_row(g) for g in (gorjetas or [])],
         'stats': {
             'eventos': len(enriched_events),
             'shows_com_cache': len(fee_events),
             'receita_confirmada': receita_confirmada,
             'recebido': recebido,
             'a_receber': a_receber,
+            'gorjetas': tips,
             'custos_ensaio': custos_ensaio,
             'horas_ensaio': horas_ensaio,
             'reservas_estudio': len(enriched_bookings),
@@ -131,6 +141,26 @@ def build_band_finance_report(
             'liquido': liquido,
         },
     }
+
+
+def fee_share_whatsapp_text(
+    *,
+    band_name: str,
+    show_title: str,
+    date_label: str,
+    amount: float,
+    status: str,
+    link: str = 'https://unissono.app/bands/meus-caches',
+) -> str:
+    """Texto pronto para compartilhar a fatia no WhatsApp."""
+    return (
+        f'*Uníssono* — minha parte no show\n'
+        f'{band_name} · {show_title}\n'
+        f'{date_label}\n'
+        f'Valor: *R$ {amount:.2f}*\n'
+        f'Status: {status}\n'
+        f'{link}'
+    )
 
 
 def build_member_fee_report(
@@ -158,6 +188,7 @@ def build_member_fee_report(
         expenses = list_event_expenses(eid)
         event['fee_night_expenses'] = sum(_money(e.get('valor')) for e in expenses)
         event = enrich_event_finance(event)
+        fee_lines = list_event_fee_lines(eid) or []
         split = compute_event_fee_split(
             event,
             get_event_assignments(eid),
@@ -165,42 +196,66 @@ def build_member_fee_report(
             name_for_user=name_for_user,
             guests=list_event_guests(eid),
             event_expenses=expenses,
-            fee_lines=list_event_fee_lines(eid) or None,
+            fee_lines=fee_lines or None,
         )
         mine = next(
             (p for p in (split.get('payees') or []) if str(p.get('user_id')) == str(user_id)),
             None,
         )
+        my_line = next(
+            (ln for ln in fee_lines if str(ln.get('user_id') or '') == str(user_id)),
+            None,
+        )
         if not mine:
-            # Músico na banda mas não na divisão (não confirmou) — ainda lista com 0
             amount = 0.0
             included = False
         else:
             amount = float(mine.get('amount') or 0)
             included = True
+        personally_paid = bool(my_line and my_line.get('paid_at'))
+        night_settled = bool(event.get('fee_settled_at'))
+        is_received = personally_paid or night_settled
+        date_label = (str(event.get('starts_at') or ''))[:10]
+        status = 'Recebido' if is_received else 'A receber'
+        wa_text = ''
+        if amount > 0:
+            wa_text = fee_share_whatsapp_text(
+                band_name=event.get('band_name') or 'Banda',
+                show_title=event.get('title') or 'Show',
+                date_label=date_label,
+                amount=amount,
+                status=status,
+            )
         rows.append({
             **event,
             'my_amount': round(amount, 2),
             'included_in_split': included,
             'fee_net_band': split.get('net') or event.get('fee_net') or 0,
             'payees_count': len(split.get('payees') or []),
+            'is_received': is_received,
+            'personally_paid': personally_paid,
+            'fee_line_id': (my_line or {}).get('id'),
+            'wa_text': wa_text,
         })
 
     total = round(sum(r['my_amount'] for r in rows), 2)
     received = round(sum(r['my_amount'] for r in rows if r.get('is_received')), 2)
     pending = round(total - received, 2)
+    pending_rows = [r for r in rows if r.get('my_amount', 0) > 0 and not r.get('is_received')]
     bands = sorted({(r.get('band_id'), r.get('band_name') or '') for r in rows})
 
     return {
         'year': year,
         'month': month,
         'rows': rows,
+        'pending_rows': pending_rows,
         'stats': {
             'shows': len(rows),
             'total': total,
             'recebido': received,
             'a_receber': pending,
             'bandas': len({b[0] for b in bands if b[0]}),
+            'a_receber_count': len(pending_rows),
         },
     }
 

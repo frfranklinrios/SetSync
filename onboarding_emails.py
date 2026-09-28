@@ -55,7 +55,8 @@ _EMAILS = {
     3: {
         'subject': 'Abra o Modo Tocar no ensaio',
         'body': (
-            'Com uma cifra salva, o Modo Tocar libera tela cheia, auto-scroll e funciona offline.\n\n'
+            'Com uma cifra salva, o Modo Tocar libera tela cheia e auto-scroll.\n'
+            'Offline no palco + PDF liberam no Pro (trial na 1ª banda).\n\n'
             '{colecao_url}'
         ),
         'html': (
@@ -63,7 +64,7 @@ _EMAILS = {
             '<ul>'
             '<li>Tela cheia para o palco</li>'
             '<li>Auto-scroll ajustável</li>'
-            '<li>PWA offline no celular</li>'
+            '<li>Offline e PDF: no Pro (R$ 29/mês)</li>'
             '</ul>'
             '<p><a href="{colecao_url}">Abrir minha coleção e tocar</a></p>'
         ),
@@ -94,7 +95,7 @@ _EMAILS = {
         'subject': 'Fechou o show? Assine e continue sem limites',
         'body': (
             'Se já escalou ou fechou cachê, o Pro (R$ 29) ou Individual (R$ 15) '
-            'libera PDF e limites.\n\n'
+            'libera PDF, offline e limites.\n\n'
             '{planos_url}'
         ),
         'html': (
@@ -103,7 +104,7 @@ _EMAILS = {
             '<strong>Pro</strong> R$ 29/mês (banda) · <strong>Individual</strong> R$ 15/mês (solo).</p>'
             '<p><a href="{planos_url}" style="display:inline-block;padding:12px 24px;'
             'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;">'
-            'Ver planos</a></p>'
+            'Assinar agora</a></p>'
         ),
     },
 }
@@ -114,9 +115,9 @@ def _urls() -> dict[str, str]:
         'bands_url': external_url_for('bands.create', bem_vindo=1),
         'dashboard_url': external_url_for('dashboard'),
         'ajuda_url': external_url_for('ajuda.index'),
-        'planos_url': external_url_for('assinatura_bp.planos'),
+        'planos_url': external_url_for('assinatura_bp.planos', plano='pro', go=1),
         'cifra_url': external_url_for('cifras.comecar'),
-        'colecao_url': external_url_for('cifras.library'),
+        'colecao_url': external_url_for('cifras.my_library'),
     }
 
 

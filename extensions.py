@@ -70,6 +70,28 @@ def init_scheduler(app) -> None:
         _tz_name,
     )
 
+    def _marketing_shots_job():
+        with app.app_context():
+            from scheduler_jobs import run_marketing_screenshots_job
+            try:
+                run_marketing_screenshots_job()
+            except Exception as exc:
+                app.logger.exception('Erro no job de screenshots de marketing: %s', exc)
+
+    # 03:15 — regenera capturas do dia (persiste em ./data/screenshots)
+    _scheduler.add_job(
+        _marketing_shots_job,
+        'cron',
+        hour=3,
+        minute=15,
+        timezone=_tz,
+        id='marketing_screenshots_daily',
+    )
+    app.logger.info(
+        'APScheduler: screenshots de marketing às 03:15 (%s)',
+        _tz_name,
+    )
+
     def _digest_job():
         with app.app_context():
             from scheduler_jobs import run_notification_digest_jobs

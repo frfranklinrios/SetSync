@@ -1,0 +1,414 @@
+{% extends "index.html" %}
+{% block title %}Financeiro para bandas — Cachês, despesas e PDF | Uníssono{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ external_url_for('assinatura_bp.financeiro') }}">
+<meta name="description" content="Acompanhe cachês de shows, fechamento de noite (fundador e sideman), despesas da banda e PDF. Meu financeiro para cada músico; caixa completo para o admin.">
+<meta property="og:title" content="Financeiro Uníssono — Cachês e caixa da banda sem planilha">
+<meta property="og:description" content="Feche a noite no show, veja sua parte em todas as bandas e exporte PDF. Sem WhatsApp de valores soltos.">
+<meta property="og:url" content="{{ external_url_for('assinatura_bp.financeiro') }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ site_og_image }}">
+{% include 'partials/seo_public.html' %}
+{% include 'partials/seo_faq_financeiro.html' %}
+{% endblock %}
+
+{% block chord_diagram %}{% endblock %}
+
+{% block main_class %}home-page{% endblock %}
+
+{% block extra_head %}
+<style>
+.home-page { padding: 0; max-width: none; }
+.fin-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 1.5rem 1.5rem 3.5rem;
+    background: linear-gradient(165deg, #fff7ed 0%, #fff 48%, #f0fdfa 100%);
+    border-bottom: 1px solid var(--border);
+}
+[data-theme="dark"] .fin-hero {
+    background: linear-gradient(165deg, #0b1422 0%, #0f172a 55%, #134e4a33 100%);
+}
+.fin-hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 2rem;
+    align-items: center;
+}
+@media (max-width: 900px) {
+    .fin-hero-inner { grid-template-columns: 1fr; }
+}
+.fin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+    border: 1px solid var(--chord-highlight-border);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+}
+[data-theme="dark"] .fin-badge { color: #5eead4; }
+.fin-hero h1 {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    max-width: 18ch;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.85rem;
+}
+.fin-lead {
+    color: var(--muted);
+    max-width: 40rem;
+    line-height: 1.65;
+    font-size: var(--text-md);
+    margin-bottom: 1.5rem;
+}
+.fin-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.fin-hero-shot {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--chord-highlight-border);
+    box-shadow: 0 16px 40px rgba(42, 181, 160, 0.14);
+}
+.fin-hero-shot img { width: 100%; height: auto; display: block; }
+
+.fin-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+.fin-section h2 {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.fin-section-sub {
+    color: var(--muted);
+    max-width: 42rem;
+    margin-bottom: 1.75rem;
+    line-height: 1.55;
+}
+.fin-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+@media (max-width: 720px) { .fin-split { grid-template-columns: 1fr; } }
+.fin-panel {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.35rem 1.4rem;
+    background: #fff;
+}
+[data-theme="dark"] .fin-panel { background: #0b1422; border-color: #334155; }
+.fin-panel h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.45rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+.fin-panel p { font-size: var(--text-sm); color: var(--muted); margin: 0 0 0.85rem; line-height: 1.55; }
+.fin-panel ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: var(--text-sm);
+    color: var(--muted);
+    line-height: 1.55;
+}
+.fin-panel li { margin-bottom: 0.35rem; }
+.fin-panel .fin-who {
+    display: inline-block;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-dark);
+    background: var(--chord-highlight-bg);
+    border-radius: 6px;
+    padding: 0.15rem 0.45rem;
+    margin-bottom: 0.65rem;
+}
+[data-theme="dark"] .fin-panel .fin-who { color: #5eead4; }
+
+.fin-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+@media (max-width: 800px) { .fin-steps { grid-template-columns: 1fr; } }
+.fin-step {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: var(--bg);
+}
+.fin-step-num {
+    display: inline-flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    background: var(--chord-highlight-bg);
+    color: var(--accent-dark);
+    margin-bottom: 0.65rem;
+}
+[data-theme="dark"] .fin-step-num { color: #5eead4; }
+.fin-step h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.35rem; }
+.fin-step p { font-size: var(--text-sm); color: var(--muted); margin: 0; line-height: 1.5; }
+
+.fin-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+}
+.fin-feature {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    background: #fff;
+}
+[data-theme="dark"] .fin-feature { background: #0b1422; border-color: #334155; }
+.fin-feature h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+.fin-feature p { font-size: var(--text-sm); color: var(--muted); margin: 0; line-height: 1.5; }
+
+.fin-band {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+[data-theme="dark"] .fin-band { background: #0f172a; }
+
+.fin-faq details {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.65rem;
+    background: #fff;
+}
+[data-theme="dark"] .fin-faq details { background: #0b1422; border-color: #334155; }
+.fin-faq summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--text-base);
+}
+.fin-faq details p {
+    margin: 0.65rem 0 0;
+    font-size: var(--text-sm);
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.fin-final-cta {
+    text-align: center;
+    padding: 3.5rem 1.5rem;
+    background: linear-gradient(165deg, #fff7ed 0%, #f0fdfa 100%);
+    border-top: 1px solid var(--border);
+}
+[data-theme="dark"] .fin-final-cta {
+    background: linear-gradient(165deg, #0b1422 0%, #134e4a33 100%);
+}
+.fin-final-cta h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: 0.5rem; }
+.fin-final-cta p { color: var(--muted); max-width: 36rem; margin: 0 auto 1.25rem; line-height: 1.55; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="fin-hero">
+    {% with active='banda' %}
+    {% include 'partials/audience_bar.html' %}
+    {% endwith %}
+    <div class="fin-hero-inner">
+        <div>
+            <span class="fin-badge"><i class="fas fa-wallet" aria-hidden="true"></i> Módulo financeiro</span>
+            <h1>Cachês, freela e caixa da banda sem planilha</h1>
+            <p class="fin-lead">
+                O <strong>Uníssono</strong> fecha a noite do show, confirma freela por link,
+                divide fundador e sideman, e mostra a cada músico a própria fatia — em todas as bandas.
+                Admin vê o caixa completo e exporta PDF.
+            </p>
+            <div class="fin-cta-row">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Começar grátis</a>
+                <a href="#como-funciona" class="btn btn-outline-secondary btn-lg">Ver como funciona</a>
+            </div>
+        </div>
+        <figure class="fin-hero-shot mb-0">
+            <img src="{{ marketing_shot_url(marketing_pack_br, 'financeiro-banda-desktop') }}"
+                 alt="Tela do financeiro da banda no Uníssono"
+                 width="1200" height="750"
+                 loading="eager" decoding="async">
+        </figure>
+    </div>
+</section>
+
+<section class="fin-section" id="dois-modos">
+    <h2>Dois jeitos de olhar o dinheiro</h2>
+    <p class="fin-section-sub">
+        Separados de propósito: o músico acompanha o que é dele; a liderança gerencia o caixa da banda.
+    </p>
+    <div class="fin-split">
+        <article class="fin-panel">
+            <span class="fin-who">Todo músico</span>
+            <h3><i class="fas fa-user me-1 text-muted" aria-hidden="true"></i> Meu financeiro</h3>
+            <p>Sua parte nos shows de <strong>todas as bandas</strong> em que você toca.</p>
+            <ul>
+                <li>Filtro por banda, mês e ano</li>
+                <li>Totais: sua parte, recebido e a receber</li>
+                <li>Status liquidado ou em aberto</li>
+                <li>Relatório PDF do período</li>
+            </ul>
+        </article>
+        <article class="fin-panel">
+            <span class="fin-who">Dono / admin</span>
+            <h3><i class="fas fa-landmark me-1 text-muted" aria-hidden="true"></i> Financeiro da banda</h3>
+            <p>Caixa completo do mês — quem foi liberado vê; só dono/admin altera.</p>
+            <ul>
+                <li>Cachês dos shows e liquidação</li>
+                <li>Despesas mensais (categorias)</li>
+                <li>Custo de ensaios em estúdio</li>
+                <li>Líquido do período + PDF A4</li>
+            </ul>
+        </article>
+    </div>
+</section>
+
+<section class="fin-section fin-band" id="como-funciona">
+    <div class="fin-section" style="padding-left:0;padding-right:0;padding-top:0;padding-bottom:0;max-width:none;">
+        <h2>Fechamento de noite no show</h2>
+        <p class="fin-section-sub">
+            Em vez de rateio no grupo do WhatsApp, o admin registra o valor da casa e o Uníssono calcula a parte de cada um.
+        </p>
+        <div class="fin-steps">
+            <article class="fin-step">
+                <span class="fin-step-num">1</span>
+                <h3>Valor da casa</h3>
+                <p>Informe o que o estabelecimento pagou e as despesas da noite (combustível, alimentação…).</p>
+            </article>
+            <article class="fin-step">
+                <span class="fin-step-num">2</span>
+                <h3>Valor de cada um</h3>
+                <p>Defina quanto cada músico recebe — inclusive fundadores. Deixe em branco nos fundadores para dividir o restante; sidemen usam taxa fixa.</p>
+            </article>
+            <article class="fin-step">
+                <span class="fin-step-num">3</span>
+                <h3>Marcar liquidado</h3>
+                <p>A divisão já fica salva ao calcular. Marcar liquidado só indica que o pagamento foi feito — cada um vê a própria fatia em Meu financeiro.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="fin-section">
+    <h2>O que entra no relatório da banda</h2>
+    <p class="fin-section-sub">Um painel mensal para saber se o mês fechou no azul — sem misturar com a vida pessoal do músico.</p>
+    <div class="fin-feature-grid">
+        <article class="fin-feature">
+            <h3><i class="fas fa-guitar me-1 text-muted"></i> Cachês de shows</h3>
+            <p>Bruto da noite menos transporte, equipamento e despesas do evento.</p>
+        </article>
+        <article class="fin-feature">
+            <h3><i class="fas fa-receipt me-1 text-muted"></i> Despesas do mês</h3>
+            <p>Gastos avulsos da banda (ensaio, marketing, equipamento) por categoria.</p>
+        </article>
+        <article class="fin-feature">
+            <h3><i class="fas fa-door-open me-1 text-muted"></i> Ensaios em estúdio</h3>
+            <p>Reservas vinculadas entram como custo — o caixa acompanha o ensaio.</p>
+        </article>
+        <article class="fin-feature">
+            <h3><i class="fas fa-file-pdf me-1 text-muted"></i> PDF para o contador</h3>
+            <p>Pré-visualizar ou baixar o relatório A4 do período filtrado.</p>
+        </article>
+        <article class="fin-feature">
+            <h3><i class="fas fa-user-shield me-1 text-muted"></i> Permissões</h3>
+            <p>Só dono/admin (ou quem for liberado em Integrantes) vê o caixa completo.</p>
+        </article>
+        <article class="fin-feature">
+            <h3><i class="fas fa-building me-1 text-muted"></i> Estúdio (dono)</h3>
+            <p>Dono de sala tem financeiro próprio: receita de reservas, despesas e PDF — em
+               <a href="{{ url_for('studios.landing') }}">Estúdios</a>.</p>
+        </article>
+    </div>
+</section>
+
+<section class="fin-section">
+    <h2>Como começar</h2>
+    <p class="fin-section-sub">Três passos depois de criar a conta.</p>
+    <div class="fin-steps">
+        <article class="fin-step">
+            <span class="fin-step-num">1</span>
+            <h3>Crie a banda</h3>
+            <p>Cadastro grátis; a primeira banda ganha 30 dias de Pro sem cartão.</p>
+        </article>
+        <article class="fin-step">
+            <span class="fin-step-num">2</span>
+            <h3>Escale o show</h3>
+            <p>Na agenda, monte a escala — só quem toca entra no fechamento.</p>
+        </article>
+        <article class="fin-step">
+            <span class="fin-step-num">3</span>
+            <h3>Feche a noite</h3>
+            <p>Registre o cachê; cada um acompanha em <strong>Meu financeiro</strong> no menu.</p>
+        </article>
+    </div>
+</section>
+
+<section class="fin-section fin-faq" id="faq">
+    <h2>Perguntas frequentes</h2>
+    <p class="fin-section-sub">Dúvidas de quem cobra show e divide cachê.</p>
+    <details>
+        <summary>Todo mundo vê o caixa da banda?</summary>
+        <p>Não. O financeiro completo é de dono/admin — ou de quem o admin liberar em Integrantes.
+           Cada músico sempre vê só a própria parte em Meu financeiro.</p>
+    </details>
+    <details>
+        <summary>O que é fundador e sideman?</summary>
+        <p>No fechamento de noite você define o <strong>valor de cada um</strong>.
+           <strong>Fundadores</strong> podem ter valor fixo ou deixar em branco para dividir o restante.
+           <strong>Sidemen</strong> e convidados usam taxa fixa.</p>
+    </details>
+    <details>
+        <summary>Consigo exportar para o contador?</summary>
+        <p>Sim. Meu financeiro e o financeiro da banda geram PDF A4 (pré-visualizar ou baixar) do período filtrado.</p>
+    </details>
+    <details>
+        <summary>Preciso de plano pago?</summary>
+        <p>Você pode começar no Grátis e usar o trial Pro de 30 dias na primeira banda.
+           <a href="{{ url_for('assinatura_bp.bandas') }}#planos">Veja os planos</a> quando a banda crescer.</p>
+    </details>
+    <details>
+        <summary>E o financeiro do estúdio de ensaio?</summary>
+        <p>É um módulo separado para quem <em>dona</em> a sala (receita de reservas).
+           Bandas usam o financeiro de cachês; donos de estúdio usam o painel em
+           <a href="{{ url_for('studios.landing') }}">Estúdios</a>.</p>
+    </details>
+    <p class="mt-3 mb-0">
+        Passo a passo no app:
+        <a href="{{ url_for('ajuda.index') }}#financeiro-banda">Ajuda · Financeiro</a>
+        · <a href="{{ url_for('guia.guia_index') }}">Guia</a>
+    </p>
+</section>
+
+<section class="fin-final-cta">
+    <h2>Pare de ratear cachê no WhatsApp</h2>
+    <p>Crie a conta, monte a banda e feche o próximo show no Uníssono — Meu financeiro já mostra a parte de cada um.</p>
+    <div class="fin-cta-row justify-content-center">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg">Entrar</a>
+    </div>
+</section>
+{% endblock %}

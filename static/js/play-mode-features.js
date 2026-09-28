@@ -37,6 +37,10 @@
     if (global.SetSyncMetronome && global.SetSyncMetronome.setCountInDefault) {
       global.SetSyncMetronome.setCountInDefault(countInBeats);
     }
+    // Flash visual no #cifra-wrap (botão já tem onclick — não re-bindar click)
+    if (global.SetSyncMetronome && global.SetSyncMetronome.bindUi) {
+      global.SetSyncMetronome.bindUi(null, 'cifra-wrap');
+    }
 
     // ── Evento / modo culto ─────────────────────────────
     var eventBar = document.getElementById('play-event-bar');
@@ -314,6 +318,30 @@
       if (!cfg.offlinePackUrl || !cfg.bandId || !global.SetSyncOfflineStore) {
         return Promise.resolve(null);
       }
+      if (cfg.offlineUnlocked === false) {
+        if (!silent && typeof global.setSyncShowUpgrade === 'function') {
+          global.setSyncShowUpgrade({
+            erro: 'plano_necessario',
+            titulo: 'Offline no palco com o Pro',
+            mensagem: 'Baixar a setlist para usar sem internet faz parte do Pro.',
+            plano_sugerido: 'pro',
+            cta_label: 'Assinar Pro — R$ 29/mês',
+            upgrade_url: '/assinatura/planos?plano=pro&go=1',
+            preco_linha: 'Pro — R$ 29/mês · offline + PDF',
+            features: [
+              'Repertório offline no palco',
+              'Exportar setlist em PDF',
+              'Limites ilimitados na banda',
+              'Cancele quando quiser · Mercado Pago',
+            ],
+          });
+        } else if (offlineBanner && !silent) {
+          offlineBanner.classList.remove('d-none');
+          offlineBanner.querySelector('.play-offline-msg').textContent =
+            'Offline faz parte do Pro — assine em Planos.';
+        }
+        return Promise.resolve(null);
+      }
       if (!SetSyncOfflineStore.isSupported()) {
         if (!silent) alert('Seu navegador não suporta armazenamento offline.');
         return Promise.resolve(null);
@@ -364,6 +392,13 @@
 
     function checkOfflinePack() {
       if (!cfg.bandId || !global.SetSyncOfflineStore || !offlineBanner) return;
+      if (cfg.offlineUnlocked === false) {
+        offlineBanner.classList.remove('d-none');
+        offlineBanner.querySelector('.play-offline-msg').textContent =
+          'Offline no palco faz parte do Pro.';
+        if (offlineBtn) offlineBtn.textContent = 'Liberar no Pro';
+        return;
+      }
       if (global.navigator && global.navigator.onLine === false) {
         offlineBanner.classList.remove('d-none');
         offlineBanner.querySelector('.play-offline-msg').textContent =
@@ -572,11 +607,12 @@
     if (bootSong) showStageNote(bootSong);
   }
 
-  function waitAndInstall() {
+  function waitAndInstall(attempt) {
+    attempt = attempt || 0;
     var cfgEl = document.getElementById('play-features-config');
-  var api = global.SetSyncPlayApi;
+    var api = global.SetSyncPlayApi;
     if (!api || !cfgEl) {
-      setTimeout(waitAndInstall, 40);
+      if (attempt < 100) setTimeout(function () { waitAndInstall(attempt + 1); }, 40);
       return;
     }
     var cfg = {};

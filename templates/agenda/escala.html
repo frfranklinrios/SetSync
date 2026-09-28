@@ -68,6 +68,12 @@
         Integrantes escalados recebem notificação imediata por e-mail e WhatsApp com link para aceitar ou recusar.
     </p>
     <div class="d-flex flex-wrap gap-2 mt-3">
+        <a href="{{ url_for('agenda.comando', event_id=event.id) }}" class="btn btn-warning btn-sm">
+            <i class="fas fa-bolt me-1"></i> Comando do show
+        </a>
+        <a href="{{ url_for('agenda.view', event_id=event.id) }}#escala" class="btn btn-outline-primary btn-sm">
+            Freelas / convidados
+        </a>
         {% if lineups %}
         <form method="POST" class="d-inline">
             {% include 'partials/csrf_input.html' %}

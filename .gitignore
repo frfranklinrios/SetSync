@@ -47,3 +47,8 @@ build/
 .eggs/
 
 client_secret_1015868869104-anhiglpg0qcepgg2fpl1v8kmp74qmu6j.apps.googleusercontent.com.json
+
+# Artefatos locais / acidentais na raiz (não ignora PDF em static/)
+youtube_cookies.txt
+=2.0.0
+/*.pdf

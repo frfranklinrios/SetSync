@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ tip.band_name }} — Pix & repertório</title>
+    <style>
+        :root { color-scheme: light; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            background: #0f1419;
+            color: #f3f4f6;
+            display: flex; align-items: flex-start; justify-content: center;
+            padding: 1.25rem;
+        }
+        .wrap { width: min(440px, 100%); display: flex; flex-direction: column; gap: 1rem; }
+        .card {
+            background: #1a222c;
+            border: 1px solid #2a3441;
+            border-radius: 16px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+        h1 { font-size: 1.3rem; margin: 0 0 .3rem; font-weight: 650; }
+        h2 { font-size: 1rem; margin: 0 0 .75rem; font-weight: 650; text-align: left; }
+        .sub { color: #9ca3af; font-size: .92rem; margin: 0 0 1rem; }
+        .qr {
+            background: #fff; border-radius: 12px; padding: 12px;
+            display: inline-block; margin-bottom: .85rem;
+        }
+        .qr img { display: block; width: 200px; height: 200px; }
+        .vals { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: center; margin: 0 0 .85rem; }
+        .vals a {
+            text-decoration: none; color: #111; background: #e5e7eb;
+            border-radius: 999px; padding: .4rem .8rem; font-weight: 600; font-size: .88rem;
+        }
+        .vals a.on { background: #34d399; }
+        .pix {
+            font-size: .72rem; word-break: break-all; color: #d1d5db;
+            background: #111827; border-radius: 8px; padding: .6rem; margin: 0 0 .75rem;
+            text-align: left;
+        }
+        .btn {
+            display: inline-block; width: 100%; border: 0; border-radius: 10px;
+            padding: .8rem 1rem; font-weight: 650; cursor: pointer; font-size: .98rem;
+        }
+        .btn-main { background: #34d399; color: #052e1a; margin-bottom: .45rem; }
+        .btn-ghost { background: transparent; color: #9ca3af; border: 1px solid #374151; }
+        .btn-sm { width: auto; padding: .35rem .7rem; font-size: .8rem; }
+        label { display: block; text-align: left; font-size: .78rem; color: #9ca3af; margin-bottom: .2rem; }
+        input, textarea {
+            width: 100%; border-radius: 8px; border: 1px solid #374151;
+            background: #111827; color: #f3f4f6; padding: .6rem; margin-bottom: .65rem;
+        }
+        .ok { background: #064e3b; color: #a7f3d0; border-radius: 8px; padding: .7rem; margin-bottom: .85rem; text-align: left; }
+        .note { font-size: .78rem; color: #6b7280; margin-top: .75rem; }
+        .tabs { display: flex; gap: .4rem; margin-bottom: .85rem; }
+        .tabs button {
+            flex: 1; border: 1px solid #374151; background: #111827; color: #d1d5db;
+            border-radius: 999px; padding: .45rem .5rem; font-weight: 600; cursor: pointer;
+        }
+        .tabs button.on { background: #34d399; color: #052e1a; border-color: #34d399; }
+        .panel { display: none; text-align: left; }
+        .panel.on { display: block; }
+        .song {
+            display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+            border-bottom: 1px solid #2a3441; padding: .55rem 0;
+        }
+        .song:last-child { border-bottom: 0; }
+        .song-title { font-weight: 600; font-size: .92rem; }
+        .song-artist { color: #9ca3af; font-size: .78rem; }
+        .empty { color: #6b7280; font-size: .9rem; }
+        .ask-box { margin-top: .85rem; padding-top: .85rem; border-top: 1px solid #2a3441; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+<main class="card">
+    <h1>{{ tip.band_name }}</h1>
+    <p class="sub">{{ tip.mensagem or 'Gorjeta via Pix · peça uma música' }}</p>
+
+    {% if confirmed %}
+    <div class="ok">Obrigado! O Pix já foi para a banda.</div>
+    {% endif %}
+    {% if pedido_ok %}
+    <div class="ok">Pedido enviado! A banda vai ver no palco.</div>
+    {% endif %}
+
+    <div class="tabs" role="tablist">
+        <button type="button" class="on" data-tab="pix" id="tab-pix"
+                title="Enviar gorjeta via Pix — o valor cai direto na chave da banda">Pix</button>
+        <button type="button" data-tab="rep" id="tab-rep"
+                title="Ver o repertório e pedir uma música para a banda">Repertório</button>
+    </div>
+
+    <div class="panel on" id="panel-pix">
+        <div class="qr" title="Escaneie com o app do banco para pagar via Pix">
+            <img src="{{ tip.qr_data_uri }}" alt="QR Code Pix">
+        </div>
+        <div class="vals">
+            {% for v in tip.valores %}
+            <a class="{% if tip.valor and tip.valor|int == v %}on{% endif %}"
+               href="{{ url_for('gorjeta.publica', slug=tip.slug, valor=v, event=event_id, setlist=setlist_id) }}"
+               title="Sugerir Pix de R$ {{ v }}">R$ {{ v }}</a>
+            {% endfor %}
+            <a class="{% if not tip.valor %}on{% endif %}"
+               href="{{ url_for('gorjeta.publica', slug=tip.slug, event=event_id, setlist=setlist_id) }}"
+               title="QR sem valor fixo — você escolhe quanto pagar">Livre</a>
+        </div>
+        <div class="pix" id="pix-copy" title="Código Pix copia e cola">{{ tip.payload }}</div>
+        <button type="button" class="btn btn-ghost" id="btn-copy"
+                title="Copiar o código Pix para colar no app do banco">Copiar código Pix</button>
+
+        <form method="post" action="{{ url_for('gorjeta.confirmar', slug=tip.slug) }}" style="margin-top:1rem;text-align:left">
+            {% include 'partials/csrf_input.html' %}
+            {% if event_id %}<input type="hidden" name="event_id" value="{{ event_id }}">{% endif %}
+            {% if setlist_id %}<input type="hidden" name="setlist_id" value="{{ setlist_id }}">{% endif %}
+            <label for="valor" title="Valor que você acabou de pagar">Já paguei — valor (R$)</label>
+            <input id="valor" name="valor" inputmode="decimal" required
+                   value="{{ '%.2f'|format(tip.valor) if tip.valor else '' }}" placeholder="20,00"
+                   title="Informe o valor do Pix que você enviou">
+            <label for="nota">Mensagem (opcional)</label>
+            <input id="nota" name="nota" maxlength="120" placeholder="Show demais!"
+                   title="Mensagem opcional que a banda vê no placar">
+            <button type="submit" class="btn btn-main"
+                    title="Registra no placar da banda (o Pix já foi para a conta dela)">Confirmar no placar</button>
+        </form>
+        <p class="note">100% do Pix vai direto para a chave da banda.</p>
+    </div>
+
+    <div class="panel" id="panel-rep">
+        <h2 title="Músicas disponíveis para pedir nesta noite">{{ repertoire.setlist_name if repertoire else 'Repertório' }}</h2>
+        {% if repertoire and repertoire.songs %}
+        <div id="song-list">
+            {% for s in repertoire.songs %}
+            <div class="song">
+                <div>
+                    <div class="song-title">{{ s.titulo }}</div>
+                    {% if s.artista %}<div class="song-artist">{{ s.artista }}</div>{% endif %}
+                </div>
+                <form method="post" action="{{ url_for('gorjeta.pedir_musica', slug=tip.slug) }}">
+                    {% include 'partials/csrf_input.html' %}
+                    {% if event_id %}<input type="hidden" name="event_id" value="{{ event_id }}">{% endif %}
+                    {% if setlist_id %}<input type="hidden" name="setlist_id" value="{{ setlist_id }}">{% endif %}
+                    <input type="hidden" name="cifra_id" value="{{ s.id }}">
+                    <input type="hidden" name="titulo" value="{{ s.titulo }}">
+                    <input type="hidden" name="artista" value="{{ s.artista }}">
+                    <button type="submit" class="btn btn-main btn-sm"
+                            title="Pedir “{{ s.titulo }}” — a banda vê no Modo Tocar">Pedir</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty">Repertório ainda não disponível. Peça uma música abaixo.</p>
+        {% endif %}
+
+        <div class="ask-box">
+            <form method="post" action="{{ url_for('gorjeta.pedir_musica', slug=tip.slug) }}">
+                {% include 'partials/csrf_input.html' %}
+                {% if event_id %}<input type="hidden" name="event_id" value="{{ event_id }}">{% endif %}
+                {% if setlist_id %}<input type="hidden" name="setlist_id" value="{{ setlist_id }}">{% endif %}
+                <label for="titulo_livre">Não achou? Peça outra</label>
+                <input id="titulo_livre" name="titulo" required maxlength="160" placeholder="Nome da música"
+                       title="Digite o nome da música que deseja ouvir">
+                <label for="artista_livre">Artista (opcional)</label>
+                <input id="artista_livre" name="artista" maxlength="120" placeholder="Artista">
+                <label for="seu_nome">Seu nome (opcional)</label>
+                <input id="seu_nome" name="requester_name" maxlength="80" placeholder="Como te chamar"
+                       title="Aparece junto do pedido para a banda">
+                <button type="submit" class="btn btn-main"
+                        title="Enviar pedido — a banda vê na fila do palco">Enviar pedido</button>
+            </form>
+        </div>
+    </div>
+</main>
+</div>
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.tabs button');
+  var panels = { pix: document.getElementById('panel-pix'), rep: document.getElementById('panel-rep') };
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      tabs.forEach(function (b) { b.classList.toggle('on', b === btn); });
+      var key = btn.getAttribute('data-tab');
+      Object.keys(panels).forEach(function (k) {
+        panels[k].classList.toggle('on', k === key);
+      });
+    });
+  });
+  {% if pedido_ok %}
+  document.getElementById('tab-rep').click();
+  {% endif %}
+
+  var btn = document.getElementById('btn-copy');
+  var el = document.getElementById('pix-copy');
+  if (btn && el) {
+    btn.addEventListener('click', function () {
+      var t = el.textContent || '';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t).then(function () { btn.textContent = 'Copiado!'; });
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>

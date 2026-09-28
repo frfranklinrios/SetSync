@@ -25,26 +25,31 @@ def _notification_link(url_path: str | None) -> str | None:
 
 
 def _html_wrapper(title: str, body_html: str, button_url: str | None, button_label: str) -> str:
+    """HTML simples com quebras de linha (SMTP RFC5321: linha ≤998 chars)."""
     btn = ''
     if button_url:
         btn = (
-            f'<p style="margin:24px 0 0">'
-            f'<a href="{button_url}" style="display:inline-block;padding:12px 24px;'
-            f'background:#ea580c;color:#fff;text-decoration:none;border-radius:8px;'
-            f'font-weight:600">{button_label}</a></p>'
+            '<p style="margin:24px 0 0">\n'
+            f'<a href="{button_url}"\n'
+            ' style="display:inline-block;padding:12px 24px;'
+            'background:#ea580c;color:#fff;text-decoration:none;'
+            'border-radius:8px;font-weight:600">'
+            f'{button_label}</a></p>\n'
         )
+    perfil = external_url_for('auth.perfil')
     return (
-        '<div style="font-family:system-ui,sans-serif;color:#1c1917;max-width:520px">'
-        f'<p style="color:#78716c;font-size:13px;margin:0 0 8px">Uníssono</p>'
-        f'<h2 style="margin:0 0 12px;font-size:1.25rem">{title}</h2>'
-        f'{body_html}'
+        '<div style="font-family:system-ui,sans-serif;color:#1c1917;'
+        'max-width:520px">\n'
+        '<p style="color:#78716c;font-size:13px;margin:0 0 8px">Uníssono</p>\n'
+        f'<h2 style="margin:0 0 12px;font-size:1.25rem">{title}</h2>\n'
+        f'{body_html}\n'
         f'{btn}'
-        '<p style="margin:28px 0 0;font-size:12px;color:#a8a29e">'
-        'Você recebe este e-mail porque ativou alertas no Uníssono. '
-        'Alertas urgentes (escalação, convites e lembretes) chegam na hora; '
-        'demais atualizações vão em um resumo diário. '
-        f'<a href="{external_url_for("auth.perfil")}">Ajustar preferências</a>'
-        '</p></div>'
+        '<p style="margin:28px 0 0;font-size:12px;color:#a8a29e">\n'
+        'Você recebe este e-mail porque ativou alertas no Uníssono.\n'
+        'Alertas urgentes (escalação, convites e lembretes) chegam na hora;\n'
+        'demais atualizações vão em um resumo diário.\n'
+        f'<a href="{perfil}">Ajustar preferências</a>\n'
+        '</p></div>\n'
     )
 
 

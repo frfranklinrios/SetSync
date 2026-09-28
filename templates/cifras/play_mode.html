@@ -20,8 +20,8 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/chordsheet.css') }}?v=17">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-features.css') }}?v=3">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-a11y.css') }}?v=1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-shell.css') }}?v=2">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/play-share-prompt.css') }}?v=3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-mode-shell.css') }}?v=5">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/play-share-prompt.css') }}?v=4">
 <style>
 #cifra-content.grade-mode .cs-play-embed.setsync-cs-sheet { padding: 0; }
 .play-pwa-banner {
@@ -247,7 +247,41 @@
         <span class="prog-text" id="prog-text-l">1/{{ all_cifras|length }}</span>
         <div class="prog-dots" id="prog-dots"></div>
         <span class="prog-text" id="prog-text-r">{{ all_cifras|length }} músicas</span>
+        {% if gorjeta_url and gorjeta_live_url %}
+        <button type="button" class="play-req-chip {% if not gorjeta_requests_count %}d-none{% endif %}"
+                id="play-requests-chip"
+                title="Pedidos do público — toque para ver a fila e marcar como tocada ou descartar"
+                aria-label="Abrir pedidos de música do público"
+                aria-controls="play-requests-panel" aria-expanded="false"
+                data-tip="Pedidos do público · toque para abrir a fila">
+            Pedidos <span id="play-requests-count">{{ gorjeta_requests_count or 0 }}</span>
+        </button>
+        <a class="play-tip-chip" id="play-gorjeta-chip" href="{{ gorjeta_url }}" target="_blank" rel="noopener"
+           data-live-url="{{ gorjeta_live_url }}"
+           data-total="{{ '%.2f'|format(gorjeta_total or 0) }}"
+           data-status-url="{{ song_request_status_url or '' }}"
+           title="Total de gorjetas ao vivo — toque para abrir o QR Pix (público paga direto na sua chave, sem comissão)"
+           aria-label="Abrir página de gorjeta Pix"
+           data-tip="Gorjetas ao vivo · toque abre o QR">
+            <span class="play-tip-label">Pix</span>
+            <span class="play-tip-total" id="play-gorjeta-total">R$ {{ '%.2f'|format(gorjeta_total or 0) }}</span>
+        </a>
+        {% elif gorjeta_url %}
+        <a class="pb-btn btn-sm ms-2" id="play-gorjeta-btn" href="{{ gorjeta_url }}" target="_blank" rel="noopener"
+           title="Abrir página pública de gorjeta Pix e pedidos de música"
+           aria-label="Abrir gorjeta Pix">Pix</a>
+        {% endif %}
     </div>
+</div>
+
+<div id="play-requests-panel" class="d-none" aria-hidden="true">
+    <div class="play-requests-hd">
+        <strong title="Músicas pedidas pelo público no QR">Pedidos do público</strong>
+        <button type="button" class="pb-btn btn-sm" id="play-requests-close"
+                title="Fechar lista de pedidos" aria-label="Fechar pedidos">Fechar</button>
+    </div>
+    <ul id="play-requests-list" class="play-requests-list"></ul>
+    <p class="play-requests-empty text-muted small mb-0" id="play-requests-empty">Nenhum pedido ainda.</p>
 </div>
 
 <!-- Auto-scroll speed pill (visible only while scrolling) -->
@@ -331,6 +365,7 @@
     'songCount': all_cifras|length,
     'playStateUrl': play_state_url,
     'offlinePackUrl': offline_pack_url,
+    'offlineUnlocked': offline_unlocked|default(false),
     'playNotesUrlTpl': play_notes_url_tpl,
     'canEdit': can_edit|default(false),
     'userId': user_id,
@@ -354,18 +389,19 @@
     'transposedUrlTpl': url_for('cifras.get_transposed', cifra_id='__ID__'),
     'saveTransposeUrlTpl': url_for('cifras.save_transpose', cifra_id='__ID__'),
     'drawApiUrlTpl': url_for('cifras.api_get_play_draw', cifra_id='__ID__'),
-    'bandName': band.name if band else '',
+    'bandName': share_band_name if share_band_name is defined and share_band_name else (band.name if band else ''),
     'canEdit': can_edit|default(false),
     'membersUrl': url_for('bands.members', band_id=band.id) if band and can_edit|default(false) else none,
     'bandInviteUrl': band_invite_url if band_invite_url is defined else none,
-    'indicarUrl': url_for('assinatura_bp.voucher_indicar'),
+    'shareSongTitle': share_song_title if share_song_title is defined else '',
     'siteUrl': external_url_for('index'),
-    'showPlayCsat': show_play_csat|default(false),
+    'showPlayCsat': false,
     'playCsatUrl': url_for('ajuda.play_csat_submit'),
     'showPlayPwa': show_play_pwa|default(false),
     'showRealSongCta': show_real_song_cta|default(false),
     'realSongUrl': real_song_url if real_song_url is defined else none,
     'pwaDismissUrl': url_for('ajuda.pwa_dismiss'),
+    'playModeRealEventId': play_mode_real_event_id|default(''),
 }|tojson }}</script>
 <script id="cifras-data" type="application/json">{{ play_cifras_json | safe }}</script>
 
@@ -386,6 +422,11 @@
         return String(tpl || '').replace('__ID__', encodeURIComponent(id));
     };
     var BOOT = (Boot.readBootConfig && Boot.readBootConfig('play-boot-config')) || {};
+    if (BOOT.playModeRealEventId && typeof window.fbq === 'function') {
+        try {
+            window.fbq('trackCustom', 'PlayModeReal', { content_name: 'play_mode_real' }, { eventID: BOOT.playModeRealEventId });
+        } catch (e) {}
+    }
 
     var CIFRAS = decodeCifrasPayload('cifras-data');
     var START_IDX = BOOT.startIdx || 0;
@@ -2103,8 +2144,8 @@
     });
 })();
 </script>
-<script src="{{ url_for('static', filename='js/play-mode-features.js') }}?v=5"></script>
-<script src="{{ url_for('static', filename='js/play-share-prompt.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/play-mode-features.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='js/play-share-prompt.js') }}?v=4"></script>
 <script>
 (function () {
   /* Banner PWA no Modo Tocar: só depois de ~30s ou após tela cheia */
@@ -2169,6 +2210,128 @@
     document.body.appendChild(form);
     form.submit();
   });
+})();
+</script>
+<script>
+(function () {
+  var chip = document.getElementById('play-gorjeta-chip');
+  var totalEl = document.getElementById('play-gorjeta-total');
+  var reqChip = document.getElementById('play-requests-chip');
+  var reqCount = document.getElementById('play-requests-count');
+  var panel = document.getElementById('play-requests-panel');
+  var listEl = document.getElementById('play-requests-list');
+  var emptyEl = document.getElementById('play-requests-empty');
+  var closeBtn = document.getElementById('play-requests-close');
+  if (!chip || !totalEl) return;
+  var url = chip.getAttribute('data-live-url');
+  var statusTpl = chip.getAttribute('data-status-url') || '';
+  if (!url) return;
+  var last = parseFloat(chip.getAttribute('data-total') || '0') || 0;
+  var lastReqCount = -1;
+
+  function fmt(n) {
+    return 'R$ ' + Number(n || 0).toFixed(2).replace('.', ',');
+  }
+
+  function bump() {
+    chip.classList.remove('is-bump');
+    void chip.offsetWidth;
+    chip.classList.add('is-bump');
+  }
+
+  function statusUrl(id) {
+    return String(statusTpl || '').replace('__ID__', encodeURIComponent(id));
+  }
+
+  function setStatus(id, status) {
+    var endpoint = statusUrl(id);
+    if (!endpoint) return;
+    var headers = { 'Content-Type': 'application/json' };
+    if (window.csrfToken) headers['X-CSRFToken'] = window.csrfToken;
+    fetch(endpoint, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers,
+      body: JSON.stringify({ status: status }),
+    }).then(function () { refresh(); }).catch(function () {});
+  }
+
+  function renderRequests(items) {
+    if (!listEl || !reqChip) return;
+    var count = (items || []).length;
+    if (reqCount) reqCount.textContent = String(count);
+    reqChip.classList.toggle('d-none', count === 0);
+    if (count === 0) {
+      listEl.innerHTML = '';
+      if (emptyEl) emptyEl.classList.remove('d-none');
+      if (panel) {
+        panel.classList.add('d-none');
+        panel.setAttribute('aria-hidden', 'true');
+        reqChip.setAttribute('aria-expanded', 'false');
+      }
+      return;
+    }
+    if (emptyEl) emptyEl.classList.add('d-none');
+    listEl.innerHTML = items.map(function (r) {
+      var meta = [];
+      if (r.artista) meta.push(r.artista);
+      if (r.requester_name) meta.push(r.requester_name);
+      var metaHtml = meta.length ? '<div class="play-requests-meta">' + meta.join(' · ') + '</div>' : '';
+      return '<li data-id="' + r.id + '"><div><strong>' + (r.titulo || 'Pedido') + '</strong>' + metaHtml +
+        '</div><div class="play-requests-actions">' +
+        '<button type="button" class="play-req-done" data-act="done" title="Marcar como tocada / atendida">Ok</button>' +
+        '<button type="button" class="play-req-dismiss" data-act="dismissed" title="Descartar este pedido">X</button>' +
+        '</div></li>';
+    }).join('');
+    if (count > lastReqCount && lastReqCount >= 0) {
+      reqChip.classList.add('is-bump');
+      setTimeout(function () { reqChip.classList.remove('is-bump'); }, 700);
+    }
+    lastReqCount = count;
+  }
+
+  function refresh() {
+    fetch(url, { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.ok) return;
+        var total = Number(data.total || 0);
+        totalEl.textContent = fmt(total);
+        if (total > last + 0.009) bump();
+        last = total;
+        chip.setAttribute('data-total', String(total));
+        renderRequests(data.requests || []);
+      })
+      .catch(function () {});
+  }
+
+  if (listEl) {
+    listEl.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('button[data-act]');
+      if (!btn) return;
+      var li = btn.closest('li[data-id]');
+      if (!li) return;
+      setStatus(li.getAttribute('data-id'), btn.getAttribute('data-act'));
+    });
+  }
+  if (reqChip && panel) {
+    reqChip.addEventListener('click', function () {
+      var open = panel.classList.contains('d-none');
+      panel.classList.toggle('d-none', !open);
+      panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+      reqChip.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
+  if (closeBtn && panel && reqChip) {
+    closeBtn.addEventListener('click', function () {
+      panel.classList.add('d-none');
+      panel.setAttribute('aria-hidden', 'true');
+      reqChip.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  setInterval(refresh, 4000);
+  setTimeout(refresh, 1200);
 })();
 </script>
 {% endblock %}

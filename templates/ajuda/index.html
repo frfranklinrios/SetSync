@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('ajuda.index') }}">
-<meta name="description" content="Ajuda Uníssono: cifras, versão pessoal, grade harmônica, setlists, agenda com escalação, estúdios, Modo Tocar (sync, offline, pedal) e convites.">
-<meta property="og:title" content="Ajuda Uníssono — Cifras, agenda, estúdios e Modo Tocar">
-<meta property="og:description" content="Ajuda Uníssono: cifras, setlists, agenda, estúdios, Modo Tocar com sync e offline automático, escalação e palco para bandas.">
+<meta name="description" content="Ajuda Uníssono: cifras, setlists, agenda, financeiro, gorjeta Pix, pedidos de música no QR, Modo Tocar (sync, offline, pedal) e estúdios.">
+<meta property="og:title" content="Ajuda Uníssono — Cifras, gorjeta Pix e palco">
+<meta property="og:description" content="Ajuda Uníssono: cifras, setlists, fechamento de noite, gorjeta Pix sem comissão, pedidos de música e Modo Tocar.">
 <meta property="og:url" content="{{ external_url_for('ajuda.index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -246,7 +246,7 @@
     <h2>Ajuda — em 4 passos até o Modo Tocar</h2>
     <p class="help-muted mb-2">
       Conta → <strong>coleção</strong> ou banda → música/setlist → <strong>Modo Tocar</strong>.
-      Coleção pessoal, financeiro, indicação, estúdios e agenda estão documentados abaixo.
+      Coleção pessoal, financeiro, <strong>gorjeta Pix</strong>, indicação, estúdios e agenda estão documentados abaixo.
     </p>
     <div class="d-flex flex-wrap gap-2 mb-0">
       {% if current_user.is_authenticated %}
@@ -298,7 +298,7 @@
       </a>
       <a class="list-group-item" href="#colecao">
         <strong>Minha coleção</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Grátis e ilimitada · share com assinatura</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Até 3 cifras no Grátis · share com assinatura</div>
       </a>
       <a class="list-group-item" href="#versao-pessoal">
         <strong>Versão pessoal</strong>
@@ -318,7 +318,11 @@
       </a>
       <a class="list-group-item" href="#financeiro-banda">
         <strong>Financeiro</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Meu financeiro + caixa da banda + PDF</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Cachê, couvert, gorjetas Pix e PDF</div>
+      </a>
+      <a class="list-group-item" href="#gorjeta-pix">
+        <strong>Gorjeta Pix e pedidos</strong>
+        <div class="text-muted" style="font-size: var(--text-sm);">QR no palco, repertório e pedido de música</div>
       </a>
       <a class="list-group-item" href="#estudios">
         <strong>Estúdios de ensaio</strong>
@@ -338,7 +342,7 @@
       </a>
       <a class="list-group-item" href="#modo-tocar">
         <strong>Modo Tocar</strong>
-        <div class="text-muted" style="font-size: var(--text-sm);">Palco, seções, sync, offline auto, pedal</div>
+        <div class="text-muted" style="font-size: var(--text-sm);">Palco, Pix ao vivo, pedidos, sync e offline</div>
       </a>
       <a class="list-group-item" href="#chord-sheet">
         <strong>Grade harmônica</strong>
@@ -475,7 +479,7 @@
           {% if current_user.is_authenticated %} (menu superior){% endif %}.
         </p>
         <table class="help-table">
-          <tr><th>Grátis</th><td><strong>Coleção pessoal ilimitada</strong>. Na banda: até 30 músicas, 5 integrantes, 10 setlists e 1 banda. Compartilhar cifras (com outros ou com a banda) exige assinatura. Trial Pro de 30 dias na primeira banda.</td></tr>
+          <tr><th>Grátis</th><td>Demo + até <strong>3 cifras reais</strong> e <strong>1 abertura</strong> do Modo Tocar. Na banda: 3 músicas, 2 pessoas, sem setlist. PDF, offline e palco de ensaio exigem Pro ou Individual.</td></tr>
           <tr><th>Individual</th><td>Para quem toca sozinho: coleção + compartilhar, 1 banda, só você no elenco, repertório ilimitado e PDF.</td></tr>
           <tr><th>Pro</th><td>Músicas, integrantes e setlists ilimitados <em>na banda</em>; compartilhar da coleção; exportação em PDF.</td></tr>
           <tr><th>Worship</th><td>Tudo do Pro em <strong>várias bandas</strong> da mesma conta — para quem administra mais de um grupo.</td></tr>
@@ -494,7 +498,7 @@
           <li>Planos pagos (Individual, Pro, Worship e Estúdio Premium) usam <strong>Mercado Pago</strong> para assinatura recorrente.</li>
           <li>Ao tocar em <strong>Assinar</strong>, você é <strong>redirecionado ao site do Mercado Pago</strong> — lá você autoriza a cobrança. O Uníssono <strong>não armazena número de cartão</strong>.</li>
           <li>Escolha <strong>mensal ou anual</strong> antes de confirmar (o anual equivale a pagar 10 meses e usar 12).</li>
-          <li>O <strong>trial de 30 dias</strong> (primeira banda ou primeiro estúdio Premium) é <strong>sem cartão</strong>; só pedimos pagamento se você decidir assinar depois.</li>
+          <li>Não há trial Pro automático na banda: para ensaiar de verdade (setlist, Modo Tocar, PDF, offline), assine o <strong>Pro R$ 29/mês</strong> via Mercado Pago. O trial Premium do estúdio no 1º cadastro continua.</li>
           <li><strong>Vouchers</strong> e indicação de banda ativam Pro por tempo limitado sem passar pelo checkout. Vouchers de <strong>estúdio</strong> ativam Premium na conta do dono — veja <a href="#estudio-voucher">Voucher Estúdio Premium</a>.</li>
           <li>Para <strong>cancelar</strong> uma assinatura paga, use sua conta no Mercado Pago ou entre em contato com o suporte Uníssono.</li>
         </ul>
@@ -549,6 +553,12 @@
           <li>Com várias cantoras/cantores, cada música pode ter <strong>tom salvo por pessoa</strong> na banda e na setlist.</li>
         </ul>
 
+        <h3>Gorjeta Pix</h3>
+        <ul>
+          <li>Em <strong>Configurações → Gorjeta Pix</strong>, cadastre a chave Pix e o link público do show.</li>
+          <li>Guia completo: <a href="#gorjeta-pix">Gorjeta Pix e pedidos</a>.</li>
+        </ul>
+
         <h3>Instrumentos dos integrantes</h3>
         <ul>
           <li>Cada músico cadastra o que toca em <a href="{{ url_for('auth.perfil') }}">Meu perfil → Instrumentos</a>.</li>
@@ -561,9 +571,9 @@
     <section class="card help-section" id="cifras">
       <div class="card-header">Cifras</div>
       <div class="card-body">
-        <h3 id="colecao">Minha coleção (grátis)</h3>
+        <h3 id="colecao">Minha coleção</h3>
         <ul>
-          <li>No menu <strong>Coleção</strong> você guarda músicas pessoais — <strong>ilimitadas e gratuitas</strong>, sem contar no limite da banda.</li>
+          <li>No menu <strong>Coleção</strong> você guarda músicas pessoais — no <strong>Grátis até 3 cifras reais</strong>; Individual/Pro liberam ilimitado (não contam no limite da banda).</li>
           <li>Use <strong>Nova música</strong> para cadastrar, colar de sites ou importar da biblioteca.</li>
           <li><strong>Compartilhar</strong> com outro usuário (e-mail/username) ou enviar <strong>cópia para uma banda</strong> exige assinatura (Individual, Pro, Worship, trial ou voucher).</li>
           <li>Quem recebe o compartilhamento vê a música em <strong>Compartilhadas comigo</strong> na mesma tela da Coleção.</li>
@@ -694,6 +704,7 @@
           <li>Copie o link ou use o <strong>QR Code</strong> para projetor, equipe de som ou público.</li>
           <li><strong>Gerar novo link</strong> invalida o anterior — use se o link vazou.</li>
           <li>Planos <strong>Pro/Worship</strong> permitem <strong>exportar PDF</strong> da setlist (impressão para ensaio), com opção de incluir <strong>cifras</strong>, <strong>letras</strong> e <strong>grades harmônicas</strong> por música.</li>
+          <li>Com <strong>Gorjeta Pix</strong> ativa e a opção ligada, o PDF pode trazer o <strong>QR de gorjeta</strong> no rodapé — útil para impresso na mesa do bar. Veja <a href="#gorjeta-pix">Gorjeta Pix</a>.</li>
         </ul>
         {% with pack=marketing_pack_br, name='setlist-desktop', frame='desktop',
                 caption='Setlist / roteiro no desktop — tom por cantor',
@@ -733,7 +744,7 @@
           <li>Em cada evento, admins abrem <strong>Escalação</strong> e marcam quem participa por <strong>função</strong> (Vocal, Bateria, Teclado…).</li>
           <li>Abaixo do nome de cada integrante aparecem os <strong>instrumentos do perfil</strong> (se cadastrados) — além do campo de função na escala.</li>
           <li>Status: <strong>Pendente</strong>, <strong>Confirmado</strong> ou <strong>Recusado</strong>. O músico responde pelo <strong>link no e-mail ou WhatsApp</strong> (aceitar ou recusar em um toque).</li>
-          <li>Convide <strong>convidados externos</strong> (não membros) com nome e função — também recebem link de confirmação.</li>
+          <li>Convide <strong>freelas / convidados externos</strong> (não membros) com nome, WhatsApp e função — eles recebem link para confirmar ou recusar, sem criar conta. Você também pode copiar o link e reenviar.</li>
           <li>Use <strong>formações salvas</strong> (em Configurações → Gerenciar equipe) ou <strong>Sugerir escala</strong> para preencher mais rápido.</li>
           <li>Campo <strong>Buscar</strong>, <strong>Marcar todos</strong> ou <strong>Limpar</strong> agilizam listas grandes.</li>
           <li>Se <strong>nenhuma escala</strong> for definida, todos os membros da banda são considerados no evento.</li>
@@ -744,9 +755,11 @@
 
         <h3>Cachê do show</h3>
         <ul>
-          <li>Em eventos do tipo <strong>show</strong>, administradores cadastram o <strong>valor total</strong>, descontos de transporte/equipamento e observações.</li>
-          <li>O app divide o valor <strong>líquido</strong> igualmente entre integrantes <strong>confirmados</strong> na escalação (ou todos os membros, se não houver escala definida).</li>
-          <li>Marque <strong>Fechado</strong> quando o pagamento for acertado com a banda.</li>
+          <li>Em eventos do tipo <strong>show</strong>, use o <strong>Fechamento de noite</strong>: valor que a casa pagou, <strong>couvert/entrada</strong> (se a banda fica com esse valor), despesas e quanto cada um recebe.</li>
+          <li>O <strong>couvert</strong> soma ao bruto da casa antes de despesas e divisão — útil quando a entrada artística fica com a banda.</li>
+          <li>Sidemen e convidados podem ter taxa fixa; fundadores sem valor informado dividem o restante.</li>
+          <li>Marque <strong>liquidado</strong> quando o pagamento for acertado — cada músico vê a própria fatia em <a href="#financeiro-banda">Meu financeiro</a>.</li>
+          <li>Gorjetas Pix do público são separadas do cachê da casa — veja <a href="#gorjeta-pix">Gorjeta Pix</a>.</li>
         </ul>
 
         <h3>Calendário e lembretes</h3>
@@ -791,15 +804,62 @@
         </ul>
         <h3 class="h6">No evento (show) — Fechamento de noite</h3>
         <ul>
-          <li>No show, use <strong>Fechamento de noite</strong>: informe o valor que a casa pagou, despesas da noite (combustível, alimentação…) e quem é <strong>fundador</strong> (divide o resto) ou <strong>sideman</strong> (taxa fixa).</li>
+          <li>No show, use <strong>Fechamento de noite</strong>: informe o valor que a casa pagou, o <strong>couvert/entrada</strong> (opcional), despesas da noite e <strong>quanto cada um recebe</strong> (fundadores inclusive). Deixe o valor em branco nos fundadores para dividir o restante igualmente; sidemen usam taxa fixa.</li>
+          <li>O couvert entra no <strong>bruto da noite</strong> junto com o cachê da casa, antes das despesas.</li>
           <li>Convidados/subs também podem receber taxa fixa no mesmo fechamento.</li>
           <li>Ao marcar <strong>liquidado</strong>, o Uníssono grava quem recebe o quê — cada músico vê a própria parte em Meu financeiro.</li>
           <li>Admin vê a liquidação completa; demais músicos veem só a própria fatia.</li>
         </ul>
+        <h3 class="h6">Gorjetas Pix no caixa</h3>
+        <ul>
+          <li>No financeiro da banda, o card <strong>Gorjetas Pix</strong> soma o que o público confirmou no placar (ou o que o admin registrou manualmente).</li>
+          <li>O placar <strong>atualiza sozinho</strong> a cada poucos segundos durante o show.</li>
+          <li>O dinheiro do Pix <strong>já caiu na chave da banda</strong> — o Uníssono <strong>não retém comissão</strong>; o app só mostra o total.</li>
+          <li>Detalhes de configuração e QR: <a href="#gorjeta-pix">Gorjeta Pix e pedidos</a>.</li>
+        </ul>
         <p class="mb-0">
-          O <strong>líquido da banda</strong> (recebido − custos de ensaio/despesas mensais) aparece no financeiro completo.
+          O <strong>resultado do mês</strong> considera cachês recebidos + gorjetas − custos de ensaio/despesas.
           Despesas lançadas no fechamento da noite já entram no cálculo do show.
         </p>
+      </div>
+    </section>
+
+    <section class="card help-section" id="gorjeta-pix">
+      <div class="card-header">Gorjeta Pix, repertório no QR e pedidos de música</div>
+      <div class="card-body">
+        <p>
+          No show, o público escaneia um QR: manda <strong>Pix direto para a chave da banda</strong> (100%, sem comissão),
+          vê o <strong>repertório</strong> e pode <strong>pedir música</strong>. No Modo Tocar você acompanha o total e a fila de pedidos ao vivo.
+        </p>
+        <h3>Configurar</h3>
+        <ul>
+          <li>Abra a banda → <strong>Configurações → Gorjeta Pix</strong>.</li>
+          <li>Informe a <strong>chave Pix</strong>, um <strong>link curto</strong> (ex.: <span class="code">/gorjeta/minha-banda</span>), mensagem e valores sugeridos.</li>
+          <li>Ative a gorjeta e escolha se o QR aparece no <strong>Modo Tocar</strong> e no <strong>PDF da setlist</strong>.</li>
+        </ul>
+        <h3>Página pública (sem login)</h3>
+        <ul>
+          <li>Link: <span class="code">unissono.app/gorjeta/seu-slug</span> — ou o QR impresso / botão Pix no palco.</li>
+          <li>Aba <strong>Pix</strong>: QR Code, valores sugeridos, copiar código e confirmar valor no placar (“Já paguei”).</li>
+          <li>Aba <strong>Repertório</strong>: lista as músicas da setlist (ou da banda) com botão <strong>Pedir</strong>; também dá para digitar uma música que não está na lista.</li>
+          <li>Quando o Modo Tocar abre a partir de uma setlist ou evento, o link já leva aquele repertório.</li>
+        </ul>
+        <h3>No Modo Tocar</h3>
+        <ul>
+          <li>Chip <strong>Pix · R$ …</strong> no rodapé: total de gorjetas do dia (ou do evento) — atualiza a cada poucos segundos e “pula” quando entra Pix novo.</li>
+          <li>Chip <strong>Pedidos</strong>: fila ao vivo do que o público pediu; use <strong>Ok</strong> (tocada) ou <strong>X</strong> (descartar).</li>
+          <li>Toque no chip Pix para abrir a página do QR no celular/telão.</li>
+        </ul>
+        <h3>Importante sobre o dinheiro</h3>
+        <ul>
+          <li>O Pix é <strong>estático na sua chave</strong> — o valor vai <strong>inteiro</strong> para a conta do músico/banda.</li>
+          <li>O Uníssono <strong>não intermedia</strong> e <strong>não cobra porcentagem</strong> sobre a gorjeta.</li>
+          <li>O placar depende da confirmação do público (“Já paguei”) ou do registro manual no Financeiro.</li>
+        </ul>
+        <div class="help-callout">
+          Dica de show: deixe o QR na mesa/telão; peça ao público para abrir a aba Repertório e pedir a música —
+          você vê a fila no tablet do palco sem sair do Modo Tocar.
+        </div>
       </div>
     </section>
 
@@ -1032,6 +1092,14 @@
           <li><strong>BPM</strong>, <strong>capo</strong> e <strong>compasso</strong> aparecem na barra de metadados junto com artista e tom.</li>
           <li><strong>Notas de palco</strong> — cadastre na setlist (campo por música) ou edite no palco (botão Editar no aviso amarelo ao trocar de faixa).</li>
           <li>Com <strong>duração</strong> cadastrada na música, o auto-scroll pode usar velocidade <strong>Auto</strong> (termina a rolagem no tempo da faixa).</li>
+        </ul>
+
+        <h3>Gorjeta Pix e pedidos no palco</h3>
+        <ul>
+          <li>Com gorjeta ativada na banda, o rodapé mostra o chip <strong>Pix · R$ …</strong> com o total ao vivo (do dia ou do evento).</li>
+          <li>O chip <strong>Pedidos</strong> lista o que o público pediu na página do QR; marque <strong>Ok</strong> ou descarte.</li>
+          <li>Toque no chip Pix para abrir a página pública (QR + repertório + pedir música).</li>
+          <li>Configuração e detalhes: <a href="#gorjeta-pix">Gorjeta Pix e pedidos</a>.</li>
         </ul>
 
         <h3>Atalhos úteis</h3>
@@ -1273,6 +1341,14 @@
         <ul>
           <li>Só funciona com o link <strong>ativado</strong> na setlist; link antigo para de funcionar ao <strong>gerar novo link</strong>.</li>
           <li>Visitantes não precisam de conta; a página pode levar alguns segundos para refletir mudanças na setlist.</li>
+        </ul>
+
+        <h3>Gorjeta Pix / pedidos</h3>
+        <ul>
+          <li>QR não aparece? Ative em <strong>Configurações da banda → Gorjeta Pix</strong> e confira a chave Pix.</li>
+          <li>Total no palco não sobe? O público precisa tocar <strong>Já paguei</strong> na página do QR (ou registre manualmente no Financeiro).</li>
+          <li>Pedido não chega? Confirme que o link do QR foi aberto a partir do Modo Tocar da setlist certa; o chip <strong>Pedidos</strong> atualiza em alguns segundos.</li>
+          <li>Mais detalhes: <a href="#gorjeta-pix">Gorjeta Pix e pedidos</a>.</li>
         </ul>
 
         <h3>Limite do plano grátis</h3>

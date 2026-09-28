@@ -31,8 +31,16 @@
             </a>
             {% endfor %}
         {% else %}
-            <div class="list-group-item text-muted text-center py-5" style="background:var(--bg); border-color:var(--border);">
-                {% if folder == 'sent' %}Nenhum e-mail enviado ainda.{% else %}Caixa de entrada vazia.{% endif %}
+            <div class="p-3">
+            {% if folder == 'sent' %}
+            {% with icon='fa-paper-plane', title='Nenhum e-mail enviado', text='Mensagens que você enviar pelo webmail aparecem aqui.' %}
+            {% include 'partials/empty_state.html' %}
+            {% endwith %}
+            {% else %}
+            {% with icon='fa-inbox', title='Caixa de entrada vazia', text='Quando alguém escrever para o seu @unissono.app, o e-mail chega aqui.' %}
+            {% include 'partials/empty_state.html' %}
+            {% endwith %}
+            {% endif %}
             </div>
         {% endif %}
     </div>

@@ -1,0 +1,52 @@
+CRIATIVO CERTO — Uníssono
+Destino: https://unissono.app/auth/register?next=/cifras/comecar
+Otimizar: play_mode_real (não cadastro)
+Não usar: 30 dias Pro, estúdio, financeiro, “criar conta grátis” no texto principal
+
+────────────────────────────────
+META / INSTAGRAM — campanha única (banda)
+────────────────────────────────
+Texto principal:
+A cifra que vocês ensaiam, no celular de todo mundo — no tom certo, tela cheia, até sem internet.
+
+Título:
+A cifra do ensaio, no palco
+
+Descrição:
+Modo Tocar do Uníssono
+
+CTA do anúncio: Saiba mais
+(o botão no criativo diz “Abrir o palco”)
+
+PNG:
+  png/feed-1x1.png      → feed 1:1
+  png/feed-4x5.png      → feed Instagram 4:5 (prioridade)
+  png/stories-9x16.png  → stories / reels
+
+────────────────────────────────
+META — igreja (só se o anúncio for pra líder de louvor)
+────────────────────────────────
+Texto principal:
+Cifra no Drive, print no grupo, tom errado no culto. O palco do Uníssono abre a música de vocês no celular de cada músico — offline no templo.
+
+Título:
+Pare de perder o culto no WhatsApp
+
+PNG: png/igreja-4x5.png
+
+────────────────────────────────
+GOOGLE — RSA (pesquisa)
+────────────────────────────────
+Títulos:
+A cifra do ensaio no palco
+Mesmo tom no celular da banda
+Sem PDF no grupo do WhatsApp
+Modo Tocar offline
+Uníssono — palco no celular
+
+Descrições:
+Cole a música do ensaio. Abre tela cheia, transposição e funciona sem internet.
+O palco da banda: cifra no tom certo no celular de todo mundo.
+
+URL final: unissono.app/cifras/comecar
+(cadastro no meio do caminho se não estiver logado)

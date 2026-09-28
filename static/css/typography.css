@@ -3,7 +3,9 @@
  * Escala: 12px badges · 14px meta/UI · 16px corpo/inputs · fluido em heroes.
  */
 :root {
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Display + UI: Sora (marca). Mono: JetBrains (cifras). */
+  --font-display: 'Sora', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Sora', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Courier New', Courier, monospace;
   --cifra-mono-font: var(--font-mono);
 
@@ -59,9 +61,9 @@ button {
 
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4, .h5, .h6 {
-  font-family: inherit;
+  font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 pre,

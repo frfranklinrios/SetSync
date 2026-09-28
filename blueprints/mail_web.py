@@ -25,19 +25,22 @@ def _storage_instance() -> EmailStorage:
 
 
 def mailbox_for_user(user_id: int | None) -> str:
-    """Caixa do domínio Uníssono do usuário master ou contato padrão do .env."""
-    from email_config import MAIL_DOMAIN, contact_email
+    """Caixa do domínio Uníssono do usuário master ou contato padrão do .env.
 
-    fallback = contact_email().strip().lower()
+    Endereços legados @setsync.com.br são mapeados para @unissono.app.
+    """
+    from email_config import contact_email
+    from mail_server.config import LOCAL_DOMAINS, canonical_mailbox
+
+    fallback = canonical_mailbox(contact_email())
     if not user_id:
         return fallback
     user = get_user(user_id)
     if not user:
         return fallback
     email = (user.get("email") or "").strip().lower()
-    domains = {MAIL_DOMAIN, "unissono.app", "setsync.com.br"}
-    if any(email.endswith(f"@{d}") for d in domains if d):
-        return email
+    if "@" in email and email.rsplit("@", 1)[-1] in LOCAL_DOMAINS:
+        return canonical_mailbox(email)
     return fallback
 
 
@@ -71,6 +74,30 @@ def sent():
         folder="sent",
         mailbox=owner,
         unread_count=0,
+    )
+
+
+@mail_web_bp.route("/dns")
+@superadmin_required
+def dns_status():
+    """Diagnóstico SPF/DKIM/DMARC para o domínio de envio."""
+    dkim_value = None
+    try:
+        from mail_server.server.dkim_sign import dns_record, ensure_dkim_keys
+
+        ensure_dkim_keys()
+        dkim_value = dns_record()
+    except Exception:
+        dkim_value = None
+    from mail_dns import check_mail_dns
+
+    checks = check_mail_dns(dkim_value=dkim_value)
+    return render_template(
+        "mail/dns.html",
+        mailbox=_owner(),
+        checks=checks,
+        dkim_value=dkim_value or "",
+        folder="dns",
     )
 
 

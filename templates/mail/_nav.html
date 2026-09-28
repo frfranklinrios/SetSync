@@ -25,4 +25,9 @@
             <i class="fas fa-paper-plane me-1"></i> Enviados
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link {% if folder == 'dns' %}active{% endif %}" href="{{ url_for('mail_web.dns_status') }}">
+            <i class="fas fa-shield-alt me-1"></i> DNS
+        </a>
+    </li>
 </ul>

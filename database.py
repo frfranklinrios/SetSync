@@ -123,9 +123,57 @@ else:
 
 
 def _adapt_sql(sql: str) -> str:
+    """Converte placeholders SQLite (?) → PostgreSQL (%s).
+
+    Preserva ``%s`` / ``%(name)s`` / ``%%`` já existentes e escapa ``%`` literais
+    (ex.: LIKE 'foo%') para o psycopg2.
+    """
     if not IS_POSTGRES:
         return sql
-    s = sql.replace('?', '%s')
+
+    mark = '\x00PH\x00'
+    saved: list[str] = []
+
+    def _stash(m: re.Match) -> str:
+        saved.append(m.group(0))
+        return f'{mark}{len(saved) - 1}{mark}'
+
+    # Protege placeholders Postgres e escapes já corretos.
+    sql = re.sub(r'%%|%\(\w+\)s|%s', _stash, sql)
+
+    qmark = '\x00QM\x00'
+    out: list[str] = []
+    i = 0
+    n = len(sql)
+    in_single = False
+    in_double = False
+    while i < n:
+        ch = sql[i]
+        if ch == "'" and not in_double:
+            if in_single and i + 1 < n and sql[i + 1] == "'":
+                out.append("''")
+                i += 2
+                continue
+            in_single = not in_single
+            out.append(ch)
+            i += 1
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            out.append(ch)
+            i += 1
+            continue
+        if ch == '?' and not in_single and not in_double:
+            out.append(qmark)
+            i += 1
+            continue
+        out.append(ch)
+        i += 1
+    s = ''.join(out)
+    s = s.replace('%', '%%')
+    for idx, token in enumerate(saved):
+        s = s.replace(f'{mark}{idx}{mark}', token)
+    s = s.replace(qmark, '%s')
     s = s.replace("datetime('now')", 'CURRENT_TIMESTAMP')
     return s
 

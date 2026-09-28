@@ -7,12 +7,12 @@
     <div class="mockup-grid">
         <figure class="mockup-mobile">
             <button type="button" class="mockup-zoom-trigger"
-                    data-lightbox-src="{{ url_for('static', filename='screenshots/estudio-painel-mobile.png') }}"
+                    data-lightbox-src="{{ marketing_shot_url(marketing_pack_estudio, 'estudio-painel-mobile') }}"
                     data-lightbox-alt="Painel do estúdio no celular — salas, QR de agendamento e métricas do Groove Box Ensaios"
                     data-lightbox-caption="Painel no celular — salas e QR"
                     aria-label="Ampliar captura do painel no celular">
                 <div class="mockup-mobile-frame">
-                    <img src="{{ url_for('static', filename='screenshots/estudio-painel-mobile.png') }}"
+                    <img src="{{ marketing_shot_url(marketing_pack_estudio, 'estudio-painel-mobile') }}"
                          alt=""
                          width="478" height="785"
                          loading="lazy"
@@ -23,12 +23,12 @@
         </figure>
         <figure class="mockup-desktop">
             <button type="button" class="mockup-zoom-trigger"
-                    data-lightbox-src="{{ url_for('static', filename='screenshots/estudio-financeiro-desktop.png') }}"
+                    data-lightbox-src="{{ marketing_shot_url(marketing_pack_estudio, 'estudio-financeiro-desktop') }}"
                     data-lightbox-alt="Financeiro do estúdio no Uníssono — receita, reservas confirmadas, preço por hora e despesas"
                     data-lightbox-caption="Financeiro — receita, reservas e despesas"
                     aria-label="Ampliar captura do financeiro">
                 <div class="mockup-desktop-frame">
-                    <img src="{{ url_for('static', filename='screenshots/estudio-financeiro-desktop.png') }}"
+                    <img src="{{ marketing_shot_url(marketing_pack_estudio, 'estudio-financeiro-desktop') }}"
                          alt=""
                          width="2640" height="1422"
                          loading="lazy"

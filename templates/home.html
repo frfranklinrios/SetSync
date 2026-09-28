@@ -1,13 +1,13 @@
 {% extends "index.html" %}
 
-{% block title %}Uníssono — App para bandas, igrejas e estúdios de ensaio{% endblock %}
+{% block title %}Uníssono — Cifras e setlists para bandas (Modo Tocar offline){% endblock %}
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('index') }}">
-<meta name="description" content="Uníssono é o app brasileiro para música ao vivo: cifras e setlists para bandas, plano Worship para igrejas e agenda com financeiro para estúdios de ensaio. Tudo em um só lugar.">
-<meta name="keywords" content="Uníssono, app música, cifras banda, setlist, estúdio ensaio, louvor igreja">
-<meta property="og:title" content="Uníssono — Bandas, igrejas e estúdios em um app">
-<meta property="og:description" content="Repertório sincronizado, agenda com escalação, reservas de sala e Modo Tocar offline — escolha seu perfil e comece grátis.">
+<meta name="description" content="Uníssono organiza cifras, setlists e agenda da sua banda com Modo Tocar offline. Comece grátis — Pro R$ 29/mês para ensaiar de verdade.">
+<meta name="keywords" content="Uníssono, cifras banda, setlist, Modo Tocar, ensaio, app músicos">
+<meta property="og:title" content="Uníssono — Repertório da banda no palco, sem caos no WhatsApp">
+<meta property="og:description" content="Cifras sincronizadas, setlists e Modo Tocar offline. Comece grátis.">
 <meta property="og:url" content="{{ external_url_for('index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -530,6 +530,15 @@
 .home-hero-hub { max-width: 900px; margin: 0 auto; text-align: center; }
 .home-hero-hub h1 { max-width: none; margin-left: auto; margin-right: auto; }
 .home-hero-hub .home-lead { margin-left: auto; margin-right: auto; }
+.home-brand-mark {
+    font-family: var(--font-display, var(--font-sans));
+    font-size: clamp(1.75rem, 4vw + 0.5rem, 2.75rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+    margin: 0 0 0.75rem;
+    line-height: 1.1;
+}
 .home-audience-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -597,45 +606,110 @@
 .home-platform-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.35rem; }
 .home-platform-card p { font-size: var(--text-sm); color: var(--muted); margin: 0; line-height: 1.5; }
 
+.home-extensoes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+@media (max-width: 640px) {
+    .home-extensoes-grid { grid-template-columns: 1fr; }
+}
+.home-extensao-link {
+    display: block;
+    padding: 1.15rem 1.25rem;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    background: var(--bg);
+    transition: border-color 0.15s, background 0.15s;
+}
+.home-extensao-link:hover {
+    border-color: var(--accent);
+    border-style: solid;
+}
+.home-extensao-link strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+.home-extensao-link span {
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+
+.home-finance-cta {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem 3rem;
+}
+.home-finance-cta-inner {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 1.75rem;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem 1.6rem;
+    background: linear-gradient(135deg, rgba(255, 247, 237, 0.9), rgba(240, 253, 250, 0.85));
+}
+[data-theme="dark"] .home-finance-cta-inner {
+    background: linear-gradient(135deg, rgba(11, 20, 34, 0.95), rgba(19, 78, 74, 0.25));
+    border-color: #334155;
+}
+@media (max-width: 800px) {
+    .home-finance-cta-inner { grid-template-columns: 1fr; }
+}
+.home-finance-cta h2 {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    margin: 0 0 0.4rem;
+}
+.home-finance-cta p {
+    color: var(--muted);
+    font-size: var(--text-base);
+    line-height: 1.55;
+    margin: 0 0 1rem;
+    max-width: 38rem;
+}
+.home-finance-cta-shot {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--chord-highlight-border);
+}
+.home-finance-cta-shot img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="home-hero">
+    {% with active='banda' %}
     {% include 'partials/audience_bar.html' %}
+    {% endwith %}
     <div class="home-hero-inner home-hero-hub">
-        <span class="home-badge"><i class="fas fa-gift me-1"></i> 30 dias Pro grátis · sem cartão</span>
-        <h1>Cifras e setlists prontos para o palco</h1>
+        <p class="home-brand-mark" aria-label="Uníssono">Uníssono</p>
+        <h1>Cifras no palco, sem caos no WhatsApp</h1>
         <p class="home-lead">
-            O <strong>Uníssono</strong> é o app da sua banda, igreja ou estúdio:
-            repertório sincronizado, agenda e <strong>Modo Tocar offline</strong> — sem caos no WhatsApp.
+            Repertório sincronizado e <strong>Modo Tocar offline</strong> — e no dia do show:
+            escala, freela por WhatsApp e fechamento de cachê, sem planilha.
+            Comece grátis — Pro R$ 29/mês para setlist, Modo Tocar da banda e offline.
         </p>
-
-        <div class="home-cta justify-content-center mb-4">
-            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Criar conta grátis</a>
-            <a href="{{ url_for('assinatura_bp.bandas') }}#planos" class="btn btn-outline-secondary btn-lg">Ver planos</a>
+        <div class="home-cta justify-content-center mb-3">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Começar grátis</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg">Entrar</a>
         </div>
-        <p class="text-center text-muted small mb-4">Bandas · igrejas · estúdios · pagamento Mercado Pago</p>
-
-        <div class="home-audience-cards">
-            <a href="{{ url_for('assinatura_bp.bandas') }}" class="home-audience-card">
-                <div class="home-audience-card-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
-                <h2>Sou banda</h2>
-                <p>Cifras, setlists, agenda, cachês e palco offline.</p>
-                <span class="home-audience-card-cta">Ver para bandas →</span>
-            </a>
-            <a href="{{ url_for('assinatura_bp.igrejas') }}" class="home-audience-card">
-                <div class="home-audience-card-icon"><i class="fas fa-church" aria-hidden="true"></i></div>
-                <h2>Sou igreja</h2>
-                <p>Worship: várias equipes de louvor numa conta.</p>
-                <span class="home-audience-card-cta">Ver para igrejas →</span>
-            </a>
-            <a href="{{ url_for('studios.landing') }}" class="home-audience-card">
-                <div class="home-audience-card-icon"><i class="fas fa-door-open" aria-hidden="true"></i></div>
-                <h2>Tenho estúdio</h2>
-                <p>Salas, reservas online e financeiro do ensaio.</p>
-                <span class="home-audience-card-cta">Ver para estúdios →</span>
-            </a>
+        <p class="text-muted small mb-4">Leva ~2&nbsp;min · E-mail ou Google</p>
+        <div class="hero-mock-clean mx-auto" style="max-width:min(520px,92vw);">
+            <img src="{{ url_for('static', filename='screenshots/modo-tocar-mobile.png') }}"
+                 alt="Modo Tocar do Uníssono no celular"
+                 width="540" height="1170"
+                 loading="eager" decoding="async"
+                 class="w-100">
         </div>
     </div>
 </section>
@@ -668,32 +742,69 @@
 {% endif %}
 
 <section class="home-section">
-    <h2>Tudo que um projeto musical precisa</h2>
-    <p class="section-sub">Do ensaio ao show — e da reserva de sala ao fechamento do mês.</p>
+    <h2>Feito para a banda no ensaio e no show</h2>
+    <p class="section-sub">Do ensaio ao cachê: repertório → Modo Tocar → escala e freela → fechamento da noite.</p>
     <div class="home-platform-grid">
         <article class="home-platform-card">
             <h3><i class="fas fa-music me-1 text-muted"></i> Repertório</h3>
-            <p>Cifras com transposição, setlists por cantor, biblioteca compartilhada e Modo Tocar na tela cheia.</p>
+            <p>Cifras com transposição, biblioteca compartilhável e versão pessoal quando você precisa.</p>
         </article>
         <article class="home-platform-card">
-            <h3><i class="fas fa-calendar-alt me-1 text-muted"></i> Agenda</h3>
-            <p>Ensaios e shows com escalação, confirmação por link, setlist do evento e lembretes.</p>
+            <h3><i class="fas fa-play me-1 text-muted"></i> Modo Tocar</h3>
+            <p>Tela cheia, offline, metrônomo, pedais e sync entre músicos — o aha do Uníssono.</p>
         </article>
         <article class="home-platform-card">
-            <h3><i class="fas fa-door-open me-1 text-muted"></i> Estúdios</h3>
-            <p>Bandas reservam salas por cidade; donos confirmam, sincronizam com a agenda e controlam o financeiro.</p>
+            <h3><i class="fas fa-user-check me-1 text-muted"></i> Escala &amp; freela</h3>
+            <p>Quem toca o show confirma por link. Freela avulso no WhatsApp — e volta no pool da banda.</p>
+        </article>
+        <article class="home-platform-card">
+            <h3><i class="fas fa-wallet me-1 text-muted"></i> Cachê da noite</h3>
+            <p>Casa paga → despesas → fundador e sideman. Cada um vê a fatia em Meu financeiro.</p>
         </article>
     </div>
 </section>
 
-{% include 'partials/secao_estudio_home.html' %}
+<section class="home-finance-cta" id="financeiro">
+    <div class="home-finance-cta-inner">
+        <div>
+            <h2><i class="fas fa-wallet me-1 text-muted" aria-hidden="true"></i> Financeiro da banda</h2>
+            <p>
+                Feche a noite do show, escale freela avulso com confirmação por link,
+                divida fundador e sideman e acompanhe cachês sem planilha.
+                Cada músico vê a própria parte; o admin gerencia o caixa e exporta PDF.
+            </p>
+            <a href="{{ url_for('assinatura_bp.financeiro') }}" class="btn btn-primary">
+                Conhecer o módulo financeiro
+            </a>
+        </div>
+        <figure class="home-finance-cta-shot mb-0">
+            <img src="{{ marketing_shot_url(marketing_pack_br, 'financeiro-banda-desktop') }}"
+                 alt="Painel financeiro da banda no Uníssono"
+                 width="900" height="560"
+                 loading="lazy" decoding="async">
+        </figure>
+    </div>
+</section>
 
-{% include 'partials/secao_worship_plano.html' %}
+<section class="home-section home-extensoes" id="extensoes">
+    <h2>Também serve igrejas e estúdios</h2>
+    <p class="section-sub">Extensões do mesmo produto — páginas dedicadas, sem competir com o fluxo da banda.</p>
+    <div class="home-extensoes-grid">
+        <a href="{{ url_for('assinatura_bp.igrejas') }}" class="home-extensao-link">
+            <strong><i class="fas fa-church me-1" aria-hidden="true"></i>Igrejas · Worship</strong>
+            <span>Várias equipes de louvor em uma conta.</span>
+        </a>
+        <a href="{{ url_for('studios.landing') }}" class="home-extensao-link">
+            <strong><i class="fas fa-door-open me-1" aria-hidden="true"></i>Estúdios</strong>
+            <span>Salas, reservas e financeiro do dono.</span>
+        </a>
+    </div>
+</section>
 
 {% if testimonials %}
 <section class="home-section home-testimonials">
     <h2>Quem usa recomenda</h2>
-    <p class="section-sub">Bandas, igrejas e estúdios que já organizaram o trabalho no Uníssono.</p>
+    <p class="section-sub">Bandas que já organizaram o ensaio no Uníssono.</p>
     <div class="testimonials-grid">
         {% for t in testimonials[:3] %}
         <article class="testimonial-card">
@@ -709,18 +820,25 @@
 
 <section class="home-section home-faq" id="faq">
     <h2>Perguntas frequentes</h2>
-    <p class="section-sub">Dúvidas comuns sobre o Uníssono como plataforma.</p>
+    <p class="section-sub">Dúvidas comuns de quem toca em banda.</p>
     <details>
         <summary>O Uníssono é só para bandas?</summary>
-        <p>Não. Há módulos para <strong>bandas e músicos</strong>, <strong>igrejas</strong> (plano Worship) e <strong>donos de estúdio</strong> (reservas e financeiro). Escolha seu perfil nas páginas <a href="{{ url_for('assinatura_bp.bandas') }}">Bandas</a>, <a href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a> ou <a href="{{ url_for('studios.landing') }}">Estúdios</a>.</p>
+        <p>O foco é a <strong>banda</strong> (cifras, setlists, Modo Tocar). Igreja e estúdio são extensões —
+        veja <a href="{{ url_for('assinatura_bp.igrejas') }}">Igrejas</a> ou
+        <a href="{{ url_for('studios.landing') }}">Estúdios</a>.</p>
     </details>
     <details>
         <summary>Preciso pagar para começar?</summary>
-        <p>Não. O plano Grátis não exige cartão. Bandas ganham <strong>30 dias de Pro</strong> na primeira conta; estúdios têm trial Premium no primeiro cadastro.</p>
+        <p>Não. O Grátis libera demo e uma abertura do Modo Tocar. Ensaio de banda (setlist, palco, PDF, offline) é no <strong>Pro R$ 29/mês</strong>.</p>
     </details>
     <details>
         <summary>Funciona offline no palco?</summary>
-        <p>Sim. Instale como app (PWA) e use setlists e cifras já abertas sem internet — ideal em shows e cultos.</p>
+        <p>Sim — com o <strong>Pro</strong> (ou Individual no solo) você baixa a setlist no celular.</p>
+    </details>
+    <details>
+        <summary>Tem financeiro de cachê?</summary>
+        <p>Sim. Feche a noite do show, acompanhe sua parte em Meu financeiro e o caixa da banda no painel do admin.
+           <a href="{{ url_for('assinatura_bp.financeiro') }}">Veja o módulo financeiro</a>.</p>
     </details>
     <p class="mt-3 mb-1">
         <a href="{{ url_for('guia.guia_index') }}">Ver todos os guias →</a>
@@ -731,9 +849,34 @@
 
 <section class="home-cta-band">
     <h2>Pronto para o próximo ensaio?</h2>
-    <p>Crie a conta grátis — o Pro de 30 dias começa na primeira banda, sem cartão.</p>
+    <p>Crie a conta grátis, sinta o Modo Tocar — e assine o Pro quando for ensaiar de verdade.</p>
     <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2 mb-2">Criar conta grátis</a>
     <a href="{{ url_for('assinatura_bp.bandas') }}#planos" class="btn btn-outline-secondary btn-lg mb-2">Ver planos</a>
+</section>
+
+<section class="home-section home-planos" id="planos-solo">
+    <div class="home-planos-inner">
+        <h2 class="text-center mb-2">Toca sozinho?</h2>
+        <p class="section-sub text-center mb-4">
+            Coleção + Modo Tocar são grátis. PDF e compartilhar saem no <strong>Individual</strong> por R$&nbsp;15/mês —
+            sem montar banda de ensaio.
+        </p>
+        <div class="planos-publicos-grid" style="max-width:420px;margin:0 auto;">
+            <article style="border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.35rem;background:var(--card,#fff);">
+                <h3 class="h5 mb-1">Individual</h3>
+                <p class="mb-2" style="font-size:1.75rem;font-weight:700;line-height:1;">R$ 15<small style="font-size:0.95rem;font-weight:500;color:var(--muted);">/mês</small></p>
+                <ul class="mb-3" style="font-size:var(--text-sm);padding-left:1.1rem;">
+                    <li>Compartilhar cifras</li>
+                    <li>Exportar PDF</li>
+                    <li>1 banda solo (checkout cria pra você)</li>
+                </ul>
+                <a href="{{ url_for('assinatura_bp.planos') }}" class="btn btn-primary w-100">Ver Individual</a>
+            </article>
+        </div>
+        <p class="home-planos-note">Banda completa? <a href="{{ url_for('assinatura_bp.bandas') }}#planos">Pro R$ 29</a> · Igreja:
+            <a href="{{ url_for('assinatura_bp.igrejas') }}">Worship</a> · Comparar
+            <a href="{{ url_for('guia.comparativo', slug='ipraise') }}">vs iPraise</a></p>
+    </div>
 </section>
 {% endblock %}
 

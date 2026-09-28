@@ -58,11 +58,36 @@
     color: inherit;
 }
 .guia-related a:hover { border-color: var(--accent); }
+.help-shot { margin: 1rem 0 1.5rem; text-align: center; }
+.help-shot-zoom { display: inline-block; padding: 0; border: none; background: transparent; cursor: zoom-in; }
+.help-shot-mobile-frame {
+    width: min(100%, 220px); margin: 0 auto; padding: 8px;
+    border: 1px solid #334155; border-radius: 22px;
+    background: linear-gradient(180deg, #1e293b 0%, #0b1422 100%);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
+}
+.help-shot-mobile-frame img { display: block; width: 100%; height: auto; border-radius: 14px; }
+.help-shot-desktop-frame {
+    width: min(100%, 640px); margin: 0 auto; padding: 10px 10px 14px;
+    border: 1px solid var(--border); border-radius: 10px; background: #0f172a;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+}
+[data-theme="light"] .help-shot-desktop-frame { background: #e2e8f0; }
+.help-shot-desktop-frame img { display: block; width: 100%; height: auto; border-radius: 4px; }
+.help-shot-caption { margin-top: 0.55rem; font-size: var(--text-sm); color: var(--muted); }
+.help-shot-hint { display: block; font-size: var(--text-xs); opacity: 0.8; }
 </style>
 
 <article class="guia-page">
     <p class="text-muted small mb-2"><a href="{{ url_for('guia.guia_index') }}">← Guia Uníssono</a></p>
     <h1>{{ page.h1 }}</h1>
+
+    {% if guia_shot %}
+    {% with pack=guia_shot.pack, name=guia_shot.name, frame=guia_shot.frame,
+            caption=guia_shot.caption, alt=guia_shot.alt %}
+      {% include 'partials/help_shot.html' %}
+    {% endwith %}
+    {% endif %}
 
     {% for section in page.sections %}
         {% if section.h2 %}<h2>{{ section.h2 }}</h2>{% endif %}
@@ -89,4 +114,5 @@
     </div>
     {% endif %}
 </article>
+{% include 'partials/image_lightbox_assets.html' %}
 {% endblock %}

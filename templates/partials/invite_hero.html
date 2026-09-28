@@ -1,0 +1,34 @@
+{# Depois do palco real: um toque para chamar a banda. #}
+{% if invite_cta %}
+<div class="invite-hero mb-4">
+    <h2 class="invite-hero-title">Manda no grupo do ensaio</h2>
+    <p class="invite-hero-lead">
+        {% if invite_cta.has_band %}
+        Você já tocou. Agora a banda precisa entrar no mesmo palco, no mesmo tom.
+        {% else %}
+        Você já tocou a cifra. Um WhatsApp e quem ensaiar com você entra no palco.
+        {% endif %}
+    </p>
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="{{ invite_cta.wa_href }}" class="btn btn-success" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp me-1" aria-hidden="true"></i>Mandar no WhatsApp
+        </a>
+        {% if invite_cta.has_band %}
+        <a href="{{ invite_cta.members_url }}" class="btn btn-outline-secondary">Copiar link de convite</a>
+        {% else %}
+        <a href="{{ invite_cta.members_url }}" class="btn btn-outline-secondary">Criar a banda primeiro</a>
+        {% endif %}
+    </div>
+</div>
+<style>
+.invite-hero {
+    border: 2px solid rgba(22, 163, 74, 0.35);
+    border-radius: 14px;
+    padding: 1.35rem 1.25rem;
+    background: var(--bg);
+    text-align: center;
+}
+.invite-hero-title { font-size: var(--text-lg); font-weight: 800; margin-bottom: 0.45rem; }
+.invite-hero-lead { font-size: var(--text-base); max-width: 34rem; margin: 0 auto 1rem; line-height: 1.5; color: var(--muted); }
+</style>
+{% endif %}

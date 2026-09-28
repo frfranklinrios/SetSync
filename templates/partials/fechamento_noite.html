@@ -6,7 +6,8 @@
             <div>
                 <h3 class="h6 mb-1"><i class="fas fa-moon me-1"></i> Fechamento de noite</h3>
                 <p class="text-muted mb-0" style="font-size: var(--text-sm);">
-                    Casa paga um valor → despesas → sidemen (taxa fixa) → resto entre fundadores.
+                    Casa paga → despesas → informe quanto <strong>cada um</strong> recebe
+                    (fundadores inclusive). Deixe em branco nos fundadores para dividir o restante.
                 </p>
             </div>
             {% if event.fee_settled_at %}
@@ -34,25 +35,40 @@
 
             <div class="row g-2 align-items-end mb-3">
                 <div class="col-md-3">
-                    <label class="form-label mb-1" style="font-size: var(--text-sm);">Bruto da casa (R$)</label>
+                    <label class="form-label mb-1" style="font-size: var(--text-sm);"
+                           title="Valor que a casa pagou à banda pelo show">Bruto da casa (R$)</label>
                     <input type="text" name="fee_total" class="form-control form-control-sm" inputmode="decimal"
-                           value="{{ event.fee_total or '' }}" placeholder="1500,00" required>
+                           value="{{ event.fee_total or '' }}" placeholder="1500,00" required
+                           title="Cachê bruto pago pela casa">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label mb-1" style="font-size: var(--text-sm);">− Transporte / pedágio</label>
+                    <label class="form-label mb-1" style="font-size: var(--text-sm);"
+                           title="Entrada/couvert que ficou com a banda — soma ao bruto antes das despesas">+ Couvert / entrada (R$)</label>
+                    <input type="text" name="fee_couvert" class="form-control form-control-sm" inputmode="decimal"
+                           value="{{ event.fee_couvert or '' }}" placeholder="0"
+                           title="Valor de couvert ou entrada artística da banda">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1" style="font-size: var(--text-sm);"
+                           title="Desconta do bruto (combustível, pedágio etc.)">− Transporte / pedágio</label>
                     <input type="text" name="fee_transport_discount" class="form-control form-control-sm" inputmode="decimal"
-                           value="{{ event.fee_transport_discount or '' }}" placeholder="0">
+                           value="{{ event.fee_transport_discount or '' }}" placeholder="0"
+                           title="Desconto de transporte/pedágio">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label mb-1" style="font-size: var(--text-sm);">− Equipamento / backline</label>
+                    <label class="form-label mb-1" style="font-size: var(--text-sm);"
+                           title="Desconta do bruto (aluguel de backline etc.)">− Equipamento / backline</label>
                     <input type="text" name="fee_equipment_discount" class="form-control form-control-sm" inputmode="decimal"
-                           value="{{ event.fee_equipment_discount or '' }}" placeholder="0">
+                           value="{{ event.fee_equipment_discount or '' }}" placeholder="0"
+                           title="Desconto de equipamento/backline">
                 </div>
                 <div class="col-md-3">
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="checkbox" name="fee_settled" value="1" id="fee-settled-night"
-                               {% if event.fee_settled_at %}checked{% endif %}>
-                        <label class="form-check-label" for="fee-settled-night" style="font-size: var(--text-sm);">
+                               {% if event.fee_settled_at %}checked{% endif %}
+                               title="Marca o show como pago/acertado com a banda">
+                        <label class="form-check-label" for="fee-settled-night" style="font-size: var(--text-sm);"
+                               title="Quando marcado, cada músico vê a fatia como liquidada">
                             Marcar como liquidado
                         </label>
                     </div>
@@ -61,8 +77,10 @@
 
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label class="form-label mb-0" style="font-size: var(--text-sm);">Despesas desta noite</label>
-                    <button type="button" class="btn btn-link btn-sm p-0" id="add-night-expense">+ despesa</button>
+                    <label class="form-label mb-0" style="font-size: var(--text-sm);"
+                           title="Gastos da noite que saem do bruto antes da divisão">Despesas desta noite</label>
+                    <button type="button" class="btn btn-link btn-sm p-0" id="add-night-expense"
+                            title="Adicionar outra linha de despesa (alimentação, combustível…)">+ despesa</button>
                 </div>
                 <div id="night-expenses" class="d-flex flex-column gap-1">
                     {% for e in event_expenses or [] %}
@@ -99,33 +117,56 @@
 
             {% if members %}
             <div class="mb-3">
-                <label class="form-label mb-1" style="font-size: var(--text-sm);">Integrantes — fundador ou sideman</label>
+                <label class="form-label mb-1" style="font-size: var(--text-sm);">
+                    Quanto cada um recebe
+                </label>
+                <p class="text-muted mb-2" style="font-size: var(--text-xs);">
+                    <strong>Fundador:</strong> preencha o valor ou deixe vazio para dividir o restante igualmente.
+                    <strong>Sideman:</strong> taxa fixa (salva como padrão da banda).
+                </p>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0" style="font-size: var(--text-sm);">
                         <thead>
                             <tr>
                                 <th>Nome</th>
                                 <th style="width:8rem;">Tipo</th>
-                                <th style="width:7rem;">Taxa fixa</th>
+                                <th style="width:8rem;">Valor (R$)</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for m in members %}
                             {% set uid = m.user_id %}
-                            <tr>
-                                <td>{{ user_display_name(m) }}</td>
+                            {% set uid_s = uid|string %}
+                            {% set in_split = (not settlement_member_ids) or (uid_s in settlement_member_ids) %}
+                            {% set is_sideman = (m.settlement_role or '') == 'sideman' %}
+                            {% set snap = (fee_amount_by_user or {}).get(uid_s) %}
+                            {% if snap is not none %}
+                              {% set fee_val = snap %}
+                            {% elif is_sideman and m.default_fixed_fee %}
+                              {% set fee_val = m.default_fixed_fee %}
+                            {% else %}
+                              {% set fee_val = none %}
+                            {% endif %}
+                            <tr class="{% if not in_split %}table-secondary{% endif %}">
                                 <td>
-                                    <select name="member_role_{{ uid }}" class="form-select form-select-sm member-settle-role" data-uid="{{ uid }}">
-                                        <option value="founder" {% if (m.settlement_role or 'founder') != 'sideman' %}selected{% endif %}>Fundador</option>
-                                        <option value="sideman" {% if (m.settlement_role or '') == 'sideman' %}selected{% endif %}>Sideman</option>
+                                    {{ user_display_name(m) }}
+                                    {% if not in_split %}
+                                    <span class="badge text-bg-light border text-muted ms-1">fora da divisão</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <select name="member_role_{{ uid }}" class="form-select form-select-sm member-settle-role" data-uid="{{ uid }}"
+                                            {% if not in_split %}disabled{% endif %}>
+                                        <option value="founder" {% if not is_sideman %}selected{% endif %}>Fundador</option>
+                                        <option value="sideman" {% if is_sideman %}selected{% endif %}>Sideman</option>
                                     </select>
                                 </td>
                                 <td>
                                     <input type="text" name="member_fee_{{ uid }}" class="form-control form-control-sm member-settle-fee"
                                            inputmode="decimal" data-uid="{{ uid }}"
-                                           value="{{ '%.2f'|format(m.default_fixed_fee) if m.default_fixed_fee else '' }}"
-                                           placeholder="—"
-                                           {% if (m.settlement_role or 'founder') != 'sideman' %}disabled{% endif %}>
+                                           value="{{ '%.2f'|format(fee_val) if fee_val is not none and in_split else '' }}"
+                                           placeholder="{{ 'taxa' if is_sideman else 'resto' }}"
+                                           {% if not in_split %}disabled{% endif %}>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -137,18 +178,26 @@
 
             {% if guests %}
             <div class="mb-3">
-                <label class="form-label mb-1" style="font-size: var(--text-sm);">Convidados / subs — taxa fixa</label>
+                <label class="form-label mb-1" style="font-size: var(--text-sm);">Freelas / convidados — taxa fixa</label>
                 <div class="d-flex flex-column gap-1">
                     {% for g in guests %}
+                    {% set gst = (g.response_status or 'pending')|lower %}
+                    {% if gst != 'declined' %}
                     <div class="row g-1 align-items-center">
                         <div class="col-8" style="font-size: var(--text-sm);">
                             {{ g.name }}{% if g.role_label %} <span class="text-muted">({{ g.role_label }})</span>{% endif %}
+                            {% if gst == 'accepted' %}
+                            <span class="badge text-bg-success">confirmou</span>
+                            {% else %}
+                            <span class="badge text-bg-warning text-dark">pendente</span>
+                            {% endif %}
                         </div>
                         <div class="col-4">
                             <input type="text" name="guest_fee_{{ g.id }}" class="form-control form-control-sm" inputmode="decimal"
                                    value="{{ '%.2f'|format(g.fixed_fee) if g.fixed_fee else '' }}" placeholder="Taxa R$">
                         </div>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -164,6 +213,26 @@
                 <i class="fas fa-calculator me-1"></i> Calcular e salvar liquidação
             </button>
         </form>
+        {% if trial_opt_in_available %}
+        <form method="post" action="{{ url_for('agenda.trial_pro_opt_in', event_id=event.id) }}" class="mt-2 d-inline">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-outline-warning btn-sm">
+                Testar Pro 7 dias neste show
+            </button>
+        </form>
+        <a href="{{ pro_checkout_url or url_for('assinatura_bp.planos', banda_id=band.id, plano='pro', go=1) }}"
+           class="btn btn-warning btn-sm mt-2">Assinar Pro — R$ 29</a>
+        {% endif %}
+        {% if event.fee_total and fee_split and fee_split.payees and not event.fee_settled_at %}
+        <form method="post" action="{{ url_for('agenda.liquidar_noite_rapido', event_id=event.id) }}"
+              class="mt-2"
+              onsubmit="return confirm('Marcar a noite como liquidada e avisar os músicos?');">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-success btn-sm">
+                <i class="fas fa-check-double me-1"></i> Liquidar agora (1 toque)
+            </button>
+        </form>
+        {% endif %}
         {% elif not event.fee_total %}
         <p class="text-muted mb-0" style="font-size: var(--text-sm);">O administrador ainda não fechou o cachê deste show.</p>
         {% endif %}
@@ -174,13 +243,39 @@
         <div style="font-size: var(--text-sm);">
             {% if fee_split.my_amount is not none %}
             <p class="mb-1"><strong>Sua parte:</strong> R$ {{ '%.2f'|format(fee_split.my_amount) }}
-                {% if fee_split.payees and fee_split.payees[0].kind == 'fixed' %}
-                <span class="badge text-bg-secondary">taxa fixa</span>
+                {% if fee_split.my_paid %}
+                <span class="badge text-bg-success">Recebido</span>
                 {% else %}
-                <span class="badge text-bg-primary">fundador</span>
+                <span class="badge text-bg-warning text-dark">A receber</span>
+                {% endif %}
+                {% set my_p = fee_split.payees[0] if fee_split.payees else none %}
+                {% if my_p and my_p.kind == 'fixed' %}
+                  {% if my_p.role_label and 'Fundador' in my_p.role_label %}
+                  <span class="badge text-bg-primary">valor definido</span>
+                  {% else %}
+                  <span class="badge text-bg-secondary">taxa fixa</span>
+                  {% endif %}
+                {% else %}
+                <span class="badge text-bg-primary">divide o restante</span>
                 {% endif %}
             </p>
-            <p class="text-muted mb-0">Pool dos fundadores: R$ {{ '%.2f'|format(fee_split.pool) }}</p>
+            {% if fee_split.wa_text and fee_split.my_amount %}
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                <a class="btn btn-sm btn-outline-success"
+                   href="https://wa.me/?text={{ fee_split.wa_text|urlencode }}"
+                   target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp me-1"></i> Compartilhar minha fatia
+                </a>
+                {% if fee_split.fee_line_id and not fee_split.my_paid %}
+                <form method="post" action="{{ url_for('bands.confirmar_cache_recebido', event_id=event.id) }}">
+                    {% include 'partials/csrf_input.html' %}
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        Confirmei o PIX
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
             {% else %}
             <p class="text-muted mb-0">Você não entrou nesta liquidação.</p>
             {% endif %}
@@ -209,32 +304,43 @@
                     {% endif %}
                     <tr><th>Líquido após despesas</th><td class="text-end"><strong>R$ {{ '%.2f'|format(fee_split.net) }}</strong></td></tr>
                     {% if fee_split.fixed_total %}
-                    <tr><th>− Taxas fixas (sidemen)</th><td class="text-end">R$ {{ '%.2f'|format(fee_split.fixed_total) }}</td></tr>
+                    <tr><th>− Valores definidos</th><td class="text-end">R$ {{ '%.2f'|format(fee_split.fixed_total) }}</td></tr>
                     {% endif %}
-                    <tr class="table-active"><th>Pool dos fundadores</th><td class="text-end"><strong>R$ {{ '%.2f'|format(fee_split.pool) }}</strong></td></tr>
+                    {% if fee_split.founder_payees or fee_split.pool > 0 %}
+                    <tr class="table-active"><th>Restante a dividir</th><td class="text-end"><strong>R$ {{ '%.2f'|format(fee_split.pool) }}</strong></td></tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
 
-        {% if fee_split.fixed_payees %}
-        <p class="fw-semibold mb-1" style="font-size: var(--text-sm);">Taxa fixa</p>
-        <ul class="list-unstyled mb-3" style="font-size: var(--text-sm);">
-            {% for p in fee_split.fixed_payees %}
-            <li class="d-flex justify-content-between border-top py-1">
-                <span>{{ p.name }}{% if p.role_label %} <span class="text-muted">· {{ p.role_label }}</span>{% endif %}</span>
-                <strong>R$ {{ '%.2f'|format(p.amount) }}</strong>
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-
-        {% if fee_split.founder_payees %}
-        <p class="fw-semibold mb-1" style="font-size: var(--text-sm);">Fundadores (dividem o pool)</p>
+        {% if fee_split.payees %}
+        <p class="fw-semibold mb-1" style="font-size: var(--text-sm);">Quem recebe</p>
         <ul class="list-unstyled mb-0" style="font-size: var(--text-sm);">
-            {% for p in fee_split.founder_payees %}
-            <li class="d-flex justify-content-between border-top py-1">
-                <span>{{ p.name }}</span>
-                <strong>R$ {{ '%.2f'|format(p.amount) }}</strong>
+            {% for p in fee_split.payees %}
+            <li class="d-flex justify-content-between align-items-center border-top py-1 gap-2 flex-wrap">
+                <span>
+                    {{ p.name }}{% if p.role_label %} <span class="text-muted">· {{ p.role_label }}</span>{% endif %}
+                    {% if p.is_paid or event.fee_settled_at %}
+                    <span class="badge text-bg-success">Pago</span>
+                    {% else %}
+                    <span class="badge text-bg-warning text-dark">Pendente</span>
+                    {% endif %}
+                </span>
+                <span class="d-flex align-items-center gap-2">
+                    <strong>R$ {{ '%.2f'|format(p.amount) }}</strong>
+                    {% if can_edit_finance and p.id %}
+                    <form method="post" action="{{ url_for('agenda.toggle_fee_line_paid', event_id=event.id, line_id=p.id) }}" class="d-inline">
+                        {% include 'partials/csrf_input.html' %}
+                        {% if p.is_paid or event.fee_settled_at %}
+                        <input type="hidden" name="paid" value="0">
+                        <button type="submit" class="btn btn-link btn-sm p-0" title="Desmarcar pago">↺</button>
+                        {% else %}
+                        <input type="hidden" name="paid" value="1">
+                        <button type="submit" class="btn btn-outline-success btn-sm py-0">Pago</button>
+                        {% endif %}
+                    </form>
+                    {% endif %}
+                </span>
             </li>
             {% endfor %}
         </ul>
@@ -247,6 +353,13 @@
         {% if event.fee_notes and can_view_finance %}
         <p class="text-muted mb-0 mt-2" style="font-size: var(--text-sm);">{{ event.fee_notes }}</p>
         {% endif %}
+        {% endif %}
+        {% if event.fee_settled_at %}
+        <div class="alert alert-success py-2 mt-3 mb-0" style="font-size: var(--text-sm);">
+            <strong>Noite fechada.</strong> Conhece outra banda que ainda resolve escala no WhatsApp?
+            Gere um código: eles ganham <strong>3 meses Pro</strong> e você também.
+            <a href="{{ url_for('assinatura_bp.voucher_indicar') }}" class="alert-link ms-1">Indicar agora →</a>
+        </div>
         {% endif %}
     </div>
 </div>
@@ -286,9 +399,7 @@
         sel.addEventListener('change', function () {
             var fee = document.querySelector('.member-settle-fee[data-uid="' + sel.getAttribute('data-uid') + '"]');
             if (!fee) return;
-            var isSideman = sel.value === 'sideman';
-            fee.disabled = !isSideman;
-            if (!isSideman) fee.value = '';
+            fee.placeholder = sel.value === 'sideman' ? 'taxa' : 'resto';
         });
     });
 })();

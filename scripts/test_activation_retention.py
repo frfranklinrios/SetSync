@@ -83,6 +83,7 @@ class TrialOnValueTest(unittest.TestCase):
         init_db()
 
     def test_create_band_does_not_start_trial(self):
+        """create_band no DB não arma trial sozinho — o blueprint chama maybe_start."""
         from db import create_band, create_user, get_assinatura
         from monetizacao import dias_restantes_trial
 
@@ -93,20 +94,43 @@ class TrialOnValueTest(unittest.TestCase):
         self.assertFalse(row.get('trial_usado'))
         self.assertIsNone(dias_restantes_trial(band_id))
 
-    def test_maybe_start_trial_on_play(self):
+    def test_maybe_start_trial_on_primeira_banda(self):
+        """Trial automático desligado — criar banda não libera Pro."""
+        from db import create_band, create_user
+        from demo_onboarding import maybe_start_trial_on_value
+        from monetizacao import dias_restantes_trial, get_plano_efetivo
+
+        uid = create_user('bandtrial', 'bandtrial@test.com', 'senha1234567', display_name='B')
+        band_id = create_band('Banda Trial', '', uid)
+        started = maybe_start_trial_on_value(uid, reason='primeira_banda')
+        self.assertIsNone(started)
+        self.assertEqual(get_plano_efetivo(band_id), 'gratis')
+        self.assertIsNone(dias_restantes_trial(band_id))
+
+    def test_maybe_start_trial_on_play_does_not_start(self):
         from db import create_band, create_user
         from demo_onboarding import maybe_start_trial_on_value
         from monetizacao import dias_restantes_trial, get_plano_efetivo
 
         uid = create_user('playtrial', 'playtrial@test.com', 'senha1234567', display_name='P')
         band_id = create_band('Banda Play', '', uid)
-        started = maybe_start_trial_on_value(uid, reason='play_mode')
-        self.assertEqual(started, band_id)
-        self.assertEqual(get_plano_efetivo(band_id), 'pro')
-        self.assertGreaterEqual(dias_restantes_trial(band_id) or 0, 29)
-
-        # segunda chamada não reinicia
         self.assertIsNone(maybe_start_trial_on_value(uid, reason='play_mode'))
+        self.assertIsNone(maybe_start_trial_on_value(uid, reason='play_mode_colecao'))
+        self.assertEqual(get_plano_efetivo(band_id), 'gratis')
+        self.assertIsNone(dias_restantes_trial(band_id))
+
+    def test_maybe_start_trial_on_setlist(self):
+        from db import create_band, create_user
+        from demo_onboarding import maybe_start_trial_on_value
+        from monetizacao import dias_restantes_trial, get_plano_efetivo
+
+        uid = create_user('settrial', 'settrial@test.com', 'senha1234567', display_name='S')
+        band_id = create_band('Banda Set', '', uid)
+        started = maybe_start_trial_on_value(uid, reason='primeira_setlist')
+        self.assertIsNone(started)
+        self.assertEqual(get_plano_efetivo(band_id), 'gratis')
+        self.assertIsNone(dias_restantes_trial(band_id))
+        self.assertIsNone(maybe_start_trial_on_value(uid, reason='primeira_setlist'))
 
     def test_maybe_start_without_band_is_noop(self):
         from db import create_user
@@ -248,6 +272,8 @@ class ActivationHttpTest(unittest.TestCase):
         play = r2.get_data(as_text=True)
         self.assertTrue('play-mode' in play.lower() or 'pb-exit' in play)
         self.assertIn('"showRealSongCta": false', play)
+        self.assertIn('"showPlayCsat": false', play)
+        self.assertIn('Evidências', play)
 
     def test_exemplo_seeds_demo_and_cta_on_play(self):
         from db import count_user_personal_cifras, create_user
@@ -350,6 +376,129 @@ class ActivationHttpTest(unittest.TestCase):
         self.assertEqual(r.status_code, 200, r.get_data(as_text=True)[:200])
         self.assertTrue(r.get_json().get('ok'))
         self.assertEqual(get_user(uid).get('play_csat_answer'), 'problemas')
+
+    def test_first_band_goes_to_members_not_show(self):
+        from db import create_personal_cifra, create_user
+        from product_funnel import log_funnel_step
+
+        uid = create_user('bandzap', 'bandzap@test.com', 'senha1234567', display_name='BZ')
+        create_personal_cifra(uid, 'Real', 'Eu', 'C', '[C] oi')
+        log_funnel_step(uid, 'primeira_cifra_real')
+        log_funnel_step(uid, 'play_mode_real')
+        client = self.app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = uid
+            sess['username'] = 'bandzap'
+        r = client.post(
+            '/bands/create',
+            data={'name': 'Banda Zap', 'description': ''},
+            base_url=self.BASE,
+            follow_redirects=False,
+        )
+        self.assertIn(r.status_code, (302, 303), r.get_data(as_text=True)[:400])
+        loc = r.headers.get('Location') or ''
+        self.assertIn('/members', loc)
+        self.assertNotIn('/agenda', loc)
+
+    def test_dashboard_invite_after_play_real(self):
+        from db import create_personal_cifra, create_user
+        from product_funnel import log_funnel_step
+
+        uid = create_user('invitedash', 'invitedash@test.com', 'senha1234567', display_name='Inv')
+        create_personal_cifra(uid, 'Evidências', 'Eu', 'C', '[C] oi')
+        log_funnel_step(uid, 'primeira_cifra_real')
+        log_funnel_step(uid, 'play_mode_real')
+        client = self.app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = uid
+            sess['username'] = 'invitedash'
+        r = client.get('/dashboard', base_url=self.BASE, follow_redirects=True)
+        self.assertLess(r.status_code, 400, r.get_data(as_text=True)[:400])
+        body = r.get_data(as_text=True)
+        self.assertIn('Manda no grupo do ensaio', body)
+        self.assertIn('wa.me', body)
+
+
+class InviteLoopTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from db import init_db
+
+        init_db()
+
+    def test_onboarding_drops_show_step(self):
+        from db import create_personal_cifra, create_user
+        from onboarding import get_onboarding_progress
+        from product_funnel import log_funnel_step
+
+        uid = create_user('onb3', 'onb3@test.com', 'senha1234567', display_name='O')
+        create_personal_cifra(uid, 'Real', 'Eu', 'C', '[C] oi')
+        log_funnel_step(uid, 'play_mode_real')
+
+        from app import app
+
+        with app.test_request_context('/dashboard'):
+            progress = get_onboarding_progress(uid)
+        self.assertTrue(progress)
+        ids = [s['id'] for s in progress['steps']]
+        self.assertEqual(ids, ['cifra', 'tocar', 'band'])
+        self.assertNotIn('show', ids)
+        self.assertTrue(progress['activated'])
+        self.assertFalse(next(s for s in progress['steps'] if s['id'] == 'band')['done'])
+
+    def test_share_prompt_is_one_whatsapp(self):
+        from pathlib import Path
+
+        js = (Path(__file__).resolve().parents[1] / 'static/js/play-share-prompt.js').read_text()
+        self.assertIn('Manda no grupo do ensaio', js)
+        self.assertNotIn('Indicar e ganhar 3 meses Pro', js)
+        self.assertNotIn('30 dias Pro sem cartão', js)
+
+
+class JornadaAdminTest(unittest.TestCase):
+    BASE = 'https://unissono.app'
+
+    @classmethod
+    def setUpClass(cls):
+        from db import create_user, init_db, set_user_superadmin
+
+        init_db()
+        from app import app
+
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        cls.app = app
+        cls.uid = create_user(
+            'jornada_admin', 'jornada_admin@test.com', 'senha1234567',
+            display_name='Jornada Admin',
+        )
+        set_user_superadmin(cls.uid, True)
+
+    def test_jornada_page_renders(self):
+        from admin_dashboard import jornada_snapshot
+
+        snap = jornada_snapshot()
+        self.assertIn('real_users', snap)
+        self.assertIn('tourists', snap)
+
+        client = self.app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = self.uid
+            sess['username'] = 'jornada_admin'
+        r = client.get('/admin/jornada', base_url=self.BASE)
+        self.assertEqual(r.status_code, 200, r.get_data(as_text=True)[:500])
+        body = r.get_data(as_text=True)
+        self.assertIn('Jornada pós-cadastro', body)
+        self.assertIn('Turistas do anúncio', body)
+
+    def test_admin_index_has_jornada_button(self):
+        client = self.app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = self.uid
+            sess['username'] = 'jornada_admin'
+        r = client.get('/admin/', base_url=self.BASE)
+        self.assertEqual(r.status_code, 200, r.get_data(as_text=True)[:400])
+        self.assertIn('/admin/jornada', r.get_data(as_text=True))
 
 
 if __name__ == '__main__':

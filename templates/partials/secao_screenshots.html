@@ -1,15 +1,22 @@
 <section class="secao-screenshots" aria-labelledby="secao-screenshots-titulo">
+    {% set shot_pack = marketing_shot_pack|default(marketing_pack_br) %}
     <h2 id="secao-screenshots-titulo">Veja o Uníssono em ação</h2>
-    <p class="section-sub mx-auto">Modo Tocar no celular e painel de setlists no desktop.</p>
+    <p class="section-sub mx-auto">
+        {% if shot_pack == marketing_pack_gospel %}
+        Modo Tocar no culto e setlist de louvor no desktop — repertório gospel.
+        {% else %}
+        Modo Tocar no celular e painel de setlists — repertório brasileiro.
+        {% endif %}
+    </p>
     <div class="mockup-grid">
         <figure class="mockup-mobile">
             <button type="button" class="mockup-zoom-trigger"
-                    data-lightbox-src="{{ url_for('static', filename='screenshots/modo-tocar-mobile.png') }}"
-                    data-lightbox-alt="Músico utilizando o Modo Tocar do Uníssono — cifra em tela cheia com transposição no palco"
+                    data-lightbox-src="{{ marketing_shot_url(shot_pack, 'modo-tocar-mobile') }}"
+                    data-lightbox-alt="{% if shot_pack == marketing_pack_gospel %}Músico no culto com cifras gospel no Modo Tocar{% else %}Músico utilizando o Modo Tocar do Uníssono — cifra em tela cheia{% endif %}"
                     data-lightbox-caption="Modo Tocar — palco no bolso"
                     aria-label="Ampliar captura do Modo Tocar">
                 <div class="mockup-mobile-frame">
-                    <img src="{{ url_for('static', filename='screenshots/modo-tocar-mobile.png') }}"
+                    <img src="{{ marketing_shot_url(shot_pack, 'modo-tocar-mobile') }}"
                          alt=""
                          width="540" height="1170"
                          loading="lazy"
@@ -20,21 +27,41 @@
         </figure>
         <figure class="mockup-desktop">
             <button type="button" class="mockup-zoom-trigger"
-                    data-lightbox-src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
-                    data-lightbox-alt="Painel Uníssono — organize setlist com tom por cantor"
-                    data-lightbox-caption="Setlist — roteiro do show ou ensaio"
+                    data-lightbox-src="{{ marketing_shot_url(shot_pack, 'setlist-desktop') }}"
+                    data-lightbox-alt="{% if shot_pack == marketing_pack_gospel %}Setlist de louvor no Uníssono{% else %}Painel Uníssono — setlist com tom por cantor{% endif %}"
+                    data-lightbox-caption="{% if shot_pack == marketing_pack_gospel %}Setlist — roteiro do culto{% else %}Setlist — roteiro do show ou ensaio{% endif %}"
                     aria-label="Ampliar captura do setlist">
                 <div class="mockup-desktop-frame">
-                    <img src="{{ url_for('static', filename='screenshots/setlist-desktop.png') }}"
+                    <img src="{{ marketing_shot_url(shot_pack, 'setlist-desktop') }}"
                          alt=""
                          width="1389" height="822"
                          loading="lazy"
                          decoding="async">
                 </div>
             </button>
-            <figcaption class="mockup-caption">Setlist — roteiro do show ou ensaio<span class="mockup-caption-hint">Clique para ampliar</span></figcaption>
+            <figcaption class="mockup-caption">{% if shot_pack == marketing_pack_gospel %}Setlist — roteiro do culto{% else %}Setlist — roteiro do show ou ensaio{% endif %}<span class="mockup-caption-hint">Clique para ampliar</span></figcaption>
         </figure>
     </div>
+    {% if shot_pack != marketing_pack_gospel %}
+    <div class="mockup-grid mockup-grid--finance mt-4">
+        <figure class="mockup-desktop" style="grid-column: 1 / -1; max-width: 920px; margin: 0 auto;">
+            <button type="button" class="mockup-zoom-trigger"
+                    data-lightbox-src="{{ marketing_shot_url(shot_pack, 'financeiro-banda-desktop') }}"
+                    data-lightbox-alt="Financeiro da banda com vários shows e despesas no Uníssono"
+                    data-lightbox-caption="Financeiro da banda — cachês e despesas"
+                    aria-label="Ampliar captura do financeiro">
+                <div class="mockup-desktop-frame">
+                    <img src="{{ marketing_shot_url(shot_pack, 'financeiro-banda-desktop') }}"
+                         alt=""
+                         width="1440" height="900"
+                         loading="lazy"
+                         decoding="async">
+                </div>
+            </button>
+            <figcaption class="mockup-caption">Financeiro da banda — várias transações<span class="mockup-caption-hint">Clique para ampliar</span></figcaption>
+        </figure>
+    </div>
+    {% endif %}
 </section>
 {% include 'partials/image_lightbox_assets.html' %}
 <style>
@@ -57,6 +84,7 @@
     margin-top: 2rem;
     text-align: center;
 }
+.mockup-grid--finance { margin-top: 2.5rem; }
 .mockup-mobile,
 .mockup-desktop {
     margin: 0;

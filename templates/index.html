@@ -436,6 +436,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=15">
     {% block extra_head %}{% endblock %}
     {% if not pdfgen and not is_print_view %}{% include 'partials/google_ads_head.html' %}{% endif %}
+    {% if not pdfgen and not is_print_view %}{% include 'partials/meta_pixel.html' %}{% endif %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
     <a class="skip-to-content" href="#conteudo-principal">Ir para o conteúdo</a>
@@ -466,6 +467,9 @@
                                 <i class="fas fa-shield-halved me-1"></i> Admin
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.jornada') }}">Jornada</a>
+                        </li>
                         {% if mail_inbox_url %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ mail_inbox_url }}">
@@ -492,6 +496,9 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('ajuda.index') }}">Ajuda</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-outline-secondary ms-lg-1" href="{{ loja_url }}">Loja</a>
                         </li>
                         <li class="nav-item ss-notif-wrap" id="ss-notif-wrap"
                             data-list-url="{{ url_for('notifications.api_list') }}"
@@ -561,6 +568,9 @@
                             <a class="nav-link" href="{{ url_for('assinatura_bp.bandas') }}#planos">Planos</a>
                         </li>
                         <li class="nav-item">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ loja_url }}">Loja</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('guia.guia_index') }}">Guia</a>
                         </li>
                         <li class="nav-item">
@@ -611,11 +621,13 @@
         &copy; 2026 Uníssono
         · <a href="{{ url_for('legal.privacidade') }}" class="text-muted">Privacidade</a>
         · <a href="{{ url_for('legal.termos') }}" class="text-muted">Termos</a>
+        · <a href="{{ loja_url }}" class="text-muted">Loja</a>
         {% if not current_user.is_authenticated %}
         · <a href="{{ url_for('auth.register') }}" class="text-muted">Criar conta grátis</a>
         · <a href="{{ url_for('assinatura_bp.bandas') }}#planos" class="text-muted">Planos</a>
         · <a href="{{ url_for('assinatura_bp.igrejas') }}" class="text-muted">Igrejas</a>
         · <a href="{{ url_for('studios.landing') }}" class="text-muted">Estúdios</a>
+        · <a href="{{ url_for('assinatura_bp.financeiro') }}" class="text-muted">Financeiro</a>
         · <a href="{{ url_for('guia.guia_index') }}" class="text-muted">Guia</a>
         · <a href="{{ url_for('ajuda.index') }}" class="text-muted">Ajuda</a>
         {% endif %}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from config import app_now_str
 from db import get_db
@@ -160,10 +161,35 @@ def list_event_fee_lines(event_id: str) -> list[dict]:
     return rows
 
 
+def _fee_line_match_key(raw: dict) -> str:
+    uid = raw.get('user_id')
+    gid = raw.get('guest_id')
+    if uid:
+        return f'u:{uid}'
+    if gid:
+        return f'g:{gid}'
+    return f'n:{(raw.get("display_name") or raw.get("name") or "").strip().lower()}'
+
+
 def replace_event_fee_lines(event_id: str, lines: list[dict]) -> list[dict]:
-    """Grava snapshot da liquidação (quem recebe o quê)."""
+    """Grava snapshot da liquidação (quem recebe o quê).
+
+    Preserva ``paid_at`` de linhas anteriores com o mesmo músico/convidado.
+    """
+    from config import app_now_str
+
     db = get_db()
     c = db.cursor()
+    c.execute(
+        'SELECT user_id, guest_id, display_name, paid_at FROM band_event_fee_lines WHERE event_id = ?',
+        (event_id,),
+    )
+    prev_paid: dict[str, Any] = {}
+    for r in c.fetchall():
+        row = dict(r)
+        if row.get('paid_at'):
+            prev_paid[_fee_line_match_key(row)] = row['paid_at']
+
     c.execute('DELETE FROM band_event_fee_lines WHERE event_id = ?', (event_id,))
     saved: list[dict] = []
     for i, raw in enumerate(lines):
@@ -174,12 +200,20 @@ def replace_event_fee_lines(event_id: str, lines: list[dict]) -> list[dict]:
             amount = max(0.0, float(raw.get('amount') or 0))
         except (TypeError, ValueError):
             amount = 0.0
-        name = (raw.get('name') or raw.get('display_name') or '—').strip()[:120] or '—'
+        name = (raw.get('display_name') or raw.get('name') or '—').strip()[:120] or '—'
         line_id = str(uuid.uuid4())
+        key = _fee_line_match_key({
+            'user_id': raw.get('user_id'),
+            'guest_id': raw.get('guest_id'),
+            'display_name': name,
+        })
+        paid_at = raw.get('paid_at') or prev_paid.get(key)
+        if raw.get('mark_paid'):
+            paid_at = paid_at or app_now_str()
         c.execute(
             '''INSERT INTO band_event_fee_lines
-               (id, event_id, user_id, guest_id, display_name, kind, amount, sort_order)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+               (id, event_id, user_id, guest_id, display_name, kind, amount, sort_order, paid_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             (
                 line_id,
                 event_id,
@@ -189,6 +223,7 @@ def replace_event_fee_lines(event_id: str, lines: list[dict]) -> list[dict]:
                 kind,
                 amount,
                 i,
+                paid_at,
             ),
         )
         saved.append({
@@ -200,10 +235,68 @@ def replace_event_fee_lines(event_id: str, lines: list[dict]) -> list[dict]:
             'kind': kind,
             'amount': amount,
             'sort_order': i,
+            'paid_at': paid_at,
         })
     db.commit()
     db.close()
     return saved
+
+
+def set_fee_line_paid(line_id: str, *, paid: bool, event_id: str | None = None) -> bool:
+    """Marca ou limpa pagamento individual de uma linha de liquidação."""
+    from config import app_now_str
+
+    db = get_db()
+    c = db.cursor()
+    if event_id:
+        c.execute(
+            'SELECT id FROM band_event_fee_lines WHERE id = ? AND event_id = ?',
+            (line_id, event_id),
+        )
+    else:
+        c.execute('SELECT id FROM band_event_fee_lines WHERE id = ?', (line_id,))
+    if not c.fetchone():
+        db.close()
+        return False
+    paid_at = app_now_str() if paid else None
+    c.execute(
+        'UPDATE band_event_fee_lines SET paid_at = ? WHERE id = ?',
+        (paid_at, line_id),
+    )
+    db.commit()
+    db.close()
+    return True
+
+
+def mark_all_event_fee_lines_paid(event_id: str, *, paid: bool = True) -> int:
+    """Marca todas as linhas do show como pagas (ou limpa)."""
+    from config import app_now_str
+
+    db = get_db()
+    c = db.cursor()
+    paid_at = app_now_str() if paid else None
+    c.execute(
+        'UPDATE band_event_fee_lines SET paid_at = ? WHERE event_id = ?',
+        (paid_at, event_id),
+    )
+    n = c.rowcount
+    db.commit()
+    db.close()
+    return int(n or 0)
+
+
+def get_member_fee_line(event_id: str, user_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT * FROM band_event_fee_lines
+           WHERE event_id = ? AND user_id = ?
+           ORDER BY sort_order ASC LIMIT 1''',
+        (event_id, user_id),
+    )
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
 
 
 def clear_event_fee_lines(event_id: str) -> None:

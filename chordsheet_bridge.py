@@ -352,21 +352,21 @@ def _apply_nashville_to_chart(chart) -> None:
     key = (chart.meta.key or "").strip()
     if not key:
         return
+
+    def _cell(c):
+        raw = str(c or "").strip()
+        if raw in ("", "%", "*", "."):
+            return c
+        nash = chord_to_nashville(raw, key)
+        if nash == raw:
+            return c
+        return f"@@{raw}@@{nash}"
+
     for bar in chart.bars:
         if bar.nav or bar.blank_spacer or bar.private_note:
             continue
         grid = bar.get_pulse_grid()
-        bar.set_pulse_grid(
-            [
-                [
-                    chord_to_nashville(str(c), key)
-                    if str(c or "").strip() not in ("", "%", "*", ".")
-                    else c
-                    for c in beat
-                ]
-                for beat in grid
-            ]
-        )
+        bar.set_pulse_grid([[_cell(c) for c in beat] for beat in grid])
 
 
 def persist_chordsheet_payload(

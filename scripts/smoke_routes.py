@@ -240,7 +240,7 @@ def run() -> int:
 
         public_gets = [
             '/', '/health', '/login', '/auth/login', '/auth/register',
-            '/ajuda', '/igrejas', '/estudios', '/offline', '/manifest.webmanifest', '/sw.js', '/ads.txt',
+            '/ajuda', '/igrejas', '/financeiro', '/estudios', '/offline', '/manifest.webmanifest', '/sw.js', '/ads.txt',
             f'/setlists/letras/{ctx.get("public_token", "x")}',
             f'/setlists/compartilhar/{ctx.get("public_token", "x")}',
         ]

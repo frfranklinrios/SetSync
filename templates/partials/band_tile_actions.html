@@ -1,0 +1,8 @@
+{# Ações rápidas do tile da banda (links irmãos — o tile não é mais um <a> único). #}
+<div class="band-tile-actions">
+    <a href="{{ url_for('cifras.list_by_band', band_id=band.id) }}" class="bta-link">Cifras</a>
+    <a href="{{ url_for('setlists.list_setlists', band_id=band.id) }}" class="bta-link">Setlists</a>
+    <a href="{{ url_for('bands.view', band_id=band.id) }}#tab-agenda" class="bta-link">Agenda</a>
+    <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="bta-link bta-accent">Tocar</a>
+    <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}" class="bta-link">Cachê</a>
+</div>

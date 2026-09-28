@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Criativos Uníssono — palco</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #2ab5a0;
+      --brand-ink: #5eead4;
+      --text: #e2e8f0;
+      --muted: #a8b8cc;
+      --border: #334155;
+      --bg: #0f172a;
+      --card: #0b1422;
+      --chord: #5eead4;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --font: 'Sora', 'Segoe UI', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #020617;
+      font-family: var(--font);
+      color: var(--text);
+    }
+    .stage { padding: 24px; display: flex; flex-direction: column; gap: 32px; }
+    .board {
+      position: relative;
+      overflow: hidden;
+      background: var(--card);
+      color: var(--text);
+      flex-shrink: 0;
+    }
+    .logo {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+    .kicker {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--brand-ink);
+    }
+    h1 {
+      margin: 0;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 500;
+      line-height: 1.35;
+    }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--brand);
+      color: #0b1422;
+      font-weight: 700;
+      border-radius: var(--radius);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .phone {
+      background: #020617;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+      display: flex;
+      flex-direction: column;
+    }
+    .play-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: #0b1422;
+      border-bottom: 1px solid rgba(42, 181, 160, 0.45);
+    }
+    .pb-btn {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(42, 181, 160, 0.45);
+      background: rgba(42, 181, 160, 0.14);
+      color: var(--chord);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+    }
+    .pb-title { font-size: 15px; font-weight: 700; color: #f1f5f9; line-height: 1.2; }
+    .pb-meta { font-size: 12px; color: #64748b; }
+    .cifra {
+      flex: 1;
+      padding: 18px 16px 20px;
+      font-family: var(--mono);
+      font-size: 15px;
+      color: #cbd5e1;
+      background: #0f172a;
+    }
+    .cifra .sec {
+      color: var(--brand);
+      font-size: 0.72em;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin: 0.35em 0 0.55em;
+    }
+    .cifra .sec:first-child { margin-top: 0; }
+    .cifra .ln {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin: 0 0 0.7em;
+    }
+    .cifra .tok {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      max-width: 100%;
+    }
+    .cifra .ch {
+      color: var(--chord);
+      font-weight: 700;
+      font-size: 0.92em;
+      line-height: 1.05;
+      min-height: 1.15em;
+      padding-bottom: 2px;
+    }
+    .cifra .ly {
+      white-space: pre-wrap;
+      line-height: 1.25;
+      color: #e2e8f0;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--brand-ink);
+      border: 1px solid rgba(42, 181, 160, 0.45);
+      background: rgba(42, 181, 160, 0.14);
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    /* 1:1 feed */
+    #feed-1x1 { width: 1080px; height: 1080px; padding: 56px 64px; display: grid; grid-template-columns: 1fr 420px; gap: 48px; align-items: center; }
+    #feed-1x1 h1 { font-size: 64px; }
+    #feed-1x1 .lead { font-size: 26px; margin-top: 18px; max-width: 18ch; }
+    #feed-1x1 .cta { margin-top: 28px; height: 56px; padding: 0 28px; font-size: 20px; }
+    #feed-1x1 .phone { height: 860px; width: 400px; }
+    #feed-1x1 .cifra { font-size: 18px; padding: 22px 18px; }
+
+    /* 4:5 Instagram */
+    #feed-4x5 { width: 1080px; height: 1350px; padding: 48px 56px 56px; display: flex; flex-direction: column; }
+    #feed-4x5 .top { display: flex; justify-content: space-between; align-items: center; }
+    #feed-4x5 h1 { font-size: 56px; margin-top: 22px; }
+    #feed-4x5 .lead { font-size: 24px; margin-top: 12px; }
+    #feed-4x5 .phone { width: 520px; height: 820px; margin: 28px auto 0; }
+    #feed-4x5 .cta { margin-top: 28px; height: 58px; padding: 0 32px; font-size: 22px; align-self: flex-start; }
+    #feed-4x5 .cifra { font-size: 20px; }
+
+    /* Stories */
+    #stories-9x16 { width: 1080px; height: 1920px; padding: 72px 56px 80px; display: flex; flex-direction: column; }
+    #stories-9x16 .logo { height: 48px; }
+    #stories-9x16 h1 { font-size: 72px; margin-top: 28px; }
+    #stories-9x16 .lead { font-size: 30px; margin-top: 16px; }
+    #stories-9x16 .phone { width: 860px; height: 1180px; margin: 40px auto 0; border-radius: 36px; }
+    #stories-9x16 .play-bar { padding: 18px 22px; }
+    #stories-9x16 .pb-title { font-size: 28px; }
+    #stories-9x16 .pb-meta { font-size: 18px; }
+    #stories-9x16 .cifra { font-size: 28px; padding: 36px 32px; }
+    #stories-9x16 .cta { margin-top: 36px; height: 72px; padding: 0 36px; font-size: 26px; }
+
+    /* Igreja 4:5 */
+    #igreja-4x5 { width: 1080px; height: 1350px; padding: 48px 56px 56px; display: flex; flex-direction: column; }
+    #igreja-4x5 .top { display: flex; justify-content: space-between; align-items: center; }
+    #igreja-4x5 h1 { font-size: 52px; margin-top: 22px; }
+    #igreja-4x5 .lead { font-size: 24px; margin-top: 12px; }
+    #igreja-4x5 .phone { width: 520px; height: 780px; margin: 28px auto 0; }
+    #igreja-4x5 .cta { margin-top: 28px; height: 58px; padding: 0 32px; font-size: 22px; align-self: flex-start; }
+    #igreja-4x5 .cifra { font-size: 19px; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+
+    <div class="board" id="feed-1x1">
+      <div>
+        <img class="logo" src="../../static/logoUnissono.png" alt="Uníssono">
+        <p class="kicker" style="margin: 28px 0 14px;">Música em comum</p>
+        <h1>A cifra do ensaio.<br>No palco.</h1>
+        <p class="lead">Mesmo tom. Tela cheia. Sem internet.</p>
+        <span class="cta">Abrir o palco</span>
+      </div>
+      <div class="phone">
+        <div class="play-bar">
+          <div class="pb-btn">☰</div>
+          <div class="pb-btn">‹</div>
+          <div style="flex:1;min-width:0;">
+            <div class="pb-title">Evidências</div>
+            <div class="pb-meta">Chitãozinho &amp; Xororó · Tom D</div>
+          </div>
+          <div class="pb-btn">›</div>
+        </div>
+        <div class="cifra">
+          <div class="sec">VERSO</div>
+          <div class="ln">
+            <span class="tok"><span class="ch">D</span><span class="ly">Quando eu digo que deixei de te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amar</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch">Bm</span><span class="ly">Por favor, não leve a </span></span>
+            <span class="tok"><span class="ch">G</span><span class="ly">mal</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">Se eu for embora, saiba que eu te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amei</span></span>
+          </div>
+          <div class="sec">REFRÃO</div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">E as </span></span>
+            <span class="tok"><span class="ch">D</span><span class="ly">evidências no olhar</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">Mostram que eu ainda te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amo</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="board" id="feed-4x5">
+      <div class="top">
+        <img class="logo" src="../../static/logoUnissono.png" alt="Uníssono">
+        <span class="badge">Modo Tocar</span>
+      </div>
+      <h1>A cifra do ensaio,<br>no celular de todo mundo.</h1>
+      <p class="lead">Sem PDF no grupo. Sem tom errado no palco.</p>
+      <div class="phone">
+        <div class="play-bar">
+          <div class="pb-btn">☰</div>
+          <div style="flex:1;min-width:0;">
+            <div class="pb-title">Evidências</div>
+            <div class="pb-meta">Ensaio · Tom D · Offline</div>
+          </div>
+          <div class="pb-btn">▶</div>
+        </div>
+        <div class="cifra">
+          <div class="sec">VERSO</div>
+          <div class="ln">
+            <span class="tok"><span class="ch">D</span><span class="ly">Quando eu digo que deixei de te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amar</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch">Bm</span><span class="ly">Por favor, não leve a </span></span>
+            <span class="tok"><span class="ch">G</span><span class="ly">mal</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">Se eu for embora, saiba que eu te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amei</span></span>
+          </div>
+          <div class="sec">REFRÃO</div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">E as </span></span>
+            <span class="tok"><span class="ch">D</span><span class="ly">evidências no olhar</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">Mostram que eu ainda te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amo</span></span>
+          </div>
+        </div>
+      </div>
+      <span class="cta">Abrir o palco</span>
+    </div>
+
+    <div class="board" id="stories-9x16">
+      <img class="logo" src="../../static/logoUnissono.png" alt="Uníssono">
+      <h1>Cole a música<br>do ensaio.</h1>
+      <p class="lead">O palco abre nela. Offline.</p>
+      <div class="phone">
+        <div class="play-bar">
+          <div class="pb-btn">☰</div>
+          <div style="flex:1;min-width:0;">
+            <div class="pb-title">Evidências</div>
+            <div class="pb-meta">Chitãozinho &amp; Xororó · Tom D</div>
+          </div>
+        </div>
+        <div class="cifra">
+          <div class="sec">VERSO</div>
+          <div class="ln">
+            <span class="tok"><span class="ch">D</span><span class="ly">Quando eu digo que deixei de te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amar</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch">Bm</span><span class="ly">Por favor, não leve a </span></span>
+            <span class="tok"><span class="ch">G</span><span class="ly">mal</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">Se eu for embora, saiba que eu te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amei</span></span>
+          </div>
+          <div class="sec">REFRÃO</div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">E as </span></span>
+            <span class="tok"><span class="ch">D</span><span class="ly">evidências no olhar</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch"></span><span class="ly">Mostram que eu ainda te </span></span>
+            <span class="tok"><span class="ch">A</span><span class="ly">amo</span></span>
+          </div>
+        </div>
+      </div>
+      <span class="cta">Abrir o palco</span>
+    </div>
+
+    <div class="board" id="igreja-4x5">
+      <div class="top">
+        <img class="logo" src="../../static/logoUnissono.png" alt="Uníssono">
+        <span class="badge">Louvor</span>
+      </div>
+      <h1>Pare de perder o culto no grupo do WhatsApp.</h1>
+      <p class="lead">Tom certo no celular de cada músico. Sem internet no templo.</p>
+      <div class="phone">
+        <div class="play-bar">
+          <div class="pb-btn">☰</div>
+          <div style="flex:1;min-width:0;">
+            <div class="pb-title">Porque Ele Vive</div>
+            <div class="pb-meta">Culto · Tom G · Offline</div>
+          </div>
+        </div>
+        <div class="cifra">
+          <div class="sec">REFRÃO</div>
+          <div class="ln">
+            <span class="tok"><span class="ch">G</span><span class="ly">Porque Ele </span></span>
+            <span class="tok"><span class="ch">D</span><span class="ly">vive,</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch">Em</span><span class="ly">posso crer no </span></span>
+            <span class="tok"><span class="ch">C</span><span class="ly">amanhã</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch">G</span><span class="ly">Porque Ele </span></span>
+            <span class="tok"><span class="ch">D</span><span class="ly">vive,</span></span>
+          </div>
+          <div class="ln">
+            <span class="tok"><span class="ch">Em</span><span class="ly">temor não </span></span>
+            <span class="tok"><span class="ch">C</span><span class="ly">há</span></span>
+          </div>
+        </div>
+      </div>
+      <span class="cta">Abrir o palco</span>
+    </div>
+
+  </div>
+</body>
+</html>

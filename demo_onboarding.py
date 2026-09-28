@@ -230,22 +230,38 @@ def log_primeira_cifra_real(user_id: str, *, source: str, cifra_id: str | None =
         pass
 
 
-def log_play_mode_real(user_id: str, *, source: str = 'play') -> None:
+def log_play_mode_real(user_id: str, *, source: str = 'play') -> str:
     from product_funnel import log_funnel_step
 
-    log_funnel_step(user_id, 'play_mode_real', meta={'source': source})
+    inserted = log_funnel_step(user_id, 'play_mode_real', meta={'source': source})
+    if not inserted:
+        return ''
+    try:
+        from db import get_user
+        from meta_pixel import marcar_play_mode_real
+
+        return marcar_play_mode_real(get_user(user_id)) or ''
+    except Exception:
+        logger.exception('Meta PlayModeReal falhou user=%s', user_id)
+        return ''
+
+
+# Trial automático desligado (conversão via checkout). Motivos legados ignorados.
+_TRIAL_VALUE_REASONS = frozenset()
 
 
 def maybe_start_trial_on_value(user_id: str, *, reason: str = 'play_mode') -> str | None:
     """
-    Inicia trial Pro na 1ª banda do usuário no momento de valor
-    (Modo Tocar ou 1º setlist real) — não no create da banda.
-    Retorna banda_id se iniciou.
+    Não inicia mais trial automático.
+    Mantido por compatibilidade com callers; use checkout Pro.
     """
-    if not user_id:
+    from monetizacao import TRIAL_AUTO, iniciar_trial_banda
+
+    if not TRIAL_AUTO:
         return None
-    from db import get_owned_bands
-    from monetizacao import iniciar_trial_banda
+    if not user_id or reason not in _TRIAL_VALUE_REASONS:
+        return None
+    from db import count_band_members, get_owned_bands
     from product_funnel import log_funnel_step
 
     owned = get_owned_bands(user_id)
@@ -253,6 +269,10 @@ def maybe_start_trial_on_value(user_id: str, *, reason: str = 'play_mode') -> st
         return None
     for band in owned:
         band_id = band['id']
+        if reason == 'play_mode_setlist' and count_band_members(band_id) < 2:
+            continue
+        if reason == 'segundo_membro' and count_band_members(band_id) < 2:
+            continue
         if iniciar_trial_banda(band_id):
             try:
                 from google_ads import mark_funnel_event
@@ -267,3 +287,15 @@ def maybe_start_trial_on_value(user_id: str, *, reason: str = 'play_mode') -> st
             )
             return band_id
     return None
+
+
+def maybe_trial_on_segundo_membro(band_id: str) -> str | None:
+    """Quando a banda chega a 2+ membros, arma trial Pro para o dono."""
+    if not band_id:
+        return None
+    from db import count_band_members, get_band
+
+    band = get_band(band_id)
+    if not band or count_band_members(band_id) < 2:
+        return None
+    return maybe_start_trial_on_value(band['owner_id'], reason='segundo_membro')

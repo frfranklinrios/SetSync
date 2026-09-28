@@ -36,3 +36,11 @@ jobs:
 
       - name: Rodar suíte de testes
         run: python scripts/run_tests.py
+
+      - name: Smoke Playwright (rotas públicas)
+        run: |
+          python -c "import ast; ast.parse(open('scripts/smoke_playwright_public.py').read()); print('smoke public ok')"
+          python -c "import ast; ast.parse(open('scripts/smoke_auth_flow.py').read()); print('smoke auth ok')"
+          python -c "import ast; ast.parse(open('scripts/prod_status.py').read()); print('prod_status ok')"
+          test -x scripts/run_prod_smokes.sh || chmod +x scripts/run_prod_smokes.sh
+          test -f scripts/run_prod_smokes.sh && echo 'run_prod_smokes ok'

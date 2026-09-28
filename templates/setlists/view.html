@@ -487,14 +487,13 @@
 {% endif %}
 
 {% else %}
-<div class="empty">
-    <i class="fas fa-music"></i>
-    <p class="mb-2" style="font-size: var(--text-base);">Roteiro vazio</p>
-    <p class="text-muted small mb-3">Adicione 2–3 músicas e toque <strong>Tocar</strong> — esse é o momento Uníssono.</p>
-    <a href="{{ url_for('setlists.add_cifra', setlist_id=setlist.id) }}" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i> Adicionar músicas e tocar
-    </a>
-</div>
+{% with icon='fa-music',
+        title='Roteiro vazio',
+        text='Adicione 2–3 músicas e toque Tocar — esse é o momento Uníssono.',
+        cta_url=url_for('setlists.add_cifra', setlist_id=setlist.id),
+        cta_label='Adicionar músicas e tocar' %}
+{% include 'partials/empty_state.html' %}
+{% endwith %}
 {% endif %}
 
 {% endblock %}

@@ -137,6 +137,24 @@ def build_setlist_print_payload(
         sections = parse_print_sections()
 
     from band_logos import band_has_logo, band_logo_data_uri
+    from gorjeta_service import banda_gorjeta_pronta, montar_gorjeta_qr
+
+    gorjeta_qr_data_uri = None
+    gorjeta_public_url = None
+    if (
+        int(band.get('gorjeta_enabled') or 0)
+        and int(band.get('gorjeta_show_pdf') if band.get('gorjeta_show_pdf') is not None else 1)
+        and banda_gorjeta_pronta(band)
+        and band.get('gorjeta_slug')
+    ):
+        try:
+            tip = montar_gorjeta_qr(band)
+            gorjeta_qr_data_uri = tip['qr_data_uri']
+            gorjeta_public_url = url_for(
+                'gorjeta.publica', slug=band['gorjeta_slug'], _external=True,
+            )
+        except Exception:
+            gorjeta_qr_data_uri = None
 
     return {
         'empty': False,
@@ -149,6 +167,8 @@ def build_setlist_print_payload(
         'print_sections': sections,
         'band_has_logo': band_has_logo(band),
         'band_logo_data_uri': band_logo_data_uri(band),
+        'gorjeta_qr_data_uri': gorjeta_qr_data_uri,
+        'gorjeta_public_url': gorjeta_public_url,
     }
 
 
@@ -252,16 +272,14 @@ def tocar(setlist_id):
         return redirect(url_for('dashboard'))
 
     from db import mark_user_play_mode_used
+    from monetizacao import pode_modo_tocar_banda, resposta_modo_tocar_paywall
     from product_funnel import log_funnel_step
+
+    if not pode_modo_tocar_banda(band['id']):
+        return resposta_modo_tocar_paywall(contexto='banda')
+
     mark_user_play_mode_used(user_id)
     log_funnel_step(user_id, 'play_mode')
-    try:
-        from demo_onboarding import maybe_start_trial_on_value
-        started = maybe_start_trial_on_value(user_id, reason='play_mode_setlist')
-        if started:
-            flash('Trial Pro de 30 dias ativado — PDF e limites liberados.', 'info')
-    except Exception:
-        pass
 
     all_cifras = [
         enrich_cifra_for_tocar(dict(c), setlist_id=setlist_id, user_id=user_id)
@@ -427,16 +445,6 @@ def create(band_id):
         if antes == 0:
             from product_funnel import log_funnel_step
             log_funnel_step(user_id, 'primeira_setlist')
-            try:
-                from demo_onboarding import maybe_start_trial_on_value
-                started = maybe_start_trial_on_value(user_id, reason='primeira_setlist')
-                if started:
-                    flash(
-                        'Trial Pro de 30 dias ativado — PDF e limites liberados nesta banda.',
-                        'info',
-                    )
-            except Exception:
-                pass
         bn.setlist_created(band_id, user_id, setlist_id, name)
         flash('Setlist criada!', 'success')
         return redirect(url_for('setlists.view', setlist_id=setlist_id))
@@ -498,6 +506,11 @@ def offline_pack(setlist_id):
     ok, band = _require_setlist_access(setlist, user_id)
     if not ok:
         return jsonify({'detail': 'Sem acesso.'}), 403
+
+    from monetizacao import pode_offline_pack, resposta_offline_paywall
+    if not pode_offline_pack(band['id']):
+        return resposta_offline_paywall(band['id'])
+
     cifras = [
         enrich_cifra_for_tocar(dict(c), setlist_id=int(setlist_id), user_id=user_id)
         for c in get_setlist_cifras(setlist_id)

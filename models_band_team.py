@@ -294,12 +294,73 @@ def users_blocked_on_date(user_ids: list[str], event_date: str) -> set[str]:
     return blocked
 
 
+def get_event_guest(guest_id: str) -> dict | None:
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM band_event_guests WHERE id = ?', (guest_id,))
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def respond_event_guest(
+    guest_id: str,
+    *,
+    accepted: bool,
+    note: str | None = None,
+) -> dict | None:
+    """Registra aceite/recusa do convidado externo."""
+    status = 'accepted' if accepted else 'declined'
+    now = app_now_str()
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE band_event_guests
+           SET response_status = ?, response_note = ?, responded_at = ?
+           WHERE id = ?''',
+        (status, (note or '').strip()[:200] or None, now, guest_id),
+    )
+    if c.rowcount <= 0:
+        db.close()
+        return None
+    db.commit()
+    db.close()
+    return get_event_guest(guest_id)
+
+
 def list_event_guests(event_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
         'SELECT * FROM band_event_guests WHERE event_id = ? ORDER BY name',
         (event_id,),
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def list_band_freela_pool(band_id: str, *, limit: int = 40) -> list[dict]:
+    """Roster implícito: freelas já usados em shows da banda (por telefone ou nome)."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT MAX(g.name) AS name,
+                  MAX(g.phone) AS phone,
+                  MAX(g.role_label) AS role_label,
+                  MAX(g.created_at) AS last_invited_at,
+                  COUNT(*) AS times_used,
+                  SUM(CASE WHEN g.response_status = 'accepted' THEN 1 ELSE 0 END) AS times_accepted
+           FROM band_event_guests g
+           JOIN band_events e ON e.id = g.event_id
+           WHERE e.band_id = ?
+           GROUP BY
+             LOWER(TRIM(g.name)),
+             COALESCE(NULLIF(TRIM(g.phone), ''), LOWER(TRIM(g.name))),
+             COALESCE(NULLIF(TRIM(g.role_label), ''), '')
+           ORDER BY MAX(g.created_at) DESC
+           LIMIT ?''',
+        (band_id, int(limit)),
     )
     rows = [dict(r) for r in c.fetchall()]
     db.close()

@@ -1,0 +1,20 @@
+[project]
+name = "unissono-loja"
+version = "1.0.0"
+description = "Loja dropshipping Uníssono — FastAPI, Mercado Pago, DuckDB e Parquet"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.12,<5",
+    "duckdb>=1.2,<2",
+    "fastapi>=0.115,<1",
+    "httpx>=0.27,<1",
+    "itsdangerous>=2.2,<3",
+    "lxml>=5.3,<6",
+    "mercadopago>=2.2,<3",
+    "pydantic>=2.9,<3",
+    "python-dotenv>=1.0,<2",
+    "uvicorn[standard]>=0.32,<1",
+]
+
+[tool.uv]
+package = false

@@ -376,10 +376,11 @@
     }
 
     document.addEventListener('click', function (ev) {
-      var target = ev.target.closest('.chord, .cj-chord, .sp-chord, .grade-chord, .grade-chord-play, .grade-visual-chord, .chord-text, .chord-sheet-chord, .cs-chord');
-      if (target && target.textContent && target.textContent.trim()) {
+      var target = ev.target.closest('.chord, .cj-chord, .sp-chord, .grade-chord, .grade-chord-play, .grade-visual-chord, .chord-text, .chord-sheet-chord, .cs-chord, .cifra-tab-chord');
+      if (target && (target.getAttribute('data-chord') || (target.textContent && target.textContent.trim()))) {
         ev.preventDefault();
-        openChordModal(target.textContent.trim());
+        var symbol = (target.getAttribute('data-chord') || target.textContent || '').trim();
+        if (symbol && symbol !== '\u00a0') openChordModal(symbol);
         return;
       }
 

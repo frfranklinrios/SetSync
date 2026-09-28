@@ -86,6 +86,13 @@ def _apply_quality_styles(head: str, prefs: Prefs) -> str:
 
 
 def chord_to_html(chord: str, prefs: Prefs) -> str:
+    data_chord = None
+    raw = chord or ""
+    if raw.startswith("@@") and "@@" in raw[2:]:
+        parts = raw[2:].split("@@", 1)
+        if len(parts) == 2 and parts[0] and parts[1]:
+            data_chord, chord = parts[0], parts[1]
+
     parsed = parse_chord_token(chord)
     display = format_chord_display(chord, prefs)
 
@@ -98,16 +105,18 @@ def chord_to_html(chord: str, prefs: Prefs) -> str:
     if display == "N.C.":
         return '<span class="cs-nc">N.C.</span>'
 
+    data_attr = f' data-chord="{html.escape(data_chord, quote=True)}"' if data_chord else ""
+
     m = ROOT.match(display)
     if not m:
         css = "cs-chord cs-smufl" if uses_smufl(prefs) else "cs-chord"
-        inner = f'<span class="{css}">{html.escape(display)}</span>'
+        inner = f'<span class="{css}"{data_attr}>{html.escape(display)}</span>'
         return _wrap_chord(inner, parsed)
 
     if uses_smufl(prefs):
-        inner = f'<span class="cs-chord cs-smufl">{display_to_smufl(display)}</span>'
+        inner = f'<span class="cs-chord cs-smufl"{data_attr}>{display_to_smufl(display)}</span>'
     else:
-        inner = f'<span class="cs-chord">{html.escape(display)}</span>'
+        inner = f'<span class="cs-chord"{data_attr}>{html.escape(display)}</span>'
     return _wrap_chord(inner, parsed)
 
 

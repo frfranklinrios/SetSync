@@ -4,17 +4,36 @@
 services:
   api-cifras:
     build:
-      context: ..
-      dockerfile: api-cifras/Dockerfile
+      context: ../api-cifras
+      dockerfile: Dockerfile
+      additional_contexts:
+        setsync: .
     container_name: setsync-api-cifras
     ports:
       - "127.0.0.1:8000:8000"
+    volumes:
+      # Pasta já baixada no host — sem copiar para volume Docker
+      - ../api-cifras/data:/app/data
+    environment:
+      DATA_DIR: /app/data
     restart: unless-stopped
-    # Teto de memória p/ o sidecar não sufocar o núcleo (web/postgres ficam livres).
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     deploy:
       resources:
         limits:
-          memory: 512M
+          cpus: "1.0"
+          memory: 1g
     networks:
       - default
 
@@ -35,6 +54,11 @@ services:
       timeout: 5s
       retries: 8
       start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1536M
     networks:
       - default
 
@@ -68,6 +92,7 @@ services:
     deploy:
       resources:
         limits:
+          cpus: "0.75"
           memory: 1g
     networks:
       - default
@@ -91,9 +116,22 @@ services:
     restart: unless-stopped
     cap_add:
       - NET_BIND_SERVICE
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.create_connection(('127.0.0.1',587),2); s.close()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     deploy:
       resources:
         limits:
+          cpus: "0.5"
           memory: 256M
     networks:
       - default
@@ -105,11 +143,14 @@ services:
     environment:
       TZ: ${SETSYNC_TIMEZONE:-America/Fortaleza}
       SETSYNC_TIMEZONE: ${SETSYNC_TIMEZONE:-America/Fortaleza}
+      SETSYNC_DATA_DIR: /app/data
       MAIL_DATA_DIR: /app/data/mail
       MAIL_DATABASE_PATH: /app/data/mail/emails.db
       SMTP_CONNECT_HOST: mail
       EVOLUTION_API_URL: http://evolution-api:8080
       API_CIFRAS_URL: ${API_CIFRAS_URL:-http://api-cifras:8000}
+      SCREENSHOT_BASE_URL: https://unissono.app
+      SETSYNC_SCREENSHOTS_DIR: /app/data/screenshots
     ports:
       - "127.0.0.1:5001:5000"
     volumes:
@@ -118,11 +159,11 @@ services:
       postgres:
         condition: service_healthy
       mail:
-        condition: service_started
+        condition: service_healthy
       evolution-api:
         condition: service_started
       api-cifras:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:5000/health"]
@@ -130,6 +171,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 25s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g
     networks:
       - default
       - nginx_proxy_net

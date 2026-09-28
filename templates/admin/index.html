@@ -81,7 +81,7 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
 {% endif %}
 {% endmacro %}
 
-{% macro user_action_row(u) %}
+{% macro user_action_row(u, wa_text='') %}
 <li class="d-flex flex-wrap align-items-center justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
     <span>
         <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="text-decoration-none fw-semibold">{{ user_display_name(u) }}</a>
@@ -90,13 +90,29 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     <span class="text-nowrap">
         <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
         {% if u.phone %}
-        <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+        <a href="https://wa.me/{{ u.phone }}{% if wa_text %}?text={{ wa_text|urlencode }}{% endif %}"
+           target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
         {% endif %}
         {% if u.id != current_user.id %}
         <form method="post" action="{{ url_for('admin.impersonate_user', user_id=u.id) }}" class="d-inline">
             {% include 'partials/csrf_input.html' %}
             <button type="submit" class="btn btn-sm btn-primary py-0">Entrar</button>
         </form>
+        {% endif %}
+    </span>
+</li>
+{% endmacro %}
+{% macro hot_lead_row(item, phone=none, user_id=none, wa_text='') %}
+<li class="d-flex flex-wrap justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
+    <span>{{ caller() }}</span>
+    <span class="text-nowrap">
+        {% if user_id %}
+        <a href="{{ url_for('admin.usuario_detalhe', user_id=user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
+        {% endif %}
+        {% set ph = phone or item.phone %}
+        {% if ph %}
+        <a href="https://wa.me/{{ ph }}{% if wa_text %}?text={{ wa_text|urlencode }}{% endif %}"
+           target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
         {% endif %}
     </span>
 </li>
@@ -114,7 +130,8 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         </p>
     </div>
     <div class="admin-nav-links">
-        <a href="{{ url_for('mail_web.inbox') }}" class="btn btn-primary btn-sm"><i class="fas fa-inbox me-1"></i>E-mail</a>
+        <a href="{{ url_for('admin.jornada') }}" class="btn btn-primary btn-sm"><i class="fas fa-route me-1"></i>Jornada pós-cadastro</a>
+        <a href="{{ url_for('mail_web.inbox') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-inbox me-1"></i>E-mail</a>
         <a href="{{ url_for('whatsapp_admin.index') }}" class="btn btn-success btn-sm"><i class="fab fa-whatsapp me-1"></i>WhatsApp</a>
         <a href="{{ url_for('admin.historico') }}" class="btn btn-outline-primary btn-sm">Histórico</a>
         <div class="dropdown">
@@ -143,11 +160,13 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
 <p class="admin-section-title">Pulse</p>
 <div class="row g-2 mb-4">
     <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ url_for('admin.jornada') }}" class="text-decoration-none text-reset d-block">
         <div class="admin-stat kpi">
             <div class="num">{{ stats.signups_7d }}</div>
             <div class="lbl">Novos (7d)</div>
             <div class="sub">{{ cohort_7d.cifra_pct }}% com cifra · {{ cohort_7d.play_pct }}% tocaram</div>
         </div>
+        </a>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="admin-stat kpi">
@@ -182,7 +201,7 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         <div class="admin-stat kpi">
             <div class="num">{{ monetization.trials_active }}</div>
             <div class="lbl">Trials ativos</div>
-            <div class="sub">{{ monetization.paid_total }} pagantes · churn {{ monetization.trial_churn.churn_pct }}%</div>
+            <div class="sub">{{ monetization.paid_real }} cliente{{ 's' if monetization.paid_real != 1 else '' }} pago{{ 's' if monetization.paid_real != 1 else '' }} · {{ monetization.voucher_total }} voucher{{ 's' if monetization.voucher_total != 1 else '' }}</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
@@ -194,55 +213,193 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         </div>
     </div>
 </div>
-
-{# ── B. FILA DE AÇÃO ────────────────────────────────────────────────────── #}
-<p class="admin-section-title">Fila de ação</p>
+<p class="text-muted mb-4" style="font-size: var(--text-xs);">
+    Escala {{ monetization.scale_events_7d|default(0) }} eventos (7d) · freela {{ monetization.guest_events_7d|default(0) }} (7d)
+    · bandas com escala {{ monetization.bands_with_scale|default(0) }} · com freela {{ monetization.bands_with_guest|default(0) }}
+    · churn trial {{ monetization.trial_churn.churn_pct }}% · fundador excluído de pagantes
+</p>
+{# ── B. CONCIERGE (14 dias) ─────────────────────────────────────────────── #}
+<p class="admin-section-title">Concierge — cifra real e palco</p>
 {% set eq = engagement_queues %}
 {% set et = eq.totals or {} %}
+{% set wa_cifra = 'Oi! Vi sua conta no Uníssono. Qual música vocês ensaiam essa semana? Te ajudo a colar a cifra no palco em 2 min.' %}
+{% set wa_play = 'Oi! Vi que você já tem cifra no Uníssono. Abre o Modo Tocar nela no ensaio — é a tela cheia. Qualquer trava, me chama.' %}
+{% set wa_solo = 'Oi! Já tocou no palco do Uníssono. Manda o link no grupo do ensaio — a banda entra no mesmo tom. Te mando o convite se quiser.' %}
 <div class="row g-3 mb-4">
-    <div class="col-md-6 col-xl-3">
+    <div class="col-md-6 col-xl-4">
         <div class="admin-queue-card">
             <div class="qh text-warning">
-                Sem 1ª música <span class="badge bg-warning text-dark">{{ et.needs_cifra }}</span>
+                Sem cifra real (14d) <span class="badge bg-warning text-dark">{{ et.needs_cifra }}</span>
             </div>
             <div class="qb">
                 <ul class="list-unstyled mb-0">
-                    {% for u in eq.needs_cifra %}{{ user_action_row(u) }}{% else %}
+                    {% for u in eq.needs_cifra %}{{ user_action_row(u, wa_cifra) }}{% else %}
                     <li class="text-muted py-2" style="font-size: var(--text-sm);">Ninguém nesta fila.</li>
                     {% endfor %}
                 </ul>
             </div>
-            <div class="qf">Prioridade #1 — sem cifra não ativa</div>
+            <div class="qf">WhatsApp D0 — “qual música do ensaio?”</div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
+    <div class="col-md-6 col-xl-4">
         <div class="admin-queue-card">
             <div class="qh" style="color:#b45309;">
                 Tem cifra, não tocou <span class="badge text-bg-light border">{{ et.needs_play }}</span>
             </div>
             <div class="qb">
                 <ul class="list-unstyled mb-0">
-                    {% for u in eq.needs_play %}{{ user_action_row(u) }}{% else %}
+                    {% for u in eq.needs_play %}{{ user_action_row(u, wa_play) }}{% else %}
                     <li class="text-muted py-2" style="font-size: var(--text-sm);">Ninguém nesta fila.</li>
                     {% endfor %}
                 </ul>
             </div>
-            <div class="qf">Aha do produto = Modo Tocar</div>
+            <div class="qf">Aha = Modo Tocar na cifra deles</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-4">
+        <div class="admin-queue-card">
+            <div class="qh text-success">
+                Tocou e ainda solo <span class="badge bg-success">{{ et.solo_activated }}</span>
+            </div>
+            <div class="qb">
+                <ul class="list-unstyled mb-0">
+                    {% for u in eq.solo_activated %}{{ user_action_row(u, wa_solo) }}{% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Ninguém nesta fila.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="qf">Pedir pra mandar no grupo do ensaio</div>
+        </div>
+    </div>
+</div>
+<p class="text-muted mb-3" style="font-size: var(--text-xs);">
+    {{ et.users_no_band }} contas sem banda no total —
+    {{ et.solo_activated }} tocaram reais e ainda estão sozinhos.
+</p>
+
+{# ── C. OUTRAS FILAS ─────────────────────────────────────────────────────── #}
+<p class="admin-section-title">Fila de ação (depois do palco)</p>
+<div class="row g-3 mb-3">
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-queue-card">
+            <div class="qh text-info">
+                Campeões de escala <span class="badge text-bg-info">{{ eq.scale_champions|length }}</span>
+            </div>
+            <div class="qb">
+                <ul class="list-unstyled mb-0">
+                    {% for u in eq.scale_champions %}
+                    {% set wa_msg = 'Oi! Vi que você usa escala no Uníssono. Lancei o Comando do show (escala + freela + cachê num só lugar). Topa me dar 5 min de feedback?' %}
+                    <li class="d-flex flex-wrap justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
+                        <span>
+                            <strong>{{ u.display_name or u.username }}</strong>
+                            <span class="text-muted">· {{ u.scale_accepts }} aceite{{ 's' if u.scale_accepts != 1 else '' }}</span>
+                        </span>
+                        <span class="text-nowrap">
+                            <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
+                            {% if u.phone %}
+                            <a href="https://wa.me/{{ u.phone }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+                            {% endif %}
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Ninguém ainda.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="qf">Pedir feedback do Comando do show + pool de freela</div>
         </div>
     </div>
     <div class="col-md-6 col-xl-3">
         <div class="admin-queue-card">
-            <div class="qh text-success">
-                Solo ativado <span class="badge bg-success">{{ et.solo_activated }}</span>
+            <div class="qh text-danger">
+                Trial caiu (14d) <span class="badge bg-danger">{{ eq.trials_churned|length }}</span>
             </div>
             <div class="qb">
                 <ul class="list-unstyled mb-0">
-                    {% for u in eq.solo_activated %}{{ user_action_row(u) }}{% else %}
-                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nenhum solo ativo.</li>
+                    {% for t in eq.trials_churned %}
+                    {% set wa_msg = 'Oi! O trial da banda ' ~ (t.band_name or '') ~ ' acabou. Posso te ajudar a marcar o próximo show (escala + freela) no Uníssono em 10 min?' %}
+                    <li class="d-flex flex-wrap justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
+                        <span>
+                            <strong>{{ t.band_name }}</strong>
+                            <span class="text-muted">· {{ (t.trial_fim|string)[:10] }}</span>
+                        </span>
+                        <span class="text-nowrap">
+                        {% if t.user_id %}
+                        <a href="{{ url_for('admin.usuario_detalhe', user_id=t.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
+                        {% endif %}
+                        {% if t.phone %}
+                        <a href="https://wa.me/{{ t.phone }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+                        {% endif %}
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nenhum churn recente.</li>
                     {% endfor %}
                 </ul>
             </div>
-            <div class="qf">Sem banda, mas engajado — upsell Individual</div>
+            <div class="qf">WhatsApp: “montamos o próximo show juntos?”</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-queue-card">
+            <div class="qh text-warning">
+                Show sem escala <span class="badge bg-warning text-dark">{{ eq.shows_no_scale|length }}</span>
+            </div>
+            <div class="qb">
+                <ul class="list-unstyled mb-0">
+                    {% for e in eq.shows_no_scale %}
+                    {% set wa_msg = 'Oi! Vi o show «' ~ (e.title or '') ~ '» sem escala no Uníssono. Quer que eu te mostre o Comando do show (escala + freela)?' %}
+                    <li class="d-flex flex-wrap justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
+                        <span>
+                            <strong>{{ e.title }}</strong>
+                            <span class="text-muted">· {{ e.band_name }}</span>
+                        </span>
+                        <span class="text-nowrap">
+                        {% if e.user_id %}
+                        <a href="{{ url_for('admin.usuario_detalhe', user_id=e.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
+                        {% endif %}
+                        {% if e.phone %}
+                        <a href="https://wa.me/{{ e.phone }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+                        {% endif %}
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nada na fila.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="qf">Empurrar Comando do show</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-queue-card">
+            <div class="qh" style="color:#7c3aed;">
+                Bandas sem evento <span class="badge text-bg-light border">{{ eq.bands_no_events|length }}</span>
+            </div>
+            <div class="qb">
+                <ul class="list-unstyled mb-0">
+                    {% for b in eq.bands_no_events %}
+                    {% set wa_msg = 'Oi! Vi a banda «' ~ (b.band_name or '') ~ '» sem show no Uníssono. Em 2 min você marca o próximo (escala + setlist + freela) no Comando do show. Topa?' %}
+                    <li class="d-flex flex-wrap justify-content-between gap-1 py-1 border-bottom" style="font-size: var(--text-sm);">
+                        <span>
+                            <strong>{{ b.band_name }}</strong>
+                            <span class="text-muted">· {{ b.display_name or b.username or '—' }}</span>
+                        </span>
+                        <span class="text-nowrap">
+                        {% if b.user_id %}
+                        <a href="{{ url_for('admin.usuario_detalhe', user_id=b.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
+                        {% endif %}
+                        {% if b.phone %}
+                        <a href="https://wa.me/{{ b.phone }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+                        {% endif %}
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nenhuma na fila.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="qf">{{ et.bands_no_events|default(0) }} no total — 1º show = ativação</div>
         </div>
     </div>
     <div class="col-md-6 col-xl-3">
@@ -267,23 +424,12 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                     {% endfor %}
                 </ul>
             </div>
-            <div class="qf">
-                {% if retention.nps.detractors %}
-                NPS detratores: {{ retention.nps.detractors }} —
-                <a href="#admin-nps">ver</a>
-                {% else %}
-                Sem detratores NPS recentes
-                {% endif %}
-            </div>
+            <div class="qf">Converter antes de cair pra grátis</div>
         </div>
     </div>
 </div>
-<p class="text-muted mb-4" style="font-size: var(--text-xs);">
-    {{ et.users_no_band }} contas sem banda no total —
-    {{ et.solo_activated }} já ativaram solo (não contar como abandono).
-</p>
 
-{# ── C. DIAGNÓSTICO ─────────────────────────────────────────────────────── #}
+{# ── D. DIAGNÓSTICO ─────────────────────────────────────────────────────── #}
 <p class="admin-section-title">Diagnóstico</p>
 <ul class="nav nav-pills mb-3 flex-wrap gap-1" role="tablist" style="font-size: var(--text-sm);">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#diag-funil" type="button">Funil</button></li>
@@ -313,8 +459,9 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
             {% endfor %}
         </div>
         <p class="text-muted mb-0" style="font-size: var(--text-xs);">
-            Ordem do produto: cifra → Modo Tocar → banda. Extensões:
+            Ordem do produto: cifra → Modo Tocar → banda → agenda/escala/freela. Extensões:
             agenda {{ funnel_extra.agenda }} · estúdio {{ funnel_extra.estudio }} · reserva {{ funnel_extra.reserva }}.
+            Setlist não é obrigatória para gerar valor (muitos param em cifra + tocar).
             Cohort 7d: {{ cohort_7d.signups }} cadastros → {{ cohort_7d.with_cifra }} cifra ({{ cohort_7d.cifra_pct }}%) → {{ cohort_7d.played }} tocar ({{ cohort_7d.play_pct }}%).
         </p>
         {% endif %}
@@ -375,6 +522,61 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
             </div>
         </div>
         {% endif %}
+        <div class="row g-2 mb-2" id="admin-feedback">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header py-2" style="font-size: var(--text-sm);">
+                        NPS recente <span class="badge text-bg-light border">{{ retention.nps.total|default(0) }}</span>
+                    </div>
+                    <ul class="list-group list-group-flush" style="font-size: var(--text-sm);">
+                        {% for u in retention.nps.recent|default([]) %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}">{{ u.display_name or u.username }}</a>
+                            <strong>{{ u.nps_score }}</strong>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">Ainda sem respostas — o modal dispara após Modo Tocar.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header py-2" style="font-size: var(--text-sm);">
+                        CSAT Modo Tocar <span class="badge text-bg-light border">{{ retention.nps.csat_total|default(0) }}</span>
+                    </div>
+                    <div class="card-body py-2" style="font-size: var(--text-sm);">
+                        {% set csat = retention.nps.csat_by or {} %}
+                        <div>Excelente: <strong>{{ csat.excelente|default(0) }}</strong></div>
+                        <div>Problemas: <strong>{{ csat.problemas|default(0) }}</strong></div>
+                        <div>Não usei: <strong>{{ csat.nao_usei|default(0) }}</strong></div>
+                        {% if not retention.nps.csat_total %}
+                        <p class="text-muted mb-0 mt-2">Pergunta aparece ao sair do Modo Tocar.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header py-2" style="font-size: var(--text-sm);">Churn survey</div>
+                    <div class="card-body py-2" style="font-size: var(--text-sm);">
+                        {% set ch = retention.nps.churn_by or {} %}
+                        <div>Caro: {{ ch.caro|default(0) }} · Difícil: {{ ch.dificil|default(0) }}</div>
+                        <div>Não precisou: {{ ch.nao_precisou|default(0) }} · Outro: {{ ch.outro|default(0) }}</div>
+                    </div>
+                    <ul class="list-group list-group-flush" style="font-size: var(--text-sm);">
+                        {% for u in retention.nps.churn_list|default([]) %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}">{{ u.display_name or u.username }}</a>
+                            <span class="text-muted">{{ u.churn_reason }}</span>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">Sem respostas ainda.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
         {% if retention.campaigns %}
         <div class="d-flex flex-wrap gap-2">
             {% for c in retention.campaigns %}
@@ -388,30 +590,30 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         <div class="row g-2 mb-3">
             <div class="col-6 col-md-3">
                 <div class="admin-stat kpi">
-                    <div class="num">{{ monetization.paid_total }}</div>
-                    <div class="lbl">Assinaturas pagas</div>
-                    <div class="sub">ativa / voucher</div>
+                    <div class="num">{{ monetization.paid_real }}</div>
+                    <div class="lbl">Pagantes (MP)</div>
+                    <div class="sub">Mercado Pago · excl. fundador</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="admin-stat kpi">
-                    <div class="num">{{ monetization.individual }}</div>
-                    <div class="lbl">Individual</div>
-                    <div class="sub">solo</div>
+                    <div class="num">{{ monetization.voucher_total }}</div>
+                    <div class="lbl">Vouchers</div>
+                    <div class="sub">acesso sem pagamento</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="admin-stat kpi">
-                    <div class="num">{{ monetization.pro }}</div>
-                    <div class="lbl">Pro</div>
-                    <div class="sub">banda</div>
+                    <div class="num">{{ monetization.bands_with_scale|default(0) }}</div>
+                    <div class="lbl">Bandas com escala</div>
+                    <div class="sub">{{ monetization.guest_events_7d|default(0) }} freela (7d) · {{ monetization.scale_events_7d|default(0) }} escala (7d)</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="admin-stat kpi">
-                    <div class="num">{{ monetization.worship }}</div>
-                    <div class="lbl">Worship</div>
-                    <div class="sub">+ {{ monetization.studio_premium }} estúdio Premium</div>
+                    <div class="num">{{ monetization.studio_premium }}</div>
+                    <div class="lbl">Estúdio Premium</div>
+                    <div class="sub">{{ monetization.studio_paid }} pagos · {{ monetization.studio_voucher }} vouchers</div>
                 </div>
             </div>
         </div>
@@ -419,10 +621,42 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
             Trials ativos: <strong>{{ monetization.trials_active }}</strong>
             · Conversão pós-trial: <strong>{{ monetization.trial_churn.convert_pct }}%</strong>
             · Inadimplentes: <strong>{{ monetization.inadimplente }}</strong>
+            · Planos: {{ monetization.individual }} Ind · {{ monetization.pro }} Pro · {{ monetization.worship }} Worship
         </p>
         <p class="text-muted mb-0" style="font-size: var(--text-xs);">
             Inventário: {{ stats.bands }} bandas · {{ stats.studios }} estúdios · {{ stats.cifras }} cifras · {{ stats.users }} usuários.
         </p>
+
+        {% set wb = winback or {} %}
+        <div class="card mt-3 border-warning">
+            <div class="card-body">
+                <h2 class="h6 mb-2"><i class="fas fa-rotate-left me-1"></i> Reativar quem sumiu</h2>
+                <p class="text-muted mb-2" style="font-size: var(--text-sm);">
+                    Contas inativas ≥5 dias, sem assinatura paga.
+                    <strong>{{ wb.total|default(0) }}</strong> na fila
+                    · frios {{ wb.by_segment.cold|default(0) }}
+                    · banda ociosa {{ wb.by_segment.idle_band|default(0) }}
+                    · tocou sem pagar {{ wb.by_segment.unpaid|default(0) }}
+                    · {{ wb.with_phone|default(0) }} com WhatsApp.
+                    {% if not wb.email_ok %}<span class="text-danger">E-mail não configurado.</span>{% endif %}
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <form method="post" action="{{ url_for('admin.winback_disparar') }}" class="d-inline">
+                        {% include 'partials/csrf_input.html' %}
+                        <input type="hidden" name="dry_run" value="1">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Prévia</button>
+                    </form>
+                    <form method="post" action="{{ url_for('admin.winback_disparar') }}" class="d-inline"
+                          onsubmit="return confirm('Enviar e-mail + aviso no app{% if whatsapp_configured %} + WhatsApp{% endif %} para {{ wb.total|default(0) }} contas?');">
+                        {% include 'partials/csrf_input.html' %}
+                        <input type="hidden" name="whatsapp" value="1">
+                        <button type="submit" class="btn btn-sm btn-warning" {% if not wb.total %}disabled{% endif %}>
+                            Disparar reativação agora
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="tab-pane fade" id="diag-ops">

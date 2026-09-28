@@ -1,0 +1,19 @@
+{# Empty state padronizado.
+   Uso:
+   {% with icon='fa-music', title='…', text='…', cta_url=…, cta_label='…' %}
+   {% include 'partials/empty_state.html' %}
+   {% endwith %}
+#}
+<div class="ss-empty" role="status">
+    {% if icon %}
+    <i class="fas {{ icon }}" aria-hidden="true"></i>
+    {% endif %}
+    {% if title %}<p class="ss-empty-title">{{ title }}</p>{% endif %}
+    {% if text %}<p class="ss-empty-text text-muted">{{ text }}</p>{% endif %}
+    {% if cta_url and cta_label %}
+    <a href="{{ cta_url }}" class="btn btn-primary btn-sm">{{ cta_label }}</a>
+    {% endif %}
+    {% if cta_secondary_url and cta_secondary_label %}
+    <a href="{{ cta_secondary_url }}" class="btn btn-outline-secondary btn-sm ms-1">{{ cta_secondary_label }}</a>
+    {% endif %}
+</div>

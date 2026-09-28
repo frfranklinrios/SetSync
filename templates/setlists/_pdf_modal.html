@@ -152,7 +152,25 @@
         if (!sections) return;
         saveSections();
         var q = buildQuery(sections);
-        window.location.href = q ? (pdfBase + '?' + q) : pdfBase;
+        var url = q ? (pdfBase + '?' + q) : pdfBase;
+        fetch(url, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        }).then(function (res) {
+            if (res.status === 402) {
+                return res.json().then(function (data) {
+                    if (typeof window.setSyncShowUpgrade === 'function') {
+                        window.setSyncShowUpgrade(data);
+                    } else {
+                        window.location.href = (data && data.upgrade_url) || '/assinatura/planos?plano=pro&go=1';
+                    }
+                });
+            }
+            // PDF binário / redirect: navega normalmente
+            window.location.href = url;
+        }).catch(function () {
+            window.location.href = url;
+        });
     }
 
     function goPreview() {

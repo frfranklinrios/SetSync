@@ -168,3 +168,98 @@ def set_setlist_cifra_play_notes(setlist_id, cifra_id, play_notes: str | None) -
     db.commit()
     db.close()
     return updated
+
+
+def clone_setlist(source_setlist_id: int, *, name: str | None = None) -> int | None:
+    """Copia setlist (metadados + músicas/ordem/cantor/notas) para a mesma banda."""
+    source = get_setlist(source_setlist_id)
+    if not source:
+        return None
+    band_id = source['band_id']
+    base_name = (name or '').strip() or f"{source.get('name') or 'Setlist'} (cópia)"
+    new_id = create_setlist(band_id, base_name[:120], source.get('description'))
+    if not new_id:
+        return None
+    if source.get('vocalist_id'):
+        set_setlist_vocalist(new_id, source['vocalist_id'])
+
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''SELECT cifra_id, position, vocalist_id, play_notes
+           FROM setlist_cifras WHERE setlist_id = ? ORDER BY position''',
+        (int(source_setlist_id),),
+    )
+    rows = c.fetchall()
+    for r in rows:
+        c.execute(
+            '''INSERT INTO setlist_cifras (setlist_id, cifra_id, position, vocalist_id, play_notes)
+               VALUES (?, ?, ?, ?, ?)''',
+            (
+                int(new_id),
+                r['cifra_id'],
+                r['position'],
+                r.get('vocalist_id'),
+                r.get('play_notes'),
+            ),
+        )
+    db.commit()
+    db.close()
+    return int(new_id)
+
+
+def find_suggestable_setlist(
+    band_id: str,
+    *,
+    exclude_setlist_id: int | None = None,
+) -> dict | None:
+    """Último setlist com músicas usado em evento da banda (senão o mais cheio da banda)."""
+    db = get_db()
+    c = db.cursor()
+    params: list = [band_id]
+    exclude_sql = ''
+    if exclude_setlist_id:
+        exclude_sql = ' AND s.id <> ?'
+        params.append(int(exclude_setlist_id))
+    c.execute(
+        f'''SELECT s.id, s.name, e.title AS event_title, e.starts_at,
+                  (SELECT COUNT(*) FROM setlist_cifras sc WHERE sc.setlist_id = s.id) AS n_songs
+           FROM band_events e
+           JOIN setlists s ON s.id = e.setlist_id AND s.band_id = e.band_id
+           WHERE e.band_id = ?
+             {exclude_sql}
+             AND EXISTS (SELECT 1 FROM setlist_cifras sc WHERE sc.setlist_id = s.id)
+           ORDER BY e.starts_at DESC
+           LIMIT 1''',
+        params,
+    )
+    row = c.fetchone()
+    if row:
+        db.close()
+        d = dict(row)
+        d['source'] = 'event'
+        return d
+
+    params2: list = [band_id]
+    exclude2 = ''
+    if exclude_setlist_id:
+        exclude2 = ' AND s.id <> ?'
+        params2.append(int(exclude_setlist_id))
+    c.execute(
+        f'''SELECT s.id, s.name, NULL AS event_title, NULL AS starts_at,
+                  (SELECT COUNT(*) FROM setlist_cifras sc WHERE sc.setlist_id = s.id) AS n_songs
+           FROM setlists s
+           WHERE s.band_id = ?
+             {exclude2}
+             AND EXISTS (SELECT 1 FROM setlist_cifras sc WHERE sc.setlist_id = s.id)
+           ORDER BY n_songs DESC, s.id DESC
+           LIMIT 1''',
+        params2,
+    )
+    row = c.fetchone()
+    db.close()
+    if not row:
+        return None
+    d = dict(row)
+    d['source'] = 'band'
+    return d

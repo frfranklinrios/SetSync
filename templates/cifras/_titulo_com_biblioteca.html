@@ -1,0 +1,67 @@
+{# Campo Título com busca integrada na biblioteca (api-cifras).
+   Uso: {% include 'cifras/_titulo_com_biblioteca.html' %}
+   Opcional: titulo_value, titulo_autofocus=true, titulo_required=true
+#}
+{% set _val = titulo_value if titulo_value is defined else '' %}
+{% set _af = titulo_autofocus if titulo_autofocus is defined else false %}
+{% set _req = titulo_required if titulo_required is defined else true %}
+<div class="col-md-5 position-relative" data-api-cifras-search data-api-cifras-title-search>
+    <label class="form-label" for="cifra-titulo-input">Título</label>
+    <div class="input-group">
+        <span class="input-group-text" title="Busca na biblioteca ao digitar" aria-hidden="true">
+            <i class="fas fa-search text-muted"></i>
+        </span>
+        <input type="text" class="form-control" name="titulo" id="cifra-titulo-input"
+               value="{{ _val }}"
+               {% if _req %}required{% endif %}
+               {% if _af %}autofocus{% endif %}
+               autocomplete="off"
+               data-api-cifras-input
+               placeholder="Digite o título — sugestões da biblioteca"
+               aria-autocomplete="list"
+               aria-controls="cifra-titulo-results">
+    </div>
+    <p class="form-text mb-0 api-cifras-title-hint">
+        Digite para buscar na biblioteca; toque em um resultado para preencher a cifra.
+    </p>
+    <p class="form-text mb-0" data-api-cifras-status role="status"></p>
+    <div class="api-cifras-title-results list-group border rounded shadow-sm d-none"
+         id="cifra-titulo-results"
+         data-api-cifras-results
+         role="listbox"></div>
+</div>
+<style>
+.api-cifras-title-results {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--bg, #fff);
+    margin-top: 0.15rem;
+}
+.api-cifras-title-hint { font-size: var(--text-xs); color: var(--muted); }
+.api-cifras-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+}
+.api-cifras-result:last-child { border-bottom: 0; }
+.api-cifras-result:hover,
+.api-cifras-result:focus {
+    background: var(--chord-highlight-bg, rgba(13, 148, 136, 0.08));
+    outline: none;
+}
+.api-cifras-result-title { font-weight: 600; font-size: var(--text-sm); }
+.api-cifras-result-artist { font-size: var(--text-xs); color: var(--muted); }
+</style>

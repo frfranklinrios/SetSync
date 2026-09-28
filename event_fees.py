@@ -3,8 +3,8 @@
 Fluxo de liquidação (FinTech ao vivo):
   1. Casa paga um valor bruto ao líder
   2. Subtrai despesas da noite (combustível, pedágio, alimentação…)
-  3. Paga taxa fixa a sidemen / substitutos / convidados
-  4. Divide o restante entre os fundadores
+  3. Paga valores explícitos (sidemen, convidados e fundadores com valor definido)
+  4. Divide o restante entre fundadores sem valor informado
 """
 
 from __future__ import annotations
@@ -32,9 +32,16 @@ def compute_event_fee_split(
     guests: list[dict] | None = None,
     event_expenses: list[dict] | None = None,
     fee_lines: list[dict] | None = None,
+    amount_overrides: dict[str, float] | None = None,
 ) -> dict:
     """Calcula divisão do cachê — usa liquidação de noite quando há dados extras."""
-    if fee_lines or event_expenses or guests or _has_sideman_config(band_members):
+    if (
+        fee_lines
+        or event_expenses
+        or guests
+        or amount_overrides
+        or _has_sideman_config(band_members)
+    ):
         return compute_night_settlement(
             event,
             assignments,
@@ -43,6 +50,7 @@ def compute_event_fee_split(
             event_expenses=event_expenses or [],
             fee_lines=fee_lines,
             name_for_user=name_for_user,
+            amount_overrides=amount_overrides,
         )
     return _legacy_equal_split(event, assignments, band_members, name_for_user=name_for_user)
 
@@ -149,9 +157,15 @@ def compute_night_settlement(
     event_expenses: list[dict],
     fee_lines: list[dict] | None,
     name_for_user,
+    amount_overrides: dict[str, float] | None = None,
 ) -> dict:
-    """Liquidação: bruto − despesas − taxas fixas → split entre fundadores."""
+    """Liquidação: bruto − despesas − valores explícitos → split entre quem divide o resto.
+
+    ``amount_overrides``: user_id → valor definido neste show (fundador ou sideman).
+    Quem não tem override e é fundador divide o pool restante.
+    """
     total = _money(event.get('fee_total'))
+    couvert = _money(event.get('fee_couvert'))
     transport = _money(event.get('fee_transport_discount'))
     equipment = _money(event.get('fee_equipment_discount'))
     expenses_detail = [
@@ -165,19 +179,35 @@ def compute_night_settlement(
         if _money(e.get('valor')) > 0
     ]
     night_expenses = _round2(sum(e['valor'] for e in expenses_detail))
+    overrides = {
+        str(k): _round2(_money(v))
+        for k, v in (amount_overrides or {}).items()
+        if k is not None
+    }
 
     # Snapshot já fechado
     if fee_lines:
         fixed_payees = []
         founder_payees = []
         for line in fee_lines:
+            kind = (line.get('kind') or 'share').strip().lower()
+            if kind not in ('fixed', 'share'):
+                kind = 'share'
+            stored_label = (line.get('role_label') or '').strip()
+            if stored_label in ('', 'fixed', 'share'):
+                stored_label = (
+                    'Valor definido' if kind == 'fixed' else 'Fundador'
+                )
             item = {
+                'id': line.get('id'),
                 'user_id': line.get('user_id'),
                 'guest_id': line.get('guest_id'),
                 'name': line.get('display_name') or '—',
-                'role_label': line.get('kind') or '',
-                'kind': line.get('kind') or 'share',
+                'role_label': stored_label,
+                'kind': kind,
                 'amount': _round2(_money(line.get('amount'))),
+                'paid_at': line.get('paid_at'),
+                'is_paid': bool(line.get('paid_at')),
             }
             if item['kind'] == 'fixed':
                 fixed_payees.append(item)
@@ -185,10 +215,13 @@ def compute_night_settlement(
                 founder_payees.append(item)
         fixed_total = _round2(sum(p['amount'] for p in fixed_payees))
         pool = _round2(sum(p['amount'] for p in founder_payees))
-        net = _round2(max(0.0, total - transport - equipment - night_expenses))
+        gross = _round2(total + couvert)
+        net = _round2(max(0.0, gross - transport - equipment - night_expenses))
         return {
             'mode': 'night',
             'total': total,
+            'couvert': couvert,
+            'gross': gross,
             'transport_discount': transport,
             'equipment_discount': equipment,
             'night_expenses': night_expenses,
@@ -222,17 +255,33 @@ def compute_night_settlement(
 
     for uid in sorted(accepted_ids):
         m = members_by_id.get(uid) or {}
-        # Prefer assignment row for display name
         a_row = next((a for a in assignments if str(a.get('user_id')) == uid), None)
         name = name_for_user(a_row or m)
         role = (m.get('settlement_role') or 'founder').strip().lower()
         default_fee = _money(m.get('default_fixed_fee'))
+        band_role = (a_row.get('role_label') if a_row else None) or m.get('role') or ''
+
+        if uid in overrides:
+            is_founder = role != 'sideman' and default_fee <= 0
+            fixed_payees.append({
+                'user_id': uid,
+                'guest_id': None,
+                'name': name,
+                'role_label': (
+                    'Fundador · valor definido' if is_founder
+                    else (band_role or 'Sideman / taxa fixa')
+                ),
+                'kind': 'fixed',
+                'amount': overrides[uid],
+            })
+            continue
+
         if role == 'sideman' or default_fee > 0:
             fixed_payees.append({
                 'user_id': uid,
                 'guest_id': None,
                 'name': name,
-                'role_label': 'Sideman / taxa fixa',
+                'role_label': band_role or 'Sideman / taxa fixa',
                 'kind': 'fixed',
                 'amount': _round2(default_fee),
             })
@@ -241,11 +290,14 @@ def compute_night_settlement(
                 'user_id': uid,
                 'guest_id': None,
                 'name': name,
-                'role_label': a_row.get('role_label') if a_row else (m.get('role') or 'Fundador'),
+                'role_label': band_role or 'Fundador',
                 'kind': 'share',
             })
 
     for g in guests or []:
+        status = (g.get('response_status') or 'pending').lower()
+        if status == 'declined':
+            continue
         fee = _money(g.get('fixed_fee'))
         if fee <= 0:
             continue
@@ -261,6 +313,8 @@ def compute_night_settlement(
     # Se ninguém marcado como fundador mas há confirmados sem taxa, todos dividem
     if not founder_candidates and not fixed_payees and accepted_ids:
         for uid in sorted(accepted_ids):
+            if uid in overrides:
+                continue
             m = members_by_id.get(uid) or {}
             a_row = next((a for a in assignments if str(a.get('user_id')) == uid), None)
             founder_candidates.append({
@@ -272,7 +326,8 @@ def compute_night_settlement(
             })
 
     fixed_total = _round2(sum(p['amount'] for p in fixed_payees))
-    net = _round2(max(0.0, total - transport - equipment - night_expenses))
+    gross = _round2(total + couvert)
+    net = _round2(max(0.0, gross - transport - equipment - night_expenses))
     pool = _round2(max(0.0, net - fixed_total))
 
     founder_payees: list[dict] = []
@@ -288,14 +343,21 @@ def compute_night_settlement(
         share_out = 0.0
 
     warning = None
-    if total > 0 and not fixed_payees and not founder_payees:
-        warning = 'Ninguém na liquidação — confirme a escala ou marque fundadores/sidemen.'
-    elif pool < 0.01 and fixed_total > net and total > 0:
-        warning = 'Taxas fixas superam o líquido após despesas — revise os valores.'
+    if gross > 0 and not fixed_payees and not founder_payees:
+        warning = 'Ninguém na liquidação — confirme a escala ou informe os valores.'
+    elif fixed_total > net + 0.009 and gross > 0:
+        warning = 'Valores definidos superam o líquido após despesas — revise os valores.'
+    elif pool > 0.009 and not founder_payees and gross > 0:
+        warning = (
+            f'Restam R$ {pool:.2f} sem destinatário — '
+            'marque alguém como fundador (sem valor) ou ajuste os valores.'
+        )
 
     return {
         'mode': 'night',
         'total': total,
+        'couvert': couvert,
+        'gross': gross,
         'transport_discount': transport,
         'equipment_discount': equipment,
         'night_expenses': night_expenses,

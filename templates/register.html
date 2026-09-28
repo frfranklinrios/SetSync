@@ -14,6 +14,9 @@
 {% endblock %}
 
 {% block content %}
+<style>
+.signup-hp{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;}
+</style>
 <div class="row justify-content-center py-4">
     <div class="col-sm-10 col-md-6 col-lg-4">
 
@@ -37,7 +40,7 @@
         {% endif %}
 
         {% if google_oauth_enabled %}
-        <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}"
+        <a href="{{ url_for('auth.google', convite=invite_token, next=request.args.get('next', '')) if invite_token else url_for('auth.google', next=request.args.get('next', '')) }}"
            class="btn btn-outline-dark w-100 mb-3">
             <i class="fab fa-google me-2" aria-hidden="true"></i>Continuar com Google
         </a>
@@ -46,7 +49,7 @@
         </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" autocomplete="on">
             {% include 'partials/csrf_input.html' %}
             {% if invite_token %}
             <input type="hidden" name="convite_token" value="{{ invite_token }}">
@@ -54,6 +57,19 @@
             {% if plano_intent %}
             <input type="hidden" name="plano" value="{{ plano_intent }}">
             {% endif %}
+            {% if request.args.get('next') %}
+            <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+            {% endif %}
+            <input type="hidden" name="form_ts" value="{{ form_ts or '' }}">
+            {# Honeypot anti-bot — invisível para humanos #}
+            <div class="signup-hp" aria-hidden="true">
+                <label for="website">Website</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+                <label for="company_url">Company</label>
+                <input type="text" id="company_url" name="company_url" tabindex="-1" autocomplete="off">
+                <label for="fax_number">Fax</label>
+                <input type="text" id="fax_number" name="fax_number" tabindex="-1" autocomplete="off">
+            </div>
             <div class="mb-3">
                 <label for="username" class="form-label">Usuário</label>
                 <input type="text" class="form-control" id="username" name="username" required autofocus

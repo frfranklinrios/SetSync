@@ -116,12 +116,39 @@ def index():
         retention=admin_ctx.get('retention') or {},
         metrics_trend=admin_ctx.get('metrics_trend') or {},
         monetization=admin_ctx.get('monetization') or {},
+        winback=admin_ctx.get('winback') or {},
         engagement_queues=admin_ctx.get('engagement_queues') or {},
         cohort_7d=admin_ctx.get('cohort_7d') or {},
         platform_finance=admin_ctx.get('platform_finance'),
         invite_log=invite_log,
         whatsapp_configured=admin_ctx.get('whatsapp_configured', False),
         stats=admin_ctx['stats'],
+    )
+
+
+@admin_bp.route('/jornada')
+@superadmin_required
+def jornada():
+    """Cadastro → cifra real → palco — números ao vivo."""
+    from admin_dashboard import (
+        build_admin_dashboard_context,
+        engagement_action_queues,
+        jornada_snapshot,
+    )
+
+    admin_ctx = build_admin_dashboard_context()
+    queues = engagement_action_queues(limit=20)
+    queues['totals'] = (admin_ctx.get('engagement_queues') or {}).get('totals') or {}
+    return render_template(
+        'admin/jornada.html',
+        funnel_rows=admin_ctx['funnel_rows'],
+        funnel_extra=admin_ctx.get('funnel_extra') or {},
+        funnel_leak=admin_ctx.get('funnel_leak'),
+        retention=admin_ctx.get('retention') or {},
+        cohort_7d=admin_ctx.get('cohort_7d') or {},
+        stats=admin_ctx['stats'],
+        engagement_queues=queues,
+        jornada=jornada_snapshot(),
     )
 
 
@@ -382,6 +409,46 @@ def depoimentos_excluir(testimonial_id: int):
         pass
     flash('Depoimento removido.', 'success')
     return redirect(url_for('admin.depoimentos'))
+
+
+@admin_bp.route('/winback', methods=['POST'])
+@superadmin_required
+def winback_disparar():
+    """Reativa quem cadastrou e sumiu (e-mail + WhatsApp + in-app)."""
+    from winback import disparar_winback, preview_winback
+
+    dry = (request.form.get('dry_run') or '').strip() in ('1', 'true', 'yes')
+    whatsapp = (request.form.get('whatsapp') or '1').strip() not in ('0', 'false', 'no')
+    try:
+        days = int(request.form.get('days') or 5)
+    except ValueError:
+        days = 5
+    days = max(3, min(days, 90))
+
+    if dry:
+        prev = preview_winback(min_inactive_days=days)
+        flash(
+            f'Prévia winback: {prev["total"]} contas '
+            f'(frios {prev["by_segment"].get("cold", 0)} · '
+            f'banda ociosa {prev["by_segment"].get("idle_band", 0)} · '
+            f'tocou sem pagar {prev["by_segment"].get("unpaid", 0)}) · '
+            f'{prev["with_phone"]} com WhatsApp.',
+            'info',
+        )
+        return redirect(url_for('admin.index') + '#diag-monetizacao')
+
+    stats = disparar_winback(
+        min_inactive_days=days,
+        dry_run=False,
+        whatsapp=whatsapp,
+    )
+    flash(
+        f'Reativação enviada: {stats["email"]} e-mails · '
+        f'{stats["whatsapp"]} WhatsApp · {stats["inapp"]} avisos no app '
+        f'({stats["erros"]} erros · {stats["pulados"]} já enviados).',
+        'success' if stats['email'] or stats['whatsapp'] or stats['inapp'] else 'warning',
+    )
+    return redirect(url_for('admin.index') + '#diag-monetizacao')
 
 
 @admin_bp.route('/convite-whatsapp', methods=['POST'])

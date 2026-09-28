@@ -28,7 +28,9 @@ PRECO_PRO_ANUAL = 249.0
 PRECO_WORSHIP_ANUAL = 599.0
 PRECO_ESTUDIO_PREMIUM = 49.0
 PRECO_ESTUDIO_PREMIUM_ANUAL = 490.0
-TRIAL_DIAS = 30
+# Trial só sobra para quem já ativou; novos usuários vão direto ao checkout.
+TRIAL_DIAS = 7
+TRIAL_AUTO = False  # não inicia trial ao criar banda / setlist / 2º membro
 
 LIMITES_INDIVIDUAL = {
     'integrante': 1,
@@ -39,12 +41,15 @@ STATUS_VOUCHER = 'voucher'
 STATUS_CANCELADA = 'cancelada'
 STATUS_INADIMPLENTE = 'inadimplente'
 
+# Grátis = demo + solo raso. Banda de verdade = Pro.
 LIMITES_GRATIS = {
-    'musica': 30,
-    'integrante': 5,
-    'setlist': 10,
+    'musica': 3,
+    'integrante': 2,
+    'setlist': 0,
     'banda': 1,
 }
+# Cifras reais na coleção pessoal (demos de onboarding não contam).
+LIMITES_COLECAO_GRATIS = 3
 
 
 @dataclass(frozen=True)
@@ -158,11 +163,11 @@ def planos_para_site() -> list[PlanoSite]:
             sufixo='',
             destaque=False,
             features=(
-                'Coleção pessoal ilimitada',
-                f'Até {lim["musica"]} músicas no repertório da banda',
-                f'Até {lim["integrante"]} integrantes',
-                f'Até {lim["setlist"]} setlists · {lim["banda"]} banda',
-                'Compartilhar cifras: com assinatura',
+                f'Até {LIMITES_COLECAO_GRATIS} cifras reais na coleção',
+                'Demo + 1 abertura do Modo Tocar',
+                f'Banda raso: {lim["musica"]} músicas · {lim["integrante"]} pessoas',
+                'Sem setlist de ensaio no Grátis',
+                'PDF / offline / palco de banda: no Pro',
             ),
             cta='Começar grátis',
             cta_outline=True,
@@ -175,10 +180,10 @@ def planos_para_site() -> list[PlanoSite]:
             destaque=False,
             features=(
                 'Para quem toca sozinho',
-                'Coleção pessoal + compartilhar',
+                'Coleção + Modo Tocar ilimitados',
                 '1 banda · só você no elenco',
-                'Músicas e setlists ilimitados',
-                'Exportar setlist em PDF',
+                'PDF e compartilhar',
+                'Offline no aparelho',
             ),
             cta='Sou solo',
             cta_outline=True,
@@ -199,8 +204,9 @@ def planos_para_site() -> list[PlanoSite]:
                 'Coleção pessoal + compartilhar com a banda',
                 'Músicas, setlists e membros ilimitados',
                 'Exportar setlist em PDF',
+                'Modo Tocar + offline no palco',
             ),
-            cta='Testar Pro 30 dias',
+            cta='Assinar Pro',
             cta_outline=False,
             preco_anual_label=_preco_label(PRECO_PRO_ANUAL),
             economia_anual=_economia_anual_label(pro.preco_mensal, PRECO_PRO_ANUAL),
@@ -611,8 +617,15 @@ def plano_badge_ui(banda_id: str) -> dict[str, Any]:
         periodo = {
             'tem_periodo': True,
             'tipo': 'trial',
-            'texto_restante': f'{dias} dias restantes' if dias is not None else 'Trial ativo',
+            'inicio': None,
+            'fim': None,
+            'dias_restantes': dias,
+            'dias_totais': None,
+            'progresso_pct': None,
             'urgencia': 'ok' if (dias or 0) > 3 else 'atencao',
+            'texto_restante': f'{dias} dias restantes' if dias is not None else 'Trial ativo',
+            'texto_dia': None,
+            'texto_detalhe': '',
         }
 
     return {
@@ -724,6 +737,124 @@ def pode_exportar_pdf(banda_id: str) -> bool:
     """Exportação PDF exige assinatura ativa (paga ou voucher)."""
     assinatura = get_assinatura_banda(banda_id)
     return assinatura.tem_acesso_premium()
+
+
+def pode_offline_pack(banda_id: str) -> bool:
+    """Download offline da setlist/repertório exige Pro/trial/voucher."""
+    return get_plano_efetivo(banda_id) != PLANO_GRATIS
+
+
+def user_tem_assinatura_ativa(user_id: str | None) -> bool:
+    """True se o usuário tem Individual/Pro/Worship/trial em alguma banda própria."""
+    if not user_id:
+        return False
+    from db import get_owned_bands, is_superadmin, owner_has_worship_ativa
+
+    if is_superadmin(user_id):
+        return True
+    if owner_has_worship_ativa(user_id):
+        return True
+    for band in get_owned_bands(user_id) or []:
+        if get_plano_efetivo(band['id']) != PLANO_GRATIS:
+            return True
+    return False
+
+
+def pode_modo_tocar_banda(banda_id: str) -> bool:
+    """Ensaio/palco de banda exige Pro (ou trial legado ainda ativo)."""
+    return get_plano_efetivo(banda_id) != PLANO_GRATIS
+
+
+def pode_modo_tocar_colecao(user_id: str, cifras: list | None) -> bool:
+    """
+    Coleção pessoal: demo sempre livre; 1 abertura com repertório real no Grátis;
+    depois Individual/Pro.
+    """
+    if not user_id:
+        return False
+    if user_tem_assinatura_ativa(user_id):
+        return True
+    from demo_onboarding import play_list_is_demo_only
+    from db import user_play_mode_used
+
+    if play_list_is_demo_only(cifras):
+        return True
+    # Primeira abertura com música real — aha moment.
+    return not user_play_mode_used(user_id)
+
+
+def check_limite_colecao_pessoal(user_id: str) -> bool:
+    """True se ainda pode salvar mais uma cifra real na coleção (Grátis)."""
+    if not user_id:
+        return False
+    if user_tem_assinatura_ativa(user_id):
+        return True
+    from demo_onboarding import count_real_personal_cifras
+
+    return count_real_personal_cifras(user_id) < LIMITES_COLECAO_GRATIS
+
+
+def resposta_modo_tocar_paywall(*, contexto: str = 'banda'):
+    """HTTP 402 / redirect quando Modo Tocar exige assinatura."""
+    from flask import flash, jsonify, redirect, request, session
+
+    motivo = 'premium' if contexto == 'colecao' else 'limite'
+    cta = sugerir_upgrade(session.get('user_id'), motivo=motivo)
+    if contexto == 'colecao':
+        msg = (
+            'Você já usou a abertura grátis do Modo Tocar. '
+            f'Continue com o Individual — {cta["preco_linha"]}.'
+        )
+    else:
+        msg = (
+            'Modo Tocar da banda e setlist de ensaio fazem parte do Pro. '
+            f'{cta["preco_linha"]}.'
+        )
+    payload = {
+        'erro': 'plano_necessario',
+        'mensagem': msg,
+        **cta,
+    }
+    wants_json = (
+        request.accept_mimetypes.best == 'application/json'
+        or request.is_json
+        or (request.headers.get('X-Requested-With') or '').lower() == 'xmlhttprequest'
+    )
+    if wants_json:
+        return jsonify(payload), 402
+    flash(msg, 'warning')
+    return redirect(payload.get('upgrade_url') or '/assinatura/planos?plano=pro&go=1')
+
+
+def resposta_limite_colecao():
+    """Limite de cifras reais na coleção pessoal (Grátis)."""
+    from flask import flash, jsonify, redirect, request, session
+
+    cta = sugerir_upgrade(session.get('user_id'), motivo='premium')
+    msg = (
+        f'No Grátis você guarda até {LIMITES_COLECAO_GRATIS} cifras reais. '
+        f'Assine o Individual para repertório ilimitado — {cta["preco_linha"]}.'
+    )
+    payload = {'erro': 'limite_plano', 'mensagem': msg, **cta}
+    if request.accept_mimetypes.best == 'application/json' or request.is_json:
+        return jsonify(payload), 402
+    flash(msg, 'warning')
+    return redirect(payload.get('upgrade_url') or '/assinatura/planos?plano=individual&go=1')
+
+
+def resposta_offline_paywall(banda_id: str | None = None):
+    """HTTP 402 amigável para pacote offline."""
+    from flask import jsonify, session
+
+    cta = sugerir_upgrade(session.get('user_id'), motivo='offline')
+    return jsonify({
+        'erro': 'plano_necessario',
+        'mensagem': (
+            'Baixar o repertório offline faz parte do Pro. '
+            f'{cta["preco_linha"]}.'
+        ),
+        **cta,
+    }), 402
 
 
 def get_plano_efetivo(banda_id: str) -> str:
@@ -839,17 +970,26 @@ def resposta_limite_plano(recurso: str = 'recursos', limite: int | None = None):
 
 def resposta_plano_necessario():
     """Resposta HTTP 402 para feature premium (ex.: PDF de setlist)."""
-    from flask import jsonify, session
+    from flask import flash, jsonify, redirect, request, session
 
     cta = sugerir_upgrade(session.get('user_id'), motivo='pdf')
-    return jsonify({
+    payload = {
         'erro': 'plano_necessario',
         'mensagem': (
             'Exportar PDF faz parte dos planos pagos. '
             f'{cta["preco_linha"]}.'
         ),
         **cta,
-    }), 402
+    }
+    wants_json = (
+        request.accept_mimetypes.best == 'application/json'
+        or request.is_json
+        or (request.headers.get('X-Requested-With') or '').lower() == 'xmlhttprequest'
+    )
+    if wants_json:
+        return jsonify(payload), 402
+    flash(payload['mensagem'], 'warning')
+    return redirect(payload.get('upgrade_url') or '/assinatura/planos?plano=pro&go=1')
 
 
 def user_pode_compartilhar_cifras(user_id: str) -> bool:
@@ -912,14 +1052,18 @@ def sugerir_upgrade(user_id: str | None, *, motivo: str = 'limite') -> dict:
     preco_p = int(PLANOS[PLANO_PRO].preco_mensal or 29)
 
     quer_individual = motivo == 'compartilhar' and not owned
-    if motivo in ('pdf', 'premium') and not owned:
+    if motivo in ('pdf', 'premium', 'offline') and not owned:
         quer_individual = True
 
     if quer_individual:
         return {
             'plano_sugerido': PLANO_INDIVIDUAL,
             'cta_label': f'Assinar Individual — R$ {preco_i}/mês',
-            'upgrade_url': url_for('assinatura_bp.planos'),
+            'upgrade_url': url_for(
+                'assinatura_bp.planos',
+                plano=PLANO_INDIVIDUAL,
+                go=1,
+            ),
             'titulo': 'Continue com o Individual',
             'preco_linha': f'Individual — R$ {preco_i}/mês · PDF e compartilhar',
             'features': [
@@ -931,22 +1075,37 @@ def sugerir_upgrade(user_id: str | None, *, motivo: str = 'limite') -> dict:
         }
 
     planos_url = (
-        url_for('assinatura_bp.planos', banda_id=banda_id)
+        url_for(
+            'assinatura_bp.planos',
+            banda_id=banda_id,
+            plano=PLANO_PRO,
+            go=1,
+        )
         if banda_id
-        else url_for('assinatura_bp.planos')
+        else url_for('assinatura_bp.planos', plano=PLANO_PRO, go=1)
     )
+    features = [
+        'Músicas, setlists e integrantes ilimitados',
+        'Exportar setlist em PDF para o ensaio',
+        'Repertório offline no palco',
+        'Cancele quando quiser · Mercado Pago',
+    ]
+    if motivo == 'offline':
+        return {
+            'plano_sugerido': PLANO_PRO,
+            'cta_label': f'Assinar Pro — R$ {preco_p}/mês',
+            'upgrade_url': planos_url,
+            'titulo': 'Offline no palco com o Pro',
+            'preco_linha': f'Pro — R$ {preco_p}/mês · baixe a setlist sem internet',
+            'features': features,
+        }
     return {
         'plano_sugerido': PLANO_PRO,
         'cta_label': f'Assinar Pro — R$ {preco_p}/mês',
         'upgrade_url': planos_url,
         'titulo': 'Continue com o Pro',
-        'preco_linha': f'Pro — R$ {preco_p}/mês por banda · anual sai ~R$ 21/mês',
-        'features': [
-            'Músicas, setlists e integrantes ilimitados',
-            'Exportar setlist em PDF para o ensaio',
-            'Sem anúncios no Modo Tocar',
-            'Cancele quando quiser · Mercado Pago',
-        ],
+        'preco_linha': f'Pro — R$ {preco_p}/mês por banda',
+        'features': features,
     }
 
 
@@ -1121,10 +1280,11 @@ def resposta_limite_estudio():
         'recurso': 'sala',
         'limite': limite,
         'mensagem': (
-            f'Limite do plano Estúdio Básico: até {limite} salas. '
-            'Faça upgrade para o Premium e cadastre salas ilimitadas.'
+            f'No Básico cabem {limite} salas. A 3ª sala (e ilimitadas) pedem '
+            'Estúdio Premium — R$ 49/mês.'
         ),
         'upgrade_url': '/assinatura/planos#estudio',
+        'cta_label': 'Assinar Estúdio Premium — R$ 49',
     }
     if request.accept_mimetypes.best == 'application/json' or request.is_json:
         return jsonify(payload), 402

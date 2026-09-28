@@ -60,9 +60,9 @@ def expira_em_para_voucher(voucher: dict, agora: datetime) -> datetime:
 
 def gerar_codigo_voucher(prefixo: str | None = None) -> str:
     """
-    Gera código único: PREFIXO-XXXX ou SETSYNC-XXXX.
+    Gera código único: PREFIXO-XXXX ou UNISSONO-XXXX (aceita SETSYNC legado).
     """
-    base = (prefixo or 'SETSYNC').strip().upper().replace(' ', '-')
+    base = (prefixo or 'UNISSONO').strip().upper().replace(' ', '-')
     alfabeto = string.ascii_uppercase + string.digits
     for _ in range(50):
         sufixo = ''.join(secrets.choice(alfabeto) for _ in range(4))

@@ -175,6 +175,11 @@ def accept_band_member_invite(invite_id: str, user_id: str) -> tuple[bool, str]:
 
     add_band_member(inv['band_id'], user_id, inv.get('role') or 'member')
     _set_invite_status(invite_id, 'accepted')
+    try:
+        from demo_onboarding import maybe_trial_on_segundo_membro
+        maybe_trial_on_segundo_membro(inv['band_id'])
+    except Exception:
+        pass
     return True, 'ok'
 
 

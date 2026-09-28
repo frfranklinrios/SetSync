@@ -21,6 +21,7 @@ from blueprints.convites import convites_bp
 from blueprints.music_api import music_api_bp
 from blueprints.realtime import realtime_bp
 from blueprints.studios import studios_bp
+from blueprints.gorjeta import gorjeta_bp
 from agenda_util import event_relative_label, format_event_datetime
 from db import init_db
 from extensions import init_scheduler
@@ -66,6 +67,12 @@ if canonical:
     parsed = urlparse(canonical)
     if parsed.scheme:
         app.config['PREFERRED_URL_SCHEME'] = parsed.scheme
+    host = (parsed.hostname or '').lower()
+    cookie_domain = (os.getenv('SESSION_COOKIE_DOMAIN') or '').strip()
+    if cookie_domain:
+        app.config['SESSION_COOKIE_DOMAIN'] = cookie_domain
+    elif host.endswith('unissono.app'):
+        app.config['SESSION_COOKIE_DOMAIN'] = '.unissono.app'
 
 mail = Mail(app)
 csrf = CSRFProtect(app)
@@ -189,6 +196,11 @@ def before_request():
         session.permanent = True
         from db import is_superadmin as _is_superadmin
         session['is_superadmin'] = bool(_is_superadmin(session['user_id']))
+    try:
+        from meta_pixel import capture_fbclid
+        capture_fbclid()
+    except Exception:
+        pass
 
 
 @app.after_request
@@ -231,6 +243,7 @@ app.register_blueprint(convites_bp)
 app.register_blueprint(music_api_bp)
 app.register_blueprint(realtime_bp)
 app.register_blueprint(studios_bp)
+app.register_blueprint(gorjeta_bp)
 try:
     from blueprints.marketing_shots import marketing_shots_bp
     app.register_blueprint(marketing_shots_bp)
@@ -271,7 +284,9 @@ for _csrf_json_endpoint in (
     'ajuda.play_csat_submit',
     'ajuda.churn_survey_submit',
     'legal.cookie_consent',
+    'auth.api_me',
     'cifras.comecar_salvar_json',
+    'gorjeta.pedido_status',
 ):
     _view = app.view_functions.get(_csrf_json_endpoint)
     if _view:
@@ -401,6 +416,7 @@ def sitemap():
         {'loc': external_url_for('assinatura_bp.bandas'), 'changefreq': 'monthly', 'priority': '0.9'},
         {'loc': external_url_for('guia.guia_index'), 'changefreq': 'weekly', 'priority': '0.92'},
         {'loc': external_url_for('assinatura_bp.igrejas'), 'changefreq': 'monthly', 'priority': '0.85'},
+        {'loc': external_url_for('assinatura_bp.financeiro'), 'changefreq': 'monthly', 'priority': '0.82'},
         {'loc': external_url_for('studios.landing'), 'changefreq': 'monthly', 'priority': '0.85'},
         {'loc': external_url_for('comece'), 'changefreq': 'monthly', 'priority': '0.88'},
         {'loc': external_url_for('blog.blog_index'), 'changefreq': 'daily', 'priority': '0.9'},
@@ -473,7 +489,7 @@ def dashboard():
     )
     from monetizacao import enrich_bands_plano, resumo_planos_usuario, dias_restantes_trial, get_assinatura_banda
 
-    from onboarding import get_onboarding_progress, user_needs_band_activation
+    from onboarding import get_onboarding_progress, get_invite_loop_cta, user_needs_band_activation
     from band_member_invites import list_pending_invites_for_user
     from cifras_tool.api_cifras_client import get_api_cifras_public_stats
 
@@ -493,6 +509,7 @@ def dashboard():
 
     onboarding = get_onboarding_progress(user_id)
     needs_activation = user_needs_band_activation(user_id)
+    invite_cta = None if sa else get_invite_loop_cta(user_id)
     pending_band_invites = list_pending_invites_for_user(user_id)
     sa = is_superadmin(user_id)
 
@@ -586,6 +603,7 @@ def dashboard():
             trial_ui=_trial_ctx(owned_bands),
             onboarding=onboarding,
             needs_activation=needs_activation,
+            invite_cta=None,
             pending_band_invites=pending_band_invites,
             pending_scale=pending_scale,
             pending_scale_admin=pending_scale_admin,
@@ -596,6 +614,12 @@ def dashboard():
     bands = enrich_bands_plano(enrich_bands_for_display(get_user_bands(user_id)))
     upcoming_events = _enrich_upcoming(get_upcoming_events_for_user(user_id, limit=8))
     growth = _growth_ctx(owned_bands)
+    show_commands = []
+    try:
+        from show_command import build_show_command_cards
+        show_commands = build_show_command_cards(user_id, limit=3)
+    except Exception:
+        show_commands = []
     _band_ids = {b['id'] for b in owned_bands} | {b['id'] for b in bands}
     dashboard_summary = {
         'events': len(upcoming_events),
@@ -609,11 +633,14 @@ def dashboard():
         owned_bands=owned_bands,
         upcoming_events=upcoming_events,
         dashboard_summary=dashboard_summary,
+        show_commands=show_commands,
+        format_event_datetime=__import__('agenda_util', fromlist=['format_event_datetime']).format_event_datetime,
         is_superadmin=False,
         planos_resumo=resumo_planos_usuario(owned_bands),
         trial_ui=_trial_ctx(owned_bands),
         onboarding=onboarding,
         needs_activation=needs_activation,
+        invite_cta=invite_cta,
         pending_band_invites=pending_band_invites,
         pending_scale=pending_scale,
         pending_scale_admin=pending_scale_admin,
@@ -634,6 +661,7 @@ _SEO_PUBLIC_ENDPOINTS = frozenset({
     'blog.blog_post',
     'ajuda.index',
     'assinatura_bp.igrejas',
+    'assinatura_bp.financeiro',
     'studios.landing',
     'studios.booking_landing',
     'auth.register',
@@ -688,6 +716,8 @@ def inject_google_ads():
     if ativo and may_load_tracking() and _req.endpoint in _fire:
         funnel_events = consume_funnel_events()
 
+    from meta_pixel import get_meta_pixel_id, meta_pixel_ativo
+
     return dict(
         google_ads=get_google_ads_config(),
         google_ads_ativo=ativo,
@@ -696,6 +726,10 @@ def inject_google_ads():
         google_ads_fire_signup='signup' in funnel_events,
         google_ads_funnel_events=funnel_events,
         google_ads_enhanced_data={},
+        meta_pixel_id=get_meta_pixel_id(),
+        meta_pixel_ativo=meta_pixel_ativo(),
+        meta_pixel_fire_complete_registration=False,
+        meta_pixel_event_id='',
     )
 
 
@@ -772,6 +806,7 @@ def inject_user():
         notifications_unread=unread,
         is_studio_primary=is_studio_primary,
         nav_home_url=nav_home_url,
+        loja_url=(os.getenv('LOJA_PUBLIC_URL') or 'https://loja.unissono.app').rstrip('/'),
         impersonating=bool(impersonator_id),
         impersonator={
             'id': impersonator_id,

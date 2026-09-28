@@ -6,6 +6,7 @@ from db import (
     list_retention_candidates_inactive,
     list_retention_candidates_no_band,
     get_user,
+    list_retention_candidates_activated_unpaid,
     list_retention_candidates_trial_expired,
     list_retention_candidates_studio_trial_expired,
     list_trials_expiring_soon,
@@ -68,13 +69,13 @@ _CAMPAIGNS = {
         'body': (
             'Você se cadastrou mas ainda não adicionou uma cifra.\n'
             'Coleção pessoal é grátis. Depois abra o Modo Tocar.\n'
-            'Se for ensaio em grupo, aí sim crie a banda (trial Pro 30 dias).\n\n'
+            'Se for ensaio em grupo, assine o Pro (R$ 29/mês).\n\n'
             '{cifra_url}'
         ),
         'html_body': (
             '<p>Você se cadastrou no Uníssono mas ainda <strong>não adicionou uma música</strong>.</p>'
-            '<p>Comece pela coleção pessoal (grátis). Se for tocar em grupo, crie a banda depois e ganhe '
-            '<strong>30 dias de Pro</strong>.</p>'
+            '<p>Comece pela coleção pessoal (demo + até 3 cifras). Para ensaio em grupo, '
+            '<strong>Pro R$ 29/mês</strong>.</p>'
         ),
         'button_label': 'Escolher minha música',
         'button_key': 'cifra_url',
@@ -204,6 +205,24 @@ _CAMPAIGNS = {
         'button_label': 'Assinar Premium — R$ 49',
         'button_key': 'planos_url',
     },
+    'activated_unpaid_3': {
+        'subject': 'Você já tocou no Uníssono — falta só assinar',
+        'body': (
+            'Você já usou o Modo Tocar de verdade.\n'
+            'Para PDF, offline no palco e limites ilimitados: Pro R$ 29/mês '
+            'ou Individual R$ 15/mês (solo).\n\n'
+            '{planos_url}'
+        ),
+        'html_body': (
+            '<p>Você já <strong>tocou de verdade</strong> no Uníssono.</p>'
+            '<p>O próximo passo é assinar: <strong>Pro R$ 29/mês</strong> para a banda '
+            '(PDF + offline + ilimitado) ou <strong>Individual R$ 15/mês</strong> se toca só.</p>'
+            '<p style="font-size:14px;color:#64748b;">Pagamento via <strong>Mercado Pago</strong> — '
+            'cancele quando quiser.</p>'
+        ),
+        'button_label': 'Ver planos e assinar',
+        'button_key': 'planos_url',
+    },
 }
 
 
@@ -211,10 +230,13 @@ def _urls() -> dict[str, str]:
     return {
         'dashboard_url': external_url_for('dashboard'),
         'bands_url': external_url_for('bands.list_bands'),
-        'planos_url': external_url_for('assinatura_bp.planos'),
+        'planos_url': external_url_for('assinatura_bp.planos', plano='pro', go=1),
+        'planos_individual_url': external_url_for(
+            'assinatura_bp.planos', plano='individual', go=1
+        ),
         'planos_estudio_url': external_url_for('assinatura_bp.planos') + '#estudio',
         'cifra_url': external_url_for('cifras.comecar'),
-        'colecao_url': external_url_for('cifras.library'),
+        'colecao_url': external_url_for('cifras.my_library'),
     }
 
 
@@ -233,15 +255,17 @@ def _trial_offer_extra(banda_id: str, band_name: str) -> dict:
                 'libera PDF e compartilhar — sem precisar de elenco.'
             ),
             'button_label': 'Assinar Individual — R$ 15/mês',
+            'button_key': 'planos_individual_url',
         }
     return {
         'band_name': band_name or 'sua banda',
         'offer_short': 'assine Pro (R$ 29)',
         'offer_line': (
             'Volte ao <strong>Pro (R$ 29/mês)</strong> e mantenha músicas, setlists '
-            'e integrantes ilimitados + PDF.'
+            'e integrantes ilimitados + PDF + offline.'
         ),
         'button_label': 'Assinar Pro — R$ 29/mês',
+        'button_key': 'planos_url',
     }
 
 
@@ -312,6 +336,22 @@ def verificar_e_disparar_retencao() -> int:
         uid = row['id']
         campaign = 'no_cifra_2'
         if retention_was_sent(uid, campaign):
+            continue
+        email = (row.get('email') or '').strip()
+        if not email:
+            continue
+        if _send_campaign(email, campaign):
+            mark_retention_sent(uid, campaign, 'enviado')
+            enviados += 1
+        else:
+            mark_retention_sent(uid, campaign, 'erro')
+
+    for row in list_retention_candidates_activated_unpaid(min_days=3):
+        uid = row['id']
+        campaign = 'activated_unpaid_3'
+        if retention_was_sent(uid, campaign):
+            continue
+        if not user_wants_email_notifications(get_user(uid)):
             continue
         email = (row.get('email') or '').strip()
         if not email:

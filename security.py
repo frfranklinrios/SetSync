@@ -231,11 +231,54 @@ def clear_rate_limit(key: str) -> None:
         _rate_buckets.pop(key, None)
 
 
+_LOJA_REDIRECT_HOSTS = frozenset({
+    'loja.unissono.app',
+    'localhost',
+    '127.0.0.1',
+})
+
+
 def safe_redirect_path(path: str | None) -> str | None:
-    """Path interno seguro para ?next= (não APIs nem JSON)."""
-    if not path or not path.startswith('/') or path.startswith('//'):
+    """Destino seguro para ?next= (path interno ou loja Uníssono)."""
+    if not path:
         return None
-    low = path.lower().split('?', 1)[0]
-    if '/api/' in low or low.endswith('.json') or low.endswith('.webmanifest'):
+    raw = path.strip()
+    if raw.startswith('/') and not raw.startswith('//'):
+        low = raw.lower().split('?', 1)[0]
+        if '/api/' in low or low.endswith('.json') or low.endswith('.webmanifest'):
+            return None
+        return raw
+    try:
+        parsed = urlparse(raw)
+    except ValueError:
         return None
-    return path
+    host = (parsed.hostname or '').lower()
+    if parsed.scheme not in {'https', 'http'} or host not in _LOJA_REDIRECT_HOSTS:
+        return None
+    if host == 'loja.unissono.app' and parsed.scheme != 'https':
+        return None
+    if host in {'localhost', '127.0.0.1'} and parsed.port not in {8011, 5173, None}:
+        return None
+    return parsed.geturl()
+
+
+def make_loja_sso_token(user_id: str, **extra) -> str:
+    payload = {'uid': str(user_id)}
+    for chave, valor in extra.items():
+        if valor is not None:
+            payload[chave] = valor
+    return _serializer('loja-sso').dumps(payload)
+
+
+def verify_loja_sso_token(token: str, *, max_age: int = 172800) -> dict | None:
+    if not token:
+        return None
+    try:
+        data = _serializer('loja-sso').loads(token, max_age=max_age)
+    except (BadSignature, SignatureExpired, TypeError):
+        return None
+    uid = data.get('uid')
+    if not uid:
+        return None
+    data['uid'] = str(uid)
+    return data

@@ -806,6 +806,10 @@ def offline_pack(band_id):
     if not band or not is_band_member(band_id, user_id):
         return jsonify({'detail': 'Sem acesso.'}), 403
 
+    from monetizacao import pode_offline_pack, resposta_offline_paywall
+    if not pode_offline_pack(band_id):
+        return resposta_offline_paywall(band_id)
+
     cifras = get_band_cifras(band_id)
     enriched = [
         enrich_cifra_for_tocar(c, user_id=user_id)
@@ -880,9 +884,14 @@ def delete_demo_library():
 @cifras_bp.route('/minha-colecao/add', methods=['GET', 'POST'])
 @login_required
 def add_personal():
-    """Adicionar música à coleção pessoal — sempre gratuito."""
+    """Adicionar música à coleção pessoal (limite no Grátis)."""
     user_id = session['user_id']
     if request.method == 'POST':
+        from monetizacao import check_limite_colecao_pessoal, resposta_limite_colecao
+
+        if not check_limite_colecao_pessoal(user_id):
+            return resposta_limite_colecao()
+
         titulo = request.form.get('titulo', '').strip()
         artista = request.form.get('artista', '').strip()
         tom_original = request.form.get('tom_original', 'C').strip()
@@ -949,6 +958,11 @@ def comecar():
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
+        from monetizacao import check_limite_colecao_pessoal, resposta_limite_colecao
+
+        if not check_limite_colecao_pessoal(user_id):
+            return resposta_limite_colecao()
+
         titulo = request.form.get('titulo', '').strip()
         artista = request.form.get('artista', '').strip()
         tom_original = request.form.get('tom_original', 'C').strip() or 'C'
@@ -998,6 +1012,10 @@ def comecar_salvar_json():
     """1 toque na busca: salva na coleção e devolve a URL do palco."""
     user_id = session['user_id']
     from demo_onboarding import log_primeira_cifra_real
+    from monetizacao import check_limite_colecao_pessoal, resposta_limite_colecao
+
+    if not check_limite_colecao_pessoal(user_id):
+        return resposta_limite_colecao()
 
     data = request.get_json(silent=True) or {}
     titulo = (data.get('titulo') or '').strip()
@@ -1262,9 +1280,12 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
     can_edit = bool(band and user_id and is_band_editor(band['id'], user_id))
     play_state_url = None
     offline_pack_url = None
+    offline_unlocked = False
     play_notes_url_tpl = None
     if band and band.get('id'):
         from flask import url_for as _url_for
+        from monetizacao import pode_offline_pack
+        offline_unlocked = pode_offline_pack(band['id'])
         play_state_url = _url_for('realtime.set_play_state', band_id=band['id'])
         if setlist and not is_virtual and setlist.get('id'):
             offline_pack_url = _url_for('setlists.offline_pack', setlist_id=setlist['id'])
@@ -1281,17 +1302,63 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
             from setlist_public import public_share_urls
             public_letras_url = public_share_urls(share_token)['letras']
     band_invite_url = None
+    share_band_name = band['name'] if band else ''
     if band and can_edit and band.get('id'):
         from band_invites import make_band_invite_token
         from security import external_url_for
         band_invite_url = external_url_for(
             'auth.convite', token=make_band_invite_token(band['id']),
         )
+    elif user_id:
+        from db import get_owned_bands as _owned
+        from db import is_band_editor as _editor
+        owned = _owned(user_id) or []
+        if owned and _editor(owned[0]['id'], user_id):
+            from band_invites import make_band_invite_token
+            from security import external_url_for
+            band_invite_url = external_url_for(
+                'auth.convite', token=make_band_invite_token(owned[0]['id']),
+            )
+            share_band_name = owned[0].get('name') or share_band_name
     from demo_onboarding import play_list_is_demo_only, log_play_mode_real
 
+    play_mode_real_event_id = ''
     demo_only = play_list_is_demo_only(all_cifras)
     if user_id and not demo_only:
-        log_play_mode_real(user_id, source='play_render')
+        play_mode_real_event_id = log_play_mode_real(user_id, source='play_render') or ''
+    share_song = ''
+    if all_cifras:
+        idx = min(max(int(start_idx or 0), 0), len(all_cifras) - 1)
+        share_song = (all_cifras[idx].get('titulo') or '').strip()
+    gorjeta_url = None
+    gorjeta_live_url = None
+    gorjeta_total = 0.0
+    gorjeta_requests_count = 0
+    if band and int(band.get('gorjeta_enabled') or 0) and int(band.get('gorjeta_show_play') if band.get('gorjeta_show_play') is not None else 1):
+        from gorjeta_service import banda_gorjeta_pronta
+        from db import sum_band_gorjetas, count_song_requests
+        from config import app_now_str
+        if banda_gorjeta_pronta(band) and band.get('gorjeta_slug'):
+            event_id = (event_context or {}).get('id') if event_context else None
+            setlist_q = None if is_virtual or not setlist else setlist.get('id')
+            tip_kw = {'slug': band['gorjeta_slug']}
+            if event_id:
+                tip_kw['event'] = event_id
+            if setlist_q:
+                tip_kw['setlist'] = setlist_q
+            gorjeta_url = url_for('gorjeta.publica', **tip_kw)
+            if event_id:
+                gorjeta_live_url = url_for('gorjeta.live_json', band_id=band['id'], event_id=event_id)
+                gorjeta_total = sum_band_gorjetas(band['id'], event_id=event_id)
+                gorjeta_requests_count = count_song_requests(band['id'], event_id=event_id)
+            else:
+                today = app_now_str()[:10]
+                gorjeta_live_url = (
+                    url_for('gorjeta.live_json', band_id=band['id'])
+                    + f'?from={today}&to={today}'
+                )
+                gorjeta_total = sum_band_gorjetas(band['id'], from_date=today, to_date=today)
+                gorjeta_requests_count = count_song_requests(band['id'])
     return render_template(
         'cifras/play_mode.html',
         setlist=setlist,
@@ -1314,15 +1381,27 @@ def render_play_mode(setlist, band, all_cifras, start_idx=0, is_virtual=False, e
         event_context=event_context,
         play_state_url=play_state_url,
         offline_pack_url=offline_pack_url,
+        offline_unlocked=offline_unlocked,
         play_notes_url_tpl=play_notes_url_tpl,
         user_id=user_id,
         auto_follow_leader=bool(event_context),
         public_letras_url=public_letras_url,
         band_invite_url=band_invite_url,
-        show_play_csat=_should_show_play_csat(user_id) and not demo_only,
+        share_band_name=share_band_name,
+        share_song_title=share_song,
+        show_play_csat=False,
         show_play_pwa=_should_show_play_pwa(user_id) and not demo_only,
         show_real_song_cta=demo_only,
         real_song_url=url_for('cifras.comecar') if user_id else None,
+        play_mode_real_event_id=play_mode_real_event_id,
+        gorjeta_url=gorjeta_url,
+        gorjeta_live_url=gorjeta_live_url,
+        gorjeta_total=gorjeta_total,
+        gorjeta_requests_count=gorjeta_requests_count,
+        song_request_status_url=(
+            url_for('gorjeta.pedido_status', band_id=band['id'], request_id='__ID__')
+            if band else None
+        ),
     )
 
 
@@ -1356,16 +1435,14 @@ def tocar_band(band_id):
         return redirect(url_for('dashboard'))
 
     from db import mark_user_play_mode_used
+    from monetizacao import pode_modo_tocar_banda, resposta_modo_tocar_paywall
     from product_funnel import log_funnel_step
+
+    if not pode_modo_tocar_banda(band_id):
+        return resposta_modo_tocar_paywall(contexto='banda')
+
     mark_user_play_mode_used(user_id)
     log_funnel_step(user_id, 'play_mode')
-    try:
-        from demo_onboarding import maybe_start_trial_on_value
-        started = maybe_start_trial_on_value(user_id, reason='play_mode')
-        if started:
-            flash('Trial Pro de 30 dias ativado — PDF e limites liberados nesta banda.', 'info')
-    except Exception:
-        pass
 
     all_cifras = [
         enrich_cifra_for_tocar(c, user_id=user_id) for c in get_band_cifras(band_id)
@@ -1395,7 +1472,7 @@ def tocar_band(band_id):
 @cifras_bp.route('/minha-colecao/tocar')
 @login_required
 def tocar_colecao():
-    """Modo Tocar da coleção pessoal — o 'aha' do usuário solo, sem precisar de banda."""
+    """Modo Tocar da coleção pessoal — demo livre; 1 aha real; depois Individual."""
     user_id = session['user_id']
 
     all_cifras = [
@@ -1407,19 +1484,14 @@ def tocar_colecao():
         return redirect(url_for('cifras.comecar'))
 
     from db import mark_user_play_mode_used
+    from monetizacao import pode_modo_tocar_colecao, resposta_modo_tocar_paywall
     from product_funnel import log_funnel_step
-    from demo_onboarding import play_list_is_demo_only, maybe_start_trial_on_value
+
+    if not pode_modo_tocar_colecao(user_id, all_cifras):
+        return resposta_modo_tocar_paywall(contexto='colecao')
 
     mark_user_play_mode_used(user_id)
     log_funnel_step(user_id, 'play_mode')
-    demo_only = play_list_is_demo_only(all_cifras)
-    if not demo_only:
-        try:
-            started = maybe_start_trial_on_value(user_id, reason='play_mode_colecao')
-            if started:
-                flash('Trial Pro de 30 dias ativado na sua banda.', 'info')
-        except Exception:
-            pass
 
     start_id = request.args.get('start')
     start_idx = 0

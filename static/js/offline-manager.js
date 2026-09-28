@@ -60,6 +60,22 @@
   }
 
   function downloadBand(bandId, bandName, panel) {
+    if (panel.getAttribute('data-offline-unlocked') === '0') {
+      if (typeof global.setSyncShowUpgrade === 'function') {
+        global.setSyncShowUpgrade({
+          erro: 'plano_necessario',
+          titulo: 'Offline no palco com o Pro',
+          mensagem: 'Baixar o repertório offline faz parte do Pro.',
+          plano_sugerido: 'pro',
+          cta_label: 'Assinar Pro — R$ 29/mês',
+          upgrade_url: '/assinatura/planos?banda_id=' + encodeURIComponent(bandId) + '&plano=pro&go=1',
+          preco_linha: 'Pro — R$ 29/mês · offline + PDF',
+        });
+      } else {
+        global.location.href = '/assinatura/planos?banda_id=' + encodeURIComponent(bandId) + '&plano=pro&go=1';
+      }
+      return Promise.resolve(null);
+    }
     if (!store || !store.isSupported()) {
       alert('Seu navegador não suporta armazenamento offline (IndexedDB).');
       return Promise.reject(new Error('no-idb'));
@@ -67,9 +83,19 @@
     setProgress(panel, 5, 'Baixando repertório…');
     return fetch('/cifras/band/' + encodeURIComponent(bandId) + '/offline-pack.json', {
       credentials: 'same-origin',
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     })
       .then(function (res) {
+        if (res.status === 402) {
+          return res.json().then(function (data) {
+            if (typeof global.setSyncShowUpgrade === 'function') {
+              global.setSyncShowUpgrade(data);
+            } else {
+              global.location.href = (data && data.upgrade_url) || '/assinatura/planos?plano=pro&go=1';
+            }
+            throw new Error('paywall');
+          });
+        }
         if (!res.ok) throw new Error('Falha ao baixar (' + res.status + ')');
         setProgress(panel, 45, 'Processando…');
         return res.json();

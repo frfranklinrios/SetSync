@@ -17,6 +17,8 @@ def render_setlist_pdf_html(app, data: dict) -> str:
             sheets=data.get('sheets', []),
             printed_at=data.get('printed_at') or datetime.now(),
             band_logo_data_uri=data.get('band_logo_data_uri'),
+            gorjeta_qr_data_uri=data.get('gorjeta_qr_data_uri'),
+            gorjeta_public_url=data.get('gorjeta_public_url'),
         )
 
 

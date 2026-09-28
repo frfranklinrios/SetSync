@@ -10,14 +10,16 @@
   border-bottom: none;
 }
 
-#play-app.metronome-flash #cifra-wrap {
+#play-app.metronome-flash #cifra-wrap,
+#cifra-wrap.metronome-flash {
   box-shadow: inset 0 0 0 3px rgba(45, 212, 191, 0.55);
   transition: box-shadow 0.05s;
 }
 
 .play-draw-canvas {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: 20;
   pointer-events: none;
   touch-action: none;
@@ -33,4 +35,8 @@
 }
 #cifra-scroll {
   position: relative;
+}
+/* Com lápis ativo, bordas de página não roubam o pointer */
+body.play-drawing .tap-zone {
+  pointer-events: none !important;
 }

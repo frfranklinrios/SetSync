@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from db import (
     count_band_cifras,
-    count_band_setlists,
+    count_band_members,
     count_user_personal_cifras,
     get_owned_bands,
     get_user_bands,
@@ -19,6 +21,56 @@ def user_has_any_band(user_id: str) -> bool:
     if get_owned_bands(user_id):
         return True
     return bool(get_user_bands(user_id))
+
+
+def user_has_bandmate(user_id: str) -> bool:
+    """True se alguma banda do usuário já tem 2+ pessoas (incluindo o dono)."""
+    for band in list(get_owned_bands(user_id) or []) + list(get_user_bands(user_id) or []):
+        if count_band_members(band['id']) >= 2:
+            return True
+    return False
+
+
+def get_invite_loop_cta(user_id: str) -> dict | None:
+    """Depois do palco real: um toque para chamar a banda. Some quando já tem 2 pessoas."""
+    if not user_id:
+        return None
+    from product_funnel import get_user_funnel_steps
+    from security import external_url_for
+
+    done = (get_user_funnel_steps(user_id).get('done') or set())
+    if 'play_mode_real' not in done:
+        return None
+    if user_has_bandmate(user_id):
+        return None
+
+    owned = list(get_owned_bands(user_id) or [])
+    site = external_url_for('index')
+    if owned:
+        from band_invites import make_band_invite_token
+
+        band = owned[0]
+        invite = external_url_for(
+            'auth.convite', token=make_band_invite_token(band['id']),
+        )
+        name = band.get('name') or 'minha banda'
+        msg = (
+            f'Toquei no Uníssono no ensaio da banda "{name}". '
+            f'Entra no palco (cifra no tom certo): {invite}'
+        )
+        return {
+            'has_band': True,
+            'band_name': name,
+            'members_url': url_for('bands.members', band_id=band['id']),
+            'wa_href': f'https://wa.me/?text={quote(msg)}',
+        }
+    msg = f'Toquei a cifra do ensaio no Uníssono. Entra no palco comigo: {site}'
+    return {
+        'has_band': False,
+        'band_name': '',
+        'members_url': url_for('bands.create', bem_vindo=1),
+        'wa_href': f'https://wa.me/?text={quote(msg)}',
+    }
 
 
 def user_needs_band_activation(user_id: str) -> bool:
@@ -50,7 +102,6 @@ def get_onboarding_progress(user_id: str) -> dict | None:
 
     has_band = bool(bands)
     total_band_cifras = sum(count_band_cifras(b['id']) for b in bands) if bands else 0
-    total_setlists = sum(count_band_setlists(b['id']) for b in bands) if bands else 0
     total_personal = count_user_personal_cifras(user_id)
     played = user_play_mode_used(user_id)
     from demo_onboarding import count_real_personal_cifras
@@ -63,47 +114,24 @@ def get_onboarding_progress(user_id: str) -> dict | None:
     except Exception:
         played_real = bool(played and real_songs > 0)
 
-
     first_band_id = bands[0]['id'] if bands else None
-
-    # 1ª música: coleção pessoal (grátis, sem banda) para quem ainda não tem banda.
     add_url = (
         url_for('cifras.add', band_id=first_band_id)
         if first_band_id
         else url_for('cifras.comecar')
     )
-    # Modo Tocar: banda com cifras; senão a coleção pessoal (mesmo 'aha', sem banda).
     if first_band_id and total_band_cifras:
         tocar_url = url_for('cifras.tocar_band', band_id=first_band_id)
     elif total_personal:
         tocar_url = url_for('cifras.tocar_colecao')
     else:
         tocar_url = add_url
-    band_url = (
-        url_for('bands.view', band_id=first_band_id)
-        if has_band
-        else url_for('bands.create', bem_vindo=1)
-    )
-    setlist_url = (
-        url_for('setlists.create', band_id=first_band_id)
+    invite_url = (
+        url_for('bands.members', band_id=first_band_id)
         if first_band_id
         else url_for('bands.create', bem_vindo=1)
     )
-    show_url = (
-        url_for('agenda.create', band_id=first_band_id, tipo='show', kit=1)
-        if first_band_id
-        else url_for('bands.create', bem_vindo=1)
-    )
-
-    # Funil: música + tocar; depois banda; o "aha" de pagamento é o show (escala/freela/cachê).
-    has_show = False
-    if first_band_id:
-        try:
-            from models_agenda import count_band_events
-            has_show = count_band_events(first_band_id) > 0
-        except Exception:
-            from models_agenda import get_upcoming_events_for_user
-            has_show = bool(get_upcoming_events_for_user(user_id, limit=1))
+    has_bandmate = user_has_bandmate(user_id)
 
     steps = [
         {
@@ -122,17 +150,10 @@ def get_onboarding_progress(user_id: str) -> dict | None:
         },
         {
             'id': 'band',
-            'label': '3. Criar ou entrar numa banda',
-            'hint': 'Toque junto: repertório, escala e freelas. Trial Pro no Modo Tocar ou setlist.',
-            'done': has_band,
-            'url': band_url,
-        },
-        {
-            'id': 'show',
-            'label': '4. Marcar o próximo show',
-            'hint': 'Data → escala → freela → setlist → cachê. É o Comando do show.',
-            'done': has_show,
-            'url': show_url,
+            'label': '3. Chamar alguém do ensaio no WhatsApp',
+            'hint': 'Um link. A banda entra no mesmo tom, no mesmo palco.',
+            'done': has_bandmate,
+            'url': invite_url,
         },
     ]
 

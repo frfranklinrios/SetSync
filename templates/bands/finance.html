@@ -14,9 +14,9 @@
         <p class="text-muted mb-0 small">
             Caixa completo de {{ band.name }} ({{ from_date }} a {{ to_date }}).
             {% if is_admin %}
-            Cadastre o cachê em cada evento da agenda ou aqui abaixo.
+            Cadastre o cachê no <strong>Fechamento de noite</strong> de cada show na agenda.
             {% else %}
-            Você vê porque o admin liberou o acesso.
+            Você vê o caixa porque o admin liberou o acesso (só admin altera valores).
             {% endif %}
             Seus valores pessoais: <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}">Meu financeiro</a>.
         </p>
@@ -45,17 +45,25 @@
     </form>
 </div>
 
+{% if finance_paywall %}
+<div class="alert alert-warning py-2 d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <span class="small mb-0">PDF do caixa e fechamentos ilimitados: {{ finance_paywall.preco_linha }}</span>
+    <a href="{{ finance_paywall.upgrade_url }}" class="btn btn-warning btn-sm">{{ finance_paywall.cta_label }}</a>
+</div>
+{% endif %}
+
 <div class="alert alert-light border small mb-4" role="note">
     <i class="fas fa-info-circle text-primary me-1" aria-hidden="true"></i>
     <strong>O que é cada número:</strong>
     <strong>Cachês confirmados</strong> = shows com valor cadastrado;
-    <strong>Recebido</strong> = já entrou no caixa;
+    <strong>Liquidado</strong> = pagamento marcado como feito;
+    <strong>Em aberto</strong> = ainda a receber.
     <strong>A receber</strong> = falta receber;
     <strong>Ensaios em estúdio</strong> = custo estimado das reservas confirmadas;
     <strong>Despesas</strong> = gastos extras (transporte, etc.);
     <strong>Resultado</strong> = recebido menos todos os custos.
     {% if is_admin %}
-    Para cadastrar cachê de um show, toque em <strong>Informar cachê</strong> na linha do evento.
+    Para shows, use <strong>Fechar noite</strong> na linha do evento (abre o fechamento completo).
     {% endif %}
     <a href="{{ url_for('ajuda.index') }}#financeiro-banda" class="ms-1">Ajuda completa</a>
 </div>
@@ -80,6 +88,12 @@
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
+        <div class="border rounded p-2 text-center small h-100" title="Gorjetas Pix registradas no placar (100% na chave da banda)">
+            <div class="fw-bold text-success" id="gorjetas-live-total">R$ {{ '%.2f'|format(report.stats.gorjetas or 0) }}</div>
+            <div class="text-muted">Gorjetas Pix</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
         <div class="border rounded p-2 text-center small h-100" title="Estimativa com base nas reservas de sala">
             <div class="fw-bold text-danger">R$ {{ '%.2f'|format(report.stats.custos_ensaio) }}</div>
             <div class="text-muted">Salas de ensaio</div>
@@ -92,12 +106,91 @@
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
-        <div class="border rounded p-2 text-center small h-100" title="Recebido menos ensaios e despesas">
+        <div class="border rounded p-2 text-center small h-100" title="Recebido + gorjetas − ensaios e despesas">
             <div class="fw-bold">R$ {{ '%.2f'|format(report.stats.liquido) }}</div>
             <div class="text-muted">Resultado do mês</div>
         </div>
     </div>
 </div>
+
+{% if gorjeta_public_url or is_admin %}
+<div class="border rounded p-3 mb-4" id="gorjetas-live-panel"
+     data-live-url="{{ url_for('gorjeta.live_json', band_id=band.id) }}?from={{ from_date }}&to={{ to_date }}">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <div>
+            <h2 class="h6 mb-0">Gorjetas ao vivo</h2>
+            <p class="text-muted small mb-0">Placar do que o público confirmou. O Pix já caiu na chave da banda.</p>
+        </div>
+        {% if gorjeta_public_url %}
+        <a class="btn btn-sm btn-outline-success" href="{{ gorjeta_public_url }}" target="_blank" rel="noopener"
+           title="Abrir a página pública do QR Pix e do repertório (sem login)">
+            Abrir QR / link
+        </a>
+        {% endif %}
+    </div>
+    {% if is_admin %}
+    <form method="post" action="{{ url_for('gorjeta.registrar_manual', band_id=band.id) }}" class="row g-2 align-items-end mb-3">
+        {% include 'partials/csrf_input.html' %}
+        <div class="col-auto">
+            <label class="form-label small mb-0" title="Quando alguém pagou Pix mas não confirmou no placar">Registrar manual (R$)</label>
+            <input type="text" name="valor" class="form-control form-control-sm" inputmode="decimal" placeholder="20,00" required
+                   title="Valor da gorjeta recebida na chave Pix">
+        </div>
+        <div class="col-auto">
+            <label class="form-label small mb-0">Nota</label>
+            <input type="text" name="nota" class="form-control form-control-sm" maxlength="120" placeholder="opcional"
+                   title="Observação interna (ex.: mesa 4)">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-primary"
+                    title="Soma este valor ao placar de gorjetas do mês">Somar</button>
+        </div>
+    </form>
+    {% endif %}
+    <ul class="list-unstyled small mb-0" id="gorjetas-live-list">
+        {% for g in report.gorjetas[:12] %}
+        <li class="d-flex justify-content-between border-bottom py-1">
+            <span>{{ (g.created_at|string)[11:16] if g.created_at else '' }}
+                {% if g.nota %}<span class="text-muted">· {{ g.nota }}</span>{% endif %}
+            </span>
+            <strong>R$ {{ '%.2f'|format(g.valor) }}</strong>
+        </li>
+        {% else %}
+        <li class="text-muted" id="gorjetas-empty">Nenhuma gorjeta neste mês ainda.</li>
+        {% endfor %}
+    </ul>
+</div>
+<script>
+(function () {
+  var panel = document.getElementById('gorjetas-live-panel');
+  if (!panel) return;
+  var url = panel.getAttribute('data-live-url');
+  var totalEl = document.getElementById('gorjetas-live-total');
+  var listEl = document.getElementById('gorjetas-live-list');
+  function refresh() {
+    fetch(url, { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.ok) return;
+        if (totalEl) totalEl.textContent = 'R$ ' + Number(data.total || 0).toFixed(2);
+        if (!listEl) return;
+        if (!(data.items || []).length) {
+          listEl.innerHTML = '<li class="text-muted">Nenhuma gorjeta neste mês ainda.</li>';
+          return;
+        }
+        listEl.innerHTML = data.items.slice(0, 12).map(function (g) {
+          var t = String(g.created_at || '');
+          var hh = t.length >= 16 ? t.slice(11, 16) : '';
+          var nota = g.nota ? '<span class="text-muted">· ' + g.nota + '</span>' : '';
+          return '<li class="d-flex justify-content-between border-bottom py-1"><span>' + hh + ' ' + nota +
+            '</span><strong>R$ ' + Number(g.valor || 0).toFixed(2) + '</strong></li>';
+        }).join('');
+      }).catch(function () {});
+  }
+  setInterval(refresh, 5000);
+})();
+</script>
+{% endif %}
 
 <h2 class="h6">Eventos da agenda</h2>
 {% if report.events %}
@@ -131,9 +224,9 @@
                 <td>
                     {% if e.has_fee %}
                         {% if e.is_received %}
-                        <span class="badge text-bg-success">Recebido</span>
+                        <span class="badge text-bg-success">Liquidado</span>
                         {% else %}
-                        <span class="badge text-bg-warning">Pendente</span>
+                        <span class="badge text-bg-warning text-dark">Em aberto</span>
                         {% endif %}
                     {% else %}
                     <span class="text-muted">Sem cachê</span>
@@ -141,14 +234,21 @@
                 </td>
                 {% if is_admin %}
                 <td class="text-end">
+                    {% if e.event_type == 'show' %}
+                    <a href="{{ url_for('agenda.view', event_id=e.id) }}#fechamento-noite"
+                       class="btn btn-outline-primary btn-sm">
+                        Fechar noite
+                    </a>
+                    {% else %}
                     <button type="button" class="btn btn-outline-secondary btn-sm"
                             data-bs-toggle="collapse" data-bs-target="#fee-{{ e.id }}" aria-expanded="false">
                         Informar cachê
                     </button>
+                    {% endif %}
                 </td>
                 {% endif %}
             </tr>
-            {% if is_admin %}
+            {% if is_admin and e.event_type != 'show' %}
             <tr class="collapse" id="fee-{{ e.id }}">
                 <td colspan="6" class="bg-light">
                     <form method="post" action="{{ url_for('bands.save_event_finance', band_id=band.id, event_id=e.id) }}" class="row g-2 align-items-end">
@@ -158,7 +258,7 @@
                         <div class="col-md-2">
                             <label class="form-label mb-1 small">Total (R$)</label>
                             <input type="text" name="fee_total" class="form-control form-control-sm" inputmode="decimal"
-                                   value="{{ e.fee_total if e.has_fee else '' }}" placeholder="1500.00" required>
+                                   value="{{ e.fee_total if e.has_fee else '' }}" placeholder="1500,00" required>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label mb-1 small">Desc. transporte</label>
@@ -173,8 +273,8 @@
                         <div class="col-md-2">
                             <label class="form-label mb-1 small">Pagamento</label>
                             <select name="fee_settled" class="form-select form-select-sm">
-                                <option value="1" {% if e.is_received %}selected{% endif %}>Recebido</option>
-                                <option value="0" {% if not e.is_received %}selected{% endif %}>Pendente</option>
+                                <option value="1" {% if e.is_received %}selected{% endif %}>Liquidado</option>
+                                <option value="0" {% if not e.is_received %}selected{% endif %}>Em aberto</option>
                             </select>
                         </div>
                         <div class="col-md-3">

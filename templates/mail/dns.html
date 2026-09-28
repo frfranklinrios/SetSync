@@ -1,0 +1,64 @@
+{% extends "index.html" %}
+{% block title %}DNS de e-mail · Uníssono{% endblock %}
+
+{% block content %}
+{% include "mail/_nav.html" %}
+
+<div class="mb-3">
+    <p class="text-muted mb-2" style="font-size: var(--text-sm);">
+        Remetente oficial: <code>contato@unissono.app</code>
+        (substitui <code>@setsync.com.br</code>).
+        Sem SPF/DKIM/MX corretos no GoDaddy, Gmail/Outlook rejeitam ou a caixa não recebe.
+    </p>
+</div>
+
+{% set pending = checks|selectattr('ok', 'equalto', false)|list %}
+{% if pending %}
+<div class="alert alert-warning" style="font-size: var(--text-sm);">
+    <strong>{{ pending|length }} item(ns) DNS pendente(s)</strong> no GoDaddy
+    (domínio <code>unissono.app</code>, nameservers <code>ns*.domaincontrol.com</code>).
+    Cole os valores “Esperado” abaixo — o TXT do apex deve ser <em>SPF</em>, nunca DKIM.
+</div>
+{% else %}
+<div class="alert alert-success" style="font-size: var(--text-sm);">
+    DNS de autenticação OK para <code>unissono.app</code>.
+</div>
+{% endif %}
+
+<div class="list-group mb-4">
+    {% for c in checks %}
+    <div class="list-group-item" style="background:var(--bg); border-color:var(--border); color:inherit;">
+        <div class="d-flex justify-content-between gap-2 mb-1">
+            <strong style="font-size: var(--text-base);">{{ c.name }}</strong>
+            {% if c.ok %}
+            <span class="badge bg-success">OK</span>
+            {% else %}
+            <span class="badge bg-danger">Corrigir</span>
+            {% endif %}
+        </div>
+        <div class="text-muted" style="font-size: var(--text-sm); word-break: break-all;">
+            {{ c.detail }}
+        </div>
+        {% if not c.ok and c.expected %}
+        <div class="mt-2" style="font-size: var(--text-sm);">
+            <span class="text-muted">Esperado:</span>
+            <code style="word-break: break-all;">{{ c.expected }}</code>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% if dkim_value %}
+<div class="card p-3 mb-3" style="background:var(--bg); border-color:var(--border);">
+    <h2 class="h6 mb-2">Registro DKIM completo (cole em <code>unissono._domainkey</code>)</h2>
+    <code style="word-break: break-all; font-size: var(--text-sm);">{{ dkim_value }}</code>
+</div>
+{% endif %}
+
+<p class="text-muted mb-0" style="font-size: var(--text-sm);">
+    No servidor: <code>docker exec setsync-mail python -m mail_server.show_dkim</code>
+    · Teste Gmail:
+    <code>docker compose -f docker-compose.prod.yml exec web python3 scripts/send_test_email.py voce@gmail.com</code>
+</p>
+{% endblock %}

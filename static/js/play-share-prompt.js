@@ -7,7 +7,7 @@
   'use strict';
 
   var STORAGE_KEY = 'setsync.play.sharePrompt.v1';
-  var MIN_MS = 45 * 1000;
+  var MIN_MS = 15 * 1000;
   var COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
   var started = Date.now();
   var pendingExit = null;
@@ -109,25 +109,29 @@
     return root;
   }
 
+  function currentSongTitle(boot) {
+    var el = document.getElementById('bar-title');
+    var fromDom = el && String(el.textContent || '').trim();
+    return fromDom || boot.shareSongTitle || 'essa música';
+  }
+
   function buildShareOverlay(boot) {
     var existing = document.getElementById('play-share-prompt');
     if (existing) return existing;
 
-    var bandName = boot.bandName || 'minha banda';
-    var membersUrl = boot.membersUrl || '';
-    var inviteUrl = boot.bandInviteUrl || membersUrl || '';
-    var indicarUrl = boot.indicarUrl || '/assinatura/voucher/indicar';
+    var song = currentSongTitle(boot);
+    var bandName = boot.bandName || '';
+    var inviteUrl = boot.bandInviteUrl || '';
     var siteUrl = boot.siteUrl || 'https://unissono.app';
-    var canInvite = !!inviteUrl && !!boot.canEdit;
-
+    var link = inviteUrl || siteUrl;
+    var where = bandName ? ' da banda "' + bandName + '"' : '';
     var inviteMsg =
-      'Bora usar o Uníssono no ensaio da banda "' +
-      bandName +
-      '"? Cifras no tom certo + Modo Tocar offline. Entra por este link: ' +
-      (inviteUrl || siteUrl);
-    var referMsg =
-      'App de cifras/setlist pro ensaio — Modo Tocar offline. Grátis + 30 dias Pro sem cartão: ' +
-      siteUrl;
+      'Toquei "' +
+      song +
+      '" no Uníssono no ensaio' +
+      where +
+      '. Entra no palco (mesmo tom, cifra na tela): ' +
+      link;
 
     var root = document.createElement('div');
     root.id = 'play-share-prompt';
@@ -138,25 +142,14 @@
     root.innerHTML =
       '<div class="play-share-card">' +
       '<button type="button" class="play-share-close" aria-label="Fechar" data-share-skip>&times;</button>' +
-      '<p class="play-share-kicker">Ensaio bom de espalhar</p>' +
-      '<h2 id="play-share-title">Leve a banda (ou indique outra)</h2>' +
-      '<p class="play-share-lead">Você não precisa vender o app — um toque no WhatsApp basta.</p>' +
+      '<p class="play-share-kicker">Próximo ensaio</p>' +
+      '<h2 id="play-share-title">Manda no grupo do ensaio</h2>' +
+      '<p class="play-share-lead">Um toque no WhatsApp. A banda entra no mesmo palco, no mesmo tom.</p>' +
       '<div class="play-share-actions">' +
-      (canInvite
-        ? '<a class="btn btn-primary" data-share-go href="' +
-          waUrl(inviteMsg) +
-          '" target="_blank" rel="noopener">' +
-          '<i class="fab fa-whatsapp me-1" aria-hidden="true"></i>Convidar no WhatsApp</a>' +
-          '<a class="btn btn-outline-secondary" data-share-go href="' +
-          (membersUrl || inviteUrl) +
-          '">Abrir link de convite</a>'
-        : '') +
-      '<a class="btn btn-outline-success" data-share-go href="' +
-      indicarUrl +
-      '"><i class="fas fa-gift me-1" aria-hidden="true"></i>Indicar e ganhar 3 meses Pro</a>' +
-      '<a class="btn btn-outline-secondary btn-sm" data-share-go href="' +
-      waUrl(referMsg) +
-      '" target="_blank" rel="noopener">Mandar o app no WhatsApp</a>' +
+      '<a class="btn btn-primary" data-share-go href="' +
+      waUrl(inviteMsg) +
+      '" target="_blank" rel="noopener">' +
+      '<i class="fab fa-whatsapp me-1" aria-hidden="true"></i>Mandar no WhatsApp</a>' +
       '</div>' +
       '<button type="button" class="play-share-skip" data-share-skip>Agora não · sair</button>' +
       '</div>';

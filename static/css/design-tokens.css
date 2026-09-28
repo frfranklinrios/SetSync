@@ -1,0 +1,80 @@
+/**
+ * Uníssono — tokens de design (fonte única para cor, espaço, raio, sombra).
+ * Carregar antes de setsync-theme.css / tipografia.
+ */
+:root {
+  /* Marca */
+  --brand: #ea580c;
+  --brand-ink: #c2410c;
+  --brand-soft: rgba(234, 88, 12, 0.12);
+
+  /* Alias legados usados no app */
+  --accent: var(--brand);
+  --accent-dark: var(--brand-ink);
+
+  --text: #1a1a1a;
+  --muted: #5b6570;
+  --hint: #5b6570;
+  --placeholder: #9ca3af;
+  --border: #e5e7eb;
+  --bg: #f8f9fa;
+  --card-bg: #ffffff;
+  --surface-elevated: #ffffff;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+
+  --touch-min: 44px;
+  --focus-ring: 0 0 0 3px rgba(234, 88, 12, 0.35);
+
+  --chord-highlight: #c2410c;
+  --chord-highlight-soft: #ea580c;
+  --chord-highlight-bg: rgba(234, 88, 12, 0.1);
+  --chord-highlight-border: rgba(234, 88, 12, 0.4);
+  --chord-highlight-ring: rgba(234, 88, 12, 0.2);
+  --chord-highlight-ghost: rgba(234, 88, 12, 0.08);
+  --chord-highlight-ghost-strong: rgba(234, 88, 12, 0.32);
+  --chord-highlight-fade: rgba(234, 88, 12, 0.7);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --brand: #2ab5a0;
+  --brand-ink: #5eead4;
+  --brand-soft: rgba(42, 181, 160, 0.14);
+  --accent: #2ab5a0;
+  --accent-dark: #5eead4;
+  --text: #e2e8f0;
+  --muted: #a8b8cc;
+  --hint: #c8d4e4;
+  --placeholder: #8b9cb3;
+  --border: #334155;
+  --bg: #0f172a;
+  --card-bg: #0b1422;
+  --surface-elevated: #1e293b;
+  --focus-ring: 0 0 0 3px rgba(94, 234, 212, 0.4);
+  --chord-highlight: #5eead4;
+  --chord-highlight-soft: #2dd4bf;
+  --chord-highlight-bg: rgba(42, 181, 160, 0.14);
+  --chord-highlight-border: rgba(42, 181, 160, 0.45);
+  --chord-highlight-ring: rgba(42, 181, 160, 0.28);
+  --chord-highlight-ghost: rgba(42, 181, 160, 0.1);
+  --chord-highlight-ghost-strong: rgba(42, 181, 160, 0.35);
+  --chord-highlight-fade: rgba(45, 212, 191, 0.75);
+}

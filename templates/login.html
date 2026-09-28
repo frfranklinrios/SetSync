@@ -24,10 +24,15 @@
                 Abra cifras, setlists e o <strong>Modo Tocar</strong> da sua banda.
             </p>
             <p class="text-muted small mt-2 mb-0" style="opacity:0.85;">
-                Usava SetSync? Mesma conta — só o nome mudou.
+                Já usava o Uníssono? Entre com a mesma conta.
             </p>
         </div>
 
+        {% if request.args.get('next') and 'loja.unissono.app' in request.args.get('next') %}
+        <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
+            Entre com a mesma conta do Uníssono para comprar na loja.
+        </div>
+        {% endif %}
         {% if invite_band %}
         <div class="alert alert-info mb-4" style="font-size: var(--text-base);">
             Convite para a banda <strong>{{ invite_band.name }}</strong>.
@@ -36,7 +41,7 @@
         {% endif %}
 
         {% if google_oauth_enabled %}
-        <a href="{{ url_for('auth.google', convite=invite_token) if invite_token else url_for('auth.google') }}"
+        <a href="{{ url_for('auth.google', convite=invite_token, next=request.args.get('next', '')) if invite_token else url_for('auth.google', next=request.args.get('next', '')) }}"
            class="btn btn-outline-dark w-100 mb-3">
             <i class="fab fa-google me-2" aria-hidden="true"></i>Continuar com Google
         </a>
@@ -49,6 +54,9 @@
             {% include 'partials/csrf_input.html' %}
             {% if invite_token %}
             <input type="hidden" name="convite_token" value="{{ invite_token }}">
+            {% endif %}
+            {% if request.args.get('next') %}
+            <input type="hidden" name="next" value="{{ request.args.get('next') }}">
             {% endif %}
             <div class="mb-3">
                 <label for="login_id" class="form-label">Usuário ou e-mail</label>
@@ -75,7 +83,7 @@
 
         <p class="text-center text-muted mt-4 mb-1" style="font-size: var(--text-sm);">
             Novo por aqui?
-            <a href="{{ url_for('auth.register', convite=invite_token) if invite_token else url_for('auth.register') }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Criar conta grátis</a>
+            <a href="{{ url_for('auth.register', convite=invite_token, next=request.args.get('next', '')) if invite_token else url_for('auth.register', next=request.args.get('next', '')) }}" style="color:var(--accent);text-decoration:none;font-weight:600;">Criar conta grátis</a>
         </p>
         <p class="text-center text-muted small mb-0">Primeira banda = 30 dias Pro grátis · sem cartão</p>
     </div>

@@ -68,26 +68,35 @@ def create():
         if is_first_band:
             mark_funnel_event('primeira_banda')
             log_funnel_step(user_id, 'primeira_banda')
-        # Trial Pro começa no 1º Modo Tocar / setlist real (demo_onboarding.maybe_start_trial_on_value)
         import admin_notifications as an
         an.band_created(band_id, user_id)
         flash(f'Banda "{name}" criada com sucesso!', 'success')
+        flash(
+            'Para Modo Tocar, setlist de ensaio, PDF e offline: assine o Pro (R$ 29/mês).',
+            'info',
+        )
         if is_first_band:
             flash(
-                'Trial Pro de 30 dias libera quando você abrir o Modo Tocar ou criar um setlist — '
-                'sem pressa no setup.',
+                'Agora chama quem toca com você — um link no WhatsApp.',
                 'info',
             )
-            return redirect(url_for('cifras.add', band_id=band_id, welcome=1))
+            return redirect(url_for('bands.members', band_id=band_id))
         return redirect(url_for('bands.view', band_id=band_id))
     
     from db import get_owned_bands
     is_first_band = not get_owned_bands(user_id) and not get_user_bands(user_id)
     bem_vindo = request.args.get('bem_vindo') == '1' or is_first_band
+    worship_d0 = request.args.get('worship') == '1'
+    if worship_d0:
+        flash(
+            'Worship: cadastre esta 2ª banda/ministério agora — setlists e escala em todas as bandas da igreja.',
+            'success',
+        )
     return render_template(
         'bands/create.html',
         is_first_band=is_first_band,
         bem_vindo=bem_vindo,
+        worship_d0=worship_d0,
     )
 
 @bands_bp.route('/<band_id>')
@@ -126,6 +135,16 @@ def view(band_id):
     from band_logos import band_has_logo
     from datetime import datetime
     from models_agenda import get_band_events, get_events_scale_summaries
+    from monetizacao import pode_offline_pack
+    from gorjeta_service import banda_gorjeta_pronta
+
+    offline_unlocked = pode_offline_pack(band_id)
+    gorjeta_pronta = banda_gorjeta_pronta(band)
+    gorjeta_public_url = None
+    if gorjeta_pronta and band.get('gorjeta_slug'):
+        gorjeta_public_url = url_for(
+            'gorjeta.publica', slug=band['gorjeta_slug'], _external=True,
+        )
 
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     all_events = get_band_events(band_id)
@@ -170,6 +189,9 @@ def view(band_id):
         is_superadmin=is_superadmin(user_id),
         band_has_logo=band_has_logo(band),
         band_logo_url=url_for('bands.band_logo', band_id=band_id) if band_has_logo(band) else None,
+        offline_unlocked=offline_unlocked,
+        gorjeta_public_url=gorjeta_public_url,
+        gorjeta_pronta=gorjeta_pronta,
     )
 
 @bands_bp.route('/<band_id>/logo')
@@ -214,6 +236,44 @@ def settings(band_id):
             bn.band_updated(band_id, user_id)
             flash('Configurações atualizadas', 'success')
 
+        elif action == 'save_gorjeta':
+            from db import update_band_gorjeta, gorjeta_slug_taken
+            from gorjeta_service import (
+                parse_valores_sugeridos,
+                slugify_band_name,
+                validate_gorjeta_slug,
+                valores_to_storage,
+            )
+            from pix_emv import normalize_pix_key
+
+            pix_chave = normalize_pix_key(request.form.get('pix_chave') or '')
+            slug = (request.form.get('gorjeta_slug') or '').strip().lower() or slugify_band_name(band['name'])
+            err = validate_gorjeta_slug(slug)
+            if err:
+                flash(err, 'danger')
+                return redirect(url_for('bands.settings', band_id=band_id))
+            if gorjeta_slug_taken(slug, exclude_band_id=band_id):
+                flash('Esse link de gorjeta já está em uso. Escolha outro.', 'danger')
+                return redirect(url_for('bands.settings', band_id=band_id))
+            enabled = request.form.get('gorjeta_enabled') == '1'
+            if enabled and not pix_chave:
+                flash('Informe a chave Pix para ativar a gorjeta.', 'danger')
+                return redirect(url_for('bands.settings', band_id=band_id))
+            valores = parse_valores_sugeridos(request.form.get('gorjeta_valores'))
+            update_band_gorjeta(
+                band_id,
+                pix_chave=pix_chave or None,
+                gorjeta_slug=slug,
+                gorjeta_mensagem=(request.form.get('gorjeta_mensagem') or '').strip() or None,
+                gorjeta_enabled=enabled,
+                gorjeta_show_play=request.form.get('gorjeta_show_play') == '1',
+                gorjeta_show_pdf=request.form.get('gorjeta_show_pdf') == '1',
+                gorjeta_valores=valores_to_storage(valores),
+            )
+            flash(
+                'Gorjeta Pix atualizada. O público paga direto na sua chave — sem comissão.',
+                'success',
+            )
         elif action == 'add_vocalist':
             raw = request.form.get('vocalist_names', '').strip()
             if not raw:
@@ -272,9 +332,15 @@ def settings(band_id):
         return redirect(url_for('bands.settings', band_id=band_id))
 
     from db import get_band_vocalists
+    from gorjeta_service import banda_gorjeta_pronta, parse_valores_sugeridos, slugify_band_name
     band_members = get_band_members(band_id)
     vocalists = get_band_vocalists(band_id)
     from band_logos import band_has_logo
+    gorjeta_public_url = None
+    if band.get('gorjeta_slug') and banda_gorjeta_pronta(band):
+        gorjeta_public_url = url_for(
+            'gorjeta.publica', slug=band['gorjeta_slug'], _external=True,
+        )
     return render_template(
         'bands/settings.html',
         band=band,
@@ -282,6 +348,11 @@ def settings(band_id):
         vocalists=vocalists,
         band_has_logo=band_has_logo(band),
         band_logo_url=url_for('bands.band_logo', band_id=band_id) if band_has_logo(band) else None,
+        gorjeta_valores_txt=', '.join(
+            str(v) for v in parse_valores_sugeridos(band.get('gorjeta_valores'))
+        ),
+        gorjeta_slug_default=band.get('gorjeta_slug') or slugify_band_name(band.get('name') or ''),
+        gorjeta_public_url=gorjeta_public_url,
     )
 
 @bands_bp.route('/<band_id>/vocalists/api', methods=['POST'])
@@ -681,6 +752,7 @@ def _load_band_finance_report(band_id: str, year: int, month: int):
         list_band_expenses,
         list_band_studio_bookings_for_finance,
     )
+    from db import list_band_gorjetas, sum_band_gorjetas
 
     band = get_band(band_id)
     if not band:
@@ -691,6 +763,8 @@ def _load_band_finance_report(band_id: str, year: int, month: int):
         band_id, from_date=from_date, to_date=to_date,
     )
     expenses = list_band_expenses(band_id, from_date=from_date, to_date=to_date)
+    tips = list_band_gorjetas(band_id, from_date=from_date, to_date=to_date, limit=100)
+    tips_total = sum_band_gorjetas(band_id, from_date=from_date, to_date=to_date)
     report = build_band_finance_report(
         band=band,
         events=events,
@@ -698,6 +772,8 @@ def _load_band_finance_report(band_id: str, year: int, month: int):
         expenses=expenses,
         year=year,
         month=month,
+        gorjetas_total=tips_total,
+        gorjetas=tips,
     )
     return band, report, from_date, to_date
 
@@ -793,6 +869,31 @@ def my_fees():
     )
 
 
+@bands_bp.route('/meus-caches/evento/<event_id>/confirmar-recebido', methods=['POST'])
+@login_required
+def confirmar_cache_recebido(event_id):
+    """Músico confirma que recebeu o PIX da sua fatia."""
+    user_id = session['user_id']
+    from models_agenda import get_band_event
+    from models_band_finance import get_member_fee_line, set_fee_line_paid
+
+    event = get_band_event(event_id)
+    if not event:
+        flash('Show não encontrado.', 'warning')
+        return redirect(url_for('bands.my_fees'))
+    band_id = event.get('band_id')
+    if not band_id or not is_band_member(band_id, user_id):
+        flash('Sem acesso a este show.', 'danger')
+        return redirect(url_for('bands.my_fees'))
+    line = get_member_fee_line(event_id, user_id)
+    if not line:
+        flash('Você não tem fatia registrada neste show.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id) + '#fechamento-noite')
+    set_fee_line_paid(line['id'], paid=True, event_id=event_id)
+    flash('Marcamos como recebido. Se precisar desfazer, peça ao admin da banda.', 'success')
+    return redirect(url_for('bands.my_fees', banda_id=band_id))
+
+
 @bands_bp.route('/meus-caches/imprimir')
 def my_fees_print():
     uid = _resolve_my_fees_user()
@@ -876,6 +977,17 @@ def finance(band_id):
         return redirect(url_for('dashboard'))
     band, report, from_date, to_date = loaded
     from agenda_util import event_type_label
+    from conversion_levers import banda_eh_paga, cta_pro, count_band_shows_with_fee
+
+    finance_paywall = None
+    if not banda_eh_paga(band_id) and count_band_shows_with_fee(band_id) >= 1:
+        finance_paywall = cta_pro(banda_id=band_id)
+    gorjeta_public_url = None
+    from gorjeta_service import banda_gorjeta_pronta
+    if band.get('gorjeta_slug') and banda_gorjeta_pronta(band):
+        gorjeta_public_url = url_for(
+            'gorjeta.publica', slug=band['gorjeta_slug'], _external=True,
+        )
     return render_template(
         'bands/finance.html',
         band=band,
@@ -885,6 +997,8 @@ def finance(band_id):
         to_date=to_date,
         event_type_label=event_type_label,
         is_admin=is_admin,
+        finance_paywall=finance_paywall,
+        gorjeta_public_url=gorjeta_public_url,
     )
 
 @bands_bp.route('/<band_id>/financeiro/imprimir')
@@ -926,6 +1040,13 @@ def finance_print(band_id):
 def finance_export_pdf(band_id):
     from io import BytesIO
 
+    from conversion_levers import pode_pdf_financeiro_banda, resposta_paywall_conversao
+
+    if not pode_pdf_financeiro_banda(band_id):
+        return resposta_paywall_conversao(
+            'PDF do caixa da banda faz parte do Pro. Meu financeiro (sua fatia) continua grátis.',
+            banda_id=band_id,
+        )
     from band_finance_pdf import build_finance_pdf_download_name, generate_band_finance_pdf_bytes
 
     band, uid = _require_band_finance_viewer(band_id)
@@ -984,7 +1105,14 @@ def save_event_finance(band_id, event_id):
         fee_notes=fee_notes,
         fee_settled=fee_settled,
     )
-    flash('Cachê do evento atualizado.', 'success')
+    from models_band_finance import clear_event_fee_lines
+
+    clear_event_fee_lines(event_id)
+    flash(
+        'Totais do cachê atualizados. Abra o evento e use '
+        'Fechamento de noite para definir quanto cada um recebe.',
+        'success',
+    )
     return _finance_redirect(band_id)
 
 

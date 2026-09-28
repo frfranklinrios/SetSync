@@ -52,6 +52,48 @@
     </div>
 </form>
 
+{% if report.pending_rows %}
+<div class="alert alert-warning border-warning mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+        <div>
+            <strong><i class="fas fa-hand-holding-dollar me-1"></i> Me devem</strong>
+            <span class="text-muted small ms-1">
+                {{ report.stats.a_receber_count }} show{% if report.stats.a_receber_count != 1 %}s{% endif %}
+                · R$ {{ '%.2f'|format(report.stats.a_receber) }}
+            </span>
+        </div>
+    </div>
+    <ul class="list-unstyled mb-0" style="font-size: var(--text-sm);">
+        {% for row in report.pending_rows[:8] %}
+        <li class="d-flex justify-content-between align-items-center gap-2 py-1 border-top border-warning-subtle flex-wrap">
+            <span>
+                <a href="{{ url_for('agenda.view', event_id=row.id) }}#fechamento-noite">
+                    {{ row.title or 'Show' }}
+                </a>
+                <span class="text-muted">· {{ row.band_name }} · {{ (row.starts_at|string)[:10] }}</span>
+            </span>
+            <span class="d-flex align-items-center gap-2">
+                <strong>R$ {{ '%.2f'|format(row.my_amount) }}</strong>
+                {% if row.wa_text %}
+                <a class="btn btn-sm btn-outline-success py-0"
+                   href="https://wa.me/?text={{ row.wa_text|urlencode }}"
+                   target="_blank" rel="noopener" title="Cobrar / avisar no WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                {% endif %}
+                {% if row.fee_line_id %}
+                <form method="post" action="{{ url_for('bands.confirmar_cache_recebido', event_id=row.id) }}">
+                    {% include 'partials/csrf_input.html' %}
+                    <button type="submit" class="btn btn-sm btn-outline-primary py-0">Recebi</button>
+                </form>
+                {% endif %}
+            </span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <div class="row g-2 mb-4">
     <div class="col-6 col-md-3">
         <div class="border rounded p-2 text-center">
@@ -62,7 +104,7 @@
     <div class="col-6 col-md-3">
         <div class="border rounded p-2 text-center">
             <div class="fw-bold text-success">R$ {{ '%.2f'|format(report.stats.recebido) }}</div>
-            <div class="text-muted small">Recebido / fechado</div>
+            <div class="text-muted small">Recebido</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
@@ -89,6 +131,7 @@
                 <th>Banda</th>
                 <th class="text-end">Sua parte</th>
                 <th>Status</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -96,7 +139,7 @@
             <tr>
                 <td>{{ (row.starts_at|string)[:10] }}</td>
                 <td>
-                    <a href="{{ url_for('agenda.view', event_id=row.id) }}">{{ row.title or 'Show' }}</a>
+                    <a href="{{ url_for('agenda.view', event_id=row.id) }}#fechamento-noite">{{ row.title or 'Show' }}</a>
                     {% if not row.included_in_split %}
                     <div class="text-muted" style="font-size:0.85em;">Você não entrou na divisão (não confirmado na escala).</div>
                     {% endif %}
@@ -105,9 +148,24 @@
                 <td class="text-end fw-semibold">R$ {{ '%.2f'|format(row.my_amount) }}</td>
                 <td>
                     {% if row.is_received %}
-                    <span class="badge text-bg-success">Fechado</span>
+                    <span class="badge text-bg-success">Recebido</span>
                     {% else %}
-                    <span class="badge text-bg-warning">Em aberto</span>
+                    <span class="badge text-bg-warning text-dark">A receber</span>
+                    {% endif %}
+                </td>
+                <td class="text-end text-nowrap">
+                    {% if row.wa_text %}
+                    <a class="btn btn-sm btn-outline-success py-0"
+                       href="https://wa.me/?text={{ row.wa_text|urlencode }}"
+                       target="_blank" rel="noopener" title="WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                    {% endif %}
+                    {% if row.fee_line_id and not row.is_received %}
+                    <form method="post" action="{{ url_for('bands.confirmar_cache_recebido', event_id=row.id) }}" class="d-inline">
+                        {% include 'partials/csrf_input.html' %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary py-0">Recebi</button>
+                    </form>
                     {% endif %}
                 </td>
             </tr>
@@ -116,13 +174,12 @@
     </table>
 </div>
 {% else %}
-<div class="empty">
-    <i class="fas fa-wallet"></i>
-    <p class="mb-2">Nenhum cachê neste período.</p>
-    <p class="text-muted small mb-0">
-        Quando o admin cadastrar o cachê de um show e você estiver na escala (ou na banda),
-        sua parte aparece aqui.
-    </p>
-</div>
+{% with icon='fa-wallet',
+        title='Nenhum cachê neste período',
+        text='Quando o admin cadastrar o cachê de um show e você estiver na escala, sua parte aparece aqui.',
+        cta_url=url_for('agenda.minha_agenda'),
+        cta_label='Ver minha agenda' %}
+{% include 'partials/empty_state.html' %}
+{% endwith %}
 {% endif %}
 {% endblock %}

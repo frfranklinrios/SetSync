@@ -5,7 +5,7 @@ from email.utils import parseaddr
 
 from aiosmtpd.smtp import AuthResult, SMTP
 
-from mail_server.config import DOMAIN
+from mail_server.config import canonical_mailbox, is_local_address
 from mail_server.server.outbound import deliver_external, get_last_error
 from mail_server.server.storage import EmailStorage
 
@@ -64,8 +64,8 @@ class EmailHandler:
 
         message_id = parsed.get("Message-ID", "")
 
-        local_rcpts = [r for r in recipients if r.endswith(f"@{DOMAIN}")]
-        external_rcpts = [r for r in recipients if not r.endswith(f"@{DOMAIN}")]
+        local_rcpts = [r for r in recipients if is_local_address(r)]
+        external_rcpts = [r for r in recipients if not is_local_address(r)]
         authenticated = bool(
             getattr(session, 'login_data', None) or getattr(session, 'authenticated', False)
         )
@@ -88,9 +88,15 @@ class EmailHandler:
                 )
 
         for recipient in local_rcpts:
-            user = await self.storage.get_user_by_email(recipient)
+            owner = canonical_mailbox(recipient)
+            user = await self.storage.get_user_by_email(owner)
             if not user:
-                logger.warning("Caixa inexistente: %s", recipient)
+                # Aceita login legado: cria lookup direto no endereço original.
+                user = await self.storage.get_user_by_email(recipient)
+                if user:
+                    owner = recipient
+            if not user:
+                logger.warning("Caixa inexistente: %s (canon %s)", recipient, owner)
                 continue
 
             await self.storage.save_email(
@@ -99,10 +105,10 @@ class EmailHandler:
                 subject=subject,
                 body_text=body_text or "",
                 body_html=body_html,
-                owner_email=recipient,
+                owner_email=owner,
                 message_id=message_id,
             )
-            logger.info("Email recebido: %s -> %s | %s", sender, recipient, subject)
+            logger.info("Email recebido: %s -> %s | %s", sender, owner, subject)
 
         if not local_rcpts and not (external_rcpts and authenticated):
             return "550 Nenhum destinatário aceito"
@@ -125,6 +131,11 @@ class SMTPAuthenticator:
             password = password.decode("utf-8", errors="replace")
 
         user = self.storage.authenticate_sync(username, password)
+        if not user:
+            # Login com @setsync.com.br autentica a caixa canônica @unissono.app.
+            alt = canonical_mailbox(username)
+            if alt != (username or "").strip().lower():
+                user = self.storage.authenticate_sync(alt, password)
         if user:
             return AuthResult(success=True, auth_data=login_data)
 

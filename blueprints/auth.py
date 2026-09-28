@@ -14,8 +14,8 @@ from google_oauth import handle_google_callback, get_authorization_url
 import functools
 from itsdangerous import URLSafeTimedSerializer
 from security import (
-    check_rate_limit, clear_rate_limit, external_url_for, make_oauth_state,
-    safe_redirect_path, verify_oauth_state,
+    check_rate_limit, clear_rate_limit, external_url_for, make_loja_sso_token,
+    make_oauth_state, safe_redirect_path, verify_oauth_state,
 )
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -53,10 +53,33 @@ def _password_reset_serializer():
 
 
 def _is_safe_redirect(target):
-    """Evita open redirect: aceita apenas paths relativos do mesmo host."""
-    if not target or not target.startswith('/'):
-        return False
-    return not target.startswith('//')
+    return bool(safe_redirect_path(target))
+
+
+def _loja_cors_origin() -> str | None:
+    origin = (request.headers.get('Origin') or '').rstrip('/')
+    allowed = {
+        'https://loja.unissono.app',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:8011',
+        'http://127.0.0.1:8011',
+    }
+    return origin if origin in allowed else None
+
+
+def _json_loja_cors(payload: dict, status: int = 200):
+    from flask import jsonify, make_response
+
+    resp = make_response('' if status == 204 else jsonify(payload), status)
+    origin = _loja_cors_origin()
+    if origin:
+        resp.headers['Access-Control-Allow-Origin'] = origin
+        resp.headers['Access-Control-Allow-Credentials'] = 'true'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        resp.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        resp.headers['Vary'] = 'Origin'
+    return resp
 
 
 def _invite_token_from_request():
@@ -158,9 +181,10 @@ def _auth_destination_path(user, invite_token: str | None = None) -> str:
                 flash(f'Você entrou na banda {name}!', 'success')
             return url_for('bands.view', band_id=band_id)
 
-    next_page = request.args.get('next')
-    if next_page and safe_redirect_path(next_page):
-        return next_page
+    next_page = request.values.get('next') or session.pop('auth_next', None)
+    safe_next = safe_redirect_path(next_page)
+    if safe_next:
+        return safe_next
     from models_studio import studio_primary_home_endpoint
     studio_home = studio_primary_home_endpoint(user['id'])
     if studio_home:
@@ -185,8 +209,16 @@ def _redirect_after_auth(user, invite_token: str | None = None):
 
 
 def _redirect_after_signup(user, invite_token: str | None = None):
-    """Redireciona após cadastro novo — passa pela URL de conversão do Google Ads."""
+    """Redireciona após cadastro novo — conversão Ads/Meta e intent de plano."""
     dest = _auth_destination_path(user, invite_token)
+    intent = (session.pop('register_plano_intent', None) or '').strip().lower()
+    if intent and not invite_token:
+        if intent == 'worship':
+            dest = url_for('assinatura_bp.planos', plano='worship', go=1)
+        elif intent == 'pro':
+            dest = url_for('bands.create', bem_vindo=1)
+        elif intent == 'individual':
+            dest = url_for('assinatura_bp.planos', plano='individual', go=1)
     signup_page = url_for('auth.cadastro_concluido', next=dest)
     return _auth_setup_redirect(signup_page)
 
@@ -395,7 +427,20 @@ def register():
             phone=phone_raw,
             whatsapp_notify=whatsapp_notify,
         )
-        
+
+        from signup_guard import check_signup_abuse, make_signup_timing_token
+        form_values['form_ts'] = make_signup_timing_token()
+        ok_signup, signup_msg, _reason = check_signup_abuse(
+            username=username,
+            display_name=display_name,
+            email=email,
+            form=request.form,
+            remote_addr=request.remote_addr,
+        )
+        if not ok_signup:
+            flash(signup_msg or 'Não foi possível concluir o cadastro agora.', 'danger')
+            return render_template('register.html', **form_values)
+
         if not username or not display_name or not email or not password:
             flash('Preencha usuário, nome, e-mail e senha', 'danger')
             return render_template('register.html', **form_values)
@@ -444,6 +489,11 @@ def register():
         from google_ads import mark_signup_conversion_pending
         mark_signup_conversion_pending()
         try:
+            from meta_pixel import marcar_inscricao
+            marcar_inscricao(user)
+        except Exception:
+            pass
+        try:
             from product_funnel import log_funnel_step
             log_funnel_step(user_id, 'signup')
         except Exception:
@@ -458,12 +508,14 @@ def register():
             flash('Conta criada com sucesso!', 'success')
         return _redirect_after_signup(user, invite_token)
 
+    from signup_guard import make_signup_timing_token
     return render_template(
         'register.html',
         invite_token=invite_token,
         invite_band=invite_band,
         plano_intent=plano_intent,
         whatsapp_notify=False,
+        form_ts=make_signup_timing_token(),
     )
 
 
@@ -478,7 +530,12 @@ def cadastro_concluido():
     if not safe_redirect_path(next_path):
         next_path = url_for('dashboard')
 
-    if not session.get('google_ads_funnel_pending'):
+    from meta_pixel import consume_complete_registration, consume_post_signup_landing
+
+    post_signup = consume_post_signup_landing()
+    meta_fire, meta_event_id = consume_complete_registration()
+    google_pending = bool(session.get('google_ads_funnel_pending'))
+    if not post_signup and not meta_fire and not google_pending:
         return redirect(next_path)
 
     from db import get_user
@@ -496,6 +553,8 @@ def cadastro_concluido():
         needs_activation=needs_activation,
         google_ads_enhanced_data=enhanced_user_data(user),
         test_drive=bool(needs_activation),
+        meta_pixel_fire_complete_registration=meta_fire,
+        meta_pixel_event_id=meta_event_id,
     )
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -505,6 +564,9 @@ def login():
     if 'user_id' in session:
         if band_id_early and apply_band_invite(session['user_id'], band_id_early):
             return redirect(url_for('bands.view', band_id=band_id_early))
+        user = get_user(session['user_id'])
+        if user:
+            return _redirect_after_auth(user, invite_token_early)
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
@@ -545,7 +607,48 @@ def login():
 def logout():
     session.clear()
     flash('Você saiu da conta', 'info')
-    return redirect(url_for('auth.login'))
+    dest = safe_redirect_path(request.form.get('next') or request.args.get('next'))
+    return redirect(dest or url_for('auth.login'))
+
+
+@auth_bp.route('/sair')
+def sair():
+    session.clear()
+    dest = safe_redirect_path(request.args.get('next')) or url_for('auth.login')
+    return redirect(dest)
+
+
+@auth_bp.route('/me', methods=['GET', 'OPTIONS'])
+def api_me():
+    if request.method == 'OPTIONS':
+        return _json_loja_cors({}, 204)
+    user = get_user(session['user_id']) if session.get('user_id') else None
+    if not user:
+        return _json_loja_cors({'autenticado': False})
+    nome = (user.get('display_name') or '').strip() or user.get('username') or ''
+    impersonando = bool((session.get('impersonator_id') or '').strip())
+    master = bool(is_superadmin(user['id'])) and not impersonando
+    return _json_loja_cors({
+        'autenticado': True,
+        'usuario': {
+            'id': user['id'],
+            'username': user.get('username') or '',
+            'nome': nome,
+            'email': user.get('email') or '',
+            'telefone': user.get('phone') or '',
+            'is_superadmin': master,
+            'is_loja_admin': master,
+        },
+        'loja_token': make_loja_sso_token(
+            user['id'],
+            nome=nome,
+            email=user.get('email') or '',
+            telefone=user.get('phone') or '',
+            username=user.get('username') or '',
+            is_superadmin=master,
+            is_loja_admin=master,
+        ),
+    })
 
 
 @auth_bp.route('/google')
@@ -561,6 +664,10 @@ def google():
     token = request.args.get('convite', '').strip()
     if token and parse_band_invite_token(token):
         session['pending_band_invite'] = token
+        session.modified = True
+    nxt = safe_redirect_path(request.args.get('next'))
+    if nxt:
+        session['auth_next'] = nxt
         session.modified = True
     state = make_oauth_state()
     session['oauth_state'] = state
@@ -621,6 +728,11 @@ def google_callback():
     if new_signup:
         from google_ads import mark_signup_conversion_pending
         mark_signup_conversion_pending()
+        try:
+            from meta_pixel import marcar_inscricao
+            marcar_inscricao(user)
+        except Exception:
+            pass
         try:
             from product_funnel import log_funnel_step
             log_funnel_step(user['id'], 'signup')

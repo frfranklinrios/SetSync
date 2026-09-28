@@ -44,7 +44,22 @@ def _notify_members(
     url_path: str | None = None,
     include_extra=None,
     also_notify: list[str] | None = None,
+    entity_id: str | None = None,
 ):
+    try:
+        from activity_log import log_activity
+
+        log_activity(
+            actor_user_id=actor_user_id,
+            action=event_type,
+            title=title,
+            summary=body,
+            entity_id=entity_id or band_id,
+            band_id=band_id,
+            url_path=url_path,
+        )
+    except Exception:
+        pass
     recipients = _member_ids(band_id, exclude=actor_user_id, include_extra=also_notify or [])
     if not recipients:
         return 0
@@ -217,6 +232,7 @@ def cifra_created(band_id: str, actor_user_id: str, cifra_id: str, titulo: str):
         f'{band} — nova cifra',
         f'{actor} adicionou a cifra «{titulo}».',
         url_path=f'/cifras/{cifra_id}',
+        entity_id=cifra_id,
     )
 
 
@@ -224,19 +240,35 @@ def cifra_updated(band_id: str, actor_user_id: str, cifra_id: str, titulo: str):
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
     url_path = f'/cifras/{cifra_id}'
+    title = f'{band} — cifra editada'
+    body = f'{actor} editou a cifra «{titulo}».'
+    try:
+        from activity_log import log_activity
+
+        log_activity(
+            actor_user_id=actor_user_id,
+            action='cifra_updated',
+            title=title,
+            summary=body,
+            entity_type='cifra',
+            entity_id=cifra_id,
+            band_id=band_id,
+            url_path=url_path,
+        )
+    except Exception:
+        pass
     recipients = _member_ids(band_id, exclude=actor_user_id)
     if not recipients:
         return 0
-    count = create_notifications_for_users(
+    return create_notifications_for_users(
         recipients,
         band_id=band_id,
         actor_user_id=actor_user_id,
         type='cifra_updated',
-        title=f'{band} — cifra editada',
-        body=f'{actor} editou a cifra «{titulo}».',
+        title=title,
+        body=body,
         url_path=url_path,
     )
-    return count
 
 
 def cifra_deleted(band_id: str, actor_user_id: str, titulo: str):
@@ -262,6 +294,7 @@ def setlist_created(band_id: str, actor_user_id: str, setlist_id: int, name: str
         f'{band} — nova setlist',
         f'{actor} criou a setlist «{name}».',
         url_path=f'/setlists/{setlist_id}',
+        entity_id=str(setlist_id),
     )
 
 
@@ -288,6 +321,7 @@ def setlist_song_added(band_id: str, actor_user_id: str, setlist_id: int, setlis
         f'{band} — setlist atualizada',
         f'{actor} adicionou «{song_title}» à setlist «{setlist_name}».',
         url_path=f'/setlists/{setlist_id}',
+        entity_id=str(setlist_id),
     )
 
 
@@ -306,6 +340,7 @@ def event_created(band_id: str, actor_user_id: str, event_id: str, title: str, e
         f'{band} — {tipo} agendado',
         f'{actor} marcou «{title}» na agenda.',
         url_path=f'/agenda/{event_id}',
+        entity_id=event_id,
     )
 
 
@@ -320,6 +355,7 @@ def event_updated(band_id: str, actor_user_id: str, event_id: str, title: str, e
         f'{band} — {tipo} atualizado',
         f'{actor} alterou «{title}» na agenda.',
         url_path=f'/agenda/{event_id}',
+        entity_id=event_id,
     )
 
 
@@ -347,12 +383,28 @@ def event_scale_response(
     body = f'{responder} {verb} a escalação para «{title}».'
     if note:
         body += f' Observação: {note}'
+    title_n = f'{band} — resposta da escalação'
+    try:
+        from activity_log import log_activity
+
+        log_activity(
+            actor_user_id=responder_user_id,
+            action=ntype,
+            title=title_n,
+            summary=body,
+            entity_type='event',
+            entity_id=event_id,
+            band_id=band_id,
+            url_path=f'/agenda/{event_id}',
+        )
+    except Exception:
+        pass
     create_notification(
         assigned_by,
         band_id=band_id,
         actor_user_id=responder_user_id,
         type=ntype,
-        title=f'{band} — resposta da escalação',
+        title=title_n,
         body=body,
         url_path=f'/agenda/{event_id}',
     )
@@ -376,6 +428,22 @@ def event_scale_assigned(
         return 0
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
+    try:
+        from activity_log import log_activity
+
+        n = len(list(user_ids or []))
+        log_activity(
+            actor_user_id=actor_user_id,
+            action='event_scale_assigned',
+            title=f'{band} — escalação',
+            summary=f'{actor} escalou {n} pessoa(s) para «{title}».',
+            entity_type='event',
+            entity_id=event_id,
+            band_id=band_id,
+            url_path=f'/agenda/{event_id}',
+        )
+    except Exception:
+        pass
     return send_scale_assignment_channels(
         band_id=band_id,
         actor_user_id=actor_user_id,
@@ -411,4 +479,5 @@ def setlist_song_removed(band_id: str, actor_user_id: str, setlist_id: int, setl
         f'{band} — setlist atualizada',
         f'{actor} removeu «{song_title}» da setlist «{setlist_name}».',
         url_path=f'/setlists/{setlist_id}',
+        entity_id=str(setlist_id),
     )

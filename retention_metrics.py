@@ -157,6 +157,42 @@ def nps_stats() -> dict[str, Any]:
            LIMIT 8'''
     )
     detractor_list = [dict(r) for r in c.fetchall()]
+
+    c.execute(
+        '''SELECT id, username, display_name, email, nps_score, nps_submitted_at
+           FROM users
+           WHERE nps_submitted_at IS NOT NULL AND nps_score IS NOT NULL
+           ORDER BY nps_submitted_at DESC
+           LIMIT 12'''
+    )
+    recent_nps = [dict(r) for r in c.fetchall()]
+
+    c.execute(
+        '''SELECT play_csat_answer AS answer, COUNT(*) AS n
+           FROM users WHERE play_csat_submitted_at IS NOT NULL AND play_csat_answer IS NOT NULL
+           GROUP BY play_csat_answer'''
+    )
+    csat_by = {str(r['answer']): int(r['n']) for r in c.fetchall()}
+    c.execute(
+        '''SELECT COUNT(*) AS n FROM users WHERE play_csat_submitted_at IS NOT NULL'''
+    )
+    csat_total = int((c.fetchone() or {}).get('n') or 0)
+
+    c.execute(
+        '''SELECT id, username, display_name, email, churn_reason, churn_survey_at
+           FROM users
+           WHERE churn_survey_at IS NOT NULL AND churn_reason IS NOT NULL
+           ORDER BY churn_survey_at DESC
+           LIMIT 12'''
+    )
+    churn_list = [dict(r) for r in c.fetchall()]
+    c.execute(
+        '''SELECT churn_reason AS reason, COUNT(*) AS n
+           FROM users WHERE churn_reason IS NOT NULL
+           GROUP BY churn_reason'''
+    )
+    churn_by = {str(r['reason']): int(r['n']) for r in c.fetchall()}
+
     db.close()
     return {
         'total': total,
@@ -166,6 +202,11 @@ def nps_stats() -> dict[str, Any]:
         'passives': passives,
         'detractors': detractors,
         'detractor_list': detractor_list,
+        'recent': recent_nps,
+        'csat_total': csat_total,
+        'csat_by': csat_by,
+        'churn_list': churn_list,
+        'churn_by': churn_by,
     }
 
 

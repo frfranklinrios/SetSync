@@ -36,16 +36,18 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="empty">
-        <i class="fas fa-list"></i>
-        <p class="mb-2" style="font-size: var(--text-base);">O roteiro vira o Modo Tocar</p>
-        <p class="text-muted small mb-3">Monte a ordem do culto ou show e abra no palco.</p>
-        {% if can_edit %}
+    {% with icon='fa-list',
+            title='O roteiro vira o Modo Tocar',
+            text='Monte a ordem do culto ou show e abra no palco.' %}
+    {% include 'partials/empty_state.html' %}
+    {% endwith %}
+    {% if can_edit %}
+    <div class="text-center mt-2">
         <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i> Criar setlist e tocar
         </a>
-        {% endif %}
     </div>
+    {% endif %}
     {% endif %}
 </div>
 {% endblock %}

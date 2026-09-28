@@ -99,12 +99,44 @@
             <i class="fas fa-wallet me-1"></i> Meu financeiro
         </a>
         {% if is_admin %}
+        {% if gorjeta_pronta and gorjeta_public_url %}
+        <a href="{{ gorjeta_public_url }}" class="btn btn-success btn-sm" target="_blank" rel="noopener"
+           title="Página pública do QR Pix e pedidos de música">
+            <i class="fas fa-qrcode me-1"></i> Gorjeta Pix
+        </a>
+        <a href="{{ url_for('bands.settings', band_id=band.id) }}#gorjeta" class="btn btn-outline-success btn-sm"
+           title="Editar chave Pix e opções">
+            <i class="fas fa-sliders-h me-1"></i> Config. gorjeta
+        </a>
+        {% else %}
+        <a href="{{ url_for('bands.settings', band_id=band.id) }}#gorjeta" class="btn btn-success btn-sm"
+           title="Ativar QR de gorjeta Pix e pedidos de música">
+            <i class="fas fa-qrcode me-1"></i> Ativar gorjeta Pix
+        </a>
+        {% endif %}
         <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-cog me-1"></i> Configurações
         </a>
         {% endif %}
     </div>
 </div>
+
+{% if is_admin and not gorjeta_pronta %}
+<div class="alert alert-success border small mb-3" role="status">
+    <i class="fas fa-qrcode me-1" aria-hidden="true"></i>
+    <strong>Gorjeta Pix:</strong> cadastre a chave Pix em
+    <a href="{{ url_for('bands.settings', band_id=band.id) }}#gorjeta" class="alert-link">Configurações → Gorjeta Pix</a>
+    para o público pagar no show e pedir música. O dinheiro cai 100% na sua chave.
+</div>
+{% elif is_admin and gorjeta_public_url %}
+<div class="alert alert-light border small mb-3" role="status">
+    <i class="fas fa-qrcode text-success me-1" aria-hidden="true"></i>
+    <strong>Gorjeta ativa:</strong>
+    <a href="{{ gorjeta_public_url }}" target="_blank" rel="noopener">{{ gorjeta_public_url }}</a>
+    · no <strong>Modo Tocar</strong> aparece o total no rodapé ·
+    <a href="{{ url_for('bands.finance', band_id=band.id) }}">ver placar no Financeiro</a>
+</div>
+{% endif %}
 
 <div class="alert alert-light border small mb-3 ux-band-guide" role="note">
     <i class="fas fa-route text-primary me-1" aria-hidden="true"></i>
@@ -115,6 +147,9 @@
     <strong>Financeiro da banda</strong> é o caixa completo — só dono/admin (ou liberado).
     {% else %}
     Seus valores ficam em <strong>Meu financeiro</strong> (menu do topo).
+    {% endif %}
+    {% if is_admin %}
+    <strong>Gorjeta Pix</strong> fica em Configurações (ou no botão verde acima).
     {% endif %}
 </div>
 
@@ -127,7 +162,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link" data-bs-toggle="tab" href="#tab-setlists" id="tab-setlists-btn">
-            <i class="fas fa-list me-1"></i> Roteiro
+            <i class="fas fa-list me-1"></i> Roteiro (Setlist)
             <span class="badge bg-light text-muted border ms-1" style="font-size: var(--text-xs);">{{ setlists|length }}</span>
         </a>
     </li>
@@ -181,21 +216,23 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="empty">
-            <i class="fas fa-music"></i>
-            <p class="mb-2" style="font-size: var(--text-base);">Sem repertório ainda</p>
-            <p class="text-muted small mb-3">Em 1 minuto você adiciona uma música e já testa o <strong>Modo Tocar</strong>.</p>
-            {% if can_edit %}
+        {% with icon='fa-music',
+                title='Sem repertório ainda',
+                text='Em 1 minuto você adiciona uma música e já testa o Modo Tocar.' %}
+        {% include 'partials/empty_state.html' %}
+        {% endwith %}
+        {% if can_edit %}
+        <div class="text-center mt-2 mb-2">
             <button type="button" class="btn btn-primary btn-sm me-2" data-open-cifra-search>
                 <i class="fas fa-search me-1"></i> Buscar na biblioteca
             </button>
             <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-plus me-1"></i> Cadastrar manualmente
             </a>
-            {% else %}
-            <p class="text-muted small mb-0">Peça a um administrador da banda para adicionar músicas.</p>
-            {% endif %}
         </div>
+        {% else %}
+        <p class="text-muted small text-center mb-2">Peça a um administrador da banda para adicionar músicas.</p>
+        {% endif %}
         {% endif %}
     </div>
 
@@ -217,18 +254,16 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="empty">
-            <i class="fas fa-list"></i>
-            <p class="mb-2" style="font-size: var(--text-base);">Sem roteiro, o palco vira WhatsApp</p>
-            <p class="text-muted small mb-3">Monte a ordem das músicas e abra o <strong>Modo Tocar</strong> no ensaio.</p>
-            {% if can_edit %}
-            <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Criar roteiro e tocar
-            </a>
-            {% else %}
-            <p class="text-muted small mb-0">Peça a um administrador para montar o roteiro.</p>
-            {% endif %}
-        </div>
+        {% with icon='fa-list',
+                title='Sem roteiro, o palco vira WhatsApp',
+                text='Monte a ordem das músicas e abra o Modo Tocar no ensaio.',
+                cta_url=(url_for('setlists.create', band_id=band.id) if can_edit else none),
+                cta_label=('Criar roteiro e tocar' if can_edit else none) %}
+        {% include 'partials/empty_state.html' %}
+        {% endwith %}
+        {% if not can_edit %}
+        <p class="text-muted small text-center mb-2">Peça a um administrador para montar o roteiro.</p>
+        {% endif %}
         {% endif %}
     </div>
 
@@ -273,18 +308,13 @@
         {% endif %}
         {% else %}
         <p class="agenda-list-title">Lista de eventos</p>
-        <div class="empty">
-            <i class="fas fa-calendar-alt"></i>
-            <p class="mb-2" style="font-size: var(--text-base);">Nenhum ensaio ou show na agenda.</p>
-            {% if is_admin %}
-            <p class="text-muted small mb-3">Cadastre a data, o local e quem vai participar.</p>
-            <a href="{{ url_for('agenda.create', band_id=band.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Registrar primeiro evento
-            </a>
-            {% else %}
-            <p class="text-muted small mb-0">Quando o administrador criar um evento, ele aparecerá aqui.</p>
-            {% endif %}
-        </div>
+        {% with icon='fa-calendar-alt',
+                title='Nenhum ensaio ou show na agenda',
+                text=('Cadastre a data, o local e quem vai participar.' if is_admin else 'Quando o administrador criar um evento, ele aparecerá aqui.'),
+                cta_url=(url_for('agenda.create', band_id=band.id) if is_admin else none),
+                cta_label=('Registrar primeiro evento' if is_admin else none) %}
+        {% include 'partials/empty_state.html' %}
+        {% endwith %}
         {% endif %}
     </div>
 
@@ -339,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/offline-store.js') }}?v=1"></script>
-<script src="{{ url_for('static', filename='js/offline-manager.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/offline-manager.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/realtime-sync.js') }}?v=1"></script>
 {% if can_edit %}
 {% include 'cifras/_cifra_search_scripts.html' %}

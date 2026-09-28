@@ -18,20 +18,20 @@
                  loading="lazy">
         </div>
         <div class="home-offline-copy">
-            <h2 id="offline-title">Funciona offline quando a internet falha</h2>
+            <h2 id="offline-title">Offline no palco (Pro)</h2>
             <p>
-                Instale o <strong>Uníssono</strong> na tela inicial (PWA). Páginas já visitadas —
-                setlists e cifras — continuam acessíveis no palco, mesmo com Wi-Fi instável no local.
+                Instale o <strong>Uníssono</strong> na tela inicial (PWA). Com o <strong>Pro</strong>,
+                você baixa a setlist neste aparelho —
+                mesmo com Wi-Fi instável no local.
             </p>
             <ul class="home-offline-list">
-                <li><i class="fas fa-shield-halved"></i> Segurança no palco: sem depender do grupo do WhatsApp</li>
+                <li><i class="fas fa-shield-halved"></i> Segurança no palco: setlist salva no celular</li>
                 <li><i class="fas fa-download"></i> Um toque para instalar no Android ou iPhone (Safari)</li>
-                <li><i class="fas fa-sync"></i> Sincroniza de novo quando a conexão voltar</li>
+                <li><i class="fas fa-crown"></i> Pack offline completo no Pro</li>
             </ul>
-            <button type="button" class="btn btn-primary"
-                    onclick="typeof installPWA === 'function' && installPWA()">
-                <i class="fas fa-mobile-screen-button me-1"></i> Instalar app grátis
-            </button>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">
+                <i class="fas fa-crown me-1"></i> Assinar Pro — R$ 29
+            </a>
         </div>
     </div>
 </section>

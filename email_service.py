@@ -14,6 +14,22 @@ from flask import current_app
 from flask_mail import Message
 
 
+def _fold_smtp_lines(text: str, max_len: int = 780) -> str:
+    """Quebra linhas longas — alguns SMTP rejeitam >998 chars (RFC5321)."""
+    if not text:
+        return text
+    out: list[str] = []
+    for line in text.splitlines():
+        while len(line) > max_len:
+            cut = line.rfind(' ', 0, max_len)
+            if cut < max_len // 2:
+                cut = max_len
+            out.append(line[:cut])
+            line = line[cut:].lstrip() if cut < len(line) and line[cut] == ' ' else line[cut:]
+        out.append(line)
+    return '\n'.join(out)
+
+
 def is_configured() -> bool:
     """True se o Flask-Mail está inicializado e tem credenciais SMTP.
 
@@ -52,7 +68,14 @@ def send_email(
         )
         return False
 
-    msg = Message(subject=subject, recipients=list(recipients), body=body, html=html)
+    safe_html = _fold_smtp_lines(html) if html else html
+    safe_body = _fold_smtp_lines(body) if body else body
+    msg = Message(
+        subject=subject,
+        recipients=list(recipients),
+        body=safe_body,
+        html=safe_html,
+    )
     try:
         current_app.extensions['mail'].send(msg)
         return True

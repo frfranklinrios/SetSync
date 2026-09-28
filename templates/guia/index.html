@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('guia.guia_index') }}">
-<meta name="description" content="Guias Uníssono: coleção pessoal grátis, compartilhar cifras, financeiro da banda, indicação com 3 meses, setlists, estúdios e Modo Tocar.">
-<meta property="og:title" content="Guia Uníssono — Coleção, cifras, financeiro e palco">
-<meta property="og:description" content="Guarde cifras na coleção, compartilhe com a banda, acompanhe cachês, indique e ganhe 3 meses Pro, reserve estúdio e use o Modo Tocar.">
+<meta name="description" content="Guias Uníssono: coleção com até 3 cifras grátis, Pro para banda (setlist, PDF, offline), financeiro, gorjeta Pix, indicação e Modo Tocar.">
+<meta property="og:title" content="Guia Uníssono — Coleção, cifras, gorjeta Pix e palco">
+<meta property="og:description" content="Guarde até 3 cifras na coleção grátis; Pro libera setlist, PDF, offline e fechamento de cachê. Gorjeta Pix sem comissão no show.">
 <meta property="og:url" content="{{ external_url_for('guia.guia_index') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -18,6 +18,32 @@
 .guia-hero { margin-bottom: 1.5rem; }
 .guia-hero h1 { font-size: var(--text-xl); font-weight: 700; margin-bottom: 0.5rem; }
 .guia-hero p { color: var(--muted); max-width: 42rem; line-height: 1.55; }
+.guia-hero-shots {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
+    gap: 1.25rem;
+    align-items: end;
+    margin: 1.25rem 0 0.5rem;
+}
+@media (max-width: 768px) {
+    .guia-hero-shots { grid-template-columns: 1fr; }
+}
+.help-shot { margin: 0; text-align: center; }
+.help-shot-zoom { display: inline-block; padding: 0; border: none; background: transparent; cursor: zoom-in; }
+.help-shot-mobile-frame {
+    width: min(100%, 200px); margin: 0 auto; padding: 8px;
+    border: 1px solid #334155; border-radius: 22px;
+    background: linear-gradient(180deg, #1e293b 0%, #0b1422 100%);
+}
+.help-shot-mobile-frame img { display: block; width: 100%; height: auto; border-radius: 14px; }
+.help-shot-desktop-frame {
+    width: 100%; margin: 0 auto; padding: 10px 10px 14px;
+    border: 1px solid var(--border); border-radius: 10px; background: #0f172a;
+}
+[data-theme="light"] .help-shot-desktop-frame { background: #e2e8f0; }
+.help-shot-desktop-frame img { display: block; width: 100%; height: auto; border-radius: 4px; }
+.help-shot-caption { margin-top: 0.45rem; font-size: var(--text-sm); color: var(--muted); }
+.help-shot-hint { display: block; font-size: var(--text-xs); opacity: 0.8; }
 .guia-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -60,6 +86,16 @@
         Igrejas e ministérios de louvor: <a href="{{ url_for('assinatura_bp.igrejas') }}">Uníssono para Igrejas</a>.
         Donos de estúdio: <a href="{{ url_for('studios.landing') }}">Uníssono para Estúdios</a>.
     </p>
+    <div class="guia-hero-shots" aria-label="Telas do Uníssono">
+        {% with pack=marketing_pack_br, name='modo-tocar-mobile', frame='mobile',
+                caption='Modo Tocar', alt='Modo Tocar Uníssono' %}
+          {% include 'partials/help_shot.html' %}
+        {% endwith %}
+        {% with pack=marketing_pack_br, name='setlist-desktop', frame='desktop',
+                caption='Setlist / roteiro', alt='Setlist no Uníssono' %}
+          {% include 'partials/help_shot.html' %}
+        {% endwith %}
+    </div>
     <p class="mb-0">
         <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm me-2">Criar conta grátis</a>
         <a href="{{ url_for('ajuda.index') }}" class="btn btn-outline-secondary btn-sm me-2">Ajuda</a>
@@ -71,11 +107,15 @@
 <div class="guia-grid mb-4">
     <a class="guia-link" href="{{ url_for('ajuda.index') }}#colecao">
         <strong>Minha coleção</strong>
-        <span>Músicas pessoais grátis e ilimitadas · compartilhar com assinatura</span>
+        <span>Até 3 cifras reais no Grátis · Individual/Pro para ilimitado</span>
     </a>
     <a class="guia-link" href="{{ url_for('ajuda.index') }}#financeiro-banda">
         <strong>Meu financeiro e da banda</strong>
         <span>Cachês pessoais, caixa da banda e PDF em A4 retrato</span>
+    </a>
+    <a class="guia-link" href="{{ url_for('assinatura_bp.financeiro') }}">
+        <strong>Como funciona o financeiro</strong>
+        <span>Página completa: Meu financeiro × caixa da banda</span>
     </a>
     <a class="guia-link" href="{{ url_for('assinatura_bp.voucher_indicar') }}">
         <strong>Indicar e ganhar 3 meses</strong>
@@ -159,4 +199,6 @@
     </a>
     {% endfor %}
 </div>
+
+{% include 'partials/image_lightbox_assets.html' %}
 {% endblock %}

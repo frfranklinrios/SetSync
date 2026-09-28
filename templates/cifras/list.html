@@ -50,19 +50,21 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="empty">
-        <i class="fas fa-music"></i>
-        <p class="mb-2" style="font-size: var(--text-base);">Sem repertório compartilhado</p>
-        <p class="text-muted small mb-3">Sem cifras na banda, cada um usa um PDF diferente. Em 1 min você testa o Modo Tocar.</p>
-        {% if can_edit %}
+    {% with icon='fa-music',
+            title='Sem repertório compartilhado',
+            text='Sem cifras na banda, cada um usa um PDF diferente. Em 1 min você testa o Modo Tocar.' %}
+    {% include 'partials/empty_state.html' %}
+    {% endwith %}
+    {% if can_edit %}
+    <div class="text-center mt-2">
         <button type="button" class="btn btn-primary me-2" data-open-cifra-search>
             <i class="fas fa-search me-1"></i> Buscar na biblioteca
         </button>
         <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-outline-secondary">
             <i class="fas fa-plus me-1"></i> Cadastrar cifra
         </a>
-        {% endif %}
     </div>
+    {% endif %}
     {% endif %}
 </div>
 

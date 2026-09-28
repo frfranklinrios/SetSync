@@ -136,3 +136,58 @@ def category_channel_enabled(
 def serialize_notification_prefs(prefs: dict[str, Any]) -> str:
     normalized = parse_notification_prefs(prefs)
     return json.dumps(normalized, ensure_ascii=False, separators=(',', ':'))
+
+
+def user_wants_whatsapp_notifications(user: dict | None) -> bool:
+    if not user:
+        return False
+    return int(user.get('whatsapp_notify') or 0) == 1
+
+
+def user_has_phone(user: dict | None) -> bool:
+    if not user:
+        return False
+    return bool((user.get('phone') or '').strip())
+
+
+def user_wants_email_notifications(user: dict | None) -> bool:
+    if not user:
+        return False
+    if user.get('email_notify') is None:
+        return True
+    return int(user.get('email_notify') or 0) == 1
+
+
+def user_wants_push_notifications(user: dict | None) -> bool:
+    if not user:
+        return False
+    return int(user.get('push_notify') or 0) == 1
+
+
+def get_user_notification_prefs(user: dict | None) -> dict[str, Any]:
+    if not user:
+        return parse_notification_prefs(None)
+    return parse_notification_prefs(user.get('notification_prefs_json'))
+
+
+def user_wants_notification_channel(
+    user: dict | None,
+    channel: str,
+    notification_type: str,
+) -> bool:
+    """Respeita toggle global do canal + preferência por categoria."""
+    if not user:
+        return False
+    if channel == 'email' and not user_wants_email_notifications(user):
+        return False
+    if channel == 'whatsapp':
+        if not user_wants_whatsapp_notifications(user) or not user_has_phone(user):
+            return False
+    if channel == 'push' and not user_wants_push_notifications(user):
+        return False
+
+    cat = notification_category(notification_type)
+    if not cat:
+        return True
+    prefs = get_user_notification_prefs(user)
+    return category_channel_enabled(prefs, cat, channel)

@@ -121,6 +121,34 @@ def _ensure_banda_para_individual(user_id: str) -> dict | None:
     return get_band(band_id)
 
 
+def _ensure_banda_para_pro(user_id: str) -> dict | None:
+    """Sem banda no checkout Pro: cria uma para vincular a assinatura."""
+    owned = get_owned_bands(user_id)
+    if owned:
+        return owned[0]
+    from db import create_band
+
+    user = get_user(user_id) or {}
+    nome = (user.get('name') or 'Minha banda').strip() or 'Minha banda'
+    band_name = f'{nome}'[:80]
+    band_id = create_band(band_name, 'Banda — plano Pro', user_id)
+    try:
+        from product_funnel import log_funnel_step
+        from google_ads import mark_funnel_event
+
+        log_funnel_step(user_id, 'primeira_banda', meta={'origem': 'checkout_pro'})
+        mark_funnel_event('primeira_banda')
+    except Exception:
+        pass
+    try:
+        import admin_notifications as an
+
+        an.band_created(band_id, user_id)
+    except Exception:
+        current_app.logger.exception('Notificação admin (banda Pro) falhou')
+    return get_band(band_id)
+
+
 @assinatura_bp.route('/planos')
 def planos_redirect():
     """Atalho legado usado em guias SEO e conteúdo antigo."""
@@ -164,13 +192,16 @@ def iniciar(plano):
 
     banda_id = request.form.get('banda_id', '').strip()
     band = _banda_do_usuario(banda_id, session['user_id']) if banda_id else None
-    # Individual: usuário sem banda (coleção pessoal com limites de PDF/compartilhar)
+    # Individual / Pro: sem banda, cria automaticamente para o checkout.
     if not band and plano == PLANO_INDIVIDUAL:
         band = _ensure_banda_para_individual(session['user_id'])
         banda_id = (band or {}).get('id') or ''
+    if not band and plano == PLANO_PRO:
+        band = _ensure_banda_para_pro(session['user_id'])
+        banda_id = (band or {}).get('id') or ''
     if not band:
-        if plano == PLANO_INDIVIDUAL:
-            flash('Não foi possível preparar sua banda solo. Tente de novo.', 'danger')
+        if plano in (PLANO_INDIVIDUAL, PLANO_PRO):
+            flash('Não foi possível preparar sua banda. Tente de novo.', 'danger')
         else:
             flash('Selecione uma banda da qual você é dona/dono', 'danger')
         return redirect(url_for('assinatura_bp.planos'))
@@ -216,6 +247,15 @@ def iniciar(plano):
         if mp_id:
             update_assinatura(banda_id, mp_preapproval_id=mp_id)
             session['mp_checkout']['preapproval_id'] = str(mp_id)
+        try:
+            from product_funnel import log_funnel_step
+            log_funnel_step(
+                session['user_id'],
+                'checkout_iniciado',
+                meta={'plano': plano, 'banda_id': banda_id},
+            )
+        except Exception:
+            pass
         return redirect(init_point)
     except Exception as exc:
         current_app.logger.exception('Erro ao iniciar assinatura: %s', exc)
@@ -434,14 +474,31 @@ def sucesso():
         if resultado == 'ativa':
             session.pop('mp_checkout', None)
             flash('Assinatura ativada com sucesso!', 'success')
+            if plano == PLANO_WORSHIP:
+                flash(
+                    'Worship liberado. Próximo passo: cadastre a 2ª banda/ministério '
+                    'para aproveitar várias bandas na mesma conta.',
+                    'info',
+                )
+                return redirect(url_for('bands.create', bem_vindo=1, worship=1))
             return redirect(url_for('assinatura_bp.planos', banda_id=banda_id))
         if resultado == 'pendente':
+            try:
+                from db import mark_retention_sent
+                mark_retention_sent(session['user_id'], 'checkout_pending', 'pendente')
+            except Exception:
+                pass
             return redirect(url_for(
                 'assinatura_bp.pendente',
                 banda_id=banda_id,
                 plano=plano,
             ))
 
+    try:
+        from db import mark_retention_sent
+        mark_retention_sent(session['user_id'], 'checkout_pending', 'pendente')
+    except Exception:
+        pass
     flash('Assinatura registrada. Confirmando pagamento…', 'info')
     return redirect(url_for(
         'assinatura_bp.pendente',
@@ -734,3 +791,9 @@ def igrejas():
         whatsapp=whatsapp_number(),
         whatsapp_message=whatsapp_message(),
     )
+
+
+@assinatura_bp.route('/financeiro')
+def financeiro():
+    """Landing pública do módulo financeiro (cachês / caixa da banda)."""
+    return render_template('financeiro.html')

@@ -45,10 +45,13 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="empty">
-        <i class="fas fa-envelope-open"></i>
-        <p class="mb-0" style="font-size: var(--text-base);">Nenhum convite pendente no momento.</p>
-    </div>
+    {% with icon='fa-envelope-open',
+            title='Nenhum convite pendente',
+            text='Quando alguém te convidar para uma banda, o pedido aparece aqui.',
+            cta_url=url_for('bands.list_bands'),
+            cta_label='Ver minhas bandas' %}
+    {% include 'partials/empty_state.html' %}
+    {% endwith %}
     {% endif %}
 </div>
 {% endblock %}

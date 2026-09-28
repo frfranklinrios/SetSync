@@ -9,10 +9,10 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT)
 
-DEMO_USERNAME = 'estudio_teste'
-DEMO_PASSWORD = 'EstudioTeste2026'
-DEMO_EMAIL = 'estudio.teste@setsync.com.br'
-DEMO_DISPLAY = 'Carlos Estúdio'
+DEMO_USERNAME = 'carlos_groove'
+DEMO_PASSWORD = 'UníssonoGroove2026!'
+DEMO_EMAIL = 'carlos.groove@unissono.app'
+DEMO_DISPLAY = 'Carlos Mendes'
 
 STUDIO_NOME = 'Groove Box Ensaios'
 STUDIO_CIDADE = 'Fortaleza'
@@ -125,7 +125,7 @@ def main() -> int:
     studio_id = ensure_studio(owner_id)
 
     print()
-    print('=== Conta estúdio de teste ===')
+    print('=== Conta dono de estúdio (demo) ===')
     print(f'Login:    {DEMO_USERNAME}')
     print(f'Senha:    {DEMO_PASSWORD}')
     print(f'E-mail:   {DEMO_EMAIL}')

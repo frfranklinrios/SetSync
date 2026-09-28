@@ -34,7 +34,20 @@ def _meta_desc(verb: str, obj: str) -> str:
     if 'financeiro da banda' in obj or 'meu financeiro' in obj or 'cachês' in obj:
         return (
             'Acompanhe cachês no Uníssono: Meu financeiro (sua fatia nos shows) e o caixa '
-            'completo da banda para admins, com relatório PDF em A4 retrato.'
+            'da banda com couvert, gorjetas Pix, ensaios e despesas — PDF em A4.'
+        )
+    if 'gorjeta' in obj or ('pix' in obj and 'gorjeta' in f'{verb} {obj}'):
+        return (
+            'Ative gorjeta Pix no show: QR público, 100% na chave da banda (sem comissão), '
+            'repertório e pedidos de música — placar ao vivo no Modo Tocar.'
+        )
+    if 'pedido' in obj and 'música' in obj:
+        return (
+            'O público vê o repertório no QR e pede música; a banda acompanha a fila no Modo Tocar.'
+        )
+    if 'couvert' in obj:
+        return (
+            'Cadastre o couvert/entrada no fechamento de noite e some ao bruto da casa antes da divisão.'
         )
     if 'coleção' in obj or 'colecao' in obj:
         return (
@@ -88,7 +101,8 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
             {
                 'html': (
                     '<p>O Uníssono separa <strong>Meu financeiro</strong> (sua fatia nos shows de todas as bandas) '
-                    'do <strong>financeiro da banda</strong> (caixa completo: cachês, ensaios em estúdio e despesas).</p>'
+                    'do <strong>financeiro da banda</strong> (caixa completo: cachês, couvert, gorjetas Pix, '
+                    'ensaios em estúdio e despesas).</p>'
                 ),
             },
             {
@@ -106,10 +120,43 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
                 'html': (
                     '<ul>'
                     '<li>Só <strong>dono/admin</strong> (ou quem o admin liberar em Integrantes).</li>'
-                    '<li>Cadastre cachê no evento, despesas do mês e exporte PDF.</li>'
+                    '<li>Cadastre cachê e <strong>couvert</strong> no fechamento da noite, despesas do mês e exporte PDF.</li>'
+                    '<li>Acompanhe <strong>gorjetas Pix</strong> ao vivo (100% na chave da banda — sem comissão).</li>'
                     '<li>Músicos sem acesso ao caixa veem apenas a própria fatia no show.</li>'
                     '</ul>'
-                    '<p>Guia na <a href="/ajuda#financeiro-banda">Ajuda → Financeiro</a>.</p>'
+                    '<p>Guia na <a href="/ajuda#financeiro-banda">Ajuda → Financeiro</a> '
+                    'e <a href="/ajuda#gorjeta-pix">Gorjeta Pix</a>.</p>'
+                ),
+            },
+        ]
+
+    if 'gorjeta' in obj or 'pix' in obj or 'pedido de música' in obj or 'pedidos de música' in obj:
+        return [
+            {
+                'html': (
+                    '<p>No show, o público escaneia um QR do Uníssono: manda <strong>Pix direto para a chave '
+                    'da banda</strong> (sem comissão), vê o <strong>repertório</strong> e pode '
+                    '<strong>pedir música</strong>. No Modo Tocar você acompanha o total e a fila ao vivo.</p>'
+                ),
+            },
+            {
+                'h2': 'Como configurar',
+                'html': (
+                    '<ul>'
+                    '<li>Banda → <strong>Configurações → Gorjeta Pix</strong>: chave, link curto e valores sugeridos.</li>'
+                    '<li>Ative a exibição no Modo Tocar e/ou no PDF da setlist.</li>'
+                    '</ul>'
+                ),
+            },
+            {
+                'h2': 'No palco e no QR',
+                'html': (
+                    '<ul>'
+                    '<li>Página pública <code>/gorjeta/seu-slug</code>: aba Pix + aba Repertório/Pedir.</li>'
+                    '<li>Modo Tocar: chip com total de gorjetas e chip de pedidos.</li>'
+                    '<li>O dinheiro já caiu na conta — o app só mostra o placar.</li>'
+                    '</ul>'
+                    '<p>Passo a passo na <a href="/ajuda#gorjeta-pix">Ajuda → Gorjeta Pix</a>.</p>'
                 ),
             },
         ]
@@ -419,6 +466,8 @@ def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
                 '<p>Tela cheia para o palco: seções, modo vocalista, sync entre músicos, '
                 'offline automático da setlist, notas de palco, metrônomo com count-in, '
                 'pedal Bluetooth e auto-scroll. '
+                'Com <strong>Gorjeta Pix</strong> ativa, o rodapé mostra o total ao vivo e a fila de '
+                '<strong>pedidos de música</strong> do público. '
                 'Instale como PWA na tela inicial — ideal no culto ou no ensaio sem internet.</p>'
             ),
         })
@@ -448,6 +497,10 @@ _KEYWORD_PAIRS: list[tuple[str, str]] = [
     ('gerenciar', 'financeiro da banda'),
     ('acompanhar', 'meu financeiro'),
     ('acompanhar', 'cachês'),
+    ('receber', 'gorjeta pix'),
+    ('ativar', 'gorjeta pix'),
+    ('receber', 'pedidos de música'),
+    ('cadastrar', 'couvert no show'),
     ('reservar', 'sala de ensaio'),
     ('buscar', 'estúdio de ensaio'),
     ('cadastrar', 'estúdio de ensaio'),
@@ -505,6 +558,10 @@ _STANDALONE_TOPICS: list[str] = [
     'setlist culto gospel',
     'modo tocar cifras',
     'modo tocar palco',
+    'gorjeta pix banda',
+    'gorjeta pix show',
+    'pedido de música qr code',
+    'couvert banda show',
     'agenda banda louvor',
     'agenda ensaio culto',
     'chord sheet cifra',
@@ -574,7 +631,7 @@ def _premium_faq_block(phrase: str) -> dict[str, Any]:
         'h2': 'Perguntas frequentes',
         'html': (
             '<p><strong>O Uníssono é grátis?</strong> Sim, para começar com banda, repertório e Modo Tocar. '
-            'Trial Pro de 30 dias na primeira banda; estúdios têm trial Premium no primeiro cadastro.</p>'
+            'Trial desligado na 1ª banda — assine Pro para ensaiar; estúdios têm trial Premium no primeiro cadastro.</p>'
             '<p><strong>Preciso instalar app?</strong> Funciona no navegador; instale como PWA. '
             'No Modo Tocar a setlist baixa automaticamente; na banda use Disponibilizar offline para o repertório inteiro.</p>'
             '<p><strong>Plano anual?</strong> Em <a href="/assinatura/planos">Planos</a>, use Mensal/Anual para ver o desconto '
@@ -613,19 +670,31 @@ _COMPARISON_PAGES: dict[str, dict[str, Any]] = {
     'ipraise': {
         'slug': 'ipraise',
         'h1': 'Uníssono vs iPraise',
-        'meta_title': 'Uníssono vs iPraise para bandas',
-        'meta_description': 'iPraise para escalas; Uníssono para cifras, setlists e Modo Tocar com plano Worship.',
+        'meta_title': 'Uníssono vs iPraise — cifras, setlist e escala para bandas',
+        'meta_description': (
+            'iPraise é forte em escalas de igreja. Uníssono une cifras, Modo Tocar, '
+            'Comando do show (escala + freela + cachê) e Individual R$ 15 para quem toca só.'
+        ),
         'sections': [
             {'html': (
-                '<p><strong>iPraise</strong> — escalas e chat. <strong>Uníssono</strong> — cifras, '
-                'setlists e palco, com agenda nos planos pagos.</p>'
+                '<p><strong>iPraise</strong> — escalas e comunicação de equipe. '
+                '<strong>Uníssono</strong> — repertório no palco (cifras, setlists, Modo Tocar) '
+                'com agenda, freela e fechamento de cachê no <em>Comando do show</em>.</p>'
             )},
             {'h2': 'Comparativo', 'html': (
                 '<table><thead><tr><th></th><th>iPraise</th><th>Uníssono</th></tr></thead><tbody>'
-                '<tr><td>Escalas</td><td>Forte</td><td>Agenda Pro/Worship</td></tr>'
-                '<tr><td>Modo Tocar</td><td>Básico</td><td>Tela cheia + offline</td></tr>'
-                '<tr><td>Import Cifra Club</td><td>Não</td><td>Sim</td></tr>'
+                '<tr><td>Escalas</td><td>Forte</td><td>Agenda + Comando do show (Pro/Worship)</td></tr>'
+                '<tr><td>Cifras / setlist</td><td>Limitado</td><td>Nativo · import Cifra Club</td></tr>'
+                '<tr><td>Modo Tocar</td><td>Básico</td><td>Tela cheia + offline (PWA)</td></tr>'
+                '<tr><td>Freela / cachê</td><td>Não</td><td>Convite por link + fechamento da noite</td></tr>'
+                '<tr><td>Músico solo</td><td>—</td><td>Individual R$ 15 (PDF + compartilhar)</td></tr>'
+                '<tr><td>Igreja / várias bandas</td><td>Escalas</td><td>Plano Worship</td></tr>'
                 '</tbody></table>'
+            )},
+            {'h2': 'Quando escolher Uníssono', 'html': (
+                '<p>Se o gargalo é <strong>tocar no tom certo no ensaio e no show</strong>, '
+                'mais do que só escalar quem falta — Uníssono. '
+                'Comece grátis; Individual R$&nbsp;15/mês se toca só; Pro se a banda precisa de escala e PDF.</p>'
             )},
         ],
     },
@@ -712,11 +781,19 @@ def get_seo_page(slug: str) -> dict[str, Any] | None:
 
 
 def faq_entries() -> list[dict[str, str]]:
-    """Perguntas frequentes para schema.org e home."""
+    """Perguntas frequentes para schema.org e home (âncora: banda)."""
     return [
+        {
+            'q': 'O Uníssono é só para bandas?',
+            'a': 'O foco é a banda: cifras, setlists e Modo Tocar. Igreja (Worship) e estúdios de ensaio são extensões — veja unissono.app/igrejas e unissono.app/estudios.',
+        },
         {
             'q': 'O Uníssono serve para compartilhar cifras com a banda?',
             'a': 'Sim. Você centraliza o repertório, convida musicistas por link e todos acessam a mesma versão da cifra, com transposição por cantor e setlists sincronizadas.',
+        },
+        {
+            'q': 'Preciso pagar para começar?',
+            'a': 'Não. O Grátis libera demo e uma abertura do Modo Tocar. Setlist, palco de banda, PDF e offline pedem Pro (R$ 29/mês) ou Individual (R$ 15/mês).',
         },
         {
             'q': 'Como gerenciar várias bandas no Uníssono?',
@@ -748,11 +825,11 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Posso usar cifras offline no celular?',
-            'a': 'Instale o Uníssono como PWA na tela inicial. Na banda, use Disponibilizar offline no repertório; no Modo Tocar, a setlist baixa automaticamente ao abrir — ideal se a internet falhar no culto.',
+            'a': 'Instale o Uníssono como PWA na tela inicial. Na banda, use Disponibilizar offline no repertório; no Modo Tocar, a setlist baixa automaticamente ao abrir — ideal se a internet falhar no show.',
         },
         {
             'q': 'O que é o Modo Tocar?',
-            'a': 'Tela cheia para o palco: cifra legível, seções (S), modo vocalista (P), auto-scroll, metrônomo com count-in, sync entre músicos, offline automático da setlist, notas de palco, pedal Bluetooth e navegação entre músicas da setlist.',
+            'a': 'Tela cheia para o palco: cifra legível, seções (S), auto-scroll, metrônomo com count-in, sync entre músicos, offline automático da setlist, notas de palco, pedal Bluetooth e navegação entre músicas da setlist.',
         },
         {
             'q': 'Como sincronizar a banda no palco?',
@@ -816,7 +893,7 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Quantas músicas posso cadastrar?',
-            'a': 'A coleção pessoal é grátis e ilimitada. No repertório da banda, o plano grátis tem limite (30 músicas); Individual, Pro e Worship liberam o repertório da banda. Compartilhar da coleção com outros ou com a banda exige assinatura.',
+            'a': 'No Grátis: até 3 cifras reais na coleção e 1 abertura do Modo Tocar; na banda, 3 músicas e 2 pessoas, sem setlist. Individual, Pro e Worship liberam o repertório. PDF, offline e Modo Tocar de ensaio exigem assinatura.',
         },
         {
             'q': 'O que é Minha coleção?',
@@ -824,11 +901,27 @@ def faq_entries() -> list[dict[str, str]]:
         },
         {
             'q': 'Como ver meus cachês?',
-            'a': 'No menu Meu financeiro você vê sua fatia nos shows de todas as bandas, com filtro e PDF. O caixa completo da banda (totais e despesas) fica só com o dono/admin ou quem ele liberar.',
+            'a': 'No menu Meu financeiro você vê sua fatia nos shows de todas as bandas, com filtro e PDF. O caixa completo da banda (totais, couvert, gorjetas Pix e despesas) fica só com o dono/admin ou quem ele liberar.',
+        },
+        {
+            'q': 'Como funciona a gorjeta Pix no Uníssono?',
+            'a': 'Em Configurações da banda → Gorjeta Pix você cadastra a chave e um link público. O público escaneia o QR, paga Pix direto na sua chave (100%, sem comissão) e pode pedir música pelo repertório. No Modo Tocar você vê o total e a fila de pedidos ao vivo. Detalhes em /ajuda#gorjeta-pix.',
+        },
+        {
+            'q': 'O Uníssono cobra comissão sobre a gorjeta?',
+            'a': 'Não. O QR é Pix estático na chave da banda — o dinheiro vai inteiro para a conta do músico. O app só registra o placar quando o público confirma “Já paguei” ou quando o admin lança manualmente.',
+        },
+        {
+            'q': 'O público pode pedir música pelo QR?',
+            'a': 'Sim. Na página /gorjeta/seu-slug a aba Repertório lista as músicas da setlist (ou da banda). O visitante toca Pedir ou digita outra música. No Modo Tocar aparece o chip Pedidos com a fila.',
+        },
+        {
+            'q': 'O que é o couvert no fechamento de noite?',
+            'a': 'No Fechamento de noite do show você pode informar o valor de couvert/entrada que ficou com a banda. Esse valor soma ao bruto da casa antes das despesas e da divisão entre músicos.',
         },
         {
             'q': 'Como funciona a cobrança no Uníssono?',
-            'a': 'Ao assinar Pro, Worship, Individual ou Estúdio Premium, você é redirecionado ao Mercado Pago. Lá você autoriza a assinatura recorrente — o Uníssono não armazena dados do seu cartão. O trial de 30 dias é sem cartão.',
+            'a': 'Ao assinar Pro, Worship, Individual ou Estúdio Premium, você é redirecionado ao Mercado Pago. Lá você autoriza a assinatura recorrente — o Uníssono não armazena dados do seu cartão. Gorjeta Pix não passa pelo Mercado Pago: vai direto para a chave da banda.',
         },
         {
             'q': 'É seguro pagar pelo Uníssono?',

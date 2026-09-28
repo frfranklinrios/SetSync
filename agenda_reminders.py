@@ -54,6 +54,13 @@ def verificar_e_enviar_lembretes_agenda() -> int:
         body = _reminder_body(event)
         url_path = f'/agenda/{event_id}'
 
+        skip_wa = False
+        try:
+            from conversion_levers import pode_whatsapp_prep_banda
+            skip_wa = not pode_whatsapp_prep_banda(band_id)
+        except Exception:
+            skip_wa = False
+
         for user_id in get_event_reminder_recipient_ids(event_id, band_id):
             if event_reminder_was_sent(event_id, user_id):
                 continue
@@ -66,6 +73,7 @@ def verificar_e_enviar_lembretes_agenda() -> int:
                     title=title,
                     body=body,
                     url_path=url_path,
+                    skip_whatsapp=skip_wa,
                 )
                 mark_event_reminder_sent(event_id, user_id)
                 sent += 1

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import threading
+import time
 from typing import Any
 from urllib.parse import quote
 
@@ -27,10 +29,23 @@ def api_cifras_base_url() -> str:
     return (os.getenv('API_CIFRAS_URL') or 'http://127.0.0.1:8000').rstrip('/')
 
 
-def _request(method: str, path: str, *, params: dict | None = None, timeout: float = 20.0) -> Any:
+def _request(
+    method: str,
+    path: str,
+    *,
+    params: dict | None = None,
+    json_body: dict | None = None,
+    timeout: float = 20.0,
+) -> Any:
     url = f'{api_cifras_base_url()}{path}'
     try:
-        response = requests.request(method, url, params=params, timeout=timeout)
+        response = requests.request(
+            method,
+            url,
+            params=params,
+            json=json_body,
+            timeout=timeout,
+        )
     except requests.RequestException as exc:
         raise ApiCifrasError(
             'Não foi possível conectar à API de cifras. Verifique se o serviço api-cifras está ativo.'
@@ -38,10 +53,14 @@ def _request(method: str, path: str, *, params: dict | None = None, timeout: flo
 
     if response.status_code == 404:
         raise ApiCifrasError('Cifra não encontrada no cache local.', status_code=404)
+    if response.status_code == 409:
+        raise ApiCifrasError('Já existe um sync em andamento.', status_code=409)
     if response.status_code >= 400:
         detail = response.text[:200] if response.text else response.reason
         raise ApiCifrasError(f'API de cifras respondeu com erro ({response.status_code}): {detail}')
 
+    if not response.content:
+        return {}
     return response.json()
 
 
@@ -140,29 +159,60 @@ def record_to_setsync_package(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def health_check() -> dict[str, Any]:
-    return _request('GET', '/health', timeout=5.0)
+    return _request('GET', '/health', timeout=3.0)
+
+
+_stats_lock = threading.Lock()
+_stats_cache: dict[str, Any] = {'ts': 0.0, 'data': {'available': False}}
+_STATS_TTL_SEC = float(os.getenv('API_CIFRAS_STATS_TTL', '120') or '120')
 
 
 def get_api_cifras_public_stats() -> dict[str, Any]:
     """
     Estatísticas da biblioteca local para exibir no dashboard.
-    Retorna songs_cached ou available=False se a API estiver offline.
+    Cacheia por TTL para não chamar COUNT no SQLite a cada pageview.
     """
+    now = time.monotonic()
+    with _stats_lock:
+        if now - float(_stats_cache['ts']) < _STATS_TTL_SEC:
+            return dict(_stats_cache['data'])
+
     try:
-        data = _request('GET', '/health', timeout=3.0)
+        # /health é leve; disponibilidade sem COUNT.
+        _request('GET', '/health', timeout=2.0)
+        data = _request('GET', '/stats', timeout=12.0)
         count = data.get('songs_cached')
         if count is None:
-            stats = _request('GET', '/stats', timeout=3.0)
-            count = stats.get('songs_cached')
-        if count is None:
-            return {'available': False}
-        n = int(count)
-        return {
-            'available': True,
-            'songs_cached': n,
-            'songs_cached_fmt': f'{n:,}'.replace(',', '.'),
-        }
+            result = {'available': False}
+        else:
+            n = int(count)
+            result = {
+                'available': True,
+                'songs_cached': n,
+                'songs_cached_fmt': f'{n:,}'.replace(',', '.'),
+            }
     except ApiCifrasError:
-        return {'available': False}
+        result = {'available': False}
     except (TypeError, ValueError):
-        return {'available': False}
+        result = {'available': False}
+
+    with _stats_lock:
+        _stats_cache['ts'] = time.monotonic()
+        _stats_cache['data'] = result
+    return dict(result)
+
+
+def get_api_cifras_report() -> dict[str, Any]:
+    """Relatório completo (biblioteca + sync + últimas execuções)."""
+    return _request('GET', '/report', timeout=15.0)
+
+
+def get_api_cifras_sync_status() -> dict[str, Any]:
+    return _request('GET', '/sync/status', timeout=5.0)
+
+
+def start_api_cifras_sync(*, mode: str = 'incremental', limit: int | None = None) -> dict[str, Any]:
+    body: dict[str, Any] = {'mode': mode or 'incremental'}
+    if limit is not None:
+        body['limit'] = int(limit)
+    return _request('POST', '/sync', json_body=body, timeout=10.0)

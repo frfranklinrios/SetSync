@@ -44,7 +44,7 @@ html.studio-finance-print-root.pdfgen main.container {
 
 .studio-finance-print-doc {
     color: var(--sf-ink);
-    font-family: Inter, system-ui, sans-serif;
+    font-family: 'Sora', system-ui, sans-serif;
     font-size: 10.5pt;
     line-height: 1.45;
 }

@@ -86,7 +86,7 @@
 
 <h2 class="mb-1">{% if personal %}{% if welcome %}Adicione sua primeira música{% else %}Nova música na coleção{% endif %}{% elif welcome %}Adicione sua primeira música{% else %}Adicionar Nova Cifra{% endif %}</h2>
 <p class="text-muted mb-4" style="font-size:.875rem;">
-    {% if personal %}Minha coleção · grátis e ilimitada
+    {% if personal %}Minha coleção · até 3 cifras no Grátis
     {% else %}{{ band.name }}{% endif %}
 </p>
 
@@ -110,11 +110,8 @@
     <input type="hidden" name="referencia_json" id="referencia_json_hidden" value="">
 
     <div class="row g-3 mb-3">
-        <div class="col-md-5">
-            <label class="form-label">Título</label>
-            <input type="text" class="form-control" name="titulo" required autofocus
-                   placeholder="Ex: Hotel California">
-        </div>
+        {% set titulo_autofocus = true %}
+        {% include 'cifras/_titulo_com_biblioteca.html' %}
         <div class="col-md-4">
             <label class="form-label">Artista</label>
             <input type="text" class="form-control" name="artista" required
@@ -129,17 +126,6 @@
         <div class="col-md-1">
             <label class="form-label">BPM</label>
             <input type="number" class="form-control" name="bpm" step="0.1" placeholder="120">
-        </div>
-    </div>
-    <div class="mb-3 p-3 border rounded bg-body-secondary bg-opacity-10">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <div>
-                <strong class="d-block">Buscar na biblioteca de cifras</strong>
-                <span class="text-muted small">Preview no popup e importação com um clique{% if not personal %} para {{ band.name }}{% endif %}</span>
-            </div>
-            <button type="button" class="btn btn-primary" data-open-cifra-search>
-                <i class="fas fa-search me-1"></i> Buscar e importar
-            </button>
         </div>
     </div>
 
@@ -177,13 +163,13 @@
     <details class="mb-3">
         <summary class="fw-semibold" style="cursor:pointer;font-size:.875rem;">
             &#128196; Importar arquivos JSON
-            <small class="text-muted ms-1">setsync_cifra / leadsheet</small>
+            <small class="text-muted ms-1">unissono_cifra / leadsheet</small>
         </summary>
         <div class="row g-3 mt-1">
             <div class="col-md-4">
                 <label class="form-label small fw-semibold">Cifra JSON</label>
                 <input type="file" class="form-control form-control-sm" id="upload_cifra" accept=".json">
-                <div class="form-text">setsync_cifra.json &mdash; acordes + letra por segundo</div>
+                <div class="form-text">unissono_cifra.json &mdash; acordes + letra por segundo</div>
                 <div class="form-check mt-2">
                     <input class="form-check-input" type="checkbox" id="timeline_keep_original">
                     <label class="form-check-label" for="timeline_keep_original" style="font-size:.78rem;">
@@ -194,7 +180,7 @@
             <div class="col-md-8">
                 <label class="form-label small fw-semibold">Chord sheet JSON</label>
                 <input type="file" class="form-control form-control-sm" id="upload_grade" accept=".json">
-                <div class="form-text">setsync_grade.json &mdash; chord sheet por compasso</div>
+                <div class="form-text">unissono_grade.json &mdash; chord sheet por compasso</div>
             </div>
         </div>
     </details>
@@ -210,7 +196,7 @@
 <script src="{{ url_for('static', filename='js/grade-visual.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cifraclub-paste.js') }}?v=3"></script>
 <script src="{{ url_for('static', filename='js/cifra-line-parse.js') }}?v=2"></script>
-<script src="{{ url_for('static', filename='js/api-cifras-search.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/api-cifras-search.js') }}?v=4"></script>
 <script src="{{ url_for('static', filename='js/chordpro.js') }}"></script>
 
 <script>
@@ -521,9 +507,4 @@ if (window.SetSyncGradeVisual) {
 }
 </script>
 
-{% include 'cifras/_cifra_search_modal.html' %}
-{% endblock %}
-
-{% block scripts %}
-{% include 'cifras/_cifra_search_scripts.html' %}
 {% endblock %}

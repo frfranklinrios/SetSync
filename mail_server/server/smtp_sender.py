@@ -4,7 +4,13 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr, formatdate, make_msgid
 
-from mail_server.config import DOMAIN, SENDER_NAME, SMTP_CONNECT_HOST, SMTP_SUBMISSION_PORT
+from mail_server.config import (
+    DOMAIN,
+    SENDER_NAME,
+    SMTP_CONNECT_HOST,
+    SMTP_SUBMISSION_PORT,
+    is_local_address,
+)
 from mail_server.server.outbound import deliver_external, get_last_error
 
 logger = logging.getLogger(__name__)
@@ -41,8 +47,8 @@ def send_email(
         msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     msg_str = msg.as_string()
-    local = [r for r in recipients if r.lower().endswith(f"@{DOMAIN}")]
-    external = [r for r in recipients if not r.lower().endswith(f"@{DOMAIN}")]
+    local = [r for r in recipients if is_local_address(r)]
+    external = [r for r in recipients if not is_local_address(r)]
 
     if external:
         if not deliver_external(sender, external, msg_str):

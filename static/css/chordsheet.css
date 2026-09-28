@@ -21,7 +21,7 @@
     --rb-ink: #1c1917;
     --rb-line: #44403c;
     --ss-chord: var(--chord-highlight, #c2410c);
-    --ui-font: "Inter", "Roboto", "SF Pro Text", system-ui, -apple-system, sans-serif;
+    --ui-font: "Sora", "Segoe UI", system-ui, -apple-system, sans-serif;
     --cifra-mono-font: "JetBrains Mono", ui-monospace, "Courier New", Courier, monospace;
     /* Bravura Text: variante do pacote Steinberg para texto + símbolos musicais */
     --sheet-font: "Bravura Text", "Bravura", "Times New Roman", Times, serif;

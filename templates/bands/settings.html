@@ -160,6 +160,84 @@
             </div>
         </div>
 
+        <div class="card mb-4" id="gorjeta">
+            <div class="card-header"><i class="fas fa-qrcode me-1"></i> Gorjeta Pix</div>
+            <div class="card-body">
+                <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+                    QR no Modo Tocar, PDF e link público. O Pix cai <strong>100% na sua chave</strong> — sem comissão do Uníssono.
+                    O app só mostra o placar ao vivo no Financeiro.
+                </p>
+                {% if gorjeta_public_url %}
+                <div class="alert alert-success py-2 small mb-3">
+                    Link público:
+                    <a href="{{ gorjeta_public_url }}" target="_blank" rel="noopener">{{ gorjeta_public_url }}</a>
+                </div>
+                {% endif %}
+                <form method="POST">
+                    {% include 'partials/csrf_input.html' %}
+                    <input type="hidden" name="action" value="save_gorjeta">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="gorjeta_enabled"
+                               name="gorjeta_enabled" value="1"
+                               {% if band.gorjeta_enabled %}checked{% endif %}
+                               title="Liga a página pública /gorjeta e o QR no palco/PDF">
+                        <label class="form-check-label" for="gorjeta_enabled"
+                               title="Liga a página pública /gorjeta e o QR no palco/PDF">Ativar gorjeta digital</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pix_chave" class="form-label"
+                               title="Chave onde o público paga — CPF, e-mail, telefone ou aleatória">Chave Pix</label>
+                        <input type="text" class="form-control" id="pix_chave" name="pix_chave"
+                               value="{{ band.pix_chave or '' }}"
+                               placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                               title="O Pix cai 100% nesta chave — o Uníssono não retém comissão">
+                    </div>
+                    <div class="mb-3">
+                        <label for="gorjeta_slug" class="form-label"
+                               title="Endereço curto da página pública">Link curto</label>
+                        <div class="input-group">
+                            <span class="input-group-text">/gorjeta/</span>
+                            <input type="text" class="form-control" id="gorjeta_slug" name="gorjeta_slug"
+                                   value="{{ gorjeta_slug_default }}" pattern="[a-z0-9][a-z0-9-]{1,40}" required
+                                   title="Só letras minúsculas, números e hífen">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="gorjeta_mensagem" class="form-label"
+                               title="Texto que aparece no Pix e na página do QR">Mensagem no Pix</label>
+                        <input type="text" class="form-control" id="gorjeta_mensagem" name="gorjeta_mensagem"
+                               maxlength="50" value="{{ band.gorjeta_mensagem or '' }}"
+                               placeholder="Obrigado pelo show!">
+                    </div>
+                    <div class="mb-3">
+                        <label for="gorjeta_valores" class="form-label"
+                               title="Botões de valor sugerido na página pública">Valores sugeridos (R$)</label>
+                        <input type="text" class="form-control" id="gorjeta_valores" name="gorjeta_valores"
+                               value="{{ gorjeta_valores_txt }}" placeholder="10, 20, 50"
+                               title="Ex.: 10, 20, 50">
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="gorjeta_show_play"
+                               name="gorjeta_show_play" value="1"
+                               {% if band.gorjeta_show_play is not defined or band.gorjeta_show_play %}checked{% endif %}
+                               title="Mostra o chip Pix e Pedidos no rodapé do Modo Tocar">
+                        <label class="form-check-label" for="gorjeta_show_play"
+                               title="Mostra o chip Pix e Pedidos no rodapé do Modo Tocar">Mostrar no Modo Tocar</label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="gorjeta_show_pdf"
+                               name="gorjeta_show_pdf" value="1"
+                               {% if band.gorjeta_show_pdf is not defined or band.gorjeta_show_pdf %}checked{% endif %}
+                               title="Imprime o QR de gorjeta no rodapé do PDF da setlist">
+                        <label class="form-check-label" for="gorjeta_show_pdf"
+                               title="Imprime o QR de gorjeta no rodapé do PDF da setlist">QR no rodapé do PDF da setlist</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm"
+                            title="Salvar chave Pix, link e opções de exibição">Salvar gorjeta</button>
+                </form>
+            </div>
+        </div>
+
         <div class="card border-danger">
             <div class="card-header text-danger" style="background:rgba(239,68,68,0.05); border-color:rgba(239,68,68,0.3);">
                 <i class="fas fa-exclamation-triangle me-1"></i> Zona de Perigo

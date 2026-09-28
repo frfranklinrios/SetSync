@@ -1,0 +1,88 @@
+{
+  "produtos": [
+    {
+      "id": "mvave-wp9",
+      "sku": "MVAVE-WP9",
+      "titulo": "Transmissor Sem Fio M-Vave WP-9 2.4GHz Guitarra/Baixo",
+      "categoria": "Transmissores",
+      "marca": "M-Vave",
+      "imagem_url": "/produtos/tx-sem-fio-01.jpg",
+      "url": "https://www.aliexpress.com/w/wholesale-m-vave-wp-9-wireless.html",
+      "preco_base_usd": 24.9,
+      "frete_usd": 8.5,
+      "estoque": 18
+    },
+    {
+      "id": "mvave-wp8",
+      "sku": "MVAVE-WP8",
+      "titulo": "Sistema Wireless M-Vave WP-8 com Case de Carga",
+      "categoria": "Transmissores",
+      "marca": "M-Vave",
+      "imagem_url": "/produtos/tx-sem-fio-01.jpg",
+      "url": "https://www.aliexpress.com/w/wholesale-m-vave-wp-8.html",
+      "preco_base_usd": 32.5,
+      "frete_usd": 9.2,
+      "estoque": 11
+    },
+    {
+      "id": "mvave-wp1",
+      "sku": "MVAVE-WP1",
+      "titulo": "Transmissor Sem Fio M-Vave WP-1 Plug and Play",
+      "categoria": "Transmissores",
+      "marca": "M-Vave",
+      "imagem_url": "/produtos/tx-sem-fio-01.jpg",
+      "url": "https://www.aliexpress.com/w/wholesale-m-vave-wp-1.html",
+      "preco_base_usd": 18.9,
+      "frete_usd": 7.8,
+      "estoque": 22
+    },
+    {
+      "id": "correia-vintage-couro",
+      "sku": "STRAP-VINT-01",
+      "titulo": "Correia Vintage de Couro para Guitarra e Baixo",
+      "categoria": "Correias",
+      "marca": "Stage",
+      "imagem_url": "/produtos/correia-vintage-01.jpg",
+      "url": "https://www.aliexpress.com/w/wholesale-vintage-leather-guitar-strap.html",
+      "preco_base_usd": 9.4,
+      "frete_usd": 5.6,
+      "estoque": 40
+    },
+    {
+      "id": "correia-vintage-suede",
+      "sku": "STRAP-VINT-02",
+      "titulo": "Correia Vintage Camurça com Costura Retrô",
+      "categoria": "Correias",
+      "marca": "Stage",
+      "imagem_url": "/produtos/correia-vintage-01.jpg",
+      "url": "https://www.aliexpress.com/w/wholesale-suede-guitar-strap.html",
+      "preco_base_usd": 11.2,
+      "frete_usd": 5.9,
+      "estoque": 28
+    },
+    {
+      "id": "encordoamento-baixo-5c",
+      "sku": "BASS-5C-045",
+      "titulo": "Encordoamento para Baixo 5 Cordas .045–.130 Níquel",
+      "categoria": "Encordoamentos",
+      "marca": "Circuit",
+      "imagem_url": "/produtos/baixo-jazz-01.jpg",
+      "url": "https://www.aliexpress.com/w/wholesale-5-string-bass-guitar-strings.html",
+      "preco_base_usd": 12.8,
+      "frete_usd": 4.9,
+      "estoque": 35
+    },
+    {
+      "id": "encordoamento-baixo-5c-light",
+      "sku": "BASS-5C-040",
+      "titulo": "Encordoamento para Baixo 5 Cordas Super Light .040–.125",
+      "categoria": "Encordoamentos",
+      "marca": "Circuit",
+      "imagem_url": "/produtos/baixo-jazz-01.jpg",
+      "url": "https://www.aliexpress.com/w/wholesale-bass-strings-5-string.html",
+      "preco_base_usd": 13.5,
+      "frete_usd": 4.9,
+      "estoque": 20
+    }
+  ]
+}

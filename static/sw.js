@@ -1,6 +1,6 @@
 // Uníssono service worker — app-shell + offline fallback
 // Bump CACHE_VERSION whenever the app shell changes so old caches are evicted.
-const CACHE_VERSION = 'setsync-v20';
+const CACHE_VERSION = 'setsync-v24';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 
@@ -11,7 +11,6 @@ const APP_SHELL = [
     '/static/logoUnissono.png',
     '/static/logoUnissono-light.png',
     '/static/logoUnissono-icon.png',
-    '/static/logoSetSync.png',
     '/static/icons/icon-192.png',
     '/static/icons/icon-512.png',
     '/static/icons/apple-touch-icon.png',

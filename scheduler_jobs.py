@@ -139,6 +139,11 @@ def run_daily_voucher_jobs() -> None:
     verificar_e_disparar_retencao()
     from studio_onboarding_emails import verificar_e_disparar_onboarding_estudio
     verificar_e_disparar_onboarding_estudio()
+    try:
+        from checkout_recovery import run_checkout_abandoned_reminders
+        run_checkout_abandoned_reminders()
+    except Exception:
+        pass
 
 
 def run_agenda_reminder_jobs() -> None:

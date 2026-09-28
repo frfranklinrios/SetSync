@@ -125,10 +125,11 @@ def clear_knowledge_base_cache() -> None:
 def default_suggestions(limit: int = 6) -> list[str]:
     curated = [
         'Como usar a coleção pessoal de cifras?',
-        'Como compartilhar cifras com a banda?',
+        'Como ativar gorjeta Pix no show?',
         'Como ver meu financeiro e cachês?',
-        'Como indicar e ganhar 3 meses Pro?',
+        'Como o público pede música pelo QR?',
         'Como usar o Modo Tocar no palco?',
+        'Como indicar e ganhar 3 meses Pro?',
         'Como reservar estúdio de ensaio?',
         'Como gerenciar o financeiro do estúdio?',
         'Qual a diferença entre Pro e Worship?',
@@ -205,7 +206,7 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
         else:
             ctas.append({'label': 'Cadastrar estúdio', 'url': url_for('studios.register_studio')})
         ctas.append({'label': 'Buscar estúdios', 'url': url_for('studios.search')})
-    if any(t in q for t in ('financeiro', 'receita', 'despesa', 'faturamento', 'liquido', 'lucro', 'cache', 'cachê')):
+    if any(t in q for t in ('financeiro', 'receita', 'despesa', 'faturamento', 'liquido', 'lucro', 'cache', 'cachê', 'gorjeta', 'pix', 'couvert', 'pedido')):
         from models_studio import list_studios_by_owner
         from db import get_owned_bands, get_user_bands, can_view_band_finance
         owned_studios = list_studios_by_owner(user_id)
@@ -225,6 +226,11 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
                 'label': 'Financeiro da banda',
                 'url': url_for('bands.finance', band_id=finance_band['id']),
             })
+            if any(t in q for t in ('gorjeta', 'pix', 'pedido')):
+                ctas.append({
+                    'label': 'Configurar gorjeta',
+                    'url': url_for('bands.settings', band_id=finance_band['id']),
+                })
         if owned_studios:
             ctas.append({
                 'label': 'Financeiro do estúdio',
@@ -234,6 +240,11 @@ def _chat_ctas(user_id: str | None, query: str) -> list[dict]:
             'label': 'Ajuda financeiro',
             'url': url_for('ajuda.index') + '#financeiro-banda',
         })
+        if any(t in q for t in ('gorjeta', 'pix', 'pedido')):
+            ctas.append({
+                'label': 'Ajuda gorjeta Pix',
+                'url': url_for('ajuda.index') + '#gorjeta-pix',
+            })
         if owned_studios:
             ctas.append({
                 'label': 'Ajuda financeiro estúdio',

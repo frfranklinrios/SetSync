@@ -22,6 +22,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Serviços típicos no compose: `web`, `postgres`, `mail`, `evolution` (WhatsApp), `api-cifras`.
 
+O `api-cifras` usa contexto `../api-cifras` + `additional_contexts` (não mais o home `/root` inteiro). Os dados ficam em `../api-cifras/data` montados no container (já baixados no host — sem copiar). Rebuilds devem levar ~15s.
+
 O app escuta na rede Docker (ex.: porta 5000). Coloque o **Nginx Proxy Manager** (ou Nginx) na frente com HTTPS.
 
 **Não use** o `docker-compose.yml` de desenvolvimento na VPS (ele monta `.:/app` e sobrescreve o código dentro do container).
@@ -91,22 +93,34 @@ Backup: `pg_dump` agendado (não só cópia de arquivo SQLite).
 
 ## 6. E-mail (`contato@unissono.app`)
 
-DNS no Registro.br (ou provedor):
+DNS do domínio `unissono.app` está nos nameservers **GoDaddy** (`ns23/ns24.domaincontrol.com`).
 
 | Tipo | Nome | Valor |
 |------|------|--------|
-| A | `mail` | IP da VPS |
-| MX | `@` | `mail.unissono.app` (prioridade 10) |
-| TXT | `@` | `v=spf1 ip4:IP_DA_VPS -all` |
-| TXT | `unissono._domainkey` | chave DKIM do `mail_server` |
+| A | `mail` | IP da VPS (`84.247.130.61`) |
+| MX | `@` | `mail.unissono.app` (prioridade 10) — opcional se só envia |
+| TXT | `@` | `v=spf1 ip4:IP_DA_VPS a:mail.unissono.app ~all` (**não** cole DKIM aqui) |
+| TXT | `unissono._domainkey` | saída de `python -m mail_server.show_dkim` |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:contato@unissono.app; fo=1` |
 
-Teste:
+Gere os valores oficiais:
+
+```bash
+docker exec setsync-mail python -m mail_server.show_dkim
+docker compose -f docker-compose.prod.yml exec web python3 scripts/check_mail_dns.py
+```
+
+Teste de envio:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec web python3 scripts/send_test_email.py voce@exemplo.com
 ```
 
-> IPs Contabo podem cair em blocklist Microsoft (S3150). Monitore reputação; se Outlook rejeitar, use relay (Zoho/SES) ou peça delist.
+Painel: `/admin/email/dns`.
+
+> **Erros comuns:** TXT do apex com `v=DKIM1` (errado — deve ser SPF); chave DKIM truncada/corrompida; PTR Contabo (`vmi….contaboserver.net`) em vez de `mail.unissono.app`.
+>
+> IPs Contabo podem cair na blocklist Gmail/Outlook (**S3150**). Opções: pedir delist + PTR no painel Contabo, ou relay autenticado via `MAIL_OUTBOUND_RELAY_*` / SMTP externo (Zoho/SES/Brevo).
 
 ## 7. Mercado Pago
 

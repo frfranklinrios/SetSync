@@ -19,8 +19,14 @@ def tracking_requires_consent() -> bool:
     """True se há scripts de rastreamento/anúncios que exigem opt-in."""
     from adsense import adsense_ativo
     from google_ads import google_ads_ativo, google_analytics_ativo
+    from meta_pixel import meta_pixel_ativo
 
-    return adsense_ativo() or google_ads_ativo() or google_analytics_ativo()
+    return (
+        adsense_ativo()
+        or google_ads_ativo()
+        or google_analytics_ativo()
+        or meta_pixel_ativo()
+    )
 
 
 def session_tracking_consent() -> bool | None:

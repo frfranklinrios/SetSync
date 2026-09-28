@@ -17,8 +17,16 @@
 <div class="row justify-content-center">
     <div class="col-lg-7">
         <h2 class="mb-3" style="font-size: var(--text-lg);">
-            {% if event %}Editar evento{% else %}Registrar ensaio ou show{% endif %}
+            {% if event and event.id %}Editar evento
+            {% elif kit_mode %}Marcar o próximo show
+            {% else %}Registrar ensaio ou show{% endif %}
         </h2>
+        {% if kit_mode and not (event and event.id) %}
+        <div class="alert alert-info mb-3" style="font-size: var(--text-sm);">
+            <strong>Comando do show:</strong> depois de salvar, você monta escala, convida freela,
+            vincula setlist e fecha o cachê — tudo num só lugar.
+        </div>
+        {% endif %}
         <div class="card">
             <div class="card-body">
                 <form method="POST">
@@ -27,7 +35,7 @@
                         <label class="form-label" for="title">Título</label>
                         <input type="text" class="form-control" id="title" name="title" required maxlength="120"
                                value="{{ event.title if event else '' }}"
-                               placeholder="Ex.: Ensaio geral, Show sábado">
+                               placeholder="{% if kit_mode or (event and event.event_type == 'show') %}Ex.: Show sábado — Bar do Zé{% else %}Ex.: Ensaio geral, Show sábado{% endif %}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="event_type">Tipo</label>

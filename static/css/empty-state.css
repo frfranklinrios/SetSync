@@ -1,0 +1,41 @@
+/**
+ * Empty state padrão (partials/empty_state.html).
+ */
+.ss-empty {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--bg);
+}
+.ss-empty > i {
+  font-size: 1.75rem;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  display: block;
+}
+.ss-empty-title {
+  font-weight: 700;
+  font-size: var(--text-base);
+  margin-bottom: 0.35rem;
+}
+.ss-empty-text {
+  font-size: var(--text-sm);
+  max-width: 28rem;
+  margin: 0 auto 1rem;
+  line-height: 1.5;
+}
+/* Compat: markup antigo .empty → mesmo visual */
+.empty {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--bg);
+}
+.empty > i {
+  font-size: 1.75rem;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  display: block;
+}

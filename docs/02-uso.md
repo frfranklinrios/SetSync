@@ -10,7 +10,7 @@
 
 1. Abra **Bandas** e crie uma banda
 2. **Membros**: link de convite ou e-mail de quem já tem conta
-3. **Configurações**: cantoras/cantores e dados da banda
+3. **Configurações**: cantoras/cantores, gorjeta Pix e dados da banda
 4. Gerencie **cifras** e **setlists** na página da banda
 
 ## Cifras
@@ -52,10 +52,22 @@ Tela cheia para o palco — abra pela setlist, cifra ou **Tocar setlist** no eve
 - **Offline**: download automático da setlist ao abrir; indicador X/Y prontas
 - **Notas de palco**: cadastre na setlist ou edite no aviso ao trocar de música
 - **Pedal**: mapeamento manual ou assistente (ícone varinha) na barra
+- **Gorjeta Pix** (se ativa): chip no rodapé com total ao vivo; toque abre o QR público
+- **Pedidos de música**: chip Pedidos com a fila do público; Ok / descartar
+
+## Gorjeta Pix e pedidos
+
+1. **Banda → Configurações → Gorjeta Pix**: chave Pix, slug (`/gorjeta/...`), mensagem e valores sugeridos
+2. Público abre o link/QR **sem login**: aba Pix (pagar) e aba Repertório (pedir música)
+3. Pix cai **100% na chave da banda** — sem comissão do Uníssono; o placar é só acompanhamento
+4. **Financeiro da banda**: card Gorjetas ao vivo + registro manual
+5. **Fechamento de noite**: campo **Couvert/entrada** soma ao bruto da casa
+
+Ajuda no app: `/ajuda#gorjeta-pix` e `/ajuda#financeiro-banda`.
 
 ## Ajuda no app
 
-Menu **Ajuda** no site: `/ajuda` — inclui painel/checklist, planos (anual), estúdios Premium, assistente de chat e link para o roadmap (`/roadmap`).
+Menu **Ajuda** no site: `/ajuda` — inclui painel/checklist, planos (anual), estúdios Premium, gorjeta Pix, assistente de chat e link para o roadmap (`/roadmap`).
 
 ## Painel e growth
 

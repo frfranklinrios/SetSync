@@ -59,20 +59,15 @@
     </div>
     {% endif %}
     {% else %}
-    <div class="empty">
-        <i class="fas fa-calendar-alt"></i>
-        <p class="mb-2" style="font-size: var(--text-base);">Nenhum ensaio ou show nas suas bandas.</p>
-        <p class="text-muted small mb-3">
-            Abra uma banda e peça ao administrador para criar eventos na aba <strong>Agenda</strong>,
-            ou crie sua própria banda.
-        </p>
-        <a href="{{ url_for('bands.list_bands') }}" class="btn btn-primary me-2">
-            <i class="fas fa-users me-1"></i> Ver minhas bandas
-        </a>
-        <a href="{{ url_for('bands.create') }}" class="btn btn-outline-secondary">
-            Criar banda
-        </a>
-    </div>
+    {% with icon='fa-calendar-alt',
+            title='Nenhum ensaio ou show nas suas bandas',
+            text='Peça ao admin da banda para criar eventos na Agenda, ou crie sua própria banda.',
+            cta_url=url_for('bands.list_bands'),
+            cta_label='Ver minhas bandas',
+            cta_secondary_url=url_for('bands.create'),
+            cta_secondary_label='Criar banda' %}
+    {% include 'partials/empty_state.html' %}
+    {% endwith %}
     {% endif %}
 </div>
 

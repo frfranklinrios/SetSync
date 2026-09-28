@@ -68,7 +68,15 @@ def is_demo_email(email: str | None) -> bool:
     if e in demo_emails():
         return True
     local, _, domain = e.partition('@')
-    return 'showcase' in local or local.endswith('.showcase')
+    if 'showcase' in local or local.endswith('.showcase'):
+        return True
+    try:
+        from signup_guard import is_blocked_email_domain
+        if is_blocked_email_domain(e):
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def is_demo_manual(user: dict | None) -> bool:

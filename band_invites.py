@@ -35,4 +35,9 @@ def apply_band_invite(user_id: str, band_id: str | None) -> str | None:
     if is_band_member(band_id, user_id):
         return 'already'
     add_band_member(band_id, user_id)
+    try:
+        from demo_onboarding import maybe_trial_on_segundo_membro
+        maybe_trial_on_segundo_membro(band_id)
+    except Exception:
+        pass
     return 'added'

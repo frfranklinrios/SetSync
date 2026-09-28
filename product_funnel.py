@@ -17,6 +17,7 @@ STEPS = (
     'play_mode_real',
     'primeiro_evento_agenda',
     'trial_iniciado',
+    'checkout_iniciado',
     'assinatura_paga',
     'estudio_cadastrado',
     'estudio_reserva_confirmada',
@@ -32,6 +33,7 @@ FUNNEL_LABELS: dict[str, str] = {
     'play_mode_real': 'Tocou cifra real',
     'primeiro_evento_agenda': '1º evento',
     'trial_iniciado': 'Trial Pro',
+    'checkout_iniciado': 'Checkout iniciado',
     'assinatura_paga': 'Assinatura paga',
     'estudio_cadastrado': 'Estúdio cadastrado',
     'estudio_reserva_confirmada': 'Reserva confirmada',
@@ -45,6 +47,7 @@ ACTIVATION_FUNNEL = (
     'primeira_banda',
     'primeira_setlist',
     'trial_iniciado',
+    'checkout_iniciado',
     'assinatura_paga',
 )
 

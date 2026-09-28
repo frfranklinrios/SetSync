@@ -26,12 +26,14 @@
 </div>
 {% endif %}
 
-<form method="get" class="row g-2 mb-4">
+<form method="get" class="row g-2 mb-4" role="search" aria-label="Buscar estúdios">
     <div class="col-md-4">
-        <input type="text" name="cidade" class="form-control" placeholder="Cidade" value="{{ cidade }}">
+        <label class="form-label visually-hidden" for="studio-cidade">Cidade</label>
+        <input type="text" name="cidade" id="studio-cidade" class="form-control" placeholder="Cidade" value="{{ cidade }}" autocomplete="address-level2">
     </div>
     <div class="col-md-4">
-        <input type="text" name="bairro" class="form-control" placeholder="Bairro" value="{{ bairro }}">
+        <label class="form-label visually-hidden" for="studio-bairro">Bairro</label>
+        <input type="text" name="bairro" id="studio-bairro" class="form-control" placeholder="Bairro" value="{{ bairro }}" autocomplete="address-level3">
     </div>
     <div class="col-md-4">
         <button type="submit" class="btn btn-primary w-100">Buscar</button>
@@ -58,12 +60,19 @@
         {% endfor %}
     </div>
     {% else %}
-    <p class="text-muted">Nenhum estúdio encontrado nesta região.</p>
+    {% with icon='fa-map-marker-alt',
+            title='Nenhum estúdio nesta região',
+            text='Tente outra cidade ou cadastre o seu estúdio para receber reservas.',
+            cta_url=url_for('studios.register_studio'),
+            cta_label='Cadastrar meu estúdio' %}
+    {% include 'partials/empty_state.html' %}
+    {% endwith %}
     {% endif %}
 {% else %}
-<div class="alert alert-light border text-muted small">
-    <i class="fas fa-search me-1"></i>
-  Informe pelo menos a <strong>cidade</strong> no campo acima e toque em <strong>Buscar</strong>.
-</div>
+{% with icon='fa-search',
+        title='Busque estúdios perto de você',
+        text='Informe pelo menos a cidade e toque em Buscar para ver salas disponíveis.' %}
+{% include 'partials/empty_state.html' %}
+{% endwith %}
 {% endif %}
 {% endblock %}

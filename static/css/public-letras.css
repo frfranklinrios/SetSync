@@ -24,7 +24,7 @@ html {
 
 body {
   margin: 0;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: 'Sora', system-ui, sans-serif;
   background: var(--pl-bg);
   color: var(--pl-text);
   line-height: 1.5;

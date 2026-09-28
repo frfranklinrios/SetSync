@@ -7,7 +7,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 
 import band_notifications as bn
 from agenda_maps import (
@@ -41,6 +41,7 @@ from models_band_team import (
     add_event_guest,
     ensure_default_band_roles,
     get_assignment_response_stats,
+    get_event_guest,
     get_lineup,
     lineup_assignments,
     list_band_lineups,
@@ -50,10 +51,21 @@ from models_band_team import (
     suggest_scale_assignments,
     users_blocked_on_date,
 )
-from models_setlist import get_band_setlists, get_setlist
+from models_setlist import (
+    clone_setlist,
+    find_suggestable_setlist,
+    get_band_setlists,
+    get_setlist,
+)
 from event_calendar import google_calendar_url, ics_content
-from event_scale_tokens import verify_scale_response_token
-from scale_service import process_scale_response, scale_token_url
+from event_scale_tokens import verify_guest_scale_token, verify_scale_response_token
+from scale_service import (
+    guest_scale_token_url,
+    notify_event_guest,
+    process_guest_scale_response,
+    process_scale_response,
+    scale_token_url,
+)
 from security import build_canonical_url, external_url_for
 from config import app_now_naive, app_now_str
 
@@ -158,6 +170,14 @@ def create(band_id):
     prefill_setlist = request.args.get('setlist_id', '')
 
     if request.method == 'POST':
+        from conversion_levers import pode_criar_evento, resposta_paywall_conversao
+
+        if not pode_criar_evento(band_id):
+            return resposta_paywall_conversao(
+                'No Grátis você cria 1 evento. No Pro a agenda fica ilimitada '
+                'com setlist, PDF e offline no palco.',
+                banda_id=band_id,
+            )
         data = _read_event_form(band_id)
         if not data:
             return render_template(
@@ -178,20 +198,26 @@ def create(band_id):
         log_funnel_step(user_id, 'primeiro_evento_agenda')
         bn.event_created(band_id, user_id, event_id, data['title'], data['event_type'])
         flash(
-            'Evento criado. Use o botão Escalação na lista para definir quem participa.',
+            'Evento criado. Abra o Comando do show: escala, freela, setlist e cachê num só lugar.',
             'success',
         )
-        return redirect(url_for('bands.view', band_id=band_id) + '#tab-agenda')
+        return redirect(url_for('agenda.comando', event_id=event_id))
 
+    kit = request.args.get('kit') == '1'
+    tipo = (request.args.get('tipo') or request.args.get('event_type') or '').strip().lower()
+    default_event = None
+    if tipo in EVENT_TYPES:
+        default_event = {'event_type': tipo, 'title': ''}
     return render_template(
         'agenda/form.html',
         **_form_template_ctx(
             band=band,
             setlists=setlists,
-            event=None,
+            event=default_event,
             prefill_setlist=prefill_setlist,
             event_types=EVENT_TYPES,
             split_event_datetime=split_event_datetime,
+            kit_mode=kit,
         ),
     )
 
@@ -257,6 +283,9 @@ def view(event_id):
     assignments = get_event_assignments(event_id)
     user_assignment = get_user_event_assignment(event_id, user_id)
     guests = list_event_guests(event_id)
+    guest_invite_urls = {
+        str(g['id']): guest_scale_token_url(event_id, g['id']) for g in guests
+    }
     scale_stats = get_assignment_response_stats(event_id)
     gcal_url = google_calendar_url(event, band_name=band.get('name') or '')
     from event_fees import compute_event_fee_split
@@ -269,6 +298,21 @@ def view(event_id):
     can_see_full_fee = can_view_band_finance(band['id'], user_id)
     can_edit_finance = is_band_finance_admin(band['id'], user_id)
     members = get_band_members(band['id'])
+    fee_amount_by_user = {
+        str(line['user_id']): float(line.get('amount') or 0)
+        for line in (fee_lines or [])
+        if line.get('user_id') is not None
+        and (line.get('kind') or '').strip().lower() == 'fixed'
+    }
+    settlement_member_ids = set()
+    if assignments:
+        for a in assignments:
+            if (a.get('response_status') or 'pending') == 'accepted' and a.get('user_id'):
+                settlement_member_ids.add(str(a['user_id']))
+    else:
+        settlement_member_ids = {
+            str(m['user_id']) for m in members if m.get('user_id')
+        }
     if event.get('fee_total') or event_expenses or fee_lines:
         fee_split = compute_event_fee_split(
             event,
@@ -284,15 +328,37 @@ def view(event_id):
                 (p for p in (fee_split.get('payees') or []) if str(p.get('user_id')) == str(user_id)),
                 None,
             )
+            my_amount = (my_payee or {}).get('amount')
+            my_line = next(
+                (ln for ln in (fee_lines or []) if str(ln.get('user_id') or '') == str(user_id)),
+                None,
+            )
+            personally_paid = bool(my_line and my_line.get('paid_at'))
+            is_paid = personally_paid or bool(event.get('fee_settled_at'))
+            wa_text = ''
+            if my_amount and float(my_amount) > 0:
+                from band_finance import fee_share_whatsapp_text
+                wa_text = fee_share_whatsapp_text(
+                    band_name=band.get('name') or 'Banda',
+                    show_title=event.get('title') or 'Show',
+                    date_label=(str(event.get('starts_at') or ''))[:10],
+                    amount=float(my_amount),
+                    status='Recebido' if is_paid else 'A receber',
+                )
             fee_split = {
                 **fee_split,
                 'payees': [my_payee] if my_payee else [],
                 'fixed_payees': [p for p in (fee_split.get('fixed_payees') or []) if str(p.get('user_id')) == str(user_id)],
                 'founder_payees': [p for p in (fee_split.get('founder_payees') or []) if str(p.get('user_id')) == str(user_id)],
                 'personal_only': True,
-                'my_amount': (my_payee or {}).get('amount'),
+                'my_amount': my_amount,
+                'my_paid': is_paid,
+                'fee_line_id': (my_line or {}).get('id'),
+                'wa_text': wa_text,
                 'payees_count': len(fee_split.get('payees') or []),
             }
+    from conversion_levers import trial_opt_in_disponivel
+
     return render_template(
         'agenda/view.html',
         event=event,
@@ -303,13 +369,20 @@ def view(event_id):
         can_edit_finance=can_edit_finance,
         assignments=assignments,
         guests=guests,
+        guest_invite_urls=guest_invite_urls,
         members=members,
+        settlement_member_ids=settlement_member_ids,
         event_expenses=event_expenses,
+        fee_amount_by_user=fee_amount_by_user,
         scale_stats=scale_stats,
         user_assignment=user_assignment,
         user_is_scaled=user_assignment is not None,
         setlist_cifras=setlist_cifras,
         fee_split=fee_split,
+        trial_opt_in_available=bool(can_edit_finance and trial_opt_in_disponivel(band['id'])),
+        pro_checkout_url=url_for(
+            'assinatura_bp.planos', banda_id=band['id'], plano='pro', go=1,
+        ),
         event_type_label=event_type_label(event.get('event_type')),
         format_event_datetime=format_event_datetime,
         user_display_name=user_display_name,
@@ -355,16 +428,21 @@ def save_event_fee(event_id):
         flash('Somente o administrador da banda pode alterar o cachê.', 'warning')
         return redirect(url_for('agenda.view', event_id=event_id))
 
+    from conversion_levers import pode_salvar_fechamento, resposta_paywall_conversao
+
+    if not pode_salvar_fechamento(band['id'], event_id=event_id):
+        return resposta_paywall_conversao(
+            'Você já fechou 1 cachê no Grátis. Assine o Pro para liquidar todos os shows, '
+            'PDF do caixa e offline no palco.',
+            banda_id=band['id'],
+        )
+
     def _parse_money(name):
-        raw = (request.form.get(name) or '').strip().replace(',', '.')
-        if not raw:
-            return None
-        try:
-            return max(0.0, float(raw))
-        except ValueError:
-            return None
+        from band_finance import parse_money_field
+        return parse_money_field(request.form.get(name))
 
     fee_total = _parse_money('fee_total')
+    fee_couvert = _parse_money('fee_couvert')
     fee_transport = _parse_money('fee_transport_discount')
     fee_equipment = _parse_money('fee_equipment_discount')
     fee_notes = (request.form.get('fee_notes') or '').strip() or None
@@ -393,6 +471,8 @@ def save_event_fee(event_id):
         fee_equipment_discount=fee_equipment or 0,
         fee_notes=fee_notes,
         fee_settled=fee_settled,
+        fee_couvert=fee_couvert or 0,
+        update_couvert=True,
     )
 
     event_date = (event.get('starts_at') or '')[:10] or app_now_str()[:10]
@@ -414,17 +494,14 @@ def save_event_fee(event_id):
 
         # Taxas fixas de convidados neste show
         for g in list_event_guests(event_id):
-            raw = (request.form.get(f'guest_fee_{g["id"]}') or '').strip().replace(',', '.')
-            fee = None
-            if raw:
-                try:
-                    fee = max(0.0, float(raw))
-                except ValueError:
-                    fee = None
+            raw = (request.form.get(f'guest_fee_{g["id"]}') or '').strip()
+            from band_finance import parse_money_field
+            fee = parse_money_field(raw)
             set_event_guest_fixed_fee(g['id'], event_id, fee)
 
-        # Overrides de taxa fixa por membro na escala (opcional)
+        # Papel + valor por membro neste show (overrides)
         from db import set_member_settlement_role
+        amount_overrides: dict[str, float] = {}
         for m in get_band_members(band['id']):
             uid = m.get('user_id') or m.get('id')
             if not uid:
@@ -434,23 +511,24 @@ def save_event_fee(event_id):
             if role_key not in request.form and fee_key not in request.form:
                 continue
             role = (request.form.get(role_key) or m.get('settlement_role') or 'founder').strip()
-            raw_fee = (request.form.get(fee_key) or '').strip().replace(',', '.')
-            fee_val = None
-            if raw_fee:
-                try:
-                    fee_val = max(0.0, float(raw_fee))
-                except ValueError:
-                    fee_val = m.get('default_fixed_fee')
-            elif role == 'sideman':
-                fee_val = m.get('default_fixed_fee') or 0
+            raw_fee = (request.form.get(fee_key) or '').strip()
+            from band_finance import parse_money_field
+            fee_val = parse_money_field(raw_fee)
+            if fee_val is not None:
+                amount_overrides[str(uid)] = fee_val
+            # Sideman: grava taxa padrão da banda; fundador não guarda fee permanente
+            sideman_default = fee_val if role == 'sideman' else None
+            if role == 'sideman' and sideman_default is None:
+                sideman_default = m.get('default_fixed_fee') or 0
             set_member_settlement_role(
                 band['id'], uid,
                 settlement_role=role,
-                default_fixed_fee=fee_val if role == 'sideman' else None,
+                default_fixed_fee=sideman_default if role == 'sideman' else None,
             )
 
         event_row = dict(event)
         event_row['fee_total'] = fee_total
+        event_row['fee_couvert'] = fee_couvert or 0
         event_row['fee_transport_discount'] = fee_transport or 0
         event_row['fee_equipment_discount'] = fee_equipment or 0
         settlement = compute_night_settlement(
@@ -461,14 +539,24 @@ def save_event_fee(event_id):
             event_expenses=list_event_expenses(event_id),
             fee_lines=None,
             name_for_user=user_display_name,
+            amount_overrides=amount_overrides or None,
         )
-        if fee_settled:
-            replace_event_fee_lines(event_id, settlement.get('payees') or [])
-        else:
-            clear_event_fee_lines(event_id)
+        # Sempre grava o snapshot da divisão; "liquidado" só marca como pago
+        saved_lines = replace_event_fee_lines(event_id, settlement.get('payees') or [])
+        from models_band_finance import mark_all_event_fee_lines_paid
+        mark_all_event_fee_lines_paid(event_id, paid=bool(fee_settled))
+        _notify_fee_payees(
+            band=band,
+            event=event,
+            actor_user_id=user_id,
+            lines=saved_lines,
+            fee_settled=fee_settled,
+        )
+        if settlement.get('warning'):
+            flash(settlement['warning'], 'warning')
         flash(
             'Fechamento de noite salvo'
-            + (' e liquidação registrada.' if fee_settled else '.'),
+            + (' e marcado como liquidado — músicos avisados.' if fee_settled else '.'),
             'success',
         )
     else:
@@ -478,20 +566,305 @@ def save_event_fee(event_id):
     return redirect(url_for('agenda.view', event_id=event_id))
 
 
+def _notify_fee_payees(*, band, event, actor_user_id, lines, fee_settled: bool) -> None:
+    """Avisa cada músico com valor > 0 sobre a fatia / liquidação."""
+    from db import create_notification
+
+    title_show = (event.get('title') or 'Show').strip()
+    band_name = (band.get('name') or 'Banda').strip()
+    for line in lines or []:
+        uid = line.get('user_id')
+        amount = float(line.get('amount') or 0)
+        if not uid or amount <= 0:
+            continue
+        if str(uid) == str(actor_user_id):
+            continue
+        status = 'liquidado' if (fee_settled or line.get('paid_at')) else 'registrado'
+        try:
+            create_notification(
+                str(uid),
+                band_id=band['id'],
+                actor_user_id=actor_user_id,
+                type='fee_share',
+                title=f'Sua parte · {title_show}',
+                body=(
+                    f'{band_name}: R$ {amount:.2f} ({status}). '
+                    'Abra Meu financeiro para ver o detalhe.'
+                ),
+                url_path='/bands/meus-caches',
+                payload={
+                    'event_id': event.get('id'),
+                    'amount': amount,
+                    'settled': bool(fee_settled),
+                },
+            )
+        except Exception:
+            current_app.logger.exception(
+                'Falha ao notificar fatia user=%s event=%s', uid, event.get('id'),
+            )
+
+
+@agenda_bp.route('/<event_id>/fee-line/<line_id>/pago', methods=['POST'])
+@login_required
+def toggle_fee_line_paid(event_id, line_id):
+    """Admin marca (ou desmarca) pagamento individual de um músico."""
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_finance_admin(band['id'], user_id):
+        flash('Sem permissão.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
+    paid = request.form.get('paid', '1') == '1'
+    from models_band_finance import set_fee_line_paid, list_event_fee_lines
+
+    if not set_fee_line_paid(line_id, paid=paid, event_id=event_id):
+        flash('Linha de cachê não encontrada.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id) + '#fechamento-noite')
+    line = next((ln for ln in list_event_fee_lines(event_id) if ln['id'] == line_id), None)
+    if paid and line and line.get('user_id') and float(line.get('amount') or 0) > 0:
+        _notify_fee_payees(
+            band=band,
+            event=event,
+            actor_user_id=user_id,
+            lines=[line],
+            fee_settled=True,
+        )
+    flash(
+        'Pagamento marcado.' if paid else 'Pagamento desmarcado.',
+        'success',
+    )
+    return redirect(url_for('agenda.view', event_id=event_id) + '#fechamento-noite')
+
+
+@agenda_bp.route('/<event_id>/fee/liquidar-rapido', methods=['POST'])
+@login_required
+def liquidar_noite_rapido(event_id):
+    """1 toque: marca a noite como liquidada com a divisão já salva e avisa a banda."""
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_finance_admin(band['id'], user_id):
+        flash('Sem permissão.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
+    from conversion_levers import pode_salvar_fechamento, resposta_paywall_conversao
+
+    if not pode_salvar_fechamento(band['id'], event_id=event_id):
+        return resposta_paywall_conversao(
+            'Liquidação completa de vários shows faz parte do Pro.',
+            banda_id=band['id'],
+        )
+    from db import update_event_fees
+    from models_band_finance import list_event_fee_lines, mark_all_event_fee_lines_paid
+
+    if not event.get('fee_total'):
+        flash('Salve o fechamento (bruto + divisão) antes de liquidar.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id) + '#fechamento-noite')
+    lines = list_event_fee_lines(event_id)
+    if not lines:
+        flash('Calcule e salve a liquidação antes de marcar como paga.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id) + '#fechamento-noite')
+    update_event_fees(
+        event_id,
+        fee_total=event.get('fee_total'),
+        fee_transport_discount=event.get('fee_transport_discount') or 0,
+        fee_equipment_discount=event.get('fee_equipment_discount') or 0,
+        fee_notes=event.get('fee_notes'),
+        fee_settled=True,
+    )
+    mark_all_event_fee_lines_paid(event_id, paid=True)
+    _notify_fee_payees(
+        band=band,
+        event=event,
+        actor_user_id=user_id,
+        lines=lines,
+        fee_settled=True,
+    )
+    flash('Noite liquidada — músicos avisados no app.', 'success')
+    return redirect(url_for('agenda.view', event_id=event_id) + '#fechamento-noite')
+
+
+@agenda_bp.route('/<event_id>/trial-pro', methods=['POST'])
+@login_required
+def trial_pro_opt_in(event_id):
+    """Trial Pro 7 dias opt-in a partir do fechamento do show."""
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_finance_admin(band['id'], user_id):
+        flash('Sem permissão.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
+    from conversion_levers import iniciar_trial_opt_in, trial_opt_in_disponivel
+    from monetizacao import TRIAL_DIAS
+
+    if not trial_opt_in_disponivel(band['id']):
+        flash('Trial indisponível para esta banda (já usado ou já paga).', 'info')
+        return redirect(url_for('agenda.view', event_id=event_id) + '#fechamento-noite')
+    if iniciar_trial_opt_in(band['id'], user_id):
+        flash(
+            f'Trial Pro de {TRIAL_DIAS} dias ativado — setlist, PDF e offline liberados.',
+            'success',
+        )
+    else:
+        flash('Não foi possível iniciar o trial.', 'warning')
+    return redirect(url_for('agenda.view', event_id=event_id) + '#fechamento-noite')
+
+
+@agenda_bp.route('/<event_id>/comando')
+@login_required
+def comando(event_id):
+    """Checklist único do show: escala, freela, setlist, cachê."""
+    event, band, user_id = _require_event_access(event_id)
+    if not event:
+        abort(404)
+    from event_prep_reminders import event_prep_gaps
+    from models_band_team import list_band_freela_pool
+
+    guests = list_event_guests(event_id)
+    gaps = event_prep_gaps(event)
+    pool = list_band_freela_pool(band['id']) if is_band_editor(band['id'], user_id) else []
+    suggest_setlist = None
+    if gaps.get('missing_setlist') or gaps.get('empty_setlist'):
+        exclude = int(event['setlist_id']) if event.get('setlist_id') else None
+        suggest_setlist = find_suggestable_setlist(band['id'], exclude_setlist_id=exclude)
+    return render_template(
+        'agenda/comando.html',
+        event=event,
+        band=band,
+        gaps=gaps,
+        guests=guests,
+        freela_pool=pool,
+        suggest_setlist=suggest_setlist,
+        can_edit=is_band_editor(band['id'], user_id),
+        format_event_datetime=format_event_datetime,
+        event_type_label=event_type_label(event.get('event_type')),
+        guest_invite_urls={
+            str(g['id']): guest_scale_token_url(event_id, g['id']) for g in guests
+        },
+    )
+
+
+@agenda_bp.route('/<event_id>/setlist/clonar-ultima', methods=['POST'])
+@login_required
+def clone_last_setlist(event_id):
+    """Clona setlist sugerida (último show / mais cheia) e vincula a este evento."""
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_editor(band['id'], user_id):
+        abort(404)
+    source_raw = (request.form.get('source_setlist_id') or '').strip()
+    exclude = int(event['setlist_id']) if event.get('setlist_id') else None
+    if source_raw.isdigit():
+        source = get_setlist(int(source_raw))
+        if not source or source.get('band_id') != band['id']:
+            flash('Setlist de origem inválida.', 'warning')
+            return redirect(url_for('agenda.comando', event_id=event_id))
+        source_id = int(source_raw)
+    else:
+        suggested = find_suggestable_setlist(band['id'], exclude_setlist_id=exclude)
+        if not suggested:
+            flash('Não há setlist anterior com músicas para clonar.', 'info')
+            return redirect(url_for('agenda.comando', event_id=event_id))
+        source_id = int(suggested['id'])
+        source = get_setlist(source_id)
+
+    show_title = (event.get('title') or 'Show').strip()
+    copy_name = f'{source.get("name") or "Setlist"} · {show_title}'[:120]
+    new_id = clone_setlist(source_id, name=copy_name)
+    if not new_id:
+        flash('Não foi possível clonar a setlist.', 'danger')
+        return redirect(url_for('agenda.comando', event_id=event_id))
+
+    update_band_event(
+        event_id,
+        title=event['title'],
+        event_type=event['event_type'],
+        starts_at=event['starts_at'],
+        ends_at=event.get('ends_at'),
+        location=event.get('location'),
+        location_lat=event.get('location_lat'),
+        location_lng=event.get('location_lng'),
+        location_place_id=event.get('location_place_id'),
+        notes=event.get('notes'),
+        setlist_id=new_id,
+    )
+    flash(f'Setlist «{copy_name}» criada e vinculada a este show.', 'success')
+    return redirect(url_for('agenda.comando', event_id=event_id))
+
+
+@agenda_bp.route('/<event_id>/freela-pool/convidar', methods=['POST'])
+@login_required
+def invite_from_pool(event_id):
+    """Reescala freela do pool histórico da banda neste show."""
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_editor(band['id'], user_id):
+        abort(404)
+    from conversion_levers import pode_adicionar_freela, resposta_paywall_conversao
+
+    if not pode_adicionar_freela(event_id, band['id']):
+        return resposta_paywall_conversao(
+            'No Grátis: 1 freela por show. Pro libera o pool completo.',
+            banda_id=band['id'],
+        )
+    name = (request.form.get('guest_name') or '').strip()
+    phone = (request.form.get('guest_phone') or '').strip() or None
+    role = (request.form.get('guest_role') or '').strip() or None
+    if not name:
+        flash('Nome obrigatório.', 'warning')
+        return redirect(url_for('agenda.comando', event_id=event_id))
+    existing = list_event_guests(event_id)
+    for g in existing:
+        same_phone = phone and (g.get('phone') or '') == phone
+        same_name = (g.get('name') or '').strip().lower() == name.lower()
+        if same_phone or (same_name and not phone):
+            flash(f'{name} já está neste show.', 'info')
+            return redirect(url_for('agenda.comando', event_id=event_id))
+    guest_id = add_event_guest(
+        event_id, name=name, phone=phone, role_label=role, invited_by=user_id,
+    )
+    guest = get_event_guest(guest_id) or {
+        'id': guest_id, 'name': name, 'phone': phone, 'role_label': role,
+    }
+    invite = notify_event_guest(
+        event=event, guest=guest, actor_user_id=user_id, band_name=band.get('name'),
+    )
+    if invite.get('whatsapp_sent'):
+        flash(f'{name} reconvidado — WhatsApp enviado.', 'success')
+    else:
+        flash(f'{name} adicionado. Copie o link no Comando do show se preciso.', 'info')
+    return redirect(url_for('agenda.comando', event_id=event_id))
+
+
 @agenda_bp.route('/<event_id>/convidado', methods=['POST'])
 @login_required
 def add_guest(event_id):
     event, band, user_id = _require_event_access(event_id)
     if not event or not is_band_editor(band['id'], user_id):
         abort(404)
+    from conversion_levers import pode_adicionar_freela, resposta_paywall_conversao
+
+    if not pode_adicionar_freela(event_id, band['id']):
+        return resposta_paywall_conversao(
+            'No Grátis: 1 freela por show. Pro libera convidados ilimitados + PDF e offline.',
+            banda_id=band['id'],
+        )
     name = (request.form.get('guest_name') or '').strip()
     phone = (request.form.get('guest_phone') or '').strip() or None
     role = (request.form.get('guest_role') or '').strip() or None
     if not name:
         flash('Informe o nome do convidado.', 'warning')
         return redirect(url_for('agenda.view', event_id=event_id))
-    add_event_guest(event_id, name=name, phone=phone, role_label=role, invited_by=user_id)
-    flash('Convidado adicionado à escalação.', 'success')
+    guest_id = add_event_guest(
+        event_id, name=name, phone=phone, role_label=role, invited_by=user_id,
+    )
+    guest = get_event_guest(guest_id) or {'id': guest_id, 'name': name, 'phone': phone, 'role_label': role}
+    invite = notify_event_guest(
+        event=event, guest=guest, actor_user_id=user_id, band_name=band.get('name'),
+    )
+    if invite.get('whatsapp_sent'):
+        flash('Freela adicionado — convite enviado por WhatsApp com link de confirmação.', 'success')
+    elif invite.get('has_phone'):
+        flash(
+            'Freela adicionado. Não foi possível enviar o WhatsApp agora — use «Reenviar» ou copie o link.',
+            'warning',
+        )
+    else:
+        flash(
+            'Freela adicionado. Informe o WhatsApp ou copie o link de confirmação na lista.',
+            'info',
+        )
     return redirect(url_for('agenda.view', event_id=event_id))
 
 
@@ -503,6 +876,28 @@ def remove_guest(event_id, guest_id):
         abort(404)
     remove_event_guest(guest_id)
     flash('Convidado removido.', 'info')
+    return redirect(url_for('agenda.view', event_id=event_id))
+
+
+@agenda_bp.route('/<event_id>/convidado/<guest_id>/reenviar', methods=['POST'])
+@login_required
+def resend_guest_invite(event_id, guest_id):
+    event, band, user_id = _require_event_access(event_id)
+    if not event or not is_band_editor(band['id'], user_id):
+        abort(404)
+    guest = get_event_guest(guest_id)
+    if not guest or str(guest.get('event_id')) != str(event_id):
+        flash('Convidado não encontrado.', 'warning')
+        return redirect(url_for('agenda.view', event_id=event_id))
+    invite = notify_event_guest(
+        event=event, guest=guest, actor_user_id=user_id, band_name=band.get('name'),
+    )
+    if invite.get('whatsapp_sent'):
+        flash('Convite reenviado por WhatsApp.', 'success')
+    elif invite.get('has_phone'):
+        flash('Falha ao enviar WhatsApp. Copie o link abaixo e envie manualmente.', 'warning')
+    else:
+        flash('Sem WhatsApp cadastrado — copie o link de confirmação.', 'info')
     return redirect(url_for('agenda.view', event_id=event_id))
 
 
@@ -744,6 +1139,77 @@ def respond_scale_token(token):
         already_responded=st != 'pending',
         format_event_datetime=format_event_datetime,
         user_display_name=user_display_name,
+    )
+
+
+
+@agenda_bp.route('/freela/responder/<token>', methods=['GET', 'POST'])
+def respond_guest_token(token):
+    """Aceitar ou recusar convite de freela/convidado via link (sem login)."""
+    parsed = verify_guest_scale_token(token)
+    if not parsed:
+        return render_template('agenda/scale_token_invalid.html'), 400
+    event_id, guest_id = parsed
+    event = get_band_event(event_id)
+    if not event:
+        return render_template('agenda/scale_token_invalid.html'), 404
+    band = get_band(event['band_id'])
+    guest = get_event_guest(guest_id)
+    if not guest or str(guest.get('event_id')) != str(event_id):
+        return render_template('agenda/scale_token_invalid.html'), 404
+
+    if request.method == 'GET':
+        action = (request.args.get('action') or '').strip().lower()
+        if action == 'accept':
+            updated = process_guest_scale_response(event_id, guest_id, accepted=True)
+            if updated:
+                return render_template(
+                    'agenda/guest_token_result.html',
+                    event=event,
+                    band=band,
+                    guest=updated,
+                    accepted=True,
+                    format_event_datetime=format_event_datetime,
+                )
+        elif action == 'decline':
+            return render_template(
+                'agenda/guest_token_decline.html',
+                event=event,
+                band=band,
+                guest=guest,
+                token=token,
+                format_event_datetime=format_event_datetime,
+            )
+
+    if request.method == 'POST':
+        action = (request.form.get('action') or '').strip().lower()
+        note = (request.form.get('note') or '').strip()
+        if action not in ('accept', 'decline'):
+            flash('Resposta inválida.', 'warning')
+            return redirect(guest_scale_token_url(event_id, guest_id))
+        updated = process_guest_scale_response(
+            event_id, guest_id, accepted=(action == 'accept'), note=note,
+        )
+        if not updated:
+            return render_template('agenda/scale_token_invalid.html'), 400
+        return render_template(
+            'agenda/guest_token_result.html',
+            event=event,
+            band=band,
+            guest=updated,
+            accepted=(action == 'accept'),
+            format_event_datetime=format_event_datetime,
+        )
+
+    st = (guest.get('response_status') or 'pending').lower()
+    return render_template(
+        'agenda/guest_token.html',
+        event=event,
+        band=band,
+        guest=guest,
+        token=token,
+        already_responded=st != 'pending',
+        format_event_datetime=format_event_datetime,
     )
 
 

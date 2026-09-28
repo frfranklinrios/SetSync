@@ -1,0 +1,21 @@
+{% extends "index.html" %}
+{% block title %}Resposta registrada · Uníssono{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body text-center py-4">
+        {% if accepted %}
+        <p class="text-success mb-2" style="font-size:2rem;"><i class="fas fa-check-circle"></i></p>
+        <h2 class="h5">Presença confirmada</h2>
+        <p class="text-muted mb-0">{{ guest.name }} — {{ event.title }} · {{ format_event_datetime(event.starts_at) }}</p>
+        {% else %}
+        <p class="text-danger mb-2" style="font-size:2rem;"><i class="fas fa-times-circle"></i></p>
+        <h2 class="h5">Convite recusado</h2>
+        <p class="text-muted mb-0">A banda {{ band.name if band else '' }} foi avisada.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -111,7 +111,7 @@ Exemplos comuns:
 
 | Plano | Preço | Limites |
 |-------|-------|---------|
-| Grátis | R$ 0 | 30 músicas, 5 integrantes, 10 setlists, 1 banda (owner) |
+| Grátis | R$ 0 | 15 músicas, 3 integrantes, 5 setlists, 1 banda (owner); PDF/offline/compartilhar no pago |
 | Pro | R$ 29/banda/mês | Sem limites + PDF |
 | Worship | R$ 69/congregação/mês | Múltiplas bandas, sem limites |
 

@@ -17,11 +17,20 @@ def _money(v: Any) -> float:
 
 
 def parse_money_field(raw: str | None) -> float | None:
+    """Aceita 1500, 1500.50, 1.500,00 ou 1500,00."""
     if raw is None:
         return None
-    s = str(raw).strip().replace(',', '.')
+    s = str(raw).strip()
     if not s:
         return None
+    s = s.replace('R$', '').replace(' ', '').strip()
+    if not s:
+        return None
+    if ',' in s and '.' in s:
+        # 1.500,00 → milhar com ponto, decimal com vírgula
+        s = s.replace('.', '').replace(',', '.')
+    elif ',' in s:
+        s = s.replace(',', '.')
     try:
         return max(0.0, float(s))
     except ValueError:

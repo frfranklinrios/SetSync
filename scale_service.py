@@ -173,6 +173,8 @@ def cascade_substitute_on_decline(event: dict, assignment: dict, declined_user_i
     band_name = band.get('name') or 'Banda'
     declined_name = user_display_name(get_user(declined_user_id))
     notified = 0
+    from whatsapp_service import is_configured as wa_configured, send_whatsapp_text
+
     for sub in subs:
         uid = sub['user_id']
         if uid in assigned_ids or uid in blocked:
@@ -188,7 +190,31 @@ def cascade_substitute_on_decline(event: dict, assignment: dict, declined_user_i
                 'Você está na lista de reserva — confirme se pode substituir.'
             ),
             url_path=f'/agenda/{event["id"]}',
+            skip_whatsapp=True,
         )
+        user = get_user(uid)
+        if user and wa_configured():
+            phone = user.get('phone') or ''
+            from db import user_wants_whatsapp_notifications
+            if phone and user_wants_whatsapp_notifications(user):
+                try:
+                    wa = build_scale_whatsapp_body(
+                        band_name=band_name,
+                        actor_name=declined_name,
+                        event_title=event['title'],
+                        when=str(event.get('starts_at') or ''),
+                        event_id=event['id'],
+                        user_id=uid,
+                        role_label=role,
+                    )
+                    send_whatsapp_text(
+                        phone,
+                        f'*Uníssono*\n\n*Vaga na escala ({role})*\n\n'
+                        f'{declined_name} recusou. Você está na reserva.\n\n{wa}',
+                        link_preview=False,
+                    )
+                except Exception:
+                    logger.exception('WhatsApp reserva para %s', uid)
         notified += 1
         break
     return notified
@@ -215,3 +241,133 @@ def apply_substitute_to_event(
     assignments.append({'user_id': user_id, 'role_label': role_label})
     set_event_assignments(event_id, assignments, assigned_by=assigned_by)
     return True
+
+
+def guest_scale_token_url(event_id: str, guest_id: str) -> str:
+    from event_scale_tokens import make_guest_scale_token
+
+    token = make_guest_scale_token(event_id, guest_id)
+    return external_url_for('agenda.respond_guest_token', token=token)
+
+
+def guest_scale_one_tap_url(event_id: str, guest_id: str, *, accept: bool) -> str:
+    from event_scale_tokens import make_guest_scale_token
+
+    token = make_guest_scale_token(event_id, guest_id)
+    action = 'accept' if accept else 'decline'
+    return external_url_for('agenda.respond_guest_token', token=token, action=action)
+
+
+def build_guest_whatsapp_body(
+    *,
+    band_name: str,
+    actor_name: str,
+    event_title: str,
+    when: str,
+    event_id: str,
+    guest_id: str,
+    guest_name: str,
+    role_label: str | None = None,
+) -> str:
+    role_part = f' ({role_label})' if role_label else ''
+    accept_url = guest_scale_one_tap_url(event_id, guest_id, accept=True)
+    decline_url = guest_scale_one_tap_url(event_id, guest_id, accept=False)
+    page_url = guest_scale_token_url(event_id, guest_id)
+    lines = [
+        f'Olá, {guest_name}!',
+        f'{actor_name} te convidou como freela para «{event_title}»{role_part} em {band_name}.',
+        f'Quando: {when}',
+        '',
+        f'✅ Aceitar: {accept_url}',
+        f'❌ Recusar: {decline_url}',
+        '',
+        f'Ou abra: {page_url}',
+    ]
+    return '\n'.join(lines)
+
+
+def notify_event_guest(
+    *,
+    event: dict,
+    guest: dict,
+    actor_user_id: str,
+    band_name: str | None = None,
+) -> dict:
+    """Envia WhatsApp (se telefone) e retorna info do convite (sempre com link)."""
+    from agenda_util import format_event_datetime
+    from db import get_band, get_user, user_display_name
+    from whatsapp_service import is_configured, send_whatsapp_text
+
+    event_id = event['id']
+    guest_id = guest['id']
+    band = get_band(event['band_id']) or {}
+    name_band = band_name or band.get('name') or 'Banda'
+    actor = get_user(actor_user_id)
+    actor_name = user_display_name(actor) if actor else 'A banda'
+    when_fmt = format_event_datetime(event.get('starts_at'))
+    page_url = guest_scale_token_url(event_id, guest_id)
+    wa_sent = False
+    phone = (guest.get('phone') or '').strip()
+    if phone and is_configured():
+        title = f'{name_band} — convite de show'
+        wa_body = build_guest_whatsapp_body(
+            band_name=name_band,
+            actor_name=actor_name,
+            event_title=event['title'],
+            when=when_fmt,
+            event_id=event_id,
+            guest_id=guest_id,
+            guest_name=guest.get('name') or 'músico',
+            role_label=guest.get('role_label'),
+        )
+        try:
+            wa_sent = bool(
+                send_whatsapp_text(phone, f'*Uníssono*\n\n*{title}*\n\n{wa_body}', link_preview=False)
+            )
+        except Exception:
+            logger.exception('WhatsApp convite freela guest=%s', guest_id)
+            wa_sent = False
+    return {
+        'url': page_url,
+        'whatsapp_sent': wa_sent,
+        'has_phone': bool(phone),
+    }
+
+
+def process_guest_scale_response(
+    event_id: str,
+    guest_id: str,
+    *,
+    accepted: bool,
+    note: str | None = None,
+) -> dict | None:
+    """Registra resposta do freela e avisa quem convidou."""
+    from models_agenda import get_band_event
+    from models_band_team import get_event_guest, respond_event_guest
+
+    guest = get_event_guest(guest_id)
+    if not guest or str(guest.get('event_id')) != str(event_id):
+        return None
+    updated = respond_event_guest(guest_id, accepted=accepted, note=note)
+    if not updated:
+        return None
+    event = get_band_event(event_id)
+    if not event:
+        return updated
+    invited_by = guest.get('invited_by')
+    if invited_by:
+        status_txt = 'confirmou' if accepted else 'recusou'
+        create_notification(
+            invited_by,
+            band_id=event['band_id'],
+            actor_user_id=None,
+            type='event_guest_response',
+            title=f'Freela {status_txt} — {event["title"]}',
+            body=(
+                f'{guest.get("name") or "Convidado"} {status_txt} o convite'
+                + (f' ({guest.get("role_label")})' if guest.get('role_label') else '')
+                + '.'
+            ),
+            url_path=f'/agenda/{event_id}',
+        )
+    return updated

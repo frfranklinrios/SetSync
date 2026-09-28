@@ -19,20 +19,20 @@
             </ul>
             <div class="home-estudio-preview" aria-hidden="false">
                 <button type="button" class="home-estudio-shot home-estudio-shot--mobile"
-                        data-lightbox-src="{{ url_for('static', filename='screenshots/estudio-painel-mobile.png') }}"
+                        data-lightbox-src="{{ marketing_shot_url(marketing_pack_estudio, 'estudio-painel-mobile') }}"
                         data-lightbox-alt="Painel do estúdio no celular — salas e QR de agendamento"
                         data-lightbox-caption="Painel no celular — salas e QR"
                         aria-label="Ampliar painel no celular">
-                    <img src="{{ url_for('static', filename='screenshots/estudio-painel-mobile.png') }}"
+                    <img src="{{ marketing_shot_url(marketing_pack_estudio, 'estudio-painel-mobile') }}"
                          alt="" width="478" height="785" loading="lazy" decoding="async">
                     <span>Painel no celular</span>
                 </button>
                 <button type="button" class="home-estudio-shot home-estudio-shot--desktop"
-                        data-lightbox-src="{{ url_for('static', filename='screenshots/estudio-financeiro-desktop.png') }}"
+                        data-lightbox-src="{{ marketing_shot_url(marketing_pack_estudio, 'estudio-financeiro-desktop') }}"
                         data-lightbox-alt="Financeiro do estúdio — receita, reservas e despesas"
                         data-lightbox-caption="Financeiro — receita, reservas e despesas"
                         aria-label="Ampliar financeiro no painel">
-                    <img src="{{ url_for('static', filename='screenshots/estudio-financeiro-desktop.png') }}"
+                    <img src="{{ marketing_shot_url(marketing_pack_estudio, 'estudio-financeiro-desktop') }}"
                          alt="" width="2640" height="1422" loading="lazy" decoding="async">
                     <span>Financeiro no painel</span>
                 </button>

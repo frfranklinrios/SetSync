@@ -562,6 +562,165 @@ body.play-mode {
     color: #64748b;
 }
 
+/* Gorjeta ao vivo no rodapé do palco */
+.play-tip-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+    margin-left: 0.35rem;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 650;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    color: #052e1a;
+    background: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.55);
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45);
+    transition: transform 0.15s ease, box-shadow 0.35s ease, background 0.2s ease;
+}
+.play-tip-chip:hover,
+.play-tip-chip:focus-visible {
+    color: #052e1a;
+    background: #6ee7b7;
+    outline: none;
+}
+.play-tip-label {
+    opacity: 0.85;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+}
+.play-tip-total {
+    font-variant-numeric: tabular-nums;
+}
+.play-tip-chip.is-bump {
+    animation: play-tip-bump 0.7s ease;
+}
+@keyframes play-tip-bump {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+    35% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); background: #a7f3d0; }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+[data-theme="light"] .play-tip-chip {
+    background: #059669;
+    color: #ecfdf5;
+    border-color: #047857;
+}
+[data-theme="light"] .play-tip-chip:hover,
+[data-theme="light"] .play-tip-chip:focus-visible {
+    background: #10b981;
+    color: #ecfdf5;
+}
+
+.play-tip-chip,
+.play-req-chip {
+    position: relative;
+}
+.play-req-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    margin-left: 0.25rem;
+    padding: 0.28rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(251, 191, 36, 0.55);
+    background: #fbbf24;
+    color: #422006;
+    font-weight: 700;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+.play-tip-chip[data-tip]::after,
+.play-req-chip[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    white-space: nowrap;
+    max-width: min(18rem, 70vw);
+    padding: 0.35rem 0.55rem;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.25;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 80;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.play-tip-chip[data-tip]:hover::after,
+.play-tip-chip[data-tip]:focus-visible::after,
+.play-req-chip[data-tip]:hover::after,
+.play-req-chip[data-tip]:focus-visible::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+@media (hover: none) {
+    .play-tip-chip[data-tip]::after,
+    .play-req-chip[data-tip]::after { display: none; }
+}
+.play-req-chip.d-none { display: none !important; }
+#play-requests-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 4.2rem;
+    transform: translateX(-50%);
+    width: min(22rem, calc(100vw - 1.5rem));
+    max-height: 42vh;
+    overflow: auto;
+    z-index: 60;
+    background: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 12px;
+    padding: 0.75rem;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+#play-requests-panel.d-none { display: none !important; }
+.play-requests-hd {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.play-requests-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.play-requests-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(148,163,184,0.2);
+    font-size: 0.85rem;
+}
+.play-requests-list li:last-child { border-bottom: 0; }
+.play-requests-meta { color: #94a3b8; font-size: 0.75rem; }
+.play-requests-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+.play-requests-actions button {
+    border: 0;
+    border-radius: 6px;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+.play-req-done { background: #34d399; color: #052e1a; }
+.play-req-dismiss { background: #334155; color: #e2e8f0; }
+
 /* ── SETLIST DRAWER ─────────────────────── */
 #drawer-overlay {
     display: none;

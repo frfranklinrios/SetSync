@@ -880,9 +880,69 @@ def _migrate_band_finance_schema(c) -> None:
         'CREATE INDEX IF NOT EXISTS idx_band_event_fee_lines_event '
         'ON band_event_fee_lines(event_id)'
     )
+    add_column_if_missing(c, 'band_event_fee_lines', 'paid_at', 'TIMESTAMP')
     c.execute(
         'CREATE INDEX IF NOT EXISTS idx_band_expenses_event '
         'ON band_expenses(event_id)'
+    )
+    # Gorjeta Pix (100% na chave do músico) + couvert da noite
+    add_column_if_missing(c, 'bands', 'pix_chave', 'TEXT')
+    add_column_if_missing(c, 'bands', 'gorjeta_slug', 'TEXT')
+    add_column_if_missing(c, 'bands', 'gorjeta_mensagem', 'TEXT')
+    add_column_if_missing(c, 'bands', 'gorjeta_enabled', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, 'bands', 'gorjeta_show_play', 'INTEGER NOT NULL DEFAULT 1')
+    add_column_if_missing(c, 'bands', 'gorjeta_show_pdf', 'INTEGER NOT NULL DEFAULT 1')
+    add_column_if_missing(c, 'bands', 'gorjeta_valores', 'TEXT')
+    add_column_if_missing(c, 'band_events', 'fee_couvert', 'REAL')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_gorjetas (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            event_id TEXT,
+            valor REAL NOT NULL,
+            nota TEXT,
+            source TEXT NOT NULL DEFAULT 'public',
+            created_by_user_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
+            FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE SET NULL
+        )
+    ''')
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_band_gorjetas_band_created '
+        'ON band_gorjetas(band_id, created_at DESC)'
+    )
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_band_gorjetas_event '
+        'ON band_gorjetas(event_id)'
+    )
+    c.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_bands_gorjeta_slug '
+        'ON bands(gorjeta_slug)'
+    )
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS band_song_requests (
+            id TEXT PRIMARY KEY,
+            band_id TEXT NOT NULL,
+            setlist_id TEXT,
+            event_id TEXT,
+            cifra_id TEXT,
+            titulo TEXT NOT NULL,
+            artista TEXT,
+            requester_name TEXT,
+            nota TEXT,
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_song_requests_band_status '
+        'ON band_song_requests(band_id, status, created_at DESC)'
+    )
+    c.execute(
+        'CREATE INDEX IF NOT EXISTS idx_song_requests_event '
+        'ON band_song_requests(event_id, created_at DESC)'
     )
 
 
@@ -2326,6 +2386,280 @@ def update_band(band_id, name, description, **_ignored):
     db.close()
 
 
+def update_band_gorjeta(
+    band_id: str,
+    *,
+    pix_chave: str | None,
+    gorjeta_slug: str | None,
+    gorjeta_mensagem: str | None,
+    gorjeta_enabled: bool,
+    gorjeta_show_play: bool = True,
+    gorjeta_show_pdf: bool = True,
+    gorjeta_valores: str | None = None,
+) -> None:
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE bands
+           SET pix_chave=?, gorjeta_slug=?, gorjeta_mensagem=?,
+               gorjeta_enabled=?, gorjeta_show_play=?, gorjeta_show_pdf=?,
+               gorjeta_valores=?
+           WHERE id=?''',
+        (
+            (pix_chave or '').strip() or None,
+            (gorjeta_slug or '').strip().lower() or None,
+            (gorjeta_mensagem or '').strip() or None,
+            1 if gorjeta_enabled else 0,
+            1 if gorjeta_show_play else 0,
+            1 if gorjeta_show_pdf else 0,
+            (gorjeta_valores or '').strip() or None,
+            band_id,
+        ),
+    )
+    db.commit()
+    db.close()
+
+
+def get_band_by_gorjeta_slug(slug: str) -> dict | None:
+    slug = (slug or '').strip().lower()
+    if not slug:
+        return None
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        'SELECT * FROM bands WHERE lower(gorjeta_slug) = ? AND gorjeta_enabled = 1',
+        (slug,),
+    )
+    row = c.fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def create_band_gorjeta(
+    band_id: str,
+    *,
+    valor: float,
+    event_id: str | None = None,
+    nota: str | None = None,
+    source: str = 'public',
+    created_by_user_id: str | None = None,
+) -> str:
+    tip_id = str(uuid.uuid4())
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO band_gorjetas
+           (id, band_id, event_id, valor, nota, source, created_by_user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        (
+            tip_id,
+            band_id,
+            event_id or None,
+            float(valor),
+            (nota or '').strip()[:200] or None,
+            (source or 'public')[:20],
+            created_by_user_id,
+        ),
+    )
+    db.commit()
+    db.close()
+    return tip_id
+
+
+def list_band_gorjetas(
+    band_id: str,
+    *,
+    event_id: str | None = None,
+    from_date: str | None = None,
+    to_date: str | None = None,
+    limit: int = 200,
+) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    clauses = ['band_id = ?']
+    params: list = [band_id]
+    if event_id:
+        clauses.append('event_id = ?')
+        params.append(event_id)
+    if from_date:
+        clauses.append('created_at >= ?')
+        params.append(f'{from_date[:10]} 00:00:00')
+    if to_date:
+        clauses.append('created_at <= ?')
+        params.append(f'{to_date[:10]} 23:59:59')
+    params.append(int(limit))
+    c.execute(
+        f'''SELECT * FROM band_gorjetas
+            WHERE {' AND '.join(clauses)}
+            ORDER BY created_at DESC
+            LIMIT ?''',
+        params,
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def sum_band_gorjetas(
+    band_id: str,
+    *,
+    event_id: str | None = None,
+    from_date: str | None = None,
+    to_date: str | None = None,
+) -> float:
+    db = get_db()
+    c = db.cursor()
+    clauses = ['band_id = ?']
+    params: list = [band_id]
+    if event_id:
+        clauses.append('event_id = ?')
+        params.append(event_id)
+    if from_date:
+        clauses.append('created_at >= ?')
+        params.append(f'{from_date[:10]} 00:00:00')
+    if to_date:
+        clauses.append('created_at <= ?')
+        params.append(f'{to_date[:10]} 23:59:59')
+    c.execute(
+        f'SELECT COALESCE(SUM(valor), 0) AS total FROM band_gorjetas WHERE {" AND ".join(clauses)}',
+        params,
+    )
+    row = c.fetchone()
+    db.close()
+    try:
+        return round(float(row['total'] if row else 0), 2)
+    except (TypeError, ValueError, KeyError):
+        return 0.0
+
+
+def gorjeta_slug_taken(slug: str, *, exclude_band_id: str | None = None) -> bool:
+    slug = (slug or '').strip().lower()
+    if not slug:
+        return False
+    db = get_db()
+    c = db.cursor()
+    if exclude_band_id:
+        c.execute(
+            'SELECT id FROM bands WHERE lower(gorjeta_slug) = ? AND id != ?',
+            (slug, exclude_band_id),
+        )
+    else:
+        c.execute('SELECT id FROM bands WHERE lower(gorjeta_slug) = ?', (slug,))
+    row = c.fetchone()
+    db.close()
+    return bool(row)
+
+
+def create_song_request(
+    band_id: str,
+    *,
+    titulo: str,
+    artista: str | None = None,
+    cifra_id: str | None = None,
+    setlist_id: str | None = None,
+    event_id: str | None = None,
+    requester_name: str | None = None,
+    nota: str | None = None,
+) -> str:
+    req_id = str(uuid.uuid4())
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''INSERT INTO band_song_requests
+           (id, band_id, setlist_id, event_id, cifra_id, titulo, artista,
+            requester_name, nota, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')''',
+        (
+            req_id,
+            band_id,
+            str(setlist_id) if setlist_id else None,
+            event_id or None,
+            str(cifra_id) if cifra_id else None,
+            (titulo or '').strip()[:160] or 'Pedido',
+            (artista or '').strip()[:120] or None,
+            (requester_name or '').strip()[:80] or None,
+            (nota or '').strip()[:200] or None,
+        ),
+    )
+    db.commit()
+    db.close()
+    return req_id
+
+
+def list_song_requests(
+    band_id: str,
+    *,
+    event_id: str | None = None,
+    status: str | None = 'pending',
+    limit: int = 50,
+) -> list[dict]:
+    db = get_db()
+    c = db.cursor()
+    clauses = ['band_id = ?']
+    params: list = [band_id]
+    if event_id:
+        clauses.append('event_id = ?')
+        params.append(event_id)
+    if status:
+        clauses.append('status = ?')
+        params.append(status)
+    params.append(int(limit))
+    c.execute(
+        f'''SELECT * FROM band_song_requests
+            WHERE {' AND '.join(clauses)}
+            ORDER BY created_at DESC
+            LIMIT ?''',
+        params,
+    )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
+def count_song_requests(
+    band_id: str,
+    *,
+    event_id: str | None = None,
+    status: str = 'pending',
+) -> int:
+    db = get_db()
+    c = db.cursor()
+    clauses = ['band_id = ?', 'status = ?']
+    params: list = [band_id, status]
+    if event_id:
+        clauses.append('event_id = ?')
+        params.append(event_id)
+    c.execute(
+        f'SELECT COUNT(*) AS n FROM band_song_requests WHERE {" AND ".join(clauses)}',
+        params,
+    )
+    n = c.fetchone()['n']
+    db.close()
+    return int(n or 0)
+
+
+def update_song_request_status(
+    request_id: str,
+    band_id: str,
+    status: str,
+) -> bool:
+    status = (status or '').strip().lower()
+    if status not in ('pending', 'done', 'dismissed'):
+        return False
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        '''UPDATE band_song_requests
+           SET status = ?
+           WHERE id = ? AND band_id = ?''',
+        (status, request_id, band_id),
+    )
+    ok = c.rowcount > 0
+    db.commit()
+    db.close()
+    return ok
+
+
 def set_band_contact_whatsapp(band_id: str, phone: str | None) -> None:
     db = get_db()
     c = db.cursor()
@@ -3440,11 +3774,35 @@ def update_event_fees(
     fee_equipment_discount: float | None,
     fee_notes: str | None,
     fee_settled: bool = False,
+    fee_couvert: float | None = None,
+    update_couvert: bool = False,
 ) -> None:
     db = get_db()
     c = db.cursor()
-    settled_at = 'CURRENT_TIMESTAMP' if fee_settled else None
-    if fee_settled:
+    if update_couvert:
+        if fee_settled:
+            c.execute(
+                '''UPDATE band_events
+                   SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
+                       fee_notes=?, fee_couvert=?, fee_settled_at=CURRENT_TIMESTAMP
+                   WHERE id=?''',
+                (
+                    fee_total, fee_transport_discount, fee_equipment_discount,
+                    fee_notes, fee_couvert, event_id,
+                ),
+            )
+        else:
+            c.execute(
+                '''UPDATE band_events
+                   SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
+                       fee_notes=?, fee_couvert=?, fee_settled_at=NULL
+                   WHERE id=?''',
+                (
+                    fee_total, fee_transport_discount, fee_equipment_discount,
+                    fee_notes, fee_couvert, event_id,
+                ),
+            )
+    elif fee_settled:
         c.execute(
             '''UPDATE band_events
                SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
@@ -4560,6 +4918,62 @@ def list_retention_candidates_no_band(*, min_days: int) -> list[dict]:
     return rows
 
 
+def list_retention_candidates_activated_unpaid(*, min_days: int = 3) -> list[dict]:
+    """Usuários que tocaram de verdade mas ainda não pagaram / não estão em trial."""
+    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    db = get_db()
+    c = db.cursor()
+    sql = '''
+        SELECT u.*
+        FROM users u
+        WHERE COALESCE(u.email, '') != ''
+          AND COALESCE(u.email_notify, 1) = 1
+          AND EXISTS (
+              SELECT 1 FROM product_funnel_events f
+              WHERE f.user_id = u.id AND f.step = 'play_mode_real'
+                AND f.created_at <= {cutoff_cmp}
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM product_funnel_events f2
+              WHERE f2.user_id = u.id
+                AND f2.step IN ('assinatura_paga', 'checkout_iniciado')
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM bands b
+              JOIN assinaturas a ON a.banda_id = b.id
+              WHERE b.owner_id = u.id
+                AND (
+                    (a.status = 'ativa' AND a.plano IN ('individual', 'pro', 'worship'))
+                    OR (
+                        COALESCE(a.trial_usado, 0) = 1
+                        AND a.trial_fim IS NOT NULL
+                        AND a.trial_fim > {now_cmp}
+                    )
+                )
+          )
+        ORDER BY u.created_at
+    '''
+    if IS_POSTGRES:
+        c.execute(
+            sql.format(
+                cutoff_cmp='?::timestamp',
+                now_cmp='NOW()',
+            ),
+            (cutoff,),
+        )
+    else:
+        c.execute(
+            sql.format(
+                cutoff_cmp='datetime(?)',
+                now_cmp="datetime('now')",
+            ),
+            (cutoff,),
+        )
+    rows = [dict(r) for r in c.fetchall()]
+    db.close()
+    return rows
+
+
 def list_retention_candidates_trial_expired() -> list[dict]:
     return list_expired_trials()
 
@@ -4660,6 +5074,9 @@ def user_should_see_nps(user_id: str) -> bool:
     user = get_user(user_id)
     if not user or user.get('nps_submitted_at') or user.get('nps_dismissed'):
         return False
+    # Após aha (Modo Tocar / agenda) — não esperar só o fim do trial
+    if user.get('play_mode_used') or user.get('agenda_event_used'):
+        return True
     from monetizacao import get_assinatura_banda
     for b in get_owned_bands(user_id):
         ass = get_assinatura_banda(b['id'])

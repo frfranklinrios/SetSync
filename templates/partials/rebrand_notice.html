@@ -1,10 +1,9 @@
-{# Aviso temporário: rebrand SetSync → Uníssono #}
+{# Aviso opcional de marca — texto já Uníssono #}
 {% if current_user.is_authenticated %}
 <div id="rebrand-notice" class="rebrand-notice" role="status" hidden>
     <div class="container-fluid px-4 d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
         <span style="font-size: var(--text-sm);">
-            <strong>SetSync agora é {{ app_name }}.</strong>
-            Mesmo app de cifras e setlists — só mudou o nome.
+            Bem-vindo ao <strong>{{ app_name }}</strong> — cifras, setlists e Modo Tocar para a sua banda.
         </span>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="rebrand-notice-dismiss" aria-label="Fechar aviso">
             Entendi
@@ -22,7 +21,7 @@
 </style>
 <script>
 (function () {
-    var KEY = 'unissono-rebrand-notice-v1';
+    var KEY = 'unissono-welcome-notice-v2';
     var el = document.getElementById('rebrand-notice');
     var btn = document.getElementById('rebrand-notice-dismiss');
     if (!el) return;

@@ -1,5 +1,6 @@
 /**
  * Anotações livres (draw-over) — local + conta (versão pessoal de palco).
+ * Canvas cobre o conteúdo integral de #cifra-scroll (não só a viewport).
  */
 (function (global) {
   'use strict';
@@ -15,6 +16,8 @@
   var saveTimer = null;
   var apiUrl = null;
   var remoteLoaded = false;
+  var wrapEl = null;
+  var resizeObserver = null;
 
   var PEN_WIDTH = 2.5;
   var ERASER_WIDTH = 20;
@@ -77,6 +80,7 @@
 
   function loadRemote(id) {
     if (!apiUrl) return Promise.resolve();
+    var requestId = id;
     return fetch(apiUrl, {
       credentials: 'same-origin',
       headers: { Accept: 'application/json' },
@@ -86,7 +90,13 @@
         return r.json();
       })
       .then(function (data) {
+        if (String(requestId) !== String(cifraId)) return;
         if (!data || !Array.isArray(data.strokes)) return;
+        // Não apagar traços locais com [] remoto (race com PUT ou ainda não syncado).
+        if (data.strokes.length === 0 && strokes.length > 0) {
+          scheduleRemoteSave();
+          return;
+        }
         strokes = data.strokes;
         strokes.forEach(function (s) {
           if (!s.tool) s.tool = 'pen';
@@ -99,12 +109,19 @@
 
   function resize() {
     if (!canvas) return;
-    var parent = canvas.parentElement;
+    var parent = wrapEl || canvas.parentElement;
     if (!parent) return;
-    var rect = parent.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    redraw();
+    // Cobrir o conteúdo rolável inteiro — inset:0 sozinho fica só na viewport.
+    var w = Math.max(parent.scrollWidth || 0, parent.clientWidth || 0, 1);
+    var h = Math.max(parent.scrollHeight || 0, parent.clientHeight || 0, 1);
+    var changed = canvas.width !== w || canvas.height !== h;
+    if (changed) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    if (changed) redraw();
   }
 
   function applyStrokeStyle(stroke) {
@@ -140,7 +157,12 @@
   function pos(ev) {
     var r = canvas.getBoundingClientRect();
     var t = ev.touches && ev.touches[0] ? ev.touches[0] : ev;
-    return { x: t.clientX - r.left, y: t.clientY - r.top };
+    var sx = canvas.width / Math.max(r.width, 1);
+    var sy = canvas.height / Math.max(r.height, 1);
+    return {
+      x: (t.clientX - r.left) * sx,
+      y: (t.clientY - r.top) * sy,
+    };
   }
 
   function onStart(ev) {
@@ -189,6 +211,12 @@
     return tool;
   }
 
+  function syncChrome() {
+    try {
+      document.body.classList.toggle('play-drawing', enabled);
+    } catch (e) { /* */ }
+  }
+
   function syncToolbar() {
     var wrap = document.getElementById('draw-tools');
     if (wrap) wrap.classList.toggle('draw-tools-visible', enabled);
@@ -206,13 +234,13 @@
     cifraId = id;
     loadLocal(id);
     remoteLoaded = false;
-    var wrap = document.getElementById(wrapId);
-    if (!wrap) return;
+    wrapEl = document.getElementById(wrapId);
+    if (!wrapEl) return;
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.className = 'play-draw-canvas';
       canvas.setAttribute('aria-hidden', 'true');
-      wrap.appendChild(canvas);
+      wrapEl.appendChild(canvas);
       ctx = canvas.getContext('2d');
       canvas.addEventListener('mousedown', onStart);
       canvas.addEventListener('mousemove', onMove);
@@ -222,13 +250,22 @@
       canvas.addEventListener('touchend', onEnd);
       global.addEventListener('resize', resize);
       if (global.ResizeObserver) {
-        var ro = new ResizeObserver(resize);
-        ro.observe(wrap);
+        resizeObserver = new ResizeObserver(function () {
+          resize();
+        });
+        resizeObserver.observe(wrapEl);
+      }
+    } else if (canvas.parentElement !== wrapEl) {
+      wrapEl.appendChild(canvas);
+      if (resizeObserver) {
+        try { resizeObserver.disconnect(); } catch (e) { /* */ }
+        resizeObserver.observe(wrapEl);
       }
     }
     resize();
     loadRemote(id).finally(function () {
       remoteLoaded = true;
+      resize();
       redraw();
     });
   }
@@ -243,6 +280,8 @@
     var btn = document.getElementById('draw-btn');
     if (btn) btn.classList.toggle('pb-on', enabled);
     syncToolbar();
+    syncChrome();
+    if (enabled) resize();
   }
 
   function toggle() {
@@ -251,11 +290,25 @@
   }
 
   function onCifraChange(id) {
+    // Mesma música (ex.: cifra → grade): só redimensiona; mantém lápis e traços.
+    if (id != null && cifraId != null && String(id) === String(cifraId)) {
+      requestAnimationFrame(function () {
+        resize();
+        redraw();
+      });
+      return;
+    }
     cifraId = id;
     loadLocal(id);
+    remoteLoaded = false;
     redraw();
     if (enabled) setEnabled(false);
-    loadRemote(id);
+    resize();
+    loadRemote(id).finally(function () {
+      remoteLoaded = true;
+      resize();
+      redraw();
+    });
   }
 
   function configure(opts) {
@@ -275,5 +328,7 @@
     onCifraChange: onCifraChange,
     setEnabled: setEnabled,
     configure: configure,
+    resize: resize,
+    isEnabled: function () { return enabled; },
   };
 })(window);
