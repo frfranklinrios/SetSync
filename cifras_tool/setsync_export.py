@@ -35,7 +35,11 @@ def cifra_inline_para_setsync(conteudo: str) -> list[dict[str, Any]]:
             continue
 
         stripped = linha.strip()
-        if _is_tab_line(stripped) or _is_tab_header(stripped) or _is_tab_meta_line(stripped):
+        if (
+            _is_tab_line(stripped)
+            or _is_tab_header(stripped)
+            or _is_tab_meta_line(stripped)
+        ):
             while i < len(linhas):
                 tab_linha = linhas[i]
                 tab_stripped = tab_linha.strip()

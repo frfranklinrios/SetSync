@@ -10,8 +10,6 @@ from chordsheet.parser import Chart, parse_chart
 from chordsheet.private_notes import (
     apply_private_notes_to_payload,
     extract_and_store_private_notes,
-    merge_private_notes,
-    split_private_notes,
 )
 from chordsheet.render import render_chart_html
 from chordsheet.transpose import transpose_chart
@@ -131,7 +129,9 @@ def _beats_per_bar_for_grade(acordes: list, default: int = 4) -> int:
     return default
 
 
-def _grade_acordes_to_source_line(acordes: list, *, beats_per_bar: int | None = None) -> str:
+def _grade_acordes_to_source_line(
+    acordes: list, *, beats_per_bar: int | None = None
+) -> str:
     """
     Converte acordes de um compasso legado → token chordsheet.
 
@@ -151,9 +151,7 @@ def _grade_acordes_to_source_line(acordes: list, *, beats_per_bar: int | None = 
         return "%"
 
     # Um acorde no primeiro pulso; demais % → só o acorde (render preenche com ·)
-    if slots[0] not in ("%", "*", "") and all(
-        s in ("%", "*", "") for s in slots[1:]
-    ):
+    if slots[0] not in ("%", "*", "") and all(s in ("%", "*", "") for s in slots[1:]):
         return slots[0]
 
     parts: list[str] = []
@@ -310,7 +308,11 @@ def render_cifra_chordsheet_html(
     nashville: bool = False,
 ) -> str | None:
     """Renderiza HTML do chord sheet no mesmo tom da cifra (tom_original + transposição)."""
-    from util import key_at_transpose, normalize_tom_label, normalize_transpose_semitones
+    from util import (
+        key_at_transpose,
+        normalize_tom_label,
+        normalize_transpose_semitones,
+    )
 
     performance = normalize_transpose_semitones(semitones)
     tom_orig = normalize_tom_label(cifra.get("tom_original") or "")
@@ -458,7 +460,9 @@ def extract_chordsheet_source_from_cifra_text(
 def extract_chordsheet_from_cifra(cifra: dict, *, time_signature: str = "4/4") -> str:
     """Extrai grade harmônica do conteúdo salvo da cifra."""
     text = _cifra_plain_text_for_extraction(cifra)
-    return extract_chordsheet_source_from_cifra_text(text, time_signature=time_signature)
+    return extract_chordsheet_source_from_cifra_text(
+        text, time_signature=time_signature
+    )
 
 
 def _cifra_plain_text_for_extraction(cifra: dict) -> str:

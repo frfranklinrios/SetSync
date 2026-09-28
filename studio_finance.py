@@ -6,7 +6,7 @@ from calendar import monthrange
 from datetime import date
 from typing import Any
 
-from studio_scheduling import BOOKING_CONFIRMADO, parse_time_hhmm, time_to_minutes
+from studio_scheduling import parse_time_hhmm, time_to_minutes
 
 
 def _money(v: Any) -> float:
@@ -23,14 +23,14 @@ def parse_money_field(raw: str | None) -> float | None:
     s = str(raw).strip()
     if not s:
         return None
-    s = s.replace('R$', '').replace(' ', '').strip()
+    s = s.replace("R$", "").replace(" ", "").strip()
     if not s:
         return None
-    if ',' in s and '.' in s:
+    if "," in s and "." in s:
         # 1.500,00 → milhar com ponto, decimal com vírgula
-        s = s.replace('.', '').replace(',', '.')
-    elif ',' in s:
-        s = s.replace(',', '.')
+        s = s.replace(".", "").replace(",", ".")
+    elif "," in s:
+        s = s.replace(",", ".")
     try:
         return max(0.0, float(s))
     except ValueError:
@@ -53,8 +53,8 @@ def estimate_booking_value(
     preco_hora: float | None,
 ) -> float:
     hours = booking_duration_hours(
-        booking.get('hora_inicio') or '',
-        booking.get('hora_fim') or '',
+        booking.get("hora_inicio") or "",
+        booking.get("hora_fim") or "",
     )
     rate = _money(preco_hora)
     if hours <= 0 or rate <= 0:
@@ -63,8 +63,8 @@ def estimate_booking_value(
 
 
 def booking_charge_amount(booking: dict, *, preco_hora: float | None) -> float:
-    charged = booking.get('valor_cobrado')
-    if charged is not None and str(charged).strip() != '':
+    charged = booking.get("valor_cobrado")
+    if charged is not None and str(charged).strip() != "":
         return round(_money(charged), 2)
     return estimate_booking_value(booking, preco_hora=preco_hora)
 
@@ -74,11 +74,11 @@ def resolve_booking_preco_hora(
     *,
     studio_preco_hora: float | None,
 ) -> float | None:
-    room_rate = booking.get('room_preco_hora')
-    if room_rate is not None and str(room_rate).strip() != '':
+    room_rate = booking.get("room_preco_hora")
+    if room_rate is not None and str(room_rate).strip() != "":
         return _money(room_rate) or None
     studio_rate = studio_preco_hora
-    if studio_rate is not None and str(studio_rate).strip() != '':
+    if studio_rate is not None and str(studio_rate).strip() != "":
         return _money(studio_rate) or None
     return None
 
@@ -92,29 +92,31 @@ def enrich_booking_finance(
     rate = preco_hora
     if rate is None:
         rate = resolve_booking_preco_hora(
-            booking, studio_preco_hora=studio_preco_hora,
+            booking,
+            studio_preco_hora=studio_preco_hora,
         )
     row = dict(booking)
     hours = booking_duration_hours(
-        row.get('hora_inicio') or '',
-        row.get('hora_fim') or '',
+        row.get("hora_inicio") or "",
+        row.get("hora_fim") or "",
     )
     estimated = estimate_booking_value(row, preco_hora=rate)
     charged = booking_charge_amount(row, preco_hora=rate)
-    row['duration_hours'] = hours
-    row['valor_estimado'] = estimated
-    row['valor_cobrado_efetivo'] = charged
-    row['is_paid'] = bool(row.get('pago_em'))
-    row['valor_customizado'] = (
-        row.get('valor_cobrado') is not None and str(row.get('valor_cobrado')).strip() != ''
+    row["duration_hours"] = hours
+    row["valor_estimado"] = estimated
+    row["valor_cobrado_efetivo"] = charged
+    row["is_paid"] = bool(row.get("pago_em"))
+    row["valor_customizado"] = (
+        row.get("valor_cobrado") is not None
+        and str(row.get("valor_cobrado")).strip() != ""
     )
-    row['preco_hora_efetivo'] = rate
+    row["preco_hora_efetivo"] = rate
     return row
 
 
 def month_bounds(year: int, month: int) -> tuple[str, str]:
     last = monthrange(year, month)[1]
-    return f'{year:04d}-{month:02d}-01', f'{year:04d}-{month:02d}-{last:02d}'
+    return f"{year:04d}-{month:02d}-01", f"{year:04d}-{month:02d}-{last:02d}"
 
 
 def default_finance_period() -> tuple[int, int, str, str]:
@@ -132,34 +134,32 @@ def build_studio_finance_report(
     year: int,
     month: int,
 ) -> dict[str, Any]:
-    preco_studio = studio.get('preco_hora')
+    preco_studio = studio.get("preco_hora")
     enriched = [
         enrich_booking_finance(b, studio_preco_hora=preco_studio) for b in bookings
     ]
 
-    receita_confirmada = sum(b['valor_cobrado_efetivo'] for b in enriched)
-    recebido = sum(
-        b['valor_cobrado_efetivo'] for b in enriched if b['is_paid']
-    )
+    receita_confirmada = sum(b["valor_cobrado_efetivo"] for b in enriched)
+    recebido = sum(b["valor_cobrado_efetivo"] for b in enriched if b["is_paid"])
     a_receber = round(receita_confirmada - recebido, 2)
-    total_despesas = round(sum(_money(e.get('valor')) for e in expenses), 2)
+    total_despesas = round(sum(_money(e.get("valor")) for e in expenses), 2)
     liquido = round(recebido - total_despesas, 2)
-    horas = round(sum(b['duration_hours'] for b in enriched), 2)
+    horas = round(sum(b["duration_hours"] for b in enriched), 2)
 
     return {
-        'year': year,
-        'month': month,
-        'preco_hora': preco_studio,
-        'tem_preco_sala': any(b.get('room_preco_hora') for b in bookings),
-        'bookings': enriched,
-        'expenses': expenses,
-        'stats': {
-            'reservas': len(enriched),
-            'horas': horas,
-            'receita_confirmada': round(receita_confirmada, 2),
-            'recebido': round(recebido, 2),
-            'a_receber': a_receber,
-            'despesas': total_despesas,
-            'liquido': liquido,
+        "year": year,
+        "month": month,
+        "preco_hora": preco_studio,
+        "tem_preco_sala": any(b.get("room_preco_hora") for b in bookings),
+        "bookings": enriched,
+        "expenses": expenses,
+        "stats": {
+            "reservas": len(enriched),
+            "horas": horas,
+            "receita_confirmada": round(receita_confirmada, 2),
+            "recebido": round(recebido, 2),
+            "a_receber": a_receber,
+            "despesas": total_despesas,
+            "liquido": liquido,
         },
     }

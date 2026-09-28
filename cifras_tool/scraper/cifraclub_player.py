@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from bs4 import BeautifulSoup
 
 VIDEO_ID_PATTERN = re.compile(r"(?:v=|/embed/|youtu\.be/)([A-Za-z0-9_-]{11})")
 
 
-def _id_de_url(url: str) -> Optional[str]:
+def _id_de_url(url: str) -> str | None:
     match = VIDEO_ID_PATTERN.search(url)
     return match.group(1) if match else None
 
 
-def extrair_youtube_do_player(html: str) -> Optional[str]:
+def extrair_youtube_do_player(html: str) -> str | None:
     """
     Extrai o link do player após o JS do site preencher o <a href="...">.
     Funciona com HTML já renderizado (ex.: Playwright).
@@ -48,7 +47,7 @@ def extrair_youtube_do_player(html: str) -> Optional[str]:
     return None
 
 
-def extrair_youtube_com_playwright(url: str, timeout_ms: int = 12_000) -> Optional[str]:
+def extrair_youtube_com_playwright(url: str, timeout_ms: int = 12_000) -> str | None:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:

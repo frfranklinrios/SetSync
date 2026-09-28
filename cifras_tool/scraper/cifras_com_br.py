@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html as html_module
 import re
-from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -14,7 +13,7 @@ from cifras_tool.scraper.comum import (
 )
 
 
-def baixar_html(url: str) -> Optional[str]:
+def baixar_html(url: str) -> str | None:
     url = normalizar_url(url)
     headers = {
         "User-Agent": (
@@ -30,7 +29,7 @@ def baixar_html(url: str) -> Optional[str]:
     return resposta.text
 
 
-def extrair_song_id(html: str) -> Optional[str]:
+def extrair_song_id(html: str) -> str | None:
     padroes = [
         r"window\.SONG_METADATA\s*=\s*\{[^}]*\bID:\s*(\d+)",
         r'model-id="(\d+)"\s+model="chord"',

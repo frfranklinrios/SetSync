@@ -1,18 +1,19 @@
 import os
 import uuid
-from datetime import datetime, timedelta
-from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import timedelta
 
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from config import app_now_naive, app_now_str
 from database import (
     IS_POSTGRES,
-    IntegrityError,
     SQLITE_PATH,
+    IntegrityError,
     add_column_if_missing,
     get_db,
     table_columns,
     table_exists,
 )
-from config import app_now_naive, app_now_str
 
 DB_PATH = SQLITE_PATH
 
@@ -21,12 +22,12 @@ def _env_superadmin_identifiers():
     """Usernames ou e-mails com privilégio de admin global (variáveis de ambiente)."""
     usernames = {
         s.strip().lower()
-        for s in os.getenv('SETSYNC_SUPERADMIN_USERNAMES', '').split(',')
+        for s in os.getenv("SETSYNC_SUPERADMIN_USERNAMES", "").split(",")
         if s.strip()
     }
     emails = {
         s.strip().lower()
-        for s in os.getenv('SETSYNC_SUPERADMIN_EMAILS', '').split(',')
+        for s in os.getenv("SETSYNC_SUPERADMIN_EMAILS", "").split(",")
         if s.strip()
     }
     return usernames, emails
@@ -35,7 +36,7 @@ def _env_superadmin_identifiers():
 def _init_postgres_schema(c) -> None:
     """Schema completo para PostgreSQL (instalação nova)."""
     statements = [
-        '''CREATE TABLE IF NOT EXISTS users (
+        """CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             display_name TEXT,
@@ -49,8 +50,8 @@ def _init_postgres_schema(c) -> None:
             last_login_at TIMESTAMP,
             onboarding_checklist_dismissed INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )''',
-        '''CREATE TABLE IF NOT EXISTS bands (
+        )""",
+        """CREATE TABLE IF NOT EXISTS bands (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
@@ -61,8 +62,8 @@ def _init_postgres_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (owner_id) REFERENCES users(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS band_members (
+        )""",
+        """CREATE TABLE IF NOT EXISTS band_members (
             band_id TEXT NOT NULL,
             user_id TEXT NOT NULL,
             role TEXT DEFAULT 'member',
@@ -70,8 +71,8 @@ def _init_postgres_schema(c) -> None:
             PRIMARY KEY (band_id, user_id),
             FOREIGN KEY (band_id) REFERENCES bands(id),
             FOREIGN KEY (user_id) REFERENCES users(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS cifras (
+        )""",
+        """CREATE TABLE IF NOT EXISTS cifras (
             id TEXT PRIMARY KEY,
             titulo TEXT NOT NULL,
             artista TEXT NOT NULL,
@@ -90,8 +91,8 @@ def _init_postgres_schema(c) -> None:
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (band_id) REFERENCES bands(id),
             FOREIGN KEY (owner_user_id) REFERENCES users(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS cifra_shares (
+        )""",
+        """CREATE TABLE IF NOT EXISTS cifra_shares (
             cifra_id TEXT NOT NULL,
             shared_with_user_id TEXT NOT NULL,
             shared_by_user_id TEXT NOT NULL,
@@ -100,8 +101,8 @@ def _init_postgres_schema(c) -> None:
             FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
             FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (shared_by_user_id) REFERENCES users(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS setlists (
+        )""",
+        """CREATE TABLE IF NOT EXISTS setlists (
             id SERIAL PRIMARY KEY,
             band_id TEXT NOT NULL,
             name TEXT NOT NULL,
@@ -111,8 +112,8 @@ def _init_postgres_schema(c) -> None:
             public_share_enabled INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (band_id) REFERENCES bands(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS setlist_cifras (
+        )""",
+        """CREATE TABLE IF NOT EXISTS setlist_cifras (
             setlist_id INTEGER NOT NULL,
             cifra_id TEXT NOT NULL,
             position INTEGER DEFAULT 0,
@@ -120,8 +121,8 @@ def _init_postgres_schema(c) -> None:
             PRIMARY KEY (setlist_id, cifra_id),
             FOREIGN KEY (setlist_id) REFERENCES setlists(id) ON DELETE CASCADE,
             FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE
-        )''',
-        '''CREATE TABLE IF NOT EXISTS band_events (
+        )""",
+        """CREATE TABLE IF NOT EXISTS band_events (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
             setlist_id INTEGER,
@@ -139,8 +140,8 @@ def _init_postgres_schema(c) -> None:
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (setlist_id) REFERENCES setlists(id) ON DELETE SET NULL,
             FOREIGN KEY (created_by) REFERENCES users(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS band_vocalists (
+        )""",
+        """CREATE TABLE IF NOT EXISTS band_vocalists (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
             name TEXT NOT NULL,
@@ -148,16 +149,16 @@ def _init_postgres_schema(c) -> None:
             sort_order INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
+        )""",
+        """CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
             cifra_id TEXT NOT NULL,
             vocalist_id TEXT NOT NULL,
             transpose_semitones INTEGER NOT NULL DEFAULT 0,
             PRIMARY KEY (cifra_id, vocalist_id),
             FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
             FOREIGN KEY (vocalist_id) REFERENCES band_vocalists(id) ON DELETE CASCADE
-        )''',
-        '''CREATE TABLE IF NOT EXISTS assinaturas (
+        )""",
+        """CREATE TABLE IF NOT EXISTS assinaturas (
             id TEXT PRIMARY KEY,
             banda_id TEXT NOT NULL UNIQUE,
             plano TEXT NOT NULL DEFAULT 'gratis',
@@ -171,8 +172,8 @@ def _init_postgres_schema(c) -> None:
             trial_fim TIMESTAMP,
             trial_usado INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (banda_id) REFERENCES bands(id) ON DELETE CASCADE
-        )''',
-        '''CREATE TABLE IF NOT EXISTS vouchers (
+        )""",
+        """CREATE TABLE IF NOT EXISTS vouchers (
             id TEXT PRIMARY KEY,
             codigo TEXT NOT NULL UNIQUE,
             plano TEXT NOT NULL,
@@ -186,8 +187,8 @@ def _init_postgres_schema(c) -> None:
             data_expiracao TIMESTAMP,
             criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (criado_por_id) REFERENCES users(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS voucher_usos (
+        )""",
+        """CREATE TABLE IF NOT EXISTS voucher_usos (
             id TEXT PRIMARY KEY,
             voucher_id TEXT NOT NULL,
             banda_id TEXT NOT NULL,
@@ -197,8 +198,8 @@ def _init_postgres_schema(c) -> None:
             UNIQUE (voucher_id, banda_id),
             FOREIGN KEY (voucher_id) REFERENCES vouchers(id),
             FOREIGN KEY (banda_id) REFERENCES bands(id)
-        )''',
-        '''CREATE TABLE IF NOT EXISTS notifications (
+        )""",
+        """CREATE TABLE IF NOT EXISTS notifications (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
             band_id TEXT,
@@ -213,10 +214,10 @@ def _init_postgres_schema(c) -> None:
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
-        )''',
-        '''CREATE INDEX IF NOT EXISTS idx_notifications_user_created
-           ON notifications(user_id, created_at DESC)''',
-        '''CREATE TABLE IF NOT EXISTS testimonials (
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_notifications_user_created
+           ON notifications(user_id, created_at DESC)""",
+        """CREATE TABLE IF NOT EXISTS testimonials (
             id SERIAL PRIMARY KEY,
             nome TEXT NOT NULL,
             cidade TEXT,
@@ -226,8 +227,8 @@ def _init_postgres_schema(c) -> None:
             ativo INTEGER NOT NULL DEFAULT 1,
             ordem INTEGER NOT NULL DEFAULT 0,
             criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )''',
-        '''CREATE TABLE IF NOT EXISTS blog_posts (
+        )""",
+        """CREATE TABLE IF NOT EXISTS blog_posts (
             id SERIAL PRIMARY KEY,
             slug TEXT UNIQUE NOT NULL,
             titulo TEXT NOT NULL,
@@ -241,8 +242,8 @@ def _init_postgres_schema(c) -> None:
             meta_description TEXT,
             imagem_capa TEXT,
             tags TEXT
-        )''',
-        '''CREATE TABLE IF NOT EXISTS onboarding_emails (
+        )""",
+        """CREATE TABLE IF NOT EXISTS onboarding_emails (
             id SERIAL PRIMARY KEY,
             usuario_id TEXT NOT NULL,
             email_numero INTEGER NOT NULL,
@@ -250,8 +251,8 @@ def _init_postgres_schema(c) -> None:
             status TEXT NOT NULL DEFAULT 'pendente',
             UNIQUE (usuario_id, email_numero),
             FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
-        )''',
-        '''CREATE TABLE IF NOT EXISTS retention_emails (
+        )""",
+        """CREATE TABLE IF NOT EXISTS retention_emails (
             id SERIAL PRIMARY KEY,
             usuario_id TEXT NOT NULL,
             campaign TEXT NOT NULL,
@@ -259,14 +260,14 @@ def _init_postgres_schema(c) -> None:
             status TEXT NOT NULL DEFAULT 'pendente',
             UNIQUE (usuario_id, campaign),
             FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
-        )''',
-        '''CREATE TABLE IF NOT EXISTS user_instruments (
+        )""",
+        """CREATE TABLE IF NOT EXISTS user_instruments (
             user_id TEXT NOT NULL,
             instrument_id TEXT NOT NULL,
             sort_order INTEGER NOT NULL DEFAULT 0,
             PRIMARY KEY (user_id, instrument_id),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        )''',
+        )""",
     ]
     for sql in statements:
         c.execute(sql)
@@ -274,14 +275,14 @@ def _init_postgres_schema(c) -> None:
 
 def init_db():
     if not IS_POSTGRES:
-        os.makedirs(os.path.dirname(DB_PATH) or '.', exist_ok=True)
+        os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
     db = get_db()
     c = db.cursor()
     if IS_POSTGRES:
         _init_postgres_schema(c)
         db.commit()
     else:
-        db.executescript('''
+        db.executescript("""
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
@@ -344,7 +345,7 @@ def init_db():
             FOREIGN KEY (setlist_id) REFERENCES setlists(id),
             FOREIGN KEY (cifra_id) REFERENCES cifras(id)
         );
-    ''')
+    """)
         db.commit()
 
     _run_schema_migrations(c)
@@ -354,46 +355,50 @@ def init_db():
 
 def _migrate_core_legacy_columns(c) -> None:
     """Colunas incrementais sobre o schema base (SQLite legado e Postgres existente)."""
-    add_column_if_missing(c, 'users', 'display_name', 'TEXT')
-    add_column_if_missing(c, 'users', 'is_superadmin', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'phone', 'TEXT')
-    add_column_if_missing(c, 'users', 'whatsapp_notify', 'INTEGER NOT NULL DEFAULT 1')
-    add_column_if_missing(c, 'users', 'email_notify', 'INTEGER NOT NULL DEFAULT 1')
-    add_column_if_missing(c, 'users', 'push_notify', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'notification_prefs_json', 'TEXT')
-    add_column_if_missing(c, 'users', 'last_login_at', 'TIMESTAMP')
-    add_column_if_missing(c, 'users', 'onboarding_checklist_dismissed', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, "users", "display_name", "TEXT")
+    add_column_if_missing(c, "users", "is_superadmin", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "users", "phone", "TEXT")
+    add_column_if_missing(c, "users", "whatsapp_notify", "INTEGER NOT NULL DEFAULT 1")
+    add_column_if_missing(c, "users", "email_notify", "INTEGER NOT NULL DEFAULT 1")
+    add_column_if_missing(c, "users", "push_notify", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "users", "notification_prefs_json", "TEXT")
+    add_column_if_missing(c, "users", "last_login_at", "TIMESTAMP")
+    add_column_if_missing(
+        c, "users", "onboarding_checklist_dismissed", "INTEGER NOT NULL DEFAULT 0"
+    )
 
-    add_column_if_missing(c, 'bands', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
-    add_column_if_missing(c, 'bands', 'vocalist_user_id', 'TEXT')
-    add_column_if_missing(c, 'bands', 'vocalist_name', 'TEXT')
-    add_column_if_missing(c, 'bands', 'logo_filename', 'TEXT')
+    add_column_if_missing(
+        c, "bands", "updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    )
+    add_column_if_missing(c, "bands", "vocalist_user_id", "TEXT")
+    add_column_if_missing(c, "bands", "vocalist_name", "TEXT")
+    add_column_if_missing(c, "bands", "logo_filename", "TEXT")
 
     for col, typedef in [
-        ('cifra_json', 'TEXT'),
-        ('grade_json', 'TEXT'),
-        ('bpm', 'REAL'),
-        ('duracao_seg', 'INTEGER'),
-        ('leadsheet_json', 'TEXT'),
-        ('transpose_semitones', 'INTEGER DEFAULT 0'),
-        ('referencia_json', 'TEXT'),
+        ("cifra_json", "TEXT"),
+        ("grade_json", "TEXT"),
+        ("bpm", "REAL"),
+        ("duracao_seg", "INTEGER"),
+        ("leadsheet_json", "TEXT"),
+        ("transpose_semitones", "INTEGER DEFAULT 0"),
+        ("referencia_json", "TEXT"),
     ]:
-        add_column_if_missing(c, 'cifras', col, typedef)
+        add_column_if_missing(c, "cifras", col, typedef)
 
-    add_column_if_missing(c, 'setlists', 'vocalist_id', 'TEXT')
-    add_column_if_missing(c, 'setlists', 'public_share_token', 'TEXT')
-    add_column_if_missing(c, 'setlists', 'public_share_enabled', 'INTEGER DEFAULT 0')
-    add_column_if_missing(c, 'setlist_cifras', 'vocalist_id', 'TEXT')
+    add_column_if_missing(c, "setlists", "vocalist_id", "TEXT")
+    add_column_if_missing(c, "setlists", "public_share_token", "TEXT")
+    add_column_if_missing(c, "setlists", "public_share_enabled", "INTEGER DEFAULT 0")
+    add_column_if_missing(c, "setlist_cifras", "vocalist_id", "TEXT")
 
 
 def _migrate_assinaturas_trial_columns(c) -> None:
-    add_column_if_missing(c, 'assinaturas', 'trial_inicio', 'TIMESTAMP')
-    add_column_if_missing(c, 'assinaturas', 'trial_fim', 'TIMESTAMP')
-    add_column_if_missing(c, 'assinaturas', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, "assinaturas", "trial_inicio", "TIMESTAMP")
+    add_column_if_missing(c, "assinaturas", "trial_fim", "TIMESTAMP")
+    add_column_if_missing(c, "assinaturas", "trial_usado", "INTEGER NOT NULL DEFAULT 0")
 
 
 def _migrate_vocalists_tables(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_vocalists (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
@@ -403,8 +408,8 @@ def _migrate_vocalists_tables(c) -> None:
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
             cifra_id TEXT NOT NULL,
             vocalist_id TEXT NOT NULL,
@@ -413,7 +418,7 @@ def _migrate_vocalists_tables(c) -> None:
             FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
             FOREIGN KEY (vocalist_id) REFERENCES band_vocalists(id) ON DELETE CASCADE
         )
-    ''')
+    """)
     _migrate_vocalists_schema(c)
 
 
@@ -448,7 +453,7 @@ def _run_schema_migrations(c) -> None:
 
 def _migrate_admin_activity_log_schema(c) -> None:
     """Histórico append-only de alterações para o painel Master."""
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS admin_activity_log (
             id TEXT PRIMARY KEY,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -461,38 +466,38 @@ def _migrate_admin_activity_log_schema(c) -> None:
             meta_json TEXT,
             FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_activity_log_created
         ON admin_activity_log(created_at DESC)
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_activity_log_actor
         ON admin_activity_log(actor_user_id, created_at DESC)
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_activity_log_entity
         ON admin_activity_log(entity_type, created_at DESC)
-    ''')
+    """)
 
 
 def _migrate_metric_snapshots_schema(c) -> None:
     """Snapshot diário de métricas do painel admin (para tendência/sparkline)."""
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS metric_snapshots (
             snapshot_date TEXT PRIMARY KEY,
             payload_json TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    ''')
+    """)
 
 
 def _migrate_personal_cifras_schema(c) -> None:
     """Coleção pessoal (owner_user_id) e compartilhamento entre usuários."""
     from database import IS_POSTGRES
 
-    add_column_if_missing(c, 'cifras', 'owner_user_id', 'TEXT')
-    c.execute('''
+    add_column_if_missing(c, "cifras", "owner_user_id", "TEXT")
+    c.execute("""
         CREATE TABLE IF NOT EXISTS cifra_shares (
             cifra_id TEXT NOT NULL,
             shared_with_user_id TEXT NOT NULL,
@@ -503,18 +508,17 @@ def _migrate_personal_cifras_schema(c) -> None:
             FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (shared_by_user_id) REFERENCES users(id)
         )
-    ''')
+    """)
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_cifras_owner_user '
-        'ON cifras(owner_user_id)'
+        "CREATE INDEX IF NOT EXISTS idx_cifras_owner_user ON cifras(owner_user_id)"
     )
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_cifra_shares_with '
-        'ON cifra_shares(shared_with_user_id)'
+        "CREATE INDEX IF NOT EXISTS idx_cifra_shares_with "
+        "ON cifra_shares(shared_with_user_id)"
     )
     if IS_POSTGRES:
         try:
-            c.execute('ALTER TABLE cifras ALTER COLUMN band_id DROP NOT NULL')
+            c.execute("ALTER TABLE cifras ALTER COLUMN band_id DROP NOT NULL")
         except Exception:
             pass
     else:
@@ -527,62 +531,62 @@ def _migrate_personal_cifras_schema(c) -> None:
 
 def _sqlite_relax_cifras_band_id_not_null(c) -> None:
     """SQLite não permite DROP NOT NULL — recria a tabela se necessário."""
-    c.execute('PRAGMA table_info(cifras)')
+    c.execute("PRAGMA table_info(cifras)")
     cols = c.fetchall()
-    band_col = next((r for r in cols if r['name'] == 'band_id'), None)
-    if not band_col or int(band_col['notnull'] or 0) == 0:
+    band_col = next((r for r in cols if r["name"] == "band_id"), None)
+    if not band_col or int(band_col["notnull"] or 0) == 0:
         return
-    names = [r['name'] for r in cols]
-    if 'owner_user_id' not in names:
-        names.append('owner_user_id')
+    names = [r["name"] for r in cols]
+    if "owner_user_id" not in names:
+        names.append("owner_user_id")
     col_defs = []
     for r in cols:
-        name = r['name']
-        ctype = r['type'] or 'TEXT'
-        if name == 'id':
-            col_defs.append('id TEXT PRIMARY KEY')
-        elif name == 'band_id':
-            col_defs.append('band_id TEXT')
-        elif name in ('titulo', 'artista'):
-            col_defs.append(f'{name} TEXT NOT NULL')
-        elif name == 'conteudo':
+        name = r["name"]
+        ctype = r["type"] or "TEXT"
+        if name == "id":
+            col_defs.append("id TEXT PRIMARY KEY")
+        elif name == "band_id":
+            col_defs.append("band_id TEXT")
+        elif name in ("titulo", "artista"):
+            col_defs.append(f"{name} TEXT NOT NULL")
+        elif name == "conteudo":
             col_defs.append("conteudo TEXT NOT NULL DEFAULT ''")
         else:
             # Preserva o DEFAULT original (ex.: created_at/updated_at
             # DEFAULT CURRENT_TIMESTAMP) — sem isso os novos inserts ficariam NULL.
-            default = r['dflt_value'] if 'dflt_value' in r.keys() else None
-            col_def = f'{name} {ctype}'
+            default = r["dflt_value"] if "dflt_value" in r.keys() else None
+            col_def = f"{name} {ctype}"
             if default is not None:
-                col_def += f' DEFAULT {default}'
+                col_def += f" DEFAULT {default}"
             col_defs.append(col_def)
-    if 'owner_user_id' not in {r['name'] for r in cols}:
-        col_defs.append('owner_user_id TEXT')
-    c.execute('PRAGMA foreign_keys=OFF')
-    c.execute(f'CREATE TABLE cifras__personal_mig ({", ".join(col_defs)})')
-    src_names = [r['name'] for r in cols]
+    if "owner_user_id" not in {r["name"] for r in cols}:
+        col_defs.append("owner_user_id TEXT")
+    c.execute("PRAGMA foreign_keys=OFF")
+    c.execute(f"CREATE TABLE cifras__personal_mig ({', '.join(col_defs)})")
+    src_names = [r["name"] for r in cols]
     select_parts = []
     insert_names = list(src_names)
     for name in src_names:
         select_parts.append(name)
-    if 'owner_user_id' not in src_names:
-        insert_names.append('owner_user_id')
-        select_parts.append('NULL')
+    if "owner_user_id" not in src_names:
+        insert_names.append("owner_user_id")
+        select_parts.append("NULL")
     c.execute(
-        f'INSERT INTO cifras__personal_mig ({", ".join(insert_names)}) '
-        f'SELECT {", ".join(select_parts)} FROM cifras'
+        f"INSERT INTO cifras__personal_mig ({', '.join(insert_names)}) "
+        f"SELECT {', '.join(select_parts)} FROM cifras"
     )
-    c.execute('DROP TABLE cifras')
-    c.execute('ALTER TABLE cifras__personal_mig RENAME TO cifras')
-    c.execute('PRAGMA foreign_keys=ON')
+    c.execute("DROP TABLE cifras")
+    c.execute("ALTER TABLE cifras__personal_mig RENAME TO cifras")
+    c.execute("PRAGMA foreign_keys=ON")
 
 
 def _migrate_lgpd_schema(c) -> None:
-    add_column_if_missing(c, 'users', 'privacy_accepted_at', 'TIMESTAMP')
+    add_column_if_missing(c, "users", "privacy_accepted_at", "TIMESTAMP")
 
 
 def _migrate_admin_outreach_schema(c) -> None:
-    add_column_if_missing(c, 'bands', 'contact_whatsapp', 'TEXT')
-    c.execute('''
+    add_column_if_missing(c, "bands", "contact_whatsapp", "TEXT")
+    c.execute("""
         CREATE TABLE IF NOT EXISTS admin_whatsapp_invites (
             id TEXT PRIMARY KEY,
             target_type TEXT NOT NULL,
@@ -594,12 +598,12 @@ def _migrate_admin_outreach_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (sent_by_user_id) REFERENCES users(id)
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_admin_whatsapp_invites_target
         ON admin_whatsapp_invites(target_type, target_id, created_at DESC)
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_prospects (
             id TEXT PRIMARY KEY,
             nome TEXT NOT NULL,
@@ -611,12 +615,12 @@ def _migrate_admin_outreach_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (created_by_user_id) REFERENCES users(id)
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_studio_prospects_phone
         ON studio_prospects(phone)
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_prospects (
             id TEXT PRIMARY KEY,
             nome TEXT NOT NULL,
@@ -628,15 +632,15 @@ def _migrate_admin_outreach_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (created_by_user_id) REFERENCES users(id)
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_band_prospects_phone
         ON band_prospects(phone)
-    ''')
+    """)
 
 
 def _migrate_cifra_drafts_schema(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS cifra_user_drafts (
             id TEXT PRIMARY KEY,
             cifra_id TEXT NOT NULL,
@@ -653,11 +657,11 @@ def _migrate_cifra_drafts_schema(c) -> None:
             FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
+    """)
 
 
 def _migrate_roadmap_phase3_schema(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS cifra_play_drawings (
             cifra_id TEXT NOT NULL,
             user_id TEXT NOT NULL,
@@ -667,21 +671,21 @@ def _migrate_roadmap_phase3_schema(c) -> None:
             FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
-    add_column_if_missing(c, 'band_events', 'fee_total', 'REAL')
-    add_column_if_missing(c, 'band_events', 'fee_transport_discount', 'REAL')
-    add_column_if_missing(c, 'band_events', 'fee_equipment_discount', 'REAL')
-    add_column_if_missing(c, 'band_events', 'fee_notes', 'TEXT')
-    add_column_if_missing(c, 'band_events', 'fee_settled_at', 'TIMESTAMP')
-    add_column_if_missing(c, 'cifras', 'spotify_url', 'TEXT')
-    add_column_if_missing(c, 'cifras', 'apple_music_url', 'TEXT')
-    add_column_if_missing(c, 'cifras', 'play_notes', 'TEXT')
-    add_column_if_missing(c, 'setlist_cifras', 'play_notes', 'TEXT')
+    """)
+    add_column_if_missing(c, "band_events", "fee_total", "REAL")
+    add_column_if_missing(c, "band_events", "fee_transport_discount", "REAL")
+    add_column_if_missing(c, "band_events", "fee_equipment_discount", "REAL")
+    add_column_if_missing(c, "band_events", "fee_notes", "TEXT")
+    add_column_if_missing(c, "band_events", "fee_settled_at", "TIMESTAMP")
+    add_column_if_missing(c, "cifras", "spotify_url", "TEXT")
+    add_column_if_missing(c, "cifras", "apple_music_url", "TEXT")
+    add_column_if_missing(c, "cifras", "play_notes", "TEXT")
+    add_column_if_missing(c, "setlist_cifras", "play_notes", "TEXT")
 
 
 def _migrate_studio_schema(c) -> None:
     """Estúdios de ensaio — cadastro, salas, disponibilidade e agendamentos."""
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studios (
             id TEXT PRIMARY KEY,
             owner_user_id TEXT NOT NULL,
@@ -697,8 +701,8 @@ def _migrate_studio_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_photos (
             id TEXT PRIMARY KEY,
             studio_id TEXT NOT NULL,
@@ -706,8 +710,8 @@ def _migrate_studio_schema(c) -> None:
             sort_order INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_rooms (
             id TEXT PRIMARY KEY,
             studio_id TEXT NOT NULL,
@@ -717,8 +721,8 @@ def _migrate_studio_schema(c) -> None:
             ativa INTEGER NOT NULL DEFAULT 1,
             FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_room_photos (
             id TEXT PRIMARY KEY,
             room_id TEXT NOT NULL,
@@ -726,8 +730,8 @@ def _migrate_studio_schema(c) -> None:
             sort_order INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (room_id) REFERENCES studio_rooms(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_room_availability (
             id TEXT PRIMARY KEY,
             room_id TEXT NOT NULL,
@@ -738,8 +742,8 @@ def _migrate_studio_schema(c) -> None:
             recorrente INTEGER NOT NULL DEFAULT 1,
             FOREIGN KEY (room_id) REFERENCES studio_rooms(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_room_blocks (
             id TEXT PRIMARY KEY,
             room_id TEXT NOT NULL,
@@ -749,8 +753,8 @@ def _migrate_studio_schema(c) -> None:
             motivo TEXT,
             FOREIGN KEY (room_id) REFERENCES studio_rooms(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_bookings (
             id TEXT PRIMARY KEY,
             room_id TEXT NOT NULL,
@@ -769,8 +773,8 @@ def _migrate_studio_schema(c) -> None:
             FOREIGN KEY (requested_by_user_id) REFERENCES users(id),
             FOREIGN KEY (band_event_id) REFERENCES band_events(id) ON DELETE SET NULL
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_subscriptions (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL UNIQUE,
@@ -779,40 +783,44 @@ def _migrate_studio_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
-    add_column_if_missing(c, 'band_events', 'studio_booking_id', 'TEXT')
-    add_column_if_missing(c, 'studios', 'endereco_lat', 'REAL')
-    add_column_if_missing(c, 'studios', 'endereco_lng', 'REAL')
-    add_column_if_missing(c, 'studios', 'endereco_place_id', 'TEXT')
-    add_column_if_missing(c, 'studios', 'onboarding_dismissed', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'studio_subscriptions', 'mp_preapproval_id', 'TEXT')
-    add_column_if_missing(c, 'studio_subscriptions', 'mp_subscription_id', 'TEXT')
-    add_column_if_missing(c, 'studio_subscriptions', 'data_proxima_cobranca', 'TIMESTAMP')
-    add_column_if_missing(c, 'studio_subscriptions', 'trial_inicio', 'TIMESTAMP')
-    add_column_if_missing(c, 'studio_subscriptions', 'trial_fim', 'TIMESTAMP')
-    add_column_if_missing(c, 'studio_subscriptions', 'trial_usado', 'INTEGER NOT NULL DEFAULT 0')
-    c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_studios_city ON studios(cidade, bairro, ativo)'
+    """)
+    add_column_if_missing(c, "band_events", "studio_booking_id", "TEXT")
+    add_column_if_missing(c, "studios", "endereco_lat", "REAL")
+    add_column_if_missing(c, "studios", "endereco_lng", "REAL")
+    add_column_if_missing(c, "studios", "endereco_place_id", "TEXT")
+    add_column_if_missing(
+        c, "studios", "onboarding_dismissed", "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(c, "studio_subscriptions", "mp_preapproval_id", "TEXT")
+    add_column_if_missing(c, "studio_subscriptions", "mp_subscription_id", "TEXT")
+    add_column_if_missing(
+        c, "studio_subscriptions", "data_proxima_cobranca", "TIMESTAMP"
+    )
+    add_column_if_missing(c, "studio_subscriptions", "trial_inicio", "TIMESTAMP")
+    add_column_if_missing(c, "studio_subscriptions", "trial_fim", "TIMESTAMP")
+    add_column_if_missing(
+        c, "studio_subscriptions", "trial_usado", "INTEGER NOT NULL DEFAULT 0"
     )
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_studios_owner ON studios(owner_user_id)'
+        "CREATE INDEX IF NOT EXISTS idx_studios_city ON studios(cidade, bairro, ativo)"
+    )
+    c.execute("CREATE INDEX IF NOT EXISTS idx_studios_owner ON studios(owner_user_id)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_studio_bookings_room_date "
+        "ON studio_bookings(room_id, data, status)"
     )
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_studio_bookings_room_date '
-        'ON studio_bookings(room_id, data, status)'
-    )
-    c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_studio_bookings_band '
-        'ON studio_bookings(band_id, status)'
+        "CREATE INDEX IF NOT EXISTS idx_studio_bookings_band "
+        "ON studio_bookings(band_id, status)"
     )
     _migrate_studio_finance_schema(c)
 
 
 def _migrate_studio_finance_schema(c) -> None:
-    add_column_if_missing(c, 'studio_bookings', 'valor_cobrado', 'REAL')
-    add_column_if_missing(c, 'studio_bookings', 'pago_em', 'TIMESTAMP')
-    add_column_if_missing(c, 'studio_bookings', 'finance_notes', 'TEXT')
-    c.execute('''
+    add_column_if_missing(c, "studio_bookings", "valor_cobrado", "REAL")
+    add_column_if_missing(c, "studio_bookings", "pago_em", "TIMESTAMP")
+    add_column_if_missing(c, "studio_bookings", "finance_notes", "TEXT")
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_expenses (
             id TEXT PRIMARY KEY,
             studio_id TEXT NOT NULL,
@@ -825,16 +833,16 @@ def _migrate_studio_finance_schema(c) -> None:
             FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE,
             FOREIGN KEY (created_by_user_id) REFERENCES users(id)
         )
-    ''')
+    """)
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_studio_expenses_studio_date '
-        'ON studio_expenses(studio_id, data)'
+        "CREATE INDEX IF NOT EXISTS idx_studio_expenses_studio_date "
+        "ON studio_expenses(studio_id, data)"
     )
-    add_column_if_missing(c, 'studio_rooms', 'preco_hora', 'REAL')
+    add_column_if_missing(c, "studio_rooms", "preco_hora", "REAL")
 
 
 def _migrate_band_finance_schema(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_expenses (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
@@ -847,22 +855,28 @@ def _migrate_band_finance_schema(c) -> None:
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (created_by_user_id) REFERENCES users(id)
         )
-    ''')
+    """)
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_band_expenses_band_date '
-        'ON band_expenses(band_id, data)'
+        "CREATE INDEX IF NOT EXISTS idx_band_expenses_band_date "
+        "ON band_expenses(band_id, data)"
     )
     add_column_if_missing(
-        c, 'band_members', 'can_view_finance', 'INTEGER NOT NULL DEFAULT 0',
+        c,
+        "band_members",
+        "can_view_finance",
+        "INTEGER NOT NULL DEFAULT 0",
     )
     # Fechamento de noite: fundador (divide o líquido) vs sideman (taxa fixa)
     add_column_if_missing(
-        c, 'band_members', 'settlement_role', "TEXT NOT NULL DEFAULT 'founder'",
+        c,
+        "band_members",
+        "settlement_role",
+        "TEXT NOT NULL DEFAULT 'founder'",
     )
-    add_column_if_missing(c, 'band_members', 'default_fixed_fee', 'REAL')
-    add_column_if_missing(c, 'band_expenses', 'event_id', 'TEXT')
-    add_column_if_missing(c, 'band_event_guests', 'fixed_fee', 'REAL')
-    c.execute('''
+    add_column_if_missing(c, "band_members", "default_fixed_fee", "REAL")
+    add_column_if_missing(c, "band_expenses", "event_id", "TEXT")
+    add_column_if_missing(c, "band_event_guests", "fixed_fee", "REAL")
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_event_fee_lines (
             id TEXT PRIMARY KEY,
             event_id TEXT NOT NULL,
@@ -875,26 +889,25 @@ def _migrate_band_finance_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE CASCADE
         )
-    ''')
+    """)
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_band_event_fee_lines_event '
-        'ON band_event_fee_lines(event_id)'
+        "CREATE INDEX IF NOT EXISTS idx_band_event_fee_lines_event "
+        "ON band_event_fee_lines(event_id)"
     )
-    add_column_if_missing(c, 'band_event_fee_lines', 'paid_at', 'TIMESTAMP')
+    add_column_if_missing(c, "band_event_fee_lines", "paid_at", "TIMESTAMP")
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_band_expenses_event '
-        'ON band_expenses(event_id)'
+        "CREATE INDEX IF NOT EXISTS idx_band_expenses_event ON band_expenses(event_id)"
     )
     # Gorjeta Pix (100% na chave do músico) + couvert da noite
-    add_column_if_missing(c, 'bands', 'pix_chave', 'TEXT')
-    add_column_if_missing(c, 'bands', 'gorjeta_slug', 'TEXT')
-    add_column_if_missing(c, 'bands', 'gorjeta_mensagem', 'TEXT')
-    add_column_if_missing(c, 'bands', 'gorjeta_enabled', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'bands', 'gorjeta_show_play', 'INTEGER NOT NULL DEFAULT 1')
-    add_column_if_missing(c, 'bands', 'gorjeta_show_pdf', 'INTEGER NOT NULL DEFAULT 1')
-    add_column_if_missing(c, 'bands', 'gorjeta_valores', 'TEXT')
-    add_column_if_missing(c, 'band_events', 'fee_couvert', 'REAL')
-    c.execute('''
+    add_column_if_missing(c, "bands", "pix_chave", "TEXT")
+    add_column_if_missing(c, "bands", "gorjeta_slug", "TEXT")
+    add_column_if_missing(c, "bands", "gorjeta_mensagem", "TEXT")
+    add_column_if_missing(c, "bands", "gorjeta_enabled", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "bands", "gorjeta_show_play", "INTEGER NOT NULL DEFAULT 1")
+    add_column_if_missing(c, "bands", "gorjeta_show_pdf", "INTEGER NOT NULL DEFAULT 1")
+    add_column_if_missing(c, "bands", "gorjeta_valores", "TEXT")
+    add_column_if_missing(c, "band_events", "fee_couvert", "REAL")
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_gorjetas (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
@@ -907,20 +920,19 @@ def _migrate_band_finance_schema(c) -> None:
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE SET NULL
         )
-    ''')
+    """)
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_band_gorjetas_band_created '
-        'ON band_gorjetas(band_id, created_at DESC)'
+        "CREATE INDEX IF NOT EXISTS idx_band_gorjetas_band_created "
+        "ON band_gorjetas(band_id, created_at DESC)"
     )
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_band_gorjetas_event '
-        'ON band_gorjetas(event_id)'
+        "CREATE INDEX IF NOT EXISTS idx_band_gorjetas_event ON band_gorjetas(event_id)"
     )
     c.execute(
-        'CREATE UNIQUE INDEX IF NOT EXISTS idx_bands_gorjeta_slug '
-        'ON bands(gorjeta_slug)'
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_bands_gorjeta_slug "
+        "ON bands(gorjeta_slug)"
     )
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_song_requests (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
@@ -935,35 +947,39 @@ def _migrate_band_finance_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE
         )
-    ''')
+    """)
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_song_requests_band_status '
-        'ON band_song_requests(band_id, status, created_at DESC)'
+        "CREATE INDEX IF NOT EXISTS idx_song_requests_band_status "
+        "ON band_song_requests(band_id, status, created_at DESC)"
     )
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_song_requests_event '
-        'ON band_song_requests(event_id, created_at DESC)'
+        "CREATE INDEX IF NOT EXISTS idx_song_requests_event "
+        "ON band_song_requests(event_id, created_at DESC)"
     )
 
 
 def _migrate_growth_schema(c) -> None:
     """Funil, NPS, métricas de estúdio e e-mails de onboarding estúdio."""
-    add_column_if_missing(c, 'users', 'play_mode_used', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'agenda_event_used', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'nps_score', 'INTEGER')
-    add_column_if_missing(c, 'users', 'nps_submitted_at', 'TIMESTAMP')
-    add_column_if_missing(c, 'users', 'nps_dismissed', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'pwa_prompt_dismissed', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'is_demo', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'play_csat_answer', 'TEXT')
-    add_column_if_missing(c, 'users', 'play_csat_submitted_at', 'TIMESTAMP')
-    add_column_if_missing(c, 'users', 'churn_reason', 'TEXT')
-    add_column_if_missing(c, 'users', 'churn_survey_at', 'TIMESTAMP')
-    add_column_if_missing(c, 'users', 'churn_survey_dismissed', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'studios', 'page_views', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'studios', 'booking_clicks', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(c, "users", "play_mode_used", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "users", "agenda_event_used", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "users", "nps_score", "INTEGER")
+    add_column_if_missing(c, "users", "nps_submitted_at", "TIMESTAMP")
+    add_column_if_missing(c, "users", "nps_dismissed", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(
+        c, "users", "pwa_prompt_dismissed", "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(c, "users", "is_demo", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "users", "play_csat_answer", "TEXT")
+    add_column_if_missing(c, "users", "play_csat_submitted_at", "TIMESTAMP")
+    add_column_if_missing(c, "users", "churn_reason", "TEXT")
+    add_column_if_missing(c, "users", "churn_survey_at", "TIMESTAMP")
+    add_column_if_missing(
+        c, "users", "churn_survey_dismissed", "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(c, "studios", "page_views", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "studios", "booking_clicks", "INTEGER NOT NULL DEFAULT 0")
     if IS_POSTGRES:
-        c.execute('''
+        c.execute("""
             CREATE TABLE IF NOT EXISTS product_funnel_events (
                 id SERIAL PRIMARY KEY,
                 user_id TEXT,
@@ -972,8 +988,8 @@ def _migrate_growth_schema(c) -> None:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             )
-        ''')
-        c.execute('''
+        """)
+        c.execute("""
             CREATE TABLE IF NOT EXISTS studio_onboarding_emails (
                 id SERIAL PRIMARY KEY,
                 owner_user_id TEXT NOT NULL,
@@ -985,9 +1001,9 @@ def _migrate_growth_schema(c) -> None:
                 FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE
             )
-        ''')
+        """)
     else:
-        c.execute('''
+        c.execute("""
             CREATE TABLE IF NOT EXISTS product_funnel_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id TEXT,
@@ -996,8 +1012,8 @@ def _migrate_growth_schema(c) -> None:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             )
-        ''')
-        c.execute('''
+        """)
+        c.execute("""
             CREATE TABLE IF NOT EXISTS studio_onboarding_emails (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 owner_user_id TEXT NOT NULL,
@@ -1009,17 +1025,17 @@ def _migrate_growth_schema(c) -> None:
                 FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (studio_id) REFERENCES studios(id) ON DELETE CASCADE
             )
-        ''')
+        """)
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_funnel_step ON product_funnel_events(step)'
+        "CREATE INDEX IF NOT EXISTS idx_funnel_step ON product_funnel_events(step)"
     )
     c.execute(
-        'CREATE INDEX IF NOT EXISTS idx_funnel_user ON product_funnel_events(user_id, step)'
+        "CREATE INDEX IF NOT EXISTS idx_funnel_user ON product_funnel_events(user_id, step)"
     )
 
 
 def _migrate_band_team_schema(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_roles (
             band_id TEXT NOT NULL,
             label TEXT NOT NULL,
@@ -1027,8 +1043,8 @@ def _migrate_band_team_schema(c) -> None:
             PRIMARY KEY (band_id, label),
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_lineups (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
@@ -1036,8 +1052,8 @@ def _migrate_band_team_schema(c) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_lineup_members (
             lineup_id TEXT NOT NULL,
             user_id TEXT NOT NULL,
@@ -1047,8 +1063,8 @@ def _migrate_band_team_schema(c) -> None:
             FOREIGN KEY (lineup_id) REFERENCES band_lineups(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_role_substitutes (
             band_id TEXT NOT NULL,
             role_label TEXT NOT NULL,
@@ -1058,8 +1074,8 @@ def _migrate_band_team_schema(c) -> None:
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS user_availability_blockouts (
             user_id TEXT NOT NULL,
             block_date TEXT NOT NULL,
@@ -1067,8 +1083,8 @@ def _migrate_band_team_schema(c) -> None:
             PRIMARY KEY (user_id, block_date),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_event_guests (
             id TEXT PRIMARY KEY,
             event_id TEXT NOT NULL,
@@ -1083,11 +1099,11 @@ def _migrate_band_team_schema(c) -> None:
             FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE CASCADE,
             FOREIGN KEY (invited_by) REFERENCES users(id)
         )
-    ''')
+    """)
 
 
 def _migrate_user_instruments_schema(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS user_instruments (
             user_id TEXT NOT NULL,
             instrument_id TEXT NOT NULL,
@@ -1095,12 +1111,12 @@ def _migrate_user_instruments_schema(c) -> None:
             PRIMARY KEY (user_id, instrument_id),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
+    """)
 
 
 def _migrate_band_member_invites_schema(c) -> None:
     c.execute(
-        '''CREATE TABLE IF NOT EXISTS band_member_invites (
+        """CREATE TABLE IF NOT EXISTS band_member_invites (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
             user_id TEXT NOT NULL,
@@ -1113,16 +1129,16 @@ def _migrate_band_member_invites_schema(c) -> None:
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (invited_by) REFERENCES users(id) ON DELETE SET NULL
-        )'''
+        )"""
     )
     c.execute(
-        '''CREATE INDEX IF NOT EXISTS idx_band_member_invites_user_pending
-           ON band_member_invites(user_id, status)'''
+        """CREATE INDEX IF NOT EXISTS idx_band_member_invites_user_pending
+           ON band_member_invites(user_id, status)"""
     )
 
 
 def _migrate_agenda_schema(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_events (
             id TEXT PRIMARY KEY,
             band_id TEXT NOT NULL,
@@ -1139,8 +1155,8 @@ def _migrate_agenda_schema(c) -> None:
             FOREIGN KEY (setlist_id) REFERENCES setlists(id) ON DELETE SET NULL,
             FOREIGN KEY (created_by) REFERENCES users(id)
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS event_reminders (
             event_id TEXT NOT NULL,
             user_id TEXT NOT NULL,
@@ -1149,8 +1165,8 @@ def _migrate_agenda_schema(c) -> None:
             FOREIGN KEY (event_id) REFERENCES band_events(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS band_event_assignments (
             event_id TEXT NOT NULL,
             user_id TEXT NOT NULL,
@@ -1162,19 +1178,21 @@ def _migrate_agenda_schema(c) -> None:
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (assigned_by) REFERENCES users(id)
         )
-    ''')
-    add_column_if_missing(c, 'band_events', 'location_lat', 'REAL')
-    add_column_if_missing(c, 'band_events', 'location_lng', 'REAL')
-    add_column_if_missing(c, 'band_events', 'location_place_id', 'TEXT')
-    add_column_if_missing(c, 'band_event_assignments', 'response_status', "TEXT DEFAULT 'pending'")
-    add_column_if_missing(c, 'band_event_assignments', 'response_note', 'TEXT')
-    add_column_if_missing(c, 'band_event_assignments', 'responded_at', 'TIMESTAMP')
+    """)
+    add_column_if_missing(c, "band_events", "location_lat", "REAL")
+    add_column_if_missing(c, "band_events", "location_lng", "REAL")
+    add_column_if_missing(c, "band_events", "location_place_id", "TEXT")
+    add_column_if_missing(
+        c, "band_event_assignments", "response_status", "TEXT DEFAULT 'pending'"
+    )
+    add_column_if_missing(c, "band_event_assignments", "response_note", "TEXT")
+    add_column_if_missing(c, "band_event_assignments", "responded_at", "TIMESTAMP")
 
 
 def _migrate_content_schema(c) -> None:
     """Tabelas de conteúdo (depoimentos, blog, onboarding) e seeds iniciais."""
     if not IS_POSTGRES:
-        c.execute('''
+        c.execute("""
             CREATE TABLE IF NOT EXISTS testimonials (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
@@ -1186,8 +1204,8 @@ def _migrate_content_schema(c) -> None:
                 ordem INTEGER NOT NULL DEFAULT 0,
                 criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        ''')
-        c.execute('''
+        """)
+        c.execute("""
             CREATE TABLE IF NOT EXISTS blog_posts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 slug TEXT UNIQUE NOT NULL,
@@ -1203,8 +1221,8 @@ def _migrate_content_schema(c) -> None:
                 imagem_capa TEXT,
                 tags TEXT
             )
-        ''')
-        c.execute('''
+        """)
+        c.execute("""
             CREATE TABLE IF NOT EXISTS onboarding_emails (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 usuario_id TEXT NOT NULL,
@@ -1214,8 +1232,8 @@ def _migrate_content_schema(c) -> None:
                 UNIQUE (usuario_id, email_numero),
                 FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
             )
-        ''')
-        c.execute('''
+        """)
+        c.execute("""
             CREATE TABLE IF NOT EXISTS retention_emails (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 usuario_id TEXT NOT NULL,
@@ -1225,9 +1243,9 @@ def _migrate_content_schema(c) -> None:
                 UNIQUE (usuario_id, campaign),
                 FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
             )
-        ''')
+        """)
     if IS_POSTGRES:
-        c.execute('''
+        c.execute("""
             CREATE TABLE IF NOT EXISTS retention_emails (
                 id SERIAL PRIMARY KEY,
                 usuario_id TEXT NOT NULL,
@@ -1237,9 +1255,10 @@ def _migrate_content_schema(c) -> None:
                 UNIQUE (usuario_id, campaign),
                 FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
             )
-        ''')
+        """)
     _sync_superadmins_from_env(c)
-    from content_seed import seed_testimonials, seed_blog_posts
+    from content_seed import seed_blog_posts, seed_testimonials
+
     seed_testimonials(c)
     seed_blog_posts(c)
 
@@ -1247,43 +1266,47 @@ def _migrate_content_schema(c) -> None:
 def _split_vocalist_names(raw: str) -> list[str]:
     if not raw:
         return []
-    return [p.strip() for p in raw.replace(';', ',').split(',') if p.strip()]
+    return [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
 
 
 def _migrate_vocalists_schema(c) -> None:
     """Migra cantor único (bands.*) e transpose por user_id para band_vocalists."""
-    cols = table_columns(c, 'cifra_vocalist_transpose')
-    if 'user_id' in cols and 'vocalist_id' not in cols:
-        c.execute('ALTER TABLE cifra_vocalist_transpose RENAME TO _legacy_cvt_user')
+    cols = table_columns(c, "cifra_vocalist_transpose")
+    if "user_id" in cols and "vocalist_id" not in cols:
+        c.execute("ALTER TABLE cifra_vocalist_transpose RENAME TO _legacy_cvt_user")
 
-    c.execute('SELECT COUNT(*) AS n FROM band_vocalists')
-    if (c.fetchone()['n'] or 0) == 0:
+    c.execute("SELECT COUNT(*) AS n FROM band_vocalists")
+    if (c.fetchone()["n"] or 0) == 0:
         c.execute(
-            '''SELECT id, vocalist_name, vocalist_user_id FROM bands
-               WHERE COALESCE(vocalist_name, '') != '' OR vocalist_user_id IS NOT NULL'''
+            """SELECT id, vocalist_name, vocalist_user_id FROM bands
+               WHERE COALESCE(vocalist_name, '') != '' OR vocalist_user_id IS NOT NULL"""
         )
         for row in c.fetchall():
-            uid = row['vocalist_user_id']
-            raw = (row['vocalist_name'] or '').strip()
+            uid = row["vocalist_user_id"]
+            raw = (row["vocalist_name"] or "").strip()
             names = _split_vocalist_names(raw)
             if not names:
                 if uid:
                     u = get_user(uid)
-                    names = [((u.get('display_name') or '').strip() or u.get('username')) if u else 'Cantora/cantor']
+                    names = [
+                        ((u.get("display_name") or "").strip() or u.get("username"))
+                        if u
+                        else "Cantora/cantor"
+                    ]
                 else:
                     continue
             for i, name in enumerate(names):
                 vid = str(uuid.uuid4())
                 link_uid = uid if i == 0 else None
                 c.execute(
-                    '''INSERT INTO band_vocalists (id, band_id, name, user_id, sort_order)
-                       VALUES (?, ?, ?, ?, ?)''',
-                    (vid, row['id'], name, link_uid, i),
+                    """INSERT INTO band_vocalists (id, band_id, name, user_id, sort_order)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (vid, row["id"], name, link_uid, i),
                 )
 
-    cols = table_columns(c, 'cifra_vocalist_transpose')
-    if 'vocalist_id' not in cols:
-        c.execute('''
+    cols = table_columns(c, "cifra_vocalist_transpose")
+    if "vocalist_id" not in cols:
+        c.execute("""
             CREATE TABLE IF NOT EXISTS cifra_vocalist_transpose (
                 cifra_id TEXT NOT NULL,
                 vocalist_id TEXT NOT NULL,
@@ -1292,8 +1315,8 @@ def _migrate_vocalists_schema(c) -> None:
                 FOREIGN KEY (cifra_id) REFERENCES cifras(id) ON DELETE CASCADE,
                 FOREIGN KEY (vocalist_id) REFERENCES band_vocalists(id) ON DELETE CASCADE
             )
-        ''')
-        c.execute('''
+        """)
+        c.execute("""
             INSERT OR IGNORE INTO cifra_vocalist_transpose
                 (cifra_id, vocalist_id, transpose_semitones)
             SELECT c.id, bv.id, COALESCE(c.transpose_semitones, 0)
@@ -1302,23 +1325,23 @@ def _migrate_vocalists_schema(c) -> None:
             WHERE bv.sort_order = (
                 SELECT MIN(bv2.sort_order) FROM band_vocalists bv2 WHERE bv2.band_id = c.band_id
             )
-        ''')
-        if table_exists(c, '_legacy_cvt_user'):
-            c.execute('''
+        """)
+        if table_exists(c, "_legacy_cvt_user"):
+            c.execute("""
                 INSERT OR REPLACE INTO cifra_vocalist_transpose
                     (cifra_id, vocalist_id, transpose_semitones)
                 SELECT t.cifra_id, bv.id, t.transpose_semitones
                 FROM _legacy_cvt_user t
                 JOIN cifras c ON c.id = t.cifra_id
                 JOIN band_vocalists bv ON bv.band_id = c.band_id AND bv.user_id = t.user_id
-            ''')
-            c.execute('DROP TABLE IF EXISTS _legacy_cvt_user')
+            """)
+            c.execute("DROP TABLE IF EXISTS _legacy_cvt_user")
 
 
 def update_user_display_name(user_id: str, display_name: str | None):
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE users SET display_name = ? WHERE id = ?', (display_name, user_id))
+    c.execute("UPDATE users SET display_name = ? WHERE id = ?", (display_name, user_id))
     db.commit()
     db.close()
 
@@ -1333,34 +1356,36 @@ def update_user_profile(
     push_notify: bool | None = None,
     notification_prefs: dict | None = None,
 ) -> None:
-    from whatsapp_service import normalize_whatsapp_phone
     from notification_prefs import serialize_notification_prefs
+    from whatsapp_service import normalize_whatsapp_phone
 
     db = get_db()
     c = db.cursor()
     if display_name is not None:
-        c.execute('UPDATE users SET display_name = ? WHERE id = ?', (display_name, user_id))
+        c.execute(
+            "UPDATE users SET display_name = ? WHERE id = ?", (display_name, user_id)
+        )
     if phone is not None:
         normalized = normalize_whatsapp_phone(phone) if phone.strip() else None
-        c.execute('UPDATE users SET phone = ? WHERE id = ?', (normalized, user_id))
+        c.execute("UPDATE users SET phone = ? WHERE id = ?", (normalized, user_id))
     if whatsapp_notify is not None:
         c.execute(
-            'UPDATE users SET whatsapp_notify = ? WHERE id = ?',
+            "UPDATE users SET whatsapp_notify = ? WHERE id = ?",
             (1 if whatsapp_notify else 0, user_id),
         )
     if email_notify is not None:
         c.execute(
-            'UPDATE users SET email_notify = ? WHERE id = ?',
+            "UPDATE users SET email_notify = ? WHERE id = ?",
             (1 if email_notify else 0, user_id),
         )
     if push_notify is not None:
         c.execute(
-            'UPDATE users SET push_notify = ? WHERE id = ?',
+            "UPDATE users SET push_notify = ? WHERE id = ?",
             (1 if push_notify else 0, user_id),
         )
     if notification_prefs is not None:
         c.execute(
-            'UPDATE users SET notification_prefs_json = ? WHERE id = ?',
+            "UPDATE users SET notification_prefs_json = ? WHERE id = ?",
             (serialize_notification_prefs(notification_prefs), user_id),
         )
     db.commit()
@@ -1371,7 +1396,7 @@ def touch_user_last_login(user_id: str) -> None:
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE users SET last_login_at = ? WHERE id = ?', (now, user_id))
+    c.execute("UPDATE users SET last_login_at = ? WHERE id = ?", (now, user_id))
     db.commit()
     db.close()
 
@@ -1380,14 +1405,14 @@ def user_onboarding_checklist_dismissed(user_id: str) -> bool:
     user = get_user(user_id)
     if not user:
         return False
-    return bool(user.get('onboarding_checklist_dismissed'))
+    return bool(user.get("onboarding_checklist_dismissed"))
 
 
 def dismiss_onboarding_checklist(user_id: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE users SET onboarding_checklist_dismissed = 1 WHERE id = ?',
+        "UPDATE users SET onboarding_checklist_dismissed = 1 WHERE id = ?",
         (user_id,),
     )
     db.commit()
@@ -1396,26 +1421,31 @@ def dismiss_onboarding_checklist(user_id: str) -> None:
 
 def user_wants_whatsapp_notifications(user: dict | None) -> bool:
     from notification_prefs import user_wants_whatsapp_notifications as _fn
+
     return _fn(user)
 
 
 def user_has_phone(user: dict | None) -> bool:
     from notification_prefs import user_has_phone as _fn
+
     return _fn(user)
 
 
 def user_wants_email_notifications(user: dict | None) -> bool:
     from notification_prefs import user_wants_email_notifications as _fn
+
     return _fn(user)
 
 
 def user_wants_push_notifications(user: dict | None) -> bool:
     from notification_prefs import user_wants_push_notifications as _fn
+
     return _fn(user)
 
 
 def get_user_notification_prefs(user: dict | None) -> dict:
     from notification_prefs import get_user_notification_prefs as _fn
+
     return _fn(user)
 
 
@@ -1425,6 +1455,7 @@ def user_wants_notification_channel(
     notification_type: str,
 ) -> bool:
     from notification_prefs import user_wants_notification_channel as _fn
+
     return _fn(user, channel, notification_type)
 
 
@@ -1439,20 +1470,20 @@ def save_push_subscription(
     sub_id = str(uuid.uuid4())
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT id FROM push_subscriptions WHERE endpoint = ?', (endpoint,))
+    c.execute("SELECT id FROM push_subscriptions WHERE endpoint = ?", (endpoint,))
     existing = c.fetchone()
     if existing:
         c.execute(
-            '''UPDATE push_subscriptions
+            """UPDATE push_subscriptions
                SET user_id = ?, p256dh = ?, auth = ?, user_agent = ?, last_used_at = CURRENT_TIMESTAMP
-               WHERE endpoint = ?''',
+               WHERE endpoint = ?""",
             (user_id, p256dh, auth, user_agent, endpoint),
         )
-        sub_id = existing['id'] if hasattr(existing, 'keys') else existing[0]
+        sub_id = existing["id"] if hasattr(existing, "keys") else existing[0]
     else:
         c.execute(
-            '''INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, user_agent)
-               VALUES (?, ?, ?, ?, ?, ?)''',
+            """INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, user_agent)
+               VALUES (?, ?, ?, ?, ?, ?)""",
             (sub_id, user_id, endpoint, p256dh, auth, user_agent),
         )
     db.commit()
@@ -1464,7 +1495,7 @@ def delete_push_subscription(user_id: str, endpoint: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?',
+        "DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?",
         (user_id, endpoint),
     )
     deleted = c.rowcount > 0
@@ -1476,7 +1507,7 @@ def delete_push_subscription(user_id: str, endpoint: str) -> bool:
 def delete_all_push_subscriptions(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM push_subscriptions WHERE user_id = ?', (user_id,))
+    c.execute("DELETE FROM push_subscriptions WHERE user_id = ?", (user_id,))
     n = c.rowcount
     db.commit()
     db.close()
@@ -1487,7 +1518,7 @@ def list_push_subscriptions(user_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM push_subscriptions WHERE user_id = ? ORDER BY created_at DESC',
+        "SELECT * FROM push_subscriptions WHERE user_id = ? ORDER BY created_at DESC",
         (user_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -1498,26 +1529,29 @@ def list_push_subscriptions(user_id: str) -> list[dict]:
 def count_push_subscriptions(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM push_subscriptions WHERE user_id = ?', (user_id,))
+    c.execute(
+        "SELECT COUNT(*) AS n FROM push_subscriptions WHERE user_id = ?", (user_id,)
+    )
     row = c.fetchone()
     db.close()
-    return int(row['n'] if row else 0)
+    return int(row["n"] if row else 0)
 
 
 def remove_push_subscription_by_endpoint(endpoint: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM push_subscriptions WHERE endpoint = ?', (endpoint,))
+    c.execute("DELETE FROM push_subscriptions WHERE endpoint = ?", (endpoint,))
     db.commit()
     db.close()
     if not user:
         return False
-    if user.get('email_notify') is None:
+    if user.get("email_notify") is None:
         return True
-    return int(user.get('email_notify') or 0) == 1
+    return int(user.get("email_notify") or 0) == 1
 
 
 # ── Users ──────────────────────────────────────────────────────────────────
+
 
 def create_user(username, email, password, display_name: str | None = None):
     db = get_db()
@@ -1525,8 +1559,14 @@ def create_user(username, email, password, display_name: str | None = None):
     try:
         user_id = str(uuid.uuid4())
         c.execute(
-            'INSERT INTO users (id, username, display_name, email, password_hash) VALUES (?, ?, ?, ?, ?)',
-            (user_id, username, (display_name or None), email, generate_password_hash(password))
+            "INSERT INTO users (id, username, display_name, email, password_hash) VALUES (?, ?, ?, ?, ?)",
+            (
+                user_id,
+                username,
+                (display_name or None),
+                email,
+                generate_password_hash(password),
+            ),
         )
         db.commit()
         return user_id
@@ -1545,15 +1585,15 @@ def create_google_user(google_id, email, username, display_name: str | None = No
         attempt = username
         i = 1
         while True:
-            c.execute('SELECT id FROM users WHERE username = ?', (attempt,))
+            c.execute("SELECT id FROM users WHERE username = ?", (attempt,))
             if not c.fetchone():
                 break
-            attempt = f'{base}{i}'
+            attempt = f"{base}{i}"
             i += 1
         user_id = str(uuid.uuid4())
         c.execute(
-            'INSERT INTO users (id, username, display_name, email, google_id) VALUES (?, ?, ?, ?, ?)',
-            (user_id, attempt, (display_name or None), email, google_id)
+            "INSERT INTO users (id, username, display_name, email, google_id) VALUES (?, ?, ?, ?, ?)",
+            (user_id, attempt, (display_name or None), email, google_id),
         )
         db.commit()
         return user_id
@@ -1566,7 +1606,7 @@ def create_google_user(google_id, email, username, display_name: str | None = No
 def get_user(user_id):
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+    c.execute("SELECT * FROM users WHERE id = ?", (user_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -1576,7 +1616,7 @@ def set_privacy_accepted(user_id: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE users SET privacy_accepted_at = CURRENT_TIMESTAMP WHERE id = ?',
+        "UPDATE users SET privacy_accepted_at = CURRENT_TIMESTAMP WHERE id = ?",
         (user_id,),
     )
     db.commit()
@@ -1586,20 +1626,22 @@ def set_privacy_accepted(user_id: str) -> None:
 def user_needs_privacy_acceptance(user: dict | None) -> bool:
     if not user:
         return False
-    return not user.get('privacy_accepted_at')
+    return not user.get("privacy_accepted_at")
 
 
 def user_display_name(user: dict | None) -> str:
     """Nome amigável: display_name informado pelo usuário, senão username."""
     if not user:
-        return 'Alguém'
-    return (user.get('display_name') or '').strip() or (user.get('username') or 'Alguém')
+        return "Alguém"
+    return (user.get("display_name") or "").strip() or (
+        user.get("username") or "Alguém"
+    )
 
 
 def get_user_by_username(username):
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM users WHERE username = ?', (username,))
+    c.execute("SELECT * FROM users WHERE username = ?", (username,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -1610,10 +1652,10 @@ def get_user_by_login(identifier: str) -> dict | None:
     Busca usuário pelo username ou pelo e-mail (mesmo campo do formulário de login).
     E-mail é comparado sem diferenciar maiúsculas/minúsculas.
     """
-    ident = (identifier or '').strip()
+    ident = (identifier or "").strip()
     if not ident:
         return None
-    if '@' in ident:
+    if "@" in ident:
         user = get_user_by_email(ident)
         if user:
             return user
@@ -1622,19 +1664,19 @@ def get_user_by_login(identifier: str) -> dict | None:
         return user
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', (ident,))
+    c.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", (ident,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
 
 
 def get_user_by_email(email):
-    email = (email or '').strip()
+    email = (email or "").strip()
     if not email:
         return None
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', (email,))
+    c.execute("SELECT * FROM users WHERE LOWER(email) = LOWER(?)", (email,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -1643,7 +1685,7 @@ def get_user_by_email(email):
 def get_user_by_google_id(google_id):
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM users WHERE google_id = ?', (google_id,))
+    c.execute("SELECT * FROM users WHERE google_id = ?", (google_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -1651,9 +1693,9 @@ def get_user_by_google_id(google_id):
 
 def verify_password(user_id, password):
     user = get_user(user_id)
-    if not user or not user.get('password_hash'):
+    if not user or not user.get("password_hash"):
         return False
-    return check_password_hash(user['password_hash'], password)
+    return check_password_hash(user["password_hash"], password)
 
 
 def update_user_password_by_email(email: str, password: str) -> bool:
@@ -1664,8 +1706,8 @@ def update_user_password_by_email(email: str, password: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE users SET password_hash = ? WHERE id = ?',
-        (generate_password_hash(password), user['id']),
+        "UPDATE users SET password_hash = ? WHERE id = ?",
+        (generate_password_hash(password), user["id"]),
     )
     updated = (c.rowcount or 0) > 0
     db.commit()
@@ -1680,14 +1722,14 @@ def is_superadmin(user_id):
     user = get_user(user_id)
     if not user:
         return False
-    if user.get('is_superadmin'):
+    if user.get("is_superadmin"):
         return True
     env_users, env_emails = _env_superadmin_identifiers()
     if not env_users and not env_emails:
         return False
-    if user.get('username', '').lower() in env_users:
+    if user.get("username", "").lower() in env_users:
         return True
-    if user.get('email', '').lower() in env_emails:
+    if user.get("email", "").lower() in env_emails:
         return True
     return False
 
@@ -1697,12 +1739,12 @@ def _sync_superadmins_from_env(c) -> None:
     env_users, env_emails = _env_superadmin_identifiers()
     if not env_users and not env_emails:
         return
-    c.execute('SELECT id, username, email FROM users')
+    c.execute("SELECT id, username, email FROM users")
     for row in c.fetchall():
-        uname = (row['username'] or '').lower()
-        email = (row['email'] or '').lower()
+        uname = (row["username"] or "").lower()
+        email = (row["email"] or "").lower()
         if uname in env_users or email in env_emails:
-            c.execute('UPDATE users SET is_superadmin = 1 WHERE id = ?', (row['id'],))
+            c.execute("UPDATE users SET is_superadmin = 1 WHERE id = ?", (row["id"],))
 
 
 def set_user_superadmin(user_id: str, enabled: bool) -> bool:
@@ -1710,7 +1752,7 @@ def set_user_superadmin(user_id: str, enabled: bool) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE users SET is_superadmin = ? WHERE id = ?',
+        "UPDATE users SET is_superadmin = ? WHERE id = ?",
         (1 if enabled else 0, user_id),
     )
     ok = c.rowcount > 0
@@ -1724,7 +1766,7 @@ def set_user_is_demo(user_id: str, enabled: bool) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE users SET is_demo = ? WHERE id = ?',
+        "UPDATE users SET is_demo = ? WHERE id = ?",
         (1 if enabled else 0, user_id),
     )
     ok = c.rowcount > 0
@@ -1736,7 +1778,7 @@ def set_user_is_demo(user_id: str, enabled: bool) -> bool:
 def get_all_users():
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM users ORDER BY created_at DESC, username ASC')
+    c.execute("SELECT * FROM users ORDER BY created_at DESC, username ASC")
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
@@ -1746,24 +1788,24 @@ def count_users_without_band() -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT COUNT(*) AS n FROM users u
+        """SELECT COUNT(*) AS n FROM users u
            WHERE NOT EXISTS (SELECT 1 FROM band_members bm WHERE bm.user_id = u.id)
-             AND COALESCE(u.is_superadmin, 0) = 0'''
+             AND COALESCE(u.is_superadmin, 0) = 0"""
     )
     row = c.fetchone()
     db.close()
-    return int(row['n'] if row else 0)
+    return int(row["n"] if row else 0)
 
 
 def list_users_without_band(limit: int = 12) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT u.* FROM users u
+        """SELECT u.* FROM users u
            WHERE NOT EXISTS (SELECT 1 FROM band_members bm WHERE bm.user_id = u.id)
              AND COALESCE(u.is_superadmin, 0) = 0
            ORDER BY u.created_at DESC
-           LIMIT ?''',
+           LIMIT ?""",
         (max(1, int(limit)),),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -1774,16 +1816,18 @@ def list_users_without_band(limit: int = 12) -> list[dict]:
 def count_user_band_memberships(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM band_members WHERE user_id = ?', (user_id,))
+    c.execute("SELECT COUNT(*) AS n FROM band_members WHERE user_id = ?", (user_id,))
     row = c.fetchone()
     db.close()
-    return int(row['n'] if row else 0)
+    return int(row["n"] if row else 0)
 
 
 def get_recent_bands(limit: int = 8) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM bands ORDER BY created_at DESC LIMIT ?', (max(1, int(limit)),))
+    c.execute(
+        "SELECT * FROM bands ORDER BY created_at DESC LIMIT ?", (max(1, int(limit)),)
+    )
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     return rows
@@ -1792,7 +1836,7 @@ def get_recent_bands(limit: int = 8) -> list[dict]:
 def get_all_bands():
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM bands ORDER BY name')
+    c.execute("SELECT * FROM bands ORDER BY name")
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
@@ -1802,10 +1846,10 @@ def get_all_cifras():
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT cifras.*, bands.name AS band_name
+        """SELECT cifras.*, bands.name AS band_name
            FROM cifras
            JOIN bands ON bands.id = cifras.band_id
-           ORDER BY bands.name, cifras.titulo'''
+           ORDER BY bands.name, cifras.titulo"""
     )
     rows = c.fetchall()
     db.close()
@@ -1814,9 +1858,10 @@ def get_all_cifras():
 
 # ── Assinaturas / monetização ───────────────────────────────────────────────
 
+
 def _migrate_assinaturas_schema(c) -> None:
     """Cria tabela de assinaturas e preenche bandas existentes com plano grátis."""
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS assinaturas (
             id TEXT PRIMARY KEY,
             banda_id TEXT NOT NULL UNIQUE,
@@ -1829,38 +1874,40 @@ def _migrate_assinaturas_schema(c) -> None:
             data_cancelamento TIMESTAMP,
             FOREIGN KEY (banda_id) REFERENCES bands(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('SELECT id FROM bands')
+    """)
+    c.execute("SELECT id FROM bands")
     for row in c.fetchall():
-        c.execute('SELECT 1 FROM assinaturas WHERE banda_id = ?', (row['id'],))
+        c.execute("SELECT 1 FROM assinaturas WHERE banda_id = ?", (row["id"],))
         if not c.fetchone():
-            create_assinatura_gratis(row['id'], cursor=c, commit=False)
+            create_assinatura_gratis(row["id"], cursor=c, commit=False)
     c.connection.commit()
     _migrate_assinaturas_trial_columns(c)
 
 
-def create_assinatura_gratis(banda_id: str, *, cursor=None, commit: bool = True) -> dict:
+def create_assinatura_gratis(
+    banda_id: str, *, cursor=None, commit: bool = True
+) -> dict:
     """Cria assinatura grátis ativa para uma banda."""
     assinatura_id = str(uuid.uuid4())
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     row = {
-        'id': assinatura_id,
-        'banda_id': banda_id,
-        'plano': 'gratis',
-        'status': 'ativa',
-        'mp_subscription_id': None,
-        'mp_preapproval_id': None,
-        'data_inicio': now,
-        'data_proxima_cobranca': None,
-        'data_cancelamento': None,
+        "id": assinatura_id,
+        "banda_id": banda_id,
+        "plano": "gratis",
+        "status": "ativa",
+        "mp_subscription_id": None,
+        "mp_preapproval_id": None,
+        "data_inicio": now,
+        "data_proxima_cobranca": None,
+        "data_cancelamento": None,
     }
     if cursor is not None:
         c = cursor
         c.execute(
-            '''INSERT INTO assinaturas
+            """INSERT INTO assinaturas
                (id, banda_id, plano, status, data_inicio)
-               VALUES (?, ?, ?, ?, ?)''',
-            (assinatura_id, banda_id, 'gratis', 'ativa', now),
+               VALUES (?, ?, ?, ?, ?)""",
+            (assinatura_id, banda_id, "gratis", "ativa", now),
         )
         if commit:
             c.connection.commit()
@@ -1870,10 +1917,10 @@ def create_assinatura_gratis(banda_id: str, *, cursor=None, commit: bool = True)
     c = db.cursor()
     try:
         c.execute(
-            '''INSERT INTO assinaturas
+            """INSERT INTO assinaturas
                (id, banda_id, plano, status, data_inicio)
-               VALUES (?, ?, ?, ?, ?)''',
-            (assinatura_id, banda_id, 'gratis', 'ativa', now),
+               VALUES (?, ?, ?, ?, ?)""",
+            (assinatura_id, banda_id, "gratis", "ativa", now),
         )
         db.commit()
     except IntegrityError:
@@ -1890,7 +1937,7 @@ def create_assinatura_gratis(banda_id: str, *, cursor=None, commit: bool = True)
 def get_assinatura(banda_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM assinaturas WHERE banda_id = ?', (banda_id,))
+    c.execute("SELECT * FROM assinaturas WHERE banda_id = ?", (banda_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -1898,12 +1945,12 @@ def get_assinatura(banda_id: str) -> dict | None:
 
 def owner_has_worship_ativa(owner_id: str) -> bool:
     """True se o usuário possui alguma banda com plano Worship ativo."""
-    return owner_has_plano_premium(owner_id, 'worship')
+    return owner_has_plano_premium(owner_id, "worship")
 
 
 def owner_has_individual_ativa(owner_id: str) -> bool:
     """True se o usuário possui alguma banda com plano Individual ativo."""
-    return owner_has_plano_premium(owner_id, 'individual')
+    return owner_has_plano_premium(owner_id, "individual")
 
 
 def owner_has_plano_premium(owner_id: str, plano: str) -> bool:
@@ -1911,11 +1958,11 @@ def owner_has_plano_premium(owner_id: str, plano: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT 1 FROM assinaturas a
+        """SELECT 1 FROM assinaturas a
            JOIN bands b ON b.id = a.banda_id
            WHERE b.owner_id = ? AND a.plano = ?
              AND a.status IN ('ativa', 'voucher')
-           LIMIT 1''',
+           LIMIT 1""",
         (owner_id, plano),
     )
     found = c.fetchone() is not None
@@ -1926,8 +1973,8 @@ def owner_has_plano_premium(owner_id: str, plano: str) -> bool:
 def count_band_cifras(band_id: str) -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM cifras WHERE band_id = ?', (band_id,))
-    n = c.fetchone()['n']
+    c.execute("SELECT COUNT(*) AS n FROM cifras WHERE band_id = ?", (band_id,))
+    n = c.fetchone()["n"]
     db.close()
     return int(n or 0)
 
@@ -1935,8 +1982,8 @@ def count_band_cifras(band_id: str) -> int:
 def count_band_members(band_id: str) -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM band_members WHERE band_id = ?', (band_id,))
-    n = c.fetchone()['n']
+    c.execute("SELECT COUNT(*) AS n FROM band_members WHERE band_id = ?", (band_id,))
+    n = c.fetchone()["n"]
     db.close()
     return int(n or 0)
 
@@ -1944,8 +1991,8 @@ def count_band_members(band_id: str) -> int:
 def count_band_setlists(band_id: str) -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM setlists WHERE band_id = ?', (band_id,))
-    n = c.fetchone()['n']
+    c.execute("SELECT COUNT(*) AS n FROM setlists WHERE band_id = ?", (band_id,))
+    n = c.fetchone()["n"]
     db.close()
     return int(n or 0)
 
@@ -1953,8 +2000,8 @@ def count_band_setlists(band_id: str) -> int:
 def count_owned_bands(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM bands WHERE owner_id = ?', (user_id,))
-    n = c.fetchone()['n']
+    c.execute("SELECT COUNT(*) AS n FROM bands WHERE owner_id = ?", (user_id,))
+    n = c.fetchone()["n"]
     db.close()
     return int(n or 0)
 
@@ -1962,20 +2009,25 @@ def count_owned_bands(user_id: str) -> int:
 def update_assinatura(banda_id: str, **fields) -> dict | None:
     """Atualiza campos da assinatura da banda."""
     allowed = {
-        'plano', 'status', 'mp_subscription_id', 'mp_preapproval_id',
-        'data_inicio', 'data_proxima_cobranca', 'data_cancelamento',
+        "plano",
+        "status",
+        "mp_subscription_id",
+        "mp_preapproval_id",
+        "data_inicio",
+        "data_proxima_cobranca",
+        "data_cancelamento",
     }
     parts, vals = [], []
     for key, value in fields.items():
         if key in allowed:
-            parts.append(f'{key} = ?')
+            parts.append(f"{key} = ?")
             vals.append(value)
     if not parts:
         return get_assinatura(banda_id)
     vals.append(banda_id)
     db = get_db()
     c = db.cursor()
-    c.execute(f'UPDATE assinaturas SET {", ".join(parts)} WHERE banda_id = ?', vals)
+    c.execute(f"UPDATE assinaturas SET {', '.join(parts)} WHERE banda_id = ?", vals)
     db.commit()
     db.close()
     return get_assinatura(banda_id)
@@ -1985,7 +2037,7 @@ def get_assinatura_by_mp_id(mp_subscription_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM assinaturas WHERE mp_subscription_id = ? OR mp_preapproval_id = ?',
+        "SELECT * FROM assinaturas WHERE mp_subscription_id = ? OR mp_preapproval_id = ?",
         (mp_subscription_id, mp_subscription_id),
     )
     row = c.fetchone()
@@ -1996,9 +2048,9 @@ def get_assinatura_by_mp_id(mp_subscription_id: str) -> dict | None:
 def _migrate_studio_voucher_schema(c) -> None:
     """Vouchers com destino banda/estúdio e usos por conta de dono."""
     _migrate_vouchers_schema(c)
-    add_column_if_missing(c, 'vouchers', 'eh_vitalicio', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'vouchers', 'destino', "TEXT NOT NULL DEFAULT 'banda'")
-    c.execute('''
+    add_column_if_missing(c, "vouchers", "eh_vitalicio", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "vouchers", "destino", "TEXT NOT NULL DEFAULT 'banda'")
+    c.execute("""
         CREATE TABLE IF NOT EXISTS studio_voucher_usos (
             id TEXT PRIMARY KEY,
             voucher_id TEXT NOT NULL,
@@ -2010,11 +2062,11 @@ def _migrate_studio_voucher_schema(c) -> None:
             FOREIGN KEY (voucher_id) REFERENCES vouchers(id),
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
-    ''')
+    """)
 
 
 def _migrate_vouchers_schema(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS vouchers (
             id TEXT PRIMARY KEY,
             codigo TEXT NOT NULL UNIQUE,
@@ -2030,8 +2082,8 @@ def _migrate_vouchers_schema(c) -> None:
             criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (criado_por_id) REFERENCES users(id)
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS voucher_usos (
             id TEXT PRIMARY KEY,
             voucher_id TEXT NOT NULL,
@@ -2043,7 +2095,7 @@ def _migrate_vouchers_schema(c) -> None:
             FOREIGN KEY (voucher_id) REFERENCES vouchers(id),
             FOREIGN KEY (banda_id) REFERENCES bands(id)
         )
-    ''')
+    """)
 
 
 def create_voucher(
@@ -2055,58 +2107,68 @@ def create_voucher(
     data_expiracao: str | None = None,
     eh_indicacao: bool = False,
     eh_vitalicio: bool = False,
-    destino: str = 'banda',
+    destino: str = "banda",
 ) -> dict:
     vid = str(uuid.uuid4())
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO vouchers
+        """INSERT INTO vouchers
            (id, codigo, plano, dias, criado_por_id, max_usos, eh_indicacao, eh_vitalicio,
             data_expiracao, destino)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
-            vid, codigo.upper(), plano, dias, criado_por_id, max_usos,
-            int(eh_indicacao), int(eh_vitalicio), data_expiracao, destino,
+            vid,
+            codigo.upper(),
+            plano,
+            dias,
+            criado_por_id,
+            max_usos,
+            int(eh_indicacao),
+            int(eh_vitalicio),
+            data_expiracao,
+            destino,
         ),
     )
     db.commit()
     db.close()
-    return get_voucher_by_codigo(codigo) or {'id': vid, 'codigo': codigo}
+    return get_voucher_by_codigo(codigo) or {"id": vid, "codigo": codigo}
 
 
 def get_voucher_by_codigo(codigo: str) -> dict | None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM vouchers WHERE codigo = ?', (codigo.upper(),))
+    c.execute("SELECT * FROM vouchers WHERE codigo = ?", (codigo.upper(),))
     row = c.fetchone()
     db.close()
     if not row:
         return None
     d = dict(row)
-    d['ativo'] = bool(d.get('ativo'))
-    d['eh_indicacao'] = bool(d.get('eh_indicacao'))
-    d['eh_vitalicio'] = bool(d.get('eh_vitalicio'))
+    d["ativo"] = bool(d.get("ativo"))
+    d["eh_indicacao"] = bool(d.get("eh_indicacao"))
+    d["eh_vitalicio"] = bool(d.get("eh_vitalicio"))
     return d
 
 
 def list_vouchers() -> list[dict]:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM vouchers ORDER BY criado_em DESC')
+    c.execute("SELECT * FROM vouchers ORDER BY criado_em DESC")
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     for d in rows:
-        d['ativo'] = bool(d.get('ativo'))
-        d['eh_indicacao'] = bool(d.get('eh_indicacao'))
-        d['eh_vitalicio'] = bool(d.get('eh_vitalicio'))
+        d["ativo"] = bool(d.get("ativo"))
+        d["eh_indicacao"] = bool(d.get("eh_indicacao"))
+        d["eh_vitalicio"] = bool(d.get("eh_vitalicio"))
     return rows
 
 
 def set_voucher_ativo(codigo: str, ativo: bool) -> bool:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE vouchers SET ativo = ? WHERE codigo = ?', (int(ativo), codigo.upper()))
+    c.execute(
+        "UPDATE vouchers SET ativo = ? WHERE codigo = ?", (int(ativo), codigo.upper())
+    )
     db.commit()
     ok = c.rowcount > 0
     db.close()
@@ -2116,7 +2178,9 @@ def set_voucher_ativo(codigo: str, ativo: bool) -> bool:
 def increment_voucher_usos(voucher_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE vouchers SET usos_atual = usos_atual + 1 WHERE id = ?', (voucher_id,))
+    c.execute(
+        "UPDATE vouchers SET usos_atual = usos_atual + 1 WHERE id = ?", (voucher_id,)
+    )
     db.commit()
     db.close()
 
@@ -2125,7 +2189,7 @@ def get_voucher_uso_banda(voucher_id: str, banda_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM voucher_usos WHERE voucher_id = ? AND banda_id = ?',
+        "SELECT * FROM voucher_usos WHERE voucher_id = ? AND banda_id = ?",
         (voucher_id, banda_id),
     )
     row = c.fetchone()
@@ -2138,14 +2202,14 @@ def insert_voucher_uso(voucher_id: str, banda_id: str, usado_em, expira_em) -> s
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO voucher_usos (id, voucher_id, banda_id, usado_em, expira_em)
-           VALUES (?, ?, ?, ?, ?)''',
+        """INSERT INTO voucher_usos (id, voucher_id, banda_id, usado_em, expira_em)
+           VALUES (?, ?, ?, ?, ?)""",
         (
             uso_id,
             voucher_id,
             banda_id,
-            usado_em.strftime('%Y-%m-%d %H:%M:%S'),
-            expira_em.strftime('%Y-%m-%d %H:%M:%S'),
+            usado_em.strftime("%Y-%m-%d %H:%M:%S"),
+            expira_em.strftime("%Y-%m-%d %H:%M:%S"),
         ),
     )
     db.commit()
@@ -2157,11 +2221,11 @@ def list_voucher_usos(voucher_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT vu.*, b.name AS banda_nome
+        """SELECT vu.*, b.name AS banda_nome
            FROM voucher_usos vu
            JOIN bands b ON b.id = vu.banda_id
            WHERE vu.voucher_id = ?
-           ORDER BY vu.usado_em DESC''',
+           ORDER BY vu.usado_em DESC""",
         (voucher_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -2173,7 +2237,7 @@ def get_studio_voucher_uso(voucher_id: str, user_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM studio_voucher_usos WHERE voucher_id = ? AND user_id = ?',
+        "SELECT * FROM studio_voucher_usos WHERE voucher_id = ? AND user_id = ?",
         (voucher_id, user_id),
     )
     row = c.fetchone()
@@ -2181,19 +2245,21 @@ def get_studio_voucher_uso(voucher_id: str, user_id: str) -> dict | None:
     return dict(row) if row else None
 
 
-def insert_studio_voucher_uso(voucher_id: str, user_id: str, usado_em, expira_em) -> str:
+def insert_studio_voucher_uso(
+    voucher_id: str, user_id: str, usado_em, expira_em
+) -> str:
     uso_id = str(uuid.uuid4())
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO studio_voucher_usos (id, voucher_id, user_id, usado_em, expira_em)
-           VALUES (?, ?, ?, ?, ?)''',
+        """INSERT INTO studio_voucher_usos (id, voucher_id, user_id, usado_em, expira_em)
+           VALUES (?, ?, ?, ?, ?)""",
         (
             uso_id,
             voucher_id,
             user_id,
-            usado_em.strftime('%Y-%m-%d %H:%M:%S'),
-            expira_em.strftime('%Y-%m-%d %H:%M:%S'),
+            usado_em.strftime("%Y-%m-%d %H:%M:%S"),
+            expira_em.strftime("%Y-%m-%d %H:%M:%S"),
         ),
     )
     db.commit()
@@ -2205,11 +2271,11 @@ def list_studio_voucher_usos(voucher_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT svu.*, COALESCE(u.display_name, u.username) AS user_nome, u.email AS user_email
+        """SELECT svu.*, COALESCE(u.display_name, u.username) AS user_nome, u.email AS user_email
            FROM studio_voucher_usos svu
            JOIN users u ON u.id = svu.user_id
            WHERE svu.voucher_id = ?
-           ORDER BY svu.usado_em DESC''',
+           ORDER BY svu.usado_em DESC""",
         (voucher_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -2221,7 +2287,7 @@ def list_studio_voucher_usos_vencendo(antes_de: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT svu.*, v.plano, u.email AS owner_email,
+        """SELECT svu.*, v.plano, u.email AS owner_email,
                   COALESCE(u.display_name, u.username) AS user_nome
            FROM studio_voucher_usos svu
            JOIN vouchers v ON v.id = svu.voucher_id
@@ -2229,7 +2295,7 @@ def list_studio_voucher_usos_vencendo(antes_de: str) -> list[dict]:
            JOIN users u ON u.id = svu.user_id
            WHERE svu.expira_em <= ? AND ss.status = 'voucher'
            AND v.destino = 'estudio'
-           AND COALESCE(v.eh_vitalicio, 0) = 0''',
+           AND COALESCE(v.eh_vitalicio, 0) = 0""",
         (antes_de,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -2241,7 +2307,7 @@ def list_studio_voucher_usos_aviso(ate: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT svu.*, v.plano, u.email AS owner_email,
+        """SELECT svu.*, v.plano, u.email AS owner_email,
                   COALESCE(u.display_name, u.username) AS user_nome
            FROM studio_voucher_usos svu
            JOIN vouchers v ON v.id = svu.voucher_id
@@ -2250,7 +2316,7 @@ def list_studio_voucher_usos_aviso(ate: str) -> list[dict]:
            WHERE ss.status = 'voucher' AND svu.aviso_3d_enviado = 0
            AND svu.expira_em <= ? AND svu.expira_em > datetime('now')
            AND v.destino = 'estudio'
-           AND COALESCE(v.eh_vitalicio, 0) = 0''',
+           AND COALESCE(v.eh_vitalicio, 0) = 0""",
         (ate,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -2262,7 +2328,7 @@ def marcar_aviso_studio_voucher_enviado(uso_id: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE studio_voucher_usos SET aviso_3d_enviado = 1 WHERE id = ?',
+        "UPDATE studio_voucher_usos SET aviso_3d_enviado = 1 WHERE id = ?",
         (uso_id,),
     )
     db.commit()
@@ -2273,12 +2339,12 @@ def count_vouchers_indicacao_ativos(criado_por_id: str) -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT COUNT(*) AS n FROM vouchers
+        """SELECT COUNT(*) AS n FROM vouchers
            WHERE criado_por_id = ? AND eh_indicacao = 1 AND ativo = 1
-           AND (max_usos IS NULL OR usos_atual < max_usos)''',
+           AND (max_usos IS NULL OR usos_atual < max_usos)""",
         (criado_por_id,),
     )
-    n = c.fetchone()['n']
+    n = c.fetchone()["n"]
     db.close()
     return int(n or 0)
 
@@ -2288,7 +2354,7 @@ def list_voucher_usos_vencendo(antes_de: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT vu.*, v.plano, a.status AS assinatura_status,
+        """SELECT vu.*, v.plano, a.status AS assinatura_status,
                   b.name AS banda_nome, b.owner_id,
                   u.email AS owner_email
            FROM voucher_usos vu
@@ -2297,7 +2363,7 @@ def list_voucher_usos_vencendo(antes_de: str) -> list[dict]:
            JOIN bands b ON b.id = vu.banda_id
            JOIN users u ON u.id = b.owner_id
            WHERE vu.expira_em <= ? AND a.status = 'voucher'
-           AND COALESCE(v.eh_vitalicio, 0) = 0''',
+           AND COALESCE(v.eh_vitalicio, 0) = 0""",
         (antes_de,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -2310,7 +2376,7 @@ def list_voucher_usos_aviso(ate: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT vu.*, v.plano, b.name AS banda_nome, u.email AS owner_email
+        """SELECT vu.*, v.plano, b.name AS banda_nome, u.email AS owner_email
            FROM voucher_usos vu
            JOIN vouchers v ON v.id = vu.voucher_id
            JOIN assinaturas a ON a.banda_id = vu.banda_id
@@ -2318,7 +2384,7 @@ def list_voucher_usos_aviso(ate: str) -> list[dict]:
            JOIN users u ON u.id = b.owner_id
            WHERE a.status = 'voucher' AND vu.aviso_3d_enviado = 0
            AND vu.expira_em <= ? AND vu.expira_em > datetime('now')
-           AND COALESCE(v.eh_vitalicio, 0) = 0''',
+           AND COALESCE(v.eh_vitalicio, 0) = 0""",
         (ate,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -2329,25 +2395,26 @@ def list_voucher_usos_aviso(ate: str) -> list[dict]:
 def marcar_aviso_voucher_enviado(uso_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE voucher_usos SET aviso_3d_enviado = 1 WHERE id = ?', (uso_id,))
+    c.execute("UPDATE voucher_usos SET aviso_3d_enviado = 1 WHERE id = ?", (uso_id,))
     db.commit()
     db.close()
 
 
 # ── Bands ──────────────────────────────────────────────────────────────────
 
+
 def create_band(name, description, owner_id):
     db = get_db()
     c = db.cursor()
     band_id = str(uuid.uuid4())
     c.execute(
-        'INSERT INTO bands (id, name, description, owner_id) VALUES (?, ?, ?, ?)',
-        (band_id, name, description, owner_id)
+        "INSERT INTO bands (id, name, description, owner_id) VALUES (?, ?, ?, ?)",
+        (band_id, name, description, owner_id),
     )
     # Owner é automaticamente membro com role 'owner'
     c.execute(
-        'INSERT INTO band_members (band_id, user_id, role) VALUES (?, ?, ?)',
-        (band_id, owner_id, 'owner')
+        "INSERT INTO band_members (band_id, user_id, role) VALUES (?, ?, ?)",
+        (band_id, owner_id, "owner"),
     )
     db.commit()
     db.close()
@@ -2358,7 +2425,7 @@ def create_band(name, description, owner_id):
 def get_band(band_id):
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM bands WHERE id = ?', (band_id,))
+    c.execute("SELECT * FROM bands WHERE id = ?", (band_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -2370,7 +2437,7 @@ def can_delete_band(band_id, user_id):
         return False
     if is_superadmin(user_id):
         return True
-    return band['owner_id'] == user_id
+    return band["owner_id"] == user_id
 
 
 def can_edit_band_settings(band_id, user_id):
@@ -2381,7 +2448,10 @@ def update_band(band_id, name, description, **_ignored):
     """Atualiza nome e descrição da banda."""
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE bands SET name = ?, description = ? WHERE id = ?', (name, description, band_id))
+    c.execute(
+        "UPDATE bands SET name = ?, description = ? WHERE id = ?",
+        (name, description, band_id),
+    )
     db.commit()
     db.close()
 
@@ -2400,19 +2470,19 @@ def update_band_gorjeta(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE bands
+        """UPDATE bands
            SET pix_chave=?, gorjeta_slug=?, gorjeta_mensagem=?,
                gorjeta_enabled=?, gorjeta_show_play=?, gorjeta_show_pdf=?,
                gorjeta_valores=?
-           WHERE id=?''',
+           WHERE id=?""",
         (
-            (pix_chave or '').strip() or None,
-            (gorjeta_slug or '').strip().lower() or None,
-            (gorjeta_mensagem or '').strip() or None,
+            (pix_chave or "").strip() or None,
+            (gorjeta_slug or "").strip().lower() or None,
+            (gorjeta_mensagem or "").strip() or None,
             1 if gorjeta_enabled else 0,
             1 if gorjeta_show_play else 0,
             1 if gorjeta_show_pdf else 0,
-            (gorjeta_valores or '').strip() or None,
+            (gorjeta_valores or "").strip() or None,
             band_id,
         ),
     )
@@ -2421,13 +2491,13 @@ def update_band_gorjeta(
 
 
 def get_band_by_gorjeta_slug(slug: str) -> dict | None:
-    slug = (slug or '').strip().lower()
+    slug = (slug or "").strip().lower()
     if not slug:
         return None
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM bands WHERE lower(gorjeta_slug) = ? AND gorjeta_enabled = 1',
+        "SELECT * FROM bands WHERE lower(gorjeta_slug) = ? AND gorjeta_enabled = 1",
         (slug,),
     )
     row = c.fetchone()
@@ -2441,23 +2511,23 @@ def create_band_gorjeta(
     valor: float,
     event_id: str | None = None,
     nota: str | None = None,
-    source: str = 'public',
+    source: str = "public",
     created_by_user_id: str | None = None,
 ) -> str:
     tip_id = str(uuid.uuid4())
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO band_gorjetas
+        """INSERT INTO band_gorjetas
            (id, band_id, event_id, valor, nota, source, created_by_user_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (
             tip_id,
             band_id,
             event_id or None,
             float(valor),
-            (nota or '').strip()[:200] or None,
-            (source or 'public')[:20],
+            (nota or "").strip()[:200] or None,
+            (source or "public")[:20],
             created_by_user_id,
         ),
     )
@@ -2476,23 +2546,23 @@ def list_band_gorjetas(
 ) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    clauses = ['band_id = ?']
+    clauses = ["band_id = ?"]
     params: list = [band_id]
     if event_id:
-        clauses.append('event_id = ?')
+        clauses.append("event_id = ?")
         params.append(event_id)
     if from_date:
-        clauses.append('created_at >= ?')
-        params.append(f'{from_date[:10]} 00:00:00')
+        clauses.append("created_at >= ?")
+        params.append(f"{from_date[:10]} 00:00:00")
     if to_date:
-        clauses.append('created_at <= ?')
-        params.append(f'{to_date[:10]} 23:59:59')
+        clauses.append("created_at <= ?")
+        params.append(f"{to_date[:10]} 23:59:59")
     params.append(int(limit))
     c.execute(
-        f'''SELECT * FROM band_gorjetas
-            WHERE {' AND '.join(clauses)}
+        f"""SELECT * FROM band_gorjetas
+            WHERE {" AND ".join(clauses)}
             ORDER BY created_at DESC
-            LIMIT ?''',
+            LIMIT ?""",
         params,
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -2509,42 +2579,42 @@ def sum_band_gorjetas(
 ) -> float:
     db = get_db()
     c = db.cursor()
-    clauses = ['band_id = ?']
+    clauses = ["band_id = ?"]
     params: list = [band_id]
     if event_id:
-        clauses.append('event_id = ?')
+        clauses.append("event_id = ?")
         params.append(event_id)
     if from_date:
-        clauses.append('created_at >= ?')
-        params.append(f'{from_date[:10]} 00:00:00')
+        clauses.append("created_at >= ?")
+        params.append(f"{from_date[:10]} 00:00:00")
     if to_date:
-        clauses.append('created_at <= ?')
-        params.append(f'{to_date[:10]} 23:59:59')
+        clauses.append("created_at <= ?")
+        params.append(f"{to_date[:10]} 23:59:59")
     c.execute(
-        f'SELECT COALESCE(SUM(valor), 0) AS total FROM band_gorjetas WHERE {" AND ".join(clauses)}',
+        f"SELECT COALESCE(SUM(valor), 0) AS total FROM band_gorjetas WHERE {' AND '.join(clauses)}",
         params,
     )
     row = c.fetchone()
     db.close()
     try:
-        return round(float(row['total'] if row else 0), 2)
+        return round(float(row["total"] if row else 0), 2)
     except (TypeError, ValueError, KeyError):
         return 0.0
 
 
 def gorjeta_slug_taken(slug: str, *, exclude_band_id: str | None = None) -> bool:
-    slug = (slug or '').strip().lower()
+    slug = (slug or "").strip().lower()
     if not slug:
         return False
     db = get_db()
     c = db.cursor()
     if exclude_band_id:
         c.execute(
-            'SELECT id FROM bands WHERE lower(gorjeta_slug) = ? AND id != ?',
+            "SELECT id FROM bands WHERE lower(gorjeta_slug) = ? AND id != ?",
             (slug, exclude_band_id),
         )
     else:
-        c.execute('SELECT id FROM bands WHERE lower(gorjeta_slug) = ?', (slug,))
+        c.execute("SELECT id FROM bands WHERE lower(gorjeta_slug) = ?", (slug,))
     row = c.fetchone()
     db.close()
     return bool(row)
@@ -2565,20 +2635,20 @@ def create_song_request(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO band_song_requests
+        """INSERT INTO band_song_requests
            (id, band_id, setlist_id, event_id, cifra_id, titulo, artista,
             requester_name, nota, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')''',
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')""",
         (
             req_id,
             band_id,
             str(setlist_id) if setlist_id else None,
             event_id or None,
             str(cifra_id) if cifra_id else None,
-            (titulo or '').strip()[:160] or 'Pedido',
-            (artista or '').strip()[:120] or None,
-            (requester_name or '').strip()[:80] or None,
-            (nota or '').strip()[:200] or None,
+            (titulo or "").strip()[:160] or "Pedido",
+            (artista or "").strip()[:120] or None,
+            (requester_name or "").strip()[:80] or None,
+            (nota or "").strip()[:200] or None,
         ),
     )
     db.commit()
@@ -2590,25 +2660,25 @@ def list_song_requests(
     band_id: str,
     *,
     event_id: str | None = None,
-    status: str | None = 'pending',
+    status: str | None = "pending",
     limit: int = 50,
 ) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    clauses = ['band_id = ?']
+    clauses = ["band_id = ?"]
     params: list = [band_id]
     if event_id:
-        clauses.append('event_id = ?')
+        clauses.append("event_id = ?")
         params.append(event_id)
     if status:
-        clauses.append('status = ?')
+        clauses.append("status = ?")
         params.append(status)
     params.append(int(limit))
     c.execute(
-        f'''SELECT * FROM band_song_requests
-            WHERE {' AND '.join(clauses)}
+        f"""SELECT * FROM band_song_requests
+            WHERE {" AND ".join(clauses)}
             ORDER BY created_at DESC
-            LIMIT ?''',
+            LIMIT ?""",
         params,
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -2620,20 +2690,20 @@ def count_song_requests(
     band_id: str,
     *,
     event_id: str | None = None,
-    status: str = 'pending',
+    status: str = "pending",
 ) -> int:
     db = get_db()
     c = db.cursor()
-    clauses = ['band_id = ?', 'status = ?']
+    clauses = ["band_id = ?", "status = ?"]
     params: list = [band_id, status]
     if event_id:
-        clauses.append('event_id = ?')
+        clauses.append("event_id = ?")
         params.append(event_id)
     c.execute(
-        f'SELECT COUNT(*) AS n FROM band_song_requests WHERE {" AND ".join(clauses)}',
+        f"SELECT COUNT(*) AS n FROM band_song_requests WHERE {' AND '.join(clauses)}",
         params,
     )
-    n = c.fetchone()['n']
+    n = c.fetchone()["n"]
     db.close()
     return int(n or 0)
 
@@ -2643,15 +2713,15 @@ def update_song_request_status(
     band_id: str,
     status: str,
 ) -> bool:
-    status = (status or '').strip().lower()
-    if status not in ('pending', 'done', 'dismissed'):
+    status = (status or "").strip().lower()
+    if status not in ("pending", "done", "dismissed"):
         return False
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE band_song_requests
+        """UPDATE band_song_requests
            SET status = ?
-           WHERE id = ? AND band_id = ?''',
+           WHERE id = ? AND band_id = ?""",
         (status, request_id, band_id),
     )
     ok = c.rowcount > 0
@@ -2663,7 +2733,7 @@ def update_song_request_status(
 def set_band_contact_whatsapp(band_id: str, phone: str | None) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE bands SET contact_whatsapp = ? WHERE id = ?', (phone, band_id))
+    c.execute("UPDATE bands SET contact_whatsapp = ? WHERE id = ?", (phone, band_id))
     db.commit()
     db.close()
 
@@ -2681,11 +2751,15 @@ def log_admin_whatsapp_invite(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO admin_whatsapp_invites
+        """INSERT INTO admin_whatsapp_invites
            (id, target_type, target_id, phone, sent_by_user_id, message_body, success)
-           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (
-            invite_id, target_type, target_id, phone, sent_by_user_id,
+            invite_id,
+            target_type,
+            target_id,
+            phone,
+            sent_by_user_id,
             message_body[:4000] if message_body else None,
             1 if success else 0,
         ),
@@ -2699,7 +2773,7 @@ def get_latest_admin_whatsapp_invites() -> dict[tuple[str, str], dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT a.* FROM admin_whatsapp_invites a
+        """SELECT a.* FROM admin_whatsapp_invites a
            INNER JOIN (
                SELECT target_type, target_id, MAX(created_at) AS max_at
                FROM admin_whatsapp_invites
@@ -2707,14 +2781,14 @@ def get_latest_admin_whatsapp_invites() -> dict[tuple[str, str], dict]:
            ) latest
            ON a.target_type = latest.target_type
            AND a.target_id = latest.target_id
-           AND a.created_at = latest.max_at'''
+           AND a.created_at = latest.max_at"""
     )
     rows = c.fetchall()
     db.close()
     out: dict[tuple[str, str], dict] = {}
     for row in rows:
         d = dict(row)
-        out[(d['target_type'], d['target_id'])] = d
+        out[(d["target_type"], d["target_id"])] = d
     return out
 
 
@@ -2729,19 +2803,19 @@ def upsert_studio_prospect(
 ) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT id FROM studio_prospects WHERE id = ?', (prospect_id,))
+    c.execute("SELECT id FROM studio_prospects WHERE id = ?", (prospect_id,))
     if c.fetchone():
         c.execute(
-            '''UPDATE studio_prospects
+            """UPDATE studio_prospects
                SET nome = ?, cidade = ?, phone = ?, notes = COALESCE(?, notes)
-               WHERE id = ?''',
+               WHERE id = ?""",
             (nome, cidade, phone, notes, prospect_id),
         )
     else:
         c.execute(
-            '''INSERT INTO studio_prospects
+            """INSERT INTO studio_prospects
                (id, nome, cidade, phone, notes, created_by_user_id)
-               VALUES (?, ?, ?, ?, ?, ?)''',
+               VALUES (?, ?, ?, ?, ?, ?)""",
             (prospect_id, nome, cidade, phone, notes, created_by_user_id),
         )
     db.commit()
@@ -2752,7 +2826,7 @@ def mark_studio_prospect_invite_sent(prospect_id: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE studio_prospects SET last_invite_at = CURRENT_TIMESTAMP WHERE id = ?',
+        "UPDATE studio_prospects SET last_invite_at = CURRENT_TIMESTAMP WHERE id = ?",
         (prospect_id,),
     )
     db.commit()
@@ -2762,7 +2836,7 @@ def mark_studio_prospect_invite_sent(prospect_id: str) -> None:
 def get_studio_prospect(prospect_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM studio_prospects WHERE id = ?', (prospect_id,))
+    c.execute("SELECT * FROM studio_prospects WHERE id = ?", (prospect_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -2772,9 +2846,9 @@ def list_studio_prospects(*, limit: int = 100) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM studio_prospects
+        """SELECT * FROM studio_prospects
            ORDER BY COALESCE(last_invite_at, created_at) DESC
-           LIMIT ?''',
+           LIMIT ?""",
         (limit,),
     )
     rows = c.fetchall()
@@ -2793,19 +2867,19 @@ def upsert_band_prospect(
 ) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT id FROM band_prospects WHERE id = ?', (prospect_id,))
+    c.execute("SELECT id FROM band_prospects WHERE id = ?", (prospect_id,))
     if c.fetchone():
         c.execute(
-            '''UPDATE band_prospects
+            """UPDATE band_prospects
                SET nome = ?, cidade = ?, phone = ?, notes = COALESCE(?, notes)
-               WHERE id = ?''',
+               WHERE id = ?""",
             (nome, cidade, phone, notes, prospect_id),
         )
     else:
         c.execute(
-            '''INSERT INTO band_prospects
+            """INSERT INTO band_prospects
                (id, nome, cidade, phone, notes, created_by_user_id)
-               VALUES (?, ?, ?, ?, ?, ?)''',
+               VALUES (?, ?, ?, ?, ?, ?)""",
             (prospect_id, nome, cidade, phone, notes, created_by_user_id),
         )
     db.commit()
@@ -2816,7 +2890,7 @@ def mark_band_prospect_invite_sent(prospect_id: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE band_prospects SET last_invite_at = CURRENT_TIMESTAMP WHERE id = ?',
+        "UPDATE band_prospects SET last_invite_at = CURRENT_TIMESTAMP WHERE id = ?",
         (prospect_id,),
     )
     db.commit()
@@ -2826,7 +2900,7 @@ def mark_band_prospect_invite_sent(prospect_id: str) -> None:
 def get_band_prospect(prospect_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM band_prospects WHERE id = ?', (prospect_id,))
+    c.execute("SELECT * FROM band_prospects WHERE id = ?", (prospect_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -2836,9 +2910,9 @@ def list_band_prospects(*, limit: int = 100) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM band_prospects
+        """SELECT * FROM band_prospects
            ORDER BY COALESCE(last_invite_at, created_at) DESC
-           LIMIT ?''',
+           LIMIT ?""",
         (limit,),
     )
     rows = c.fetchall()
@@ -2849,18 +2923,20 @@ def list_band_prospects(*, limit: int = 100) -> list[dict]:
 def set_band_logo_filename(band_id: str, filename: str | None) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE bands SET logo_filename = ? WHERE id = ?', (filename, band_id))
+    c.execute("UPDATE bands SET logo_filename = ? WHERE id = ?", (filename, band_id))
     db.commit()
     db.close()
 
 
 def _vocalist_row_dict(row) -> dict:
     d = dict(row)
-    if d.get('user_id'):
-        u = get_user(d['user_id'])
+    if d.get("user_id"):
+        u = get_user(d["user_id"])
         if u:
-            d['username'] = u.get('username')
-            d['user_display'] = (u.get('display_name') or '').strip() or u.get('username')
+            d["username"] = u.get("username")
+            d["user_display"] = (u.get("display_name") or "").strip() or u.get(
+                "username"
+            )
     return d
 
 
@@ -2868,11 +2944,11 @@ def get_band_vocalists(band_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM band_vocalists WHERE band_id = ?
-           ORDER BY sort_order, LOWER(name)''',
+        """SELECT * FROM band_vocalists WHERE band_id = ?
+           ORDER BY sort_order, LOWER(name)""",
         (band_id,),
     )
-    rows = [ _vocalist_row_dict(r) for r in c.fetchall() ]
+    rows = [_vocalist_row_dict(r) for r in c.fetchall()]
     db.close()
     return rows
 
@@ -2880,7 +2956,7 @@ def get_band_vocalists(band_id: str) -> list[dict]:
 def get_band_vocalist(vocalist_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM band_vocalists WHERE id = ?', (vocalist_id,))
+    c.execute("SELECT * FROM band_vocalists WHERE id = ?", (vocalist_id,))
     row = c.fetchone()
     db.close()
     return _vocalist_row_dict(row) if row else None
@@ -2888,7 +2964,7 @@ def get_band_vocalist(vocalist_id: str) -> dict | None:
 
 def band_vocalist_belongs_to_band(vocalist_id: str, band_id: str) -> bool:
     v = get_band_vocalist(vocalist_id)
-    return bool(v and v.get('band_id') == band_id)
+    return bool(v and v.get("band_id") == band_id)
 
 
 def band_has_vocalist(band_id: str) -> bool:
@@ -2897,36 +2973,39 @@ def band_has_vocalist(band_id: str) -> bool:
 
 def vocalist_entry_display_name(vocalist: dict) -> str:
     if not vocalist:
-        return ''
-    if vocalist.get('user_display'):
-        return vocalist['user_display']
-    return (vocalist.get('name') or '').strip()
+        return ""
+    if vocalist.get("user_display"):
+        return vocalist["user_display"]
+    return (vocalist.get("name") or "").strip()
 
 
 def vocalists_summary_label(band_id: str) -> str | None:
     vocalists = get_band_vocalists(band_id)
     if not vocalists:
         return None
-    return ', '.join(vocalist_entry_display_name(v) for v in vocalists)
+    return ", ".join(vocalist_entry_display_name(v) for v in vocalists)
 
 
 def add_band_vocalist(band_id: str, name: str, user_id: str | None = None) -> str:
     name = name.strip()
     if not name:
-        raise ValueError('Nome de cantora/cantor é obrigatório')
+        raise ValueError("Nome de cantora/cantor é obrigatório")
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM band_vocalists WHERE band_id = ?', (band_id,))
-    sort_order = c.fetchone()['n']
+    c.execute(
+        "SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM band_vocalists WHERE band_id = ?",
+        (band_id,),
+    )
+    sort_order = c.fetchone()["n"]
     vid = str(uuid.uuid4())
     c.execute(
-        '''INSERT INTO band_vocalists (id, band_id, name, user_id, sort_order)
-           VALUES (?, ?, ?, ?, ?)''',
+        """INSERT INTO band_vocalists (id, band_id, name, user_id, sort_order)
+           VALUES (?, ?, ?, ?, ?)""",
         (vid, band_id, name, user_id or None, sort_order),
     )
     c.execute(
-        '''INSERT OR IGNORE INTO cifra_vocalist_transpose (cifra_id, vocalist_id, transpose_semitones)
-           SELECT id, ?, COALESCE(transpose_semitones, 0) FROM cifras WHERE band_id = ?''',
+        """INSERT OR IGNORE INTO cifra_vocalist_transpose (cifra_id, vocalist_id, transpose_semitones)
+           SELECT id, ?, COALESCE(transpose_semitones, 0) FROM cifras WHERE band_id = ?""",
         (vid, band_id),
     )
     db.commit()
@@ -2934,12 +3013,14 @@ def add_band_vocalist(band_id: str, name: str, user_id: str | None = None) -> st
     return vid
 
 
-def add_band_vocalists_from_text(band_id: str, raw_names: str, user_id: str | None = None) -> list[str]:
+def add_band_vocalists_from_text(
+    band_id: str, raw_names: str, user_id: str | None = None
+) -> list[str]:
     """Aceita vários nomes separados por vírgula."""
     ids = []
     names = _split_vocalist_names(raw_names)
     if not names:
-        raise ValueError('Informe pelo menos um nome')
+        raise ValueError("Informe pelo menos um nome")
     for i, name in enumerate(names):
         link = user_id if i == 0 else None
         ids.append(add_band_vocalist(band_id, name, link))
@@ -2954,16 +3035,16 @@ def update_band_vocalist(vocalist_id: str, name: str | None = None, user_id=_UNS
     c = db.cursor()
     parts, vals = [], []
     if name is not None:
-        parts.append('name = ?')
+        parts.append("name = ?")
         vals.append(name.strip())
     if user_id is not _UNSET:
-        parts.append('user_id = ?')
+        parts.append("user_id = ?")
         vals.append(user_id or None)
     if not parts:
         db.close()
         return
     vals.append(vocalist_id)
-    c.execute(f'UPDATE band_vocalists SET {", ".join(parts)} WHERE id = ?', vals)
+    c.execute(f"UPDATE band_vocalists SET {', '.join(parts)} WHERE id = ?", vals)
     db.commit()
     db.close()
 
@@ -2971,8 +3052,10 @@ def update_band_vocalist(vocalist_id: str, name: str | None = None, user_id=_UNS
 def delete_band_vocalist(vocalist_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM cifra_vocalist_transpose WHERE vocalist_id = ?', (vocalist_id,))
-    c.execute('DELETE FROM band_vocalists WHERE id = ?', (vocalist_id,))
+    c.execute(
+        "DELETE FROM cifra_vocalist_transpose WHERE vocalist_id = ?", (vocalist_id,)
+    )
+    c.execute("DELETE FROM band_vocalists WHERE id = ?", (vocalist_id,))
     db.commit()
     db.close()
 
@@ -2981,7 +3064,7 @@ def get_cifra_vocalist_transpose(cifra_id: str, vocalist_id: str) -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT transpose_semitones FROM cifra_vocalist_transpose WHERE cifra_id = ? AND vocalist_id = ?',
+        "SELECT transpose_semitones FROM cifra_vocalist_transpose WHERE cifra_id = ? AND vocalist_id = ?",
         (cifra_id, vocalist_id),
     )
     row = c.fetchone()
@@ -2989,27 +3072,29 @@ def get_cifra_vocalist_transpose(cifra_id: str, vocalist_id: str) -> int:
     if not row:
         return 0
     try:
-        return int(row['transpose_semitones'])
+        return int(row["transpose_semitones"])
     except (TypeError, ValueError):
         return 0
 
 
 def get_cifra_transpose_by_vocalists(cifra_id: str, band_id: str) -> dict[str, int]:
     vocalists = get_band_vocalists(band_id)
-    return {v['id']: get_cifra_vocalist_transpose(cifra_id, v['id']) for v in vocalists}
+    return {v["id"]: get_cifra_vocalist_transpose(cifra_id, v["id"]) for v in vocalists}
 
 
-def set_cifra_vocalist_transpose(cifra_id: str, vocalist_id: str, semitones: int) -> None:
+def set_cifra_vocalist_transpose(
+    cifra_id: str, vocalist_id: str, semitones: int
+) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO cifra_vocalist_transpose (cifra_id, vocalist_id, transpose_semitones)
+        """INSERT INTO cifra_vocalist_transpose (cifra_id, vocalist_id, transpose_semitones)
            VALUES (?, ?, ?)
            ON CONFLICT(cifra_id, vocalist_id) DO UPDATE SET
-               transpose_semitones = excluded.transpose_semitones''',
+               transpose_semitones = excluded.transpose_semitones""",
         (cifra_id, vocalist_id, int(semitones)),
     )
-    c.execute('UPDATE cifras SET updated_at=CURRENT_TIMESTAMP WHERE id=?', (cifra_id,))
+    c.execute("UPDATE cifras SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (cifra_id,))
     db.commit()
     db.close()
 
@@ -3017,26 +3102,30 @@ def set_cifra_vocalist_transpose(cifra_id: str, vocalist_id: str, semitones: int
 def delete_band(band_id):
     try:
         from band_logos import delete_band_logo_files
+
         delete_band_logo_files(band_id)
     except Exception:
         pass
     db = get_db()
     c = db.cursor()
     # Remover em cascata: setlist_cifras → setlists → cifras → band_members → band
-    c.execute('''DELETE FROM setlist_cifras WHERE setlist_id IN
-                 (SELECT id FROM setlists WHERE band_id = ?)''', (band_id,))
-    c.execute('DELETE FROM setlists WHERE band_id = ?', (band_id,))
     c.execute(
-        '''DELETE FROM cifra_vocalist_transpose WHERE cifra_id IN
-           (SELECT id FROM cifras WHERE band_id = ?)''',
+        """DELETE FROM setlist_cifras WHERE setlist_id IN
+                 (SELECT id FROM setlists WHERE band_id = ?)""",
         (band_id,),
     )
-    c.execute('DELETE FROM cifras WHERE band_id = ?', (band_id,))
-    c.execute('DELETE FROM band_vocalists WHERE band_id = ?', (band_id,))
-    c.execute('DELETE FROM band_members WHERE band_id = ?', (band_id,))
-    c.execute('DELETE FROM voucher_usos WHERE banda_id = ?', (band_id,))
-    c.execute('DELETE FROM assinaturas WHERE banda_id = ?', (band_id,))
-    c.execute('DELETE FROM bands WHERE id = ?', (band_id,))
+    c.execute("DELETE FROM setlists WHERE band_id = ?", (band_id,))
+    c.execute(
+        """DELETE FROM cifra_vocalist_transpose WHERE cifra_id IN
+           (SELECT id FROM cifras WHERE band_id = ?)""",
+        (band_id,),
+    )
+    c.execute("DELETE FROM cifras WHERE band_id = ?", (band_id,))
+    c.execute("DELETE FROM band_vocalists WHERE band_id = ?", (band_id,))
+    c.execute("DELETE FROM band_members WHERE band_id = ?", (band_id,))
+    c.execute("DELETE FROM voucher_usos WHERE banda_id = ?", (band_id,))
+    c.execute("DELETE FROM assinaturas WHERE banda_id = ?", (band_id,))
+    c.execute("DELETE FROM bands WHERE id = ?", (band_id,))
     db.commit()
     db.close()
 
@@ -3045,11 +3134,14 @@ def get_user_bands(user_id):
     """Todas as bandas das quais o usuário é membro (incluindo as que é dono)."""
     db = get_db()
     c = db.cursor()
-    c.execute('''
+    c.execute(
+        """
         SELECT bands.* FROM bands
         JOIN band_members ON bands.id = band_members.band_id
         WHERE band_members.user_id = ?
-    ''', (user_id,))
+    """,
+        (user_id,),
+    )
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
@@ -3059,7 +3151,7 @@ def get_owned_bands(user_id):
     """Bandas cujo dono é o usuário."""
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM bands WHERE owner_id = ?', (user_id,))
+    c.execute("SELECT * FROM bands WHERE owner_id = ?", (user_id,))
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
@@ -3067,33 +3159,33 @@ def get_owned_bands(user_id):
 
 def _in_placeholders(ids: list) -> tuple[str, tuple]:
     if not ids:
-        return '', ()
-    return ','.join('?' * len(ids)), tuple(ids)
+        return "", ()
+    return ",".join("?" * len(ids)), tuple(ids)
 
 
 def _ensure_perf_indexes(c) -> None:
     """Índices em FKs usadas em quase toda listagem."""
     for sql in (
-        'CREATE INDEX IF NOT EXISTS idx_band_members_band ON band_members(band_id)',
-        'CREATE INDEX IF NOT EXISTS idx_band_members_user ON band_members(user_id)',
-        'CREATE INDEX IF NOT EXISTS idx_cifras_band ON cifras(band_id)',
-        'CREATE INDEX IF NOT EXISTS idx_setlists_band ON setlists(band_id)',
-        'CREATE INDEX IF NOT EXISTS idx_band_events_band_starts ON band_events(band_id, starts_at)',
-        'CREATE INDEX IF NOT EXISTS idx_band_event_assignments_event ON band_event_assignments(event_id)',
-        'CREATE INDEX IF NOT EXISTS idx_setlist_cifras_setlist ON setlist_cifras(setlist_id)',
-        'CREATE INDEX IF NOT EXISTS idx_assinaturas_banda ON assinaturas(banda_id)',
+        "CREATE INDEX IF NOT EXISTS idx_band_members_band ON band_members(band_id)",
+        "CREATE INDEX IF NOT EXISTS idx_band_members_user ON band_members(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_cifras_band ON cifras(band_id)",
+        "CREATE INDEX IF NOT EXISTS idx_setlists_band ON setlists(band_id)",
+        "CREATE INDEX IF NOT EXISTS idx_band_events_band_starts ON band_events(band_id, starts_at)",
+        "CREATE INDEX IF NOT EXISTS idx_band_event_assignments_event ON band_event_assignments(event_id)",
+        "CREATE INDEX IF NOT EXISTS idx_setlist_cifras_setlist ON setlist_cifras(setlist_id)",
+        "CREATE INDEX IF NOT EXISTS idx_assinaturas_banda ON assinaturas(banda_id)",
         # Funil/ativação: dedup em log_funnel_step (user_id+step) e contagens por step.
-        'CREATE INDEX IF NOT EXISTS idx_funnel_events_user_step ON product_funnel_events(user_id, step)',
-        'CREATE INDEX IF NOT EXISTS idx_funnel_events_step ON product_funnel_events(step)',
+        "CREATE INDEX IF NOT EXISTS idx_funnel_events_user_step ON product_funnel_events(user_id, step)",
+        "CREATE INDEX IF NOT EXISTS idx_funnel_events_step ON product_funnel_events(step)",
         # Escala do músico: "minhas pendências" e alertas de preparação (por usuário).
-        'CREATE INDEX IF NOT EXISTS idx_band_event_assignments_user ON band_event_assignments(user_id)',
+        "CREATE INDEX IF NOT EXISTS idx_band_event_assignments_user ON band_event_assignments(user_id)",
         # Login / superadmin por e-mail.
-        'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
-        'CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)',
+        "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)",
+        "CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)",
         # Versão pessoal da cifra.
-        'CREATE INDEX IF NOT EXISTS idx_cifra_user_drafts_user ON cifra_user_drafts(user_id)',
-        'CREATE INDEX IF NOT EXISTS idx_cifra_user_drafts_cifra ON cifra_user_drafts(cifra_id)',
-        'CREATE INDEX IF NOT EXISTS idx_cifra_play_drawings_user ON cifra_play_drawings(user_id)',
+        "CREATE INDEX IF NOT EXISTS idx_cifra_user_drafts_user ON cifra_user_drafts(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_cifra_user_drafts_cifra ON cifra_user_drafts(cifra_id)",
+        "CREATE INDEX IF NOT EXISTS idx_cifra_play_drawings_user ON cifra_play_drawings(user_id)",
     ):
         c.execute(sql)
 
@@ -3105,17 +3197,17 @@ def _members_by_band_ids(band_ids: list[str]) -> dict[str, list[dict]]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        f'''SELECT users.*, band_members.role, band_members.band_id AS band_id
+        f"""SELECT users.*, band_members.role, band_members.band_id AS band_id
             FROM users
             JOIN band_members ON users.id = band_members.user_id
-            WHERE band_members.band_id IN ({ph})''',
+            WHERE band_members.band_id IN ({ph})""",
         params,
     )
     rows = c.fetchall()
     db.close()
     out: dict[str, list[dict]] = {bid: [] for bid in band_ids}
     for row in rows:
-        out[row['band_id']].append(dict(row))
+        out[row["band_id"]].append(dict(row))
     return out
 
 
@@ -3127,15 +3219,15 @@ def _cifra_summaries_by_band_ids(band_ids: list[str]) -> dict[str, list[dict]]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        f'''SELECT id, band_id, titulo, artista, tom_original, created_at, updated_at
-            FROM cifras WHERE band_id IN ({ph}) ORDER BY titulo''',
+        f"""SELECT id, band_id, titulo, artista, tom_original, created_at, updated_at
+            FROM cifras WHERE band_id IN ({ph}) ORDER BY titulo""",
         params,
     )
     rows = c.fetchall()
     db.close()
     out: dict[str, list[dict]] = {bid: [] for bid in band_ids}
     for row in rows:
-        out[row['band_id']].append(dict(row))
+        out[row["band_id"]].append(dict(row))
     return out
 
 
@@ -3145,10 +3237,10 @@ def _users_by_ids(user_ids: list[str]) -> dict[str, dict]:
     ph, params = _in_placeholders(user_ids)
     db = get_db()
     c = db.cursor()
-    c.execute(f'SELECT * FROM users WHERE id IN ({ph})', params)
+    c.execute(f"SELECT * FROM users WHERE id IN ({ph})", params)
     rows = c.fetchall()
     db.close()
-    return {row['id']: dict(row) for row in rows}
+    return {row["id"]: dict(row) for row in rows}
 
 
 def enrich_bands_for_display(bands) -> list[dict]:
@@ -3158,8 +3250,8 @@ def enrich_bands_for_display(bands) -> list[dict]:
     if not bands:
         return []
 
-    band_ids = [b['id'] for b in bands]
-    owner_ids = list({b.get('owner_id') for b in bands if b.get('owner_id')})
+    band_ids = [b["id"] for b in bands]
+    owner_ids = list({b.get("owner_id") for b in bands if b.get("owner_id")})
     members_map = _members_by_band_ids(band_ids)
     cifras_map = _cifra_summaries_by_band_ids(band_ids)
     owners_map = _users_by_ids(owner_ids)
@@ -3167,11 +3259,11 @@ def enrich_bands_for_display(bands) -> list[dict]:
     result = []
     for band in bands:
         b = dict(band)
-        bid = b['id']
-        b['members'] = members_map.get(bid, [])
-        b['cifras'] = cifras_map.get(bid, [])
-        b['owner'] = owners_map.get(b.get('owner_id'), {})
-        b['has_logo'] = band_has_logo(b)
+        bid = b["id"]
+        b["members"] = members_map.get(bid, [])
+        b["cifras"] = cifras_map.get(bid, [])
+        b["owner"] = owners_map.get(b.get("owner_id"), {})
+        b["has_logo"] = band_has_logo(b)
         result.append(b)
     return result
 
@@ -3179,7 +3271,8 @@ def enrich_bands_for_display(bands) -> list[dict]:
 def get_band_members(band_id):
     db = get_db()
     c = db.cursor()
-    c.execute('''
+    c.execute(
+        """
         SELECT users.*,
                band_members.user_id AS user_id,
                band_members.role,
@@ -3189,7 +3282,9 @@ def get_band_members(band_id):
         FROM users
         JOIN band_members ON users.id = band_members.user_id
         WHERE band_members.band_id = ?
-    ''', (band_id,))
+    """,
+        (band_id,),
+    )
     rows = c.fetchall()
     db.close()
     return [dict(r) for r in rows]
@@ -3200,9 +3295,9 @@ def set_band_member_finance_access(band_id: str, user_id: str, enabled: bool) ->
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE band_members
+        """UPDATE band_members
            SET can_view_finance = ?
-           WHERE band_id = ? AND user_id = ? AND role NOT IN ('owner', 'admin')''',
+           WHERE band_id = ? AND user_id = ? AND role NOT IN ('owner', 'admin')""",
         (1 if enabled else 0, band_id, user_id),
     )
     ok = c.rowcount > 0
@@ -3215,13 +3310,13 @@ def member_can_view_finance_flag(band_id: str, user_id: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT COALESCE(can_view_finance, 0) AS can_view_finance
-           FROM band_members WHERE band_id = ? AND user_id = ?''',
+        """SELECT COALESCE(can_view_finance, 0) AS can_view_finance
+           FROM band_members WHERE band_id = ? AND user_id = ?""",
         (band_id, user_id),
     )
     row = c.fetchone()
     db.close()
-    return bool(row and int(row['can_view_finance'] or 0) == 1)
+    return bool(row and int(row["can_view_finance"] or 0) == 1)
 
 
 def can_view_band_finance(band_id: str, user_id: str) -> bool:
@@ -3236,10 +3331,10 @@ def can_view_band_finance(band_id: str, user_id: str) -> bool:
     band = get_band(band_id)
     if not band:
         return False
-    if band.get('owner_id') == user_id:
+    if band.get("owner_id") == user_id:
         return True
     role = get_band_member_role(band_id, user_id)
-    if role in ('owner', 'admin'):
+    if role in ("owner", "admin"):
         return True
     if role is None:
         return False
@@ -3253,20 +3348,19 @@ def is_band_finance_admin(band_id: str, user_id: str) -> bool:
     band = get_band(band_id)
     if not band:
         return False
-    if band.get('owner_id') == user_id:
+    if band.get("owner_id") == user_id:
         return True
     role = get_band_member_role(band_id, user_id)
-    return role in ('owner', 'admin')
+    return role in ("owner", "admin")
 
 
-
-def add_band_member(band_id, user_id, role='member'):
+def add_band_member(band_id, user_id, role="member"):
     db = get_db()
     c = db.cursor()
     try:
         c.execute(
-            'INSERT INTO band_members (band_id, user_id, role) VALUES (?, ?, ?)',
-            (band_id, user_id, role)
+            "INSERT INTO band_members (band_id, user_id, role) VALUES (?, ?, ?)",
+            (band_id, user_id, role),
         )
         db.commit()
     except IntegrityError:
@@ -3278,16 +3372,18 @@ def add_band_member(band_id, user_id, role='member'):
 def remove_band_member(band_id, user_id):
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM band_members WHERE band_id = ? AND user_id = ?', (band_id, user_id))
+    c.execute(
+        "DELETE FROM band_members WHERE band_id = ? AND user_id = ?", (band_id, user_id)
+    )
     db.commit()
     db.close()
 
 
 def update_band_member_role(band_id: str, user_id: str, role: str) -> bool:
     """Atualiza papel do membro na banda (member | editor | admin). Não altera owner."""
-    role = (role or 'member').strip().lower()
-    if role not in ('member', 'editor', 'admin'):
-        role = 'member'
+    role = (role or "member").strip().lower()
+    if role not in ("member", "editor", "admin"):
+        role = "member"
     db = get_db()
     c = db.cursor()
     c.execute(
@@ -3304,27 +3400,27 @@ def set_member_settlement_role(
     band_id: str,
     user_id: str,
     *,
-    settlement_role: str = 'founder',
+    settlement_role: str = "founder",
     default_fixed_fee: float | None = None,
 ) -> bool:
     """Fundador divide o líquido; sideman recebe taxa fixa no fechamento de noite."""
-    role = (settlement_role or 'founder').strip().lower()
-    if role not in ('founder', 'sideman'):
-        role = 'founder'
+    role = (settlement_role or "founder").strip().lower()
+    if role not in ("founder", "sideman"):
+        role = "founder"
     fee = None
     if default_fixed_fee is not None:
         try:
             fee = max(0.0, float(default_fixed_fee))
         except (TypeError, ValueError):
             fee = 0.0
-        if role == 'founder':
+        if role == "founder":
             fee = None
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE band_members
+        """UPDATE band_members
            SET settlement_role = ?, default_fixed_fee = ?
-           WHERE band_id = ? AND user_id = ?''',
+           WHERE band_id = ? AND user_id = ?""",
         (role, fee, band_id, user_id),
     )
     ok = c.rowcount > 0
@@ -3338,19 +3434,19 @@ def get_band_member_role(band_id: str, user_id: str) -> str | None:
     band = get_band(band_id)
     if not band or not user_id:
         return None
-    if band['owner_id'] == user_id:
-        return 'owner'
+    if band["owner_id"] == user_id:
+        return "owner"
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT role FROM band_members WHERE band_id = ? AND user_id = ?',
+        "SELECT role FROM band_members WHERE band_id = ? AND user_id = ?",
         (band_id, user_id),
     )
     row = c.fetchone()
     db.close()
     if not row:
         return None
-    return (row['role'] or 'member').strip().lower()
+    return (row["role"] or "member").strip().lower()
 
 
 def is_superadmin_env_only(user_id: str) -> bool:
@@ -3358,14 +3454,14 @@ def is_superadmin_env_only(user_id: str) -> bool:
     if not user_id:
         return False
     user = get_user(user_id)
-    if not user or user.get('is_superadmin'):
+    if not user or user.get("is_superadmin"):
         return False
     env_users, env_emails = _env_superadmin_identifiers()
     if not env_users and not env_emails:
         return False
-    if user.get('username', '').lower() in env_users:
+    if user.get("username", "").lower() in env_users:
         return True
-    if user.get('email', '').lower() in env_emails:
+    if user.get("email", "").lower() in env_emails:
         return True
     return False
 
@@ -3375,7 +3471,10 @@ def is_band_member(band_id, user_id):
         return True
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT 1 FROM band_members WHERE band_id = ? AND user_id = ?', (band_id, user_id))
+    c.execute(
+        "SELECT 1 FROM band_members WHERE band_id = ? AND user_id = ?",
+        (band_id, user_id),
+    )
     result = c.fetchone() is not None
     db.close()
     return result
@@ -3386,14 +3485,14 @@ def is_band_admin(band_id, user_id):
         return True
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM bands WHERE id = ?', (band_id,))
+    c.execute("SELECT * FROM bands WHERE id = ?", (band_id,))
     band = c.fetchone()
-    if band and band['owner_id'] == user_id:
+    if band and band["owner_id"] == user_id:
         db.close()
         return True
     c.execute(
         "SELECT 1 FROM band_members WHERE band_id = ? AND user_id = ? AND role IN ('admin', 'owner')",
-        (band_id, user_id)
+        (band_id, user_id),
     )
     result = c.fetchone() is not None
     db.close()
@@ -3404,39 +3503,81 @@ def is_band_editor(band_id, user_id) -> bool:
     """Pode criar/editar/excluir cifras, letras, chord sheets e setlists."""
     if is_band_admin(band_id, user_id):
         return True
-    return get_band_member_role(band_id, user_id) == 'editor'
+    return get_band_member_role(band_id, user_id) == "editor"
 
 
 # ── Cifras ─────────────────────────────────────────────────────────────────
 
-def create_cifra(titulo, artista, tom_original, conteudo, band_id,
-                 cifra_json=None, grade_json=None, leadsheet_json=None,
-                 bpm=None, duracao_seg=None, referencia_json=None,
-                 owner_user_id=None):
+
+def create_cifra(
+    titulo,
+    artista,
+    tom_original,
+    conteudo,
+    band_id,
+    cifra_json=None,
+    grade_json=None,
+    leadsheet_json=None,
+    bpm=None,
+    duracao_seg=None,
+    referencia_json=None,
+    owner_user_id=None,
+):
     db = get_db()
     c = db.cursor()
     cifra_id = str(uuid.uuid4())
     c.execute(
-        '''INSERT INTO cifras
+        """INSERT INTO cifras
            (id, titulo, artista, tom_original, conteudo, band_id, owner_user_id,
             cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, referencia_json)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-        (cifra_id, titulo, artista, tom_original, conteudo or '', band_id,
-         owner_user_id, cifra_json, grade_json, leadsheet_json, bpm, duracao_seg,
-         referencia_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            cifra_id,
+            titulo,
+            artista,
+            tom_original,
+            conteudo or "",
+            band_id,
+            owner_user_id,
+            cifra_json,
+            grade_json,
+            leadsheet_json,
+            bpm,
+            duracao_seg,
+            referencia_json,
+        ),
     )
     db.commit()
     db.close()
     return cifra_id
 
 
-def create_personal_cifra(user_id, titulo, artista, tom_original, conteudo,
-                          cifra_json=None, grade_json=None, leadsheet_json=None,
-                          bpm=None, duracao_seg=None, referencia_json=None):
+def create_personal_cifra(
+    user_id,
+    titulo,
+    artista,
+    tom_original,
+    conteudo,
+    cifra_json=None,
+    grade_json=None,
+    leadsheet_json=None,
+    bpm=None,
+    duracao_seg=None,
+    referencia_json=None,
+):
     """Cria cifra na coleção pessoal (grátis, sem banda)."""
     return create_cifra(
-        titulo, artista, tom_original, conteudo, None,
-        cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, referencia_json,
+        titulo,
+        artista,
+        tom_original,
+        conteudo,
+        None,
+        cifra_json,
+        grade_json,
+        leadsheet_json,
+        bpm,
+        duracao_seg,
+        referencia_json,
         owner_user_id=user_id,
     )
 
@@ -3444,7 +3585,7 @@ def create_personal_cifra(user_id, titulo, artista, tom_original, conteudo,
 def get_cifra(cifra_id):
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM cifras WHERE id = ?', (cifra_id,))
+    c.execute("SELECT * FROM cifras WHERE id = ?", (cifra_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -3454,7 +3595,7 @@ def get_band_cifras(band_id):
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM cifras WHERE band_id = ? ORDER BY titulo',
+        "SELECT * FROM cifras WHERE band_id = ? ORDER BY titulo",
         (band_id,),
     )
     rows = c.fetchall()
@@ -3466,9 +3607,9 @@ def get_user_personal_cifras(user_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM cifras
+        """SELECT * FROM cifras
            WHERE owner_user_id = ? AND band_id IS NULL
-           ORDER BY titulo''',
+           ORDER BY titulo""",
         (user_id,),
     )
     rows = c.fetchall()
@@ -3480,16 +3621,18 @@ def count_user_personal_cifras(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT COUNT(*) AS n FROM cifras
-           WHERE owner_user_id = ? AND band_id IS NULL''',
+        """SELECT COUNT(*) AS n FROM cifras
+           WHERE owner_user_id = ? AND band_id IS NULL""",
         (user_id,),
     )
-    n = c.fetchone()['n']
+    n = c.fetchone()["n"]
     db.close()
     return int(n or 0)
 
 
-def count_personal_cifras_by_user_ids(user_ids: list[str] | None = None) -> dict[str, int]:
+def count_personal_cifras_by_user_ids(
+    user_ids: list[str] | None = None,
+) -> dict[str, int]:
     """Contagem de cifras da coleção pessoal por usuário (uma query)."""
     db = get_db()
     c = db.cursor()
@@ -3498,33 +3641,33 @@ def count_personal_cifras_by_user_ids(user_ids: list[str] | None = None) -> dict
         if not ids:
             db.close()
             return {}
-        placeholders = ','.join('?' * len(ids))
+        placeholders = ",".join("?" * len(ids))
         c.execute(
-            f'''SELECT owner_user_id, COUNT(*) AS n FROM cifras
+            f"""SELECT owner_user_id, COUNT(*) AS n FROM cifras
                 WHERE band_id IS NULL AND owner_user_id IN ({placeholders})
-                GROUP BY owner_user_id''',
+                GROUP BY owner_user_id""",
             tuple(ids),
         )
     else:
         c.execute(
-            '''SELECT owner_user_id, COUNT(*) AS n FROM cifras
+            """SELECT owner_user_id, COUNT(*) AS n FROM cifras
                WHERE band_id IS NULL AND owner_user_id IS NOT NULL
-               GROUP BY owner_user_id'''
+               GROUP BY owner_user_id"""
         )
-    out = {str(r['owner_user_id']): int(r['n'] or 0) for r in c.fetchall()}
+    out = {str(r["owner_user_id"]): int(r["n"] or 0) for r in c.fetchall()}
     db.close()
     return out
 
 
 def cifra_is_personal(cifra: dict | None) -> bool:
-    return bool(cifra and cifra.get('owner_user_id') and not cifra.get('band_id'))
+    return bool(cifra and cifra.get("owner_user_id") and not cifra.get("band_id"))
 
 
 def user_owns_personal_cifra(cifra: dict | None, user_id: str) -> bool:
     return bool(
         cifra
         and cifra_is_personal(cifra)
-        and str(cifra.get('owner_user_id')) == str(user_id)
+        and str(cifra.get("owner_user_id")) == str(user_id)
     )
 
 
@@ -3532,8 +3675,8 @@ def user_has_cifra_share(cifra_id: str, user_id: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT 1 FROM cifra_shares
-           WHERE cifra_id = ? AND shared_with_user_id = ?''',
+        """SELECT 1 FROM cifra_shares
+           WHERE cifra_id = ? AND shared_with_user_id = ?""",
         (cifra_id, user_id),
     )
     ok = c.fetchone() is not None
@@ -3546,11 +3689,11 @@ def user_can_access_cifra(cifra: dict | None, user_id: str) -> bool:
         return False
     if is_superadmin(user_id):
         return True
-    if cifra.get('band_id') and is_band_member(cifra['band_id'], user_id):
+    if cifra.get("band_id") and is_band_member(cifra["band_id"], user_id):
         return True
-    if str(cifra.get('owner_user_id') or '') == str(user_id):
+    if str(cifra.get("owner_user_id") or "") == str(user_id):
         return True
-    return user_has_cifra_share(cifra['id'], user_id)
+    return user_has_cifra_share(cifra["id"], user_id)
 
 
 def user_can_edit_cifra(cifra: dict | None, user_id: str) -> bool:
@@ -3558,7 +3701,7 @@ def user_can_edit_cifra(cifra: dict | None, user_id: str) -> bool:
         return False
     if user_owns_personal_cifra(cifra, user_id):
         return True
-    if cifra.get('band_id') and is_band_editor(cifra['band_id'], user_id):
+    if cifra.get("band_id") and is_band_editor(cifra["band_id"], user_id):
         return True
     return False
 
@@ -3567,12 +3710,12 @@ def list_cifra_shares(cifra_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT cs.*, u.email AS user_email, u.username AS user_username,
+        """SELECT cs.*, u.email AS user_email, u.username AS user_username,
                   u.display_name AS user_display_name
            FROM cifra_shares cs
            JOIN users u ON u.id = cs.shared_with_user_id
            WHERE cs.cifra_id = ?
-           ORDER BY cs.created_at DESC''',
+           ORDER BY cs.created_at DESC""",
         (cifra_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -3584,12 +3727,12 @@ def list_cifras_shared_with_user(user_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT c.*, u.display_name AS shared_by_name, u.username AS shared_by_username
+        """SELECT c.*, u.display_name AS shared_by_name, u.username AS shared_by_username
            FROM cifra_shares cs
            JOIN cifras c ON c.id = cs.cifra_id
            JOIN users u ON u.id = cs.shared_by_user_id
            WHERE cs.shared_with_user_id = ?
-           ORDER BY c.titulo''',
+           ORDER BY c.titulo""",
         (user_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -3597,15 +3740,17 @@ def list_cifras_shared_with_user(user_id: str) -> list[dict]:
     return rows
 
 
-def share_cifra_with_user(cifra_id: str, shared_with_user_id: str, shared_by_user_id: str) -> bool:
+def share_cifra_with_user(
+    cifra_id: str, shared_with_user_id: str, shared_by_user_id: str
+) -> bool:
     if str(shared_with_user_id) == str(shared_by_user_id):
         return False
     db = get_db()
     c = db.cursor()
     try:
         c.execute(
-            '''INSERT INTO cifra_shares (cifra_id, shared_with_user_id, shared_by_user_id)
-               VALUES (?, ?, ?)''',
+            """INSERT INTO cifra_shares (cifra_id, shared_with_user_id, shared_by_user_id)
+               VALUES (?, ?, ?)""",
             (cifra_id, shared_with_user_id, shared_by_user_id),
         )
         db.commit()
@@ -3621,8 +3766,8 @@ def unshare_cifra_with_user(cifra_id: str, shared_with_user_id: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''DELETE FROM cifra_shares
-           WHERE cifra_id = ? AND shared_with_user_id = ?''',
+        """DELETE FROM cifra_shares
+           WHERE cifra_id = ? AND shared_with_user_id = ?""",
         (cifra_id, shared_with_user_id),
     )
     ok = c.rowcount > 0
@@ -3631,20 +3776,22 @@ def unshare_cifra_with_user(cifra_id: str, shared_with_user_id: str) -> bool:
     return ok
 
 
-def copy_cifra_to_band(cifra: dict, band_id: str, *, owner_user_id: str | None = None) -> str:
+def copy_cifra_to_band(
+    cifra: dict, band_id: str, *, owner_user_id: str | None = None
+) -> str:
     """Duplica uma cifra (pessoal ou de outra banda) no repertório da banda."""
     return create_cifra(
-        cifra.get('titulo') or 'Sem título',
-        cifra.get('artista') or '—',
-        cifra.get('tom_original') or 'C',
-        cifra.get('conteudo') or '',
+        cifra.get("titulo") or "Sem título",
+        cifra.get("artista") or "—",
+        cifra.get("tom_original") or "C",
+        cifra.get("conteudo") or "",
         band_id,
-        cifra.get('cifra_json'),
-        cifra.get('grade_json'),
-        cifra.get('leadsheet_json'),
-        cifra.get('bpm'),
-        cifra.get('duracao_seg'),
-        cifra.get('referencia_json'),
+        cifra.get("cifra_json"),
+        cifra.get("grade_json"),
+        cifra.get("leadsheet_json"),
+        cifra.get("bpm"),
+        cifra.get("duracao_seg"),
+        cifra.get("referencia_json"),
         owner_user_id=owner_user_id,
     )
 
@@ -3653,7 +3800,7 @@ def update_cifra_referencia(cifra_id, referencia_json):
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE cifras SET referencia_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?''',
+        """UPDATE cifras SET referencia_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?""",
         (referencia_json, cifra_id),
     )
     db.commit()
@@ -3670,35 +3817,54 @@ def restore_cifra_from_referencia(cifra_id) -> bool:
     if not ref:
         return False
     fields = restore_fields_from_referencia(ref)
-    if not fields.get('titulo') or not fields.get('artista'):
-        fields['titulo'] = cifra.get('titulo') or fields.get('titulo')
-        fields['artista'] = cifra.get('artista') or fields.get('artista')
+    if not fields.get("titulo") or not fields.get("artista"):
+        fields["titulo"] = cifra.get("titulo") or fields.get("titulo")
+        fields["artista"] = cifra.get("artista") or fields.get("artista")
     update_cifra(
         cifra_id,
-        fields['titulo'],
-        fields['artista'],
-        fields['tom_original'],
-        fields['conteudo'],
-        cifra_json=fields.get('cifra_json'),
-        grade_json=fields.get('grade_json'),
-        leadsheet_json=fields.get('leadsheet_json'),
-        bpm=cifra.get('bpm'),
-        duracao_seg=cifra.get('duracao_seg'),
+        fields["titulo"],
+        fields["artista"],
+        fields["tom_original"],
+        fields["conteudo"],
+        cifra_json=fields.get("cifra_json"),
+        grade_json=fields.get("grade_json"),
+        leadsheet_json=fields.get("leadsheet_json"),
+        bpm=cifra.get("bpm"),
+        duracao_seg=cifra.get("duracao_seg"),
     )
     return True
 
 
-def update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
-                 cifra_json=None, grade_json=None, leadsheet_json=None,
-                 bpm=None, duracao_seg=None):
+def update_cifra(
+    cifra_id,
+    titulo,
+    artista,
+    tom_original,
+    conteudo,
+    cifra_json=None,
+    grade_json=None,
+    leadsheet_json=None,
+    bpm=None,
+    duracao_seg=None,
+):
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE cifras SET titulo=?, artista=?, tom_original=?, conteudo=?,
+        """UPDATE cifras SET titulo=?, artista=?, tom_original=?, conteudo=?,
            cifra_json=?, grade_json=?, leadsheet_json=?, bpm=?, duracao_seg=?,
-           updated_at=CURRENT_TIMESTAMP WHERE id=?''',
-        (titulo, artista, tom_original, conteudo or '',
-         cifra_json, grade_json, leadsheet_json, bpm, duracao_seg, cifra_id)
+           updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+        (
+            titulo,
+            artista,
+            tom_original,
+            conteudo or "",
+            cifra_json,
+            grade_json,
+            leadsheet_json,
+            bpm,
+            duracao_seg,
+            cifra_id,
+        ),
     )
     db.commit()
     db.close()
@@ -3707,11 +3873,11 @@ def update_cifra(cifra_id, titulo, artista, tom_original, conteudo,
 def delete_cifra(cifra_id):
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM cifra_play_drawings WHERE cifra_id = ?', (cifra_id,))
-    c.execute('DELETE FROM cifra_user_drafts WHERE cifra_id = ?', (cifra_id,))
-    c.execute('DELETE FROM cifra_vocalist_transpose WHERE cifra_id = ?', (cifra_id,))
-    c.execute('DELETE FROM setlist_cifras WHERE cifra_id = ?', (cifra_id,))
-    c.execute('DELETE FROM cifras WHERE id = ?', (cifra_id,))
+    c.execute("DELETE FROM cifra_play_drawings WHERE cifra_id = ?", (cifra_id,))
+    c.execute("DELETE FROM cifra_user_drafts WHERE cifra_id = ?", (cifra_id,))
+    c.execute("DELETE FROM cifra_vocalist_transpose WHERE cifra_id = ?", (cifra_id,))
+    c.execute("DELETE FROM setlist_cifras WHERE cifra_id = ?", (cifra_id,))
+    c.execute("DELETE FROM cifras WHERE id = ?", (cifra_id,))
     db.commit()
     db.close()
 
@@ -3720,8 +3886,8 @@ def update_cifra_streaming(cifra_id, apple_music_url=None):
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE cifras SET spotify_url=NULL, apple_music_url=?, updated_at=CURRENT_TIMESTAMP
-           WHERE id=?''',
+        """UPDATE cifras SET spotify_url=NULL, apple_music_url=?, updated_at=CURRENT_TIMESTAMP
+           WHERE id=?""",
         (apple_music_url, cifra_id),
     )
     db.commit()
@@ -3732,7 +3898,7 @@ def set_cifra_play_notes(cifra_id: str, play_notes: str | None) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE cifras SET play_notes = ?, updated_at=CURRENT_TIMESTAMP WHERE id = ?',
+        "UPDATE cifras SET play_notes = ?, updated_at=CURRENT_TIMESTAMP WHERE id = ?",
         (play_notes, cifra_id),
     )
     db.commit()
@@ -3743,7 +3909,7 @@ def get_cifra_play_drawing(cifra_id: str, user_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM cifra_play_drawings WHERE cifra_id = ? AND user_id = ?',
+        "SELECT * FROM cifra_play_drawings WHERE cifra_id = ? AND user_id = ?",
         (cifra_id, user_id),
     )
     row = c.fetchone()
@@ -3755,12 +3921,12 @@ def upsert_cifra_play_drawing(cifra_id: str, user_id: str, strokes_json: str) ->
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO cifra_play_drawings (cifra_id, user_id, strokes_json, updated_at)
+        """INSERT INTO cifra_play_drawings (cifra_id, user_id, strokes_json, updated_at)
            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
            ON CONFLICT(cifra_id, user_id) DO UPDATE SET
              strokes_json=excluded.strokes_json,
-             updated_at=CURRENT_TIMESTAMP''',
-        (cifra_id, user_id, strokes_json or '[]'),
+             updated_at=CURRENT_TIMESTAMP""",
+        (cifra_id, user_id, strokes_json or "[]"),
     )
     db.commit()
     db.close()
@@ -3782,41 +3948,61 @@ def update_event_fees(
     if update_couvert:
         if fee_settled:
             c.execute(
-                '''UPDATE band_events
+                """UPDATE band_events
                    SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
                        fee_notes=?, fee_couvert=?, fee_settled_at=CURRENT_TIMESTAMP
-                   WHERE id=?''',
+                   WHERE id=?""",
                 (
-                    fee_total, fee_transport_discount, fee_equipment_discount,
-                    fee_notes, fee_couvert, event_id,
+                    fee_total,
+                    fee_transport_discount,
+                    fee_equipment_discount,
+                    fee_notes,
+                    fee_couvert,
+                    event_id,
                 ),
             )
         else:
             c.execute(
-                '''UPDATE band_events
+                """UPDATE band_events
                    SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
                        fee_notes=?, fee_couvert=?, fee_settled_at=NULL
-                   WHERE id=?''',
+                   WHERE id=?""",
                 (
-                    fee_total, fee_transport_discount, fee_equipment_discount,
-                    fee_notes, fee_couvert, event_id,
+                    fee_total,
+                    fee_transport_discount,
+                    fee_equipment_discount,
+                    fee_notes,
+                    fee_couvert,
+                    event_id,
                 ),
             )
     elif fee_settled:
         c.execute(
-            '''UPDATE band_events
+            """UPDATE band_events
                SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
                    fee_notes=?, fee_settled_at=CURRENT_TIMESTAMP
-               WHERE id=?''',
-            (fee_total, fee_transport_discount, fee_equipment_discount, fee_notes, event_id),
+               WHERE id=?""",
+            (
+                fee_total,
+                fee_transport_discount,
+                fee_equipment_discount,
+                fee_notes,
+                event_id,
+            ),
         )
     else:
         c.execute(
-            '''UPDATE band_events
+            """UPDATE band_events
                SET fee_total=?, fee_transport_discount=?, fee_equipment_discount=?,
                    fee_notes=?, fee_settled_at=NULL
-               WHERE id=?''',
-            (fee_total, fee_transport_discount, fee_equipment_discount, fee_notes, event_id),
+               WHERE id=?""",
+            (
+                fee_total,
+                fee_transport_discount,
+                fee_equipment_discount,
+                fee_notes,
+                event_id,
+            ),
         )
     db.commit()
     db.close()
@@ -3826,7 +4012,7 @@ def get_cifra_user_draft(cifra_id: str, user_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM cifra_user_drafts WHERE cifra_id = ? AND user_id = ?',
+        "SELECT * FROM cifra_user_drafts WHERE cifra_id = ? AND user_id = ?",
         (cifra_id, user_id),
     )
     row = c.fetchone()
@@ -3838,9 +4024,9 @@ def upsert_cifra_user_draft(cifra_id: str, user_id: str, fields: dict) -> str:
     db = get_db()
     c = db.cursor()
     existing = get_cifra_user_draft(cifra_id, user_id)
-    draft_id = existing['id'] if existing else str(uuid.uuid4())
+    draft_id = existing["id"] if existing else str(uuid.uuid4())
     c.execute(
-        '''INSERT INTO cifra_user_drafts
+        """INSERT INTO cifra_user_drafts
            (id, cifra_id, user_id, titulo, artista, tom_original, conteudo,
             cifra_json, grade_json, leadsheet_json, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -3852,18 +4038,18 @@ def upsert_cifra_user_draft(cifra_id: str, user_id: str, fields: dict) -> str:
              cifra_json=excluded.cifra_json,
              grade_json=excluded.grade_json,
              leadsheet_json=excluded.leadsheet_json,
-             updated_at=CURRENT_TIMESTAMP''',
+             updated_at=CURRENT_TIMESTAMP""",
         (
             draft_id,
             cifra_id,
             user_id,
-            fields.get('titulo'),
-            fields.get('artista'),
-            fields.get('tom_original'),
-            fields.get('conteudo'),
-            fields.get('cifra_json'),
-            fields.get('grade_json'),
-            fields.get('leadsheet_json'),
+            fields.get("titulo"),
+            fields.get("artista"),
+            fields.get("tom_original"),
+            fields.get("conteudo"),
+            fields.get("cifra_json"),
+            fields.get("grade_json"),
+            fields.get("leadsheet_json"),
         ),
     )
     db.commit()
@@ -3875,7 +4061,7 @@ def delete_cifra_user_draft(cifra_id: str, user_id: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'DELETE FROM cifra_user_drafts WHERE cifra_id = ? AND user_id = ?',
+        "DELETE FROM cifra_user_drafts WHERE cifra_id = ? AND user_id = ?",
         (cifra_id, user_id),
     )
     deleted = c.rowcount > 0
@@ -3891,21 +4077,31 @@ def publish_cifra_user_draft(cifra_id: str, user_id: str) -> bool:
         return False
     update_cifra(
         cifra_id,
-        draft.get('titulo') or cifra['titulo'],
-        draft.get('artista') or cifra['artista'],
-        draft.get('tom_original') or cifra['tom_original'],
-        draft.get('conteudo') if draft.get('conteudo') is not None else cifra['conteudo'],
-        cifra_json=draft.get('cifra_json') if draft.get('cifra_json') is not None else cifra.get('cifra_json'),
-        grade_json=draft.get('grade_json') if draft.get('grade_json') is not None else cifra.get('grade_json'),
-        leadsheet_json=draft.get('leadsheet_json') if draft.get('leadsheet_json') is not None else cifra.get('leadsheet_json'),
-        bpm=cifra.get('bpm'),
-        duracao_seg=cifra.get('duracao_seg'),
+        draft.get("titulo") or cifra["titulo"],
+        draft.get("artista") or cifra["artista"],
+        draft.get("tom_original") or cifra["tom_original"],
+        draft.get("conteudo")
+        if draft.get("conteudo") is not None
+        else cifra["conteudo"],
+        cifra_json=draft.get("cifra_json")
+        if draft.get("cifra_json") is not None
+        else cifra.get("cifra_json"),
+        grade_json=draft.get("grade_json")
+        if draft.get("grade_json") is not None
+        else cifra.get("grade_json"),
+        leadsheet_json=draft.get("leadsheet_json")
+        if draft.get("leadsheet_json") is not None
+        else cifra.get("leadsheet_json"),
+        bpm=cifra.get("bpm"),
+        duracao_seg=cifra.get("duracao_seg"),
     )
     delete_cifra_user_draft(cifra_id, user_id)
     return True
 
 
-def set_cifra_transpose_semitones(cifra_id, semitones: int, vocalist_id: str | None = None) -> None:
+def set_cifra_transpose_semitones(
+    cifra_id, semitones: int, vocalist_id: str | None = None
+) -> None:
     """Tom de performance por cantor(a); sem cantores, grava na cifra."""
     from util import normalize_transpose_semitones
 
@@ -3913,17 +4109,17 @@ def set_cifra_transpose_semitones(cifra_id, semitones: int, vocalist_id: str | N
     if not cifra:
         return
     semi = normalize_transpose_semitones(semitones)
-    band_id = cifra['band_id']
+    band_id = cifra["band_id"]
     vocalists = get_band_vocalists(band_id)
     if vocalists:
-        vid = vocalist_id or vocalists[0]['id']
+        vid = vocalist_id or vocalists[0]["id"]
         if vid and band_vocalist_belongs_to_band(vid, band_id):
             set_cifra_vocalist_transpose(cifra_id, vid, semi)
             return
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE cifras SET transpose_semitones=?, updated_at=CURRENT_TIMESTAMP WHERE id=?''',
+        """UPDATE cifras SET transpose_semitones=?, updated_at=CURRENT_TIMESTAMP WHERE id=?""",
         (semi, cifra_id),
     )
     db.commit()
@@ -3931,7 +4127,7 @@ def set_cifra_transpose_semitones(cifra_id, semitones: int, vocalist_id: str | N
 
 
 def _migrate_notifications_schema(c) -> None:
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS notifications (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
@@ -3948,12 +4144,12 @@ def _migrate_notifications_schema(c) -> None:
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_notifications_user_created
         ON notifications(user_id, created_at DESC)
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS whatsapp_cifra_digest (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
@@ -3970,13 +4166,13 @@ def _migrate_notifications_schema(c) -> None:
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE,
             FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_whatsapp_cifra_digest_pending
         ON whatsapp_cifra_digest(user_id, digest_date)
         WHERE sent_at IS NULL
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS notification_digest_queue (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
@@ -3992,13 +4188,13 @@ def _migrate_notifications_schema(c) -> None:
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (band_id) REFERENCES bands(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_notification_digest_pending
         ON notification_digest_queue(user_id, digest_date)
         WHERE sent_at IS NULL
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS push_subscriptions (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
@@ -4010,13 +4206,13 @@ def _migrate_notifications_schema(c) -> None:
             last_used_at TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
-    c.execute('''
+    """)
+    c.execute("""
         CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
         ON push_subscriptions(user_id)
-    ''')
-    add_column_if_missing(c, 'users', 'push_notify', 'INTEGER NOT NULL DEFAULT 0')
-    add_column_if_missing(c, 'users', 'notification_prefs_json', 'TEXT')
+    """)
+    add_column_if_missing(c, "users", "push_notify", "INTEGER NOT NULL DEFAULT 0")
+    add_column_if_missing(c, "users", "notification_prefs_json", "TEXT")
 
 
 def _digest_date_sp() -> str:
@@ -4039,24 +4235,24 @@ def queue_whatsapp_cifra_digest(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT id FROM whatsapp_cifra_digest
-           WHERE user_id = ? AND cifra_id = ? AND digest_date = ?''',
+        """SELECT id FROM whatsapp_cifra_digest
+           WHERE user_id = ? AND cifra_id = ? AND digest_date = ?""",
         (user_id, cifra_id, digest_date),
     )
     row = c.fetchone()
     if row:
         c.execute(
-            '''UPDATE whatsapp_cifra_digest
+            """UPDATE whatsapp_cifra_digest
                SET titulo = ?, actor_user_id = ?, url_path = ?, band_id = ?,
                    updated_at = CURRENT_TIMESTAMP
-               WHERE id = ?''',
-            (titulo, actor_user_id, url_path, band_id, row['id']),
+               WHERE id = ?""",
+            (titulo, actor_user_id, url_path, band_id, row["id"]),
         )
     else:
         c.execute(
-            '''INSERT INTO whatsapp_cifra_digest
+            """INSERT INTO whatsapp_cifra_digest
                (id, user_id, band_id, cifra_id, titulo, actor_user_id, url_path, digest_date)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 str(uuid.uuid4()),
                 user_id,
@@ -4076,27 +4272,29 @@ def list_pending_whatsapp_cifra_digest_user_ids() -> list[str]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT DISTINCT user_id FROM whatsapp_cifra_digest
-           WHERE sent_at IS NULL ORDER BY user_id''',
+        """SELECT DISTINCT user_id FROM whatsapp_cifra_digest
+           WHERE sent_at IS NULL ORDER BY user_id""",
     )
-    ids = [r['user_id'] for r in c.fetchall()]
+    ids = [r["user_id"] for r in c.fetchall()]
     db.close()
     return ids
 
 
-def list_whatsapp_cifra_digest_for_user(user_id: str, *, pending_only: bool = True) -> list[dict]:
+def list_whatsapp_cifra_digest_for_user(
+    user_id: str, *, pending_only: bool = True
+) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    sql = '''
+    sql = """
         SELECT d.*, b.name AS band_name
         FROM whatsapp_cifra_digest d
         JOIN bands b ON b.id = d.band_id
         WHERE d.user_id = ?
-    '''
+    """
     params: list = [user_id]
     if pending_only:
-        sql += ' AND d.sent_at IS NULL'
-    sql += ' ORDER BY b.name, d.titulo'
+        sql += " AND d.sent_at IS NULL"
+    sql += " ORDER BY b.name, d.titulo"
     c.execute(sql, params)
     rows = [dict(r) for r in c.fetchall()]
     db.close()
@@ -4107,8 +4305,8 @@ def mark_whatsapp_cifra_digest_sent(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE whatsapp_cifra_digest SET sent_at = CURRENT_TIMESTAMP
-           WHERE user_id = ? AND sent_at IS NULL''',
+        """UPDATE whatsapp_cifra_digest SET sent_at = CURRENT_TIMESTAMP
+           WHERE user_id = ? AND sent_at IS NULL""",
         (user_id,),
     )
     n = c.rowcount if c.rowcount is not None else 0
@@ -4117,10 +4315,12 @@ def mark_whatsapp_cifra_digest_sent(user_id: str) -> int:
     return int(n)
 
 
-def _should_queue_notification_digest(user: dict | None, notification_type: str) -> bool:
+def _should_queue_notification_digest(
+    user: dict | None, notification_type: str
+) -> bool:
     if not user:
         return False
-    for ch in ('push', 'email', 'whatsapp'):
+    for ch in ("push", "email", "whatsapp"):
         if user_wants_notification_channel(user, ch, notification_type):
             return True
     return False
@@ -4133,7 +4333,7 @@ def queue_notification_digest(
     band_id: str | None,
     notification_type: str,
     title: str,
-    body: str = '',
+    body: str = "",
     url_path: str | None = None,
 ) -> str:
     digest_date = _digest_date_sp()
@@ -4141,9 +4341,9 @@ def queue_notification_digest(
     c = db.cursor()
     row_id = str(uuid.uuid4())
     c.execute(
-        '''INSERT INTO notification_digest_queue
+        """INSERT INTO notification_digest_queue
            (id, user_id, notification_id, band_id, type, title, body, url_path, digest_date)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             row_id,
             user_id,
@@ -4151,7 +4351,7 @@ def queue_notification_digest(
             band_id,
             notification_type,
             title,
-            body or '',
+            body or "",
             url_path,
             digest_date,
         ),
@@ -4165,27 +4365,29 @@ def list_pending_notification_digest_user_ids() -> list[str]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT DISTINCT user_id FROM notification_digest_queue
-           WHERE sent_at IS NULL ORDER BY user_id''',
+        """SELECT DISTINCT user_id FROM notification_digest_queue
+           WHERE sent_at IS NULL ORDER BY user_id""",
     )
-    ids = [r['user_id'] for r in c.fetchall()]
+    ids = [r["user_id"] for r in c.fetchall()]
     db.close()
     return ids
 
 
-def list_notification_digest_for_user(user_id: str, *, pending_only: bool = True) -> list[dict]:
+def list_notification_digest_for_user(
+    user_id: str, *, pending_only: bool = True
+) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    sql = '''
+    sql = """
         SELECT d.*, b.name AS band_name
         FROM notification_digest_queue d
         LEFT JOIN bands b ON b.id = d.band_id
         WHERE d.user_id = ?
-    '''
+    """
     params: list = [user_id]
     if pending_only:
-        sql += ' AND d.sent_at IS NULL'
-    sql += ' ORDER BY d.queued_at ASC'
+        sql += " AND d.sent_at IS NULL"
+    sql += " ORDER BY d.queued_at ASC"
     c.execute(sql, params)
     rows = [dict(r) for r in c.fetchall()]
     db.close()
@@ -4196,8 +4398,8 @@ def mark_notification_digest_sent(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE notification_digest_queue SET sent_at = CURRENT_TIMESTAMP
-           WHERE user_id = ? AND sent_at IS NULL''',
+        """UPDATE notification_digest_queue SET sent_at = CURRENT_TIMESTAMP
+           WHERE user_id = ? AND sent_at IS NULL""",
         (user_id,),
     )
     n = c.rowcount if c.rowcount is not None else 0
@@ -4213,7 +4415,7 @@ def create_notification(
     actor_user_id: str | None,
     type: str,
     title: str,
-    body: str = '',
+    body: str = "",
     url_path: str | None = None,
     payload: dict | None = None,
     skip_whatsapp: bool = False,
@@ -4222,15 +4424,16 @@ def create_notification(
     urgent: bool | None = None,
 ) -> str:
     import json
-    if url_path and (not url_path.startswith('/') or url_path.startswith('//')):
+
+    if url_path and (not url_path.startswith("/") or url_path.startswith("//")):
         url_path = None
     nid = str(uuid.uuid4())
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO notifications
+        """INSERT INTO notifications
            (id, user_id, band_id, actor_user_id, type, title, body, url_path, payload_json)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             nid,
             user_id,
@@ -4238,7 +4441,7 @@ def create_notification(
             actor_user_id,
             type,
             title,
-            body or '',
+            body or "",
             url_path,
             json.dumps(payload, ensure_ascii=False) if payload else None,
         ),
@@ -4255,47 +4458,56 @@ def create_notification(
         if not skip_whatsapp:
             try:
                 from whatsapp_service import dispatch_notification_whatsapp
+
                 dispatch_notification_whatsapp(
                     user_id,
                     title=title,
-                    body=body or '',
+                    body=body or "",
                     url_path=url_path,
                     notification_type=type,
                 )
             except Exception:
                 import logging
-                logging.getLogger('setsync.whatsapp').exception(
-                    'Falha ao enviar notificação WhatsApp para %s', user_id,
+
+                logging.getLogger("setsync.whatsapp").exception(
+                    "Falha ao enviar notificação WhatsApp para %s",
+                    user_id,
                 )
         if not skip_email:
             try:
                 from notification_email_service import dispatch_notification_email
+
                 dispatch_notification_email(
                     user_id,
                     title=title,
-                    body=body or '',
+                    body=body or "",
                     url_path=url_path,
                     notification_type=type,
                 )
             except Exception:
                 import logging
-                logging.getLogger('setsync.email_notify').exception(
-                    'Falha ao enviar notificação por e-mail para %s', user_id,
+
+                logging.getLogger("setsync.email_notify").exception(
+                    "Falha ao enviar notificação por e-mail para %s",
+                    user_id,
                 )
         if not skip_push:
             try:
                 from push_notification_service import dispatch_notification_push
+
                 dispatch_notification_push(
                     user_id,
                     notification_type=type,
                     title=title,
-                    body=body or '',
+                    body=body or "",
                     url_path=url_path,
                 )
             except Exception:
                 import logging
-                logging.getLogger('setsync.push').exception(
-                    'Falha ao enviar push para %s', user_id,
+
+                logging.getLogger("setsync.push").exception(
+                    "Falha ao enviar push para %s",
+                    user_id,
                 )
     elif _should_queue_notification_digest(user, type):
         queue_notification_digest(
@@ -4304,7 +4516,7 @@ def create_notification(
             band_id=band_id,
             notification_type=type,
             title=title,
-            body=body or '',
+            body=body or "",
             url_path=url_path,
         )
     return nid
@@ -4317,7 +4529,7 @@ def create_notifications_for_users(
     actor_user_id: str | None,
     type: str,
     title: str,
-    body: str = '',
+    body: str = "",
     url_path: str | None = None,
     payload: dict | None = None,
     skip_whatsapp: bool = False,
@@ -4349,39 +4561,42 @@ def create_notifications_for_users(
     return count
 
 
-def list_notifications(user_id: str, *, limit: int = 30, unread_only: bool = False) -> list[dict]:
+def list_notifications(
+    user_id: str, *, limit: int = 30, unread_only: bool = False
+) -> list[dict]:
     import json
+
     db = get_db()
     c = db.cursor()
-    sql = '''
+    sql = """
         SELECT n.*, b.name AS band_name,
                u.display_name AS actor_display_name, u.username AS actor_username
         FROM notifications n
         LEFT JOIN bands b ON b.id = n.band_id
         LEFT JOIN users u ON u.id = n.actor_user_id
         WHERE n.user_id = ?
-    '''
+    """
     params: list = [user_id]
     if unread_only:
-        sql += ' AND n.read_at IS NULL'
-    sql += ' ORDER BY n.created_at DESC LIMIT ?'
+        sql += " AND n.read_at IS NULL"
+    sql += " ORDER BY n.created_at DESC LIMIT ?"
     params.append(int(limit))
     c.execute(sql, params)
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     for row in rows:
-        row['actor_name'] = (
-            (row.get('actor_display_name') or '').strip()
-            or row.get('actor_username')
-            or ''
+        row["actor_name"] = (
+            (row.get("actor_display_name") or "").strip()
+            or row.get("actor_username")
+            or ""
         )
-        if row.get('payload_json'):
+        if row.get("payload_json"):
             try:
-                row['payload'] = json.loads(row['payload_json'])
+                row["payload"] = json.loads(row["payload_json"])
             except (TypeError, ValueError):
-                row['payload'] = {}
+                row["payload"] = {}
         else:
-            row['payload'] = {}
+            row["payload"] = {}
     return rows
 
 
@@ -4389,10 +4604,10 @@ def count_unread_notifications(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL',
+        "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL",
         (user_id,),
     )
-    n = c.fetchone()['n'] or 0
+    n = c.fetchone()["n"] or 0
     db.close()
     return int(n)
 
@@ -4401,8 +4616,8 @@ def mark_notification_read(notification_id: str, user_id: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE notifications SET read_at = CURRENT_TIMESTAMP
-           WHERE id = ? AND user_id = ? AND read_at IS NULL''',
+        """UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND user_id = ? AND read_at IS NULL""",
         (notification_id, user_id),
     )
     ok = c.rowcount > 0
@@ -4415,8 +4630,8 @@ def mark_all_notifications_read(user_id: str) -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE notifications SET read_at = CURRENT_TIMESTAMP
-           WHERE user_id = ? AND read_at IS NULL''',
+        """UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+           WHERE user_id = ? AND read_at IS NULL""",
         (user_id,),
     )
     n = c.rowcount
@@ -4427,11 +4642,12 @@ def mark_all_notifications_read(user_id: str) -> int:
 
 # ── Estatísticas públicas ───────────────────────────────────────────────────
 
+
 def count_users() -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM users')
-    n = int(c.fetchone()['n'] or 0)
+    c.execute("SELECT COUNT(*) AS n FROM users")
+    n = int(c.fetchone()["n"] or 0)
     db.close()
     return n
 
@@ -4439,8 +4655,8 @@ def count_users() -> int:
 def count_bands() -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM bands')
-    n = int(c.fetchone()['n'] or 0)
+    c.execute("SELECT COUNT(*) AS n FROM bands")
+    n = int(c.fetchone()["n"] or 0)
     db.close()
     return n
 
@@ -4448,8 +4664,8 @@ def count_bands() -> int:
 def count_studios() -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM studios')
-    n = int(c.fetchone()['n'] or 0)
+    c.execute("SELECT COUNT(*) AS n FROM studios")
+    n = int(c.fetchone()["n"] or 0)
     db.close()
     return n
 
@@ -4457,8 +4673,8 @@ def count_studios() -> int:
 def count_cifras() -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM cifras')
-    n = int(c.fetchone()['n'] or 0)
+    c.execute("SELECT COUNT(*) AS n FROM cifras")
+    n = int(c.fetchone()["n"] or 0)
     db.close()
     return n
 
@@ -4466,23 +4682,24 @@ def count_cifras() -> int:
 def count_setlists() -> int:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) AS n FROM setlists')
-    n = int(c.fetchone()['n'] or 0)
+    c.execute("SELECT COUNT(*) AS n FROM setlists")
+    n = int(c.fetchone()["n"] or 0)
     db.close()
     return n
 
 
 # ── Depoimentos ─────────────────────────────────────────────────────────────
 
+
 def list_testimonials(active_only: bool = True) -> list[dict]:
     db = get_db()
     c = db.cursor()
     if active_only:
         c.execute(
-            'SELECT * FROM testimonials WHERE ativo = 1 ORDER BY ordem ASC, id ASC'
+            "SELECT * FROM testimonials WHERE ativo = 1 ORDER BY ordem ASC, id ASC"
         )
     else:
-        c.execute('SELECT * FROM testimonials ORDER BY ordem ASC, id ASC')
+        c.execute("SELECT * FROM testimonials ORDER BY ordem ASC, id ASC")
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     return rows
@@ -4491,7 +4708,7 @@ def list_testimonials(active_only: bool = True) -> list[dict]:
 def get_testimonial(testimonial_id: int) -> dict | None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM testimonials WHERE id = ?', (testimonial_id,))
+    c.execute("SELECT * FROM testimonials WHERE id = ?", (testimonial_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -4501,13 +4718,16 @@ def create_testimonial(data: dict) -> int:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO testimonials (nome, cidade, descricao, texto, foto_url, ativo, ordem)
-           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        """INSERT INTO testimonials (nome, cidade, descricao, texto, foto_url, ativo, ordem)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (
-            data['nome'], data.get('cidade'), data.get('descricao'),
-            data['texto'], data.get('foto_url'),
-            1 if data.get('ativo', True) else 0,
-            int(data.get('ordem') or 0),
+            data["nome"],
+            data.get("cidade"),
+            data.get("descricao"),
+            data["texto"],
+            data.get("foto_url"),
+            1 if data.get("ativo", True) else 0,
+            int(data.get("ordem") or 0),
         ),
     )
     tid = c.lastrowid
@@ -4520,13 +4740,16 @@ def update_testimonial(testimonial_id: int, data: dict) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE testimonials SET nome=?, cidade=?, descricao=?, texto=?,
-           foto_url=?, ativo=?, ordem=? WHERE id=?''',
+        """UPDATE testimonials SET nome=?, cidade=?, descricao=?, texto=?,
+           foto_url=?, ativo=?, ordem=? WHERE id=?""",
         (
-            data['nome'], data.get('cidade'), data.get('descricao'),
-            data['texto'], data.get('foto_url'),
-            1 if data.get('ativo', True) else 0,
-            int(data.get('ordem') or 0),
+            data["nome"],
+            data.get("cidade"),
+            data.get("descricao"),
+            data["texto"],
+            data.get("foto_url"),
+            1 if data.get("ativo", True) else 0,
+            int(data.get("ordem") or 0),
             testimonial_id,
         ),
     )
@@ -4539,7 +4762,7 @@ def update_testimonial(testimonial_id: int, data: dict) -> bool:
 def delete_testimonial(testimonial_id: int) -> bool:
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM testimonials WHERE id = ?', (testimonial_id,))
+    c.execute("DELETE FROM testimonials WHERE id = ?", (testimonial_id,))
     ok = c.rowcount > 0
     db.commit()
     db.close()
@@ -4548,15 +4771,16 @@ def delete_testimonial(testimonial_id: int) -> bool:
 
 # ── Blog ────────────────────────────────────────────────────────────────────
 
+
 def list_blog_posts(published_only: bool = True) -> list[dict]:
     db = get_db()
     c = db.cursor()
     if published_only:
         c.execute(
-            'SELECT * FROM blog_posts WHERE publicado = 1 ORDER BY publicado_em DESC, id DESC'
+            "SELECT * FROM blog_posts WHERE publicado = 1 ORDER BY publicado_em DESC, id DESC"
         )
     else:
-        c.execute('SELECT * FROM blog_posts ORDER BY publicado_em DESC, id DESC')
+        c.execute("SELECT * FROM blog_posts ORDER BY publicado_em DESC, id DESC")
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     return rows
@@ -4566,11 +4790,9 @@ def get_blog_post_by_slug(slug: str, published_only: bool = True) -> dict | None
     db = get_db()
     c = db.cursor()
     if published_only:
-        c.execute(
-            'SELECT * FROM blog_posts WHERE slug = ? AND publicado = 1', (slug,)
-        )
+        c.execute("SELECT * FROM blog_posts WHERE slug = ? AND publicado = 1", (slug,))
     else:
-        c.execute('SELECT * FROM blog_posts WHERE slug = ?', (slug,))
+        c.execute("SELECT * FROM blog_posts WHERE slug = ?", (slug,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -4580,33 +4802,49 @@ def upsert_blog_post(data: dict) -> None:
     db = get_db()
     c = db.cursor()
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
-    c.execute('SELECT id FROM blog_posts WHERE slug = ?', (data['slug'],))
+    c.execute("SELECT id FROM blog_posts WHERE slug = ?", (data["slug"],))
     existing = c.fetchone()
-    pub = 1 if data.get('publicado') else 0
-    pub_em = data.get('publicado_em') or (now if pub else None)
+    pub = 1 if data.get("publicado") else 0
+    pub_em = data.get("publicado_em") or (now if pub else None)
     if existing:
         c.execute(
-            '''UPDATE blog_posts SET titulo=?, resumo=?, conteudo=?, autor=?,
+            """UPDATE blog_posts SET titulo=?, resumo=?, conteudo=?, autor=?,
                publicado=?, publicado_em=?, atualizado_em=?, meta_title=?,
-               meta_description=?, imagem_capa=?, tags=? WHERE slug=?''',
+               meta_description=?, imagem_capa=?, tags=? WHERE slug=?""",
             (
-                data['titulo'], data.get('resumo'), data.get('conteudo'),
-                data.get('autor'), pub, pub_em, now,
-                data.get('meta_title'), data.get('meta_description'),
-                data.get('imagem_capa'), data.get('tags'), data['slug'],
+                data["titulo"],
+                data.get("resumo"),
+                data.get("conteudo"),
+                data.get("autor"),
+                pub,
+                pub_em,
+                now,
+                data.get("meta_title"),
+                data.get("meta_description"),
+                data.get("imagem_capa"),
+                data.get("tags"),
+                data["slug"],
             ),
         )
     else:
         c.execute(
-            '''INSERT INTO blog_posts
+            """INSERT INTO blog_posts
                (slug, titulo, resumo, conteudo, autor, publicado, publicado_em,
                 atualizado_em, meta_title, meta_description, imagem_capa, tags)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                data['slug'], data['titulo'], data.get('resumo'),
-                data.get('conteudo'), data.get('autor'), pub, pub_em, now,
-                data.get('meta_title'), data.get('meta_description'),
-                data.get('imagem_capa'), data.get('tags'),
+                data["slug"],
+                data["titulo"],
+                data.get("resumo"),
+                data.get("conteudo"),
+                data.get("autor"),
+                pub,
+                pub_em,
+                now,
+                data.get("meta_title"),
+                data.get("meta_description"),
+                data.get("imagem_capa"),
+                data.get("tags"),
             ),
         )
     db.commit()
@@ -4615,14 +4853,15 @@ def upsert_blog_post(data: dict) -> None:
 
 # ── Onboarding e-mails ──────────────────────────────────────────────────────
 
+
 def ensure_onboarding_rows(usuario_id: str) -> None:
     db = get_db()
     c = db.cursor()
     for n in range(1, 6):
         try:
             c.execute(
-                '''INSERT INTO onboarding_emails (usuario_id, email_numero, status)
-                   VALUES (?, ?, 'pendente')''',
+                """INSERT INTO onboarding_emails (usuario_id, email_numero, status)
+                   VALUES (?, ?, 'pendente')""",
                 (usuario_id, n),
             )
         except IntegrityError:
@@ -4635,23 +4874,23 @@ def list_onboarding_pending() -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT oe.*, u.email, u.username, u.display_name, u.created_at AS user_created_at
+        """SELECT oe.*, u.email, u.username, u.display_name, u.created_at AS user_created_at
            FROM onboarding_emails oe
            JOIN users u ON u.id = oe.usuario_id
            WHERE oe.status = 'pendente'
-           ORDER BY oe.usuario_id, oe.email_numero'''
+           ORDER BY oe.usuario_id, oe.email_numero"""
     )
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     return rows
 
 
-def mark_onboarding_sent(row_id: int, status: str = 'enviado') -> None:
+def mark_onboarding_sent(row_id: int, status: str = "enviado") -> None:
     db = get_db()
     c = db.cursor()
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute(
-        'UPDATE onboarding_emails SET status = ?, enviado_em = ? WHERE id = ?',
+        "UPDATE onboarding_emails SET status = ?, enviado_em = ? WHERE id = ?",
         (status, now, row_id),
     )
     db.commit()
@@ -4668,20 +4907,20 @@ def update_assinatura_trial(
     parts: list[str] = []
     vals: list = []
     if trial_inicio is not None:
-        parts.append('trial_inicio = ?')
+        parts.append("trial_inicio = ?")
         vals.append(trial_inicio)
     if trial_fim is not None:
-        parts.append('trial_fim = ?')
+        parts.append("trial_fim = ?")
         vals.append(trial_fim)
     if trial_usado is not None:
-        parts.append('trial_usado = ?')
+        parts.append("trial_usado = ?")
         vals.append(trial_usado)
     if not parts:
         return
     vals.append(banda_id)
     db = get_db()
     c = db.cursor()
-    c.execute(f'UPDATE assinaturas SET {", ".join(parts)} WHERE banda_id = ?', vals)
+    c.execute(f"UPDATE assinaturas SET {', '.join(parts)} WHERE banda_id = ?", vals)
     db.commit()
     db.close()
 
@@ -4689,16 +4928,16 @@ def update_assinatura_trial(
 def list_trials_expiring_soon(days: int = 3) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    limite = (app_now_naive() + timedelta(days=days)).strftime('%Y-%m-%d %H:%M:%S')
+    limite = (app_now_naive() + timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
     agora = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute(
-        '''SELECT a.*, b.name AS band_name, b.owner_id, u.email AS owner_email
+        """SELECT a.*, b.name AS band_name, b.owner_id, u.email AS owner_email
            FROM assinaturas a
            JOIN bands b ON b.id = a.banda_id
            JOIN users u ON u.id = b.owner_id
            WHERE a.trial_usado = 1 AND a.trial_fim IS NOT NULL
              AND a.trial_fim > ? AND a.trial_fim <= ?
-             AND a.plano = 'gratis' AND a.status = 'ativa' ''',
+             AND a.plano = 'gratis' AND a.status = 'ativa' """,
         (agora, limite),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -4709,16 +4948,16 @@ def list_trials_expiring_soon(days: int = 3) -> list[dict]:
 def list_studio_trials_expiring_soon(days: int = 3) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    limite = (app_now_naive() + timedelta(days=days)).strftime('%Y-%m-%d %H:%M:%S')
+    limite = (app_now_naive() + timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
     agora = app_now_str()
     c.execute(
-        '''SELECT s.*, u.email AS owner_email
+        """SELECT s.*, u.email AS owner_email
            FROM studio_subscriptions s
            JOIN users u ON u.id = s.user_id
            WHERE s.trial_usado = 1 AND s.trial_fim IS NOT NULL
              AND s.trial_fim > ? AND s.trial_fim <= ?
              AND (s.plano = 'estudio_basico' OR s.plano IS NULL)
-             AND s.status = 'ativa' ''',
+             AND s.status = 'ativa' """,
         (agora, limite),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -4731,12 +4970,12 @@ def list_expired_trials() -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT a.*, b.name AS band_name, b.owner_id, u.email AS owner_email
+        """SELECT a.*, b.name AS band_name, b.owner_id, u.email AS owner_email
            FROM assinaturas a
            JOIN bands b ON b.id = a.banda_id
            JOIN users u ON u.id = b.owner_id
            WHERE a.trial_usado = 1 AND a.trial_fim IS NOT NULL
-             AND a.trial_fim <= ? AND a.plano = 'gratis' AND a.status = 'ativa' ''',
+             AND a.trial_fim <= ? AND a.plano = 'gratis' AND a.status = 'ativa' """,
         (agora,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -4746,12 +4985,12 @@ def list_expired_trials() -> list[dict]:
 
 def list_retention_candidates_no_cifra(*, min_days: int = 2) -> list[dict]:
     """Usuários com conta há ≥N dias sem cifra pessoal e sem evento primeira_cifra."""
-    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime("%Y-%m-%d %H:%M:%S")
     db = get_db()
     c = db.cursor()
     if IS_POSTGRES:
         c.execute(
-            '''SELECT u.*
+            """SELECT u.*
                FROM users u
                WHERE COALESCE(u.email, '') != ''
                  AND COALESCE(u.email_notify, 1) = 1
@@ -4770,12 +5009,12 @@ def list_retention_candidates_no_cifra(*, min_days: int = 2) -> list[dict]:
                      SELECT 1 FROM product_funnel_events f
                      WHERE f.user_id = u.id AND f.step = 'primeira_cifra'
                  )
-               ORDER BY u.created_at''',
+               ORDER BY u.created_at""",
             (cutoff,),
         )
     else:
         c.execute(
-            '''SELECT u.*
+            """SELECT u.*
                FROM users u
                WHERE COALESCE(u.email, '') != ''
                  AND COALESCE(u.email_notify, 1) = 1
@@ -4794,7 +5033,7 @@ def list_retention_candidates_no_cifra(*, min_days: int = 2) -> list[dict]:
                      SELECT 1 FROM product_funnel_events f
                      WHERE f.user_id = u.id AND f.step = 'primeira_cifra'
                  )
-               ORDER BY u.created_at''',
+               ORDER BY u.created_at""",
             (cutoff,),
         )
     rows = [dict(r) for r in c.fetchall()]
@@ -4804,12 +5043,13 @@ def list_retention_candidates_no_cifra(*, min_days: int = 2) -> list[dict]:
 
 # ── Retenção anti-churn ───────────────────────────────────────────────────────
 
+
 def retention_was_sent(usuario_id: str, campaign: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT 1 FROM retention_emails
-           WHERE usuario_id = ? AND campaign = ? AND status = 'enviado' LIMIT 1''',
+        """SELECT 1 FROM retention_emails
+           WHERE usuario_id = ? AND campaign = ? AND status = 'enviado' LIMIT 1""",
         (usuario_id, campaign),
     )
     found = c.fetchone() is not None
@@ -4817,7 +5057,9 @@ def retention_was_sent(usuario_id: str, campaign: str) -> bool:
     return found
 
 
-def mark_retention_sent(usuario_id: str, campaign: str, status: str = 'enviado') -> None:
+def mark_retention_sent(
+    usuario_id: str, campaign: str, status: str = "enviado"
+) -> None:
     db = get_db()
     c = db.cursor()
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
@@ -4825,23 +5067,23 @@ def mark_retention_sent(usuario_id: str, campaign: str, status: str = 'enviado')
         # ON CONFLICT evita UniqueViolation; após erro no PG a tx fica abortada
         # e um UPDATE no except sem rollback falha com InFailedSqlTransaction.
         c.execute(
-            '''INSERT INTO retention_emails (usuario_id, campaign, status, enviado_em)
+            """INSERT INTO retention_emails (usuario_id, campaign, status, enviado_em)
                VALUES (?, ?, ?, ?)
                ON CONFLICT (usuario_id, campaign)
-               DO UPDATE SET status = EXCLUDED.status, enviado_em = EXCLUDED.enviado_em''',
+               DO UPDATE SET status = EXCLUDED.status, enviado_em = EXCLUDED.enviado_em""",
             (usuario_id, campaign, status, now),
         )
     else:
         try:
             c.execute(
-                '''INSERT INTO retention_emails (usuario_id, campaign, status, enviado_em)
-                   VALUES (?, ?, ?, ?)''',
+                """INSERT INTO retention_emails (usuario_id, campaign, status, enviado_em)
+                   VALUES (?, ?, ?, ?)""",
                 (usuario_id, campaign, status, now),
             )
         except IntegrityError:
             c.execute(
-                '''UPDATE retention_emails SET status = ?, enviado_em = ?
-                   WHERE usuario_id = ? AND campaign = ?''',
+                """UPDATE retention_emails SET status = ?, enviado_em = ?
+                   WHERE usuario_id = ? AND campaign = ?""",
                 (status, now, usuario_id, campaign),
             )
     db.commit()
@@ -4849,27 +5091,27 @@ def mark_retention_sent(usuario_id: str, campaign: str, status: str = 'enviado')
 
 
 def list_retention_candidates_inactive(min_days: int) -> list[dict]:
-    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime("%Y-%m-%d %H:%M:%S")
     db = get_db()
     c = db.cursor()
     if IS_POSTGRES:
         c.execute(
-            '''SELECT u.*
+            """SELECT u.*
                FROM users u
                WHERE COALESCE(u.email, '') != ''
                  AND COALESCE(u.email_notify, 1) = 1
                  AND COALESCE(u.last_login_at, u.created_at) <= ?::timestamp
-               ORDER BY u.created_at''',
+               ORDER BY u.created_at""",
             (cutoff,),
         )
     else:
         c.execute(
-            '''SELECT u.*
+            """SELECT u.*
                FROM users u
                WHERE COALESCE(u.email, '') != ''
                  AND COALESCE(u.email_notify, 1) = 1
                  AND datetime(COALESCE(u.last_login_at, u.created_at)) <= datetime(?)
-               ORDER BY u.created_at''',
+               ORDER BY u.created_at""",
             (cutoff,),
         )
     rows = [dict(r) for r in c.fetchall()]
@@ -4878,12 +5120,12 @@ def list_retention_candidates_inactive(min_days: int) -> list[dict]:
 
 
 def list_retention_candidates_no_band(*, min_days: int) -> list[dict]:
-    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime("%Y-%m-%d %H:%M:%S")
     db = get_db()
     c = db.cursor()
     if IS_POSTGRES:
         c.execute(
-            '''SELECT u.*
+            """SELECT u.*
                FROM users u
                WHERE COALESCE(u.email, '') != ''
                  AND COALESCE(u.email_notify, 1) = 1
@@ -4894,12 +5136,12 @@ def list_retention_candidates_no_band(*, min_days: int) -> list[dict]:
                  AND NOT EXISTS (
                      SELECT 1 FROM bands b WHERE b.owner_id = u.id
                  )
-               ORDER BY u.created_at''',
+               ORDER BY u.created_at""",
             (cutoff,),
         )
     else:
         c.execute(
-            '''SELECT u.*
+            """SELECT u.*
                FROM users u
                WHERE COALESCE(u.email, '') != ''
                  AND COALESCE(u.email_notify, 1) = 1
@@ -4910,7 +5152,7 @@ def list_retention_candidates_no_band(*, min_days: int) -> list[dict]:
                  AND NOT EXISTS (
                      SELECT 1 FROM bands b WHERE b.owner_id = u.id
                  )
-               ORDER BY u.created_at''',
+               ORDER BY u.created_at""",
             (cutoff,),
         )
     rows = [dict(r) for r in c.fetchall()]
@@ -4920,10 +5162,10 @@ def list_retention_candidates_no_band(*, min_days: int) -> list[dict]:
 
 def list_retention_candidates_activated_unpaid(*, min_days: int = 3) -> list[dict]:
     """Usuários que tocaram de verdade mas ainda não pagaram / não estão em trial."""
-    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = (app_now_naive() - timedelta(days=min_days)).strftime("%Y-%m-%d %H:%M:%S")
     db = get_db()
     c = db.cursor()
-    sql = '''
+    sql = """
         SELECT u.*
         FROM users u
         WHERE COALESCE(u.email, '') != ''
@@ -4952,19 +5194,19 @@ def list_retention_candidates_activated_unpaid(*, min_days: int = 3) -> list[dic
                 )
           )
         ORDER BY u.created_at
-    '''
+    """
     if IS_POSTGRES:
         c.execute(
             sql.format(
-                cutoff_cmp='?::timestamp',
-                now_cmp='NOW()',
+                cutoff_cmp="?::timestamp",
+                now_cmp="NOW()",
             ),
             (cutoff,),
         )
     else:
         c.execute(
             sql.format(
-                cutoff_cmp='datetime(?)',
+                cutoff_cmp="datetime(?)",
                 now_cmp="datetime('now')",
             ),
             (cutoff,),
@@ -4980,12 +5222,12 @@ def list_retention_candidates_trial_expired() -> list[dict]:
 
 def list_retention_candidates_studio_trial_expired() -> list[dict]:
     """Donos com trial Premium de estúdio expirado nos últimos 14 dias."""
-    cutoff = (app_now_naive() - timedelta(days=14)).strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = (app_now_naive() - timedelta(days=14)).strftime("%Y-%m-%d %H:%M:%S")
     db = get_db()
     c = db.cursor()
     if IS_POSTGRES:
         c.execute(
-            '''SELECT ss.user_id AS owner_id, u.email AS owner_email,
+            """SELECT ss.user_id AS owner_id, u.email AS owner_email,
                       MIN(s.nome) AS studio_nome, MIN(s.id) AS studio_id
                FROM studio_subscriptions ss
                JOIN users u ON u.id = ss.user_id
@@ -4995,12 +5237,12 @@ def list_retention_candidates_studio_trial_expired() -> list[dict]:
                  AND ss.trial_fim IS NOT NULL
                  AND ss.trial_fim < CURRENT_TIMESTAMP
                  AND ss.trial_fim >= ?::timestamp
-               GROUP BY ss.user_id, u.email''',
+               GROUP BY ss.user_id, u.email""",
             (cutoff,),
         )
     else:
         c.execute(
-            '''SELECT ss.user_id AS owner_id, u.email AS owner_email,
+            """SELECT ss.user_id AS owner_id, u.email AS owner_email,
                       MIN(s.nome) AS studio_nome, MIN(s.id) AS studio_id
                FROM studio_subscriptions ss
                JOIN users u ON u.id = ss.user_id
@@ -5010,7 +5252,7 @@ def list_retention_candidates_studio_trial_expired() -> list[dict]:
                  AND ss.trial_fim IS NOT NULL
                  AND ss.trial_fim < CURRENT_TIMESTAMP
                  AND ss.trial_fim >= datetime('now', '-14 days')
-               GROUP BY ss.user_id, u.email'''
+               GROUP BY ss.user_id, u.email"""
         )
     rows = [dict(r) for r in c.fetchall()]
     db.close()
@@ -5021,7 +5263,7 @@ def mark_user_play_mode_used(user_id: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE users SET play_mode_used = 1 WHERE id = ? AND play_mode_used = 0',
+        "UPDATE users SET play_mode_used = 1 WHERE id = ? AND play_mode_used = 0",
         (user_id,),
     )
     db.commit()
@@ -5030,14 +5272,14 @@ def mark_user_play_mode_used(user_id: str) -> None:
 
 def user_play_mode_used(user_id: str) -> bool:
     user = get_user(user_id)
-    return bool(user and user.get('play_mode_used'))
+    return bool(user and user.get("play_mode_used"))
 
 
 def mark_user_agenda_event_used(user_id: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE users SET agenda_event_used = 1 WHERE id = ? AND agenda_event_used = 0',
+        "UPDATE users SET agenda_event_used = 1 WHERE id = ? AND agenda_event_used = 0",
         (user_id,),
     )
     db.commit()
@@ -5046,16 +5288,17 @@ def mark_user_agenda_event_used(user_id: str) -> None:
 
 def user_agenda_event_used(user_id: str) -> bool:
     user = get_user(user_id)
-    return bool(user and user.get('agenda_event_used'))
+    return bool(user and user.get("agenda_event_used"))
 
 
 def save_user_nps(user_id: str, score: int) -> None:
     from config import app_now_str
+
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE users SET nps_score = ?, nps_submitted_at = ?, nps_dismissed = 1
-           WHERE id = ?''',
+        """UPDATE users SET nps_score = ?, nps_submitted_at = ?, nps_dismissed = 1
+           WHERE id = ?""",
         (max(0, min(10, score)), app_now_str(), user_id),
     )
     db.commit()
@@ -5065,28 +5308,34 @@ def save_user_nps(user_id: str, score: int) -> None:
 def dismiss_user_nps(user_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE users SET nps_dismissed = 1 WHERE id = ?', (user_id,))
+    c.execute("UPDATE users SET nps_dismissed = 1 WHERE id = ?", (user_id,))
     db.commit()
     db.close()
 
 
 def user_should_see_nps(user_id: str) -> bool:
     user = get_user(user_id)
-    if not user or user.get('nps_submitted_at') or user.get('nps_dismissed'):
+    if not user or user.get("nps_submitted_at") or user.get("nps_dismissed"):
         return False
     # Após aha (Modo Tocar / agenda) — não esperar só o fim do trial
-    if user.get('play_mode_used') or user.get('agenda_event_used'):
+    if user.get("play_mode_used") or user.get("agenda_event_used"):
         return True
     from monetizacao import get_assinatura_banda
+
     for b in get_owned_bands(user_id):
-        ass = get_assinatura_banda(b['id'])
+        ass = get_assinatura_banda(b["id"])
         if ass.trial_usado and not ass.trial_ativo():
             return True
     from models_studio import get_studio_subscription, list_studios_by_owner
     from monetizacao import dias_restantes_trial_estudio, studio_tem_premium
+
     if list_studios_by_owner(user_id) and not studio_tem_premium(user_id):
         sub = get_studio_subscription(user_id)
-        if sub and sub.get('trial_usado') and dias_restantes_trial_estudio(user_id) is None:
+        if (
+            sub
+            and sub.get("trial_usado")
+            and dias_restantes_trial_estudio(user_id) is None
+        ):
             return True
     return False
 
@@ -5094,25 +5343,25 @@ def user_should_see_nps(user_id: str) -> bool:
 def dismiss_pwa_prompt(user_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE users SET pwa_prompt_dismissed = 1 WHERE id = ?', (user_id,))
+    c.execute("UPDATE users SET pwa_prompt_dismissed = 1 WHERE id = ?", (user_id,))
     db.commit()
     db.close()
 
 
 def user_should_see_pwa_prompt(user_id: str) -> bool:
     user = get_user(user_id)
-    if not user or user.get('pwa_prompt_dismissed'):
+    if not user or user.get("pwa_prompt_dismissed"):
         return False
-    return bool(user.get('play_mode_used') or user.get('agenda_event_used'))
+    return bool(user.get("play_mode_used") or user.get("agenda_event_used"))
 
 
-_PLAY_CSAT_ANSWERS = frozenset({'excelente', 'problemas', 'nao_usei'})
-_CHURN_REASONS = frozenset({'caro', 'dificil', 'nao_precisou', 'outro'})
+_PLAY_CSAT_ANSWERS = frozenset({"excelente", "problemas", "nao_usei"})
+_CHURN_REASONS = frozenset({"caro", "dificil", "nao_precisou", "outro"})
 
 
 def save_user_play_csat(user_id: str, answer: str) -> bool:
     """Micro-survey pós-Modo Tocar. Retorna True se salvou."""
-    ans = (answer or '').strip().lower()
+    ans = (answer or "").strip().lower()
     if ans not in _PLAY_CSAT_ANSWERS:
         return False
     from config import app_now_str
@@ -5120,8 +5369,8 @@ def save_user_play_csat(user_id: str, answer: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE users SET play_csat_answer = ?, play_csat_submitted_at = ?
-           WHERE id = ? AND play_csat_submitted_at IS NULL''',
+        """UPDATE users SET play_csat_answer = ?, play_csat_submitted_at = ?
+           WHERE id = ? AND play_csat_submitted_at IS NULL""",
         (ans, app_now_str(), user_id),
     )
     ok = c.rowcount > 0
@@ -5131,7 +5380,7 @@ def save_user_play_csat(user_id: str, answer: str) -> bool:
 
 
 def save_user_churn_survey(user_id: str, reason: str) -> bool:
-    reason_n = (reason or '').strip().lower()
+    reason_n = (reason or "").strip().lower()
     if reason_n not in _CHURN_REASONS:
         return False
     from config import app_now_str
@@ -5139,8 +5388,8 @@ def save_user_churn_survey(user_id: str, reason: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE users SET churn_reason = ?, churn_survey_at = ?, churn_survey_dismissed = 1
-           WHERE id = ?''',
+        """UPDATE users SET churn_reason = ?, churn_survey_at = ?, churn_survey_dismissed = 1
+           WHERE id = ?""",
         (reason_n, app_now_str(), user_id),
     )
     db.commit()
@@ -5151,7 +5400,7 @@ def save_user_churn_survey(user_id: str, reason: str) -> bool:
 def dismiss_user_churn_survey(user_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE users SET churn_survey_dismissed = 1 WHERE id = ?', (user_id,))
+    c.execute("UPDATE users SET churn_survey_dismissed = 1 WHERE id = ?", (user_id,))
     db.commit()
     db.close()
 
@@ -5159,12 +5408,12 @@ def dismiss_user_churn_survey(user_id: str) -> None:
 def user_should_see_churn_survey(user_id: str) -> bool:
     """Após trial expirado, uma pergunta amigável de churn (se ainda não respondeu)."""
     user = get_user(user_id)
-    if not user or user.get('churn_survey_at') or user.get('churn_survey_dismissed'):
+    if not user or user.get("churn_survey_at") or user.get("churn_survey_dismissed"):
         return False
     from monetizacao import get_assinatura_banda
 
     for b in get_owned_bands(user_id):
-        ass = get_assinatura_banda(b['id'])
+        ass = get_assinatura_banda(b["id"])
         if ass.trial_usado and not ass.trial_ativo() and not ass.tem_acesso_premium():
             return True
     return False
@@ -5172,14 +5421,15 @@ def user_should_see_churn_survey(user_id: str) -> bool:
 
 def ensure_studio_onboarding_rows(owner_user_id: str, studio_id: str) -> None:
     from sqlite3 import IntegrityError
+
     db = get_db()
     c = db.cursor()
     for n in range(1, 6):
         try:
             c.execute(
-                '''INSERT INTO studio_onboarding_emails
+                """INSERT INTO studio_onboarding_emails
                    (owner_user_id, studio_id, email_numero, status)
-                   VALUES (?, ?, ?, 'pendente')''',
+                   VALUES (?, ?, ?, 'pendente')""",
                 (owner_user_id, studio_id, n),
             )
         except IntegrityError:
@@ -5192,26 +5442,26 @@ def list_studio_onboarding_pending() -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT soe.*, u.email, s.nome AS studio_nome, s.created_at AS studio_created_at
+        """SELECT soe.*, u.email, s.nome AS studio_nome, s.created_at AS studio_created_at
            FROM studio_onboarding_emails soe
            JOIN users u ON u.id = soe.owner_user_id
            JOIN studios s ON s.id = soe.studio_id
            WHERE soe.status = 'pendente'
-           ORDER BY soe.owner_user_id, soe.email_numero'''
+           ORDER BY soe.owner_user_id, soe.email_numero"""
     )
     rows = [dict(r) for r in c.fetchall()]
     db.close()
     return rows
 
 
-def mark_studio_onboarding_sent(row_id: int, status: str = 'enviado') -> None:
+def mark_studio_onboarding_sent(row_id: int, status: str = "enviado") -> None:
     from config import app_now_str
+
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE studio_onboarding_emails SET status = ?, enviado_em = ? WHERE id = ?',
+        "UPDATE studio_onboarding_emails SET status = ?, enviado_em = ? WHERE id = ?",
         (status, app_now_str(), row_id),
     )
     db.commit()
     db.close()
-

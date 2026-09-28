@@ -22,6 +22,7 @@ from app.catalogo import (
     status_catalogo,
     upsert_produtos,
 )
+from app.cj import importar_pid, preview_busca
 from app.db import init_db
 from app.enderecos import obter_endereco, salvar_endereco
 from app.ledger import gravar_transacao_financeira, resumo_competencia
@@ -37,11 +38,12 @@ from app.models import (
     ProdutoAdminIn,
 )
 from app.pedidos import criar_pedido, listar_pedidos, obter_pedido, processar_webhook
-from app.cj import importar_pid, preview_busca
 from app.scraper import carregar_fonte, importar_url
 from app.sso import eh_admin_loja, exigir_admin, usuario_do_request
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
 log = logging.getLogger("unissono.loja")
 
 
@@ -56,7 +58,9 @@ async def _rotina_scraper() -> None:
                 upsert_produtos([{**p, "fonte": "semente"} for p in carregar_fonte()])
     while True:
         agora = datetime.now()
-        alvo = agora.replace(hour=config.SCRAPER_HORA, minute=15, second=0, microsecond=0)
+        alvo = agora.replace(
+            hour=config.SCRAPER_HORA, minute=15, second=0, microsecond=0
+        )
         if agora >= alvo:
             alvo += timedelta(hours=max(config.SCRAPER_INTERVALO_H, 1))
         await asyncio.sleep(max(30.0, (alvo - agora).total_seconds()))
@@ -130,7 +134,10 @@ def get_me(request: Request) -> dict[str, object]:
     try:
         usuario = usuario_do_request(request)
     except HTTPException:
-        return {"autenticado": False, "login_url": f"{config.UNISSONO_PUBLIC_URL}/auth/login?next={config.LOJA_PUBLIC_URL}"}
+        return {
+            "autenticado": False,
+            "login_url": f"{config.UNISSONO_PUBLIC_URL}/auth/login?next={config.LOJA_PUBLIC_URL}",
+        }
     return {
         "autenticado": True,
         "usuario": {
@@ -142,7 +149,9 @@ def get_me(request: Request) -> dict[str, object]:
             "is_superadmin": eh_admin_loja(usuario),
             "is_loja_admin": eh_admin_loja(usuario),
         },
-        "token": request.headers.get("Authorization", "").removeprefix("Bearer ").strip(),
+        "token": request.headers.get("Authorization", "")
+        .removeprefix("Bearer ")
+        .strip(),
     }
 
 
@@ -176,19 +185,26 @@ def admin_salvar_produto(item: ProdutoAdminIn, request: Request) -> dict:
 async def admin_importar(body: ImportarUrlIn, request: Request) -> dict:
     exigir_admin(request)
     try:
-        produto = await importar_url(body.url, categoria=body.categoria, marca=body.marca)
+        produto = await importar_url(
+            body.url, categoria=body.categoria, marca=body.marca
+        )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     except Exception as exc:
         log.warning("Importação falhou: %s", exc)
-        raise HTTPException(502, "Não consegui ler essa página do fornecedor. Tente o link do produto, não o da busca.") from exc
+        raise HTTPException(
+            502,
+            "Não consegui ler essa página do fornecedor. Tente o link do produto, não o da busca.",
+        ) from exc
     if body.preco_base_usd is not None:
         produto["preco_base_usd"] = float(body.preco_base_usd)
     if body.frete_usd is not None:
         produto["frete_usd"] = float(body.frete_usd)
     publicado = False
     if body.publicar and float(produto.get("preco_base_usd") or 0) > 0:
-        salvo = salvar_produto_admin(ProdutoAdminIn(**{k: produto[k] for k in ProdutoAdminIn.model_fields}))
+        salvo = salvar_produto_admin(
+            ProdutoAdminIn(**{k: produto[k] for k in ProdutoAdminIn.model_fields})
+        )
         publicado = True
         produto = {**produto, **salvo}
     return {
@@ -217,7 +233,11 @@ def admin_pedidos(request: Request) -> list[dict]:
 @app.get("/api/loja/admin/resumo")
 def admin_resumo(request: Request) -> dict[str, object]:
     exigir_admin(request)
-    return {**resumo_competencia(), "usd_brl": usd_brl(), **status_catalogo().model_dump()}
+    return {
+        **resumo_competencia(),
+        "usd_brl": usd_brl(),
+        **status_catalogo().model_dump(),
+    }
 
 
 @app.post("/api/loja/admin/cambio")
@@ -237,7 +257,9 @@ def admin_cj_buscar(request: Request, q: str = "", tamanho: int = 12) -> dict:
         raise HTTPException(400, str(exc)) from exc
     except Exception as exc:
         log.warning("Busca CJ falhou: %s", exc)
-        raise HTTPException(502, "O CJ não respondeu. Tente de novo em alguns segundos.") from exc
+        raise HTTPException(
+            502, "O CJ não respondeu. Tente de novo em alguns segundos."
+        ) from exc
     return {"ok": True, "itens": itens}
 
 
@@ -251,7 +273,9 @@ def admin_cj_disponibilizar(body: CjDisponibilizarIn, request: Request) -> dict:
     except Exception as exc:
         log.warning("Import CJ falhou: %s", exc)
         raise HTTPException(502, "Não consegui importar esse produto do CJ.") from exc
-    salvo = salvar_produto_admin(ProdutoAdminIn(**{k: produto[k] for k in ProdutoAdminIn.model_fields}))
+    salvo = salvar_produto_admin(
+        ProdutoAdminIn(**{k: produto[k] for k in ProdutoAdminIn.model_fields})
+    )
     return {"ok": True, "produto": {**produto, **salvo}}
 
 
@@ -267,7 +291,11 @@ async def admin_scraper(request: Request) -> dict[str, object]:
             log.exception("Sincronização em segundo plano falhou")
 
     asyncio.create_task(_job(), name="sync-catalogo")
-    return {"ok": True, "mensagem": "Sincronização iniciada. Atualize o resumo em um minuto.", **status_catalogo().model_dump()}
+    return {
+        "ok": True,
+        "mensagem": "Sincronização iniciada. Atualize o resumo em um minuto.",
+        **status_catalogo().model_dump(),
+    }
 
 
 @app.post("/api/loja/pedidos", response_model=PedidoOut)
@@ -298,7 +326,12 @@ async def webhook_mercadopago(
     except Exception:
         payload = {}
     payment_id = data_id or id or str((payload.get("data") or {}).get("id") or "")
-    topic = (request.query_params.get("topic") or request.query_params.get("type") or payload.get("type") or "").lower()
+    topic = (
+        request.query_params.get("topic")
+        or request.query_params.get("type")
+        or payload.get("type")
+        or ""
+    ).lower()
     if topic in {"", "payment", "payments"}:
         processar_webhook(payload, payment_id)
     return {"status": "ok"}

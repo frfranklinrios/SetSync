@@ -16,14 +16,14 @@ from flask import (
 
 from blueprints.auth import login_required
 from cifra_referencia import build_referencia_snapshot, meta_from_import_payload
-from cifras_tool.pipeline_cifras import (
-    executar_apenas_cifra,
-    validar_url_cifra,
-)
 from cifras_tool.api_cifras_client import (
     ApiCifrasError,
     get_cifra_setsync,
     search_songs,
+)
+from cifras_tool.pipeline_cifras import (
+    executar_apenas_cifra,
+    validar_url_cifra,
 )
 from cifras_tool.setsync_export import partes_para_grade_ui
 from security import check_rate_limit
@@ -99,9 +99,11 @@ def embed_tool_legacy():
 def api_processar_cifra():
     """Somente raspagem da cifra + grade pelos acordes."""
     user_id = session["user_id"]
-    rate_key = f'import:{user_id}'
+    rate_key = f"import:{user_id}"
     if not check_rate_limit(rate_key, max_attempts=15, window_sec=3600):
-        return jsonify({"detail": "Limite de importações por hora atingido. Tente mais tarde."}), 429
+        return jsonify(
+            {"detail": "Limite de importações por hora atingido. Tente mais tarde."}
+        ), 429
 
     corpo = request.get_json(silent=True) or {}
     url_cifra = (corpo.get("url_cifra") or "").strip()
@@ -158,50 +160,57 @@ def _resposta_api_cifras(pacote: dict) -> dict:
 @login_required
 def api_preview_cifra():
     """Renderiza HTML da cifra para exibição no modal (sem salvar)."""
-    from cifra_user_draft import cifra_dict_from_import
     from blueprints.cifras import prepare_cifra_sheet
+    from cifra_user_draft import cifra_dict_from_import
 
     data = request.get_json(silent=True) or {}
     fake = cifra_dict_from_import(data)
-    if not (fake.get('conteudo') or fake.get('cifra_json') or fake.get('grade_json')):
+    if not (fake.get("conteudo") or fake.get("cifra_json") or fake.get("grade_json")):
         return jsonify({"detail": "Cifra sem conteúdo para visualizar."}), 400
 
     sheet = prepare_cifra_sheet(fake)
     html = render_template("partials/cifra_sheet_body.html", sheet=sheet)
-    return jsonify({
-        "titulo": fake.get("titulo"),
-        "artista": fake.get("artista"),
-        "tom_original": fake.get("tom_original"),
-        "html": html,
-        "has_content": bool(sheet.get("has_content")),
-    })
+    return jsonify(
+        {
+            "titulo": fake.get("titulo"),
+            "artista": fake.get("artista"),
+            "tom_original": fake.get("tom_original"),
+            "html": html,
+            "has_content": bool(sheet.get("has_content")),
+        }
+    )
 
 
 @cifras_import_bp.route("/api/para-banda/<band_id>", methods=["POST"])
 @login_required
 def api_import_para_banda(band_id: str):
     """Importa cifra da biblioteca direto para o repertório da banda."""
-    from flask import url_for
     import json
 
-    from db import count_band_cifras, create_cifra, get_band, is_band_editor
+    from flask import url_for
+
     import band_notifications as bn
-    from monetizacao import check_limite, LIMITES_GRATIS
+    from db import count_band_cifras, create_cifra, get_band, is_band_editor
+    from monetizacao import LIMITES_GRATIS, check_limite
 
     user_id = session["user_id"]
     band = get_band(band_id)
     if not band or not is_band_editor(band_id, user_id):
         return jsonify({"detail": "Sem permissão para importar nesta banda."}), 403
 
-    rate_key = f'import:{user_id}'
+    rate_key = f"import:{user_id}"
     if not check_rate_limit(rate_key, max_attempts=30, window_sec=3600):
-        return jsonify({"detail": "Limite de importações por hora atingido. Tente mais tarde."}), 429
+        return jsonify(
+            {"detail": "Limite de importações por hora atingido. Tente mais tarde."}
+        ), 429
 
-    if not check_limite(band, 'musica'):
-        return jsonify({
-            "detail": f"Limite do plano atingido ({LIMITES_GRATIS['musica']} músicas).",
-            "upgrade": True,
-        }), 402
+    if not check_limite(band, "musica"):
+        return jsonify(
+            {
+                "detail": f"Limite do plano atingido ({LIMITES_GRATIS['musica']} músicas).",
+                "upgrade": True,
+            }
+        ), 402
 
     data = request.get_json(silent=True) or {}
     titulo = (data.get("titulo") or "").strip()
@@ -245,30 +254,38 @@ def api_import_para_banda(band_id: str):
     if cifras_antes == 0:
         from google_ads import mark_funnel_event
         from product_funnel import log_funnel_step
-        mark_funnel_event('primeira_cifra')
-        log_funnel_step(user_id, 'primeira_cifra', meta={'via': 'import'})
+
+        mark_funnel_event("primeira_cifra")
+        log_funnel_step(user_id, "primeira_cifra", meta={"via": "import"})
     bn.cifra_created(band_id, user_id, cifra_id, titulo)
     try:
         from blueprints.realtime import notify_band
-        notify_band(str(band_id), 'cifra_imported', {'cifra_id': cifra_id, 'titulo': titulo})
+
+        notify_band(
+            str(band_id), "cifra_imported", {"cifra_id": cifra_id, "titulo": titulo}
+        )
     except Exception:
         pass
 
-    return jsonify({
-        "cifra_id": cifra_id,
-        "titulo": titulo,
-        "view_url": url_for("cifras.view", cifra_id=cifra_id),
-        "edit_url": url_for("cifras.edit", cifra_id=cifra_id),
-    })
+    return jsonify(
+        {
+            "cifra_id": cifra_id,
+            "titulo": titulo,
+            "view_url": url_for("cifras.view", cifra_id=cifra_id),
+            "edit_url": url_for("cifras.edit", cifra_id=cifra_id),
+        }
+    )
 
 
 @cifras_import_bp.route("/api/buscar")
 @login_required
 def api_buscar_cifras():
     user_id = session["user_id"]
-    rate_key = f'api-cifras-search:{user_id}'
+    rate_key = f"api-cifras-search:{user_id}"
     if not check_rate_limit(rate_key, max_attempts=120, window_sec=3600):
-        return jsonify({"detail": "Limite de buscas por hora atingido. Tente mais tarde."}), 429
+        return jsonify(
+            {"detail": "Limite de buscas por hora atingido. Tente mais tarde."}
+        ), 429
 
     q = (request.args.get("q") or "").strip()
     try:
@@ -290,9 +307,11 @@ def api_buscar_cifras():
 def api_import_api_cifras(artist_slug: str, song_slug: str):
     """Importa cifra do cache local (api-cifras) ou busca online se solicitado."""
     user_id = session["user_id"]
-    rate_key = f'import:{user_id}'
+    rate_key = f"import:{user_id}"
     if not check_rate_limit(rate_key, max_attempts=30, window_sec=3600):
-        return jsonify({"detail": "Limite de importações por hora atingido. Tente mais tarde."}), 429
+        return jsonify(
+            {"detail": "Limite de importações por hora atingido. Tente mais tarde."}
+        ), 429
 
     scrape = request.args.get("scrape", "1").lower() in ("1", "true", "yes")
 
@@ -305,8 +324,7 @@ def api_import_api_cifras(artist_slug: str, song_slug: str):
             return jsonify({"detail": str(erro)}), status
 
     url_cifra = (
-        f"https://www.cifraclub.com.br/{artist_slug.strip('/')}/"
-        f"{song_slug.strip('/')}/"
+        f"https://www.cifraclub.com.br/{artist_slug.strip('/')}/{song_slug.strip('/')}/"
     )
     job_id = str(uuid.uuid4())
     pasta_job = _exports_dir() / job_id

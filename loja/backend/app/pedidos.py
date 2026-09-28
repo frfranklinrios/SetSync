@@ -6,7 +6,7 @@ import json
 import logging
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException
 
@@ -38,15 +38,39 @@ def _validar_cliente(pedido: PedidoIn) -> None:
     if len(_somente_digitos(cliente.cpf)) != 11:
         raise HTTPException(400, "Informe um CPF válido para o pagamento.")
     if cliente.uf.strip().upper() not in {
-        "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
-        "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
-        "SP", "SE", "TO",
+        "AC",
+        "AL",
+        "AP",
+        "AM",
+        "BA",
+        "CE",
+        "DF",
+        "ES",
+        "GO",
+        "MA",
+        "MT",
+        "MS",
+        "MG",
+        "PA",
+        "PB",
+        "PR",
+        "PE",
+        "PI",
+        "RJ",
+        "RN",
+        "RS",
+        "RO",
+        "RR",
+        "SC",
+        "SP",
+        "SE",
+        "TO",
     }:
         raise HTTPException(400, "UF inválida.")
 
 
 def _salvar(registro: dict) -> None:
-    agora = datetime.now(timezone.utc).replace(tzinfo=None)
+    agora = datetime.now(UTC).replace(tzinfo=None)
     with locked():
         con = connect()
         try:
@@ -82,7 +106,9 @@ def _ler(pedido_id: str) -> dict:
     with locked():
         con = connect()
         try:
-            row = con.execute("SELECT payload FROM pedidos WHERE id = ?", [pedido_id]).fetchone()
+            row = con.execute(
+                "SELECT payload FROM pedidos WHERE id = ?", [pedido_id]
+            ).fetchone()
         finally:
             con.close()
     if not row:
@@ -117,7 +143,10 @@ def criar_pedido(pedido: PedidoIn, usuario: dict | None = None) -> PedidoOut:
         pedido.cliente.email = str(usuario["email"])
     if usuario.get("nome") and len(str(usuario["nome"]).strip()) >= 3:
         pedido.cliente.nome = str(usuario["nome"]).strip()
-    if usuario.get("telefone") and len(_somente_digitos(str(usuario["telefone"]))) >= 10:
+    if (
+        usuario.get("telefone")
+        and len(_somente_digitos(str(usuario["telefone"]))) >= 10
+    ):
         pedido.cliente.telefone = str(usuario["telefone"])
     _validar_cliente(pedido)
     if not config.mp_configurada():
@@ -156,7 +185,7 @@ def criar_pedido(pedido: PedidoIn, usuario: dict | None = None) -> PedidoOut:
     registro = {
         "id": pedido_id,
         "status": "aguardando_pagamento",
-        "criado_em": datetime.now(timezone.utc).replace(tzinfo=None),
+        "criado_em": datetime.now(UTC).replace(tzinfo=None),
         "pagamento": pagamento,
         "total": total,
         "total_pix": total,
@@ -236,10 +265,14 @@ def marcar_pago(pedido_id: str, pagamento_mp: dict) -> None:
     registro["status_mp"] = status_mp
     if status_mp == "approved":
         registro["status"] = "pago"
-        registro["pago_em"] = datetime.now(timezone.utc).isoformat()
+        registro["pago_em"] = datetime.now(UTC).isoformat()
         registro["mensagem"] = "Pagamento confirmado. Pedido em separação."
-        valor = float(pagamento_mp.get("transaction_amount") or registro.get("total") or 0)
-        taxa = taxa_mercadopago(pagamento_mp, str(registro.get("pagamento") or "pix"), valor)
+        valor = float(
+            pagamento_mp.get("transaction_amount") or registro.get("total") or 0
+        )
+        taxa = taxa_mercadopago(
+            pagamento_mp, str(registro.get("pagamento") or "pix"), valor
+        )
         gravar_transacao_financeira(
             pedido_id=pedido_id,
             valor_venda=valor,
@@ -268,7 +301,9 @@ def sincronizar_pagamento(pedido_id: str, payment_id: str) -> PedidoOut:
 
 
 def processar_webhook(payload: dict, payment_id: str | None) -> None:
-    pid = payment_id or str((payload.get("data") or {}).get("id") or payload.get("id") or "")
+    pid = payment_id or str(
+        (payload.get("data") or {}).get("id") or payload.get("id") or ""
+    )
     if not pid or pid == "123456":
         return
     data = consultar_pagamento(pid)

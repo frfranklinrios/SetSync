@@ -8,61 +8,66 @@ import os
 import sys
 from datetime import datetime, timedelta
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
-DEMO_USERNAME = 'showcase'
-DEMO_PASSWORD = 'UníssonoShowcase2026!'
-DEMO_EMAIL = 'showcase@setsync.com.br'
-DEMO_DISPLAY = 'Ana Costa'
+DEMO_USERNAME = "showcase"
+DEMO_PASSWORD = "UníssonoShowcase2026!"
+DEMO_EMAIL = "showcase@setsync.com.br"
+DEMO_DISPLAY = "Ana Costa"
 
-BAND_NAME = 'Maré Alta'
+BAND_NAME = "Maré Alta"
 BAND_DESC = (
-    'Covers de MPB e rock para bares, festivais e eventos corporativos. '
-    'Fortaleza — CE · desde 2019.'
+    "Covers de MPB e rock para bares, festivais e eventos corporativos. "
+    "Fortaleza — CE · desde 2019."
 )
 
-SETLIST_CORPORATIVO = 'Corporativo — Happy hour'
-SETLIST_CORPORATIVO_DESC = 'Versão enxuta (~1h) para eventos empresariais e festas privadas.'
+SETLIST_CORPORATIVO = "Corporativo — Happy hour"
+SETLIST_CORPORATIVO_DESC = (
+    "Versão enxuta (~1h) para eventos empresariais e festas privadas."
+)
 
 # Bar do Porto / Beira Mar — Fortaleza (mapa embutido na agenda)
 MAP_LAT = -3.7186
 MAP_LNG = -38.5424
 
 MEMBERS = [
-    ('lucas_showcase', 'lucas@setsync.com.br', 'Lucas Mendes', 'member'),
-    ('bia_showcase', 'bia@setsync.com.br', 'Bia Alves', 'member'),
-    ('raf_showcase', 'raf@setsync.com.br', 'Rafael Drum', 'member'),
+    ("lucas_showcase", "lucas@setsync.com.br", "Lucas Mendes", "member"),
+    ("bia_showcase", "bia@setsync.com.br", "Bia Alves", "member"),
+    ("raf_showcase", "raf@setsync.com.br", "Rafael Drum", "member"),
 ]
 
-VOCALISTS = ['Ana Costa', 'Lucas Mendes']
+VOCALISTS = ["Ana Costa", "Lucas Mendes"]
 
-SETLIST_NAME = 'Sábado — Bar do Porto'
-SETLIST_DESC = 'Set principal: 2h de show, mix MPB e clássicos internacionais.'
+SETLIST_NAME = "Sábado — Bar do Porto"
+SETLIST_DESC = "Set principal: 2h de show, mix MPB e clássicos internacionais."
 
-EVENT_SHOW_TITLE = 'Show — Bar do Porto'
-EVENT_SHOW_LOCATION = 'Bar do Porto, Rua dos Navegantes — Fortaleza, CE'
+EVENT_SHOW_TITLE = "Show — Bar do Porto"
+EVENT_SHOW_LOCATION = "Bar do Porto, Rua dos Navegantes — Fortaleza, CE"
 
-EVENT_ENSAIO_TITLE = 'Ensaio geral — pré-show'
-EVENT_ENSAIO_LOCATION = 'Estúdio Maré Alta — Cocó, Fortaleza'
+EVENT_ENSAIO_TITLE = "Ensaio geral — pré-show"
+EVENT_ENSAIO_LOCATION = "Estúdio Maré Alta — Cocó, Fortaleza"
 
 
 def _chordsheet_payload(key: str, bpm: float, source: str) -> str:
-    return json.dumps({
-        'source': source.strip(),
-        'meta': {'key': key, 'bpm': str(int(bpm)), 'time_signature': '4/4'},
-    }, ensure_ascii=False)
+    return json.dumps(
+        {
+            "source": source.strip(),
+            "meta": {"key": key, "bpm": str(int(bpm)), "time_signature": "4/4"},
+        },
+        ensure_ascii=False,
+    )
 
 
 def _songs():
     """Repertório genérico: MPB, rock e pop — serve para qualquer tipo de banda."""
     return [
         {
-            'titulo': 'Evidências',
-            'artista': 'Chitãozinho & Xororó',
-            'tom': 'A',
-            'bpm': 92,
-            'conteudo': """{title: Evidências}
+            "titulo": "Evidências",
+            "artista": "Chitãozinho & Xororó",
+            "tom": "A",
+            "bpm": 92,
+            "conteudo": """{title: Evidências}
 {artist: Chitãozinho & Xororó}
 {key: A}
 {tempo: 92}
@@ -80,17 +85,21 @@ def _songs():
 [D]Por isso eu finjo que [A]não te quero
 [E]Mas é só [D]evidências
 {end_of_chorus}""",
-            'grade': _chordsheet_payload('A', 92, """: Verso
+            "grade": _chordsheet_payload(
+                "A",
+                92,
+                """: Verso
 A E F#m7 D
 = Refrão
-D A E F#m7 D A E D"""),
+D A E F#m7 D A E D""",
+            ),
         },
         {
-            'titulo': 'Tempo Perdido',
-            'artista': 'Legião Urbana',
-            'tom': 'C',
-            'bpm': 112,
-            'conteudo': """{title: Tempo Perdido}
+            "titulo": "Tempo Perdido",
+            "artista": "Legião Urbana",
+            "tom": "C",
+            "bpm": 112,
+            "conteudo": """{title: Tempo Perdido}
 {artist: Legião Urbana}
 {key: C}
 {tempo: 112}
@@ -110,18 +119,22 @@ D A E F#m7 D A E D"""),
 [F]Alguém que me faça [G]esquecer
 [Am]Pelo menos por um [G]dia
 {end_of_chorus}""",
-            'grade': _chordsheet_payload('C', 112, """: Verso
+            "grade": _chordsheet_payload(
+                "C",
+                112,
+                """: Verso
 C Am F G
 = Refrão
-F G Am F G Am G"""),
+F G Am F G Am G""",
+            ),
         },
         {
-            'titulo': 'Wonderwall',
-            'artista': 'Oasis',
-            'tom': 'Em',
-            'bpm': 87,
-            'apple': 'https://music.apple.com/br/album/wonderwall/1440650788?i=1440650799',
-            'conteudo': """{title: Wonderwall}
+            "titulo": "Wonderwall",
+            "artista": "Oasis",
+            "tom": "Em",
+            "bpm": 87,
+            "apple": "https://music.apple.com/br/album/wonderwall/1440650788?i=1440650799",
+            "conteudo": """{title: Wonderwall}
 {artist: Oasis}
 {key: Em}
 {tempo: 87}
@@ -140,11 +153,11 @@ F G Am F G Am G"""),
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Garota de Ipanema',
-            'artista': 'Tom Jobim & Vinícius',
-            'tom': 'F',
-            'bpm': 118,
-            'conteudo': """{title: Garota de Ipanema}
+            "titulo": "Garota de Ipanema",
+            "artista": "Tom Jobim & Vinícius",
+            "tom": "F",
+            "bpm": 118,
+            "conteudo": """{title: Garota de Ipanema}
 {artist: Tom Jobim & Vinícius de Moraes}
 {key: F}
 {tempo: 118}
@@ -162,11 +175,11 @@ F G Am F G Am G"""),
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Stand By Me',
-            'artista': 'Ben E. King',
-            'tom': 'A',
-            'bpm': 118,
-            'conteudo': """{title: Stand By Me}
+            "titulo": "Stand By Me",
+            "artista": "Ben E. King",
+            "tom": "A",
+            "bpm": 118,
+            "conteudo": """{title: Stand By Me}
 {artist: Ben E. King}
 {key: A}
 {tempo: 118}
@@ -184,11 +197,11 @@ F G Am F G Am G"""),
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Só Hoje',
-            'artista': 'Jota Quest',
-            'tom': 'G',
-            'bpm': 96,
-            'conteudo': """{title: Só Hoje}
+            "titulo": "Só Hoje",
+            "artista": "Jota Quest",
+            "tom": "G",
+            "bpm": 96,
+            "conteudo": """{title: Só Hoje}
 {artist: Jota Quest}
 {key: G}
 {tempo: 96}
@@ -208,11 +221,11 @@ F G Am F G Am G"""),
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Hotel California',
-            'artista': 'Eagles',
-            'tom': 'Bm',
-            'bpm': 74,
-            'conteudo': """{title: Hotel California}
+            "titulo": "Hotel California",
+            "artista": "Eagles",
+            "tom": "Bm",
+            "bpm": 74,
+            "conteudo": """{title: Hotel California}
 {artist: Eagles}
 {key: Bm}
 {tempo: 74}
@@ -230,17 +243,21 @@ F G Am F G Am G"""),
 [G]Plenty of room at the Hotel [D]California
 [Em]Any time of year you can [F#]find it here
 {end_of_chorus}""",
-            'grade': _chordsheet_payload('Bm', 74, """: Verso
+            "grade": _chordsheet_payload(
+                "Bm",
+                74,
+                """: Verso
 Bm F# A E G D Em F#
 = Refrão
-G D Em F#"""),
+G D Em F#""",
+            ),
         },
         {
-            'titulo': 'Valerie',
-            'artista': 'Amy Winehouse / Mark Ronson',
-            'tom': 'Eb',
-            'bpm': 104,
-            'conteudo': """{title: Valerie}
+            "titulo": "Valerie",
+            "artista": "Amy Winehouse / Mark Ronson",
+            "tom": "Eb",
+            "bpm": 104,
+            "conteudo": """{title: Valerie}
 {artist: Amy Winehouse}
 {key: Eb}
 {tempo: 104}
@@ -267,22 +284,26 @@ def ensure_user(username: str, email: str, password: str, display_name: str) -> 
 
     u = get_user_by_username(username)
     if u:
-        if display_name and (u.get('display_name') or '') != display_name:
-            update_user_display_name(u['id'], display_name)
-        return u['id']
+        if display_name and (u.get("display_name") or "") != display_name:
+            update_user_display_name(u["id"], display_name)
+        return u["id"]
     uid = create_user(username, email, password, display_name=display_name)
     if not uid:
-        raise RuntimeError(f'Não foi possível criar usuário {username}')
+        raise RuntimeError(f"Não foi possível criar usuário {username}")
     return uid
 
 
 def polish_user(user_id: str, *, display_name: str, phone: str | None = None) -> None:
-    from db import dismiss_onboarding_checklist, touch_user_last_login, update_user_profile
+    from db import (
+        dismiss_onboarding_checklist,
+        touch_user_last_login,
+        update_user_profile,
+    )
 
     update_user_profile(
         user_id,
         display_name=display_name,
-        phone=phone or '',
+        phone=phone or "",
         whatsapp_notify=True,
         email_notify=True,
     )
@@ -295,22 +316,22 @@ def create_prepared_cifra(band_id: str, song: dict) -> str:
     from db import create_cifra, update_cifra_streaming
 
     conteudo, cifra_json = _prepare_conteudo_for_save(
-        song['conteudo'],
-        titulo=song['titulo'],
-        artista=song['artista'],
-        tom_original=song['tom'],
+        song["conteudo"],
+        titulo=song["titulo"],
+        artista=song["artista"],
+        tom_original=song["tom"],
     )
     cid = create_cifra(
-        song['titulo'],
-        song['artista'],
-        song['tom'],
+        song["titulo"],
+        song["artista"],
+        song["tom"],
         conteudo,
         band_id,
         cifra_json=cifra_json,
-        grade_json=song.get('grade'),
-        bpm=song.get('bpm'),
+        grade_json=song.get("grade"),
+        bpm=song.get("bpm"),
     )
-    apple = song.get('apple')
+    apple = song.get("apple")
     if apple:
         update_cifra_streaming(cid, apple)
     return cid
@@ -327,21 +348,26 @@ def install_band_logo(band_id: str, title: str) -> None:
 
     delete_band_logo_files(band_id)
     w, h = 520, 180
-    img = Image.new('RGBA', (w, h), (15, 23, 42, 255))
+    img = Image.new("RGBA", (w, h), (15, 23, 42, 255))
     draw = ImageDraw.Draw(img)
-    draw.rounded_rectangle((12, 12, w - 12, h - 12), radius=28, fill=(42, 181, 160, 255))
+    draw.rounded_rectangle(
+        (12, 12, w - 12, h - 12), radius=28, fill=(42, 181, 160, 255)
+    )
     draw.rounded_rectangle((28, 28, w - 28, h - 28), radius=20, fill=(15, 23, 42, 255))
     try:
         from PIL import ImageFont
-        font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 52)
-        sub = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 22)
+
+        font = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 52
+        )
+        sub = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 22)
     except OSError:
         font = ImageFont.load_default()
         sub = font
     draw.text((48, 48), title, fill=(255, 255, 255, 255), font=font)
-    draw.text((48, 118), 'covers · MPB · rock', fill=(148, 163, 184, 255), font=sub)
-    filename = f'{band_id}.png'
-    img.save(logo_dir() / filename, 'PNG')
+    draw.text((48, 118), "covers · MPB · rock", fill=(148, 163, 184, 255), font=sub)
+    filename = f"{band_id}.png"
+    img.save(logo_dir() / filename, "PNG")
     set_band_logo_filename(band_id, filename)
 
 
@@ -349,9 +375,9 @@ def cleanup_showcase_bands(owner_id: str) -> None:
     from db import delete_band, get_owned_bands
 
     for band in get_owned_bands(owner_id):
-        name = (band.get('name') or '').strip()
-        if name in (BAND_NAME, 'Uníssono Showcase'):
-            delete_band(band['id'])
+        name = (band.get("name") or "").strip()
+        if name in (BAND_NAME, "Uníssono Showcase"):
+            delete_band(band["id"])
 
 
 def main() -> int:
@@ -371,16 +397,20 @@ def main() -> int:
         set_event_assignments,
     )
     from models_band_team import create_lineup, ensure_default_band_roles
-    from models_setlist import add_cifra_to_setlist, create_setlist, set_setlist_vocalist
+    from models_setlist import (
+        add_cifra_to_setlist,
+        create_setlist,
+        set_setlist_vocalist,
+    )
     from setlist_public import set_setlist_public_share
 
-    print('=== Uníssono — demo merchandising (pronto para print) ===\n')
+    print("=== Uníssono — demo merchandising (pronto para print) ===\n")
 
     owner_id = ensure_user(DEMO_USERNAME, DEMO_EMAIL, DEMO_PASSWORD, DEMO_DISPLAY)
-    polish_user(owner_id, display_name=DEMO_DISPLAY, phone='85999887766')
+    polish_user(owner_id, display_name=DEMO_DISPLAY, phone="85999887766")
 
     member_ids = []
-    phones = ['85988776655', '85977665544', '85966554433']
+    phones = ["85988776655", "85977665544", "85966554433"]
     for i, (uname, email, display, role) in enumerate(MEMBERS):
         uid = ensure_user(uname, email, DEMO_PASSWORD, display)
         polish_user(uid, display_name=display, phone=phones[i % len(phones)])
@@ -400,18 +430,18 @@ def main() -> int:
     v_ana = add_band_vocalist(band_id, VOCALISTS[0], user_id=owner_id)
     v_lucas = add_band_vocalist(band_id, VOCALISTS[1])
 
-    update_assinatura(band_id, plano='pro', status='ativa')
+    update_assinatura(band_id, plano="pro", status="ativa")
 
     songs = _songs()
     cifra_ids = [create_prepared_cifra(band_id, song) for song in songs]
 
-    roles = ['Vocal', 'Guitarra', 'Baixo', 'Bateria']
+    roles = ["Vocal", "Guitarra", "Baixo", "Bateria"]
     all_member_ids = [owner_id] + [m[0] for m in member_ids]
     create_lineup(
         band_id,
-        'Formação show',
+        "Formação show",
         [
-            {'user_id': uid, 'role_label': roles[i % len(roles)]}
+            {"user_id": uid, "role_label": roles[i % len(roles)]}
             for i, uid in enumerate(all_member_ids)
         ],
     )
@@ -431,7 +461,10 @@ def main() -> int:
     now = datetime.now()
     days_to_sat = (5 - now.weekday()) % 7 or 7
     show_start = (now + timedelta(days=days_to_sat)).replace(
-        hour=21, minute=0, second=0, microsecond=0,
+        hour=21,
+        minute=0,
+        second=0,
+        microsecond=0,
     )
     ensaio_start = (show_start - timedelta(days=2)).replace(hour=20, minute=0)
 
@@ -439,12 +472,12 @@ def main() -> int:
         band_id,
         title=EVENT_ENSAIO_TITLE,
         event_type=EVENT_ENSAIO,
-        starts_at=ensaio_start.strftime('%Y-%m-%d %H:%M:%S'),
-        ends_at=(ensaio_start + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S'),
+        starts_at=ensaio_start.strftime("%Y-%m-%d %H:%M:%S"),
+        ends_at=(ensaio_start + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S"),
         location=EVENT_ENSAIO_LOCATION,
         location_lat=MAP_LAT,
         location_lng=MAP_LNG,
-        notes='Checklist: passagem de som, ordem do set, volumes de monitor.',
+        notes="Checklist: passagem de som, ordem do set, volumes de monitor.",
         setlist_id=setlist_id,
         created_by=owner_id,
     )
@@ -453,18 +486,18 @@ def main() -> int:
         band_id,
         title=EVENT_SHOW_TITLE,
         event_type=EVENT_SHOW,
-        starts_at=show_start.strftime('%Y-%m-%d %H:%M:%S'),
-        ends_at=(show_start + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S'),
+        starts_at=show_start.strftime("%Y-%m-%d %H:%M:%S"),
+        ends_at=(show_start + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S"),
         location=EVENT_SHOW_LOCATION,
         location_lat=MAP_LAT,
         location_lng=MAP_LNG,
-        notes='Entrada gratuita até 22h · repetição do set corporativo sob encomenda.',
+        notes="Entrada gratuita até 22h · repetição do set corporativo sob encomenda.",
         setlist_id=setlist_id,
         created_by=owner_id,
     )
 
     assignments = [
-        {'user_id': uid, 'role_label': roles[i % len(roles)]}
+        {"user_id": uid, "role_label": roles[i % len(roles)]}
         for i, uid in enumerate(all_member_ids)
     ]
     for event_id in (ensaio_id, show_id):
@@ -477,36 +510,38 @@ def main() -> int:
         fee_total=1800.0,
         fee_transport_discount=150.0,
         fee_equipment_discount=80.0,
-        fee_notes='Van rateada entre 4 músicos · equipamento do bar incluso.',
+        fee_notes="Van rateada entre 4 músicos · equipamento do bar incluso.",
         fee_settled=False,
     )
 
-    base = (os.getenv('SETSYNC_CANONICAL_URL') or 'https://setsync.com.br').rstrip('/')
+    base = (os.getenv("SETSYNC_CANONICAL_URL") or "https://setsync.com.br").rstrip("/")
 
-    print('── Login ──')
-    print(f'  Usuário:  {DEMO_USERNAME}')
-    print(f'  E-mail:   {DEMO_EMAIL}')
-    print(f'  Senha:    {DEMO_PASSWORD}')
-    print(f'  Perfil:   {DEMO_DISPLAY} · WhatsApp cadastrado\n')
+    print("── Login ──")
+    print(f"  Usuário:  {DEMO_USERNAME}")
+    print(f"  E-mail:   {DEMO_EMAIL}")
+    print(f"  Senha:    {DEMO_PASSWORD}")
+    print(f"  Perfil:   {DEMO_DISPLAY} · WhatsApp cadastrado\n")
 
-    print('── Banda ──')
-    print(f'  {BAND_NAME} · plano Pro · logo · 8 cifras · 2 setlists · formação salva\n')
+    print("── Banda ──")
+    print(
+        f"  {BAND_NAME} · plano Pro · logo · 8 cifras · 2 setlists · formação salva\n"
+    )
 
-    print('── Telas para print ──')
-    print(f'  Login:       {base}/auth/login')
-    print(f'  Dashboard:   {base}/dashboard')
-    print(f'  Banda:       {base}/bands/{band_id}')
-    print(f'  Setlist:     {base}/setlists/{setlist_id}')
-    print(f'  Corporativo: {base}/setlists/{corp_id}')
-    print(f'  Modo Tocar:  {base}/setlists/{setlist_id}/tocar')
-    print(f'  Ensaio:      {base}/agenda/{ensaio_id}')
-    print(f'  Show+cachê:  {base}/agenda/{show_id}')
+    print("── Telas para print ──")
+    print(f"  Login:       {base}/auth/login")
+    print(f"  Dashboard:   {base}/dashboard")
+    print(f"  Banda:       {base}/bands/{band_id}")
+    print(f"  Setlist:     {base}/setlists/{setlist_id}")
+    print(f"  Corporativo: {base}/setlists/{corp_id}")
+    print(f"  Modo Tocar:  {base}/setlists/{setlist_id}/tocar")
+    print(f"  Ensaio:      {base}/agenda/{ensaio_id}")
+    print(f"  Show+cachê:  {base}/agenda/{show_id}")
     if share_token:
-        print(f'  Link público: {base}/setlists/letras/{share_token}')
+        print(f"  Link público: {base}/setlists/letras/{share_token}")
     print()
-    print('Conta pronta — entre com showcase e capture as telas.')
+    print("Conta pronta — entre com showcase e capture as telas.")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())

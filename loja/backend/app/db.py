@@ -158,7 +158,9 @@ def get_meta(chave: str) -> str | None:
     with _lock:
         con = connect()
         try:
-            row = con.execute("SELECT valor FROM meta WHERE chave = ?", [chave]).fetchone()
+            row = con.execute(
+                "SELECT valor FROM meta WHERE chave = ?", [chave]
+            ).fetchone()
             return str(row[0]) if row else None
         finally:
             con.close()

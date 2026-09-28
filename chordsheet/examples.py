@@ -129,7 +129,12 @@ Am D7 G %""",
     },
     "semi_pulsos": {
         "title": "Semi-pulsos (&)",
-        "meta": {"title": "Semi-pulsos", "key": "C", "bpm": "100", "time_signature": "4/4"},
+        "meta": {
+            "title": "Semi-pulsos",
+            "key": "C",
+            "bpm": "100",
+            "time_signature": "4/4",
+        },
         "source": """= Demo semi-pulsos (extensão SetSync)
 C&D
 C&D_E
@@ -156,7 +161,11 @@ Ab Bb Eb Cm""",
     },
     "navegacao": {
         "title": "Ritornello e navegação (|: :| D.C. coda)",
-        "meta": {"title": "Comfortably Numb (demo)", "artist": "Pink Floyd", "key": "Bm"},
+        "meta": {
+            "title": "Comfortably Numb (demo)",
+            "artist": "Pink Floyd",
+            "key": "Bm",
+        },
         "source": """= intro
 Bm
 = verse

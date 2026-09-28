@@ -9,7 +9,7 @@ MAX_VOICINGS_DEFAULT = 8
 
 
 def _fret_pitch(open_pc: int, fret) -> int | None:
-    if fret == 'x' or fret is None:
+    if fret == "x" or fret is None:
         return None
     if fret == 0:
         return open_pc
@@ -25,10 +25,12 @@ def _is_playable_span(frets: list, max_span: int) -> bool:
     return max(nums) - min(nums) <= max_span
 
 
-def _options_per_string(open_pcs: list[int], chord_pcs: set[int], max_fret: int) -> list[list]:
+def _options_per_string(
+    open_pcs: list[int], chord_pcs: set[int], max_fret: int
+) -> list[list]:
     per = []
     for oi in open_pcs:
-        opts: list = ['x']
+        opts: list = ["x"]
         if oi in chord_pcs:
             opts.append(0)
         for f in range(1, max_fret + 1):
@@ -38,11 +40,13 @@ def _options_per_string(open_pcs: list[int], chord_pcs: set[int], max_fret: int)
     return per
 
 
-def _validate(frets, open_pcs: list[int], chord_pcs: set[int], root_pc: int, max_span: int) -> bool:
+def _validate(
+    frets, open_pcs: list[int], chord_pcs: set[int], root_pc: int, max_span: int
+) -> bool:
     played: set[int] = set()
     active = 0
     for si, f in enumerate(frets):
-        if f == 'x':
+        if f == "x":
             continue
         active += 1
         pitch = _fret_pitch(open_pcs[si], f)
@@ -69,7 +73,7 @@ def _score(frets, open_pcs: list[int], root_pc: int) -> float:
     score = 0.0
     nums = []
     for si, f in enumerate(frets):
-        if f == 'x':
+        if f == "x":
             score += 8
         elif f == 0:
             score -= 6
@@ -84,21 +88,34 @@ def _score(frets, open_pcs: list[int], root_pc: int) -> float:
     return score
 
 
-def _backtrack(per_string, open_pcs, chord_pcs, root_pc, si, current, out, seen, max_span, limit):
+def _backtrack(
+    per_string, open_pcs, chord_pcs, root_pc, si, current, out, seen, max_span, limit
+):
     if len(out) >= limit:
         return
     if si >= len(per_string):
         if not _validate(current, open_pcs, chord_pcs, root_pc, max_span):
             return
-        key = ''.join(str(x) for x in current)
+        key = "".join(str(x) for x in current)
         if key in seen:
             return
         seen.add(key)
-        out.append({'frets': current[:], 'score': _score(current, open_pcs, root_pc)})
+        out.append({"frets": current[:], "score": _score(current, open_pcs, root_pc)})
         return
     for opt in per_string[si]:
         current.append(opt)
-        _backtrack(per_string, open_pcs, chord_pcs, root_pc, si + 1, current, out, seen, max_span, limit)
+        _backtrack(
+            per_string,
+            open_pcs,
+            chord_pcs,
+            root_pc,
+            si + 1,
+            current,
+            out,
+            seen,
+            max_span,
+            limit,
+        )
         current.pop()
         if len(out) >= limit:
             return
@@ -125,8 +142,10 @@ def discover_voicings(
     per = _options_per_string(open_pcs, chord_set, spec.max_fret)
     raw: list[dict] = []
     seen: set[str] = set()
-    _backtrack(per, open_pcs, chord_set, root_pc, 0, [], raw, seen, spec.max_span, limit)
-    raw.sort(key=lambda x: x['score'])
+    _backtrack(
+        per, open_pcs, chord_set, root_pc, 0, [], raw, seen, spec.max_span, limit
+    )
+    raw.sort(key=lambda x: x["score"])
     return raw[:limit]
 
 
@@ -160,7 +179,7 @@ def _detect_barres_contiguous(frets: list) -> list[dict]:
             while e < j and _barre_allowed_on_string(frets, e, f):
                 e += 1
             if e - s >= 2:
-                barres.append({'fret': f, 'startString': s + 1, 'endString': e})
+                barres.append({"fret": f, "startString": s + 1, "endString": e})
             s = e
         i = j
     return barres
@@ -185,7 +204,7 @@ def _detect_barres_from_fingers(frets: list, fingers: list[int] | None) -> list[
         valid = True
         for s in range(start, end + 1):
             fg = frets[s]
-            if fg in ('x', 'X'):
+            if fg in ("x", "X"):
                 valid = False
                 break
             if isinstance(fg, int) and 0 < fg < fret:
@@ -195,8 +214,10 @@ def _detect_barres_from_fingers(frets: list, fingers: list[int] | None) -> list[
                 valid = False
                 break
         if valid and end > start:
-            barres.append({'fret': fret, 'startString': start + 1, 'endString': end + 1})
-    barres.sort(key=lambda b: b['fret'])
+            barres.append(
+                {"fret": fret, "startString": start + 1, "endString": end + 1}
+            )
+    barres.sort(key=lambda b: b["fret"])
     return barres
 
 
@@ -211,9 +232,9 @@ def detect_barres(frets: list, fingers: list[int] | None = None) -> list[dict]:
 def string_on_barre(string_idx: int, frets: list, barres: list[dict]) -> dict | None:
     fval = frets[string_idx]
     for bar in barres:
-        s0 = bar['startString'] - 1
-        s1 = bar['endString'] - 1
-        if s0 <= string_idx <= s1 and fval == bar['fret']:
+        s0 = bar["startString"] - 1
+        s1 = bar["endString"] - 1
+        if s0 <= string_idx <= s1 and fval == bar["fret"]:
             return bar
     return None
 
@@ -222,7 +243,7 @@ def assign_fingers(frets: list, barres: list[dict]) -> list[int]:
     """Heurística simples de dedilhado (1=polegar … 4=mindinho)."""
     barre_strings: set[int] = set()
     for b in barres:
-        for s in range(b['startString'], b['endString'] + 1):
+        for s in range(b["startString"], b["endString"] + 1):
             barre_strings.add(s - 1)
 
     fingers = [0] * len(frets)
@@ -231,9 +252,7 @@ def assign_fingers(frets: list, barres: list[dict]) -> list[int]:
     fret_to_finger = {f: i + 1 for i, f in enumerate(nums[:4])}
 
     for si, f in enumerate(frets):
-        if f == 'x':
-            fingers[si] = 0
-        elif f == 0:
+        if f == "x" or f == 0:
             fingers[si] = 0
         elif si in barre_strings:
             fingers[si] = 1
@@ -245,8 +264,8 @@ def assign_fingers(frets: list, barres: list[dict]) -> list[int]:
 def frets_to_api(frets: list) -> list:
     out = []
     for f in frets:
-        if f == 'x':
-            out.append('X')
+        if f == "x":
+            out.append("X")
         else:
             out.append(f)
     return out
@@ -265,18 +284,18 @@ _GUITAR_TO_CAVACO_IDX = (2, 3, 4, 5)
 
 def adapt_guitar_voicing_to_four_strings(voicing: dict) -> dict:
     """Reduz voicing de 6 cordas (violão) para 4 (cavaco/cavaquinho)."""
-    frets = list(voicing.get('frets') or [])
+    frets = list(voicing.get("frets") or [])
     if len(frets) != 6:
         return dict(voicing)
-    fingers = voicing.get('fingers')
+    fingers = voicing.get("fingers")
     new_frets = [frets[i] for i in _GUITAR_TO_CAVACO_IDX]
     new_fingers = [fingers[i] for i in _GUITAR_TO_CAVACO_IDX] if fingers else None
     new_barres = detect_barres(new_frets, new_fingers)
     out = dict(voicing)
-    out['frets'] = new_frets
-    out['fingers'] = new_fingers
-    out['barres'] = [
-        {'fret': b['fret'], 'from': b['startString'] - 1, 'to': b['endString'] - 1}
+    out["frets"] = new_frets
+    out["fingers"] = new_fingers
+    out["barres"] = [
+        {"fret": b["fret"], "from": b["startString"] - 1, "to": b["endString"] - 1}
         for b in new_barres
     ]
     return out

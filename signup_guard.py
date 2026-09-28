@@ -13,50 +13,52 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # Domínios comprovadamente usados em bots/spam neste produto + descartáveis comuns.
-_DEFAULT_BLOCKED_EMAIL_DOMAINS = frozenset({
-    'immenseignite.info',
-    'mailinator.com',
-    'guerrillamail.com',
-    'guerrillamail.net',
-    'sharklasers.com',
-    'grr.la',
-    'tempmail.com',
-    'temp-mail.org',
-    'throwaway.email',
-    'yopmail.com',
-    'trashmail.com',
-    '10minutemail.com',
-    'getnada.com',
-    'dispostable.com',
-    'fakeinbox.com',
-    'maildrop.cc',
-})
+_DEFAULT_BLOCKED_EMAIL_DOMAINS = frozenset(
+    {
+        "immenseignite.info",
+        "mailinator.com",
+        "guerrillamail.com",
+        "guerrillamail.net",
+        "sharklasers.com",
+        "grr.la",
+        "tempmail.com",
+        "temp-mail.org",
+        "throwaway.email",
+        "yopmail.com",
+        "trashmail.com",
+        "10minutemail.com",
+        "getnada.com",
+        "dispostable.com",
+        "fakeinbox.com",
+        "maildrop.cc",
+    }
+)
 
-_VOWELS = set('aeiouáéíóúãõâêôàü')
-_HONEYPOT_FIELDS = ('website', 'company_url', 'fax_number')
+_VOWELS = set("aeiouáéíóúãõâêôàü")
+_HONEYPOT_FIELDS = ("website", "company_url", "fax_number")
 
 # Mensagem genérica — não ensina o bot o que falhou.
 GENERIC_REJECT_MSG = (
-    'Não foi possível concluir o cadastro agora. '
-    'Tente novamente em alguns minutos ou use outro e-mail.'
+    "Não foi possível concluir o cadastro agora. "
+    "Tente novamente em alguns minutos ou use outro e-mail."
 )
 
 
 def _csv_env(name: str) -> frozenset[str]:
-    raw = (os.getenv(name) or '').strip()
+    raw = (os.getenv(name) or "").strip()
     if not raw:
         return frozenset()
-    return frozenset(p.strip().lower() for p in raw.split(',') if p.strip())
+    return frozenset(p.strip().lower() for p in raw.split(",") if p.strip())
 
 
 @lru_cache(maxsize=1)
 def blocked_email_domains() -> frozenset[str]:
-    return _DEFAULT_BLOCKED_EMAIL_DOMAINS | _csv_env('SETSYNC_BLOCKED_EMAIL_DOMAINS')
+    return _DEFAULT_BLOCKED_EMAIL_DOMAINS | _csv_env("SETSYNC_BLOCKED_EMAIL_DOMAINS")
 
 
 def email_domain(email: str) -> str:
-    e = (email or '').strip().lower()
-    _, _, domain = e.partition('@')
+    e = (email or "").strip().lower()
+    _, _, domain = e.partition("@")
     return domain.strip()
 
 
@@ -66,7 +68,7 @@ def is_blocked_email_domain(email: str) -> bool:
 
 def looks_like_gibberish(text: str | None, *, min_len: int = 8) -> bool:
     """Detecta strings tipo teclado aleatório (ex.: nqfnfmnzuq, rhznzdzgoz)."""
-    raw = (text or '').strip()
+    raw = (text or "").strip()
     if len(raw) < min_len:
         return False
     # Nomes com espaço/acento costumam ser reais.
@@ -89,7 +91,7 @@ def looks_like_gibberish(text: str | None, *, min_len: int = 8) -> bool:
     if vowel_ratio <= 0.34 and unique_ratio >= 0.65:
         return True
     # Sequências de 4+ consoantes (comum em bots)
-    if re.search(r'[bcdfghjklmnpqrstvwxyz]{4,}', ''.join(letters)):
+    if re.search(r"[bcdfghjklmnpqrstvwxyz]{4,}", "".join(letters)):
         if vowel_ratio <= 0.40 and unique_ratio >= 0.55:
             return True
     return False
@@ -97,7 +99,7 @@ def looks_like_gibberish(text: str | None, *, min_len: int = 8) -> bool:
 
 def honeypot_tripped(form: Any) -> bool:
     for name in _HONEYPOT_FIELDS:
-        val = (form.get(name) or '').strip()
+        val = (form.get(name) or "").strip()
         if val:
             return True
     return False
@@ -108,8 +110,8 @@ def make_signup_timing_token() -> str:
     from flask import current_app
     from itsdangerous import URLSafeTimedSerializer
 
-    s = URLSafeTimedSerializer(current_app.secret_key, salt='signup-timing')
-    return s.dumps({'t': time.time()})
+    s = URLSafeTimedSerializer(current_app.secret_key, salt="signup-timing")
+    return s.dumps({"t": time.time()})
 
 
 def signup_filled_too_fast(token: str | None, *, min_seconds: float = 2.5) -> bool:
@@ -121,9 +123,9 @@ def signup_filled_too_fast(token: str | None, *, min_seconds: float = 2.5) -> bo
         from flask import current_app
         from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
-        s = URLSafeTimedSerializer(current_app.secret_key, salt='signup-timing')
+        s = URLSafeTimedSerializer(current_app.secret_key, salt="signup-timing")
         data = s.loads(token, max_age=60 * 60 * 6)
-        started = float(data.get('t') or 0)
+        started = float(data.get("t") or 0)
         if started <= 0:
             return True
         return (time.time() - started) < min_seconds
@@ -148,34 +150,40 @@ def check_signup_abuse(
     """
     from security import check_rate_limit
 
-    ip = (remote_addr or 'unknown').strip() or 'unknown'
+    ip = (remote_addr or "unknown").strip() or "unknown"
 
     if honeypot_tripped(form):
-        logger.warning('signup_blocked reason=honeypot ip=%s email=%s', ip, email)
+        logger.warning("signup_blocked reason=honeypot ip=%s email=%s", ip, email)
         # Consome rate limit e falha genérica (não confirma honeypot).
-        check_rate_limit(f'signup:{ip}', max_attempts=5, window_sec=3600)
-        return False, GENERIC_REJECT_MSG, 'honeypot'
+        check_rate_limit(f"signup:{ip}", max_attempts=5, window_sec=3600)
+        return False, GENERIC_REJECT_MSG, "honeypot"
 
-    if not check_rate_limit(f'signup:{ip}', max_attempts=5, window_sec=3600):
-        logger.warning('signup_blocked reason=rate_limit ip=%s', ip)
-        return False, GENERIC_REJECT_MSG, 'rate_limit'
+    if not check_rate_limit(f"signup:{ip}", max_attempts=5, window_sec=3600):
+        logger.warning("signup_blocked reason=rate_limit ip=%s", ip)
+        return False, GENERIC_REJECT_MSG, "rate_limit"
 
     if is_blocked_email_domain(email):
-        logger.warning('signup_blocked reason=email_domain ip=%s domain=%s', ip, email_domain(email))
-        return False, GENERIC_REJECT_MSG, 'email_domain'
+        logger.warning(
+            "signup_blocked reason=email_domain ip=%s domain=%s",
+            ip,
+            email_domain(email),
+        )
+        return False, GENERIC_REJECT_MSG, "email_domain"
 
-    timing = (form.get('form_ts') or '').strip()
+    timing = (form.get("form_ts") or "").strip()
     if signup_filled_too_fast(timing):
-        logger.warning('signup_blocked reason=too_fast ip=%s email=%s', ip, email)
-        return False, GENERIC_REJECT_MSG, 'too_fast'
+        logger.warning("signup_blocked reason=too_fast ip=%s email=%s", ip, email)
+        return False, GENERIC_REJECT_MSG, "too_fast"
 
     user_gib = looks_like_gibberish(username)
     name_gib = looks_like_gibberish(display_name)
     if user_gib and name_gib:
         logger.warning(
-            'signup_blocked reason=gibberish ip=%s user=%s name=%s',
-            ip, username, display_name,
+            "signup_blocked reason=gibberish ip=%s user=%s name=%s",
+            ip,
+            username,
+            display_name,
         )
-        return False, GENERIC_REJECT_MSG, 'gibberish'
+        return False, GENERIC_REJECT_MSG, "gibberish"
 
     return True, None, None

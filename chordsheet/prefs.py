@@ -26,7 +26,7 @@ class Prefs:
     tab_show_barlines: bool = True
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any] | None) -> "Prefs":
+    def from_dict(cls, raw: dict[str, Any] | None) -> Prefs:
         base = cls()
         if not raw:
             return base
@@ -52,6 +52,10 @@ class Prefs:
             "relaxed": "cs-spacing-relaxed",
         }.get(self.line_spacing, "cs-spacing-normal")
         bl = f"cs-bl-style-{self.bar_line_style}"
-        extra = " cs-tab-no-barlines" if self.bar_line_style == "tab" and not self.tab_show_barlines else ""
+        extra = (
+            " cs-tab-no-barlines"
+            if self.bar_line_style == "tab" and not self.tab_show_barlines
+            else ""
+        )
         ns = self.notation_style if self.notation_style in NOTATION_STYLES else "br"
         return f"cs-chart {size} {spacing} {bl}{extra} cs-notation-{ns}"

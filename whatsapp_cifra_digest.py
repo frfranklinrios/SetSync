@@ -6,56 +6,56 @@ import logging
 from collections import defaultdict
 
 from db import (
+    get_user,
     list_pending_whatsapp_cifra_digest_user_ids,
     list_whatsapp_cifra_digest_for_user,
     mark_whatsapp_cifra_digest_sent,
     user_display_name,
-    get_user,
 )
 from whatsapp_config import canonical_app_url
-from whatsapp_service import send_whatsapp_text, normalize_whatsapp_phone
+from whatsapp_service import normalize_whatsapp_phone, send_whatsapp_text
 
-logger = logging.getLogger('setsync.whatsapp.digest')
+logger = logging.getLogger("setsync.whatsapp.digest")
 
 
 def _format_digest_text(entries: list[dict]) -> tuple[str, str]:
     """Retorna (title, body) para o resumo do dia."""
     by_band: dict[str, list[str]] = defaultdict(list)
     for row in entries:
-        band = (row.get('band_name') or 'Banda').strip()
-        titulo = (row.get('titulo') or 'Cifra').strip()
+        band = (row.get("band_name") or "Banda").strip()
+        titulo = (row.get("titulo") or "Cifra").strip()
         if titulo not in by_band[band]:
             by_band[band].append(titulo)
 
     if len(by_band) == 1:
         band_name = next(iter(by_band))
-        title = f'{band_name} — cifras editadas hoje'
+        title = f"{band_name} — cifras editadas hoje"
     else:
-        title = 'Cifras editadas hoje'
+        title = "Cifras editadas hoje"
 
     lines: list[str] = []
     for band_name in sorted(by_band):
         titulos = by_band[band_name]
         if len(by_band) > 1:
-            lines.append(f'*{band_name}*')
+            lines.append(f"*{band_name}*")
         for t in titulos:
-            lines.append(f'• «{t}»')
+            lines.append(f"• «{t}»")
         if len(by_band) > 1:
-            lines.append('')
+            lines.append("")
 
-    body = '\n'.join(lines).strip()
+    body = "\n".join(lines).strip()
     if len(entries) == 1:
-        body = f'Houve 1 alteração no repertório.\n\n{body}'
+        body = f"Houve 1 alteração no repertório.\n\n{body}"
     else:
-        body = f'Houve {len(entries)} alterações no repertório.\n\n{body}'
+        body = f"Houve {len(entries)} alterações no repertório.\n\n{body}"
     return title, body
 
 
 def _format_whatsapp_message(title: str, body: str) -> str:
-    base = canonical_app_url() or ''
-    link = f'{base}/dashboard' if base else '/dashboard'
-    parts = ['*Uníssono*', f'*{title}*', body, f'_Abrir no app:_\n{link}']
-    return '\n\n'.join(p for p in parts if p)
+    base = canonical_app_url() or ""
+    link = f"{base}/dashboard" if base else "/dashboard"
+    parts = ["*Uníssono*", f"*{title}*", body, f"_Abrir no app:_\n{link}"]
+    return "\n\n".join(p for p in parts if p)
 
 
 def send_user_cifra_digest(user_id: str) -> bool:
@@ -71,7 +71,7 @@ def send_user_cifra_digest(user_id: str) -> bool:
         mark_whatsapp_cifra_digest_sent(user_id)
         return False
 
-    phone = normalize_whatsapp_phone(user.get('phone') or '')
+    phone = normalize_whatsapp_phone(user.get("phone") or "")
     if not phone:
         mark_whatsapp_cifra_digest_sent(user_id)
         return False
@@ -83,7 +83,7 @@ def send_user_cifra_digest(user_id: str) -> bool:
 
     mark_whatsapp_cifra_digest_sent(user_id)
     logger.info(
-        'Digest cifra enviado para %s (%d itens)',
+        "Digest cifra enviado para %s (%d itens)",
         user_display_name(user),
         len(entries),
     )
@@ -92,15 +92,15 @@ def send_user_cifra_digest(user_id: str) -> bool:
 
 def send_pending_cifra_digests() -> dict[str, int]:
     """Job diário: um WhatsApp por usuário com resumo das edições do dia."""
-    stats = {'users': 0, 'sent': 0, 'failed': 0, 'skipped': 0}
+    stats = {"users": 0, "sent": 0, "failed": 0, "skipped": 0}
     for user_id in list_pending_whatsapp_cifra_digest_user_ids():
-        stats['users'] += 1
+        stats["users"] += 1
         try:
             if send_user_cifra_digest(user_id):
-                stats['sent'] += 1
+                stats["sent"] += 1
             else:
-                stats['skipped'] += 1
+                stats["skipped"] += 1
         except Exception:
-            logger.exception('Falha no digest de cifra para %s', user_id)
-            stats['failed'] += 1
+            logger.exception("Falha no digest de cifra para %s", user_id)
+            stats["failed"] += 1
     return stats

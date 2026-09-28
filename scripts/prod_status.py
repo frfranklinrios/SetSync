@@ -35,7 +35,9 @@ def main() -> int:
 
     # Backup
     bdir = ROOT / "backups"
-    dumps = sorted(bdir.glob("setsync-*.sql.gz"), key=lambda p: p.stat().st_mtime, reverse=True)
+    dumps = sorted(
+        bdir.glob("setsync-*.sql.gz"), key=lambda p: p.stat().st_mtime, reverse=True
+    )
     if dumps and dumps[0].stat().st_size > 50_000:
         _ok("Backup Postgres", True, dumps[0].name)
     else:

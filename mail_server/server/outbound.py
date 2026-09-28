@@ -29,12 +29,16 @@ def _mx_host(domain: str) -> str:
         best = sorted(records, key=lambda r: r.preference)[0]
         return str(best.exchange).rstrip(".")
     except Exception as exc:
-        logger.warning("MX lookup falhou para %s: %s — usando domínio direto", domain, exc)
+        logger.warning(
+            "MX lookup falhou para %s: %s — usando domínio direto", domain, exc
+        )
         return domain
 
 
 def _decode_smtp_error(code: int, resp: bytes) -> str:
-    text = resp.decode("utf-8", errors="replace") if isinstance(resp, bytes) else str(resp)
+    text = (
+        resp.decode("utf-8", errors="replace") if isinstance(resp, bytes) else str(resp)
+    )
     low = text.lower()
     if "block list" in low or "s3150" in low or "blocked using" in low:
         return (
@@ -56,7 +60,11 @@ def _relay_settings() -> tuple[str, int, bool, str, str] | None:
     if not host:
         return None
     port = int(os.getenv("MAIL_OUTBOUND_RELAY_PORT") or "587")
-    use_tls = (os.getenv("MAIL_OUTBOUND_RELAY_TLS") or "1").lower() in ("1", "true", "yes")
+    use_tls = (os.getenv("MAIL_OUTBOUND_RELAY_TLS") or "1").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     user = (os.getenv("MAIL_OUTBOUND_RELAY_USER") or "").strip()
     password = (os.getenv("MAIL_OUTBOUND_RELAY_PASSWORD") or "").strip()
     return host, port, use_tls, user, password

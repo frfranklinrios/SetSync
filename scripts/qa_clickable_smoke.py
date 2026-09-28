@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Smoke de UI: clica links/botões críticos e detecta 500 ou traceback."""
+
 from __future__ import annotations
 
 import os
@@ -15,10 +16,11 @@ sys.path.insert(0, str(ROOT))
 os.environ.setdefault("SESSION_COOKIE_SECURE", "0")
 os.environ["SETSYNC_CANONICAL_URL"] = ""
 
-from app import app  # noqa: E402
-from db import get_band_cifras, get_user_bands, get_user_by_username  # noqa: E402
-from models_setlist import get_band_setlists  # noqa: E402
-from playwright.sync_api import sync_playwright  # noqa: E402
+from playwright.sync_api import sync_playwright
+
+from app import app
+from db import get_band_cifras, get_user_bands, get_user_by_username
+from models_setlist import get_band_setlists
 
 SMOKE_HOST = "127.0.0.1"
 SMOKE_PORT = int(os.getenv("QA_SMOKE_PORT", "5099"))
@@ -60,7 +62,11 @@ def get_session_cookie() -> dict | None:
             sess["_fresh"] = True
         client.get("/bands", base_url=BASE)
         for jar in client._cookies.values():
-            items = jar.values() if hasattr(jar, "values") and not hasattr(jar, "key") else [jar]
+            items = (
+                jar.values()
+                if hasattr(jar, "values") and not hasattr(jar, "key")
+                else [jar]
+            )
             for cookie in items:
                 if getattr(cookie, "key", None) == "session":
                     return {
@@ -118,14 +124,31 @@ def safe(page, fn, label: str) -> None:
 
 
 def run_public(page) -> None:
-    for path in ["/ajuda", "/guia", "/blog", "/igrejas", "/planos", "/assinatura/planos"]:
-        safe(page, lambda p=path: page.goto(BASE + p, wait_until="domcontentloaded", timeout=20000), path)
+    for path in [
+        "/ajuda",
+        "/guia",
+        "/blog",
+        "/igrejas",
+        "/planos",
+        "/assinatura/planos",
+    ]:
+        safe(
+            page,
+            lambda p=path: page.goto(
+                BASE + p, wait_until="domcontentloaded", timeout=20000
+            ),
+            path,
+        )
         check_page(page, path)
 
     for link in page.locator("nav a[href^='/']").all()[:6]:
         href = link.get_attribute("href") or ""
         if href and "logout" not in href:
-            safe(page, lambda h=href: page.goto(BASE + h, wait_until="domcontentloaded"), f"nav {href}")
+            safe(
+                page,
+                lambda h=href: page.goto(BASE + h, wait_until="domcontentloaded"),
+                f"nav {href}",
+            )
             check_page(page, href)
 
 
@@ -145,7 +168,11 @@ def run_authenticated(page, bid: str, cid: str, sid: str) -> None:
             )
             check_page(page, tab_id)
 
-    safe(page, lambda: go(page, f"/cifras/{cid}/edit?tab=chordsheet", "edit chordsheet"), "edit chordsheet")
+    safe(
+        page,
+        lambda: go(page, f"/cifras/{cid}/edit?tab=chordsheet", "edit chordsheet"),
+        "edit chordsheet",
+    )
     if page.locator("#btn-render").count():
         safe(page, lambda: page.locator("#btn-render").click(timeout=8000), "render")
         page.wait_for_timeout(2500)
@@ -153,12 +180,20 @@ def run_authenticated(page, bid: str, cid: str, sid: str) -> None:
         preview = page.locator("#preview")
         if preview.count():
             html = preview.inner_html()
-            src = page.locator("#source").input_value() if page.locator("#source").count() else ""
+            src = (
+                page.locator("#source").input_value()
+                if page.locator("#source").count()
+                else ""
+            )
             if src.strip() and "cs-chart" not in html and "Digite" not in html:
                 errors.append("prévia chord sheet sem cs-chart após render")
 
     for tab in ("cifra", "letra"):
-        safe(page, lambda t=tab: go(page, f"/cifras/{cid}/edit?tab={t}", f"edit {tab}"), f"edit {tab}")
+        safe(
+            page,
+            lambda t=tab: go(page, f"/cifras/{cid}/edit?tab={t}", f"edit {tab}"),
+            f"edit {tab}",
+        )
 
     safe(page, lambda: go(page, f"/setlists/{sid}", "setlist"), "setlist")
     for path in (
@@ -168,7 +203,11 @@ def run_authenticated(page, bid: str, cid: str, sid: str) -> None:
     ):
         safe(page, lambda p=path: go(page, p, path), path)
 
-    safe(page, lambda: go(page, "/ajuda#chord-sheet", "ajuda chord-sheet"), "ajuda chord-sheet")
+    safe(
+        page,
+        lambda: go(page, "/ajuda#chord-sheet", "ajuda chord-sheet"),
+        "ajuda chord-sheet",
+    )
 
 
 def main() -> int:

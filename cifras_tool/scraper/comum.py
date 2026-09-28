@@ -68,9 +68,7 @@ _MARCADOR_SECAO = re.compile(r"\[[^\]]+\]")
 
 
 VIDEO_ID_YOUTUBE = re.compile(r"^[A-Za-z0-9_-]{11}$")
-PADRAO_URL_YOUTUBE = re.compile(
-    r"(?:v=|/embed/|youtu\.be/)([A-Za-z0-9_-]{11})"
-)
+PADRAO_URL_YOUTUBE = re.compile(r"(?:v=|/embed/|youtu\.be/)([A-Za-z0-9_-]{11})")
 
 
 def normalizar_url_youtube(url: str) -> str:
@@ -118,7 +116,12 @@ def detectar_fonte(url: str) -> str:
 
 def html_para_layout(linha_html: str) -> str:
     """Remove tags HTML preservando espaços; acordes ficam no lugar (colunas)."""
-    s = (linha_html or "").replace("\u00a0", " ").replace("&nbsp;", " ").replace("&#160;", " ")
+    s = (
+        (linha_html or "")
+        .replace("\u00a0", " ")
+        .replace("&nbsp;", " ")
+        .replace("&#160;", " ")
+    )
     partes: list[str] = []
     pos = 0
     while pos < len(s):
@@ -207,7 +210,9 @@ def mesclar_acordes_inline(
     ref = largura_layout if largura_layout and largura_layout > 0 else tamanho
 
     if ref < tamanho * 0.6 and acordes:
-        prefixo = " ".join(f"[{a}]" for _, a in sorted(acordes, key=lambda x: x[0])) + " "
+        prefixo = (
+            " ".join(f"[{a}]" for _, a in sorted(acordes, key=lambda x: x[0])) + " "
+        )
         return prefixo + letra
 
     resultado = letra
@@ -233,17 +238,23 @@ def formatar_linha_acordes_brackets(layout: str, acordes: list[tuple[int, str]])
 def parse_linha_html(linha_html: str) -> tuple[list[tuple[int, str]], str, bool]:
     """Compat: retorna acordes (coluna, nome), texto e flag."""
     info = analisar_linha_html(linha_html)
-    return info["acordes"], info["lyric_text"] or info["layout"].rstrip(), info["tem_acordes"]
+    return (
+        info["acordes"],
+        info["lyric_text"] or info["layout"].rstrip(),
+        info["tem_acordes"],
+    )
 
 
 def _texto_bloco_tablatura(conteudo_html: str) -> str:
     """Extrai texto legível de um bloco <span class="tablatura">…</span>."""
-    texto = re.sub(r'<span\s+class=["\']cnt["\'][^>]*>', '', conteudo_html, flags=re.I)
-    texto = re.sub(r'</span>', '', texto, flags=re.I)
-    texto = re.sub(r'<[^>]+>', '', texto)
-    texto = texto.replace('&nbsp;', ' ').replace('&#160;', ' ')
+    texto = re.sub(
+        r'<span\s+class=["\']cnt["\'][^>]*>', "", conteudo_html, flags=re.IGNORECASE
+    )
+    texto = re.sub(r"</span>", "", texto, flags=re.IGNORECASE)
+    texto = re.sub(r"<[^>]+>", "", texto)
+    texto = texto.replace("&nbsp;", " ").replace("&#160;", " ")
     linhas = [ln.rstrip() for ln in texto.splitlines()]
-    return '\n'.join(ln for ln in linhas if ln.strip())
+    return "\n".join(ln for ln in linhas if ln.strip())
 
 
 def extrair_tablaturas_do_html(html: str) -> str:
@@ -255,7 +266,7 @@ def extrair_tablaturas_do_html(html: str) -> str:
 
     def _substituir(match: re.Match) -> str:
         bloco = _texto_bloco_tablatura(match.group(1))
-        return f'\n{bloco}\n' if bloco else ''
+        return f"\n{bloco}\n" if bloco else ""
 
     return padrao.sub(_substituir, html)
 
@@ -301,15 +312,15 @@ def converter_html_para_inline(html: str) -> str:
         atual = analisar_linha_html(linhas_html[indice])
 
         # Letra → linha só de acordes → letra (padrão comum no Cifra Club)
-        if (
-            atual["somente_letra"]
-            and indice + 2 < total
-        ):
+        if atual["somente_letra"] and indice + 2 < total:
             meio = analisar_linha_html(linhas_html[indice + 1])
             prox = analisar_linha_html(linhas_html[indice + 2])
             if meio["somente_acordes"] and prox["somente_letra"]:
                 saida.append(atual["lyric_text"])
-                letra2 = prox["lyric_text"] or html_para_layout(linhas_html[indice + 2]).strip()
+                letra2 = (
+                    prox["lyric_text"]
+                    or html_para_layout(linhas_html[indice + 2]).strip()
+                )
                 desloc = max(0, len(atual["lyric_text"]) - len(letra2))
                 saida.append(
                     mesclar_acordes_inline(
@@ -326,7 +337,10 @@ def converter_html_para_inline(html: str) -> str:
             if indice + 1 < total:
                 prox = analisar_linha_html(linhas_html[indice + 1])
                 if prox["somente_letra"]:
-                    letra = prox["lyric_text"] or html_para_layout(linhas_html[indice + 1]).strip()
+                    letra = (
+                        prox["lyric_text"]
+                        or html_para_layout(linhas_html[indice + 1]).strip()
+                    )
                     saida.append(
                         mesclar_acordes_inline(
                             atual["acordes"],
@@ -336,7 +350,9 @@ def converter_html_para_inline(html: str) -> str:
                     )
                     indice += 2
                     continue
-            saida.append(formatar_linha_acordes_brackets(atual["layout"], atual["acordes"]))
+            saida.append(
+                formatar_linha_acordes_brackets(atual["layout"], atual["acordes"])
+            )
             indice += 1
             continue
 
@@ -358,7 +374,9 @@ def converter_html_para_inline(html: str) -> str:
                     )
                 )
             else:
-                saida.append(formatar_linha_acordes_brackets(atual["layout"], atual["acordes"]))
+                saida.append(
+                    formatar_linha_acordes_brackets(atual["layout"], atual["acordes"])
+                )
             indice += 1
             continue
 

@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta
-from typing import Any
+from datetime import date, datetime, time
 
-BOOKING_PENDENTE = 'pendente'
-BOOKING_CONFIRMADO = 'confirmado'
-BOOKING_CANCELADO = 'cancelado'
-BOOKING_RECUSADO = 'recusado'
+BOOKING_PENDENTE = "pendente"
+BOOKING_CONFIRMADO = "confirmado"
+BOOKING_CANCELADO = "cancelado"
+BOOKING_RECUSADO = "recusado"
 BOOKING_ACTIVE_STATUSES = (BOOKING_PENDENTE, BOOKING_CONFIRMADO)
 
 
@@ -17,7 +16,7 @@ def parse_time_hhmm(value: str) -> time | None:
         return None
     value = str(value).strip()[:5]
     try:
-        parts = value.split(':')
+        parts = value.split(":")
         if len(parts) != 2:
             return None
         h, m = int(parts[0]), int(parts[1])
@@ -34,7 +33,7 @@ def time_to_minutes(t: time) -> int:
 
 def minutes_to_hhmm(minutes: int) -> str:
     minutes = max(0, min(24 * 60 - 1, minutes))
-    return f'{minutes // 60:02d}:{minutes % 60:02d}'
+    return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
 
 def intervals_overlap(a_start: str, a_end: str, b_start: str, b_end: str) -> bool:
@@ -62,8 +61,8 @@ def _availability_windows_for_date(
     weekday = _date_weekday(target)
     windows: list[tuple[str, str]] = []
     for row in availability_rows:
-        spec = (row.get('data_especifica') or '').strip()
-        dow = row.get('dia_semana')
+        spec = (row.get("data_especifica") or "").strip()
+        dow = row.get("dia_semana")
         if spec:
             if spec != iso:
                 continue
@@ -72,7 +71,7 @@ def _availability_windows_for_date(
                 continue
         else:
             continue
-        hi, hf = row.get('hora_inicio'), row.get('hora_fim')
+        hi, hf = row.get("hora_inicio"), row.get("hora_fim")
         if hi and hf and parse_time_hhmm(hi) and parse_time_hhmm(hf):
             windows.append((hi[:5], hf[:5]))
     return windows
@@ -116,19 +115,29 @@ def list_conflicts(
 ) -> list[dict]:
     conflicts: list[dict] = []
     for b in bookings:
-        if b.get('data') != date_iso:
+        if b.get("data") != date_iso:
             continue
-        if exclude_booking_id and str(b.get('id')) == str(exclude_booking_id):
+        if exclude_booking_id and str(b.get("id")) == str(exclude_booking_id):
             continue
-        status = b.get('status') or ''
-        if status == BOOKING_CONFIRMADO or (count_pending and status == BOOKING_PENDENTE):
-            if intervals_overlap(start, end, b.get('hora_inicio', ''), b.get('hora_fim', '')):
-                conflicts.append({'type': 'booking', 'id': b.get('id'), 'status': status})
+        status = b.get("status") or ""
+        if status == BOOKING_CONFIRMADO or (
+            count_pending and status == BOOKING_PENDENTE
+        ):
+            if intervals_overlap(
+                start, end, b.get("hora_inicio", ""), b.get("hora_fim", "")
+            ):
+                conflicts.append(
+                    {"type": "booking", "id": b.get("id"), "status": status}
+                )
     for bl in blocks:
-        if bl.get('data') != date_iso:
+        if bl.get("data") != date_iso:
             continue
-        if intervals_overlap(start, end, bl.get('hora_inicio', ''), bl.get('hora_fim', '')):
-            conflicts.append({'type': 'block', 'id': bl.get('id'), 'motivo': bl.get('motivo')})
+        if intervals_overlap(
+            start, end, bl.get("hora_inicio", ""), bl.get("hora_fim", "")
+        ):
+            conflicts.append(
+                {"type": "block", "id": bl.get("id"), "motivo": bl.get("motivo")}
+            )
     return conflicts
 
 
@@ -167,15 +176,21 @@ def get_available_slots(
 
     occupied: list[tuple[int, int]] = []
     for b in bookings:
-        if b.get('data') != iso or b.get('status') != BOOKING_CONFIRMADO:
+        if b.get("data") != iso or b.get("status") != BOOKING_CONFIRMADO:
             continue
-        t0, t1 = parse_time_hhmm(b.get('hora_inicio', '')), parse_time_hhmm(b.get('hora_fim', ''))
+        t0, t1 = (
+            parse_time_hhmm(b.get("hora_inicio", "")),
+            parse_time_hhmm(b.get("hora_fim", "")),
+        )
         if t0 and t1:
             occupied.append((time_to_minutes(t0), time_to_minutes(t1)))
     for bl in blocks:
-        if bl.get('data') != iso:
+        if bl.get("data") != iso:
             continue
-        t0, t1 = parse_time_hhmm(bl.get('hora_inicio', '')), parse_time_hhmm(bl.get('hora_fim', ''))
+        t0, t1 = (
+            parse_time_hhmm(bl.get("hora_inicio", "")),
+            parse_time_hhmm(bl.get("hora_fim", "")),
+        )
         if t0 and t1:
             occupied.append((time_to_minutes(t0), time_to_minutes(t1)))
     occupied = _merge_minutes_ranges(occupied)
@@ -191,10 +206,12 @@ def get_available_slots(
                     blocked = True
                     break
             if not blocked:
-                slots.append({
-                    'inicio': minutes_to_hhmm(cursor),
-                    'fim': minutes_to_hhmm(slot_end),
-                })
+                slots.append(
+                    {
+                        "inicio": minutes_to_hhmm(cursor),
+                        "fim": minutes_to_hhmm(slot_end),
+                    }
+                )
             cursor += slot_minutes
     return slots
 
@@ -210,7 +227,7 @@ def validate_booking_request(
     exclude_booking_id: str | None = None,
 ) -> tuple[bool, str]:
     if not slot_within_availability(availability_rows, target, start, end):
-        return False, 'Horário fora da disponibilidade do estúdio.'
+        return False, "Horário fora da disponibilidade do estúdio."
     iso = target.isoformat()
     conflicts = list_conflicts(
         bookings=bookings,
@@ -221,20 +238,20 @@ def validate_booking_request(
         exclude_booking_id=exclude_booking_id,
     )
     if conflicts:
-        return False, 'Horário indisponível (conflito com reserva ou bloqueio).'
-    return True, ''
+        return False, "Horário indisponível (conflito com reserva ou bloqueio)."
+    return True, ""
 
 
 def booking_datetime_range(data_iso: str, start: str, end: str) -> tuple[str, str]:
     """Retorna starts_at/ends_at para band_events."""
-    d = (data_iso or '')[:10]
-    return f'{d} {start[:5]}:00', f'{d} {end[:5]}:00'
+    d = (data_iso or "")[:10]
+    return f"{d} {start[:5]}:00", f"{d} {end[:5]}:00"
 
 
 def parse_booking_date(value: str) -> date | None:
     if not value:
         return None
     try:
-        return datetime.strptime(str(value).strip()[:10], '%Y-%m-%d').date()
+        return datetime.strptime(str(value).strip()[:10], "%Y-%m-%d").date()
     except ValueError:
         return None

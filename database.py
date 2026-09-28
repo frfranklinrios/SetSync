@@ -1,4 +1,5 @@
 """Conexão SQLite ou PostgreSQL (DATABASE_URL)."""
+
 from __future__ import annotations
 
 import os
@@ -15,12 +16,12 @@ _pg_request = threading.local()
 _pg_pool = None
 _pg_pool_lock = threading.Lock()
 
-DATABASE_URL = (os.getenv('DATABASE_URL') or 'sqlite:///data/banda.db').strip()
-IS_POSTGRES = DATABASE_URL.startswith(('postgresql://', 'postgres://'))
+DATABASE_URL = (os.getenv("DATABASE_URL") or "sqlite:///data/banda.db").strip()
+IS_POSTGRES = DATABASE_URL.startswith(("postgresql://", "postgres://"))
 
 
 def _track_conn(conn) -> None:
-    conns = getattr(_open_conns, 'conns', None)
+    conns = getattr(_open_conns, "conns", None)
     if conns is None:
         conns = set()
         _open_conns.conns = conns
@@ -28,17 +29,17 @@ def _track_conn(conn) -> None:
 
 
 def _untrack_conn(conn) -> None:
-    conns = getattr(_open_conns, 'conns', None)
+    conns = getattr(_open_conns, "conns", None)
     if conns is not None:
         conns.discard(conn)
 
 
 def _pg_pool_max() -> int:
-    explicit = int(os.getenv('PG_POOL_MAX', '0') or '0')
+    explicit = int(os.getenv("PG_POOL_MAX", "0") or "0")
     if explicit > 0:
         return explicit
-    workers = max(1, int(os.getenv('GUNICORN_WORKERS', '1')))
-    threads = max(1, int(os.getenv('GUNICORN_THREADS', '4')))
+    workers = max(1, int(os.getenv("GUNICORN_WORKERS", "1")))
+    threads = max(1, int(os.getenv("GUNICORN_THREADS", "4")))
     return workers * threads + 4
 
 
@@ -59,8 +60,8 @@ def _get_pg_pool():
 
 
 def _release_pg_request_conn() -> None:
-    raw = getattr(_pg_request, 'raw', None)
-    wrapped = getattr(_pg_request, 'wrapped', None)
+    raw = getattr(_pg_request, "raw", None)
+    wrapped = getattr(_pg_request, "wrapped", None)
     if raw is None:
         return
     if wrapped is not None:
@@ -85,11 +86,11 @@ def _release_pg_request_conn() -> None:
 def close_leaked_connections() -> int:
     """Fecha conexões da thread atual não encerradas (proteção anti-vazamento)."""
     leaked = 0
-    if IS_POSTGRES and getattr(_pg_request, 'raw', None) is not None:
+    if IS_POSTGRES and getattr(_pg_request, "raw", None) is not None:
         _release_pg_request_conn()
         leaked += 1
 
-    conns = getattr(_open_conns, 'conns', None)
+    conns = getattr(_open_conns, "conns", None)
     if not conns:
         return leaked
     for conn in list(conns):
@@ -103,12 +104,12 @@ def close_leaked_connections() -> int:
 
 
 def _sqlite_path() -> str:
-    if DATABASE_URL.startswith('sqlite:///'):
-        rel = DATABASE_URL[len('sqlite:///'):]
+    if DATABASE_URL.startswith("sqlite:///"):
+        rel = DATABASE_URL[len("sqlite:///") :]
         if os.path.isabs(rel):
             return rel
         return os.path.normpath(os.path.join(os.path.dirname(__file__), rel))
-    return os.path.join(os.path.dirname(__file__), 'data', 'banda.db')
+    return os.path.join(os.path.dirname(__file__), "data", "banda.db")
 
 
 SQLITE_PATH = _sqlite_path()
@@ -131,17 +132,17 @@ def _adapt_sql(sql: str) -> str:
     if not IS_POSTGRES:
         return sql
 
-    mark = '\x00PH\x00'
+    mark = "\x00PH\x00"
     saved: list[str] = []
 
     def _stash(m: re.Match) -> str:
         saved.append(m.group(0))
-        return f'{mark}{len(saved) - 1}{mark}'
+        return f"{mark}{len(saved) - 1}{mark}"
 
     # Protege placeholders Postgres e escapes já corretos.
-    sql = re.sub(r'%%|%\(\w+\)s|%s', _stash, sql)
+    sql = re.sub(r"%%|%\(\w+\)s|%s", _stash, sql)
 
-    qmark = '\x00QM\x00'
+    qmark = "\x00QM\x00"
     out: list[str] = []
     i = 0
     n = len(sql)
@@ -163,18 +164,18 @@ def _adapt_sql(sql: str) -> str:
             out.append(ch)
             i += 1
             continue
-        if ch == '?' and not in_single and not in_double:
+        if ch == "?" and not in_single and not in_double:
             out.append(qmark)
             i += 1
             continue
         out.append(ch)
         i += 1
-    s = ''.join(out)
-    s = s.replace('%', '%%')
+    s = "".join(out)
+    s = s.replace("%", "%%")
     for idx, token in enumerate(saved):
-        s = s.replace(f'{mark}{idx}{mark}', token)
-    s = s.replace(qmark, '%s')
-    s = s.replace("datetime('now')", 'CURRENT_TIMESTAMP')
+        s = s.replace(f"{mark}{idx}{mark}", token)
+    s = s.replace(qmark, "%s")
+    s = s.replace("datetime('now')", "CURRENT_TIMESTAMP")
     return s
 
 
@@ -196,28 +197,35 @@ class CompatCursor:
 
     def execute(self, sql: str, params: tuple | list = ()):
         sql = _adapt_sql(sql)
-        if self._is_postgres and 'INSERT OR IGNORE' in sql.upper():
+        if self._is_postgres and "INSERT OR IGNORE" in sql.upper():
             sql, params = self._pg_insert_or_ignore(sql, params)
-        elif self._is_postgres and 'INSERT OR REPLACE' in sql.upper():
+        elif self._is_postgres and "INSERT OR REPLACE" in sql.upper():
             sql, params = self._pg_insert_or_replace(sql, params)
         self._raw.execute(sql, params)
         return self
 
     @staticmethod
     def _pg_insert_or_ignore(sql: str, params: tuple | list):
-        sql = re.sub(r'INSERT\s+OR\s+IGNORE\s+INTO', 'INSERT INTO', sql, flags=re.I)
-        if 'cifra_vocalist_transpose' in sql.lower():
-            sql = sql.rstrip().rstrip(';') + ' ON CONFLICT (cifra_id, vocalist_id) DO NOTHING'
+        sql = re.sub(
+            r"INSERT\s+OR\s+IGNORE\s+INTO", "INSERT INTO", sql, flags=re.IGNORECASE
+        )
+        if "cifra_vocalist_transpose" in sql.lower():
+            sql = (
+                sql.rstrip().rstrip(";")
+                + " ON CONFLICT (cifra_id, vocalist_id) DO NOTHING"
+            )
         return sql, params
 
     @staticmethod
     def _pg_insert_or_replace(sql: str, params: tuple | list):
-        sql = re.sub(r'INSERT\s+OR\s+REPLACE\s+INTO', 'INSERT INTO', sql, flags=re.I)
-        if 'cifra_vocalist_transpose' in sql.lower():
+        sql = re.sub(
+            r"INSERT\s+OR\s+REPLACE\s+INTO", "INSERT INTO", sql, flags=re.IGNORECASE
+        )
+        if "cifra_vocalist_transpose" in sql.lower():
             sql = (
-                sql.rstrip().rstrip(';')
-                + ' ON CONFLICT (cifra_id, vocalist_id) DO UPDATE SET '
-                'transpose_semitones = EXCLUDED.transpose_semitones'
+                sql.rstrip().rstrip(";")
+                + " ON CONFLICT (cifra_id, vocalist_id) DO UPDATE SET "
+                "transpose_semitones = EXCLUDED.transpose_semitones"
             )
         return sql, params
 
@@ -234,7 +242,7 @@ class CompatCursor:
     def lastrowid(self) -> int | None:
         if self._last_insert_id is not None:
             return self._last_insert_id
-        return getattr(self._raw, 'lastrowid', None)
+        return getattr(self._raw, "lastrowid", None)
 
     @property
     def rowcount(self) -> int:
@@ -270,10 +278,10 @@ class CompatConnection:
     def close(self):
         if self._pooled:
             _untrack_conn(self)
-            refs = getattr(_pg_request, 'refs', 0)
+            refs = getattr(_pg_request, "refs", 0)
             if refs > 0:
                 _pg_request.refs = refs - 1
-            if _pg_request.refs <= 0 and getattr(_pg_request, 'wrapped', None) is self:
+            if _pg_request.refs <= 0 and getattr(_pg_request, "wrapped", None) is self:
                 _release_pg_request_conn()
             return
         _untrack_conn(self)
@@ -301,7 +309,7 @@ class CompatConnection:
 
     def executescript(self, script: str) -> None:
         if self._is_postgres:
-            for stmt in script.split(';'):
+            for stmt in script.split(";"):
                 stmt = stmt.strip()
                 if stmt:
                     self.cursor().execute(stmt)
@@ -311,9 +319,9 @@ class CompatConnection:
 
 def get_db() -> CompatConnection:
     if IS_POSTGRES:
-        wrapped = getattr(_pg_request, 'wrapped', None)
-        if wrapped is not None and not getattr(_pg_request.raw, 'closed', True):
-            _pg_request.refs = getattr(_pg_request, 'refs', 0) + 1
+        wrapped = getattr(_pg_request, "wrapped", None)
+        if wrapped is not None and not getattr(_pg_request.raw, "closed", True):
+            _pg_request.refs = getattr(_pg_request, "refs", 0) + 1
             _track_conn(wrapped)
             return wrapped
 
@@ -325,10 +333,10 @@ def get_db() -> CompatConnection:
         _track_conn(wrapped)
         return wrapped
 
-    os.makedirs(os.path.dirname(SQLITE_PATH) or '.', exist_ok=True)
+    os.makedirs(os.path.dirname(SQLITE_PATH) or ".", exist_ok=True)
     conn = sqlite3.connect(SQLITE_PATH, timeout=15)
     conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA busy_timeout=15000')
+    conn.execute("PRAGMA busy_timeout=15000")
     wrapped = CompatConnection(conn, is_postgres=False)
     _track_conn(wrapped)
     return wrapped
@@ -337,21 +345,21 @@ def get_db() -> CompatConnection:
 def table_columns(cursor: CompatCursor, table: str) -> list[str]:
     if IS_POSTGRES:
         cursor.execute(
-            '''SELECT column_name FROM information_schema.columns
+            """SELECT column_name FROM information_schema.columns
                WHERE table_schema = 'public' AND table_name = %s
-               ORDER BY ordinal_position''',
+               ORDER BY ordinal_position""",
             (table,),
         )
-        return [r['column_name'] for r in cursor.fetchall()]
-    cursor.execute(f'PRAGMA table_info({table})')
-    return [row['name'] for row in cursor.fetchall()]
+        return [r["column_name"] for r in cursor.fetchall()]
+    cursor.execute(f"PRAGMA table_info({table})")
+    return [row["name"] for row in cursor.fetchall()]
 
 
 def table_exists(cursor: CompatCursor, table: str) -> bool:
     if IS_POSTGRES:
         cursor.execute(
-            '''SELECT 1 FROM information_schema.tables
-               WHERE table_schema = 'public' AND table_name = %s''',
+            """SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = %s""",
             (table,),
         )
         return cursor.fetchone() is not None
@@ -362,12 +370,14 @@ def table_exists(cursor: CompatCursor, table: str) -> bool:
     return cursor.fetchone() is not None
 
 
-def add_column_if_missing(cursor: CompatCursor, table: str, col: str, typedef: str) -> None:
+def add_column_if_missing(
+    cursor: CompatCursor, table: str, col: str, typedef: str
+) -> None:
     cols = set(table_columns(cursor, table))
     if col in cols:
         return
     if IS_POSTGRES:
-        cursor.execute(f'ALTER TABLE {table} ADD COLUMN {col} {typedef}')
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}")
     else:
-        cursor.execute(f'ALTER TABLE {table} ADD COLUMN {col} {typedef}')
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}")
     cursor.connection.commit()

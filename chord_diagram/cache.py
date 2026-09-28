@@ -8,7 +8,7 @@ import time
 from typing import Any
 
 _MEMORY: dict[str, tuple[float, Any]] = {}
-_DEFAULT_TTL = int(os.getenv('MUSIC_API_CACHE_TTL', '3600'))
+_DEFAULT_TTL = int(os.getenv("MUSIC_API_CACHE_TTL", "3600"))
 _REDIS = None
 _REDIS_TRIED = False
 
@@ -18,11 +18,12 @@ def _redis_client():
     if _REDIS_TRIED:
         return _REDIS
     _REDIS_TRIED = True
-    url = (os.getenv('REDIS_URL') or os.getenv('MUSIC_API_REDIS_URL') or '').strip()
+    url = (os.getenv("REDIS_URL") or os.getenv("MUSIC_API_REDIS_URL") or "").strip()
     if not url:
         return None
     try:
         import redis
+
         _REDIS = redis.from_url(url, decode_responses=True)
         _REDIS.ping()
     except Exception:
@@ -34,7 +35,7 @@ def get_cached(key: str) -> Any | None:
     r = _redis_client()
     if r:
         try:
-            raw = r.get(f'music_api:{key}')
+            raw = r.get(f"music_api:{key}")
             if raw:
                 return json.loads(raw)
         except Exception:
@@ -54,7 +55,7 @@ def set_cached(key: str, value: Any, ttl: int | None = None) -> None:
     r = _redis_client()
     if r:
         try:
-            r.setex(f'music_api:{key}', ttl, json.dumps(value, ensure_ascii=False))
+            r.setex(f"music_api:{key}", ttl, json.dumps(value, ensure_ascii=False))
             return
         except Exception:
             pass
@@ -63,6 +64,6 @@ def set_cached(key: str, value: Any, ttl: int | None = None) -> None:
 
 def cache_stats() -> dict:
     return {
-        'memory_entries': len(_MEMORY),
-        'redis': _redis_client() is not None,
+        "memory_entries": len(_MEMORY),
+        "redis": _redis_client() is not None,
     }

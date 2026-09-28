@@ -43,7 +43,7 @@ def format_chord_display(chord: str, prefs: Prefs) -> str:
 
     if prefs.notation_style == "br":
         out = to_brazilian_chord_notation(raw)
-        out = re.sub(r"ø7", "m7b5", out, flags=re.I)
+        out = re.sub(r"ø7", "m7b5", out, flags=re.IGNORECASE)
         out = re.sub(r"Δ(\d*)", lambda m: f"{m.group(1) or '7'}+", out)
         slash = out.find("/")
         if slash >= 0:
@@ -63,25 +63,25 @@ def _apply_quality_styles(head: str, prefs: Prefs) -> str:
     maj7_style, dim_style, half_dim_style = effective_quality_prefs(prefs)
     h = head
     if maj7_style == "delta":
-        h = re.sub(r"maj13", "Δ13", h, flags=re.I)
-        h = re.sub(r"maj9", "Δ9", h, flags=re.I)
-        h = re.sub(r"maj7", "Δ7", h, flags=re.I)
-        h = re.sub(r"MA7", "Δ7", h, flags=re.I)
+        h = re.sub(r"maj13", "Δ13", h, flags=re.IGNORECASE)
+        h = re.sub(r"maj9", "Δ9", h, flags=re.IGNORECASE)
+        h = re.sub(r"maj7", "Δ7", h, flags=re.IGNORECASE)
+        h = re.sub(r"MA7", "Δ7", h, flags=re.IGNORECASE)
     elif maj7_style == "MA7":
-        h = re.sub(r"maj7", "MA7", h, flags=re.I)
+        h = re.sub(r"maj7", "MA7", h, flags=re.IGNORECASE)
 
     if dim_style == "circle":
-        h = re.sub(r"dim7", "°7", h, flags=re.I)
-        h = re.sub(r"dim", "°", h, flags=re.I)
+        h = re.sub(r"dim7", "°7", h, flags=re.IGNORECASE)
+        h = re.sub(r"dim", "°", h, flags=re.IGNORECASE)
     elif dim_style == "dim":
-        h = re.sub(r"dim7", "dim7", h, flags=re.I)
+        h = re.sub(r"dim7", "dim7", h, flags=re.IGNORECASE)
 
     if half_dim_style == "oslash":
-        h = re.sub(r"m7b5", "ø7", h, flags=re.I)
+        h = re.sub(r"m7b5", "ø7", h, flags=re.IGNORECASE)
     elif half_dim_style == "m7b5":
-        h = re.sub(r"m7b5", "m7b5", h, flags=re.I)
+        h = re.sub(r"m7b5", "m7b5", h, flags=re.IGNORECASE)
 
-    h = re.sub(r"aug", "+", h, flags=re.I)
+    h = re.sub(r"aug", "+", h, flags=re.IGNORECASE)
     return h
 
 
@@ -97,7 +97,9 @@ def chord_to_html(chord: str, prefs: Prefs) -> str:
     display = format_chord_display(chord, prefs)
 
     if parsed.blank_head and display.startswith("/"):
-        bass_html = f'<span class="cs-chord cs-blank-bass">{html.escape(display)}</span>'
+        bass_html = (
+            f'<span class="cs-chord cs-blank-bass">{html.escape(display)}</span>'
+        )
         return _wrap_chord(bass_html, parsed)
 
     if not display or display == "%":
@@ -105,7 +107,9 @@ def chord_to_html(chord: str, prefs: Prefs) -> str:
     if display == "N.C.":
         return '<span class="cs-nc">N.C.</span>'
 
-    data_attr = f' data-chord="{html.escape(data_chord, quote=True)}"' if data_chord else ""
+    data_attr = (
+        f' data-chord="{html.escape(data_chord, quote=True)}"' if data_chord else ""
+    )
 
     m = ROOT.match(display)
     if not m:

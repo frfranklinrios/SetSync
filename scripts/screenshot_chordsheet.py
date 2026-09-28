@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Gera PNG da prévia do chord sheet (manual meta) para revisão visual."""
+
 from __future__ import annotations
 
 import sys
@@ -17,12 +18,14 @@ from chordsheet_bridge import apply_chart_cifra_spelling
 def main() -> None:
     ex = EXAMPLES["manual_meta"]
     meta = dict(ex["meta"])
-    meta.update({
-        "title": "Amor, Amor?",
-        "artist": "MASTRUZ COM LEITE",
-        "key": "F#",
-        "bpm": "120",
-    })
+    meta.update(
+        {
+            "title": "Amor, Amor?",
+            "artist": "MASTRUZ COM LEITE",
+            "key": "F#",
+            "bpm": "120",
+        }
+    )
     chart = parse_chart(ex["source"], meta=meta)
     apply_chart_cifra_spelling(chart, "F#")
     body = render_chart_html(chart)

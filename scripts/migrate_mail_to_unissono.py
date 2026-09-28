@@ -20,19 +20,32 @@ try:
 except ImportError:
     pass
 
-from mail_server.config import ADMIN_EMAIL, ADMIN_PASSWORD, DATABASE_PATH, DOMAIN, canonical_mailbox
+from datetime import UTC
+
+from mail_server.config import (
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    DATABASE_PATH,
+    DOMAIN,
+    canonical_mailbox,
+)
 from mail_server.server.storage import _hash_password
 
 
 def migrate(db_path: str = DATABASE_PATH) -> dict:
-    stats = {"emails_moved": 0, "users_renamed": 0, "users_merged": 0, "password_synced": 0}
+    stats = {
+        "emails_moved": 0,
+        "users_renamed": 0,
+        "users_merged": 0,
+        "password_synced": 0,
+    }
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     try:
         # 1) Reescreve owner_email legado → canônico.
         rows = conn.execute(
             "SELECT DISTINCT owner_email FROM emails WHERE owner_email LIKE ?",
-            (f"%@setsync.com.br",),
+            ("%@setsync.com.br",),
         ).fetchall()
         for row in rows:
             old = (row["owner_email"] or "").lower()
@@ -48,7 +61,7 @@ def migrate(db_path: str = DATABASE_PATH) -> dict:
         # 2) Usuários: renomeia ou mescla com caixa canônica.
         users = conn.execute(
             "SELECT id, email, password_hash, is_admin FROM users WHERE email LIKE ?",
-            (f"%@setsync.com.br",),
+            ("%@setsync.com.br",),
         ).fetchall()
         for u in users:
             old = u["email"].lower()
@@ -73,7 +86,9 @@ def migrate(db_path: str = DATABASE_PATH) -> dict:
         # 3) Garante contato@unissono.app com a senha do .env (MAIL_PASSWORD).
         admin = (ADMIN_EMAIL or f"contato@{DOMAIN}").lower()
         if ADMIN_PASSWORD:
-            row = conn.execute("SELECT id FROM users WHERE email = ?", (admin,)).fetchone()
+            row = conn.execute(
+                "SELECT id FROM users WHERE email = ?", (admin,)
+            ).fetchone()
             hashed = _hash_password(ADMIN_PASSWORD)
             if row:
                 conn.execute(
@@ -81,11 +96,11 @@ def migrate(db_path: str = DATABASE_PATH) -> dict:
                     (hashed, row["id"]),
                 )
             else:
-                from datetime import datetime, timezone
+                from datetime import datetime
 
                 conn.execute(
                     "INSERT INTO users (email, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
-                    (admin, hashed, datetime.now(timezone.utc).isoformat()),
+                    (admin, hashed, datetime.now(UTC).isoformat()),
                 )
             stats["password_synced"] += 1
 

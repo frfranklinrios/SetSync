@@ -8,70 +8,74 @@ de username/e-mail e listas do .env.
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from functools import lru_cache
-from typing import Iterable
-
 
 # Contas conhecidas de seed (marketing / merch / estúdio).
-_DEFAULT_DEMO_USERNAMES = frozenset({
-    'showcase',
-    'igreja_showcase',
-    'carlos_groove',
-    'lucas_showcase',
-    'bia_showcase',
-    'raf_showcase',
-    'estudio_teste',
-})
+_DEFAULT_DEMO_USERNAMES = frozenset(
+    {
+        "showcase",
+        "igreja_showcase",
+        "carlos_groove",
+        "lucas_showcase",
+        "bia_showcase",
+        "raf_showcase",
+        "estudio_teste",
+    }
+)
 
-_DEFAULT_DEMO_EMAILS = frozenset({
-    'showcase@unissono.app',
-    'igreja.showcase@unissono.app',
-    'carlos.groove@unissono.app',
-    'showcase@setsync.com.br',
-    'lucas@setsync.com.br',
-    'bia@setsync.com.br',
-    'raf@setsync.com.br',
-})
+_DEFAULT_DEMO_EMAILS = frozenset(
+    {
+        "showcase@unissono.app",
+        "igreja.showcase@unissono.app",
+        "carlos.groove@unissono.app",
+        "showcase@setsync.com.br",
+        "lucas@setsync.com.br",
+        "bia@setsync.com.br",
+        "raf@setsync.com.br",
+    }
+)
 
 
 def _csv_env(name: str) -> frozenset[str]:
-    raw = (os.getenv(name) or '').strip()
+    raw = (os.getenv(name) or "").strip()
     if not raw:
         return frozenset()
-    return frozenset(p.strip().lower() for p in raw.split(',') if p.strip())
+    return frozenset(p.strip().lower() for p in raw.split(",") if p.strip())
 
 
 @lru_cache(maxsize=1)
 def demo_usernames() -> frozenset[str]:
-    return _DEFAULT_DEMO_USERNAMES | _csv_env('SETSYNC_DEMO_USERNAMES')
+    return _DEFAULT_DEMO_USERNAMES | _csv_env("SETSYNC_DEMO_USERNAMES")
 
 
 @lru_cache(maxsize=1)
 def demo_emails() -> frozenset[str]:
-    return _DEFAULT_DEMO_EMAILS | _csv_env('SETSYNC_DEMO_EMAILS')
+    return _DEFAULT_DEMO_EMAILS | _csv_env("SETSYNC_DEMO_EMAILS")
 
 
 def is_demo_username(username: str | None) -> bool:
-    u = (username or '').strip().lower()
+    u = (username or "").strip().lower()
     if not u:
         return False
     if u in demo_usernames():
         return True
     # Membros gerados como *_showcase
-    return u.endswith('_showcase') or 'showcase' in u
+    return u.endswith("_showcase") or "showcase" in u
 
 
 def is_demo_email(email: str | None) -> bool:
-    e = (email or '').strip().lower()
+    e = (email or "").strip().lower()
     if not e:
         return False
     if e in demo_emails():
         return True
-    local, _, domain = e.partition('@')
-    if 'showcase' in local or local.endswith('.showcase'):
+    local, _, domain = e.partition("@")
+    if "showcase" in local or local.endswith(".showcase"):
         return True
     try:
         from signup_guard import is_blocked_email_domain
+
         if is_blocked_email_domain(e):
             return True
     except Exception:
@@ -83,14 +87,14 @@ def is_demo_manual(user: dict | None) -> bool:
     """Flag persistente marcada no admin (`users.is_demo`)."""
     if not user:
         return False
-    return bool(user.get('is_demo'))
+    return bool(user.get("is_demo"))
 
 
 def is_demo_heuristic(user: dict | None) -> bool:
     """Showcase / .env — independente da flag manual."""
     if not user:
         return False
-    return is_demo_username(user.get('username')) or is_demo_email(user.get('email'))
+    return is_demo_username(user.get("username")) or is_demo_email(user.get("email"))
 
 
 def is_demo_user(user: dict | None) -> bool:
@@ -118,34 +122,34 @@ def demo_user_ids() -> set[str]:
     ids: set[str] = set()
     # Flag manual no banco
     try:
-        c.execute('SELECT id FROM users WHERE COALESCE(is_demo, 0) = 1')
+        c.execute("SELECT id FROM users WHERE COALESCE(is_demo, 0) = 1")
         for r in c.fetchall():
-            ids.add(str(r['id']))
+            ids.add(str(r["id"]))
     except Exception:
         pass
     # Usernames fixos
     if names:
-        ph = ','.join('?' for _ in names)
+        ph = ",".join("?" for _ in names)
         c.execute(
-            f'SELECT id, username, email FROM users WHERE lower(username) IN ({ph})',
+            f"SELECT id, username, email FROM users WHERE lower(username) IN ({ph})",
             [n.lower() for n in names],
         )
         for r in c.fetchall():
-            ids.add(str(r['id']))
+            ids.add(str(r["id"]))
     # Emails fixos
     if emails:
-        ph = ','.join('?' for _ in emails)
+        ph = ",".join("?" for _ in emails)
         c.execute(
-            f'SELECT id FROM users WHERE lower(email) IN ({ph})',
+            f"SELECT id FROM users WHERE lower(email) IN ({ph})",
             [e.lower() for e in emails],
         )
         for r in c.fetchall():
-            ids.add(str(r['id']))
+            ids.add(str(r["id"]))
     # Sufixo / padrão showcase
-    c.execute('SELECT id, username, email FROM users')
+    c.execute("SELECT id, username, email FROM users")
     for r in c.fetchall():
-        if is_demo_username(r.get('username')) or is_demo_email(r.get('email')):
-            ids.add(str(r['id']))
+        if is_demo_username(r.get("username")) or is_demo_email(r.get("email")):
+            ids.add(str(r["id"]))
     db.close()
     return ids
 
@@ -159,12 +163,12 @@ def demo_band_ids(user_ids: Iterable[str] | None = None) -> set[str]:
 
     db = get_db()
     c = db.cursor()
-    ph = ','.join('?' for _ in uids)
+    ph = ",".join("?" for _ in uids)
     c.execute(
-        f'SELECT id FROM bands WHERE owner_id IN ({ph})',
+        f"SELECT id FROM bands WHERE owner_id IN ({ph})",
         list(uids),
     )
-    ids = {str(r['id']) for r in c.fetchall()}
+    ids = {str(r["id"]) for r in c.fetchall()}
     db.close()
     return ids
 
@@ -174,4 +178,4 @@ def is_demo_band(band: dict | None, *, owner: dict | None = None) -> bool:
         return False
     if owner is not None:
         return is_demo_user(owner)
-    return is_demo_user_id(band.get('owner_id'))
+    return is_demo_user_id(band.get("owner_id"))

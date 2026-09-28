@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 LOCAL_SOURCE_URL = "file://local/audio"
 DEFAULT_AUDIO_FILE_NAME = "audio.mp3"
@@ -103,7 +103,7 @@ def build_payload(data: dict) -> dict:
         "events": events,
         "metadata": {
             "generated_by": "setsync-leadsheet-editor",
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
         },
     }
 

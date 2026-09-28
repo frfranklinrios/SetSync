@@ -1,4 +1,5 @@
 """Notificações in-app sobre alterações na banda (usa display_name, não username)."""
+
 from __future__ import annotations
 
 from db import (
@@ -13,19 +14,21 @@ from db import (
 
 def _actor_name(actor_user_id: str | None) -> str:
     if not actor_user_id:
-        return 'Alguém'
+        return "Alguém"
     return user_display_name(get_user(actor_user_id))
 
 
 def _band_label(band_id: str | None) -> str:
     if not band_id:
-        return 'Banda'
+        return "Banda"
     band = get_band(band_id)
-    return band['name'] if band else 'Banda'
+    return band["name"] if band else "Banda"
 
 
-def _member_ids(band_id: str, *, exclude: str | None = None, include_extra=None) -> list[str]:
-    ids = [m['id'] for m in get_band_members(band_id)]
+def _member_ids(
+    band_id: str, *, exclude: str | None = None, include_extra=None
+) -> list[str]:
+    ids = [m["id"] for m in get_band_members(band_id)]
     for uid in include_extra or []:
         if uid and uid not in ids:
             ids.append(uid)
@@ -60,7 +63,9 @@ def _notify_members(
         )
     except Exception:
         pass
-    recipients = _member_ids(band_id, exclude=actor_user_id, include_extra=also_notify or [])
+    recipients = _member_ids(
+        band_id, exclude=actor_user_id, include_extra=also_notify or []
+    )
     if not recipients:
         return 0
     return create_notifications_for_users(
@@ -80,10 +85,10 @@ def band_updated(band_id: str, actor_user_id: str):
     return _notify_members(
         band_id,
         actor_user_id,
-        'band_updated',
-        f'{band} — configurações',
-        f'{actor} atualizou as informações da banda {band}.',
-        url_path=f'/bands/{band_id}',
+        "band_updated",
+        f"{band} — configurações",
+        f"{actor} atualizou as informações da banda {band}.",
+        url_path=f"/bands/{band_id}",
     )
 
 
@@ -93,10 +98,10 @@ def vocalist_added(band_id: str, actor_user_id: str, vocalist_names: str):
     return _notify_members(
         band_id,
         actor_user_id,
-        'vocalist_added',
-        f'{band} — cantores',
-        f'{actor} adicionou cantor(a/es): {vocalist_names}.',
-        url_path=f'/bands/{band_id}/settings',
+        "vocalist_added",
+        f"{band} — cantores",
+        f"{actor} adicionou cantor(a/es): {vocalist_names}.",
+        url_path=f"/bands/{band_id}/settings",
     )
 
 
@@ -106,10 +111,10 @@ def vocalist_removed(band_id: str, actor_user_id: str, vocalist_name: str):
     return _notify_members(
         band_id,
         actor_user_id,
-        'vocalist_removed',
-        f'{band} — cantores',
-        f'{actor} removeu {vocalist_name} da lista de cantores.',
-        url_path=f'/bands/{band_id}/settings',
+        "vocalist_removed",
+        f"{band} — cantores",
+        f"{actor} removeu {vocalist_name} da lista de cantores.",
+        url_path=f"/bands/{band_id}/settings",
     )
 
 
@@ -121,20 +126,20 @@ def member_added_by_admin(band_id: str, actor_user_id: str, new_user_id: str):
     _notify_members(
         band_id,
         actor_user_id,
-        'member_joined',
-        f'{band} — novo membro',
-        f'{actor} adicionou {newcomer} à banda.',
-        url_path=f'/bands/{band_id}/members',
+        "member_joined",
+        f"{band} — novo membro",
+        f"{actor} adicionou {newcomer} à banda.",
+        url_path=f"/bands/{band_id}/members",
     )
     if new_user_id != actor_user_id:
         create_notification(
             new_user_id,
             band_id=band_id,
             actor_user_id=actor_user_id,
-            type='member_joined',
-            title=f'Você entrou em {band}',
-            body=f'{actor} adicionou você à banda {band}.',
-            url_path=f'/bands/{band_id}',
+            type="member_joined",
+            title=f"Você entrou em {band}",
+            body=f"{actor} adicionou você à banda {band}.",
+            url_path=f"/bands/{band_id}",
         )
 
 
@@ -145,10 +150,10 @@ def band_invite_sent(band_id: str, actor_user_id: str, invited_user_id: str):
         invited_user_id,
         band_id=band_id,
         actor_user_id=actor_user_id,
-        type='band_invite',
-        title=f'Convite para {band}',
-        body=f'{actor} convidou você para entrar na banda {band}. Aceite para participar.',
-        url_path='/convites',
+        type="band_invite",
+        title=f"Convite para {band}",
+        body=f"{actor} convidou você para entrar na banda {band}. Aceite para participar.",
+        url_path="/convites",
     )
 
 
@@ -158,10 +163,10 @@ def member_accepted_invite(band_id: str, actor_user_id: str | None, new_user_id:
     _notify_members(
         band_id,
         new_user_id,
-        'member_joined',
-        f'{band} — novo membro',
-        f'{newcomer} aceitou o convite e entrou na banda.',
-        url_path=f'/bands/{band_id}/members',
+        "member_joined",
+        f"{band} — novo membro",
+        f"{newcomer} aceitou o convite e entrou na banda.",
+        url_path=f"/bands/{band_id}/members",
         also_notify=[actor_user_id] if actor_user_id else None,
     )
 
@@ -175,10 +180,10 @@ def band_invite_declined(band_id: str, actor_user_id: str | None, user_id: str):
         actor_user_id,
         band_id=band_id,
         actor_user_id=user_id,
-        type='band_invite_declined',
-        title=f'{band} — convite recusado',
-        body=f'{decliner} recusou o convite para entrar na banda.',
-        url_path=f'/bands/{band_id}/members',
+        type="band_invite_declined",
+        title=f"{band} — convite recusado",
+        body=f"{decliner} recusou o convite para entrar na banda.",
+        url_path=f"/bands/{band_id}/members",
     )
     return 1
 
@@ -189,10 +194,10 @@ def member_joined_via_invite(band_id: str, new_user_id: str):
     return _notify_members(
         band_id,
         new_user_id,
-        'member_joined',
-        f'{band} — novo membro',
-        f'{newcomer} entrou na banda pelo link de convite.',
-        url_path=f'/bands/{band_id}/members',
+        "member_joined",
+        f"{band} — novo membro",
+        f"{newcomer} entrou na banda pelo link de convite.",
+        url_path=f"/bands/{band_id}/members",
     )
 
 
@@ -203,10 +208,10 @@ def member_removed(band_id: str, actor_user_id: str, removed_user_id: str):
     _notify_members(
         band_id,
         actor_user_id,
-        'member_removed',
-        f'{band} — membro removido',
-        f'{actor} removeu {removed} da banda.',
-        url_path=f'/bands/{band_id}/members',
+        "member_removed",
+        f"{band} — membro removido",
+        f"{actor} removeu {removed} da banda.",
+        url_path=f"/bands/{band_id}/members",
         also_notify=[removed_user_id],
     )
     if removed_user_id != actor_user_id:
@@ -214,10 +219,10 @@ def member_removed(band_id: str, actor_user_id: str, removed_user_id: str):
             removed_user_id,
             band_id=band_id,
             actor_user_id=actor_user_id,
-            type='member_removed',
-            title=f'Removido de {band}',
-            body=f'{actor} removeu você da banda {band}.',
-            url_path='/bands/',
+            type="member_removed",
+            title=f"Removido de {band}",
+            body=f"{actor} removeu você da banda {band}.",
+            url_path="/bands/",
             urgent=True,
         )
 
@@ -228,10 +233,10 @@ def cifra_created(band_id: str, actor_user_id: str, cifra_id: str, titulo: str):
     return _notify_members(
         band_id,
         actor_user_id,
-        'cifra_created',
-        f'{band} — nova cifra',
-        f'{actor} adicionou a cifra «{titulo}».',
-        url_path=f'/cifras/{cifra_id}',
+        "cifra_created",
+        f"{band} — nova cifra",
+        f"{actor} adicionou a cifra «{titulo}».",
+        url_path=f"/cifras/{cifra_id}",
         entity_id=cifra_id,
     )
 
@@ -239,18 +244,18 @@ def cifra_created(band_id: str, actor_user_id: str, cifra_id: str, titulo: str):
 def cifra_updated(band_id: str, actor_user_id: str, cifra_id: str, titulo: str):
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
-    url_path = f'/cifras/{cifra_id}'
-    title = f'{band} — cifra editada'
-    body = f'{actor} editou a cifra «{titulo}».'
+    url_path = f"/cifras/{cifra_id}"
+    title = f"{band} — cifra editada"
+    body = f"{actor} editou a cifra «{titulo}»."
     try:
         from activity_log import log_activity
 
         log_activity(
             actor_user_id=actor_user_id,
-            action='cifra_updated',
+            action="cifra_updated",
             title=title,
             summary=body,
-            entity_type='cifra',
+            entity_type="cifra",
             entity_id=cifra_id,
             band_id=band_id,
             url_path=url_path,
@@ -264,7 +269,7 @@ def cifra_updated(band_id: str, actor_user_id: str, cifra_id: str, titulo: str):
         recipients,
         band_id=band_id,
         actor_user_id=actor_user_id,
-        type='cifra_updated',
+        type="cifra_updated",
         title=title,
         body=body,
         url_path=url_path,
@@ -277,10 +282,10 @@ def cifra_deleted(band_id: str, actor_user_id: str, titulo: str):
     return _notify_members(
         band_id,
         actor_user_id,
-        'cifra_deleted',
-        f'{band} — cifra removida',
-        f'{actor} removeu a cifra «{titulo}».',
-        url_path=f'/bands/{band_id}',
+        "cifra_deleted",
+        f"{band} — cifra removida",
+        f"{actor} removeu a cifra «{titulo}».",
+        url_path=f"/bands/{band_id}",
     )
 
 
@@ -290,10 +295,10 @@ def setlist_created(band_id: str, actor_user_id: str, setlist_id: int, name: str
     return _notify_members(
         band_id,
         actor_user_id,
-        'setlist_created',
-        f'{band} — nova setlist',
-        f'{actor} criou a setlist «{name}».',
-        url_path=f'/setlists/{setlist_id}',
+        "setlist_created",
+        f"{band} — nova setlist",
+        f"{actor} criou a setlist «{name}».",
+        url_path=f"/setlists/{setlist_id}",
         entity_id=str(setlist_id),
     )
 
@@ -304,57 +309,69 @@ def setlist_deleted(band_id: str, actor_user_id: str, name: str):
     return _notify_members(
         band_id,
         actor_user_id,
-        'setlist_deleted',
-        f'{band} — setlist removida',
-        f'{actor} excluiu a setlist «{name}».',
-        url_path=f'/setlists/band/{band_id}',
+        "setlist_deleted",
+        f"{band} — setlist removida",
+        f"{actor} excluiu a setlist «{name}».",
+        url_path=f"/setlists/band/{band_id}",
     )
 
 
-def setlist_song_added(band_id: str, actor_user_id: str, setlist_id: int, setlist_name: str, song_title: str):
+def setlist_song_added(
+    band_id: str,
+    actor_user_id: str,
+    setlist_id: int,
+    setlist_name: str,
+    song_title: str,
+):
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
     return _notify_members(
         band_id,
         actor_user_id,
-        'setlist_updated',
-        f'{band} — setlist atualizada',
-        f'{actor} adicionou «{song_title}» à setlist «{setlist_name}».',
-        url_path=f'/setlists/{setlist_id}',
+        "setlist_updated",
+        f"{band} — setlist atualizada",
+        f"{actor} adicionou «{song_title}» à setlist «{setlist_name}».",
+        url_path=f"/setlists/{setlist_id}",
         entity_id=str(setlist_id),
     )
 
 
 def _event_type_label(event_type: str | None) -> str:
-    return {'ensaio': 'ensaio', 'show': 'show'}.get((event_type or '').strip(), 'evento')
+    return {"ensaio": "ensaio", "show": "show"}.get(
+        (event_type or "").strip(), "evento"
+    )
 
 
-def event_created(band_id: str, actor_user_id: str, event_id: str, title: str, event_type: str):
+def event_created(
+    band_id: str, actor_user_id: str, event_id: str, title: str, event_type: str
+):
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
     tipo = _event_type_label(event_type)
     return _notify_members(
         band_id,
         actor_user_id,
-        'event_created',
-        f'{band} — {tipo} agendado',
-        f'{actor} marcou «{title}» na agenda.',
-        url_path=f'/agenda/{event_id}',
+        "event_created",
+        f"{band} — {tipo} agendado",
+        f"{actor} marcou «{title}» na agenda.",
+        url_path=f"/agenda/{event_id}",
         entity_id=event_id,
     )
 
 
-def event_updated(band_id: str, actor_user_id: str, event_id: str, title: str, event_type: str):
+def event_updated(
+    band_id: str, actor_user_id: str, event_id: str, title: str, event_type: str
+):
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
     tipo = _event_type_label(event_type)
     return _notify_members(
         band_id,
         actor_user_id,
-        'event_updated',
-        f'{band} — {tipo} atualizado',
-        f'{actor} alterou «{title}» na agenda.',
-        url_path=f'/agenda/{event_id}',
+        "event_updated",
+        f"{band} — {tipo} atualizado",
+        f"{actor} alterou «{title}» na agenda.",
+        url_path=f"/agenda/{event_id}",
         entity_id=event_id,
     )
 
@@ -375,15 +392,15 @@ def event_scale_response(
     responder = _actor_name(responder_user_id)
     band = _band_label(band_id)
     if accepted:
-        ntype = 'event_scale_accepted'
-        verb = 'aceitou'
+        ntype = "event_scale_accepted"
+        verb = "aceitou"
     else:
-        ntype = 'event_scale_declined'
-        verb = 'recusou'
-    body = f'{responder} {verb} a escalação para «{title}».'
+        ntype = "event_scale_declined"
+        verb = "recusou"
+    body = f"{responder} {verb} a escalação para «{title}»."
     if note:
-        body += f' Observação: {note}'
-    title_n = f'{band} — resposta da escalação'
+        body += f" Observação: {note}"
+    title_n = f"{band} — resposta da escalação"
     try:
         from activity_log import log_activity
 
@@ -392,10 +409,10 @@ def event_scale_response(
             action=ntype,
             title=title_n,
             summary=body,
-            entity_type='event',
+            entity_type="event",
             entity_id=event_id,
             band_id=band_id,
-            url_path=f'/agenda/{event_id}',
+            url_path=f"/agenda/{event_id}",
         )
     except Exception:
         pass
@@ -406,7 +423,7 @@ def event_scale_response(
         type=ntype,
         title=title_n,
         body=body,
-        url_path=f'/agenda/{event_id}',
+        url_path=f"/agenda/{event_id}",
     )
     return 1
 
@@ -419,9 +436,9 @@ def event_scale_assigned(
     user_ids: list[str] | set[str],
 ):
     """Notifica integrantes recém-escalados (in-app, e-mail e WhatsApp com links one-tap)."""
+    from agenda_util import format_event_datetime
     from models_agenda import get_band_event
     from scale_service import send_scale_assignment_channels
-    from agenda_util import format_event_datetime
 
     event = get_band_event(event_id)
     if not event:
@@ -434,13 +451,13 @@ def event_scale_assigned(
         n = len(list(user_ids or []))
         log_activity(
             actor_user_id=actor_user_id,
-            action='event_scale_assigned',
-            title=f'{band} — escalação',
-            summary=f'{actor} escalou {n} pessoa(s) para «{title}».',
-            entity_type='event',
+            action="event_scale_assigned",
+            title=f"{band} — escalação",
+            summary=f"{actor} escalou {n} pessoa(s) para «{title}».",
+            entity_type="event",
             entity_id=event_id,
             band_id=band_id,
-            url_path=f'/agenda/{event_id}',
+            url_path=f"/agenda/{event_id}",
         )
     except Exception:
         pass
@@ -451,7 +468,7 @@ def event_scale_assigned(
         user_ids=user_ids,
         band_name=band,
         actor_name=actor,
-        when=format_event_datetime(event.get('starts_at')),
+        when=format_event_datetime(event.get("starts_at")),
     )
 
 
@@ -462,22 +479,28 @@ def event_deleted(band_id: str, actor_user_id: str, title: str, event_type: str 
     return _notify_members(
         band_id,
         actor_user_id,
-        'event_deleted',
-        f'{band} — {tipo} cancelado',
-        f'{actor} removeu «{title}» da agenda.',
-        url_path=f'/bands/{band_id}#tab-agenda',
+        "event_deleted",
+        f"{band} — {tipo} cancelado",
+        f"{actor} removeu «{title}» da agenda.",
+        url_path=f"/bands/{band_id}#tab-agenda",
     )
 
 
-def setlist_song_removed(band_id: str, actor_user_id: str, setlist_id: int, setlist_name: str, song_title: str):
+def setlist_song_removed(
+    band_id: str,
+    actor_user_id: str,
+    setlist_id: int,
+    setlist_name: str,
+    song_title: str,
+):
     actor = _actor_name(actor_user_id)
     band = _band_label(band_id)
     return _notify_members(
         band_id,
         actor_user_id,
-        'setlist_updated',
-        f'{band} — setlist atualizada',
-        f'{actor} removeu «{song_title}» da setlist «{setlist_name}».',
-        url_path=f'/setlists/{setlist_id}',
+        "setlist_updated",
+        f"{band} — setlist atualizada",
+        f"{actor} removeu «{song_title}» da setlist «{setlist_name}».",
+        url_path=f"/setlists/{setlist_id}",
         entity_id=str(setlist_id),
     )

@@ -10,7 +10,6 @@ Uso:
 from __future__ import annotations
 
 import os
-import sys
 
 BASE = (os.environ.get("SCREENSHOT_BASE_URL") or "http://127.0.0.1:5001").rstrip("/")
 

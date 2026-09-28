@@ -26,9 +26,7 @@ def chart_to_payload(
         "meta": asdict(chart.meta),
         "prefs": asdict(chart.prefs),
         "source": shared_source,
-        "sections": [
-            {"bar_index": i, "title": t} for i, t in chart.sections
-        ],
+        "sections": [{"bar_index": i, "title": t} for i, t in chart.sections],
         "page_breaks": list(chart.page_breaks),
         "line_breaks": list(chart.line_breaks),
         "bars": [

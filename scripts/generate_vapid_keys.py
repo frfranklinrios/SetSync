@@ -13,10 +13,10 @@ raw = v.public_key.public_bytes(
     encoding=serialization.Encoding.X962,
     format=serialization.PublicFormat.UncompressedPoint,
 )
-public_key = base64.urlsafe_b64encode(raw).decode().rstrip('=')
+public_key = base64.urlsafe_b64encode(raw).decode().rstrip("=")
 private_key = v.private_pem().decode()
 
-print('# Cole no .env do Uníssono:')
-print(f'VAPID_PUBLIC_KEY={public_key}')
-print('VAPID_PRIVATE_KEY=' + private_key.replace('\n', '\\n'))
-print('VAPID_SUBJECT=mailto:contato@unissono.app')
+print("# Cole no .env do Uníssono:")
+print(f"VAPID_PUBLIC_KEY={public_key}")
+print("VAPID_PRIVATE_KEY=" + private_key.replace("\n", "\\n"))
+print("VAPID_SUBJECT=mailto:contato@unissono.app")

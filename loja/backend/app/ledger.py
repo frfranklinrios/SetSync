@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.db import connect, exportar_linha_parquet, exportar_parquet, locked
 from app.models import LedgerLinha
@@ -26,7 +26,7 @@ def gravar_transacao_financeira(
     custo = round(float(custo_aquisicao), 2)
     taxa = round(float(taxa_mp), 2)
     lucro = round(venda - taxa - custo, 2)
-    agora = datetime.now(timezone.utc)
+    agora = datetime.now(UTC)
     competencia = agora.strftime("%Y-%m")
     lid = f"LED-{uuid.uuid4().hex[:10].upper()}"
 
@@ -97,7 +97,7 @@ def gravar_transacao_financeira(
 
 
 def resumo_competencia(competencia: str | None = None) -> dict[str, float | str | int]:
-    mes = competencia or datetime.now(timezone.utc).strftime("%Y-%m")
+    mes = competencia or datetime.now(UTC).strftime("%Y-%m")
     with locked():
         con = connect()
         try:

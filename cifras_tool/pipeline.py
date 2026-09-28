@@ -8,7 +8,11 @@ import numpy as np
 import soundfile as sf
 
 from cifras_tool.chord_model import ChordRecognizer
-from cifras_tool.compasso import CompassoInfo, alinhar_pulsos_ao_compasso, detectar_compasso
+from cifras_tool.compasso import (
+    CompassoInfo,
+    alinhar_pulsos_ao_compasso,
+    detectar_compasso,
+)
 from cifras_tool.formatter import (
     build_cifra,
     build_grade,
@@ -54,9 +58,7 @@ class AudioPipeline:
         chords_alinhados = alinhar_pulsos_ao_compasso(chords_by_beat, compasso)
         bpb = compasso.beats_per_bar
 
-        parts = split_harmonic_parts(
-            chords_alinhados, beats_per_bar=bpb, window_bars=8
-        )
+        parts = split_harmonic_parts(chords_alinhados, beats_per_bar=bpb, window_bars=8)
         return AnalysisResult(
             cifra=build_cifra(chords_alinhados, beats_per_bar=bpb),
             grade=build_grade(parts, compasso=compasso),

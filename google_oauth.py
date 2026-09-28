@@ -1,11 +1,12 @@
 import requests
-from flask import url_for, session, current_app
+from flask import current_app
+
 from security import external_url_for
 
 
 def get_google_provider_cfg():
     """Obter configuração do Google"""
-    return requests.get(current_app.config['GOOGLE_DISCOVERY_URL']).json()
+    return requests.get(current_app.config["GOOGLE_DISCOVERY_URL"]).json()
 
 
 def get_authorization_url(state: str | None = None):
@@ -15,14 +16,22 @@ def get_authorization_url(state: str | None = None):
     if not state:
         state = make_oauth_state()
 
-    request_uri = requests.Request("GET", authorization_endpoint, params={
-        "client_id": current_app.config['GOOGLE_CLIENT_ID'],
-        "redirect_uri": external_url_for("auth.google_callback"),
-        "scope": "openid email profile",
-        "response_type": "code",
-        "prompt": "select_account",
-        "state": state,
-    }).prepare().url
+    request_uri = (
+        requests.Request(
+            "GET",
+            authorization_endpoint,
+            params={
+                "client_id": current_app.config["GOOGLE_CLIENT_ID"],
+                "redirect_uri": external_url_for("auth.google_callback"),
+                "scope": "openid email profile",
+                "response_type": "code",
+                "prompt": "select_account",
+                "state": state,
+            },
+        )
+        .prepare()
+        .url
+    )
 
     return request_uri
 
@@ -34,8 +43,8 @@ def handle_google_callback(code):
 
     token_payload = {
         "code": code,
-        "client_id": current_app.config['GOOGLE_CLIENT_ID'],
-        "client_secret": current_app.config['GOOGLE_CLIENT_SECRET'],
+        "client_id": current_app.config["GOOGLE_CLIENT_ID"],
+        "client_secret": current_app.config["GOOGLE_CLIENT_SECRET"],
         "redirect_uri": external_url_for("auth.google_callback"),
         "grant_type": "authorization_code",
     }
@@ -52,9 +61,9 @@ def handle_google_callback(code):
         return None
 
     userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
-    userinfo_response = requests.get(userinfo_endpoint, headers={
-        "Authorization": f"Bearer {tokens['access_token']}"
-    })
+    userinfo_response = requests.get(
+        userinfo_endpoint, headers={"Authorization": f"Bearer {tokens['access_token']}"}
+    )
 
     if userinfo_response.status_code != 200:
         return None
@@ -62,9 +71,9 @@ def handle_google_callback(code):
     userinfo = userinfo_response.json()
 
     return {
-        'id': userinfo.get('sub'),
-        'email': userinfo.get('email'),
-        'username': userinfo.get('email', '').split('@')[0],
-        'name': userinfo.get('name'),
-        'picture': userinfo.get('picture'),
+        "id": userinfo.get("sub"),
+        "email": userinfo.get("email"),
+        "username": userinfo.get("email", "").split("@")[0],
+        "name": userinfo.get("name"),
+        "picture": userinfo.get("picture"),
     }

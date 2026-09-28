@@ -1,21 +1,21 @@
 """Funções, formações, reservas, indisponibilidade e convidados de eventos."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 
-from database import IS_POSTGRES, IntegrityError
+from config import app_now_str, app_today_str
+from database import IntegrityError
 from db import get_db
-from config import app_now_naive, app_now_str, app_today_str
 
 DEFAULT_BAND_ROLES = (
-    'Vocal',
-    'Guitarra',
-    'Baixo',
-    'Bateria',
-    'Teclado',
-    'Violão',
-    'Som',
+    "Vocal",
+    "Guitarra",
+    "Baixo",
+    "Bateria",
+    "Teclado",
+    "Violão",
+    "Som",
 )
 
 
@@ -26,7 +26,7 @@ def ensure_default_band_roles(band_id: str) -> None:
     c = db.cursor()
     for i, label in enumerate(DEFAULT_BAND_ROLES):
         c.execute(
-            'INSERT INTO band_roles (band_id, label, sort_order) VALUES (?, ?, ?)',
+            "INSERT INTO band_roles (band_id, label, sort_order) VALUES (?, ?, ?)",
             (band_id, label, i),
         )
     db.commit()
@@ -37,7 +37,7 @@ def list_band_roles(band_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM band_roles WHERE band_id = ? ORDER BY sort_order, label',
+        "SELECT * FROM band_roles WHERE band_id = ? ORDER BY sort_order, label",
         (band_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -46,20 +46,20 @@ def list_band_roles(band_id: str) -> list[dict]:
 
 
 def add_band_role(band_id: str, label: str) -> bool:
-    label = (label or '').strip()[:40]
+    label = (label or "").strip()[:40]
     if not label:
         return False
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM band_roles WHERE band_id = ?',
+        "SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM band_roles WHERE band_id = ?",
         (band_id,),
     )
     row = c.fetchone()
-    order = int(row['n'] if row else 0)
+    order = int(row["n"] if row else 0)
     try:
         c.execute(
-            'INSERT INTO band_roles (band_id, label, sort_order) VALUES (?, ?, ?)',
+            "INSERT INTO band_roles (band_id, label, sort_order) VALUES (?, ?, ?)",
             (band_id, label, order),
         )
         db.commit()
@@ -74,7 +74,7 @@ def delete_band_role(band_id: str, label: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'DELETE FROM band_roles WHERE band_id = ? AND label = ?',
+        "DELETE FROM band_roles WHERE band_id = ? AND label = ?",
         (band_id, label),
     )
     db.commit()
@@ -85,12 +85,12 @@ def list_band_lineups(band_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT l.*, COUNT(m.user_id) AS member_count
+        """SELECT l.*, COUNT(m.user_id) AS member_count
            FROM band_lineups l
            LEFT JOIN band_lineup_members m ON m.lineup_id = l.id
            WHERE l.band_id = ?
            GROUP BY l.id
-           ORDER BY l.name''',
+           ORDER BY l.name""",
         (band_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -101,7 +101,7 @@ def list_band_lineups(band_id: str) -> list[dict]:
 def get_lineup(lineup_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM band_lineups WHERE id = ?', (lineup_id,))
+    c.execute("SELECT * FROM band_lineups WHERE id = ?", (lineup_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -111,11 +111,11 @@ def get_lineup_members(lineup_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT m.*, u.display_name, u.username, u.email
+        """SELECT m.*, u.display_name, u.username, u.email
            FROM band_lineup_members m
            JOIN users u ON u.id = m.user_id
            WHERE m.lineup_id = ?
-           ORDER BY m.sort_order, u.display_name, u.username''',
+           ORDER BY m.sort_order, u.display_name, u.username""",
         (lineup_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -129,17 +129,17 @@ def create_lineup(band_id: str, name: str, members: list[dict]) -> str:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'INSERT INTO band_lineups (id, band_id, name, created_at) VALUES (?, ?, ?, ?)',
+        "INSERT INTO band_lineups (id, band_id, name, created_at) VALUES (?, ?, ?, ?)",
         (lineup_id, band_id, name.strip()[:80], now),
     )
     for i, item in enumerate(members):
-        uid = item.get('user_id')
+        uid = item.get("user_id")
         if not uid:
             continue
-        role = (item.get('role_label') or '').strip()[:40] or None
+        role = (item.get("role_label") or "").strip()[:40] or None
         c.execute(
-            '''INSERT INTO band_lineup_members (lineup_id, user_id, role_label, sort_order)
-               VALUES (?, ?, ?, ?)''',
+            """INSERT INTO band_lineup_members (lineup_id, user_id, role_label, sort_order)
+               VALUES (?, ?, ?, ?)""",
             (lineup_id, uid, role, i),
         )
     db.commit()
@@ -150,16 +150,18 @@ def create_lineup(band_id: str, name: str, members: list[dict]) -> str:
 def update_lineup(lineup_id: str, name: str, members: list[dict]) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('UPDATE band_lineups SET name = ? WHERE id = ?', (name.strip()[:80], lineup_id))
-    c.execute('DELETE FROM band_lineup_members WHERE lineup_id = ?', (lineup_id,))
+    c.execute(
+        "UPDATE band_lineups SET name = ? WHERE id = ?", (name.strip()[:80], lineup_id)
+    )
+    c.execute("DELETE FROM band_lineup_members WHERE lineup_id = ?", (lineup_id,))
     for i, item in enumerate(members):
-        uid = item.get('user_id')
+        uid = item.get("user_id")
         if not uid:
             continue
-        role = (item.get('role_label') or '').strip()[:40] or None
+        role = (item.get("role_label") or "").strip()[:40] or None
         c.execute(
-            '''INSERT INTO band_lineup_members (lineup_id, user_id, role_label, sort_order)
-               VALUES (?, ?, ?, ?)''',
+            """INSERT INTO band_lineup_members (lineup_id, user_id, role_label, sort_order)
+               VALUES (?, ?, ?, ?)""",
             (lineup_id, uid, role, i),
         )
     db.commit()
@@ -169,15 +171,15 @@ def update_lineup(lineup_id: str, name: str, members: list[dict]) -> None:
 def delete_lineup(lineup_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM band_lineup_members WHERE lineup_id = ?', (lineup_id,))
-    c.execute('DELETE FROM band_lineups WHERE id = ?', (lineup_id,))
+    c.execute("DELETE FROM band_lineup_members WHERE lineup_id = ?", (lineup_id,))
+    c.execute("DELETE FROM band_lineups WHERE id = ?", (lineup_id,))
     db.commit()
     db.close()
 
 
 def lineup_assignments(lineup_id: str) -> list[dict]:
     return [
-        {'user_id': m['user_id'], 'role_label': m.get('role_label')}
+        {"user_id": m["user_id"], "role_label": m.get("role_label")}
         for m in get_lineup_members(lineup_id)
     ]
 
@@ -187,20 +189,20 @@ def list_role_substitutes(band_id: str, role_label: str | None = None) -> list[d
     c = db.cursor()
     if role_label:
         c.execute(
-            '''SELECT s.*, u.display_name, u.username
+            """SELECT s.*, u.display_name, u.username
                FROM band_role_substitutes s
                JOIN users u ON u.id = s.user_id
                WHERE s.band_id = ? AND s.role_label = ?
-               ORDER BY s.sort_order, u.display_name''',
+               ORDER BY s.sort_order, u.display_name""",
             (band_id, role_label),
         )
     else:
         c.execute(
-            '''SELECT s.*, u.display_name, u.username
+            """SELECT s.*, u.display_name, u.username
                FROM band_role_substitutes s
                JOIN users u ON u.id = s.user_id
                WHERE s.band_id = ?
-               ORDER BY s.role_label, s.sort_order, u.display_name''',
+               ORDER BY s.role_label, s.sort_order, u.display_name""",
             (band_id,),
         )
     rows = [dict(r) for r in c.fetchall()]
@@ -209,21 +211,21 @@ def list_role_substitutes(band_id: str, role_label: str | None = None) -> list[d
 
 
 def set_role_substitutes(band_id: str, role_label: str, user_ids: list[str]) -> None:
-    role_label = (role_label or '').strip()[:40]
+    role_label = (role_label or "").strip()[:40]
     if not role_label:
         return
     db = get_db()
     c = db.cursor()
     c.execute(
-        'DELETE FROM band_role_substitutes WHERE band_id = ? AND role_label = ?',
+        "DELETE FROM band_role_substitutes WHERE band_id = ? AND role_label = ?",
         (band_id, role_label),
     )
     for i, uid in enumerate(user_ids or []):
         if not uid:
             continue
         c.execute(
-            '''INSERT INTO band_role_substitutes (band_id, role_label, user_id, sort_order)
-               VALUES (?, ?, ?, ?)''',
+            """INSERT INTO band_role_substitutes (band_id, role_label, user_id, sort_order)
+               VALUES (?, ?, ?, ?)""",
             (band_id, role_label, uid, i),
         )
     db.commit()
@@ -235,9 +237,9 @@ def list_user_blockouts(user_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM user_availability_blockouts
+        """SELECT * FROM user_availability_blockouts
            WHERE user_id = ? AND block_date >= ?
-           ORDER BY block_date''',
+           ORDER BY block_date""",
         (user_id, today),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -246,16 +248,16 @@ def list_user_blockouts(user_id: str) -> list[dict]:
 
 
 def add_user_blockout(user_id: str, block_date: str, note: str | None = None) -> bool:
-    block_date = (block_date or '').strip()[:10]
+    block_date = (block_date or "").strip()[:10]
     if len(block_date) != 10:
         return False
-    note = (note or '').strip()[:200] or None
+    note = (note or "").strip()[:200] or None
     db = get_db()
     c = db.cursor()
     try:
         c.execute(
-            '''INSERT INTO user_availability_blockouts (user_id, block_date, note)
-               VALUES (?, ?, ?)''',
+            """INSERT INTO user_availability_blockouts (user_id, block_date, note)
+               VALUES (?, ?, ?)""",
             (user_id, block_date, note),
         )
         db.commit()
@@ -270,7 +272,7 @@ def remove_user_blockout(user_id: str, block_date: str) -> None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'DELETE FROM user_availability_blockouts WHERE user_id = ? AND block_date = ?',
+        "DELETE FROM user_availability_blockouts WHERE user_id = ? AND block_date = ?",
         (user_id, block_date),
     )
     db.commit()
@@ -283,13 +285,13 @@ def users_blocked_on_date(user_ids: list[str], event_date: str) -> set[str]:
     day = str(event_date)[:10]
     db = get_db()
     c = db.cursor()
-    ph = ','.join('?' * len(user_ids))
+    ph = ",".join("?" * len(user_ids))
     c.execute(
-        f'''SELECT user_id FROM user_availability_blockouts
-            WHERE block_date = ? AND user_id IN ({ph})''',
+        f"""SELECT user_id FROM user_availability_blockouts
+            WHERE block_date = ? AND user_id IN ({ph})""",
         [day, *user_ids],
     )
-    blocked = {str(r['user_id']) for r in c.fetchall()}
+    blocked = {str(r["user_id"]) for r in c.fetchall()}
     db.close()
     return blocked
 
@@ -297,7 +299,7 @@ def users_blocked_on_date(user_ids: list[str], event_date: str) -> set[str]:
 def get_event_guest(guest_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
-    c.execute('SELECT * FROM band_event_guests WHERE id = ?', (guest_id,))
+    c.execute("SELECT * FROM band_event_guests WHERE id = ?", (guest_id,))
     row = c.fetchone()
     db.close()
     return dict(row) if row else None
@@ -310,15 +312,15 @@ def respond_event_guest(
     note: str | None = None,
 ) -> dict | None:
     """Registra aceite/recusa do convidado externo."""
-    status = 'accepted' if accepted else 'declined'
+    status = "accepted" if accepted else "declined"
     now = app_now_str()
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''UPDATE band_event_guests
+        """UPDATE band_event_guests
            SET response_status = ?, response_note = ?, responded_at = ?
-           WHERE id = ?''',
-        (status, (note or '').strip()[:200] or None, now, guest_id),
+           WHERE id = ?""",
+        (status, (note or "").strip()[:200] or None, now, guest_id),
     )
     if c.rowcount <= 0:
         db.close()
@@ -332,7 +334,7 @@ def list_event_guests(event_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT * FROM band_event_guests WHERE event_id = ? ORDER BY name',
+        "SELECT * FROM band_event_guests WHERE event_id = ? ORDER BY name",
         (event_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -345,7 +347,7 @@ def list_band_freela_pool(band_id: str, *, limit: int = 40) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT MAX(g.name) AS name,
+        """SELECT MAX(g.name) AS name,
                   MAX(g.phone) AS phone,
                   MAX(g.role_label) AS role_label,
                   MAX(g.created_at) AS last_invited_at,
@@ -359,7 +361,7 @@ def list_band_freela_pool(band_id: str, *, limit: int = 40) -> list[dict]:
              COALESCE(NULLIF(TRIM(g.phone), ''), LOWER(TRIM(g.name))),
              COALESCE(NULLIF(TRIM(g.role_label), ''), '')
            ORDER BY MAX(g.created_at) DESC
-           LIMIT ?''',
+           LIMIT ?""",
         (band_id, int(limit)),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -380,15 +382,15 @@ def add_event_guest(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO band_event_guests
+        """INSERT INTO band_event_guests
            (id, event_id, name, phone, role_label, invited_by, response_status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)""",
         (
             guest_id,
             event_id,
             name.strip()[:80],
-            (phone or '').strip()[:20] or None,
-            (role_label or '').strip()[:40] or None,
+            (phone or "").strip()[:20] or None,
+            (role_label or "").strip()[:40] or None,
             invited_by,
             now,
         ),
@@ -401,12 +403,14 @@ def add_event_guest(
 def remove_event_guest(guest_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM band_event_guests WHERE id = ?', (guest_id,))
+    c.execute("DELETE FROM band_event_guests WHERE id = ?", (guest_id,))
     db.commit()
     db.close()
 
 
-def set_event_guest_fixed_fee(guest_id: str, event_id: str, fixed_fee: float | None) -> bool:
+def set_event_guest_fixed_fee(
+    guest_id: str, event_id: str, fixed_fee: float | None
+) -> bool:
     """Taxa fixa do convidado no fechamento de noite."""
     try:
         fee = None if fixed_fee is None else max(0.0, float(fixed_fee))
@@ -417,7 +421,7 @@ def set_event_guest_fixed_fee(guest_id: str, event_id: str, fixed_fee: float | N
     db = get_db()
     c = db.cursor()
     c.execute(
-        'UPDATE band_event_guests SET fixed_fee = ? WHERE id = ? AND event_id = ?',
+        "UPDATE band_event_guests SET fixed_fee = ? WHERE id = ? AND event_id = ?",
         (fee, guest_id, event_id),
     )
     ok = c.rowcount > 0
@@ -430,18 +434,18 @@ def get_assignment_response_stats(event_id: str) -> dict:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT response_status, COUNT(*) AS n
+        """SELECT response_status, COUNT(*) AS n
            FROM band_event_assignments WHERE event_id = ?
-           GROUP BY response_status''',
+           GROUP BY response_status""",
         (event_id,),
     )
-    stats = {'pending': 0, 'accepted': 0, 'declined': 0, 'total': 0}
+    stats = {"pending": 0, "accepted": 0, "declined": 0, "total": 0}
     for row in c.fetchall():
-        st = (row['response_status'] or 'pending').lower()
-        n = int(row['n'])
+        st = (row["response_status"] or "pending").lower()
+        n = int(row["n"])
         if st in stats:
             stats[st] = n
-        stats['total'] += n
+        stats["total"] += n
     db.close()
     return stats
 
@@ -457,24 +461,24 @@ def get_assignment_stats_by_events(event_ids: list) -> dict:
         return result
     db = get_db()
     c = db.cursor()
-    placeholders = ','.join('?' * len(event_ids))
+    placeholders = ",".join("?" * len(event_ids))
     c.execute(
-        f'''SELECT event_id, response_status, COUNT(*) AS n
+        f"""SELECT event_id, response_status, COUNT(*) AS n
             FROM band_event_assignments
             WHERE event_id IN ({placeholders})
-            GROUP BY event_id, response_status''',
+            GROUP BY event_id, response_status""",
         tuple(event_ids),
     )
     for row in c.fetchall():
-        eid = row['event_id']
+        eid = row["event_id"]
         stats = result.setdefault(
-            eid, {'pending': 0, 'accepted': 0, 'declined': 0, 'total': 0}
+            eid, {"pending": 0, "accepted": 0, "declined": 0, "total": 0}
         )
-        st = (row['response_status'] or 'pending').lower()
-        n = int(row['n'])
+        st = (row["response_status"] or "pending").lower()
+        n = int(row["n"])
         if st in stats:
             stats[st] = n
-        stats['total'] += n
+        stats["total"] += n
     db.close()
     return result
 
@@ -484,7 +488,7 @@ def list_pending_assignments_for_user(user_id: str) -> list[dict]:
     c = db.cursor()
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute(
-        '''SELECT a.*, e.title, e.starts_at, e.event_type, e.location,
+        """SELECT a.*, e.title, e.starts_at, e.event_type, e.location,
                   b.id AS band_id, b.name AS band_name
            FROM band_event_assignments a
            JOIN band_events e ON e.id = a.event_id
@@ -492,7 +496,7 @@ def list_pending_assignments_for_user(user_id: str) -> list[dict]:
            WHERE a.user_id = ?
              AND COALESCE(a.response_status, 'pending') = 'pending'
              AND e.starts_at >= ?
-           ORDER BY e.starts_at ASC''',
+           ORDER BY e.starts_at ASC""",
         (user_id, now),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -508,7 +512,7 @@ def list_events_pending_responses_for_editor(user_id: str) -> list[dict]:
     c = db.cursor()
     now = app_now_str()  # was strftime('%Y-%m-%d %H:%M:%S')
     c.execute(
-        '''SELECT e.id, e.title, e.starts_at, e.band_id, b.name AS band_name,
+        """SELECT e.id, e.title, e.starts_at, e.band_id, b.name AS band_name,
                   SUM(CASE WHEN COALESCE(a.response_status, 'pending') = 'pending' THEN 1 ELSE 0 END) AS pending_count,
                   SUM(CASE WHEN a.response_status = 'accepted' THEN 1 ELSE 0 END) AS accepted_count,
                   SUM(CASE WHEN a.response_status = 'declined' THEN 1 ELSE 0 END) AS declined_count,
@@ -519,13 +523,13 @@ def list_events_pending_responses_for_editor(user_id: str) -> list[dict]:
            WHERE e.starts_at >= ?
            GROUP BY e.id, e.title, e.starts_at, e.band_id, b.name
            HAVING SUM(CASE WHEN COALESCE(a.response_status, 'pending') = 'pending' THEN 1 ELSE 0 END) > 0
-           ORDER BY e.starts_at ASC''',
+           ORDER BY e.starts_at ASC""",
         (now,),
     )
     rows = []
     for row in c.fetchall():
         r = dict(row)
-        if is_band_editor(r['band_id'], user_id):
+        if is_band_editor(r["band_id"], user_id):
             rows.append(r)
     db.close()
     return rows
@@ -536,50 +540,50 @@ def suggest_scale_assignments(band_id: str, event_id: str | None = None) -> list
     from models_agenda import get_band_event, get_event_assignments
 
     event = get_band_event(event_id) if event_id else None
-    event_type = (event or {}).get('event_type') or 'ensaio'
-    event_date = str((event or {}).get('starts_at') or '')[:10]
+    event_type = (event or {}).get("event_type") or "ensaio"
+    event_date = str((event or {}).get("starts_at") or "")[:10]
 
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT e.id FROM band_events e
+        """SELECT e.id FROM band_events e
            WHERE e.band_id = ? AND e.event_type = ?
              AND EXISTS (SELECT 1 FROM band_event_assignments a WHERE a.event_id = e.id)
-           ORDER BY e.starts_at DESC LIMIT 1''',
+           ORDER BY e.starts_at DESC LIMIT 1""",
         (band_id, event_type),
     )
     row = c.fetchone()
     source_assignments: list[dict] = []
-    reason = 'Último evento do mesmo tipo'
+    reason = "Último evento do mesmo tipo"
     if row:
-        source_assignments = get_event_assignments(row['id'])
+        source_assignments = get_event_assignments(row["id"])
     else:
         lineups = list_band_lineups(band_id)
         if lineups:
-            members = get_lineup_members(lineups[0]['id'])
+            members = get_lineup_members(lineups[0]["id"])
             source_assignments = [
-                {'user_id': m['user_id'], 'role_label': m.get('role_label')}
+                {"user_id": m["user_id"], "role_label": m.get("role_label")}
                 for m in members
             ]
-            reason = f'Formação «{lineups[0]["name"]}»'
+            reason = f"Formação «{lineups[0]['name']}»"
 
     db.close()
     if not source_assignments:
         return []
 
-    user_ids = [a['user_id'] for a in source_assignments if a.get('user_id')]
+    user_ids = [a["user_id"] for a in source_assignments if a.get("user_id")]
     blocked = users_blocked_on_date(user_ids, event_date) if event_date else set()
 
     out = []
     for a in source_assignments:
-        uid = a.get('user_id')
+        uid = a.get("user_id")
         if not uid:
             continue
         item = {
-            'user_id': uid,
-            'role_label': a.get('role_label'),
-            'reason': reason,
-            'blocked': uid in blocked,
+            "user_id": uid,
+            "role_label": a.get("role_label"),
+            "reason": reason,
+            "blocked": uid in blocked,
         }
         out.append(item)
     return out

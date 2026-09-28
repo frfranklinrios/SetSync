@@ -50,5 +50,7 @@ def despachar(registro: dict) -> dict:
     registro["fulfillment"] = info
     if info.get("ok"):
         registro["status"] = "enviado_fornecedor"
-        registro["mensagem"] = "Pagamento ok. Pedido enviado ao fornecedor para despacho."
+        registro["mensagem"] = (
+            "Pagamento ok. Pedido enviado ao fornecedor para despacho."
+        )
     return info

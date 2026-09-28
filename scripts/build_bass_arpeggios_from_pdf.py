@@ -22,22 +22,24 @@ sys.path.insert(0, str(ROOT))
 from chord_diagram.bass_arpeggio_bank import default_seed_bank
 from chord_diagram.bass_arpeggio_pdf import extract_patterns_from_pdf, patterns_to_bank
 
-OUT_JSON = ROOT / 'chord_diagram' / 'data' / 'bass_arpeggio_shapes.json'
-OUT_JS = ROOT / 'static' / 'js' / 'chord-diagram' / 'bass-arpeggio-shapes.js'
+OUT_JSON = ROOT / "chord_diagram" / "data" / "bass_arpeggio_shapes.json"
+OUT_JS = ROOT / "static" / "js" / "chord-diagram" / "bass-arpeggio-shapes.js"
 
 
 def _merge_banks(seed: dict, extracted: dict) -> dict:
     merged = {
-        'meta': extracted.get('meta') or seed.get('meta'),
-        'patterns': dict(seed.get('patterns') or {}),
+        "meta": extracted.get("meta") or seed.get("meta"),
+        "patterns": dict(seed.get("patterns") or {}),
     }
-    for sym, entries in (extracted.get('patterns') or {}).items():
-        merged['patterns'].setdefault(sym, [])
-        seen = {json.dumps(e.get('steps'), sort_keys=True) for e in merged['patterns'][sym]}
+    for sym, entries in (extracted.get("patterns") or {}).items():
+        merged["patterns"].setdefault(sym, [])
+        seen = {
+            json.dumps(e.get("steps"), sort_keys=True) for e in merged["patterns"][sym]
+        }
         for e in entries:
-            key = json.dumps(e.get('steps'), sort_keys=True)
+            key = json.dumps(e.get("steps"), sort_keys=True)
             if key not in seen:
-                merged['patterns'][sym].append(e)
+                merged["patterns"][sym].append(e)
                 seen.add(key)
     return merged
 
@@ -45,12 +47,12 @@ def _merge_banks(seed: dict, extracted: dict) -> dict:
 def write_js(bank: dict, path: Path) -> None:
     payload = json.dumps(bank, ensure_ascii=False, indent=2)
     path.write_text(
-        '/** Arpejos de baixo — gerado por scripts/build_bass_arpeggios_from_pdf.py */\n'
-        '(function (global) {\n'
-        '  var CD = (global.UníssonoChordDiagram = global.UníssonoChordDiagram || {});\n'
-        f'  CD.BASS_ARPEGGIO_BANK = {payload};\n'
+        "/** Arpejos de baixo — gerado por scripts/build_bass_arpeggios_from_pdf.py */\n"
+        "(function (global) {\n"
+        "  var CD = (global.UníssonoChordDiagram = global.UníssonoChordDiagram || {});\n"
+        f"  CD.BASS_ARPEGGIO_BANK = {payload};\n"
         '})(typeof window !== "undefined" ? window : globalThis);\n',
-        encoding='utf-8',
+        encoding="utf-8",
     )
 
 
@@ -60,42 +62,52 @@ def build_bass_arpeggio_bank() -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description='Gera JSON de arpejos de baixo a partir do manual (PDF opcional)')
-    ap.add_argument(
-        'pdf',
-        nargs='?',
-        default='/tmp/The-Bass-Guitar-Resource-Book.pdf',
-        help='Caminho do PDF (The Bass Guitar Resource Book)',
+    ap = argparse.ArgumentParser(
+        description="Gera JSON de arpejos de baixo a partir do manual (PDF opcional)"
     )
-    ap.add_argument('--source', default='The Bass Guitar Resource Book')
+    ap.add_argument(
+        "pdf",
+        nargs="?",
+        default="/tmp/The-Bass-Guitar-Resource-Book.pdf",
+        help="Caminho do PDF (The Bass Guitar Resource Book)",
+    )
+    ap.add_argument("--source", default="The Bass Guitar Resource Book")
     args = ap.parse_args()
 
     seed = default_seed_bank()
     pdf_path = Path(args.pdf)
 
     bank = seed
-    if pdf_path.is_file() and pdf_path.read_bytes()[:4] == b'%PDF':
+    if pdf_path.is_file() and pdf_path.read_bytes()[:4] == b"%PDF":
         try:
             patterns = extract_patterns_from_pdf(pdf_path, source=args.source)
             if patterns:
                 extracted = patterns_to_bank(patterns)
                 bank = _merge_banks(seed, extracted)
-                print(f'Extraídos {len(patterns)} padrões do PDF; mesclados com formas canônicas.')
+                print(
+                    f"Extraídos {len(patterns)} padrões do PDF; mesclados com formas canônicas."
+                )
             else:
-                print('PDF sem diagramas reconhecidos; usando formas canônicas do manual.')
+                print(
+                    "PDF sem diagramas reconhecidos; usando formas canônicas do manual."
+                )
         except Exception as exc:
-            print(f'Aviso: falha na extração ({exc}); usando formas canônicas.')
+            print(f"Aviso: falha na extração ({exc}); usando formas canônicas.")
     else:
-        print(f'PDF não encontrado ou inválido em {pdf_path}; gravando formas canônicas do manual.')
+        print(
+            f"PDF não encontrado ou inválido em {pdf_path}; gravando formas canônicas do manual."
+        )
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
-    OUT_JSON.write_text(json.dumps(bank, ensure_ascii=False, indent=2), encoding='utf-8')
+    OUT_JSON.write_text(
+        json.dumps(bank, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     write_js(bank, OUT_JS)
-    n = sum(len(v) for v in bank.get('patterns', {}).values())
-    print(f'OK: {n} entradas → {OUT_JSON}')
-    print(f'OK: {OUT_JS}')
+    n = sum(len(v) for v in bank.get("patterns", {}).values())
+    print(f"OK: {n} entradas → {OUT_JSON}")
+    print(f"OK: {OUT_JS}")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())

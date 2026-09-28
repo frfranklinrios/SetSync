@@ -12,7 +12,7 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from dotenv import load_dotenv
 
@@ -22,16 +22,18 @@ from product_updates import CAMPAIGN_JUN_2026_06, enviar_comunicado
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Comunicado Uníssono por e-mail e WhatsApp')
-    parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Só conta quantos receberiam, sem enviar',
+    parser = argparse.ArgumentParser(
+        description="Comunicado Uníssono por e-mail e WhatsApp"
     )
     parser.add_argument(
-        '--campaign',
+        "--dry-run",
+        action="store_true",
+        help="Só conta quantos receberiam, sem enviar",
+    )
+    parser.add_argument(
+        "--campaign",
         default=CAMPAIGN_JUN_2026_06,
-        help='ID da campanha (padrão: novidades jun/2026)',
+        help="ID da campanha (padrão: novidades jun/2026)",
     )
     args = parser.parse_args()
 
@@ -43,23 +45,23 @@ def main() -> int:
         from whatsapp_service import is_configured as wa_ok
 
         init_db()
-        print(f'Campanha: {args.campaign}')
-        print(f'SMTP:     {"ok" if email_ok() else "off"}')
-        print(f'WhatsApp: {"ok" if wa_ok() else "off"}')
+        print(f"Campanha: {args.campaign}")
+        print(f"SMTP:     {'ok' if email_ok() else 'off'}")
+        print(f"WhatsApp: {'ok' if wa_ok() else 'off'}")
         if args.dry_run:
-            print('Modo:     dry-run\n')
+            print("Modo:     dry-run\n")
         else:
-            print('Modo:     envio real\n')
+            print("Modo:     envio real\n")
 
         stats = enviar_comunicado(args.campaign, dry_run=args.dry_run)
         print(
-            f'Total {stats["total"]} | '
-            f'enviados {stats["enviados"]} | '
-            f'já tinham {stats["pulados"]} | '
-            f'erros {stats["erros"]}'
+            f"Total {stats['total']} | "
+            f"enviados {stats['enviados']} | "
+            f"já tinham {stats['pulados']} | "
+            f"erros {stats['erros']}"
         )
-    return 0 if stats['erros'] == 0 else 1
+    return 0 if stats["erros"] == 0 else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())

@@ -7,7 +7,11 @@ import json
 
 from cifras_tool.scraper.cifraclub import raspar as raspar_cifraclub
 from cifras_tool.scraper.cifras_com_br import raspar as raspar_cifras_com_br
-from cifras_tool.scraper.comum import detectar_fonte, normalizar_url, normalizar_url_youtube
+from cifras_tool.scraper.comum import (
+    detectar_fonte,
+    normalizar_url,
+    normalizar_url_youtube,
+)
 
 URL_PADRAO = "https://www.cifras.com.br/cifra/dominguinhos/gostoso-demais"
 
@@ -89,4 +93,4 @@ def main() -> None:
         print("Não foi possível extrair a cifra da página.")
 
 
-__all__ = ["raspar_cifra", "normalizar_url", "detectar_fonte", "salvar_saida", "main"]
+__all__ = ["detectar_fonte", "main", "normalizar_url", "raspar_cifra", "salvar_saida"]

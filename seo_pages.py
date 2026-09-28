@@ -8,694 +8,763 @@ from typing import Any
 
 
 def slugify(text: str) -> str:
-    text = unicodedata.normalize('NFKD', text)
-    text = text.encode('ascii', 'ignore').decode('ascii')
-    text = re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')
+    text = unicodedata.normalize("NFKD", text)
+    text = text.encode("ascii", "ignore").decode("ascii")
+    text = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
     return text
 
 
 def _phrase(verb: str, obj: str) -> str:
     if verb:
-        return f'{verb} {obj}'
+        return f"{verb} {obj}"
     return obj
 
 
 def _title_page(verb: str, obj: str) -> str:
     p = _phrase(verb, obj)
-    return f'{p.capitalize()} — Uníssono'
+    return f"{p.capitalize()} — Uníssono"
 
 
 def _meta_desc(verb: str, obj: str) -> str:
-    if 'financeiro do estúdio' in obj or obj.endswith('estúdio') and 'financeiro' in obj:
+    if (
+        "financeiro do estúdio" in obj
+        or obj.endswith("estúdio")
+        and "financeiro" in obj
+    ):
         return (
-            'Controle receita de reservas confirmadas, pagamentos e despesas do seu estúdio '
-            'de ensaio no Uníssono. Preço/hora, resumo mensal e líquido no painel do dono.'
+            "Controle receita de reservas confirmadas, pagamentos e despesas do seu estúdio "
+            "de ensaio no Uníssono. Preço/hora, resumo mensal e líquido no painel do dono."
         )
-    if 'financeiro da banda' in obj or 'meu financeiro' in obj or 'cachês' in obj:
+    if "financeiro da banda" in obj or "meu financeiro" in obj or "cachês" in obj:
         return (
-            'Acompanhe cachês no Uníssono: Meu financeiro (sua fatia nos shows) e o caixa '
-            'da banda com couvert, gorjetas Pix, ensaios e despesas — PDF em A4.'
+            "Acompanhe cachês no Uníssono: Meu financeiro (sua fatia nos shows) e o caixa "
+            "da banda com couvert, gorjetas Pix, ensaios e despesas — PDF em A4."
         )
-    if 'gorjeta' in obj or ('pix' in obj and 'gorjeta' in f'{verb} {obj}'):
+    if "gorjeta" in obj or ("pix" in obj and "gorjeta" in f"{verb} {obj}"):
         return (
-            'Ative gorjeta Pix no show: QR público, 100% na chave da banda (sem comissão), '
-            'repertório e pedidos de música — placar ao vivo no Modo Tocar.'
+            "Ative gorjeta Pix no show: QR público, 100% na chave da banda (sem comissão), "
+            "repertório e pedidos de música — placar ao vivo no Modo Tocar."
         )
-    if 'pedido' in obj and 'música' in obj:
+    if "pedido" in obj and "música" in obj:
+        return "O público vê o repertório no QR e pede música; a banda acompanha a fila no Modo Tocar."
+    if "couvert" in obj:
+        return "Cadastre o couvert/entrada no fechamento de noite e some ao bruto da casa antes da divisão."
+    if "coleção" in obj or "colecao" in obj:
         return (
-            'O público vê o repertório no QR e pede música; a banda acompanha a fila no Modo Tocar.'
+            "Guarde cifras na coleção pessoal grátis e ilimitada do Uníssono. "
+            "Compartilhe com outros músicos ou envie para a banda com assinatura."
         )
-    if 'couvert' in obj:
+    if "voucher" in obj and ("estudio" in obj or "estúdio" in obj):
         return (
-            'Cadastre o couvert/entrada no fechamento de noite e some ao bruto da casa antes da divisão.'
-        )
-    if 'coleção' in obj or 'colecao' in obj:
-        return (
-            'Guarde cifras na coleção pessoal grátis e ilimitada do Uníssono. '
-            'Compartilhe com outros músicos ou envie para a banda com assinatura.'
-        )
-    if 'voucher' in obj and ('estudio' in obj or 'estúdio' in obj):
-        return (
-            'Resgate voucher Estúdio Premium no Uníssono: salas ilimitadas por código promocional, '
-            'sem cartão. Passo a passo para donos de sala de ensaio.'
+            "Resgate voucher Estúdio Premium no Uníssono: salas ilimitadas por código promocional, "
+            "sem cartão. Passo a passo para donos de sala de ensaio."
         )
     p = _phrase(verb, obj)
     return (
-        f'Como {p} com o Uníssono: repertório centralizado, convites por link, '
-        f'setlists, transposição e Modo Tocar para bandas e músicos. Comece grátis.'
+        f"Como {p} com o Uníssono: repertório centralizado, convites por link, "
+        f"setlists, transposição e Modo Tocar para bandas e músicos. Comece grátis."
     )
 
 
 def _sections(verb: str, obj: str) -> list[dict[str, Any]]:
     phrase = _phrase(verb, obj)
-    obj_cap = obj[0].upper() + obj[1:] if obj else ''
+    obj_cap = obj[0].upper() + obj[1:] if obj else ""
 
-    if 'coleção' in obj or 'colecao' in obj:
+    if "coleção" in obj or "colecao" in obj:
         return [
             {
-                'html': (
-                    '<p>No Uníssono cada músico tem uma <strong>coleção pessoal</strong>: '
-                    'guarde quantas cifras quiser, <strong>grátis e sem limite</strong>. '
-                    'O repertório da banda fica separado — e compartilhar exige assinatura.</p>'
+                "html": (
+                    "<p>No Uníssono cada músico tem uma <strong>coleção pessoal</strong>: "
+                    "guarde quantas cifras quiser, <strong>grátis e sem limite</strong>. "
+                    "O repertório da banda fica separado — e compartilhar exige assinatura.</p>"
                 ),
             },
             {
-                'h2': 'Como usar a coleção',
-                'html': (
-                    '<ol>'
-                    '<li>Abra o menu <strong>Coleção</strong>.</li>'
-                    '<li>Toque em <strong>Nova música</strong> — cadastre, cole de um site ou importe da biblioteca.</li>'
-                    '<li>Edite e organize só para você, sem afetar nenhuma banda.</li>'
-                    '<li>Quando quiser enviar à equipe, use <strong>Compartilhar</strong> '
-                    '(assinatura Individual, Pro ou Worship).</li>'
-                    '</ol>'
+                "h2": "Como usar a coleção",
+                "html": (
+                    "<ol>"
+                    "<li>Abra o menu <strong>Coleção</strong>.</li>"
+                    "<li>Toque em <strong>Nova música</strong> — cadastre, cole de um site ou importe da biblioteca.</li>"
+                    "<li>Edite e organize só para você, sem afetar nenhuma banda.</li>"
+                    "<li>Quando quiser enviar à equipe, use <strong>Compartilhar</strong> "
+                    "(assinatura Individual, Pro ou Worship).</li>"
+                    "</ol>"
                     '<p>Detalhes na <a href="/ajuda#colecao">Ajuda → Minha coleção</a>.</p>'
                 ),
             },
         ]
 
-    if 'financeiro da banda' in obj or 'meu financeiro' in obj or (
-        'cachê' in obj or 'cachês' in obj
+    if (
+        "financeiro da banda" in obj
+        or "meu financeiro" in obj
+        or ("cachê" in obj or "cachês" in obj)
     ):
         return [
             {
-                'html': (
-                    '<p>O Uníssono separa <strong>Meu financeiro</strong> (sua fatia nos shows de todas as bandas) '
-                    'do <strong>financeiro da banda</strong> (caixa completo: cachês, couvert, gorjetas Pix, '
-                    'ensaios em estúdio e despesas).</p>'
+                "html": (
+                    "<p>O Uníssono separa <strong>Meu financeiro</strong> (sua fatia nos shows de todas as bandas) "
+                    "do <strong>financeiro da banda</strong> (caixa completo: cachês, couvert, gorjetas Pix, "
+                    "ensaios em estúdio e despesas).</p>"
                 ),
             },
             {
-                'h2': 'Meu financeiro',
-                'html': (
-                    '<ul>'
-                    '<li>Menu <strong>Meu financeiro</strong> — filtre por banda, mês e ano.</li>'
-                    '<li>Veja o que já fechou e o que está em aberto.</li>'
-                    '<li>Gere <strong>PDF A4 retrato</strong> do período.</li>'
-                    '</ul>'
+                "h2": "Meu financeiro",
+                "html": (
+                    "<ul>"
+                    "<li>Menu <strong>Meu financeiro</strong> — filtre por banda, mês e ano.</li>"
+                    "<li>Veja o que já fechou e o que está em aberto.</li>"
+                    "<li>Gere <strong>PDF A4 retrato</strong> do período.</li>"
+                    "</ul>"
                 ),
             },
             {
-                'h2': 'Financeiro da banda',
-                'html': (
-                    '<ul>'
-                    '<li>Só <strong>dono/admin</strong> (ou quem o admin liberar em Integrantes).</li>'
-                    '<li>Cadastre cachê e <strong>couvert</strong> no fechamento da noite, despesas do mês e exporte PDF.</li>'
-                    '<li>Acompanhe <strong>gorjetas Pix</strong> ao vivo (100% na chave da banda — sem comissão).</li>'
-                    '<li>Músicos sem acesso ao caixa veem apenas a própria fatia no show.</li>'
-                    '</ul>'
+                "h2": "Financeiro da banda",
+                "html": (
+                    "<ul>"
+                    "<li>Só <strong>dono/admin</strong> (ou quem o admin liberar em Integrantes).</li>"
+                    "<li>Cadastre cachê e <strong>couvert</strong> no fechamento da noite, despesas do mês e exporte PDF.</li>"
+                    "<li>Acompanhe <strong>gorjetas Pix</strong> ao vivo (100% na chave da banda — sem comissão).</li>"
+                    "<li>Músicos sem acesso ao caixa veem apenas a própria fatia no show.</li>"
+                    "</ul>"
                     '<p>Guia na <a href="/ajuda#financeiro-banda">Ajuda → Financeiro</a> '
                     'e <a href="/ajuda#gorjeta-pix">Gorjeta Pix</a>.</p>'
                 ),
             },
         ]
 
-    if 'gorjeta' in obj or 'pix' in obj or 'pedido de música' in obj or 'pedidos de música' in obj:
+    if (
+        "gorjeta" in obj
+        or "pix" in obj
+        or "pedido de música" in obj
+        or "pedidos de música" in obj
+    ):
         return [
             {
-                'html': (
-                    '<p>No show, o público escaneia um QR do Uníssono: manda <strong>Pix direto para a chave '
-                    'da banda</strong> (sem comissão), vê o <strong>repertório</strong> e pode '
-                    '<strong>pedir música</strong>. No Modo Tocar você acompanha o total e a fila ao vivo.</p>'
+                "html": (
+                    "<p>No show, o público escaneia um QR do Uníssono: manda <strong>Pix direto para a chave "
+                    "da banda</strong> (sem comissão), vê o <strong>repertório</strong> e pode "
+                    "<strong>pedir música</strong>. No Modo Tocar você acompanha o total e a fila ao vivo.</p>"
                 ),
             },
             {
-                'h2': 'Como configurar',
-                'html': (
-                    '<ul>'
-                    '<li>Banda → <strong>Configurações → Gorjeta Pix</strong>: chave, link curto e valores sugeridos.</li>'
-                    '<li>Ative a exibição no Modo Tocar e/ou no PDF da setlist.</li>'
-                    '</ul>'
+                "h2": "Como configurar",
+                "html": (
+                    "<ul>"
+                    "<li>Banda → <strong>Configurações → Gorjeta Pix</strong>: chave, link curto e valores sugeridos.</li>"
+                    "<li>Ative a exibição no Modo Tocar e/ou no PDF da setlist.</li>"
+                    "</ul>"
                 ),
             },
             {
-                'h2': 'No palco e no QR',
-                'html': (
-                    '<ul>'
-                    '<li>Página pública <code>/gorjeta/seu-slug</code>: aba Pix + aba Repertório/Pedir.</li>'
-                    '<li>Modo Tocar: chip com total de gorjetas e chip de pedidos.</li>'
-                    '<li>O dinheiro já caiu na conta — o app só mostra o placar.</li>'
-                    '</ul>'
+                "h2": "No palco e no QR",
+                "html": (
+                    "<ul>"
+                    "<li>Página pública <code>/gorjeta/seu-slug</code>: aba Pix + aba Repertório/Pedir.</li>"
+                    "<li>Modo Tocar: chip com total de gorjetas e chip de pedidos.</li>"
+                    "<li>O dinheiro já caiu na conta — o app só mostra o placar.</li>"
+                    "</ul>"
                     '<p>Passo a passo na <a href="/ajuda#gorjeta-pix">Ajuda → Gorjeta Pix</a>.</p>'
                 ),
             },
         ]
 
-    if 'financeiro' in obj and 'estúdio' in obj:
+    if "financeiro" in obj and "estúdio" in obj:
         return [
             {
-                'html': (
-                    '<p>O <strong>financeiro do estúdio</strong> no Uníssono ajuda donos de sala de ensaio '
-                    'a acompanhar <strong>receita das reservas confirmadas</strong>, marcar o que já foi '
-                    'pago e registrar <strong>despesas do mês</strong> — tudo no painel, sem planilha paralela.</p>'
+                "html": (
+                    "<p>O <strong>financeiro do estúdio</strong> no Uníssono ajuda donos de sala de ensaio "
+                    "a acompanhar <strong>receita das reservas confirmadas</strong>, marcar o que já foi "
+                    "pago e registrar <strong>despesas do mês</strong> — tudo no painel, sem planilha paralela.</p>"
                 ),
             },
             {
-                'h2': 'Como a receita é calculada',
-                'html': (
-                    '<p>Cadastre o <strong>preço por hora</strong> no perfil do estúdio. Para cada reserva '
-                    '<strong>confirmada</strong>, o sistema estima o valor multiplicando a duração '
-                    '(hora fim − hora início) pelo preço/hora. Você pode ajustar o valor manualmente em '
-                    'reservas com desconto, pacote ou acordo com a banda.</p>'
+                "h2": "Como a receita é calculada",
+                "html": (
+                    "<p>Cadastre o <strong>preço por hora</strong> no perfil do estúdio. Para cada reserva "
+                    "<strong>confirmada</strong>, o sistema estima o valor multiplicando a duração "
+                    "(hora fim − hora início) pelo preço/hora. Você pode ajustar o valor manualmente em "
+                    "reservas com desconto, pacote ou acordo com a banda.</p>"
                 ),
             },
             {
-                'h2': 'Passo a passo no painel',
-                'html': (
-                    '<ol>'
-                    '<li>Cadastre o estúdio e configure salas, disponibilidade e <strong>preço/hora</strong>.</li>'
-                    '<li>Confirme solicitações de bandas no painel — só reservas confirmadas entram no financeiro.</li>'
-                    '<li>Abra <strong>Financeiro</strong> no painel do dono (ao lado de Calendário).</li>'
-                    '<li>Filtre por mês e ano para ver receita confirmada, recebido, a receber e horas reservadas.</li>'
-                    '<li>Em cada reserva, marque <strong>Pago</strong> ou <strong>Pendente</strong> e adicione observações.</li>'
-                    '<li>Registre despesas (aluguel, energia, manutenção…) para ver o <strong>líquido</strong> do mês.</li>'
-                    '</ol>'
+                "h2": "Passo a passo no painel",
+                "html": (
+                    "<ol>"
+                    "<li>Cadastre o estúdio e configure salas, disponibilidade e <strong>preço/hora</strong>.</li>"
+                    "<li>Confirme solicitações de bandas no painel — só reservas confirmadas entram no financeiro.</li>"
+                    "<li>Abra <strong>Financeiro</strong> no painel do dono (ao lado de Calendário).</li>"
+                    "<li>Filtre por mês e ano para ver receita confirmada, recebido, a receber e horas reservadas.</li>"
+                    "<li>Em cada reserva, marque <strong>Pago</strong> ou <strong>Pendente</strong> e adicione observações.</li>"
+                    "<li>Registre despesas (aluguel, energia, manutenção…) para ver o <strong>líquido</strong> do mês.</li>"
+                    "</ol>"
                 ),
             },
             {
-                'h2': 'Resumo do mês',
-                'html': (
-                    '<ul>'
-                    '<li><strong>Receita confirmada</strong> — soma das reservas confirmadas no período.</li>'
-                    '<li><strong>Recebido</strong> — reservas marcadas como pagas.</li>'
-                    '<li><strong>A receber</strong> — diferença entre confirmado e recebido.</li>'
-                    '<li><strong>Despesas</strong> — lançamentos manuais do mês.</li>'
-                    '<li><strong>Líquido</strong> — recebido menos despesas.</li>'
-                    '</ul>'
+                "h2": "Resumo do mês",
+                "html": (
+                    "<ul>"
+                    "<li><strong>Receita confirmada</strong> — soma das reservas confirmadas no período.</li>"
+                    "<li><strong>Recebido</strong> — reservas marcadas como pagas.</li>"
+                    "<li><strong>A receber</strong> — diferença entre confirmado e recebido.</li>"
+                    "<li><strong>Despesas</strong> — lançamentos manuais do mês.</li>"
+                    "<li><strong>Líquido</strong> — recebido menos despesas.</li>"
+                    "</ul>"
                 ),
             },
             {
-                'h2': 'Integração com reservas e agenda',
-                'html': (
-                    '<p>Quando você confirma uma reserva, o ensaio vai para a agenda da banda. O financeiro '
-                    'usa os mesmos horários da reserva — não precisa digitar de novo. Bandas acompanham em '
-                    '<strong>Minhas reservas</strong>; o controle de pagamento é visível só para o dono do estúdio.</p>'
+                "h2": "Integração com reservas e agenda",
+                "html": (
+                    "<p>Quando você confirma uma reserva, o ensaio vai para a agenda da banda. O financeiro "
+                    "usa os mesmos horários da reserva — não precisa digitar de novo. Bandas acompanham em "
+                    "<strong>Minhas reservas</strong>; o controle de pagamento é visível só para o dono do estúdio.</p>"
                     '<p>Detalhes na <a href="/ajuda#estudio-financeiro">Ajuda → Financeiro do estúdio</a>.</p>'
                 ),
             },
         ]
 
-    if obj == 'cifras' and verb == 'compartilhar':
+    if obj == "cifras" and verb == "compartilhar":
         return [
             {
-                'html': (
-                    '<p>No Uníssono você pode <strong>guardar cifras na coleção pessoal</strong> (grátis) '
-                    'e <strong>compartilhar</strong> com outros músicos ou com a banda quando tiver assinatura. '
-                    'Também dá para centralizar o repertório direto na banda e convidar a equipe por link.</p>'
+                "html": (
+                    "<p>No Uníssono você pode <strong>guardar cifras na coleção pessoal</strong> (grátis) "
+                    "e <strong>compartilhar</strong> com outros músicos ou com a banda quando tiver assinatura. "
+                    "Também dá para centralizar o repertório direto na banda e convidar a equipe por link.</p>"
                 ),
             },
             {
-                'h2': 'Coleção pessoal → compartilhar',
-                'html': (
-                    '<ol>'
-                    '<li>Menu <strong>Coleção</strong> → adicione suas músicas (ilimitado no plano grátis).</li>'
-                    '<li>Abra a música → <strong>Compartilhar</strong>.</li>'
-                    '<li>Envie <strong>cópia para uma banda</strong> (ela edita a própria versão) '
-                    'ou libere para outro usuário por e-mail/username.</li>'
-                    '<li>Sem assinatura, o app mostra o upgrade — guardar na coleção continua grátis.</li>'
-                    '</ol>'
+                "h2": "Coleção pessoal → compartilhar",
+                "html": (
+                    "<ol>"
+                    "<li>Menu <strong>Coleção</strong> → adicione suas músicas (ilimitado no plano grátis).</li>"
+                    "<li>Abra a música → <strong>Compartilhar</strong>.</li>"
+                    "<li>Envie <strong>cópia para uma banda</strong> (ela edita a própria versão) "
+                    "ou libere para outro usuário por e-mail/username.</li>"
+                    "<li>Sem assinatura, o app mostra o upgrade — guardar na coleção continua grátis.</li>"
+                    "</ol>"
                 ),
             },
             {
-                'h2': 'Repertório da banda',
-                'html': (
-                    '<p>Admins cadastram cifras no repertório da banda; membros veem a mesma versão. '
-                    'Use convites por link, setlist com tom por cantor e link público de letras. '
+                "h2": "Repertório da banda",
+                "html": (
+                    "<p>Admins cadastram cifras no repertório da banda; membros veem a mesma versão. "
+                    "Use convites por link, setlist com tom por cantor e link público de letras. "
                     'Veja também a <a href="/ajuda#colecao">Ajuda → Minha coleção</a>.</p>'
                 ),
             },
         ]
 
-    if 'voucher' in obj and ('estudio' in obj or 'estúdio' in obj):
+    if "voucher" in obj and ("estudio" in obj or "estúdio" in obj):
         return [
             {
-                'html': (
-                    '<p>Donos de estúdio podem ativar o plano <strong>Premium</strong> (salas ilimitadas) '
-                    'com um <strong>código voucher</strong> enviado pela equipe Uníssono ou em campanhas '
-                    'parceiras — sem assinatura no Mercado Pago.</p>'
+                "html": (
+                    "<p>Donos de estúdio podem ativar o plano <strong>Premium</strong> (salas ilimitadas) "
+                    "com um <strong>código voucher</strong> enviado pela equipe Uníssono ou em campanhas "
+                    "parceiras — sem assinatura no Mercado Pago.</p>"
                 ),
             },
             {
-                'h2': 'Antes de resgatar',
-                'html': (
-                    '<ul>'
-                    '<li>Use a conta que <strong>cadastrou o estúdio</strong> (dono).</li>'
-                    '<li>Tenha pelo menos um estúdio no Uníssono — '
+                "h2": "Antes de resgatar",
+                "html": (
+                    "<ul>"
+                    "<li>Use a conta que <strong>cadastrou o estúdio</strong> (dono).</li>"
+                    "<li>Tenha pelo menos um estúdio no Uníssono — "
                     '<a href="/estudios">cadastre grátis</a> se ainda não tiver.</li>'
-                    '<li>O voucher não substitui assinatura <strong>Premium paga</strong> já ativa.</li>'
-                    '<li>Cada código vale <strong>uma vez</strong> por conta.</li>'
-                    '</ul>'
+                    "<li>O voucher não substitui assinatura <strong>Premium paga</strong> já ativa.</li>"
+                    "<li>Cada código vale <strong>uma vez</strong> por conta.</li>"
+                    "</ul>"
                 ),
             },
             {
-                'h2': 'Passo a passo',
-                'html': (
-                    '<ol>'
-                    '<li>Entre no Uníssono com sua conta de dono.</li>'
+                "h2": "Passo a passo",
+                "html": (
+                    "<ol>"
+                    "<li>Entre no Uníssono com sua conta de dono.</li>"
                     '<li>Abra <a href="/assinatura/planos#estudio">Planos → Estúdio</a>.</li>'
-                    '<li>Em <strong>Tem um voucher?</strong>, digite o código (ex.: <code>ESTUDIO-XXXX</code>) '
-                    'e toque em <strong>Resgatar</strong>.</li>'
-                    '<li>Confirme o badge <strong>Estúdio Premium</strong> no painel e cadastre salas além do limite do Básico.</li>'
-                    '</ol>'
+                    "<li>Em <strong>Tem um voucher?</strong>, digite o código (ex.: <code>ESTUDIO-XXXX</code>) "
+                    "e toque em <strong>Resgatar</strong>.</li>"
+                    "<li>Confirme o badge <strong>Estúdio Premium</strong> no painel e cadastre salas além do limite do Básico.</li>"
+                    "</ol>"
                 ),
             },
             {
-                'h2': 'Diferença para voucher de banda',
-                'html': (
-                    '<p>Códigos de <strong>banda</strong> liberam Pro/Worship na banda selecionada. '
-                    'Códigos de <strong>estúdio</strong> liberam Premium na <strong>conta do dono</strong>. '
-                    'Se o app avisar que o código é do outro tipo, use a seção correta em Planos.</p>'
+                "h2": "Diferença para voucher de banda",
+                "html": (
+                    "<p>Códigos de <strong>banda</strong> liberam Pro/Worship na banda selecionada. "
+                    "Códigos de <strong>estúdio</strong> liberam Premium na <strong>conta do dono</strong>. "
+                    "Se o app avisar que o código é do outro tipo, use a seção correta em Planos.</p>"
                 ),
             },
             {
-                'h2': 'Validade',
-                'html': (
-                    '<p>Vouchers por prazo expiram automaticamente; a conta volta ao plano Básico (até 2 salas). '
-                    'Você recebe e-mail antes do vencimento. Vouchers <strong>vitalícios</strong> não expiram.</p>'
+                "h2": "Validade",
+                "html": (
+                    "<p>Vouchers por prazo expiram automaticamente; a conta volta ao plano Básico (até 2 salas). "
+                    "Você recebe e-mail antes do vencimento. Vouchers <strong>vitalícios</strong> não expiram.</p>"
                     '<p>Mais detalhes na <a href="/ajuda#estudio-voucher">Ajuda → Voucher Estúdio Premium</a>.</p>'
                 ),
             },
         ]
 
     intro = (
-        f'<p>O Uníssono foi feito para quem precisa <strong>{phrase}</strong> sem depender de '
-        f'prints no WhatsApp, planilhas desatualizadas ou PDFs que ninguém sabe qual é a versão certa. '
-        f'Centralize o repertório da banda, convide musicistas por link e use setlists com transposição '
-        f'automática por cantor — no ensaio e no palco.</p>'
+        f"<p>O Uníssono foi feito para quem precisa <strong>{phrase}</strong> sem depender de "
+        f"prints no WhatsApp, planilhas desatualizadas ou PDFs que ninguém sabe qual é a versão certa. "
+        f"Centralize o repertório da banda, convide musicistas por link e use setlists com transposição "
+        f"automática por cantor — no ensaio e no palco.</p>"
     )
 
     blocks = [
         {
-            'h2': f'Por que {phrase} de forma organizada?',
-            'html': (
-                f'<p>Quando cada músico guarda a cifra no celular de um jeito, o ensaio vira adivinhação. '
-                f'{obj_cap} compartilhado significa uma única fonte: quem edita atualiza para todos. '
-                f'No Uníssono, admins da banda controlam o repertório; membros tocam a versão aprovada.</p>'
-                f'<p>Isso vale para bandas de bar, grupos acústicos, projetos paralelos e qualquer '
-                f'equipe que ensaia junto regularmente.</p>'
+            "h2": f"Por que {phrase} de forma organizada?",
+            "html": (
+                f"<p>Quando cada músico guarda a cifra no celular de um jeito, o ensaio vira adivinhação. "
+                f"{obj_cap} compartilhado significa uma única fonte: quem edita atualiza para todos. "
+                f"No Uníssono, admins da banda controlam o repertório; membros tocam a versão aprovada.</p>"
+                f"<p>Isso vale para bandas de bar, grupos acústicos, projetos paralelos e qualquer "
+                f"equipe que ensaia junto regularmente.</p>"
             ),
         },
         {
-            'h2': 'Como o Uníssono ajuda na prática',
-            'html': (
-                '<ul>'
-                '<li><strong>Repertório único</strong> — cifras, letras e grade harmônica na mesma música.</li>'
-                '<li><strong>Convites por link</strong> — integre guitarristas, tecladistas, bateristas e vocalistas.</li>'
-                '<li><strong>Setlists</strong> — ordem do show ou ensaio, tom por cantor, navegação no Modo Tocar.</li>'
-                '<li><strong>Transposição</strong> — cada vocalista com o tom certo; sustenidos e bemóis pela armadura do tom.</li>'
-                '<li><strong>Grade harmônica</strong> — editor com salvamento automático, extrair da cifra, notação brasileira e semi-pulsos.</li>'
-                '<li><strong>Agenda</strong> — ensaios e shows com setlist vinculada, escalação com confirmação por link, instrumentos no perfil e lembretes.</li>'
-                '<li><strong>Estúdios</strong> — busque salas de ensaio, solicite reserva e sincronize com a agenda da banda.</li>'
-                '<li><strong>Plano grátis</strong> — comece sem cartão; evolua para Individual, Pro, Worship ou Estúdio (beta).</li>'
-                '</ul>'
+            "h2": "Como o Uníssono ajuda na prática",
+            "html": (
+                "<ul>"
+                "<li><strong>Repertório único</strong> — cifras, letras e grade harmônica na mesma música.</li>"
+                "<li><strong>Convites por link</strong> — integre guitarristas, tecladistas, bateristas e vocalistas.</li>"
+                "<li><strong>Setlists</strong> — ordem do show ou ensaio, tom por cantor, navegação no Modo Tocar.</li>"
+                "<li><strong>Transposição</strong> — cada vocalista com o tom certo; sustenidos e bemóis pela armadura do tom.</li>"
+                "<li><strong>Grade harmônica</strong> — editor com salvamento automático, extrair da cifra, notação brasileira e semi-pulsos.</li>"
+                "<li><strong>Agenda</strong> — ensaios e shows com setlist vinculada, escalação com confirmação por link, instrumentos no perfil e lembretes.</li>"
+                "<li><strong>Estúdios</strong> — busque salas de ensaio, solicite reserva e sincronize com a agenda da banda.</li>"
+                "<li><strong>Plano grátis</strong> — comece sem cartão; evolua para Individual, Pro, Worship ou Estúdio (beta).</li>"
+                "</ul>"
             ),
         },
         {
-            'h2': f'Passo a passo para {phrase}',
-            'html': (
-                '<ol>'
-                '<li>Crie sua conta grátis no Uníssono.</li>'
-                '<li>Monte a banda e envie o link de convite aos integrantes.</li>'
-                '<li>Cadastre as músicas do repertório (importe cifras ou digite).</li>'
-                '<li>Defina vocalistas e transposição por cantor, se necessário.</li>'
-                '<li>Cadastre seus <strong>instrumentos</strong> em Meu perfil — a banda vê na escalação.</li>'
-                '<li>Monte o setlist do ensaio ou show e compartilhe com a equipe.</li>'
-                '<li>No palco, abra o Modo Tocar — sync da banda, offline automático da setlist, seções e pedal Bluetooth.</li>'
-                '</ol>'
+            "h2": f"Passo a passo para {phrase}",
+            "html": (
+                "<ol>"
+                "<li>Crie sua conta grátis no Uníssono.</li>"
+                "<li>Monte a banda e envie o link de convite aos integrantes.</li>"
+                "<li>Cadastre as músicas do repertório (importe cifras ou digite).</li>"
+                "<li>Defina vocalistas e transposição por cantor, se necessário.</li>"
+                "<li>Cadastre seus <strong>instrumentos</strong> em Meu perfil — a banda vê na escalação.</li>"
+                "<li>Monte o setlist do ensaio ou show e compartilhe com a equipe.</li>"
+                "<li>No palco, abra o Modo Tocar — sync da banda, offline automático da setlist, seções e pedal Bluetooth.</li>"
+                "</ol>"
             ),
         },
         {
-            'h2': 'Plano Worship — várias bandas',
-            'html': (
-                '<p>O plano <strong>Worship</strong> cobre <strong>múltiplas bandas</strong> na mesma conta, '
-                'cada uma com repertório e setlists próprios. Veja preços em '
+            "h2": "Plano Worship — várias bandas",
+            "html": (
+                "<p>O plano <strong>Worship</strong> cobre <strong>múltiplas bandas</strong> na mesma conta, "
+                "cada uma com repertório e setlists próprios. Veja preços em "
                 '<a href="/assinatura/planos">Planos</a>.</p>'
             ),
         },
     ]
 
-    if 'igreja' in obj or 'worship' in obj or 'louvor' in obj or 'múltiplas bandas' in obj:
-        blocks.append({
-            'h2': 'Uníssono para igrejas',
-            'html': (
-                '<p>Se você lidera o louvor em uma congregação com várias equipes, reunimos '
-                'comparativos, preços e rotina de culto na página '
-                '<a href="/igrejas">Uníssono para Igrejas</a>.</p>'
-            ),
-        })
+    if (
+        "igreja" in obj
+        or "worship" in obj
+        or "louvor" in obj
+        or "múltiplas bandas" in obj
+    ):
+        blocks.append(
+            {
+                "h2": "Uníssono para igrejas",
+                "html": (
+                    "<p>Se você lidera o louvor em uma congregação com várias equipes, reunimos "
+                    "comparativos, preços e rotina de culto na página "
+                    '<a href="/igrejas">Uníssono para Igrejas</a>.</p>'
+                ),
+            }
+        )
 
-    if 'igreja' in obj or 'worship' in obj or 'múltiplas bandas' in obj:
-        blocks.insert(1, {
-            'h2': 'Plano Worship para múltiplas equipes',
-            'html': (
-                '<p>O <strong>Worship</strong> cobre várias bandas na mesma conta — útil quando você '
-                'administra mais de um grupo musical. Detalhes, calculadora de economia e casos de '
-                'igreja estão em <a href="/igrejas">Uníssono para Igrejas</a>.</p>'
-            ),
-        })
+    if "igreja" in obj or "worship" in obj or "múltiplas bandas" in obj:
+        blocks.insert(
+            1,
+            {
+                "h2": "Plano Worship para múltiplas equipes",
+                "html": (
+                    "<p>O <strong>Worship</strong> cobre várias bandas na mesma conta — útil quando você "
+                    "administra mais de um grupo musical. Detalhes, calculadora de economia e casos de "
+                    'igreja estão em <a href="/igrejas">Uníssono para Igrejas</a>.</p>'
+                ),
+            },
+        )
 
-    if 'cifra' in obj or 'acorde' in obj or 'transpor' in verb:
-        blocks.insert(1, {
-            'h2': 'Transposição e tom do cantor',
-            'html': (
-                '<p>Cadastre cada vocalista e a transposição preferida. Na setlist, escolha quem canta '
-                'cada música — a cifra abre no tom certo automaticamente, inclusive na grade harmônica. '
-                'O Uníssono grafia sustenidos e bemóis conforme a armadura do tom (ex.: C→Eb gera Eb, Ab, Bb). '
-                'Acabou o "espera, deixa eu subir meio tom no papel".</p>'
-            ),
-        })
+    if "cifra" in obj or "acorde" in obj or "transpor" in verb:
+        blocks.insert(
+            1,
+            {
+                "h2": "Transposição e tom do cantor",
+                "html": (
+                    "<p>Cadastre cada vocalista e a transposição preferida. Na setlist, escolha quem canta "
+                    "cada música — a cifra abre no tom certo automaticamente, inclusive na grade harmônica. "
+                    "O Uníssono grafia sustenidos e bemóis conforme a armadura do tom (ex.: C→Eb gera Eb, Ab, Bb). "
+                    'Acabou o "espera, deixa eu subir meio tom no papel".</p>'
+                ),
+            },
+        )
 
-    if 'chord sheet' in obj or 'chord-sheet' in obj or 'grade harmônica' in obj or 'grade harmonica' in obj:
-        blocks.insert(1, {
-            'h2': 'Grade harmônica profissional',
-            'html': (
-                '<p>Além da cifra com letra, monte a progressão no editor chordsheet.com integrado: '
-                'compassos, simile, seções e semi-pulsos. Use <strong>Extrair da cifra</strong> para gerar um rascunho, '
-                'salvamento automático, notação brasileira (C7+, °, m7b5) e notas privadas com <code>!</code>. '
-                'No palco, alterne cifra, grade harmônica e letra — com Nashville (1–7), auto-scroll e diagramas ao tocar acordes.</p>'
-            ),
-        })
+    if (
+        "chord sheet" in obj
+        or "chord-sheet" in obj
+        or "grade harmônica" in obj
+        or "grade harmonica" in obj
+    ):
+        blocks.insert(
+            1,
+            {
+                "h2": "Grade harmônica profissional",
+                "html": (
+                    "<p>Além da cifra com letra, monte a progressão no editor chordsheet.com integrado: "
+                    "compassos, simile, seções e semi-pulsos. Use <strong>Extrair da cifra</strong> para gerar um rascunho, "
+                    "salvamento automático, notação brasileira (C7+, °, m7b5) e notas privadas com <code>!</code>. "
+                    "No palco, alterne cifra, grade harmônica e letra — com Nashville (1–7), auto-scroll e diagramas ao tocar acordes.</p>"
+                ),
+            },
+        )
 
-    if 'setlist' in obj or verb == 'montar':
-        blocks.insert(1, {
-            'h2': 'Setlist sincronizada com a banda',
-            'html': (
-                '<p>Arraste as músicas na ordem do show ou ensaio. Defina cantor e tom por faixa. '
-                'Exporte PDF no plano Pro ou navegue ao vivo com setas e toque no Modo Tocar. '
-                'Todos veem a mesma ordem — sem "qual música vem depois?".</p>'
-            ),
-        })
+    if "setlist" in obj or verb == "montar":
+        blocks.insert(
+            1,
+            {
+                "h2": "Setlist sincronizada com a banda",
+                "html": (
+                    "<p>Arraste as músicas na ordem do show ou ensaio. Defina cantor e tom por faixa. "
+                    "Exporte PDF no plano Pro ou navegue ao vivo com setas e toque no Modo Tocar. "
+                    'Todos veem a mesma ordem — sem "qual música vem depois?".</p>'
+                ),
+            },
+        )
 
-    if 'banda' in obj or 'músico' in obj or 'membro' in obj or verb == 'gerenciar':
-        blocks.insert(1, {
-            'h2': 'Gerenciar membros e permissões',
-            'html': (
-                '<p>Admins editam repertório e convidam pessoas; membros tocam e consultam. '
-                'Convite por link ou e-mail — quem entra no meio do mês já acessa tudo atualizado. '
-                'Perfeito para rotatividade em bandas com integrantes variáveis.</p>'
-            ),
-        })
+    if "banda" in obj or "músico" in obj or "membro" in obj or verb == "gerenciar":
+        blocks.insert(
+            1,
+            {
+                "h2": "Gerenciar membros e permissões",
+                "html": (
+                    "<p>Admins editam repertório e convidam pessoas; membros tocam e consultam. "
+                    "Convite por link ou e-mail — quem entra no meio do mês já acessa tudo atualizado. "
+                    "Perfeito para rotatividade em bandas com integrantes variáveis.</p>"
+                ),
+            },
+        )
 
-    if 'agenda' in obj or 'ensaio' in obj or 'escala' in obj:
-        blocks.insert(1, {
-            'h2': 'Agenda, ensaios e escalação',
-            'html': (
-                '<p>Marque ensaios e shows no calendário, vincule a setlist do evento e escale '
-                'quem participa por função. Cada músico cadastra <strong>instrumentos no perfil</strong> '
-                '— visíveis na escalação. Confirmação em um toque por link no e-mail ou WhatsApp, '
-                'formações salvas, sugestão de escala e painel de pendentes no dashboard. '
-                'Lembretes automáticos (horário de Fortaleza) e exportação para Google Agenda ou arquivo .ics.</p>'
-            ),
-        })
+    if "agenda" in obj or "ensaio" in obj or "escala" in obj:
+        blocks.insert(
+            1,
+            {
+                "h2": "Agenda, ensaios e escalação",
+                "html": (
+                    "<p>Marque ensaios e shows no calendário, vincule a setlist do evento e escale "
+                    "quem participa por função. Cada músico cadastra <strong>instrumentos no perfil</strong> "
+                    "— visíveis na escalação. Confirmação em um toque por link no e-mail ou WhatsApp, "
+                    "formações salvas, sugestão de escala e painel de pendentes no dashboard. "
+                    "Lembretes automáticos (horário de Fortaleza) e exportação para Google Agenda ou arquivo .ics.</p>"
+                ),
+            },
+        )
 
-    if 'estudio' in obj or 'estúdio' in obj or 'sala de ensaio' in obj or 'reservar' in verb:
-        blocks.insert(1, {
-            'h2': 'Estúdios de ensaio',
-            'html': (
-                '<p>Busque estúdios por cidade e bairro, veja fotos e equipamentos, abra o endereço no '
-                '<strong>Google Maps</strong> e solicite reserva de sala. Quando o estúdio confirma, o ensaio '
-                'entra na agenda da banda. Donos de estúdio cadastram salas, disponibilidade, bloqueios e '
-                '<strong>financeiro</strong> (receita, pagamentos e despesas) e <strong>vouchers Premium</strong> '
-                '— plano básico gratuito com até 2 salas.</p>'
-            ),
-        })
+    if (
+        "estudio" in obj
+        or "estúdio" in obj
+        or "sala de ensaio" in obj
+        or "reservar" in verb
+    ):
+        blocks.insert(
+            1,
+            {
+                "h2": "Estúdios de ensaio",
+                "html": (
+                    "<p>Busque estúdios por cidade e bairro, veja fotos e equipamentos, abra o endereço no "
+                    "<strong>Google Maps</strong> e solicite reserva de sala. Quando o estúdio confirma, o ensaio "
+                    "entra na agenda da banda. Donos de estúdio cadastram salas, disponibilidade, bloqueios e "
+                    "<strong>financeiro</strong> (receita, pagamentos e despesas) e <strong>vouchers Premium</strong> "
+                    "— plano básico gratuito com até 2 salas.</p>"
+                ),
+            },
+        )
 
-    if 'instrumento' in obj or 'músico' in obj or 'perfil' in obj:
-        blocks.insert(1, {
-            'h2': 'Instrumentos no perfil',
-            'html': (
-                '<p>Em <strong>Meu perfil</strong>, marque violão, guitarra, baixo, vocal, bateria, teclado e mais. '
-                'A banda enxerga isso na lista de membros e na escalação de eventos — sem planilha paralela '
-                'de “quem toca o quê”.</p>'
-            ),
-        })
+    if "instrumento" in obj or "músico" in obj or "perfil" in obj:
+        blocks.insert(
+            1,
+            {
+                "h2": "Instrumentos no perfil",
+                "html": (
+                    "<p>Em <strong>Meu perfil</strong>, marque violão, guitarra, baixo, vocal, bateria, teclado e mais. "
+                    "A banda enxerga isso na lista de membros e na escalação de eventos — sem planilha paralela "
+                    "de “quem toca o quê”.</p>"
+                ),
+            },
+        )
 
-    if 'pdf' in obj or verb == 'exportar':
-        blocks.insert(1, {
-            'h2': 'Exportar PDF para ensaio',
-            'html': (
-                '<p>No plano Pro, exporte setlists formatadas com índice, cifras, letras e grade harmônica '
-                '— escolha o que incluir. Útil para quem prefere papel de backup ou arquivo para arquivo.</p>'
-            ),
-        })
+    if "pdf" in obj or verb == "exportar":
+        blocks.insert(
+            1,
+            {
+                "h2": "Exportar PDF para ensaio",
+                "html": (
+                    "<p>No plano Pro, exporte setlists formatadas com índice, cifras, letras e grade harmônica "
+                    "— escolha o que incluir. Útil para quem prefere papel de backup ou arquivo para arquivo.</p>"
+                ),
+            },
+        )
 
-    if 'modo tocar' in obj or 'palco' in obj or 'app' in obj:
-        blocks.insert(1, {
-            'h2': 'Modo Tocar e app no celular',
-            'html': (
-                '<p>Tela cheia para o palco: seções, modo vocalista, sync entre músicos, '
-                'offline automático da setlist, notas de palco, metrônomo com count-in, '
-                'pedal Bluetooth e auto-scroll. '
-                'Com <strong>Gorjeta Pix</strong> ativa, o rodapé mostra o total ao vivo e a fila de '
-                '<strong>pedidos de música</strong> do público. '
-                'Instale como PWA na tela inicial — ideal no culto ou no ensaio sem internet.</p>'
-            ),
-        })
+    if "modo tocar" in obj or "palco" in obj or "app" in obj:
+        blocks.insert(
+            1,
+            {
+                "h2": "Modo Tocar e app no celular",
+                "html": (
+                    "<p>Tela cheia para o palco: seções, modo vocalista, sync entre músicos, "
+                    "offline automático da setlist, notas de palco, metrônomo com count-in, "
+                    "pedal Bluetooth e auto-scroll. "
+                    "Com <strong>Gorjeta Pix</strong> ativa, o rodapé mostra o total ao vivo e a fila de "
+                    "<strong>pedidos de música</strong> do público. "
+                    "Instale como PWA na tela inicial — ideal no culto ou no ensaio sem internet.</p>"
+                ),
+            },
+        )
 
-    return [{'html': intro}] + blocks
+    return [{"html": intro}] + blocks
 
 
 # verb + objeto → slug e conteúdo
 _KEYWORD_PAIRS: list[tuple[str, str]] = [
     # compartilhar
-    ('compartilhar', 'cifras'),
-    ('compartilhar', 'setlists'),
-    ('compartilhar', 'letras'),
-    ('compartilhar', 'repertório'),
-    ('compartilhar', 'chord sheet'),
-    ('compartilhar', 'grade harmônica'),
-    ('compartilhar', 'link público'),
-    ('guardar', 'cifras na coleção'),
-    ('organizar', 'coleção pessoal'),
+    ("compartilhar", "cifras"),
+    ("compartilhar", "setlists"),
+    ("compartilhar", "letras"),
+    ("compartilhar", "repertório"),
+    ("compartilhar", "chord sheet"),
+    ("compartilhar", "grade harmônica"),
+    ("compartilhar", "link público"),
+    ("guardar", "cifras na coleção"),
+    ("organizar", "coleção pessoal"),
     # gerenciar
-    ('gerenciar', 'bandas'),
-    ('gerenciar', 'ministério de louvor'),
-    ('gerenciar', 'repertório'),
-    ('gerenciar', 'músicos'),
-    ('gerenciar', 'ensaios'),
-    ('gerenciar', 'escalação'),
-    ('gerenciar', 'financeiro da banda'),
-    ('acompanhar', 'meu financeiro'),
-    ('acompanhar', 'cachês'),
-    ('receber', 'gorjeta pix'),
-    ('ativar', 'gorjeta pix'),
-    ('receber', 'pedidos de música'),
-    ('cadastrar', 'couvert no show'),
-    ('reservar', 'sala de ensaio'),
-    ('buscar', 'estúdio de ensaio'),
-    ('cadastrar', 'estúdio de ensaio'),
-    ('gerenciar', 'financeiro do estúdio'),
-    ('resgatar', 'voucher estúdio premium'),
+    ("gerenciar", "bandas"),
+    ("gerenciar", "ministério de louvor"),
+    ("gerenciar", "repertório"),
+    ("gerenciar", "músicos"),
+    ("gerenciar", "ensaios"),
+    ("gerenciar", "escalação"),
+    ("gerenciar", "financeiro da banda"),
+    ("acompanhar", "meu financeiro"),
+    ("acompanhar", "cachês"),
+    ("receber", "gorjeta pix"),
+    ("ativar", "gorjeta pix"),
+    ("receber", "pedidos de música"),
+    ("cadastrar", "couvert no show"),
+    ("reservar", "sala de ensaio"),
+    ("buscar", "estúdio de ensaio"),
+    ("cadastrar", "estúdio de ensaio"),
+    ("gerenciar", "financeiro do estúdio"),
+    ("resgatar", "voucher estúdio premium"),
     # organizar
-    ('organizar', 'cifras'),
-    ('organizar', 'setlists'),
-    ('organizar', 'banda'),
-    ('organizar', 'ministério de louvor'),
-    ('organizar', 'repertório gospel'),
-    ('organizar', 'ensaio'),
+    ("organizar", "cifras"),
+    ("organizar", "setlists"),
+    ("organizar", "banda"),
+    ("organizar", "ministério de louvor"),
+    ("organizar", "repertório gospel"),
+    ("organizar", "ensaio"),
     # montar
-    ('montar', 'setlist'),
-    ('montar', 'setlist gospel'),
-    ('montar', 'setlist culto'),
-    ('montar', 'repertório'),
-    ('montar', 'grade harmônica'),
+    ("montar", "setlist"),
+    ("montar", "setlist gospel"),
+    ("montar", "setlist culto"),
+    ("montar", "repertório"),
+    ("montar", "grade harmônica"),
     # transpor
-    ('transpor', 'cifras'),
-    ('transpor', 'acordes'),
-    ('transpor', 'cifras online'),
-    ('transpor', 'cifras por cantor'),
+    ("transpor", "cifras"),
+    ("transpor", "acordes"),
+    ("transpor", "cifras online"),
+    ("transpor", "cifras por cantor"),
     # criar
-    ('criar', 'banda'),
-    ('criar', 'setlist online'),
-    ('criar', 'repertório digital'),
+    ("criar", "banda"),
+    ("criar", "setlist online"),
+    ("criar", "repertório digital"),
     # usar
-    ('usar', 'modo tocar'),
-    ('usar', 'agenda da banda'),
-    ('usar', 'app de cifras'),
+    ("usar", "modo tocar"),
+    ("usar", "agenda da banda"),
+    ("usar", "app de cifras"),
     # exportar
-    ('exportar', 'setlist pdf'),
-    ('exportar', 'cifras pdf'),
+    ("exportar", "setlist pdf"),
+    ("exportar", "cifras pdf"),
     # convidar
-    ('convidar', 'músicos'),
-    ('convidar', 'membros da banda'),
+    ("convidar", "músicos"),
+    ("convidar", "membros da banda"),
     # sincronizar
-    ('sincronizar', 'repertório'),
-    ('sincronizar', 'setlist'),
-    ('sincronizar', 'cifras'),
+    ("sincronizar", "repertório"),
+    ("sincronizar", "setlist"),
+    ("sincronizar", "cifras"),
 ]
 
 _STANDALONE_TOPICS: list[str] = [
-    'cifras gospel',
-    'cifras gospel banda',
-    'cifras igreja',
-    'cifras igreja online',
-    'cifras banda online',
-    'app cifras banda',
-    'app cifras igreja',
-    'app setlist banda',
-    'setlist online',
-    'setlist online banda',
-    'setlist culto gospel',
-    'modo tocar cifras',
-    'modo tocar palco',
-    'gorjeta pix banda',
-    'gorjeta pix show',
-    'pedido de música qr code',
-    'couvert banda show',
-    'agenda banda louvor',
-    'agenda ensaio culto',
-    'chord sheet cifra',
-    'grade harmônica cifra',
-    'repertório musical banda',
-    'biblioteca cifras igreja',
-    'planilha cifras alternativa',
-    'cifras whatsapp',
-    'louvor igreja app',
-    'transposição automática cantor',
-    'múltiplas bandas igreja',
-    'plano worship igreja',
-    'cifras offline celular',
-    'pwa cifras banda',
-    'pdf setlist banda',
-    'ensaios banda gospel',
-    'palco cifras tela cheia',
-    'software cifras banda',
-    'plataforma setlist louvor',
-    'estúdio de ensaio online',
-    'reservar sala ensaio banda',
-    'cadastrar estúdio ensaio',
-    'financeiro estúdio ensaio',
-    'voucher estúdio premium',
-    'código premium estúdio ensaio',
-    'instrumentos músico perfil',
-    'escalação banda instrumentos',
+    "cifras gospel",
+    "cifras gospel banda",
+    "cifras igreja",
+    "cifras igreja online",
+    "cifras banda online",
+    "app cifras banda",
+    "app cifras igreja",
+    "app setlist banda",
+    "setlist online",
+    "setlist online banda",
+    "setlist culto gospel",
+    "modo tocar cifras",
+    "modo tocar palco",
+    "gorjeta pix banda",
+    "gorjeta pix show",
+    "pedido de música qr code",
+    "couvert banda show",
+    "agenda banda louvor",
+    "agenda ensaio culto",
+    "chord sheet cifra",
+    "grade harmônica cifra",
+    "repertório musical banda",
+    "biblioteca cifras igreja",
+    "planilha cifras alternativa",
+    "cifras whatsapp",
+    "louvor igreja app",
+    "transposição automática cantor",
+    "múltiplas bandas igreja",
+    "plano worship igreja",
+    "cifras offline celular",
+    "pwa cifras banda",
+    "pdf setlist banda",
+    "ensaios banda gospel",
+    "palco cifras tela cheia",
+    "software cifras banda",
+    "plataforma setlist louvor",
+    "estúdio de ensaio online",
+    "reservar sala ensaio banda",
+    "cadastrar estúdio ensaio",
+    "financeiro estúdio ensaio",
+    "voucher estúdio premium",
+    "código premium estúdio ensaio",
+    "instrumentos músico perfil",
+    "escalação banda instrumentos",
 ]
 
 
-_PREMIUM_SLUGS = frozenset({
-    'compartilhar-cifras',
-    'compartilhar-setlists',
-    'gerenciar-ministerio-de-louvor',
-    'gerenciar-bandas',
-    'montar-setlist',
-    'organizar-repertorio',
-    'transpor-cifras',
-    'usar-modo-tocar',
-    'app-cifras-banda',
-    'app-cifras-igreja',
-    'setlist-culto-gospel',
-    'cifras-gospel-banda',
-    'cifras-offline-celular',
-    'plano-worship-igreja',
-    'multiplas-bandas-igreja',
-    'chord-sheet-cifra',
-    'grade-harmonica-cifra',
-    'convidar-musicos',
-    'reservar-sala-de-ensaio',
-    'buscar-estudio-de-ensaio',
-    'gerenciar-escalacao',
-    'instrumentos-musico-perfil',
-    'gerenciar-financeiro-do-estudio',
-    'financeiro-estudio-ensaio',
-    'gerenciar-financeiro-da-banda',
-    'acompanhar-meu-financeiro',
-    'acompanhar-caches',
-    'guardar-cifras-na-colecao',
-    'organizar-colecao-pessoal',
-    'resgatar-voucher-estudio-premium',
-})
+_PREMIUM_SLUGS = frozenset(
+    {
+        "compartilhar-cifras",
+        "compartilhar-setlists",
+        "gerenciar-ministerio-de-louvor",
+        "gerenciar-bandas",
+        "montar-setlist",
+        "organizar-repertorio",
+        "transpor-cifras",
+        "usar-modo-tocar",
+        "app-cifras-banda",
+        "app-cifras-igreja",
+        "setlist-culto-gospel",
+        "cifras-gospel-banda",
+        "cifras-offline-celular",
+        "plano-worship-igreja",
+        "multiplas-bandas-igreja",
+        "chord-sheet-cifra",
+        "grade-harmonica-cifra",
+        "convidar-musicos",
+        "reservar-sala-de-ensaio",
+        "buscar-estudio-de-ensaio",
+        "gerenciar-escalacao",
+        "instrumentos-musico-perfil",
+        "gerenciar-financeiro-do-estudio",
+        "financeiro-estudio-ensaio",
+        "gerenciar-financeiro-da-banda",
+        "acompanhar-meu-financeiro",
+        "acompanhar-caches",
+        "guardar-cifras-na-colecao",
+        "organizar-colecao-pessoal",
+        "resgatar-voucher-estudio-premium",
+    }
+)
 
 
 def _premium_faq_block(phrase: str) -> dict[str, Any]:
     return {
-        'h2': 'Perguntas frequentes',
-        'html': (
-            '<p><strong>O Uníssono é grátis?</strong> Sim, para começar com banda, repertório e Modo Tocar. '
-            'Trial desligado na 1ª banda — assine Pro para ensaiar; estúdios têm trial Premium no primeiro cadastro.</p>'
-            '<p><strong>Preciso instalar app?</strong> Funciona no navegador; instale como PWA. '
-            'No Modo Tocar a setlist baixa automaticamente; na banda use Disponibilizar offline para o repertório inteiro.</p>'
+        "h2": "Perguntas frequentes",
+        "html": (
+            "<p><strong>O Uníssono é grátis?</strong> Sim, para começar com banda, repertório e Modo Tocar. "
+            "Trial desligado na 1ª banda — assine Pro para ensaiar; estúdios têm trial Premium no primeiro cadastro.</p>"
+            "<p><strong>Preciso instalar app?</strong> Funciona no navegador; instale como PWA. "
+            "No Modo Tocar a setlist baixa automaticamente; na banda use Disponibilizar offline para o repertório inteiro.</p>"
             '<p><strong>Plano anual?</strong> Em <a href="/assinatura/planos">Planos</a>, use Mensal/Anual para ver o desconto '
-            '(equivalente a 10 meses pagos por 12).</p>'
+            "(equivalente a 10 meses pagos por 12).</p>"
         ),
     }
 
 
 _COMPARISON_PAGES: dict[str, dict[str, Any]] = {
-    'cifra-club': {
-        'slug': 'cifra-club',
-        'h1': 'Uníssono vs Cifra Club — qual usar na banda?',
-        'meta_title': 'Uníssono vs Cifra Club para bandas',
-        'meta_description': (
-            'Compare Uníssono e Cifra Club: CC para estudo solo; Uníssono para repertório '
-            'compartilhado, setlists e transposição por cantor.'
+    "cifra-club": {
+        "slug": "cifra-club",
+        "h1": "Uníssono vs Cifra Club — qual usar na banda?",
+        "meta_title": "Uníssono vs Cifra Club para bandas",
+        "meta_description": (
+            "Compare Uníssono e Cifra Club: CC para estudo solo; Uníssono para repertório "
+            "compartilhado, setlists e transposição por cantor."
         ),
-        'sections': [
-            {'html': (
-                '<p>O <strong>Cifra Club</strong> é a maior biblioteca de cifras do Brasil. O '
-                '<strong>Uníssono</strong> foca em <strong>banda colaborativa</strong>: versão única da '
-                'música, setlist do show e Modo Tocar com a equipe.</p>'
-            )},
-            {'h2': 'Comparativo', 'html': (
-                '<table><thead><tr><th></th><th>Cifra Club</th><th>Uníssono</th></tr></thead><tbody>'
-                '<tr><td>Público</td><td>Músico solo</td><td>Banda / equipe</td></tr>'
-                '<tr><td>Coleção pessoal</td><td>Listas no app</td><td>Grátis e ilimitada + compartilhar pago</td></tr>'
-                '<tr><td>Repertório compartilhado</td><td>Limitado</td><td>Por banda</td></tr>'
-                '<tr><td>Setlist ao vivo</td><td>Limitado</td><td>Tom por cantor</td></tr>'
-                '<tr><td>Modo palco</td><td>Scroll PRO</td><td>Modo Tocar + offline</td></tr>'
-                '<tr><td>Várias bandas</td><td>Não</td><td>Worship</td></tr>'
-                '</tbody></table>'
-            )},
+        "sections": [
+            {
+                "html": (
+                    "<p>O <strong>Cifra Club</strong> é a maior biblioteca de cifras do Brasil. O "
+                    "<strong>Uníssono</strong> foca em <strong>banda colaborativa</strong>: versão única da "
+                    "música, setlist do show e Modo Tocar com a equipe.</p>"
+                )
+            },
+            {
+                "h2": "Comparativo",
+                "html": (
+                    "<table><thead><tr><th></th><th>Cifra Club</th><th>Uníssono</th></tr></thead><tbody>"
+                    "<tr><td>Público</td><td>Músico solo</td><td>Banda / equipe</td></tr>"
+                    "<tr><td>Coleção pessoal</td><td>Listas no app</td><td>Grátis e ilimitada + compartilhar pago</td></tr>"
+                    "<tr><td>Repertório compartilhado</td><td>Limitado</td><td>Por banda</td></tr>"
+                    "<tr><td>Setlist ao vivo</td><td>Limitado</td><td>Tom por cantor</td></tr>"
+                    "<tr><td>Modo palco</td><td>Scroll PRO</td><td>Modo Tocar + offline</td></tr>"
+                    "<tr><td>Várias bandas</td><td>Não</td><td>Worship</td></tr>"
+                    "</tbody></table>"
+                ),
+            },
         ],
     },
-    'ipraise': {
-        'slug': 'ipraise',
-        'h1': 'Uníssono vs iPraise',
-        'meta_title': 'Uníssono vs iPraise — cifras, setlist e escala para bandas',
-        'meta_description': (
-            'iPraise é forte em escalas de igreja. Uníssono une cifras, Modo Tocar, '
-            'Comando do show (escala + freela + cachê) e Individual R$ 15 para quem toca só.'
+    "ipraise": {
+        "slug": "ipraise",
+        "h1": "Uníssono vs iPraise",
+        "meta_title": "Uníssono vs iPraise — cifras, setlist e escala para bandas",
+        "meta_description": (
+            "iPraise é forte em escalas de igreja. Uníssono une cifras, Modo Tocar, "
+            "Comando do show (escala + freela + cachê) e Individual R$ 15 para quem toca só."
         ),
-        'sections': [
-            {'html': (
-                '<p><strong>iPraise</strong> — escalas e comunicação de equipe. '
-                '<strong>Uníssono</strong> — repertório no palco (cifras, setlists, Modo Tocar) '
-                'com agenda, freela e fechamento de cachê no <em>Comando do show</em>.</p>'
-            )},
-            {'h2': 'Comparativo', 'html': (
-                '<table><thead><tr><th></th><th>iPraise</th><th>Uníssono</th></tr></thead><tbody>'
-                '<tr><td>Escalas</td><td>Forte</td><td>Agenda + Comando do show (Pro/Worship)</td></tr>'
-                '<tr><td>Cifras / setlist</td><td>Limitado</td><td>Nativo · import Cifra Club</td></tr>'
-                '<tr><td>Modo Tocar</td><td>Básico</td><td>Tela cheia + offline (PWA)</td></tr>'
-                '<tr><td>Freela / cachê</td><td>Não</td><td>Convite por link + fechamento da noite</td></tr>'
-                '<tr><td>Músico solo</td><td>—</td><td>Individual R$ 15 (PDF + compartilhar)</td></tr>'
-                '<tr><td>Igreja / várias bandas</td><td>Escalas</td><td>Plano Worship</td></tr>'
-                '</tbody></table>'
-            )},
-            {'h2': 'Quando escolher Uníssono', 'html': (
-                '<p>Se o gargalo é <strong>tocar no tom certo no ensaio e no show</strong>, '
-                'mais do que só escalar quem falta — Uníssono. '
-                'Comece grátis; Individual R$&nbsp;15/mês se toca só; Pro se a banda precisa de escala e PDF.</p>'
-            )},
+        "sections": [
+            {
+                "html": (
+                    "<p><strong>iPraise</strong> — escalas e comunicação de equipe. "
+                    "<strong>Uníssono</strong> — repertório no palco (cifras, setlists, Modo Tocar) "
+                    "com agenda, freela e fechamento de cachê no <em>Comando do show</em>.</p>"
+                )
+            },
+            {
+                "h2": "Comparativo",
+                "html": (
+                    "<table><thead><tr><th></th><th>iPraise</th><th>Uníssono</th></tr></thead><tbody>"
+                    "<tr><td>Escalas</td><td>Forte</td><td>Agenda + Comando do show (Pro/Worship)</td></tr>"
+                    "<tr><td>Cifras / setlist</td><td>Limitado</td><td>Nativo · import Cifra Club</td></tr>"
+                    "<tr><td>Modo Tocar</td><td>Básico</td><td>Tela cheia + offline (PWA)</td></tr>"
+                    "<tr><td>Freela / cachê</td><td>Não</td><td>Convite por link + fechamento da noite</td></tr>"
+                    "<tr><td>Músico solo</td><td>—</td><td>Individual R$ 15 (PDF + compartilhar)</td></tr>"
+                    "<tr><td>Igreja / várias bandas</td><td>Escalas</td><td>Plano Worship</td></tr>"
+                    "</tbody></table>"
+                ),
+            },
+            {
+                "h2": "Quando escolher Uníssono",
+                "html": (
+                    "<p>Se o gargalo é <strong>tocar no tom certo no ensaio e no show</strong>, "
+                    "mais do que só escalar quem falta — Uníssono. "
+                    "Comece grátis; Individual R$&nbsp;15/mês se toca só; Pro se a banda precisa de escala e PDF.</p>"
+                ),
+            },
         ],
     },
 }
@@ -711,27 +780,31 @@ def list_comparison_pages() -> list[dict[str, Any]]:
 
 def _build_page(verb: str, obj: str) -> dict[str, Any]:
     if verb:
-        slug = slugify(f'{verb}-{obj}')
+        slug = slugify(f"{verb}-{obj}")
     else:
         slug = slugify(obj)
     phrase = _phrase(verb, obj)
     sections = _sections(verb, obj)
     if slug in _PREMIUM_SLUGS:
         sections = sections + [_premium_faq_block(phrase)]
-    plano_cta = 'worship' if any(x in slug for x in ('igreja', 'worship', 'ministerio', 'louvor')) else None
+    plano_cta = (
+        "worship"
+        if any(x in slug for x in ("igreja", "worship", "ministerio", "louvor"))
+        else None
+    )
     return {
-        'slug': slug,
-        'verb': verb,
-        'object': obj,
-        'phrase': phrase,
-        'h1': f'{phrase.capitalize()} com o Uníssono',
-        'meta_title': _title_page(verb, obj),
-        'meta_description': _meta_desc(verb, obj),
-        'sections': sections,
-        'keywords': phrase,
-        'noindex': slug not in _PREMIUM_SLUGS,
-        'premium': slug in _PREMIUM_SLUGS,
-        'plano_cta': plano_cta,
+        "slug": slug,
+        "verb": verb,
+        "object": obj,
+        "phrase": phrase,
+        "h1": f"{phrase.capitalize()} com o Uníssono",
+        "meta_title": _title_page(verb, obj),
+        "meta_description": _meta_desc(verb, obj),
+        "sections": sections,
+        "keywords": phrase,
+        "noindex": slug not in _PREMIUM_SLUGS,
+        "premium": slug in _PREMIUM_SLUGS,
+        "plano_cta": plano_cta,
     }
 
 
@@ -740,26 +813,28 @@ def _all_pages() -> list[dict[str, Any]]:
     seen: set[str] = set()
     for verb, obj in _KEYWORD_PAIRS:
         p = _build_page(verb, obj)
-        if p['slug'] not in seen:
-            seen.add(p['slug'])
+        if p["slug"] not in seen:
+            seen.add(p["slug"])
             pages.append(p)
     for topic in _STANDALONE_TOPICS:
-        p = _build_page('', topic)
-        if p['slug'] not in seen:
-            seen.add(p['slug'])
+        p = _build_page("", topic)
+        if p["slug"] not in seen:
+            seen.add(p["slug"])
             pages.append(p)
     for p in pages:
-        obj_key = slugify(p['object'] or p['phrase'])
-        verb_key = slugify(p['verb']) if p['verb'] else ''
+        obj_key = slugify(p["object"] or p["phrase"])
+        verb_key = slugify(p["verb"]) if p["verb"] else ""
         related = []
         for other in pages:
-            if other['slug'] == p['slug']:
+            if other["slug"] == p["slug"]:
                 continue
-            if verb_key and slugify(other['verb']) == verb_key:
+            if (
+                verb_key
+                and slugify(other["verb"]) == verb_key
+                or slugify(other["object"] or other["phrase"]) == obj_key
+            ):
                 related.append(other)
-            elif slugify(other['object'] or other['phrase']) == obj_key:
-                related.append(other)
-        p['related'] = related[:6]
+        p["related"] = related[:6]
     return pages
 
 
@@ -775,7 +850,7 @@ def list_seo_pages() -> list[dict[str, Any]]:
 
 def get_seo_page(slug: str) -> dict[str, Any] | None:
     for p in list_seo_pages():
-        if p['slug'] == slug:
+        if p["slug"] == slug:
             return p
     return None
 
@@ -784,151 +859,151 @@ def faq_entries() -> list[dict[str, str]]:
     """Perguntas frequentes para schema.org e home (âncora: banda)."""
     return [
         {
-            'q': 'O Uníssono é só para bandas?',
-            'a': 'O foco é a banda: cifras, setlists e Modo Tocar. Igreja (Worship) e estúdios de ensaio são extensões — veja unissono.app/igrejas e unissono.app/estudios.',
+            "q": "O Uníssono é só para bandas?",
+            "a": "O foco é a banda: cifras, setlists e Modo Tocar. Igreja (Worship) e estúdios de ensaio são extensões — veja unissono.app/igrejas e unissono.app/estudios.",
         },
         {
-            'q': 'O Uníssono serve para compartilhar cifras com a banda?',
-            'a': 'Sim. Você centraliza o repertório, convida musicistas por link e todos acessam a mesma versão da cifra, com transposição por cantor e setlists sincronizadas.',
+            "q": "O Uníssono serve para compartilhar cifras com a banda?",
+            "a": "Sim. Você centraliza o repertório, convida musicistas por link e todos acessam a mesma versão da cifra, com transposição por cantor e setlists sincronizadas.",
         },
         {
-            'q': 'Preciso pagar para começar?',
-            'a': 'Não. O Grátis libera demo e uma abertura do Modo Tocar. Setlist, palco de banda, PDF e offline pedem Pro (R$ 29/mês) ou Individual (R$ 15/mês).',
+            "q": "Preciso pagar para começar?",
+            "a": "Não. O Grátis libera demo e uma abertura do Modo Tocar. Setlist, palco de banda, PDF e offline pedem Pro (R$ 29/mês) ou Individual (R$ 15/mês).",
         },
         {
-            'q': 'Como gerenciar várias bandas no Uníssono?',
-            'a': 'No plano Worship, uma conta administra múltiplas bandas — cada uma com repertório e setlists próprios. Para igrejas e ministérios de louvor, veja unissono.app/igrejas.',
+            "q": "Como gerenciar várias bandas no Uníssono?",
+            "a": "No plano Worship, uma conta administra múltiplas bandas — cada uma com repertório e setlists próprios. Para igrejas e ministérios de louvor, veja unissono.app/igrejas.",
         },
         {
-            'q': 'Qual a diferença entre Pro e Worship?',
-            'a': 'O Pro cobre uma banda com integrantes ilimitados. O Worship cobre várias bandas na mesma conta. Músico solo pode usar o plano Individual.',
+            "q": "Qual a diferença entre Pro e Worship?",
+            "a": "O Pro cobre uma banda com integrantes ilimitados. O Worship cobre várias bandas na mesma conta. Músico solo pode usar o plano Individual.",
         },
         {
-            'q': 'Posso montar setlist online para show ou ensaio?',
-            'a': 'Sim. Arraste as músicas na ordem desejada, defina cantor e tom por faixa, e abra o Modo Tocar no palco ou exporte PDF no plano Pro.',
+            "q": "Posso montar setlist online para show ou ensaio?",
+            "a": "Sim. Arraste as músicas na ordem desejada, defina cantor e tom por faixa, e abra o Modo Tocar no palco ou exporte PDF no plano Pro.",
         },
         {
-            'q': 'O Uníssono transpor cifras automaticamente?',
-            'a': 'Cadastre vocalistas com transposição preferida. Ao montar a setlist, escolha quem canta — a cifra abre no tom certo, com sustenidos e bemóis pela armadura (Eb, Bb etc.), inclusive na grade harmônica.',
+            "q": "O Uníssono transpor cifras automaticamente?",
+            "a": "Cadastre vocalistas com transposição preferida. Ao montar a setlist, escolha quem canta — a cifra abre no tom certo, com sustenidos e bemóis pela armadura (Eb, Bb etc.), inclusive na grade harmônica.",
         },
         {
-            'q': 'Existe app de cifras para banda grátis?',
-            'a': 'O Uníssono tem plano grátis para começar: repertório, bandas, setlists e Modo Tocar. Planos Individual (solo), Pro (uma banda) e Worship (várias bandas) ampliam recursos.',
+            "q": "Existe app de cifras para banda grátis?",
+            "a": "O Uníssono tem plano grátis para começar: repertório, bandas, setlists e Modo Tocar. Planos Individual (solo), Pro (uma banda) e Worship (várias bandas) ampliam recursos.",
         },
         {
-            'q': 'Como convidar músicos para a banda?',
-            'a': 'Crie a banda no Uníssono e envie o link de convite por WhatsApp ou e-mail. Novos membros entram com permissão de membro ou admin.',
+            "q": "Como convidar músicos para a banda?",
+            "a": "Crie a banda no Uníssono e envie o link de convite por WhatsApp ou e-mail. Novos membros entram com permissão de membro ou admin.",
         },
         {
-            'q': 'O Uníssono serve para igrejas e ministérios de louvor?',
-            'a': 'Sim. Temos uma página dedicada com plano Worship, comparativos e rotina de culto em unissono.app/igrejas.',
+            "q": "O Uníssono serve para igrejas e ministérios de louvor?",
+            "a": "Sim. Temos uma página dedicada com plano Worship, comparativos e rotina de culto em unissono.app/igrejas.",
         },
         {
-            'q': 'Posso usar cifras offline no celular?',
-            'a': 'Instale o Uníssono como PWA na tela inicial. Na banda, use Disponibilizar offline no repertório; no Modo Tocar, a setlist baixa automaticamente ao abrir — ideal se a internet falhar no show.',
+            "q": "Posso usar cifras offline no celular?",
+            "a": "Instale o Uníssono como PWA na tela inicial. Na banda, use Disponibilizar offline no repertório; no Modo Tocar, a setlist baixa automaticamente ao abrir — ideal se a internet falhar no show.",
         },
         {
-            'q': 'O que é o Modo Tocar?',
-            'a': 'Tela cheia para o palco: cifra legível, seções (S), auto-scroll, metrônomo com count-in, sync entre músicos, offline automático da setlist, notas de palco, pedal Bluetooth e navegação entre músicas da setlist.',
+            "q": "O que é o Modo Tocar?",
+            "a": "Tela cheia para o palco: cifra legível, seções (S), auto-scroll, metrônomo com count-in, sync entre músicos, offline automático da setlist, notas de palco, pedal Bluetooth e navegação entre músicas da setlist.",
         },
         {
-            'q': 'Como sincronizar a banda no palco?',
-            'a': 'No Modo Tocar, ligue o botão Sync — todos seguem a música que o líder avança. Ao abrir pelo evento da agenda (Tocar setlist), o sync costuma vir ligado automaticamente.',
+            "q": "Como sincronizar a banda no palco?",
+            "a": "No Modo Tocar, ligue o botão Sync — todos seguem a música que o líder avança. Ao abrir pelo evento da agenda (Tocar setlist), o sync costuma vir ligado automaticamente.",
         },
         {
-            'q': 'Como configurar pedal Bluetooth no Uníssono?',
-            'a': 'No Modo Tocar, use o ícone de pedal para mapear teclas ou o assistente (varinha) que detecta Page Up/Down e setas. Por padrão, ↑↓ trocam música e Page Up/Down paginam a cifra.',
+            "q": "Como configurar pedal Bluetooth no Uníssono?",
+            "a": "No Modo Tocar, use o ícone de pedal para mapear teclas ou o assistente (varinha) que detecta Page Up/Down e setas. Por padrão, ↑↓ trocam música e Page Up/Down paginam a cifra.",
         },
         {
-            'q': 'Posso exportar setlist em PDF?',
-            'a': 'No plano Pro, exporte setlists com índice, cifras, letras e grade harmônica — você escolhe quais seções incluir.',
+            "q": "Posso exportar setlist em PDF?",
+            "a": "No plano Pro, exporte setlists com índice, cifras, letras e grade harmônica — você escolhe quais seções incluir.",
         },
         {
-            'q': 'Uníssono substitui planilha de cifras?',
-            'a': 'Sim, para bandas que precisam de versão única, transposição e setlist. Acaba o problema de "qual arquivo é o certo?" no grupo do WhatsApp.',
+            "q": "Uníssono substitui planilha de cifras?",
+            "a": 'Sim, para bandas que precisam de versão única, transposição e setlist. Acaba o problema de "qual arquivo é o certo?" no grupo do WhatsApp.',
         },
         {
-            'q': 'Tem grade harmônica além da cifra tradicional?',
-            'a': 'Cada música pode ter cifra, grade harmônica e letra. O editor salva automaticamente, permite extrair acordes da cifra, transpor com grafia correta e notas privadas (!) visíveis só para quem escreveu.',
+            "q": "Tem grade harmônica além da cifra tradicional?",
+            "a": "Cada música pode ter cifra, grade harmônica e letra. O editor salva automaticamente, permite extrair acordes da cifra, transpor com grafia correta e notas privadas (!) visíveis só para quem escreveu.",
         },
         {
-            'q': 'Como organizar ensaios da banda?',
-            'a': 'Use a Agenda: marque ensaio ou show, vincule a setlist, escale por função e envie confirmação por link no e-mail ou WhatsApp. Cadastre seus instrumentos no perfil para a equipe ver na escalação. Lembretes automáticos ajudam a equipe a não esquecer.',
+            "q": "Como organizar ensaios da banda?",
+            "a": "Use a Agenda: marque ensaio ou show, vincule a setlist, escale por função e envie confirmação por link no e-mail ou WhatsApp. Cadastre seus instrumentos no perfil para a equipe ver na escalação. Lembretes automáticos ajudam a equipe a não esquecer.",
         },
         {
-            'q': 'O Uníssono tem reserva de estúdio de ensaio?',
-            'a': 'Sim. Bandas buscam estúdios por cidade, solicitam horário e acompanham em Minhas reservas. Quando confirmado, o ensaio entra na agenda da banda. Donos cadastram salas, QR na recepção, financeiro (receita e despesas), vouchers Premium promocionais e plano Premium (R$ 49/mês) para salas ilimitadas — trial de 30 dias no primeiro cadastro.',
+            "q": "O Uníssono tem reserva de estúdio de ensaio?",
+            "a": "Sim. Bandas buscam estúdios por cidade, solicitam horário e acompanham em Minhas reservas. Quando confirmado, o ensaio entra na agenda da banda. Donos cadastram salas, QR na recepção, financeiro (receita e despesas), vouchers Premium promocionais e plano Premium (R$ 49/mês) para salas ilimitadas — trial de 30 dias no primeiro cadastro.",
         },
         {
-            'q': 'Como funciona o financeiro do estúdio no Uníssono?',
-            'a': 'No painel do dono, abra Financeiro. O sistema calcula a receita das reservas confirmadas com base no preço/hora e na duração; você marca pagamentos, ajusta valores e registra despesas do mês. O resumo mostra recebido, a receber e líquido.',
+            "q": "Como funciona o financeiro do estúdio no Uníssono?",
+            "a": "No painel do dono, abra Financeiro. O sistema calcula a receita das reservas confirmadas com base no preço/hora e na duração; você marca pagamentos, ajusta valores e registra despesas do mês. O resumo mostra recebido, a receber e líquido.",
         },
         {
-            'q': 'Como resgatar voucher Estúdio Premium?',
-            'a': 'Com a conta do dono do estúdio, abra Planos, role até Tem um voucher?, digite o código (ex.: ESTUDIO-XXXX) e resgate. O Premium libera salas ilimitadas pelo período do voucher ou vitalício, sem Mercado Pago. Cada código vale uma vez por conta.',
+            "q": "Como resgatar voucher Estúdio Premium?",
+            "a": "Com a conta do dono do estúdio, abra Planos, role até Tem um voucher?, digite o código (ex.: ESTUDIO-XXXX) e resgate. O Premium libera salas ilimitadas pelo período do voucher ou vitalício, sem Mercado Pago. Cada código vale uma vez por conta.",
         },
         {
-            'q': 'Qual a diferença entre voucher de banda e voucher de estúdio?',
-            'a': 'Voucher de banda ativa Pro/Worship na banda escolhida em Planos. Voucher de estúdio ativa Premium na conta do dono da sala de ensaio — não depende de qual banda você selecionou.',
+            "q": "Qual a diferença entre voucher de banda e voucher de estúdio?",
+            "a": "Voucher de banda ativa Pro/Worship na banda escolhida em Planos. Voucher de estúdio ativa Premium na conta do dono da sala de ensaio — não depende de qual banda você selecionou.",
         },
         {
-            'q': 'Como funciona o assistente de ajuda do Uníssono?',
-            'a': 'O ícone de chat no canto da tela responde com base na Ajuda, Guia e FAQ. Se você estiver logado, as respostas podem incluir atalhos para adicionar cifra, cadastrar estúdio ou ver planos.',
+            "q": "Como funciona o assistente de ajuda do Uníssono?",
+            "a": "O ícone de chat no canto da tela responde com base na Ajuda, Guia e FAQ. Se você estiver logado, as respostas podem incluir atalhos para adicionar cifra, cadastrar estúdio ou ver planos.",
         },
         {
-            'q': 'Existe plano anual com desconto?',
-            'a': 'Sim. Em Planos, alterne Mensal/Anual para Pro, Worship, Individual e Estúdio Premium. O anual equivale a pagar 10 meses e usar 12.',
+            "q": "Existe plano anual com desconto?",
+            "a": "Sim. Em Planos, alterne Mensal/Anual para Pro, Worship, Individual e Estúdio Premium. O anual equivale a pagar 10 meses e usar 12.",
         },
         {
-            'q': 'Como indicar outra banda ou estúdio e ganhar Pro grátis?',
-            'a': 'Em Planos → Indicar e ganhar: convide uma banda (você e ela ganham 3 meses Pro) ou o estúdio onde ensaia (você ganha 3 meses Pro e o estúdio 3 meses Premium). Quando o código for resgatado, a recompensa cai na sua banda principal.',
+            "q": "Como indicar outra banda ou estúdio e ganhar Pro grátis?",
+            "a": "Em Planos → Indicar e ganhar: convide uma banda (você e ela ganham 3 meses Pro) ou o estúdio onde ensaia (você ganha 3 meses Pro e o estúdio 3 meses Premium). Quando o código for resgatado, a recompensa cai na sua banda principal.",
         },
         {
-            'q': 'O que é o selo Verificado do estúdio?',
-            'a': 'Estúdios com perfil completo — fotos, endereço, disponibilidade e QR de agendamento — exibem o selo na busca. O dono vê visualizações e cliques no painel.',
+            "q": "O que é o selo Verificado do estúdio?",
+            "a": "Estúdios com perfil completo — fotos, endereço, disponibilidade e QR de agendamento — exibem o selo na busca. O dono vê visualizações e cliques no painel.",
         },
         {
-            'q': 'Posso cadastrar os instrumentos que toco?',
-            'a': 'Em Meu perfil, marque um ou mais instrumentos (violão, guitarra, baixo, vocal, bateria, teclado…). A banda vê isso na lista de membros e na escalação de eventos.',
+            "q": "Posso cadastrar os instrumentos que toco?",
+            "a": "Em Meu perfil, marque um ou mais instrumentos (violão, guitarra, baixo, vocal, bateria, teclado…). A banda vê isso na lista de membros e na escalação de eventos.",
         },
         {
-            'q': 'Quantas músicas posso cadastrar?',
-            'a': 'No Grátis: até 3 cifras reais na coleção e 1 abertura do Modo Tocar; na banda, 3 músicas e 2 pessoas, sem setlist. Individual, Pro e Worship liberam o repertório. PDF, offline e Modo Tocar de ensaio exigem assinatura.',
+            "q": "Quantas músicas posso cadastrar?",
+            "a": "No Grátis: até 3 cifras reais na coleção e 1 abertura do Modo Tocar; na banda, 3 músicas e 2 pessoas, sem setlist. Individual, Pro e Worship liberam o repertório. PDF, offline e Modo Tocar de ensaio exigem assinatura.",
         },
         {
-            'q': 'O que é Minha coleção?',
-            'a': 'É a sua biblioteca pessoal de cifras no menu Coleção: grátis e sem limite. Para enviar cópia a uma banda ou liberar para outro usuário, use Compartilhar — recurso de planos pagos (ou trial/voucher).',
+            "q": "O que é Minha coleção?",
+            "a": "É a sua biblioteca pessoal de cifras no menu Coleção: grátis e sem limite. Para enviar cópia a uma banda ou liberar para outro usuário, use Compartilhar — recurso de planos pagos (ou trial/voucher).",
         },
         {
-            'q': 'Como ver meus cachês?',
-            'a': 'No menu Meu financeiro você vê sua fatia nos shows de todas as bandas, com filtro e PDF. O caixa completo da banda (totais, couvert, gorjetas Pix e despesas) fica só com o dono/admin ou quem ele liberar.',
+            "q": "Como ver meus cachês?",
+            "a": "No menu Meu financeiro você vê sua fatia nos shows de todas as bandas, com filtro e PDF. O caixa completo da banda (totais, couvert, gorjetas Pix e despesas) fica só com o dono/admin ou quem ele liberar.",
         },
         {
-            'q': 'Como funciona a gorjeta Pix no Uníssono?',
-            'a': 'Em Configurações da banda → Gorjeta Pix você cadastra a chave e um link público. O público escaneia o QR, paga Pix direto na sua chave (100%, sem comissão) e pode pedir música pelo repertório. No Modo Tocar você vê o total e a fila de pedidos ao vivo. Detalhes em /ajuda#gorjeta-pix.',
+            "q": "Como funciona a gorjeta Pix no Uníssono?",
+            "a": "Em Configurações da banda → Gorjeta Pix você cadastra a chave e um link público. O público escaneia o QR, paga Pix direto na sua chave (100%, sem comissão) e pode pedir música pelo repertório. No Modo Tocar você vê o total e a fila de pedidos ao vivo. Detalhes em /ajuda#gorjeta-pix.",
         },
         {
-            'q': 'O Uníssono cobra comissão sobre a gorjeta?',
-            'a': 'Não. O QR é Pix estático na chave da banda — o dinheiro vai inteiro para a conta do músico. O app só registra o placar quando o público confirma “Já paguei” ou quando o admin lança manualmente.',
+            "q": "O Uníssono cobra comissão sobre a gorjeta?",
+            "a": "Não. O QR é Pix estático na chave da banda — o dinheiro vai inteiro para a conta do músico. O app só registra o placar quando o público confirma “Já paguei” ou quando o admin lança manualmente.",
         },
         {
-            'q': 'O público pode pedir música pelo QR?',
-            'a': 'Sim. Na página /gorjeta/seu-slug a aba Repertório lista as músicas da setlist (ou da banda). O visitante toca Pedir ou digita outra música. No Modo Tocar aparece o chip Pedidos com a fila.',
+            "q": "O público pode pedir música pelo QR?",
+            "a": "Sim. Na página /gorjeta/seu-slug a aba Repertório lista as músicas da setlist (ou da banda). O visitante toca Pedir ou digita outra música. No Modo Tocar aparece o chip Pedidos com a fila.",
         },
         {
-            'q': 'O que é o couvert no fechamento de noite?',
-            'a': 'No Fechamento de noite do show você pode informar o valor de couvert/entrada que ficou com a banda. Esse valor soma ao bruto da casa antes das despesas e da divisão entre músicos.',
+            "q": "O que é o couvert no fechamento de noite?",
+            "a": "No Fechamento de noite do show você pode informar o valor de couvert/entrada que ficou com a banda. Esse valor soma ao bruto da casa antes das despesas e da divisão entre músicos.",
         },
         {
-            'q': 'Como funciona a cobrança no Uníssono?',
-            'a': 'Ao assinar Pro, Worship, Individual ou Estúdio Premium, você é redirecionado ao Mercado Pago. Lá você autoriza a assinatura recorrente — o Uníssono não armazena dados do seu cartão. Gorjeta Pix não passa pelo Mercado Pago: vai direto para a chave da banda.',
+            "q": "Como funciona a cobrança no Uníssono?",
+            "a": "Ao assinar Pro, Worship, Individual ou Estúdio Premium, você é redirecionado ao Mercado Pago. Lá você autoriza a assinatura recorrente — o Uníssono não armazena dados do seu cartão. Gorjeta Pix não passa pelo Mercado Pago: vai direto para a chave da banda.",
         },
         {
-            'q': 'É seguro pagar pelo Uníssono?',
-            'a': 'O pagamento é processado pelo Mercado Pago, um dos meios mais usados no Brasil. Seus dados de cartão não passam pelos servidores do Uníssono — você confirma tudo no site do MP.',
+            "q": "É seguro pagar pelo Uníssono?",
+            "a": "O pagamento é processado pelo Mercado Pago, um dos meios mais usados no Brasil. Seus dados de cartão não passam pelos servidores do Uníssono — você confirma tudo no site do MP.",
         },
         {
-            'q': 'O Uníssono é melhor que mandar cifra no WhatsApp?',
-            'a': 'Para equipes que ensaiam junto, sim: uma fonte atualizada, tom por cantor, setlist compartilhada e palco no Modo Tocar — sem prints desatualizados.',
+            "q": "O Uníssono é melhor que mandar cifra no WhatsApp?",
+            "a": "Para equipes que ensaiam junto, sim: uma fonte atualizada, tom por cantor, setlist compartilhada e palco no Modo Tocar — sem prints desatualizados.",
         },
     ]

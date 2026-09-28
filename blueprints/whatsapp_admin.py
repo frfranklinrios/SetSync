@@ -8,16 +8,16 @@ from blueprints.admin import superadmin_required
 from whatsapp_config import official_whatsapp_number, whatsapp_provider
 from whatsapp_service import provider_status
 
-whatsapp_admin_bp = Blueprint('whatsapp_admin', __name__, url_prefix='/admin/whatsapp')
+whatsapp_admin_bp = Blueprint("whatsapp_admin", __name__, url_prefix="/admin/whatsapp")
 
 
-@whatsapp_admin_bp.route('/')
+@whatsapp_admin_bp.route("/")
 @superadmin_required
 def index():
-    if whatsapp_provider() == 'meta':
+    if whatsapp_provider() == "meta":
         status = provider_status()
         return render_template(
-            'admin/whatsapp.html',
+            "admin/whatsapp.html",
             status=status,
             qr=None,
             meta_mode=True,
@@ -32,7 +32,7 @@ def index():
     if not is_connected():
         qr = fetch_qrcode()
     return render_template(
-        'admin/whatsapp.html',
+        "admin/whatsapp.html",
         status=status,
         qr=qr,
         meta_mode=False,
@@ -40,16 +40,16 @@ def index():
     )
 
 
-@whatsapp_admin_bp.route('/reconectar', methods=['POST'])
+@whatsapp_admin_bp.route("/reconectar", methods=["POST"])
 @superadmin_required
 def reconectar():
-    if whatsapp_provider() == 'meta':
-        flash('Provider Meta: configure token no .env.', 'info')
-        return redirect(url_for('whatsapp_admin.index'))
+    if whatsapp_provider() == "meta":
+        flash("Provider Meta: configure token no .env.", "info")
+        return redirect(url_for("whatsapp_admin.index"))
 
     from whatsapp_server.client import fetch_qrcode, logout_instance
 
     logout_instance()
     fetch_qrcode()
-    flash('Escaneie o novo QR Code com o WhatsApp do número oficial.', 'info')
-    return redirect(url_for('whatsapp_admin.index'))
+    flash("Escaneie o novo QR Code com o WhatsApp do número oficial.", "info")
+    return redirect(url_for("whatsapp_admin.index"))

@@ -8,7 +8,7 @@ SHARP_PCS = {1, 3, 6, 8, 10}
 
 
 def key_class_for_pc(pc: int) -> str:
-    return 'accidental' if pc in SHARP_PCS else 'natural'
+    return "accidental" if pc in SHARP_PCS else "natural"
 
 
 def piano_key_mappings(
@@ -28,11 +28,13 @@ def piano_key_mappings(
         midi = note_to_midi(spelling, octave)
         if midi is None:
             midi = 12 * (octave + 1) + pc
-        out.append({
-            'note': spelling.rstrip('0123456789') or spelling,
-            'octave': octave,
-            'isRoot': pc == root_pc,
-            'keyClass': key_class_for_pc(pc),
-            'midiId': midi,
-        })
+        out.append(
+            {
+                "note": spelling.rstrip("0123456789") or spelling,
+                "octave": octave,
+                "isRoot": pc == root_pc,
+                "keyClass": key_class_for_pc(pc),
+                "midiId": midi,
+            }
+        )
     return out

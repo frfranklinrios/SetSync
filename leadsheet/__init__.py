@@ -1,5 +1,6 @@
 """LeadSheet — substitui a grade harmônica legada no Uníssono."""
 
+from .build import build_payload
 from .converter import (
     grade_flat_to_leadsheet,
     is_leadsheet_document,
@@ -7,7 +8,6 @@ from .converter import (
     resolve_leadsheet_document,
     resolve_to_grade_flat,
 )
-from .build import build_payload
 
 __all__ = [
     "build_payload",

@@ -77,8 +77,14 @@ def grade_flat_to_leadsheet(
         bar_index += 1
         max_time = max(max_time, t_start + beats * beat_dur)
 
-    duration = duration_seconds if duration_seconds and duration_seconds > 0 else max_time + beat_dur
-    sections = [{"name": "Música", "start_seconds": 0.0, "end_seconds": round(duration, 2)}]
+    duration = (
+        duration_seconds
+        if duration_seconds and duration_seconds > 0
+        else max_time + beat_dur
+    )
+    sections = [
+        {"name": "Música", "start_seconds": 0.0, "end_seconds": round(duration, 2)}
+    ]
 
     payload: dict = {
         "source": {"platform": "youtube", "url": LOCAL_SOURCE_URL},
@@ -104,7 +110,9 @@ def leadsheet_to_grade_flat(leadsheet: dict) -> list[dict]:
     beats = _beats_per_bar(song.get("time_signature") or "4/4")
     beat_dur = 60.0 / bpm if bpm > 0 else 0.5
 
-    events = sorted(leadsheet.get("events") or [], key=lambda e: float(e.get("time_seconds", 0)))
+    events = sorted(
+        leadsheet.get("events") or [], key=lambda e: float(e.get("time_seconds", 0))
+    )
     bar_chords: dict[int, list[str]] = {}
     bar_secao: dict[int, str] = {}
     bar_lyric: dict[int, str] = {}

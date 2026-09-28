@@ -4,56 +4,55 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import sys
 from pathlib import Path
 
 SUFFIX_TO_KEY = {
-    'major': '',
-    'minor': 'm',
-    'dim': 'dim',
-    'dim7': 'dim7',
-    'm7b5': 'm7b5',
-    'aug': 'aug',
-    'sus2': 'sus2',
-    'sus4': 'sus4',
-    '7sus4': '7sus4',
-    'major7': 'maj7',
-    'm7': 'm7',
-    '7': '7',
-    '6': '6',
-    'm6': 'm6',
-    '9': '9',
-    'm9': 'm9',
-    'maj9': 'maj9',
-    'add9': 'add9',
-    '11': '11',
-    'm11': 'm11',
-    '13': '13',
-    'm13': 'm13',
-    'maj13': 'maj13',
-    'alt': 'alt',
-    '5': '5',
+    "major": "",
+    "minor": "m",
+    "dim": "dim",
+    "dim7": "dim7",
+    "m7b5": "m7b5",
+    "aug": "aug",
+    "sus2": "sus2",
+    "sus4": "sus4",
+    "7sus4": "7sus4",
+    "major7": "maj7",
+    "m7": "m7",
+    "7": "7",
+    "6": "6",
+    "m6": "m6",
+    "9": "9",
+    "m9": "m9",
+    "maj9": "maj9",
+    "add9": "add9",
+    "11": "11",
+    "m11": "m11",
+    "13": "13",
+    "m13": "m13",
+    "maj13": "maj13",
+    "alt": "alt",
+    "5": "5",
 }
 
 INSTRUMENT_DIRS = {
-    'guitar': 'violao',
-    'ukulele': 'ukulele',
+    "guitar": "violao",
+    "ukulele": "ukulele",
 }
 
 
 def parse_frets(s: str) -> list:
     out = []
     for ch in s:
-        if ch.lower() == 'x':
-            out.append('x')
+        if ch.lower() == "x":
+            out.append("x")
         elif ch.isdigit():
             out.append(int(ch))
-        elif ch.lower() in 'abcdef':
-            out.append(10 + ord(ch.lower()) - ord('a'))
+        elif ch.lower() in "abcdef":
+            out.append(10 + ord(ch.lower()) - ord("a"))
         else:
-            out.append('x')
+            out.append("x")
     return out
 
 
@@ -62,11 +61,11 @@ def parse_fingers(s: str | None, n: int) -> list | None:
         return None
     out = []
     for ch in s:
-        if ch == '0':
+        if ch == "0":
             out.append(0)
         elif ch.isdigit():
             out.append(int(ch))
-        elif ch.lower() == 't':
+        elif ch.lower() == "t":
             out.append(1)
         else:
             out.append(0)
@@ -77,16 +76,16 @@ def parse_fingers(s: str | None, n: int) -> list | None:
 
 def chord_symbol(key: str, suffix: str) -> str:
     q = SUFFIX_TO_KEY.get(suffix, suffix)
-    return f'{key}{q}' if q else key
+    return f"{key}{q}" if q else key
 
 
 def load_chord_file(path: Path) -> dict | None:
-    text = path.read_text(encoding='utf-8')
-    text = re.sub(r'export\s+default\s+', '', text.strip()).rstrip(';')
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"export\s+default\s+", "", text.strip()).rstrip(";")
     # JS object → JSON (chaves e strings com aspas simples)
-    text = re.sub(r'([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:', r'\1"\2":', text)
+    text = re.sub(r"([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:", r'\1"\2":', text)
     text = text.replace("'", '"')
-    text = re.sub(r',\s*([}\]])', r'\1', text)
+    text = re.sub(r",\s*([}\]])", r"\1", text)
     try:
         return json.loads(text)
     except json.JSONDecodeError:
@@ -94,42 +93,44 @@ def load_chord_file(path: Path) -> dict | None:
 
 
 def build_bank(repo: Path, instrument: str, max_positions: int = 3) -> dict:
-    base = repo / 'src' / 'db' / instrument / 'chords'
+    base = repo / "src" / "db" / instrument / "chords"
     if not base.is_dir():
         return {}
     bank: dict[str, list] = {}
     for key_dir in sorted(base.iterdir()):
         if not key_dir.is_dir():
             continue
-        for js_file in sorted(key_dir.glob('*.js')):
+        for js_file in sorted(key_dir.glob("*.js")):
             data = load_chord_file(js_file)
             if not data:
                 continue
-            sym = chord_symbol(data.get('key', key_dir.name), data.get('suffix', ''))
+            sym = chord_symbol(data.get("key", key_dir.name), data.get("suffix", ""))
             positions = []
-            for pos in (data.get('positions') or [])[:max_positions]:
-                frets_s = pos.get('frets', '')
+            for pos in (data.get("positions") or [])[:max_positions]:
+                frets_s = pos.get("frets", "")
                 if not frets_s:
                     continue
                 frets = parse_frets(frets_s)
-                fingers = parse_fingers(pos.get('fingers'), len(frets))
-                capo = pos.get('capo')
-                barre = pos.get('barres')
-                label = 'Padrão'
+                fingers = parse_fingers(pos.get("fingers"), len(frets))
+                capo = pos.get("capo")
+                barre = pos.get("barres")
+                label = "Padrão"
                 if capo and barre:
-                    label = f'{barre}ª casa (pestana)'
+                    label = f"{barre}ª casa (pestana)"
                 elif barre:
-                    label = f'{barre}ª casa'
+                    label = f"{barre}ª casa"
                 elif frets.count(0) >= 2:
-                    label = 'Abertura'
+                    label = "Abertura"
                 barres_list = barres_from_position(frets, barre)
-                positions.append({
-                    'label': label,
-                    'frets': frets,
-                    'fingers': fingers,
-                    'barres': barres_list,
-                    'source': 'chords-db',
-                })
+                positions.append(
+                    {
+                        "label": label,
+                        "frets": frets,
+                        "fingers": fingers,
+                        "barres": barres_list,
+                        "source": "chords-db",
+                    }
+                )
             if positions:
                 bank.setdefault(sym, []).extend(positions)
     return bank
@@ -141,7 +142,7 @@ def barre_span(frets: list, barre_fret: int) -> dict | None:
     from_i: int | None = None
     to_i: int | None = None
     for i, f in enumerate(frets):
-        if f == 'x':
+        if f == "x":
             continue
         if isinstance(f, int) and f >= barre_fret:
             if from_i is None:
@@ -149,7 +150,7 @@ def barre_span(frets: list, barre_fret: int) -> dict | None:
             to_i = i
     if from_i is None or to_i is None or to_i <= from_i:
         return None
-    return {'fret': barre_fret, 'from': from_i, 'to': to_i}
+    return {"fret": barre_fret, "from": from_i, "to": to_i}
 
 
 def barres_from_position(frets: list, barre) -> list[dict]:
@@ -167,13 +168,13 @@ def barres_from_position(frets: list, barre) -> list[dict]:
 
 
 def js_escape(s: str) -> str:
-    return s.replace('\\', '\\\\').replace("'", "\\'")
+    return s.replace("\\", "\\\\").replace("'", "\\'")
 
 
 def emit_shape(pos: dict) -> str:
-    frets = json.dumps(pos['frets'])
-    fingers = json.dumps(pos['fingers']) if pos.get('fingers') else 'null'
-    barres = json.dumps(pos.get('barres') or [])
+    frets = json.dumps(pos["frets"])
+    fingers = json.dumps(pos["fingers"]) if pos.get("fingers") else "null"
+    barres = json.dumps(pos.get("barres") or [])
     return (
         f"P('{js_escape(pos['label'])}', {frets}, {fingers}, "
         f"'{js_escape(pos.get('source', 'chords-db'))}', {barres})"
@@ -181,47 +182,65 @@ def emit_shape(pos: dict) -> str:
 
 
 def main() -> None:
-    repo = Path(sys.argv[1] if len(sys.argv) > 1 else '/tmp/chords-db')
-    out = Path(__file__).resolve().parent.parent / 'static' / 'js' / 'chord-diagram' / 'chords-db-shapes.js'
+    repo = Path(sys.argv[1] if len(sys.argv) > 1 else "/tmp/chords-db")
+    out = (
+        Path(__file__).resolve().parent.parent
+        / "static"
+        / "js"
+        / "chord-diagram"
+        / "chords-db-shapes.js"
+    )
     if not repo.is_dir():
-        print(f'Repositório não encontrado: {repo}', file=sys.stderr)
+        print(f"Repositório não encontrado: {repo}", file=sys.stderr)
         sys.exit(1)
 
     lines = [
-        '/** Posições importadas de tombatossals/chords-db — gerado por scripts/build_chords_db_shapes.py */',
-        '(function (global) {',
-        '  var CD = (global.UníssonoChordDiagram = global.UníssonoChordDiagram || {});',
-        '  function P(label, frets, fingers, source, barres) {',
+        "/** Posições importadas de tombatossals/chords-db — gerado por scripts/build_chords_db_shapes.py */",
+        "(function (global) {",
+        "  var CD = (global.UníssonoChordDiagram = global.UníssonoChordDiagram || {});",
+        "  function P(label, frets, fingers, source, barres) {",
         "    return { label: label, frets: frets, fingers: fingers || null, source: source || 'chords-db', barres: barres || [] };",
-        '  }',
-        '  CD.CHORDS_DB_SHAPES = {',
+        "  }",
+        "  CD.CHORDS_DB_SHAPES = {",
     ]
 
     for inst_dir, inst_key in INSTRUMENT_DIRS.items():
         bank = build_bank(repo, inst_dir)
-        lines.append(f'    {inst_key}: {{')
+        lines.append(f"    {inst_key}: {{")
         for sym in sorted(bank.keys()):
             shapes = bank[sym]
-            joined = ',\n      '.join(emit_shape(p) for p in shapes)
+            joined = ",\n      ".join(emit_shape(p) for p in shapes)
             lines.append(f"      '{sym}': [\n      {joined}\n      ],")
-        lines.append('    },')
+        lines.append("    },")
 
-    lines.extend([
-        '  };',
-        '})(typeof window !== "undefined" ? window : globalThis);',
-        '',
-    ])
-    out.write_text('\n'.join(lines), encoding='utf-8')
-    print(f'Gerado {out} ({out.stat().st_size // 1024} KB)')
+    lines.extend(
+        [
+            "  };",
+            '})(typeof window !== "undefined" ? window : globalThis);',
+            "",
+        ]
+    )
+    out.write_text("\n".join(lines), encoding="utf-8")
+    print(f"Gerado {out} ({out.stat().st_size // 1024} KB)")
 
-    json_out = Path(__file__).resolve().parent.parent / 'chord_diagram' / 'data' / 'chords_db_shapes.json'
+    json_out = (
+        Path(__file__).resolve().parent.parent
+        / "chord_diagram"
+        / "data"
+        / "chords_db_shapes.json"
+    )
     json_out.parent.mkdir(parents=True, exist_ok=True)
-    json_bank = {inst_key: bank for inst_dir, inst_key in INSTRUMENT_DIRS.items()
-                 for bank in [build_bank(repo, inst_dir)]}
-    json_out.write_text(json.dumps(json_bank, ensure_ascii=False, indent=2), encoding='utf-8')
+    json_bank = {
+        inst_key: bank
+        for inst_dir, inst_key in INSTRUMENT_DIRS.items()
+        for bank in [build_bank(repo, inst_dir)]
+    }
+    json_out.write_text(
+        json.dumps(json_bank, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     total = sum(len(v) for b in json_bank.values() for v in b.values())
-    print(f'Gerado {json_out} — {total} posições')
+    print(f"Gerado {json_out} — {total} posições")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

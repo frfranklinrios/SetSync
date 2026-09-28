@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Executa o HTML do modo tocar no Chromium e reporta erros."""
+
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
@@ -12,22 +12,25 @@ sys.path.insert(0, str(ROOT))
 from playwright.sync_api import sync_playwright
 
 from app import app
-from db import get_band, get_band_cifras, get_user_by_username
 from blueprints.cifras import enrich_cifra_for_tocar, render_play_mode
+from db import get_band, get_band_cifras, get_user_by_username
 
 
 def main() -> None:
     with app.app_context():
-        u = get_user_by_username('amanda')
-        bid = '2ddf62cb-77d4-4ba2-b774-9270d4f95e3d'
+        u = get_user_by_username("amanda")
+        bid = "2ddf62cb-77d4-4ba2-b774-9270d4f95e3d"
         band = get_band(bid)
-        cifras = [enrich_cifra_for_tocar(c, user_id=u['id']) for c in get_band_cifras(bid)]
-        with app.test_request_context(f'/cifras/band/{bid}/tocar'):
+        cifras = [
+            enrich_cifra_for_tocar(c, user_id=u["id"]) for c in get_band_cifras(bid)
+        ]
+        with app.test_request_context(f"/cifras/band/{bid}/tocar"):
             from flask import session
-            session['user_id'] = u['id']
-            session['username'] = u['username']
+
+            session["user_id"] = u["id"]
+            session["username"] = u["username"]
             html = render_play_mode(
-                {'id': None, 'band_id': bid, 'name': 'Teste'},
+                {"id": None, "band_id": bid, "name": "Teste"},
                 band,
                 cifras,
                 is_virtual=True,
@@ -37,9 +40,16 @@ def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
-        page.on('console', lambda m: errors.append(f'console:{m.type}:{m.text}') if m.type == 'error' else None)
-        page.set_content(html, wait_until='load')
+        page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
+        page.on(
+            "console",
+            lambda m: (
+                errors.append(f"console:{m.type}:{m.text}")
+                if m.type == "error"
+                else None
+            ),
+        )
+        page.set_content(html, wait_until="load")
         page.wait_for_timeout(2000)
         state = page.evaluate(
             """() => ({
@@ -75,13 +85,13 @@ def main() -> None:
                 hasRender: typeof window.goTo === 'function',
             })"""
         )
-        print('state:', state)
+        print("state:", state)
         if errors:
-            print('errors:')
+            print("errors:")
             for e in errors[:15]:
-                print(' ', e)
+                print(" ", e)
         browser.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

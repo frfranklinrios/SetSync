@@ -31,14 +31,17 @@ def verificar_token(token: str) -> dict[str, Any] | None:
     return data
 
 
-_VERDADEIRO = {True, "True", "true", 1, "1"}
+_VERDADEIRO = {True, "True", "true", "1"}
 
 
 def eh_admin_loja(usuario: dict[str, Any] | None) -> bool:
     """O master do Uníssono (SETSYNC_SUPERADMIN_*) administra a loja."""
     if not usuario:
         return False
-    if usuario.get("is_loja_admin") in _VERDADEIRO or usuario.get("is_superadmin") in _VERDADEIRO:
+    if (
+        usuario.get("is_loja_admin") in _VERDADEIRO
+        or usuario.get("is_superadmin") in _VERDADEIRO
+    ):
         return True
     username = str(usuario.get("username") or "").strip().lower()
     email = str(usuario.get("email") or "").strip().lower()

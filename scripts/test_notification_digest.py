@@ -7,71 +7,73 @@ import os
 import sys
 import tempfile
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
-os.environ.setdefault('DATABASE_URL', f'sqlite:///{tempfile.mkdtemp()}/test.db')
+os.environ.setdefault("DATABASE_URL", f"sqlite:///{tempfile.mkdtemp()}/test.db")
 
 
 def main() -> int:
-    from notification_urgency import is_urgent_notification
     from db import (
-        init_db,
-        create_user,
-        create_band,
         add_band_member,
+        create_band,
         create_notification,
+        create_user,
+        get_user,
+        init_db,
         list_notification_digest_for_user,
         list_pending_notification_digest_user_ids,
-        get_user,
     )
+    from notification_urgency import is_urgent_notification
 
-    assert is_urgent_notification('event_scale_assigned')
-    assert is_urgent_notification('band_invite')
-    assert not is_urgent_notification('cifra_updated')
-    assert not is_urgent_notification('setlist_created')
-    assert is_urgent_notification('member_removed', urgent=True)
+    assert is_urgent_notification("event_scale_assigned")
+    assert is_urgent_notification("band_invite")
+    assert not is_urgent_notification("cifra_updated")
+    assert not is_urgent_notification("setlist_created")
+    assert is_urgent_notification("member_removed", urgent=True)
 
     init_db()
-    uid = create_user('notify@test.com', 'notify@test.com', 'hash', display_name='Notify User')
-    band_id = create_band('Banda', '', uid)
-    add_band_member(band_id, uid, 'owner')
+    uid = create_user(
+        "notify@test.com", "notify@test.com", "hash", display_name="Notify User"
+    )
+    band_id = create_band("Banda", "", uid)
+    add_band_member(band_id, uid, "owner")
     user = get_user(uid)
-    user['email_notify'] = 1
-    user['whatsapp_notify'] = 1
-    user['push_notify'] = 1
-    user['phone'] = '5511999999999'
+    user["email_notify"] = 1
+    user["whatsapp_notify"] = 1
+    user["push_notify"] = 1
+    user["phone"] = "5511999999999"
 
     create_notification(
         uid,
         band_id=band_id,
         actor_user_id=uid,
-        type='cifra_created',
-        title='Nova cifra',
-        body='Teste de digest',
-        url_path='/dashboard',
+        type="cifra_created",
+        title="Nova cifra",
+        body="Teste de digest",
+        url_path="/dashboard",
     )
 
     pending = list_notification_digest_for_user(uid, pending_only=True)
-    assert len(pending) == 1, 'cifra_created deve ir para fila do resumo'
+    assert len(pending) == 1, "cifra_created deve ir para fila do resumo"
     assert uid in list_pending_notification_digest_user_ids()
 
     create_notification(
         uid,
         band_id=band_id,
         actor_user_id=None,
-        type='band_invite',
-        title='Convite urgente',
-        body='Aceite agora',
-        url_path='/convites',
+        type="band_invite",
+        title="Convite urgente",
+        body="Aceite agora",
+        url_path="/convites",
     )
 
     pending_after = list_notification_digest_for_user(uid, pending_only=True)
-    assert len(pending_after) == 1, 'urgente não entra na fila'
+    assert len(pending_after) == 1, "urgente não entra na fila"
 
-    print('ok urgência e fila de digest')
+    print("ok urgência e fila de digest")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())

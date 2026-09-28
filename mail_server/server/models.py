@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -20,7 +19,7 @@ class Email:
     recipients: str
     subject: str
     body_text: str
-    body_html: Optional[str]
+    body_html: str | None
     folder: str
     is_read: bool
     owner_email: str

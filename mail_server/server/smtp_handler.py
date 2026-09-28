@@ -3,7 +3,7 @@ import logging
 from email import policy
 from email.utils import parseaddr
 
-from aiosmtpd.smtp import AuthResult, SMTP
+from aiosmtpd.smtp import SMTP, AuthResult
 
 from mail_server.config import canonical_mailbox, is_local_address
 from mail_server.server.outbound import deliver_external, get_last_error
@@ -40,7 +40,11 @@ class EmailHandler:
         raw = envelope.content
         parsed = email.message_from_bytes(raw, policy=policy.default)
 
-        sender = envelope.mail_from or parseaddr(parsed.get("From", ""))[1] or "unknown@unknown"
+        sender = (
+            envelope.mail_from
+            or parseaddr(parsed.get("From", ""))[1]
+            or "unknown@unknown"
+        )
         recipients = _extract_recipients(parsed, envelope.rcpt_tos)
         subject = parsed.get("Subject", "(sem assunto)")
 
@@ -67,7 +71,8 @@ class EmailHandler:
         local_rcpts = [r for r in recipients if is_local_address(r)]
         external_rcpts = [r for r in recipients if not is_local_address(r)]
         authenticated = bool(
-            getattr(session, 'login_data', None) or getattr(session, 'authenticated', False)
+            getattr(session, "login_data", None)
+            or getattr(session, "authenticated", False)
         )
 
         if external_rcpts:
@@ -77,14 +82,22 @@ class EmailHandler:
                     external_rcpts,
                 )
             else:
-                raw_text = raw.decode('utf-8', errors='replace') if isinstance(raw, bytes) else str(raw)
+                raw_text = (
+                    raw.decode("utf-8", errors="replace")
+                    if isinstance(raw, bytes)
+                    else str(raw)
+                )
                 if not deliver_external(sender, external_rcpts, raw_text):
-                    err = get_last_error() or 'falha na entrega externa'
-                    logger.error('Relay externo falhou %s -> %s: %s', sender, external_rcpts, err)
-                    return f'550 {err}'
+                    err = get_last_error() or "falha na entrega externa"
+                    logger.error(
+                        "Relay externo falhou %s -> %s: %s", sender, external_rcpts, err
+                    )
+                    return f"550 {err}"
                 logger.info(
-                    'Email enviado (relay externo): %s -> %s | %s',
-                    sender, external_rcpts, subject,
+                    "Email enviado (relay externo): %s -> %s | %s",
+                    sender,
+                    external_rcpts,
+                    subject,
                 )
 
         for recipient in local_rcpts:

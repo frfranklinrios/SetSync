@@ -131,7 +131,9 @@ def criar_preferencia(
     resp = data.get("response") or {}
     if int(data.get("status") or 0) >= 400:
         log.warning("MP preference: %s", resp)
-        detalhe = resp.get("message") or resp.get("error") or "Falha ao iniciar pagamento."
+        detalhe = (
+            resp.get("message") or resp.get("error") or "Falha ao iniciar pagamento."
+        )
         raise HTTPException(502, f"Mercado Pago: {detalhe}")
 
     if config.MP_ENVIRONMENT == "sandbox":

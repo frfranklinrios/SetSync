@@ -32,7 +32,9 @@ class SMTPServer:
         )
         inbound.start()
         self.controllers.append(inbound)
-        logger.info("SMTP (recebimento) em %s:%d [%s]", SMTP_BIND_HOST, SMTP_PORT, MAIL_HOSTNAME)
+        logger.info(
+            "SMTP (recebimento) em %s:%d [%s]", SMTP_BIND_HOST, SMTP_PORT, MAIL_HOSTNAME
+        )
 
         submission = Controller(
             handler,

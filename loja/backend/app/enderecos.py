@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.db import connect, locked
 from app.models import ClientePedido
 
 
 def salvar_endereco(usuario_id: str, cliente: ClientePedido) -> None:
-    agora = datetime.now(timezone.utc).replace(tzinfo=None)
+    agora = datetime.now(UTC).replace(tzinfo=None)
     payload = cliente.model_dump()
     with locked():
         con = connect()

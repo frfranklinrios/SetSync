@@ -55,7 +55,9 @@ class AudioDownloader:
             with YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 if not info:
-                    raise VideoUnavailableError("Nao foi possivel obter metadados do video.")
+                    raise VideoUnavailableError(
+                        "Nao foi possivel obter metadados do video."
+                    )
 
                 duration = int(info.get("duration") or 0)
                 if duration > settings.max_audio_duration:

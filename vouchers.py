@@ -6,70 +6,69 @@ import secrets
 import string
 from datetime import datetime, timedelta
 
+from config import app_now_naive
 from db import (
     count_vouchers_indicacao_ativos,
     create_voucher,
-    get_voucher_by_codigo,
-    get_voucher_uso_banda,
-    get_studio_voucher_uso,
-    increment_voucher_usos,
-    insert_voucher_uso,
-    insert_studio_voucher_uso,
-    update_assinatura,
     get_assinatura,
     get_owned_bands,
+    get_studio_voucher_uso,
     get_user,
+    get_voucher_by_codigo,
+    get_voucher_uso_banda,
+    increment_voucher_usos,
+    insert_studio_voucher_uso,
+    insert_voucher_uso,
+    update_assinatura,
 )
 from monetizacao import (
-    PLANO_PRO,
     PLANO_ESTUDIO_PREMIUM,
+    PLANO_PRO,
     PLANOS,
     PLANOS_ESTUDIO,
     STATUS_ATIVA,
     get_assinatura_banda,
 )
-from config import app_now_naive, app_now_str
-
 
 VOUCHER_INDICACAO_DIAS = 90  # 3 meses
 VOUCHER_INDICACAO_MAX_ATIVOS = 5
-VOUCHER_DESTINO_BANDA = 'banda'
-VOUCHER_DESTINO_ESTUDIO = 'estudio'
-STATUS_VOUCHER = 'voucher'
-STATUS_EXPIRADO = 'expirado'
+VOUCHER_DESTINO_BANDA = "banda"
+VOUCHER_DESTINO_ESTUDIO = "estudio"
+STATUS_VOUCHER = "voucher"
+STATUS_EXPIRADO = "expirado"
 # Data de expiração usada em voucher_usos / assinatura para acesso sem vencimento
 VOUCHER_VITALICIO_EXPIRA = datetime(2099, 12, 31, 23, 59, 59)
 
 
 def voucher_eh_vitalicio(voucher: dict) -> bool:
-    return bool(voucher.get('eh_vitalicio'))
+    return bool(voucher.get("eh_vitalicio"))
 
 
 def assinatura_voucher_vitalicia(assinatura: dict | None) -> bool:
-    if not assinatura or assinatura.get('status') != STATUS_VOUCHER:
+    if not assinatura or assinatura.get("status") != STATUS_VOUCHER:
         return False
-    fim = _parse_dt(assinatura.get('data_proxima_cobranca'))
+    fim = _parse_dt(assinatura.get("data_proxima_cobranca"))
     return fim is not None and fim.year >= 2090
 
 
 def expira_em_para_voucher(voucher: dict, agora: datetime) -> datetime:
     if voucher_eh_vitalicio(voucher):
         return VOUCHER_VITALICIO_EXPIRA
-    return agora + timedelta(days=int(voucher['dias']))
+    return agora + timedelta(days=int(voucher["dias"]))
 
 
 def gerar_codigo_voucher(prefixo: str | None = None) -> str:
     """
     Gera código único: PREFIXO-XXXX ou UNISSONO-XXXX (aceita SETSYNC legado).
     """
-    base = (prefixo or 'UNISSONO').strip().upper().replace(' ', '-')
+    base = (prefixo or "UNISSONO").strip().upper().replace(" ", "-")
     alfabeto = string.ascii_uppercase + string.digits
     for _ in range(50):
-        sufixo = ''.join(secrets.choice(alfabeto) for _ in range(4))
-        codigo = f'{base}-{sufixo}'
+        sufixo = "".join(secrets.choice(alfabeto) for _ in range(4))
+        codigo = f"{base}-{sufixo}"
         if not get_voucher_by_codigo(codigo):
             return codigo
-    raise RuntimeError('Não foi possível gerar código de voucher único')
+    raise RuntimeError("Não foi possível gerar código de voucher único")
 
 
 def banda_tem_assinatura_paga_ativa(banda_id: str) -> bool:
@@ -77,15 +76,12 @@ def banda_tem_assinatura_paga_ativa(banda_id: str) -> bool:
     row = get_assinatura(banda_id)
     if not row:
         return False
-    return (
-        row.get('plano') in ('pro', 'worship')
-        and row.get('status') == STATUS_ATIVA
-    )
+    return row.get("plano") in ("pro", "worship") and row.get("status") == STATUS_ATIVA
 
 
 def voucher_destino(voucher: dict) -> str:
-    d = (voucher.get('destino') or VOUCHER_DESTINO_BANDA).strip().lower()
-    if d == VOUCHER_DESTINO_ESTUDIO or voucher.get('plano') == PLANO_ESTUDIO_PREMIUM:
+    d = (voucher.get("destino") or VOUCHER_DESTINO_BANDA).strip().lower()
+    if d == VOUCHER_DESTINO_ESTUDIO or voucher.get("plano") == PLANO_ESTUDIO_PREMIUM:
         return VOUCHER_DESTINO_ESTUDIO
     return VOUCHER_DESTINO_BANDA
 
@@ -97,50 +93,58 @@ def usuario_tem_estudio_pago_ativo(user_id: str) -> bool:
     if not row:
         return False
     return (
-        row.get('plano') == PLANO_ESTUDIO_PREMIUM
-        and row.get('status') == STATUS_ATIVA
-        and bool(row.get('mp_preapproval_id') or row.get('mp_subscription_id'))
+        row.get("plano") == PLANO_ESTUDIO_PREMIUM
+        and row.get("status") == STATUS_ATIVA
+        and bool(row.get("mp_preapproval_id") or row.get("mp_subscription_id"))
     )
 
 
 def studio_assinatura_voucher_vitalicia(sub: dict | None) -> bool:
-    if not sub or sub.get('status') != STATUS_VOUCHER:
+    if not sub or sub.get("status") != STATUS_VOUCHER:
         return False
-    fim = _parse_dt(sub.get('data_proxima_cobranca'))
+    fim = _parse_dt(sub.get("data_proxima_cobranca"))
     return fim is not None and fim.year >= 2090
 
 
 def validar_resgate_voucher(codigo: str, banda_id: str) -> tuple[bool, str]:
     """Retorna (ok, mensagem_erro)."""
-    codigo = (codigo or '').strip().upper()
+    codigo = (codigo or "").strip().upper()
     voucher = get_voucher_by_codigo(codigo)
     if not voucher:
-        return False, 'Voucher não encontrado'
+        return False, "Voucher não encontrado"
     if voucher_destino(voucher) == VOUCHER_DESTINO_ESTUDIO:
-        return False, 'Este voucher é para conta de estúdio — resgate na seção Estúdio em Planos'
-    if not voucher.get('ativo'):
-        return False, 'Voucher desativado'
-    if voucher.get('data_expiracao'):
-        exp = _parse_dt(voucher['data_expiracao'])
+        return (
+            False,
+            "Este voucher é para conta de estúdio — resgate na seção Estúdio em Planos",
+        )
+    if not voucher.get("ativo"):
+        return False, "Voucher desativado"
+    if voucher.get("data_expiracao"):
+        exp = _parse_dt(voucher["data_expiracao"])
         if exp and exp < app_now_naive():
-            return False, 'Voucher expirado'
-    max_usos = voucher.get('max_usos')
-    if max_usos is not None and int(voucher.get('usos_atual') or 0) >= int(max_usos):
-        return False, 'Limite de usos atingido'
-    if get_voucher_uso_banda(voucher['id'], banda_id):
-        return False, 'Esta banda já utilizou este voucher'
+            return False, "Voucher expirado"
+    max_usos = voucher.get("max_usos")
+    if max_usos is not None and int(voucher.get("usos_atual") or 0) >= int(max_usos):
+        return False, "Limite de usos atingido"
+    if get_voucher_uso_banda(voucher["id"], banda_id):
+        return False, "Esta banda já utilizou este voucher"
     if banda_tem_assinatura_paga_ativa(banda_id):
-        return False, 'Voucher disponível apenas para plano grátis ou assinatura vencida'
+        return (
+            False,
+            "Voucher disponível apenas para plano grátis ou assinatura vencida",
+        )
     assinatura = get_assinatura(banda_id)
-    if assinatura and assinatura.get('status') == STATUS_VOUCHER:
+    if assinatura and assinatura.get("status") == STATUS_VOUCHER:
         if assinatura_voucher_vitalicia(assinatura):
-            return False, 'Esta banda já possui acesso vitalício'
+            return False, "Esta banda já possui acesso vitalício"
         if not voucher_eh_vitalicio(voucher):
-            return False, 'Esta banda já possui acesso por voucher ativo'
-    return True, ''
+            return False, "Esta banda já possui acesso por voucher ativo"
+    return True, ""
 
 
-def resgatar_voucher(codigo: str, banda_id: str, banda_nome: str) -> tuple[bool, str, dict | None]:
+def resgatar_voucher(
+    codigo: str, banda_id: str, banda_nome: str
+) -> tuple[bool, str, dict | None]:
     """
     Aplica voucher na banda. Retorna (ok, mensagem, info_extra).
     """
@@ -150,79 +154,84 @@ def resgatar_voucher(codigo: str, banda_id: str, banda_nome: str) -> tuple[bool,
 
     voucher = get_voucher_by_codigo(codigo.strip().upper())
     vitalicio = voucher_eh_vitalicio(voucher)
-    dias = int(voucher['dias'])
-    plano = voucher['plano']
+    dias = int(voucher["dias"])
+    plano = voucher["plano"]
     agora = app_now_naive()
     expira = expira_em_para_voucher(voucher, agora)
 
     insert_voucher_uso(
-        voucher_id=voucher['id'],
+        voucher_id=voucher["id"],
         banda_id=banda_id,
         usado_em=agora,
         expira_em=expira,
     )
-    increment_voucher_usos(voucher['id'])
+    increment_voucher_usos(voucher["id"])
 
     update_assinatura(
         banda_id,
         plano=plano,
         status=STATUS_VOUCHER,
-        data_inicio=agora.strftime('%Y-%m-%d %H:%M:%S'),
-        data_proxima_cobranca=expira.strftime('%Y-%m-%d %H:%M:%S'),
+        data_inicio=agora.strftime("%Y-%m-%d %H:%M:%S"),
+        data_proxima_cobranca=expira.strftime("%Y-%m-%d %H:%M:%S"),
         data_cancelamento=None,
     )
 
     info = {
-        'dias': dias if not vitalicio else None,
-        'vitalicio': vitalicio,
-        'plano': plano,
-        'plano_nome': PLANOS.get(plano).nome if plano in PLANOS else plano,
-        'banda_nome': banda_nome,
+        "dias": dias if not vitalicio else None,
+        "vitalicio": vitalicio,
+        "plano": plano,
+        "plano_nome": PLANOS.get(plano).nome if plano in PLANOS else plano,
+        "banda_nome": banda_nome,
     }
 
     if _is_voucher_indicacao(voucher):
         _recompensa_indicacao(voucher)
 
     if vitalicio:
-        msg = f'Acesso vitalício ao {info["plano_nome"]} ativado para {banda_nome}!'
+        msg = f"Acesso vitalício ao {info['plano_nome']} ativado para {banda_nome}!"
     else:
-        msg = f'{dias} dias de {info["plano_nome"]} ativados para {banda_nome}!'
+        msg = f"{dias} dias de {info['plano_nome']} ativados para {banda_nome}!"
     return True, msg, info
 
 
 def validar_resgate_voucher_estudio(codigo: str, user_id: str) -> tuple[bool, str]:
-    codigo = (codigo or '').strip().upper()
+    codigo = (codigo or "").strip().upper()
     voucher = get_voucher_by_codigo(codigo)
     if not voucher:
-        return False, 'Voucher não encontrado'
+        return False, "Voucher não encontrado"
     if voucher_destino(voucher) != VOUCHER_DESTINO_ESTUDIO:
-        return False, 'Este voucher é para banda — selecione a banda e resgate na seção de planos'
-    if not voucher.get('ativo'):
-        return False, 'Voucher desativado'
-    if voucher.get('data_expiracao'):
-        exp = _parse_dt(voucher['data_expiracao'])
+        return (
+            False,
+            "Este voucher é para banda — selecione a banda e resgate na seção de planos",
+        )
+    if not voucher.get("ativo"):
+        return False, "Voucher desativado"
+    if voucher.get("data_expiracao"):
+        exp = _parse_dt(voucher["data_expiracao"])
         if exp and exp < app_now_naive():
-            return False, 'Voucher expirado'
-    max_usos = voucher.get('max_usos')
-    if max_usos is not None and int(voucher.get('usos_atual') or 0) >= int(max_usos):
-        return False, 'Limite de usos atingido'
-    if get_studio_voucher_uso(voucher['id'], user_id):
-        return False, 'Você já utilizou este voucher'
+            return False, "Voucher expirado"
+    max_usos = voucher.get("max_usos")
+    if max_usos is not None and int(voucher.get("usos_atual") or 0) >= int(max_usos):
+        return False, "Limite de usos atingido"
+    if get_studio_voucher_uso(voucher["id"], user_id):
+        return False, "Você já utilizou este voucher"
     if usuario_tem_estudio_pago_ativo(user_id):
-        return False, 'Voucher disponível apenas sem assinatura Premium paga ativa'
+        return False, "Voucher disponível apenas sem assinatura Premium paga ativa"
     from models_studio import get_studio_subscription
 
     sub = get_studio_subscription(user_id)
-    if sub and sub.get('status') == STATUS_VOUCHER:
+    if sub and sub.get("status") == STATUS_VOUCHER:
         if studio_assinatura_voucher_vitalicia(sub):
-            return False, 'Sua conta já possui Premium vitalício por voucher'
+            return False, "Sua conta já possui Premium vitalício por voucher"
         if not voucher_eh_vitalicio(voucher):
-            return False, 'Sua conta já possui Premium por voucher ativo'
-    return True, ''
+            return False, "Sua conta já possui Premium por voucher ativo"
+    return True, ""
 
 
 def resgatar_voucher_estudio(
-    codigo: str, user_id: str, user_nome: str,
+    codigo: str,
+    user_id: str,
+    user_nome: str,
 ) -> tuple[bool, str, dict | None]:
     ok, msg = validar_resgate_voucher_estudio(codigo, user_id)
     if not ok:
@@ -230,18 +239,18 @@ def resgatar_voucher_estudio(
 
     voucher = get_voucher_by_codigo(codigo.strip().upper())
     vitalicio = voucher_eh_vitalicio(voucher)
-    dias = int(voucher['dias'])
-    plano = voucher['plano']
+    dias = int(voucher["dias"])
+    plano = voucher["plano"]
     agora = app_now_naive()
     expira = expira_em_para_voucher(voucher, agora)
 
     insert_studio_voucher_uso(
-        voucher_id=voucher['id'],
+        voucher_id=voucher["id"],
         user_id=user_id,
         usado_em=agora,
         expira_em=expira,
     )
-    increment_voucher_usos(voucher['id'])
+    increment_voucher_usos(voucher["id"])
 
     from models_studio import update_studio_subscription
 
@@ -249,74 +258,78 @@ def resgatar_voucher_estudio(
         user_id,
         plano=plano,
         status=STATUS_VOUCHER,
-        data_proxima_cobranca=expira.strftime('%Y-%m-%d %H:%M:%S'),
+        data_proxima_cobranca=expira.strftime("%Y-%m-%d %H:%M:%S"),
     )
 
-    plano_nome = (
-        PLANOS_ESTUDIO.get(plano).nome if plano in PLANOS_ESTUDIO else plano
-    )
+    plano_nome = PLANOS_ESTUDIO.get(plano).nome if plano in PLANOS_ESTUDIO else plano
     info = {
-        'dias': dias if not vitalicio else None,
-        'vitalicio': vitalicio,
-        'plano': plano,
-        'plano_nome': plano_nome,
-        'destino': VOUCHER_DESTINO_ESTUDIO,
-        'user_nome': user_nome,
+        "dias": dias if not vitalicio else None,
+        "vitalicio": vitalicio,
+        "plano": plano,
+        "plano_nome": plano_nome,
+        "destino": VOUCHER_DESTINO_ESTUDIO,
+        "user_nome": user_nome,
     }
     if _is_voucher_indicacao(voucher):
         _recompensa_indicacao(voucher)
 
     if vitalicio:
-        msg = f'Acesso vitalício ao {plano_nome} ativado para sua conta de estúdio!'
+        msg = f"Acesso vitalício ao {plano_nome} ativado para sua conta de estúdio!"
     else:
-        msg = f'{dias} dias de {plano_nome} ativados para sua conta de estúdio!'
+        msg = f"{dias} dias de {plano_nome} ativados para sua conta de estúdio!"
     return True, msg, info
 
 
 def _is_voucher_indicacao(voucher: dict) -> bool:
-    return bool(voucher.get('eh_indicacao'))
+    return bool(voucher.get("eh_indicacao"))
 
 
 def _recompensa_indicacao(voucher: dict) -> None:
     """Quem indicou ganha 3 meses Pro na banda principal."""
-    criador_id = voucher.get('criado_por_id')
+    criador_id = voucher.get("criado_por_id")
     if not criador_id:
         return
     owned = get_owned_bands(criador_id)
     if not owned:
         return
-    banda_id = owned[0]['id']
+    banda_id = owned[0]["id"]
     assinatura = get_assinatura_banda(banda_id)
     agora = app_now_naive()
     base = assinatura.data_proxima_cobranca or agora
-    if base < agora:
-        base = agora
+    base = max(base, agora)
     nova_cobranca = base + timedelta(days=VOUCHER_INDICACAO_DIAS)
 
-    if assinatura.plano in ('gratis',) or assinatura.status in (STATUS_EXPIRADO, 'cancelada'):
+    if assinatura.plano in ("gratis",) or assinatura.status in (
+        STATUS_EXPIRADO,
+        "cancelada",
+    ):
         update_assinatura(
             banda_id,
             plano=PLANO_PRO,
             status=STATUS_VOUCHER,
-            data_proxima_cobranca=nova_cobranca.strftime('%Y-%m-%d %H:%M:%S'),
+            data_proxima_cobranca=nova_cobranca.strftime("%Y-%m-%d %H:%M:%S"),
         )
     else:
         update_assinatura(
             banda_id,
-            data_proxima_cobranca=nova_cobranca.strftime('%Y-%m-%d %H:%M:%S'),
+            data_proxima_cobranca=nova_cobranca.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
     user = get_user(criador_id)
-    if user and user.get('email'):
+    if user and user.get("email"):
         from monetizacao_emails import send_indicacao_recompensa_email
-        send_indicacao_recompensa_email(user['email'], VOUCHER_INDICACAO_DIAS)
+
+        send_indicacao_recompensa_email(user["email"], VOUCHER_INDICACAO_DIAS)
 
 
 def criar_voucher_indicacao(criado_por_id: str) -> tuple[str | None, str]:
     """Cria voucher de indicação de banda (Pro, 3 meses, uso único)."""
     if count_vouchers_indicacao_ativos(criado_por_id) >= VOUCHER_INDICACAO_MAX_ATIVOS:
-        return None, f'Limite de {VOUCHER_INDICACAO_MAX_ATIVOS} vouchers de indicação ativos'
-    codigo = gerar_codigo_voucher('BANDA')
+        return (
+            None,
+            f"Limite de {VOUCHER_INDICACAO_MAX_ATIVOS} vouchers de indicação ativos",
+        )
+    codigo = gerar_codigo_voucher("BANDA")
     create_voucher(
         codigo=codigo,
         plano=PLANO_PRO,
@@ -326,14 +339,17 @@ def criar_voucher_indicacao(criado_por_id: str) -> tuple[str | None, str]:
         eh_indicacao=True,
         destino=VOUCHER_DESTINO_BANDA,
     )
-    return codigo, ''
+    return codigo, ""
 
 
 def criar_voucher_indicacao_estudio(criado_por_id: str) -> tuple[str | None, str]:
     """Convite ao estúdio: Premium 3 meses para o estúdio; quem indicou ganha Pro 3 meses."""
     if count_vouchers_indicacao_ativos(criado_por_id) >= VOUCHER_INDICACAO_MAX_ATIVOS:
-        return None, f'Limite de {VOUCHER_INDICACAO_MAX_ATIVOS} vouchers de indicação ativos'
-    codigo = gerar_codigo_voucher('ESTUDIO')
+        return (
+            None,
+            f"Limite de {VOUCHER_INDICACAO_MAX_ATIVOS} vouchers de indicação ativos",
+        )
+    codigo = gerar_codigo_voucher("ESTUDIO")
     create_voucher(
         codigo=codigo,
         plano=PLANO_ESTUDIO_PREMIUM,
@@ -343,7 +359,7 @@ def criar_voucher_indicacao_estudio(criado_por_id: str) -> tuple[str | None, str
         eh_indicacao=True,
         destino=VOUCHER_DESTINO_ESTUDIO,
     )
-    return codigo, ''
+    return codigo, ""
 
 
 def _parse_dt(value) -> datetime | None:
@@ -352,6 +368,6 @@ def _parse_dt(value) -> datetime | None:
     if isinstance(value, datetime):
         return value
     try:
-        return datetime.strptime(str(value)[:19], '%Y-%m-%d %H:%M:%S')
+        return datetime.strptime(str(value)[:19], "%Y-%m-%d %H:%M:%S")
     except ValueError:
         return None

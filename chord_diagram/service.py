@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-from util import chord_components_info, split_chord_progression, to_brazilian_chord_notation
-
 from chord_diagram.scales import SCALE_TYPES, suggest_scales_for_chord
+from util import (
+    chord_components_info,
+    split_chord_progression,
+    to_brazilian_chord_notation,
+)
 
 INSTRUMENTS = (
-    {'id': 'violao', 'label': 'Violão', 'strings': 6},
-    {'id': 'cavaco', 'label': 'Cavaco', 'strings': 4},
-    {'id': 'ukulele', 'label': 'Ukulele', 'strings': 4},
-    {'id': 'baixo', 'label': 'Baixo (arpejo)', 'strings': 4},
+    {"id": "violao", "label": "Violão", "strings": 6},
+    {"id": "cavaco", "label": "Cavaco", "strings": 4},
+    {"id": "ukulele", "label": "Ukulele", "strings": 4},
+    {"id": "baixo", "label": "Baixo (arpejo)", "strings": 4},
 )
 
 
@@ -20,9 +23,9 @@ def list_instruments() -> list[dict]:
 
 def chord_diagram_payload(symbol: str) -> dict:
     """Monta payload JSON para o modal de diagramas (notas + rótulos BR)."""
-    symbol = (symbol or '').strip()
+    symbol = (symbol or "").strip()
     if not symbol:
-        return {'error': 'Acorde não informado', 'chords': []}
+        return {"error": "Acorde não informado", "chords": []}
 
     chunks = split_chord_progression(symbol) or [symbol]
     chords = []
@@ -31,18 +34,15 @@ def chord_diagram_payload(symbol: str) -> dict:
         if not info:
             continue
         info = dict(info)
-        info['display'] = to_brazilian_chord_notation(info.get('display', chunk))
-        info['scales'] = suggest_scales_for_chord(info)
+        info["display"] = to_brazilian_chord_notation(info.get("display", chunk))
+        info["scales"] = suggest_scales_for_chord(info)
         chords.append(info)
 
     if not chords:
-        return {'error': 'Acorde não reconhecido', 'chords': []}
+        return {"error": "Acorde não reconhecido", "chords": []}
 
     return {
-        'chords': chords,
-        'instruments': list_instruments(),
-        'scale_types': [
-            {'id': k, 'label': v['label']}
-            for k, v in SCALE_TYPES.items()
-        ],
+        "chords": chords,
+        "instruments": list_instruments(),
+        "scale_types": [{"id": k, "label": v["label"]} for k, v in SCALE_TYPES.items()],
     }

@@ -18,14 +18,14 @@ def list_studio_bookings_for_finance(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT b.*, r.nome AS room_nome, r.preco_hora AS room_preco_hora, bd.name AS band_name
+        """SELECT b.*, r.nome AS room_nome, r.preco_hora AS room_preco_hora, bd.name AS band_name
            FROM studio_bookings b
            JOIN studio_rooms r ON r.id = b.room_id
            LEFT JOIN bands bd ON bd.id = b.band_id
            WHERE r.studio_id = ?
              AND b.status = ?
              AND b.data >= ? AND b.data <= ?
-           ORDER BY b.data DESC, b.hora_inicio DESC''',
+           ORDER BY b.data DESC, b.hora_inicio DESC""",
         (studio_id, BOOKING_CONFIRMADO, from_date[:10], to_date[:10]),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -47,19 +47,19 @@ def update_booking_finance(
     params: list = []
 
     if clear_valor:
-        sets.append('valor_cobrado = NULL')
+        sets.append("valor_cobrado = NULL")
     elif valor_cobrado is not None:
-        sets.append('valor_cobrado = ?')
+        sets.append("valor_cobrado = ?")
         params.append(valor_cobrado)
 
     if paid is True:
-        sets.append('pago_em = ?')
+        sets.append("pago_em = ?")
         params.append(app_now_str())
     elif paid is False:
-        sets.append('pago_em = NULL')
+        sets.append("pago_em = NULL")
 
     if finance_notes is not None:
-        sets.append('finance_notes = ?')
+        sets.append("finance_notes = ?")
         params.append(finance_notes[:500] if finance_notes else None)
 
     if not sets:
@@ -68,7 +68,7 @@ def update_booking_finance(
 
     params.append(booking_id)
     c.execute(
-        f'UPDATE studio_bookings SET {", ".join(sets)} WHERE id = ?',
+        f"UPDATE studio_bookings SET {', '.join(sets)} WHERE id = ?",
         params,
     )
     db.commit()
@@ -88,12 +88,17 @@ def create_studio_expense(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO studio_expenses
+        """INSERT INTO studio_expenses
            (id, studio_id, data, descricao, valor, categoria, created_by_user_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (
-            expense_id, studio_id, data[:10], descricao[:200],
-            valor, categoria[:40], created_by_user_id,
+            expense_id,
+            studio_id,
+            data[:10],
+            descricao[:200],
+            valor,
+            categoria[:40],
+            created_by_user_id,
         ),
     )
     db.commit()
@@ -105,7 +110,7 @@ def delete_studio_expense(expense_id: str, studio_id: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'DELETE FROM studio_expenses WHERE id = ? AND studio_id = ?',
+        "DELETE FROM studio_expenses WHERE id = ? AND studio_id = ?",
         (expense_id, studio_id),
     )
     deleted = c.rowcount > 0
@@ -123,9 +128,9 @@ def list_studio_expenses(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM studio_expenses
+        """SELECT * FROM studio_expenses
            WHERE studio_id = ? AND data >= ? AND data <= ?
-           ORDER BY data DESC, created_at DESC''',
+           ORDER BY data DESC, created_at DESC""",
         (studio_id, from_date[:10], to_date[:10]),
     )
     rows = [dict(r) for r in c.fetchall()]

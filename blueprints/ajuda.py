@@ -4,7 +4,6 @@ from flask import Blueprint, jsonify, render_template, request
 
 from help_chatbot import answer_question, default_suggestions
 
-
 ajuda_bp = Blueprint("ajuda", __name__)
 
 
@@ -16,6 +15,7 @@ def index():
 @ajuda_bp.route("/ajuda/chat", methods=["POST"])
 def chat():
     from flask import session
+
     data = request.get_json(silent=True) or {}
     query = (data.get("q") or data.get("message") or "").strip()
     user_id = session.get("user_id")
@@ -30,8 +30,9 @@ def chat_suggestions():
 @ajuda_bp.route("/ajuda/nps", methods=["POST"])
 def nps_submit():
     from flask import session
+
     from db import save_user_nps
-    from blueprints.auth import login_required as _lr
+
     if "user_id" not in session:
         return jsonify({"ok": False}), 401
     data = request.get_json(silent=True) or {}
@@ -45,7 +46,9 @@ def nps_submit():
 @ajuda_bp.route("/ajuda/nps/dismiss", methods=["POST"])
 def nps_dismiss():
     from flask import redirect, session, url_for
+
     from db import dismiss_user_nps
+
     if "user_id" in session:
         dismiss_user_nps(session["user_id"])
     return redirect(request.referrer or url_for("dashboard"))
@@ -54,7 +57,9 @@ def nps_dismiss():
 @ajuda_bp.route("/ajuda/pwa/dismiss", methods=["POST"])
 def pwa_dismiss():
     from flask import redirect, session, url_for
+
     from db import dismiss_pwa_prompt
+
     if "user_id" in session:
         dismiss_pwa_prompt(session["user_id"])
     return redirect(request.referrer or url_for("dashboard"))
@@ -64,6 +69,7 @@ def pwa_dismiss():
 def play_csat_submit():
     """Micro-survey após sair do Modo Tocar."""
     from flask import session
+
     from db import save_user_play_csat
 
     if "user_id" not in session:
@@ -78,6 +84,7 @@ def play_csat_submit():
 @ajuda_bp.route("/ajuda/churn-survey", methods=["POST"])
 def churn_survey_submit():
     from flask import session
+
     from db import save_user_churn_survey
 
     if "user_id" not in session:
@@ -92,9 +99,9 @@ def churn_survey_submit():
 @ajuda_bp.route("/ajuda/churn-survey/dismiss", methods=["POST"])
 def churn_survey_dismiss():
     from flask import redirect, session, url_for
+
     from db import dismiss_user_churn_survey
 
     if "user_id" in session:
         dismiss_user_churn_survey(session["user_id"])
     return redirect(request.referrer or url_for("dashboard"))
-

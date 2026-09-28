@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 """Testa login por e-mail e por usuário."""
+
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
-import os
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 
 os.environ["DATABASE_URL"] = f"sqlite:///{tempfile.mkdtemp()}/test.db"
 
-from db import init_db, create_user, get_user_by_login, verify_password  # noqa: E402
+from db import create_user, get_user_by_login, init_db, verify_password
 
 
 def main():
     init_db()
-    uid = create_user("franklin", "Franklin@Example.COM", "senha123", display_name="Franklin")
+    uid = create_user(
+        "franklin", "Franklin@Example.COM", "senha123", display_name="Franklin"
+    )
     assert uid, "create_user falhou"
 
     by_user = get_user_by_login("franklin")

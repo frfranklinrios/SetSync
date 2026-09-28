@@ -8,11 +8,11 @@ from flask import session
 
 
 def privacy_contact_email() -> str:
-    return (os.getenv('PRIVACY_CONTACT_EMAIL') or 'contato@unissono.app').strip()
+    return (os.getenv("PRIVACY_CONTACT_EMAIL") or "contato@unissono.app").strip()
 
 
 def dpo_label() -> str:
-    return (os.getenv('PRIVACY_DPO_NAME') or 'Encarregado Uníssono').strip()
+    return (os.getenv("PRIVACY_DPO_NAME") or "Encarregado Uníssono").strip()
 
 
 def tracking_requires_consent() -> bool:
@@ -31,13 +31,13 @@ def tracking_requires_consent() -> bool:
 
 def session_tracking_consent() -> bool | None:
     """None = ainda não escolheu; True/False = decisão do titular."""
-    if 'cookie_consent_tracking' not in session:
+    if "cookie_consent_tracking" not in session:
         return None
-    return bool(session.get('cookie_consent_tracking'))
+    return bool(session.get("cookie_consent_tracking"))
 
 
 def set_session_tracking_consent(allowed: bool) -> None:
-    session['cookie_consent_tracking'] = bool(allowed)
+    session["cookie_consent_tracking"] = bool(allowed)
     session.modified = True
 
 

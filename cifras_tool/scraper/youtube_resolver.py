@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 import yt_dlp
 
 from cifras_tool.ydl_common import build_ydl_opts

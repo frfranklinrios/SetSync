@@ -114,15 +114,17 @@ class MetaCharactersTest(unittest.TestCase):
 
         cifra = {
             "tom_original": "C",
-            "leadsheet_json": json.dumps({
-                "module": "setsync.chordsheet",
-                "version": "1.0.0",
-                "source": "C Am F G",
-                "meta": {"title": "T", "key": "C"},
-                "private_notes": {
-                    "user-a": [{"line": 1, "text": "minha dica"}],
-                },
-            }),
+            "leadsheet_json": json.dumps(
+                {
+                    "module": "setsync.chordsheet",
+                    "version": "1.0.0",
+                    "source": "C Am F G",
+                    "meta": {"title": "T", "key": "C"},
+                    "private_notes": {
+                        "user-a": [{"line": 1, "text": "minha dica"}],
+                    },
+                }
+            ),
         }
         html_owner = render_cifra_chordsheet_html(cifra, viewer_user_id="user-a")
         html_other = render_cifra_chordsheet_html(cifra, viewer_user_id="user-b")
@@ -209,9 +211,7 @@ class MetaCharactersTest(unittest.TestCase):
     def test_grade_flat_to_source_multi_pulse_uses_underscore(self):
         from chordsheet_bridge import grade_flat_to_source
 
-        src = grade_flat_to_source(
-            [{"compasso": 1, "acordes": ["C", "Am", "F", "G"]}]
-        )
+        src = grade_flat_to_source([{"compasso": 1, "acordes": ["C", "Am", "F", "G"]}])
         self.assertEqual(src, "C_Am_F_G")
         chart = parse_chart(src, meta={"title": "T", "time_signature": "4/4"})
         self.assertEqual(len(chart.bars), 1)
@@ -283,7 +283,11 @@ class MetaCharactersTest(unittest.TestCase):
         from chordsheet.prefs import Prefs
 
         prefs = Prefs.from_dict(
-            {"notation_style": "intl", "maj7_style": "delta", "half_dim_style": "oslash"}
+            {
+                "notation_style": "intl",
+                "maj7_style": "delta",
+                "half_dim_style": "oslash",
+            }
         )
         self.assertEqual(prefs.notation_style, "br")
         kept = Prefs.from_dict(

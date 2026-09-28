@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
 
@@ -15,7 +15,20 @@ class ChordFrame:
 class ChordRecognizer:
     def __init__(self) -> None:
         self.device = "cpu"
-        self.note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        self.note_names = [
+            "C",
+            "C#",
+            "D",
+            "D#",
+            "E",
+            "F",
+            "F#",
+            "G",
+            "G#",
+            "A",
+            "A#",
+            "B",
+        ]
         self.templates = self._build_templates()
 
     def predict(self, chroma_beats: np.ndarray) -> Sequence[ChordFrame]:
@@ -45,10 +58,16 @@ class ChordRecognizer:
             root_name = self.note_names[root]
             templates.extend(
                 [
-                    (root_name, self._chord_template(root, [0, 4, 7])),        # major
+                    (root_name, self._chord_template(root, [0, 4, 7])),  # major
                     (f"{root_name}m", self._chord_template(root, [0, 3, 7])),  # minor
-                    (f"{root_name}7", self._chord_template(root, [0, 4, 7, 10])),  # dom7
-                    (f"{root_name}m7", self._chord_template(root, [0, 3, 7, 10])),  # min7
+                    (
+                        f"{root_name}7",
+                        self._chord_template(root, [0, 4, 7, 10]),
+                    ),  # dom7
+                    (
+                        f"{root_name}m7",
+                        self._chord_template(root, [0, 3, 7, 10]),
+                    ),  # min7
                 ]
             )
         return templates
@@ -61,7 +80,9 @@ class ChordRecognizer:
         return tmpl / np.linalg.norm(tmpl)
 
     @staticmethod
-    def _median_smooth_chroma(chroma_beats: np.ndarray, kernel_size: int = 5) -> np.ndarray:
+    def _median_smooth_chroma(
+        chroma_beats: np.ndarray, kernel_size: int = 5
+    ) -> np.ndarray:
         pad = kernel_size // 2
         padded = np.pad(chroma_beats, ((pad, pad), (0, 0)), mode="edge")
         out = np.zeros_like(chroma_beats)
@@ -97,7 +118,10 @@ class ChordRecognizer:
             # desempata preservando acorde atual
             values, counts = np.unique(chunk, return_counts=True)
             best = values[int(np.argmax(counts))]
-            if labels[idx] in values and counts[list(values).index(labels[idx])] == counts.max():
+            if (
+                labels[idx] in values
+                and counts[list(values).index(labels[idx])] == counts.max()
+            ):
                 best = labels[idx]
             out.append(str(best))
         return out

@@ -3,19 +3,23 @@
 from __future__ import annotations
 
 # Tipos que exigem ação ou atenção imediata (envio na hora em push/e-mail/WhatsApp).
-URGENT_NOTIFICATION_TYPES = frozenset({
-    'event_scale_assigned',
-    'event_scale_substitute_offer',
-    'band_invite',
-    'event_reminder',
-    'event_prep_reminder',
-    'studio_booking_requested',
-    'studio_booking_confirmed',
-    'studio_booking_rejected',
-})
+URGENT_NOTIFICATION_TYPES = frozenset(
+    {
+        "event_scale_assigned",
+        "event_scale_substitute_offer",
+        "band_invite",
+        "event_reminder",
+        "event_prep_reminder",
+        "studio_booking_requested",
+        "studio_booking_confirmed",
+        "studio_booking_rejected",
+    }
+)
 
 
-def is_urgent_notification(notification_type: str, *, urgent: bool | None = None) -> bool:
+def is_urgent_notification(
+    notification_type: str, *, urgent: bool | None = None
+) -> bool:
     """Define se a notificação deve sair imediatamente nos canais externos."""
     if urgent is True:
         return True
@@ -23,6 +27,6 @@ def is_urgent_notification(notification_type: str, *, urgent: bool | None = None
         return False
     if not notification_type:
         return False
-    if notification_type.startswith('admin_'):
+    if notification_type.startswith("admin_"):
         return True
     return notification_type in URGENT_NOTIFICATION_TYPES

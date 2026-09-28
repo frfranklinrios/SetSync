@@ -25,51 +25,55 @@ def _base_data_dir() -> Path:
 
 
 def studio_photos_dir(studio_id: str) -> Path:
-    d = _base_data_dir() / 'studio_photos' / studio_id
+    d = _base_data_dir() / "studio_photos" / studio_id
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
 def room_photos_dir(room_id: str) -> Path:
-    d = _base_data_dir() / 'studio_room_photos' / room_id
+    d = _base_data_dir() / "studio_room_photos" / room_id
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
-def _save_upload(file_storage, dest_dir: Path, prefix: str) -> tuple[str | None, str | None]:
-    if not file_storage or not getattr(file_storage, 'filename', None):
-        return None, 'Selecione uma imagem.'
-    ext = _ext_from_filename(file_storage.filename or '')
+def _save_upload(
+    file_storage, dest_dir: Path, prefix: str
+) -> tuple[str | None, str | None]:
+    if not file_storage or not getattr(file_storage, "filename", None):
+        return None, "Selecione uma imagem."
+    ext = _ext_from_filename(file_storage.filename or "")
     data = file_storage.read()
     if not data:
-        return None, 'Arquivo vazio.'
+        return None, "Arquivo vazio."
     if len(data) > MAX_LOGO_BYTES:
-        return None, 'Imagem muito grande (máx. 2 MB).'
+        return None, "Imagem muito grande (máx. 2 MB)."
     detected = _detect_image_ext(data)
     if not detected:
-        return None, 'Use PNG, JPG ou WebP.'
-    mime = (getattr(file_storage, 'mimetype', None) or '').lower()
+        return None, "Use PNG, JPG ou WebP."
+    mime = (getattr(file_storage, "mimetype", None) or "").lower()
     if mime and mime not in ALLOWED_MIMES:
         mime_ext = _ext_from_mime(mime)
         if mime_ext and mime_ext != detected:
-            return None, 'Formato de imagem inválido.'
+            return None, "Formato de imagem inválido."
     ext = detected
-    filename = f'{prefix}_{uuid.uuid4().hex[:12]}{ext}'
+    filename = f"{prefix}_{uuid.uuid4().hex[:12]}{ext}"
     dest = dest_dir / filename
     dest.write_bytes(data)
     return filename, None
 
 
-def save_studio_photo_upload(studio_id: str, file_storage) -> tuple[str | None, str | None]:
-    return _save_upload(file_storage, studio_photos_dir(studio_id), 'st')
+def save_studio_photo_upload(
+    studio_id: str, file_storage
+) -> tuple[str | None, str | None]:
+    return _save_upload(file_storage, studio_photos_dir(studio_id), "st")
 
 
 def save_room_photo_upload(room_id: str, file_storage) -> tuple[str | None, str | None]:
-    return _save_upload(file_storage, room_photos_dir(room_id), 'rm')
+    return _save_upload(file_storage, room_photos_dir(room_id), "rm")
 
 
 def studio_photo_path(studio_id: str, filename: str) -> Path | None:
-    if not studio_id or not filename or '..' in filename or '/' in filename:
+    if not studio_id or not filename or ".." in filename or "/" in filename:
         return None
     ext = Path(filename).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
@@ -81,7 +85,7 @@ def studio_photo_path(studio_id: str, filename: str) -> Path | None:
 
 
 def room_photo_path(room_id: str, filename: str) -> Path | None:
-    if not room_id or not filename or '..' in filename or '/' in filename:
+    if not room_id or not filename or ".." in filename or "/" in filename:
         return None
     ext = Path(filename).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
@@ -111,4 +115,4 @@ def delete_room_photo_file(room_id: str, filename: str) -> None:
 
 
 def photo_mimetype(filename: str) -> str:
-    return mimetypes.guess_type(filename)[0] or 'image/jpeg'
+    return mimetypes.guess_type(filename)[0] or "image/jpeg"

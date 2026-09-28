@@ -18,15 +18,15 @@ def list_band_events_for_finance(
 ) -> list[dict]:
     db = get_db()
     c = db.cursor()
-    start_at = f'{from_date[:10]} 00:00:00'
-    end_at = f'{to_date[:10]} 23:59:59'
+    start_at = f"{from_date[:10]} 00:00:00"
+    end_at = f"{to_date[:10]} 23:59:59"
     c.execute(
-        '''SELECT *
+        """SELECT *
            FROM band_events
            WHERE band_id = ?
              AND starts_at >= ?
              AND starts_at <= ?
-           ORDER BY starts_at DESC''',
+           ORDER BY starts_at DESC""",
         (band_id, start_at, end_at),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -43,7 +43,7 @@ def list_band_studio_bookings_for_finance(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT b.*, r.nome AS room_nome, r.preco_hora AS room_preco_hora,
+        """SELECT b.*, r.nome AS room_nome, r.preco_hora AS room_preco_hora,
                   s.nome AS studio_nome, s.preco_hora AS studio_preco_hora
            FROM studio_bookings b
            JOIN studio_rooms r ON r.id = b.room_id
@@ -51,7 +51,7 @@ def list_band_studio_bookings_for_finance(
            WHERE b.band_id = ?
              AND b.status = ?
              AND b.data >= ? AND b.data <= ?
-           ORDER BY b.data DESC, b.hora_inicio DESC''',
+           ORDER BY b.data DESC, b.hora_inicio DESC""",
         (band_id, BOOKING_CONFIRMADO, from_date[:10], to_date[:10]),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -73,12 +73,18 @@ def create_band_expense(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''INSERT INTO band_expenses
+        """INSERT INTO band_expenses
            (id, band_id, data, descricao, valor, categoria, created_by_user_id, event_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
         (
-            expense_id, band_id, data[:10], descricao[:200],
-            valor, categoria[:40], created_by_user_id, event_id or None,
+            expense_id,
+            band_id,
+            data[:10],
+            descricao[:200],
+            valor,
+            categoria[:40],
+            created_by_user_id,
+            event_id or None,
         ),
     )
     db.commit()
@@ -90,9 +96,9 @@ def list_event_expenses(event_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM band_expenses
+        """SELECT * FROM band_expenses
            WHERE event_id = ?
-           ORDER BY created_at ASC''',
+           ORDER BY created_at ASC""",
         (event_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -112,36 +118,44 @@ def replace_event_expenses(
     db = get_db()
     c = db.cursor()
     c.execute(
-        'DELETE FROM band_expenses WHERE event_id = ? AND band_id = ?',
+        "DELETE FROM band_expenses WHERE event_id = ? AND band_id = ?",
         (event_id, band_id),
     )
     saved: list[dict] = []
     for raw in items:
-        desc = (raw.get('descricao') or '').strip()[:200]
+        desc = (raw.get("descricao") or "").strip()[:200]
         try:
-            valor = max(0.0, float(raw.get('valor') or 0))
+            valor = max(0.0, float(raw.get("valor") or 0))
         except (TypeError, ValueError):
             valor = 0.0
         if not desc or valor <= 0:
             continue
-        categoria = (raw.get('categoria') or 'outros').strip()[:40] or 'outros'
+        categoria = (raw.get("categoria") or "outros").strip()[:40] or "outros"
         expense_id = str(uuid.uuid4())
         c.execute(
-            '''INSERT INTO band_expenses
+            """INSERT INTO band_expenses
                (id, band_id, data, descricao, valor, categoria, created_by_user_id, event_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                expense_id, band_id, data[:10], desc, valor,
-                categoria, created_by_user_id, event_id,
+                expense_id,
+                band_id,
+                data[:10],
+                desc,
+                valor,
+                categoria,
+                created_by_user_id,
+                event_id,
             ),
         )
-        saved.append({
-            'id': expense_id,
-            'descricao': desc,
-            'valor': valor,
-            'categoria': categoria,
-            'event_id': event_id,
-        })
+        saved.append(
+            {
+                "id": expense_id,
+                "descricao": desc,
+                "valor": valor,
+                "categoria": categoria,
+                "event_id": event_id,
+            }
+        )
     db.commit()
     db.close()
     return saved
@@ -151,9 +165,9 @@ def list_event_fee_lines(event_id: str) -> list[dict]:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM band_event_fee_lines
+        """SELECT * FROM band_event_fee_lines
            WHERE event_id = ?
-           ORDER BY sort_order ASC, created_at ASC''',
+           ORDER BY sort_order ASC, created_at ASC""",
         (event_id,),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -162,13 +176,13 @@ def list_event_fee_lines(event_id: str) -> list[dict]:
 
 
 def _fee_line_match_key(raw: dict) -> str:
-    uid = raw.get('user_id')
-    gid = raw.get('guest_id')
+    uid = raw.get("user_id")
+    gid = raw.get("guest_id")
     if uid:
-        return f'u:{uid}'
+        return f"u:{uid}"
     if gid:
-        return f'g:{gid}'
-    return f'n:{(raw.get("display_name") or raw.get("name") or "").strip().lower()}'
+        return f"g:{gid}"
+    return f"n:{(raw.get('display_name') or raw.get('name') or '').strip().lower()}"
 
 
 def replace_event_fee_lines(event_id: str, lines: list[dict]) -> list[dict]:
@@ -176,49 +190,50 @@ def replace_event_fee_lines(event_id: str, lines: list[dict]) -> list[dict]:
 
     Preserva ``paid_at`` de linhas anteriores com o mesmo músico/convidado.
     """
-    from config import app_now_str
 
     db = get_db()
     c = db.cursor()
     c.execute(
-        'SELECT user_id, guest_id, display_name, paid_at FROM band_event_fee_lines WHERE event_id = ?',
+        "SELECT user_id, guest_id, display_name, paid_at FROM band_event_fee_lines WHERE event_id = ?",
         (event_id,),
     )
     prev_paid: dict[str, Any] = {}
     for r in c.fetchall():
         row = dict(r)
-        if row.get('paid_at'):
-            prev_paid[_fee_line_match_key(row)] = row['paid_at']
+        if row.get("paid_at"):
+            prev_paid[_fee_line_match_key(row)] = row["paid_at"]
 
-    c.execute('DELETE FROM band_event_fee_lines WHERE event_id = ?', (event_id,))
+    c.execute("DELETE FROM band_event_fee_lines WHERE event_id = ?", (event_id,))
     saved: list[dict] = []
     for i, raw in enumerate(lines):
-        kind = (raw.get('kind') or 'share').strip().lower()
-        if kind not in ('fixed', 'share'):
-            kind = 'share'
+        kind = (raw.get("kind") or "share").strip().lower()
+        if kind not in ("fixed", "share"):
+            kind = "share"
         try:
-            amount = max(0.0, float(raw.get('amount') or 0))
+            amount = max(0.0, float(raw.get("amount") or 0))
         except (TypeError, ValueError):
             amount = 0.0
-        name = (raw.get('display_name') or raw.get('name') or '—').strip()[:120] or '—'
+        name = (raw.get("display_name") or raw.get("name") or "—").strip()[:120] or "—"
         line_id = str(uuid.uuid4())
-        key = _fee_line_match_key({
-            'user_id': raw.get('user_id'),
-            'guest_id': raw.get('guest_id'),
-            'display_name': name,
-        })
-        paid_at = raw.get('paid_at') or prev_paid.get(key)
-        if raw.get('mark_paid'):
+        key = _fee_line_match_key(
+            {
+                "user_id": raw.get("user_id"),
+                "guest_id": raw.get("guest_id"),
+                "display_name": name,
+            }
+        )
+        paid_at = raw.get("paid_at") or prev_paid.get(key)
+        if raw.get("mark_paid"):
             paid_at = paid_at or app_now_str()
         c.execute(
-            '''INSERT INTO band_event_fee_lines
+            """INSERT INTO band_event_fee_lines
                (id, event_id, user_id, guest_id, display_name, kind, amount, sort_order, paid_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 line_id,
                 event_id,
-                raw.get('user_id') or None,
-                raw.get('guest_id') or None,
+                raw.get("user_id") or None,
+                raw.get("guest_id") or None,
                 name,
                 kind,
                 amount,
@@ -226,17 +241,19 @@ def replace_event_fee_lines(event_id: str, lines: list[dict]) -> list[dict]:
                 paid_at,
             ),
         )
-        saved.append({
-            'id': line_id,
-            'event_id': event_id,
-            'user_id': raw.get('user_id'),
-            'guest_id': raw.get('guest_id'),
-            'display_name': name,
-            'kind': kind,
-            'amount': amount,
-            'sort_order': i,
-            'paid_at': paid_at,
-        })
+        saved.append(
+            {
+                "id": line_id,
+                "event_id": event_id,
+                "user_id": raw.get("user_id"),
+                "guest_id": raw.get("guest_id"),
+                "display_name": name,
+                "kind": kind,
+                "amount": amount,
+                "sort_order": i,
+                "paid_at": paid_at,
+            }
+        )
     db.commit()
     db.close()
     return saved
@@ -244,23 +261,22 @@ def replace_event_fee_lines(event_id: str, lines: list[dict]) -> list[dict]:
 
 def set_fee_line_paid(line_id: str, *, paid: bool, event_id: str | None = None) -> bool:
     """Marca ou limpa pagamento individual de uma linha de liquidação."""
-    from config import app_now_str
 
     db = get_db()
     c = db.cursor()
     if event_id:
         c.execute(
-            'SELECT id FROM band_event_fee_lines WHERE id = ? AND event_id = ?',
+            "SELECT id FROM band_event_fee_lines WHERE id = ? AND event_id = ?",
             (line_id, event_id),
         )
     else:
-        c.execute('SELECT id FROM band_event_fee_lines WHERE id = ?', (line_id,))
+        c.execute("SELECT id FROM band_event_fee_lines WHERE id = ?", (line_id,))
     if not c.fetchone():
         db.close()
         return False
     paid_at = app_now_str() if paid else None
     c.execute(
-        'UPDATE band_event_fee_lines SET paid_at = ? WHERE id = ?',
+        "UPDATE band_event_fee_lines SET paid_at = ? WHERE id = ?",
         (paid_at, line_id),
     )
     db.commit()
@@ -270,13 +286,12 @@ def set_fee_line_paid(line_id: str, *, paid: bool, event_id: str | None = None) 
 
 def mark_all_event_fee_lines_paid(event_id: str, *, paid: bool = True) -> int:
     """Marca todas as linhas do show como pagas (ou limpa)."""
-    from config import app_now_str
 
     db = get_db()
     c = db.cursor()
     paid_at = app_now_str() if paid else None
     c.execute(
-        'UPDATE band_event_fee_lines SET paid_at = ? WHERE event_id = ?',
+        "UPDATE band_event_fee_lines SET paid_at = ? WHERE event_id = ?",
         (paid_at, event_id),
     )
     n = c.rowcount
@@ -289,9 +304,9 @@ def get_member_fee_line(event_id: str, user_id: str) -> dict | None:
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM band_event_fee_lines
+        """SELECT * FROM band_event_fee_lines
            WHERE event_id = ? AND user_id = ?
-           ORDER BY sort_order ASC LIMIT 1''',
+           ORDER BY sort_order ASC LIMIT 1""",
         (event_id, user_id),
     )
     row = c.fetchone()
@@ -302,7 +317,7 @@ def get_member_fee_line(event_id: str, user_id: str) -> dict | None:
 def clear_event_fee_lines(event_id: str) -> None:
     db = get_db()
     c = db.cursor()
-    c.execute('DELETE FROM band_event_fee_lines WHERE event_id = ?', (event_id,))
+    c.execute("DELETE FROM band_event_fee_lines WHERE event_id = ?", (event_id,))
     db.commit()
     db.close()
 
@@ -311,7 +326,7 @@ def delete_band_expense(expense_id: str, band_id: str) -> bool:
     db = get_db()
     c = db.cursor()
     c.execute(
-        'DELETE FROM band_expenses WHERE id = ? AND band_id = ?',
+        "DELETE FROM band_expenses WHERE id = ? AND band_id = ?",
         (expense_id, band_id),
     )
     deleted = c.rowcount > 0
@@ -329,9 +344,9 @@ def list_band_expenses(
     db = get_db()
     c = db.cursor()
     c.execute(
-        '''SELECT * FROM band_expenses
+        """SELECT * FROM band_expenses
            WHERE band_id = ? AND data >= ? AND data <= ?
-           ORDER BY data DESC, created_at DESC''',
+           ORDER BY data DESC, created_at DESC""",
         (band_id, from_date[:10], to_date[:10]),
     )
     rows = [dict(r) for r in c.fetchall()]
@@ -351,31 +366,31 @@ def aggregate_platform_band_finance(*, from_date: str, to_date: str) -> dict:
     skip_bands = demo_band_ids()
     db = get_db()
     c = db.cursor()
-    start_at = f'{from_date[:10]} 00:00:00'
-    end_at = f'{to_date[:10]} 23:59:59'
+    start_at = f"{from_date[:10]} 00:00:00"
+    end_at = f"{to_date[:10]} 23:59:59"
     c.execute(
-        '''SELECT band_id, fee_total, fee_transport_discount,
+        """SELECT band_id, fee_total, fee_transport_discount,
                   fee_equipment_discount, fee_settled_at
            FROM band_events
            WHERE starts_at >= ? AND starts_at <= ?
-             AND fee_total IS NOT NULL AND CAST(fee_total AS REAL) > 0''',
+             AND fee_total IS NOT NULL AND CAST(fee_total AS REAL) > 0""",
         (start_at, end_at),
     )
     events = [dict(r) for r in c.fetchall()]
     if skip_bands:
-        ph = ','.join('?' for _ in skip_bands)
+        ph = ",".join("?" for _ in skip_bands)
         c.execute(
-            f'''SELECT COALESCE(SUM(valor), 0) AS total
+            f"""SELECT COALESCE(SUM(valor), 0) AS total
                 FROM band_expenses
                 WHERE data >= ? AND data <= ?
-                  AND band_id NOT IN ({ph})''',
+                  AND band_id NOT IN ({ph})""",
             [from_date[:10], to_date[:10], *list(skip_bands)],
         )
     else:
         c.execute(
-            '''SELECT COALESCE(SUM(valor), 0) AS total
+            """SELECT COALESCE(SUM(valor), 0) AS total
                FROM band_expenses
-               WHERE data >= ? AND data <= ?''',
+               WHERE data >= ? AND data <= ?""",
             (from_date[:10], to_date[:10]),
         )
     exp_row = c.fetchone()
@@ -387,32 +402,32 @@ def aggregate_platform_band_finance(*, from_date: str, to_date: str) -> dict:
     shows = 0
     demo_skipped_shows = 0
     for e in events:
-        bid = e.get('band_id')
+        bid = e.get("band_id")
         if bid and str(bid) in skip_bands:
             demo_skipped_shows += 1
             continue
-        total = _money(e.get('fee_total'))
-        transport = _money(e.get('fee_transport_discount'))
-        equipment = _money(e.get('fee_equipment_discount'))
+        total = _money(e.get("fee_total"))
+        transport = _money(e.get("fee_transport_discount"))
+        equipment = _money(e.get("fee_equipment_discount"))
         net = max(0.0, total - transport - equipment) if total > 0 else 0.0
         if net <= 0:
             continue
         bands.add(bid)
         receita += net
         shows += 1
-        if e.get('fee_settled_at'):
+        if e.get("fee_settled_at"):
             recebido += net
 
-    despesas = float((exp_row['total'] if exp_row else 0) or 0)
+    despesas = float((exp_row["total"] if exp_row else 0) or 0)
     return {
-        'bandas_com_movimento': len(bands),
-        'shows_com_cache': shows,
-        'receita_confirmada': round(receita, 2),
-        'recebido': round(recebido, 2),
-        'a_receber': round(receita - recebido, 2),
-        'despesas': round(despesas, 2),
-        'demo_excluded_shows': demo_skipped_shows,
-        'demo_excluded_bands': len(skip_bands),
+        "bandas_com_movimento": len(bands),
+        "shows_com_cache": shows,
+        "receita_confirmada": round(receita, 2),
+        "recebido": round(recebido, 2),
+        "a_receber": round(receita - recebido, 2),
+        "despesas": round(despesas, 2),
+        "demo_excluded_shows": demo_skipped_shows,
+        "demo_excluded_bands": len(skip_bands),
     }
 
 
@@ -426,15 +441,15 @@ def list_member_fee_events(
     """Shows com cachê das bandas do músico (para painel pessoal)."""
     db = get_db()
     c = db.cursor()
-    start_at = f'{from_date[:10]} 00:00:00'
-    end_at = f'{to_date[:10]} 23:59:59'
+    start_at = f"{from_date[:10]} 00:00:00"
+    end_at = f"{to_date[:10]} 23:59:59"
     params: list = [start_at, end_at, user_id, user_id]
-    band_filter = ''
+    band_filter = ""
     if band_id:
-        band_filter = 'AND e.band_id = ?'
+        band_filter = "AND e.band_id = ?"
         params.append(band_id)
     c.execute(
-        f'''SELECT e.*, b.name AS band_name
+        f"""SELECT e.*, b.name AS band_name
             FROM band_events e
             JOIN bands b ON b.id = e.band_id
             WHERE e.event_type = 'show'
@@ -449,7 +464,7 @@ def list_member_fee_events(
                     OR b.owner_id = ?
                   )
               {band_filter}
-            ORDER BY e.starts_at DESC''',
+            ORDER BY e.starts_at DESC""",
         params,
     )
     rows = [dict(r) for r in c.fetchall()]

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from chord_diagram.instruments import InstrumentSpec, get_instrument, open_string_pcs
-from chord_diagram.scales_db import scale_formula, scale_note_names, resolve_scale_type
+from chord_diagram.instruments import get_instrument, open_string_pcs
+from chord_diagram.scales_db import resolve_scale_type, scale_formula
 from chord_diagram.theory.intervals import interval_name
 from chord_diagram.theory.pitch import note_to_pc, pc_to_spelling
 
@@ -18,7 +18,7 @@ def build_scale_fretboard_map(
 ) -> dict | None:
     spec = get_instrument(instrument_id)
     sid = resolve_scale_type(scale_type)
-    if not spec or spec.family != 'fretted' or not sid:
+    if not spec or spec.family != "fretted" or not sid:
         return None
     formula = scale_formula(sid)
     root_pc = note_to_pc(root)
@@ -30,27 +30,29 @@ def build_scale_fretboard_map(
     open_pcs = open_string_pcs(spec)
     nodes = []
     for si, oi in enumerate(open_pcs):
-        for fret in range(0, mf + 1):
+        for fret in range(mf + 1):
             pc = (oi + fret) % 12
             if pc not in scale_pcs:
                 continue
             note = pc_to_spelling(pc, ctx)
-            nodes.append({
-                'string': si + 1,
-                'fret': fret,
-                'note': note,
-                'isRoot': pc == root_pc,
-                'interval': interval_name((pc - root_pc) % 12),
-            })
+            nodes.append(
+                {
+                    "string": si + 1,
+                    "fret": fret,
+                    "note": note,
+                    "isRoot": pc == root_pc,
+                    "interval": interval_name((pc - root_pc) % 12),
+                }
+            )
     return {
-        'type': 'scale_map',
-        'name': f'{root} {sid}',
-        'root': root,
-        'formula': formula,
-        'fretboardMapping': {
-            'strings': spec.strings,
-            'maxFrets': mf,
-            'activeNodes': nodes,
+        "type": "scale_map",
+        "name": f"{root} {sid}",
+        "root": root,
+        "formula": formula,
+        "fretboardMapping": {
+            "strings": spec.strings,
+            "maxFrets": mf,
+            "activeNodes": nodes,
         },
     }
 
@@ -59,7 +61,7 @@ def build_arpeggio_sequence(
     note_names: list[str],
     *,
     octaves: int = 2,
-    pattern: str = 'ascend',
+    pattern: str = "ascend",
 ) -> list[dict]:
     """Arpejo como notas em oitavas sucessivas (mesma fórmula do acorde)."""
     pcs = []
@@ -72,7 +74,7 @@ def build_arpeggio_sequence(
     seq = []
     base_midi = 48
     for oct_i in range(octaves):
-        for i, pc in enumerate(pcs if pattern != 'inv1' else pcs[1:] + pcs[:1]):
+        for i, pc in enumerate(pcs if pattern != "inv1" else pcs[1:] + pcs[:1]):
             midi = base_midi + oct_i * 12 + ((pc - pcs[0]) % 12)
-            seq.append({'midiId': midi, 'pitchClass': pc, 'order': len(seq)})
+            seq.append({"midiId": midi, "pitchClass": pc, "order": len(seq)})
     return seq

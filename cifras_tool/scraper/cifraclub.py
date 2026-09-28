@@ -1,24 +1,26 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from curl_cffi import requests as curl_requests
 
 from cifras_tool.config import settings
+from cifras_tool.scraper.cifraclub_player import (
+    extrair_youtube_com_playwright,
+    extrair_youtube_do_player,
+)
 from cifras_tool.scraper.comum import (
     extrair_pre_cifra,
     extrair_tom_do_html,
     normalizar_url,
     primeiro_texto,
 )
-from cifras_tool.scraper.cifraclub_player import extrair_youtube_com_playwright, extrair_youtube_do_player
 from cifras_tool.scraper.youtube_resolver import resolver_youtube
 
 
-def baixar_html(url: str) -> Optional[str]:
+def baixar_html(url: str) -> str | None:
     url = normalizar_url(url)
     try:
         resposta = curl_requests.get(
@@ -87,7 +89,9 @@ def raspar(url: str) -> dict:
     if not youtube_player:
         youtube_player = extrair_youtube_do_player(html)
 
-    ids_pagina = list(dict.fromkeys(re.findall(r"youtube\.com/watch\?v=([\w-]+)", html)))
+    ids_pagina = list(
+        dict.fromkeys(re.findall(r"youtube\.com/watch\?v=([\w-]+)", html))
+    )
 
     if youtube_player:
         match_id = re.search(r"v=([\w-]+)", youtube_player)

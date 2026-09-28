@@ -1,8 +1,7 @@
 import hashlib
 import secrets
 import sqlite3
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from mail_server.config import ADMIN_EMAIL, ADMIN_PASSWORD, DATABASE_PATH
 
@@ -13,7 +12,7 @@ def _aiosqlite():
     return aiosqlite
 
 
-def _hash_password(password: str, salt: Optional[str] = None) -> str:
+def _hash_password(password: str, salt: str | None = None) -> str:
     salt = salt or secrets.token_hex(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 100_000)
     return f"{salt}${digest.hex()}"
@@ -67,8 +66,10 @@ class EmailStorage:
         if not await self.get_user_by_email(ADMIN_EMAIL):
             await self.create_user(ADMIN_EMAIL, ADMIN_PASSWORD, is_admin=True)
 
-    async def create_user(self, email: str, password: str, is_admin: bool = False) -> int:
-        now = datetime.now(timezone.utc).isoformat()
+    async def create_user(
+        self, email: str, password: str, is_admin: bool = False
+    ) -> int:
+        now = datetime.now(UTC).isoformat()
         async with _aiosqlite().connect(self.db_path) as db:
             cursor = await db.execute(
                 "INSERT INTO users (email, password_hash, is_admin, created_at) VALUES (?, ?, ?, ?)",
@@ -77,19 +78,19 @@ class EmailStorage:
             await db.commit()
             return cursor.lastrowid
 
-    async def authenticate(self, email: str, password: str) -> Optional[dict]:
+    async def authenticate(self, email: str, password: str) -> dict | None:
         user = await self.get_user_by_email(email)
         if user and _verify_password(password, user["password_hash"]):
             return user
         return None
 
-    def authenticate_sync(self, email: str, password: str) -> Optional[dict]:
+    def authenticate_sync(self, email: str, password: str) -> dict | None:
         user = self.get_user_by_email_sync(email)
         if user and _verify_password(password, user["password_hash"]):
             return user
         return None
 
-    def get_user_by_email_sync(self, email: str) -> Optional[dict]:
+    def get_user_by_email_sync(self, email: str) -> dict | None:
         with sqlite3.connect(self.db_path) as db:
             db.row_factory = sqlite3.Row
             row = db.execute(
@@ -97,7 +98,7 @@ class EmailStorage:
             ).fetchone()
             return dict(row) if row else None
 
-    async def get_user_by_email(self, email: str) -> Optional[dict]:
+    async def get_user_by_email(self, email: str) -> dict | None:
         async with _aiosqlite().connect(self.db_path) as db:
             db.row_factory = _aiosqlite().Row
             cursor = await db.execute(
@@ -109,7 +110,9 @@ class EmailStorage:
     async def list_users(self) -> list[dict]:
         async with _aiosqlite().connect(self.db_path) as db:
             db.row_factory = _aiosqlite().Row
-            cursor = await db.execute("SELECT id, email, is_admin, created_at FROM users ORDER BY email")
+            cursor = await db.execute(
+                "SELECT id, email, is_admin, created_at FROM users ORDER BY email"
+            )
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
 
@@ -119,12 +122,12 @@ class EmailStorage:
         recipients: list[str],
         subject: str,
         body_text: str,
-        body_html: Optional[str],
+        body_html: str | None,
         owner_email: str,
         message_id: str = "",
         folder: str = "inbox",
     ) -> int:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         async with _aiosqlite().connect(self.db_path) as db:
             cursor = await db.execute(
                 """
@@ -160,7 +163,7 @@ class EmailStorage:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
 
-    async def get_email(self, email_id: int, owner_email: str) -> Optional[dict]:
+    async def get_email(self, email_id: int, owner_email: str) -> dict | None:
         async with _aiosqlite().connect(self.db_path) as db:
             db.row_factory = _aiosqlite().Row
             cursor = await db.execute(
@@ -186,7 +189,9 @@ class EmailStorage:
             )
             await db.commit()
 
-    async def move_to_folder(self, email_id: int, owner_email: str, folder: str) -> None:
+    async def move_to_folder(
+        self, email_id: int, owner_email: str, folder: str
+    ) -> None:
         async with _aiosqlite().connect(self.db_path) as db:
             await db.execute(
                 "UPDATE emails SET folder = ? WHERE id = ? AND owner_email = ?",
@@ -207,7 +212,7 @@ class EmailStorage:
             ).fetchall()
             return [dict(r) for r in rows]
 
-    def get_email_sync(self, email_id: int, owner_email: str) -> Optional[dict]:
+    def get_email_sync(self, email_id: int, owner_email: str) -> dict | None:
         with sqlite3.connect(self.db_path) as db:
             db.row_factory = sqlite3.Row
             row = db.execute(
@@ -238,12 +243,12 @@ class EmailStorage:
         recipients: list[str],
         subject: str,
         body_text: str,
-        body_html: Optional[str],
+        body_html: str | None,
         owner_email: str,
         message_id: str = "",
         folder: str = "inbox",
     ) -> int:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with sqlite3.connect(self.db_path) as db:
             cursor = db.execute(
                 """

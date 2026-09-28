@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app import config
 from app.cambio import atualizar_cambio, usd_brl
+from app.cj import buscar_catalogo as buscar_catalogo_cj
 from app.db import connect, exportar_parquet, get_meta, locked, set_meta
 from app.models import CatalogoStatus, Produto, ProdutoAdminIn
-from app.cj import buscar_catalogo as buscar_catalogo_cj
 from app.scraper import carregar_fonte, salvar_fonte, varrer_todos
 
 log = logging.getLogger("unissono.loja.catalogo")
@@ -24,7 +24,7 @@ def _preco_venda(base_usd: float, frete_usd: float) -> tuple[float, float]:
 
 
 def upsert_produtos(itens: list[dict[str, Any]]) -> int:
-    agora = datetime.now(timezone.utc).replace(tzinfo=None)
+    agora = datetime.now(UTC).replace(tzinfo=None)
     cambio = usd_brl()
     with locked():
         con = connect()
@@ -93,7 +93,11 @@ async def sincronizar_catalogo() -> int:
     if not itens:
         itens = await varrer_todos()
     n = await asyncio.to_thread(upsert_produtos, itens)
-    log.info("Catálogo sincronizado: %s itens fonte=%s", n, "cj" if config.cj_configurada() else "scrape")
+    log.info(
+        "Catálogo sincronizado: %s itens fonte=%s",
+        n,
+        "cj" if config.cj_configurada() else "scrape",
+    )
     return n
 
 
@@ -112,8 +116,19 @@ def listar_admin() -> list[dict]:
         finally:
             con.close()
     chaves = (
-        "id", "sku", "titulo", "categoria", "marca", "imagem_url", "url",
-        "preco_base_usd", "frete_usd", "custo_aquisicao", "preco_venda", "estoque", "fonte",
+        "id",
+        "sku",
+        "titulo",
+        "categoria",
+        "marca",
+        "imagem_url",
+        "url",
+        "preco_base_usd",
+        "frete_usd",
+        "custo_aquisicao",
+        "preco_venda",
+        "estoque",
+        "fonte",
     )
     return [dict(zip(chaves, row)) for row in rows]
 

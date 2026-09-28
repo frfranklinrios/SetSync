@@ -9,49 +9,49 @@ load_dotenv(override=False)
 
 def _parse_default_sender(raw: str | None, fallback_email: str) -> tuple[str, str]:
     """Aceita e-mail simples ou formato ``Nome <email@dominio>``."""
-    name_default = (os.getenv('MAIL_SENDER_NAME') or 'Uníssono').strip() or 'Uníssono'
-    text = (raw or '').strip()
+    name_default = (os.getenv("MAIL_SENDER_NAME") or "Uníssono").strip() or "Uníssono"
+    text = (raw or "").strip()
     if not text:
-        return name_default, fallback_email or 'noreply@unissono.app'
-    match = re.match(r'^(.+?)\s*<([^>]+)>$', text)
+        return name_default, fallback_email or "noreply@unissono.app"
+    match = re.match(r"^(.+?)\s*<([^>]+)>$", text)
     if match:
         return match.group(1).strip(), match.group(2).strip()
-    if '@' in text:
+    if "@" in text:
         return name_default, text
     return name_default, fallback_email or text
 
 
 # Configurações de e-mail (Flask-Mail) — use .env em produção
 # Produção Uníssono: SMTP interno (mail) ou provedor externo — ver .env.example
-MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.zoho.com')
-MAIL_PORT = int(os.getenv('MAIL_PORT', '587'))
-MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', '1').lower() in ('1', 'true', 'yes')
-MAIL_USE_SSL = os.getenv('MAIL_USE_SSL', '0').lower() in ('1', 'true', 'yes')
-MAIL_USERNAME = (os.getenv('MAIL_USERNAME') or '').strip()
-MAIL_PASSWORD = (os.getenv('MAIL_PASSWORD') or '').strip()
+MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.zoho.com")
+MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
+MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "1").lower() in ("1", "true", "yes")
+MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "0").lower() in ("1", "true", "yes")
+MAIL_USERNAME = (os.getenv("MAIL_USERNAME") or "").strip()
+MAIL_PASSWORD = (os.getenv("MAIL_PASSWORD") or "").strip()
 MAIL_DEFAULT_SENDER = _parse_default_sender(
-    os.getenv('MAIL_DEFAULT_SENDER'),
+    os.getenv("MAIL_DEFAULT_SENDER"),
     MAIL_USERNAME,
 )
 
-MAIL_DOMAIN = (os.getenv('MAIL_DOMAIN') or 'unissono.app').strip().lower()
+MAIL_DOMAIN = (os.getenv("MAIL_DOMAIN") or "unissono.app").strip().lower()
 
 
 def contact_email() -> str:
     """E-mail público de contato (remetente / LGPD)."""
     return (
-        (os.getenv('PRIVACY_CONTACT_EMAIL') or '').strip()
+        (os.getenv("PRIVACY_CONTACT_EMAIL") or "").strip()
         or MAIL_USERNAME
-        or f'contato@{MAIL_DOMAIN}'
+        or f"contato@{MAIL_DOMAIN}"
     )
 
 
 def webmail_url() -> str | None:
     """URL pública do webmail (HTTPS, sem porta 8080)."""
-    raw = (os.getenv('SETSYNC_WEBMAIL_URL') or '').strip()
+    raw = (os.getenv("SETSYNC_WEBMAIL_URL") or "").strip()
     if not raw:
         return None
-    raw = raw.replace(':8080', '').rstrip('/')
-    if raw.startswith('http://mail.'):
-        raw = 'https://' + raw[len('http://'):]
+    raw = raw.replace(":8080", "").rstrip("/")
+    if raw.startswith("http://mail."):
+        raw = "https://" + raw[len("http://") :]
     return raw

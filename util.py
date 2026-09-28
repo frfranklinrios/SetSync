@@ -1,17 +1,16 @@
-
+import html as html_lib
+import re
 from datetime import date, datetime
 
 from pychord import Chord
-import re
-import html as html_lib
 
 
 def format_date_short(value) -> str:
     """Data curta para templates (SQLite str ou datetime do PostgreSQL)."""
     if not value:
-        return ''
+        return ""
     if isinstance(value, datetime):
-        return value.strftime('%Y-%m-%d')
+        return value.strftime("%Y-%m-%d")
     if isinstance(value, date):
         return value.isoformat()
     return str(value)[:10]
@@ -20,20 +19,18 @@ def format_date_short(value) -> str:
 def format_datetime_br(value) -> str:
     """Data e hora para histórico admin (YYYY-MM-DD HH:MM)."""
     if not value:
-        return ''
+        return ""
     if isinstance(value, datetime):
-        return value.strftime('%Y-%m-%d %H:%M')
-    text = str(value).replace('T', ' ')
+        return value.strftime("%Y-%m-%d %H:%M")
+    text = str(value).replace("T", " ")
     return text[:16]
-
-
 
 
 def _to_br_note(note):
     if not note:
         return note
     # Mantem a alteracao original (# ou b) e apenas normaliza glifos unicode.
-    return str(note).replace('♯', '#').replace('♭', 'b')
+    return str(note).replace("♯", "#").replace("♭", "b")
 
 
 def to_brazilian_chord_notation(chord_str):
@@ -50,27 +47,27 @@ def to_brazilian_chord_notation(chord_str):
         return chord_str
 
     s = str(chord_str).strip()
-    m = re.match(r'^([A-G](?:#|b)?)(.*?)(?:/([A-G](?:#|b)?))?$', s)
+    m = re.match(r"^([A-G](?:#|b)?)(.*?)(?:/([A-G](?:#|b)?))?$", s)
     if not m:
         return s
 
-    root, quality, bass = m.group(1), (m.group(2) or ''), m.group(3)
+    root, quality, bass = m.group(1), (m.group(2) or ""), m.group(3)
     root = _to_br_note(root)
     if bass:
         bass = _to_br_note(bass)
 
     q = quality
     # Ordem importa: dim7 antes de qualquer regra que possa casar "m7" dentro de "dim7"
-    q = re.sub(r'(?i)dim7', '°7', q)
-    q = re.sub(r'(?i)dim', '°', q)
-    q = re.sub(r'(?i)maj(\d+)', r'\1+', q)
-    q = re.sub(r'(\d+)M(?!\w)', r'\1+', q)       # 7M, 9M (BR)
-    q = re.sub(r'(?<![a-zA-Z])M(\d+)', r'\1+', q)  # M7 maiúsculo — NÃO casa m7 de menor
-    q = re.sub(r'(?i)min', 'm', q)
+    q = re.sub(r"(?i)dim7", "°7", q)
+    q = re.sub(r"(?i)dim", "°", q)
+    q = re.sub(r"(?i)maj(\d+)", r"\1+", q)
+    q = re.sub(r"(\d+)M(?!\w)", r"\1+", q)  # 7M, 9M (BR)
+    q = re.sub(r"(?<![a-zA-Z])M(\d+)", r"\1+", q)  # M7 maiúsculo — NÃO casa m7 de menor
+    q = re.sub(r"(?i)min", "m", q)
 
     out = root + q
     if bass:
-        out += '/' + bass
+        out += "/" + bass
     return out
 
 
@@ -80,7 +77,7 @@ def prefer_flats_for_tom(tom_original):
     root = parse_tom_root(label)
     if not root:
         return False
-    if re.match(r'^' + re.escape(root) + r'm$', label, re.I):
+    if re.match(r"^" + re.escape(root) + r"m$", label, re.IGNORECASE):
         return label in _FLAT_MINOR_LABELS or label.capitalize() in _FLAT_MINOR_LABELS
     return root in _FLAT_MAJOR_ROOTS
 
@@ -93,7 +90,7 @@ def format_text_chords_br(text, tom_original=None):
     desse tom; sem tom, mantém a grafia recebida.
     """
     if text is None:
-        return ''
+        return ""
     key_table = build_key_spelling(tom_original) if tom_original else None
 
     def format_token(chord):
@@ -106,6 +103,7 @@ def format_text_chords_br(text, tom_original=None):
         return format_token(stripped)
     return _bracket_chord_sub(str(text), format_token)
 
+
 def _normalize_chord_for_pychord(chord_str):
     """Converte notação brasileira para algo que o pychord entenda.
 
@@ -115,16 +113,12 @@ def _normalize_chord_for_pychord(chord_str):
       - 7M / M7 já são aceitos pelo pychord
       - "+" / "-" remanescentes são removidos (pychord não os entende)
     """
-    s = re.sub(r'[°º]', 'dim', chord_str)
+    s = re.sub(r"[°º]", "dim", chord_str)
     # Captura base (com m opcional) + dígito + '+' → base + 'maj' + dígito
     # Ex.: "C7+" → "Cmaj7";  "Cm7+" → "Cmmaj7" (pychord não suporta, fallback abaixo)
-    s = re.sub(
-        r'^([A-G][#b]?)(\d{1,2})\+',
-        r'\1maj\2',
-        s
-    )
+    s = re.sub(r"^([A-G][#b]?)(\d{1,2})\+", r"\1maj\2", s)
     # Remove +/- restantes que o pychord não entende (ex.: "B7-")
-    s = re.sub(r'[+\-](?=[\d]|$|/)', '', s)
+    s = re.sub(r"[+\-](?=[\d]|$|/)", "", s)
     return s
 
 
@@ -132,19 +126,19 @@ def split_chord_progression(symbol):
     """Divide uma sequência de acordes em partes (ex.: 'Bmaj7 -> F#7')."""
     if not symbol:
         return []
-    parts = re.split(r'\s*(?:→|->|⇒|~|,)\s*', symbol.strip())
+    parts = re.split(r"\s*(?:→|->|⇒|~|,)\s*", symbol.strip())
     return [p for p in parts if p]
 
 
 def clean_chord_symbol(symbol):
     """Remove wrappers visuais para tentar parsear o acorde corretamente."""
     if not symbol:
-        return ''
+        return ""
     s = symbol.strip()
-    if s.startswith('[') and s.endswith(']') and len(s) >= 2:
+    if s.startswith("[") and s.endswith("]") and len(s) >= 2:
         s = s[1:-1].strip()
     # Parênteses no meio (ex.: C#m7(5-)) não são wrapper — não usar strip('()')
-    if len(s) >= 2 and s[0] == '(' and s[-1] == ')' and '(' not in s[1:-1]:
+    if len(s) >= 2 and s[0] == "(" and s[-1] == ")" and "(" not in s[1:-1]:
         s = s[1:-1].strip()
     return s.strip()
 
@@ -162,36 +156,45 @@ def chord_components_info(symbol):
         if not isinstance(notes, list) or not notes:
             return None
         return {
-            'input': symbol,
-            'display': s,
-            'normalized': normalized,
-            'notes': notes,
+            "input": symbol,
+            "display": s,
+            "normalized": normalized,
+            "notes": notes,
         }
     except Exception:
         return None
 
 
-_CHROMATIC_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-_CHROMATIC_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+_CHROMATIC_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+_CHROMATIC_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 
-_FLAT_MAJOR_ROOTS = frozenset({'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'})
-_FLAT_MINOR_LABELS = frozenset({'Dm', 'Gm', 'Cm', 'Fm', 'Bbm', 'Ebm', 'Abm', 'Dbm', 'Gbm'})
+_FLAT_MAJOR_ROOTS = frozenset({"F", "Bb", "Eb", "Ab", "Db", "Gb"})
+_FLAT_MINOR_LABELS = frozenset(
+    {"Dm", "Gm", "Cm", "Fm", "Bbm", "Ebm", "Abm", "Dbm", "Gbm"}
+)
 
 _ENHARMONIC_FLAT_TO_SHARP = {
-    'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#',
-    'Cb': 'B', 'Fb': 'E',
+    "Db": "C#",
+    "Eb": "D#",
+    "Gb": "F#",
+    "Ab": "G#",
+    "Bb": "A#",
+    "Cb": "B",
+    "Fb": "E",
 }
 
 
 def _split_chord_root_quality(chord_str):
-    m = re.match(r'^([A-G](?:#|b)?)(.*?)(?:/([A-G](?:#|b)?))?$', (chord_str or '').strip())
+    m = re.match(
+        r"^([A-G](?:#|b)?)(.*?)(?:/([A-G](?:#|b)?))?$", (chord_str or "").strip()
+    )
     if not m:
         return None
-    return m.group(1), (m.group(2) or ''), m.group(3)
+    return m.group(1), (m.group(2) or ""), m.group(3)
 
 
 def _note_semitone_index(note):
-    n = _to_br_note(note or '')
+    n = _to_br_note(note or "")
     if n in _CHROMATIC_SHARP:
         return _CHROMATIC_SHARP.index(n)
     if n in _CHROMATIC_FLAT:
@@ -203,13 +206,26 @@ def _note_semitone_index(note):
 # Graus da escala em semitons a partir da tônica.
 _MAJOR_STEPS = (0, 2, 4, 5, 7, 9, 11)
 _MINOR_STEPS = (0, 2, 3, 5, 7, 8, 10)  # menor natural
-_LETTERS = ('C', 'D', 'E', 'F', 'G', 'A', 'B')
-_LETTER_PC = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
+_LETTERS = ("C", "D", "E", "F", "G", "A", "B")
+_LETTER_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 
 # Tonalidades canônicas práticas por pitch class (evita tons com dobrados,
 # ex.: usa Eb em vez de D#, F# em vez de Gb). Índice = semitom a partir de C.
-_MAJOR_KEY_BY_PC = ('C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')
-_MINOR_KEY_BY_PC = ('Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm')
+_MAJOR_KEY_BY_PC = ("C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B")
+_MINOR_KEY_BY_PC = (
+    "Cm",
+    "C#m",
+    "Dm",
+    "Ebm",
+    "Em",
+    "Fm",
+    "F#m",
+    "Gm",
+    "G#m",
+    "Am",
+    "Bbm",
+    "Bm",
+)
 
 
 def build_key_spelling(tom):
@@ -234,7 +250,7 @@ def build_key_spelling(tom):
         diff = (pc - _LETTER_PC[letter]) % 12
         if diff > 6:
             diff -= 12
-        acc = {0: '', 1: '#', -1: 'b'}.get(diff)
+        acc = {0: "", 1: "#", -1: "b"}.get(diff)
         if acc is None:
             continue  # grau exigiria dobrado (##/bb): mantém a cromática base
         table[pc] = letter + acc
@@ -256,7 +272,7 @@ def _respell_chord_with_key(chord_str, key_table):
             bass = key_table[idx_b]
     out = root + quality
     if bass:
-        out += '/' + bass
+        out += "/" + bass
     return out
 
 
@@ -266,17 +282,21 @@ def _dest_key_spelling(tom_origem, semitones):
 
 
 def _spell_semitone(semitone, prefer_flats=False):
-    return _CHROMATIC_FLAT[semitone % 12] if prefer_flats else _CHROMATIC_SHARP[semitone % 12]
+    return (
+        _CHROMATIC_FLAT[semitone % 12]
+        if prefer_flats
+        else _CHROMATIC_SHARP[semitone % 12]
+    )
 
 
 def _prefer_flats_for_respell(note: str, original_note: str | None = None) -> bool:
     """Define sustenido vs. bemol ao reescrever uma nota já transposta pelo pychord."""
-    if 'b' in note and '#' not in note:
+    if "b" in note and "#" not in note:
         return True
-    if '#' in note:
+    if "#" in note:
         return False
     if original_note:
-        return 'b' in original_note and '#' not in original_note
+        return "b" in original_note and "#" not in original_note
     return False
 
 
@@ -306,13 +326,13 @@ def _respell_chord_roots(transposed, original):
 
     out = new_root + quality
     if new_bass:
-        out += '/' + new_bass
+        out += "/" + new_bass
     return out
 
 
 def transpose_chord_display(chord_str, semitones: int, tom_origem: str | None) -> str:
     """Transpõe um acorde e grafia pela armadura do tom de destino."""
-    tom = normalize_tom_label(tom_origem or 'C')
+    tom = normalize_tom_label(tom_origem or "C")
     if not semitones:
         return format_text_chords_br(chord_str, tom)
     out = pychord_transpose_text(chord_str, semitones, tom)
@@ -331,9 +351,9 @@ def pychord_transpose_chord(chord_str, semitones, key_table=None):
         chord.transpose(semitones)
         new_str = str(chord)
         # Preserva a notação "+" original se existia
-        if chord_str.endswith('+') and not new_str.endswith('+'):
+        if chord_str.endswith("+") and not new_str.endswith("+"):
             # Re-aplica o "+" se a entrada original usava (mantém estilo BR)
-            new_str = re.sub(r'maj(\d+)$', r'\1+', new_str)
+            new_str = re.sub(r"maj(\d+)$", r"\1+", new_str)
         if key_table is not None:
             new_str = _respell_chord_with_key(new_str, key_table)
         else:
@@ -349,28 +369,28 @@ def pychord_transpose_chord(chord_str, semitones, key_table=None):
 #   - alteração brasileira: + (= maj), - (= menor/dim em algumas notações), ° / º (dim)
 #   - tensões alteradas: b5, #5, b9, #9, #11, b13, etc.
 _CHORD_PART = (
-    r'(?:maj7|maj|min|m7b5|m7|M7|m|M|dim7|dim|aug|sus2|sus4|sus|add9|add'
-    r'|7|9|11|13|6|5|4|2'
-    r'|[+\-°º]'
-    r'|[b#]\d{1,2}'
-    r'|\([^)]+\))'  # ex.: C#m7(5-) no Cifra Club
+    r"(?:maj7|maj|min|m7b5|m7|M7|m|M|dim7|dim|aug|sus2|sus4|sus|add9|add"
+    r"|7|9|11|13|6|5|4|2"
+    r"|[+\-°º]"
+    r"|[b#]\d{1,2}"
+    r"|\([^)]+\))"  # ex.: C#m7(5-) no Cifra Club
 )
 # Nota raiz: quando há # ou b logo após a letra, consome junto (evita casar só "F" em "F#")
-_CHORD_ROOT = r'(?:[A-G]#|[A-G]b|[A-G](?![#b]))'
-_CHORD_BASS = r'(?:/(?:[A-G]#|[A-G]b|[A-G](?![#b])))?'
+_CHORD_ROOT = r"(?:[A-G]#|[A-G]b|[A-G](?![#b]))"
+_CHORD_BASS = r"(?:/(?:[A-G]#|[A-G]b|[A-G](?![#b])))?"
 # Compat: alias usado em outros pontos
 _CHORD_HEAD = _CHORD_ROOT
 
 # Para uso em match exato (token completo)
 CHORD_TOKEN_RE = re.compile(
-    r'^' + _CHORD_ROOT + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r'$'
+    r"^" + _CHORD_ROOT + r"(?:" + _CHORD_PART + r")*" + _CHORD_BASS + r"$"
 )
 # Para uso em substituição inline (legado — preferir colchetes [Acorde])
 CHORD_INLINE_RE = re.compile(
-    r'(' + _CHORD_ROOT + r'(?:' + _CHORD_PART + r')*' + _CHORD_BASS + r')'
+    r"(" + _CHORD_ROOT + r"(?:" + _CHORD_PART + r")*" + _CHORD_BASS + r")"
 )
 # Acordes válidos apenas entre colchetes [Am], [G/B], etc.
-CHORD_BRACKET_RE = re.compile(r'\[([^\]]+)\]')
+CHORD_BRACKET_RE = re.compile(r"\[([^\]]+)\]")
 
 
 def pychord_highlight_chords(text):
@@ -378,7 +398,7 @@ def pychord_highlight_chords(text):
     not_recognized = set()
 
     def repl(match):
-        token = (match.group(1) or '').strip()
+        token = (match.group(1) or "").strip()
         if not is_bracket_chord_name(token):
             return match.group(0)
         normalized = _normalize_chord_for_pychord(token)
@@ -389,10 +409,11 @@ def pychord_highlight_chords(text):
             not_recognized.add(token)
             return match.group(0)
 
-    result = CHORD_BRACKET_RE.sub(repl, text or '')
+    result = CHORD_BRACKET_RE.sub(repl, text or "")
     if not_recognized:
         print("Acordes não reconhecidos pelo pychord:", not_recognized)
     return result
+
 
 def pychord_transpose_text(text, semitones, tom_origem=None):
     """Transpõe todos os acordes de um texto usando pychord. Suporta º/° como diminuto.
@@ -401,14 +422,14 @@ def pychord_transpose_text(text, semitones, tom_origem=None):
     armadura do tom de destino (ex.: Dó→Mi♭ gera Eb, não D#).
     """
     if semitones == 0:
-        return text or ''
+        return text or ""
     if text is None:
-        return ''
+        return ""
     key_table = _dest_key_spelling(tom_origem, semitones) if tom_origem else None
     stripped = text.strip()
     # Token isolado (grade harmônica: "F#", "G#m", "%", etc.)
-    if stripped == '%':
-        return '%'
+    if stripped == "%":
+        return "%"
     if CHORD_TOKEN_RE.match(stripped):
         return pychord_transpose_chord(stripped, semitones, key_table)
 
@@ -419,17 +440,31 @@ def pychord_transpose_text(text, semitones, tom_origem=None):
 
 
 # Notas em ordem cromática
-NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+NOTES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 
 # Mapa de aliases (bemol -> sustenido equivalente e vice-versa)
 NOTE_ALIASES = {
-    'B#': 'C', 'E#': 'F', 'Cb': 'B', 'Fb': 'E',
-    'C♯': 'C#', 'D♯': 'D#', 'E♯': 'F', 'F♯': 'F#',
-    'G♯': 'G#', 'A♯': 'A#', 'B♯': 'C',
-    'D♭': 'Db', 'E♭': 'Eb', 'F♭': 'E', 'G♭': 'Gb',
-    'A♭': 'Ab', 'B♭': 'Bb', 'C♭': 'B',
+    "B#": "C",
+    "E#": "F",
+    "Cb": "B",
+    "Fb": "E",
+    "C♯": "C#",
+    "D♯": "D#",
+    "E♯": "F",
+    "F♯": "F#",
+    "G♯": "G#",
+    "A♯": "A#",
+    "B♯": "C",
+    "D♭": "Db",
+    "E♭": "Eb",
+    "F♭": "E",
+    "G♭": "Gb",
+    "A♭": "Ab",
+    "B♭": "Bb",
+    "C♭": "B",
 }
+
 
 def normalize_note(note):
     """Normaliza notação de notas (ex: Db, ♭, ♯)"""
@@ -437,12 +472,14 @@ def normalize_note(note):
         note = NOTE_ALIASES[note]
     return note
 
+
 def find_notes_in_text(text):
     """Encontra todas as notas/acordes no texto"""
     # Padrão: nota [#/♯/b/♭] [acordes modificadores como m, maj7, etc]
-    pattern = r'\b([A-G][#♯b♭]?)(?:m|maj|min|dim|aug|sus|add|m7|maj7|7|9|11|13)?\b'
+    pattern = r"\b([A-G][#♯b♭]?)(?:m|maj|min|dim|aug|sus|add|m7|maj7|7|9|11|13)?\b"
     matches = re.finditer(pattern, text)
     return [(m.group(1), m.start(), m.end()) for m in matches]
+
 
 def get_note_index(note):
     """Retorna o índice da nota na escala cromática"""
@@ -453,117 +490,121 @@ def get_note_index(note):
         return NOTES_FLAT.index(note)
     return None
 
+
 def transpose_note(note, semitones):
     """Transpõe uma nota por um número de semitons"""
     note = normalize_note(note)
     idx = get_note_index(note)
     if idx is None:
         return note
-    
+
     new_idx = (idx + semitones) % 12
     return NOTES[new_idx]
+
 
 def extract_chord(text, start_pos):
     """Extrai um acorde completo a partir de uma posição"""
     # Padrão: nota + modificadores (m, maj7, etc)
-    pattern = r'[A-G][#♯b♭]?(?:m|maj|min|dim|aug|sus|add|m7|maj7|7|9|11|13)?'
+    pattern = r"[A-G][#♯b♭]?(?:m|maj|min|dim|aug|sus|add|m7|maj7|7|9|11|13)?"
     match = re.match(pattern, text[start_pos:])
     if match:
         return match.group(0)
     return None
 
+
 def transpose_text(text, semitones):
     """Transpõe todos os acordes em um texto"""
     if semitones == 0:
         return text
-    
+
     result = list(text)
-    
+
     # Encontrar todos os acordes
-    pattern = r'\b([A-G][#♯b♭]?)(?:(m|maj|min|dim|aug|sus|add|m7|maj7|7|9|11|13))?\b'
-    
+    pattern = r"\b([A-G][#♯b♭]?)(?:(m|maj|min|dim|aug|sus|add|m7|maj7|7|9|11|13))?\b"
+
     for match in re.finditer(pattern, text):
         base_note = match.group(1)
-        modifier = match.group(2) or ''
-        
+        modifier = match.group(2) or ""
+
         new_note = transpose_note(base_note, semitones)
         new_chord = new_note + modifier
         old_chord = match.group(0)
-        
+
         # Substituir no resultado
         start = match.start()
         end = match.end()
         for i in range(start, end):
-            result[i] = ''
+            result[i] = ""
         result[start] = new_chord
-    
-    return ''.join(result)
+
+    return "".join(result)
+
 
 def get_available_tones():
     """Retorna os tons disponíveis para transposição (legado — preferir get_transposition_options)."""
     return {
-        -12: 'Oitava Baixa',
-        -11: 'A',
-        -10: 'A#/Bb',
-        -9: 'B',
-        -8: 'C',
-        -7: 'C#/Db',
-        -6: 'D',
-        -5: 'D#/Eb',
-        -4: 'E',
-        -3: 'F',
-        -2: 'F#/Gb',
-        -1: 'G',
-        0: 'Original',
-        1: 'G#/Ab',
-        2: 'A',
-        3: 'A#/Bb',
-        4: 'B',
-        5: 'C',
-        6: 'C#/Db',
-        7: 'D',
-        8: 'D#/Eb',
-        9: 'E',
-        10: 'F',
-        11: 'F#/Gb',
-        12: 'G (Oitava Alta)',
+        -12: "Oitava Baixa",
+        -11: "A",
+        -10: "A#/Bb",
+        -9: "B",
+        -8: "C",
+        -7: "C#/Db",
+        -6: "D",
+        -5: "D#/Eb",
+        -4: "E",
+        -3: "F",
+        -2: "F#/Gb",
+        -1: "G",
+        0: "Original",
+        1: "G#/Ab",
+        2: "A",
+        3: "A#/Bb",
+        4: "B",
+        5: "C",
+        6: "C#/Db",
+        7: "D",
+        8: "D#/Eb",
+        9: "E",
+        10: "F",
+        11: "F#/Gb",
+        12: "G (Oitava Alta)",
     }
 
 
 def tom_is_minor(tom_original: str) -> bool:
     """True se o tom cadastrado for menor (Bm, Am, «A menor», etc.)."""
     label = normalize_tom_label(tom_original)
-    if re.match(r'^[A-G][#b]?m(?:in)?$', label, re.I):
+    if re.match(r"^[A-G][#b]?m(?:in)?$", label, re.IGNORECASE):
         return True
-    return bool(re.search(r'\bmenor\b', (tom_original or ''), re.I))
+    return bool(re.search(r"\bmenor\b", (tom_original or ""), re.IGNORECASE))
 
 
 def parse_tom_root(tom_original):
     """Extrai a nota raiz do tom cadastrado (ex.: Bmaj7 -> B, F#m -> F#)."""
-    s = normalize_tom_label(tom_original) or 'C'
+    s = normalize_tom_label(tom_original) or "C"
     if not s:
-        return 'C'
-    m = re.match(r'^([A-G])(#|b)?', s, re.I)
+        return "C"
+    m = re.match(r"^([A-G])(#|b)?", s, re.IGNORECASE)
     if not m:
-        return 'C'
-    return _to_br_note(m.group(1).upper() + (m.group(2) or ''))
+        return "C"
+    return _to_br_note(m.group(1).upper() + (m.group(2) or ""))
 
 
 def normalize_tom_label(tom_original):
     """Normaliza rótulos de tom para notação de cifra (C, F#, Am...)."""
-    s = (tom_original or '').strip()
+    s = (tom_original or "").strip()
     if not s:
-        return 'C'
+        return "C"
 
-    m = re.match(r'^([A-G](?:#|b)?)\s+(maior|menor)(?:\s*\(.*\))?$', s, re.IGNORECASE)
+    m = re.match(r"^([A-G](?:#|b)?)\s+(maior|menor)(?:\s*\(.*\))?$", s, re.IGNORECASE)
     if m:
         nota = _to_br_note(m.group(1))
         modo = m.group(2).lower()
-        return f'{nota}m' if modo == 'menor' else nota
+        return f"{nota}m" if modo == "menor" else nota
 
     # Remove sufixos de origem como "(cifra)" ou "(estimada)" mantendo a notação do acorde.
-    s = re.sub(r'\s*\((?:cifra|estimada)\)\s*$', '', s, flags=re.IGNORECASE).strip()
-    return s or 'C'
+    s = re.sub(r"\s*\((?:cifra|estimada)\)\s*$", "", s, flags=re.IGNORECASE).strip()
+    return s or "C"
 
 
 def semitones_between_keys(from_tom, to_key):
@@ -612,7 +653,7 @@ def key_at_transpose(tom_original, semitones):
 
 def get_absolute_key_list(tom_original=None):
     """Lista das 12 tonalidades canônicas para seleção (maiores ou menores)."""
-    if tom_is_minor(tom_original or ''):
+    if tom_is_minor(tom_original or ""):
         return list(_MINOR_KEY_BY_PC)
     return list(_MAJOR_KEY_BY_PC)
 
@@ -631,7 +672,7 @@ def get_transposition_options(tom_original):
     for key in chromatic:
         semi = semitones_between_keys(root, key)
         if semi == 0:
-            options[semi] = f'{key} (Original)'
+            options[semi] = f"{key} (Original)"
         else:
             options[semi] = key
     return dict(sorted(options.items(), key=lambda x: x[0]))
@@ -649,16 +690,16 @@ def build_transpose_map(tom_original):
 def _is_chord_token(token):
     """Verifica se um token isolado é um acorde válido"""
     t = clean_chord_symbol(token)
-    t = re.sub(r'[°º]', 'dim', t)
+    t = re.sub(r"[°º]", "dim", t)
     return bool(CHORD_TOKEN_RE.match(t))
 
 
 def is_bracket_chord_name(token: str) -> bool:
     """True se o texto entre colchetes for acorde (e não rótulo de seção como Intro)."""
-    t = (token or '').strip()
+    t = (token or "").strip()
     if not t:
         return False
-    if t in ('%', '%%') or re.fullmatch(r'%?\d+', t):
+    if t in ("%", "%%") or re.fullmatch(r"%?\d+", t):
         return True
     return _is_chord_token(t)
 
@@ -667,19 +708,19 @@ def _bracket_chord_sub(text, repl_fn):
     """Substitui apenas tokens entre colchetes que forem acordes válidos."""
 
     def repl(match):
-        token = (match.group(1) or '').strip()
+        token = (match.group(1) or "").strip()
         if not is_bracket_chord_name(token):
             return match.group(0)
-        return f'[{repl_fn(token)}]'
+        return f"[{repl_fn(token)}]"
 
-    return CHORD_BRACKET_RE.sub(repl, text or '')
+    return CHORD_BRACKET_RE.sub(repl, text or "")
 
 
 def _highlight_bracket_chords_escaped(escaped_line: str) -> str:
     """Destaca [Acorde] em linha já escapada para HTML."""
 
     def repl(match):
-        token = (match.group(1) or '').strip()
+        token = (match.group(1) or "").strip()
         if is_bracket_chord_name(token):
             return f'<span class="chord">[{html_lib.escape(token)}]</span>'
         return match.group(0)
@@ -688,43 +729,43 @@ def _highlight_bracket_chords_escaped(escaped_line: str) -> str:
 
 
 _TAB_LINE_RE = re.compile(
-    r'^[EBGDAe]\s*\|',
+    r"^[EBGDAe]\s*\|",
     re.IGNORECASE,
 )
 _TAB_HEADER_RE = re.compile(
-    r'^(?:\[(?:Tab|TAB)[^\]]*\]|(?:Tab|TABlatura)\b)',
+    r"^(?:\[(?:Tab|TAB)[^\]]*\]|(?:Tab|TABlatura)\b)",
     re.IGNORECASE,
 )
 _TAB_META_RE = re.compile(
-    r'^(?:Parte\s+\d+\s+de\s+\d+|Riff\b)',
+    r"^(?:Parte\s+\d+\s+de\s+\d+|Riff\b)",
     re.IGNORECASE,
 )
 _TAB_ARTIFACT_RE = re.compile(
-    r'span\s+class\s*=|</?span|spa\[|/span>',
+    r"span\s+class\s*=|</?span|spa\[|/span>",
     re.IGNORECASE,
 )
 
 
 def _is_tab_line(line: str) -> bool:
-    return bool(_TAB_LINE_RE.match((line or '').strip()))
+    return bool(_TAB_LINE_RE.match((line or "").strip()))
 
 
 def _is_tab_header(line: str) -> bool:
-    s = (line or '').strip()
+    s = (line or "").strip()
     if _TAB_HEADER_RE.match(s):
         return True
-    if s.startswith('[Tab') or s.startswith('[TAB'):
+    if s.startswith("[Tab") or s.startswith("[TAB"):
         return True
     return False
 
 
 def _is_tab_meta_line(line: str) -> bool:
-    s = (line or '').strip()
+    s = (line or "").strip()
     if not s:
         return False
     if _TAB_META_RE.match(s):
         return True
-    if _TAB_ARTIFACT_RE.search(s) and 'Parte' in s:
+    if _TAB_ARTIFACT_RE.search(s) and "Parte" in s:
         return True
     return False
 
@@ -732,24 +773,24 @@ def _is_tab_meta_line(line: str) -> bool:
 def sanitize_tab_html_artifacts(text: str) -> str:
     """Remove resíduos HTML de tablaturas importadas (ex.: Cifra Club)."""
     if not text:
-        return ''
+        return ""
     cleaned = []
-    for raw in text.replace('\r\n', '\n').replace('\r', '\n').split('\n'):
+    for raw in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
         line = raw
-        line = re.sub(r'^span class="tablatura">?\s*', '', line, flags=re.I)
-        line = re.sub(r'^span class="cnt">?\s*', '', line, flags=re.I)
-        line = re.sub(r'spa\[([^\]]+)\]n class="cnt">', '', line, flags=re.I)
-        line = re.sub(r'/span>\s*/span>\s*$', '', line, flags=re.I)
-        line = re.sub(r'</?span[^>]*>', '', line, flags=re.I)
-        line = re.sub(r'^spa\s*$', '', line, flags=re.I)
+        line = re.sub(r'^span class="tablatura">?\s*', "", line, flags=re.IGNORECASE)
+        line = re.sub(r'^span class="cnt">?\s*', "", line, flags=re.IGNORECASE)
+        line = re.sub(r'spa\[([^\]]+)\]n class="cnt">', "", line, flags=re.IGNORECASE)
+        line = re.sub(r"/span>\s*/span>\s*$", "", line, flags=re.IGNORECASE)
+        line = re.sub(r"</?span[^>]*>", "", line, flags=re.IGNORECASE)
+        line = re.sub(r"^spa\s*$", "", line, flags=re.IGNORECASE)
         cleaned.append(line.rstrip())
-    return '\n'.join(cleaned)
+    return "\n".join(cleaned)
 
 
 def content_has_tablatura(text: str) -> bool:
     """Indica se o texto contém tablatura (linhas E| B|… ou seções Tab)."""
-    text = sanitize_tab_html_artifacts(text or '')
-    for line in text.split('\n'):
+    text = sanitize_tab_html_artifacts(text or "")
+    for line in text.split("\n"):
         s = line.strip()
         if not s:
             continue
@@ -760,21 +801,21 @@ def content_has_tablatura(text: str) -> bool:
 
 def _parse_tab_header_line(line: str) -> tuple[str, str | None]:
     """Separa `[Tab - Intro]` do acorde opcional na mesma linha (`[G]`)."""
-    s = (line or '').strip()
-    m = re.match(r'^(\[(?:Tab|TAB)[^\]]*\])(.*)$', s, re.I)
+    s = (line or "").strip()
+    m = re.match(r"^(\[(?:Tab|TAB)[^\]]*\])(.*)$", s, re.IGNORECASE)
     if not m:
         return s, None
     title = m.group(1).strip()
-    rest = (m.group(2) or '').strip()
+    rest = (m.group(2) or "").strip()
     chord = None
-    cm = re.match(r'^\[([^\]]+)\]$', rest)
+    cm = re.match(r"^\[([^\]]+)\]$", rest)
     if cm and is_bracket_chord_name(cm.group(1)):
         chord = cm.group(1).strip()
     return title, chord
 
 
 def _is_tab_related_text(text: str) -> bool:
-    s = (text or '').strip()
+    s = (text or "").strip()
     if not s:
         return False
     return _is_tab_line(s) or _is_tab_header(s) or _is_tab_meta_line(s)
@@ -784,12 +825,12 @@ def _is_section_only_group(group: list[dict]) -> bool:
     if len(group) != 1:
         return False
     item = group[0] or {}
-    if (item.get('acorde') or '').strip():
+    if (item.get("acorde") or "").strip():
         return False
-    if item.get('section'):
+    if item.get("section"):
         return True
-    texto = (item.get('texto_letra') or '').strip()
-    if texto.startswith('[') and texto.endswith(']'):
+    texto = (item.get("texto_letra") or "").strip()
+    if texto.startswith("[") and texto.endswith("]"):
         token = texto[1:-1].strip()
         return token and not is_bracket_chord_name(token)
     return False
@@ -797,10 +838,10 @@ def _is_section_only_group(group: list[dict]) -> bool:
 
 def _section_label_from_group(group: list[dict]) -> str:
     item = group[0] or {}
-    if item.get('section'):
-        return str(item['section']).strip()
-    texto = (item.get('texto_letra') or '').strip()
-    if texto.startswith('[') and texto.endswith(']'):
+    if item.get("section"):
+        return str(item["section"]).strip()
+    texto = (item.get("texto_letra") or "").strip()
+    if texto.startswith("[") and texto.endswith("]"):
         return texto[1:-1].strip()
     return texto
 
@@ -808,32 +849,43 @@ def _section_label_from_group(group: list[dict]) -> str:
 def _is_tab_only_group(group: list[dict]) -> bool:
     if not group:
         return False
-    return all(_is_tab_related_text(str(item.get('texto_letra') or '')) for item in group)
+    return all(
+        _is_tab_related_text(str(item.get("texto_letra") or "")) for item in group
+    )
 
 
 def _sp_item_html(item: dict, next_item: dict | None = None) -> str:
-    chord = html_lib.escape((item.get('acorde') or '').strip())
-    lyric_raw = item.get('texto_letra')
-    lyric = html_lib.escape(str(lyric_raw)) if lyric_raw is not None and str(lyric_raw) else '&nbsp;'
+    chord = html_lib.escape((item.get("acorde") or "").strip())
+    lyric_raw = item.get("texto_letra")
+    lyric = (
+        html_lib.escape(str(lyric_raw))
+        if lyric_raw is not None and str(lyric_raw)
+        else "&nbsp;"
+    )
     no_gap = False
     if next_item is not None:
-        this_lyric = str(item.get('texto_letra') or '')
-        next_lyric = str(next_item.get('texto_letra') or '')
-        if this_lyric and next_lyric and not this_lyric.endswith(' ') and not next_lyric.startswith(' '):
+        this_lyric = str(item.get("texto_letra") or "")
+        next_lyric = str(next_item.get("texto_letra") or "")
+        if (
+            this_lyric
+            and next_lyric
+            and not this_lyric.endswith(" ")
+            and not next_lyric.startswith(" ")
+        ):
             no_gap = True
-    gap_cls = ' sp-no-gap' if no_gap else ''
+    gap_cls = " sp-no-gap" if no_gap else ""
     return (
         f'<span class="sp-item{gap_cls}">'
         f'<span class="sp-chord">{chord or "&nbsp;"}</span>'
         f'<span class="sp-word">{lyric}</span>'
-        '</span>'
+        "</span>"
     )
 
 
 def render_grouped_cifra_html(groups: list[list[dict]]) -> str:
     """Renderiza cifra_json agrupado: seções, blocos de tab e acordes sobre letra."""
     if not groups:
-        return ''
+        return ""
 
     parts: list[str] = []
     for group in groups:
@@ -846,18 +898,22 @@ def render_grouped_cifra_html(groups: list[list[dict]]) -> str:
             continue
 
         if _is_tab_only_group(group):
-            parts.append(_render_tab_block([str(item.get('texto_letra') or '') for item in group]))
+            parts.append(
+                _render_tab_block(
+                    [str(item.get("texto_letra") or "") for item in group]
+                )
+            )
             continue
 
         line_bits: list[str] = []
         for idx, item in enumerate(group):
             next_item = group[idx + 1] if idx + 1 < len(group) else None
-            if item.get('section') and not (item.get('acorde') or '').strip():
+            if item.get("section") and not (item.get("acorde") or "").strip():
                 line_bits.append(
                     f'<span class="sp-section">{html_lib.escape(str(item["section"]))}</span>'
                 )
                 continue
-            texto = str(item.get('texto_letra') or '')
+            texto = str(item.get("texto_letra") or "")
             if _is_tab_related_text(texto):
                 line_bits.append(_highlight_tab_line_html(texto.strip()))
                 continue
@@ -866,13 +922,13 @@ def render_grouped_cifra_html(groups: list[list[dict]]) -> str:
         if line_bits:
             parts.append(f'<div class="sp-line">{"".join(line_bits)}</div>')
 
-    return '\n'.join(parts)
+    return "\n".join(parts)
 
 
 def _highlight_tab_line_html(line: str) -> str:
     """Destaca cordas e números/técnicas em uma linha de tablatura."""
     s = line.rstrip()
-    m = re.match(r'^([EBGDAe])(\s*\|)(.*)$', s, re.I)
+    m = re.match(r"^([EBGDAe])(\s*\|)(.*)$", s, re.IGNORECASE)
     if not m:
         return f'<span class="cifra-tab-line">{html_lib.escape(s)}</span>'
 
@@ -880,15 +936,15 @@ def _highlight_tab_line_html(line: str) -> str:
     pipe = m.group(2)
     rest = html_lib.escape(m.group(3))
     rest = re.sub(
-        r'(\d+|x|X|/|\\|~|h|p|b)',
+        r"(\d+|x|X|/|\\|~|h|p|b)",
         r'<span class="tab-tech">\1</span>',
         rest,
     )
     return (
         f'<span class="cifra-tab-line">'
         f'<span class="tab-string">{string_name}{html_lib.escape(pipe)}</span>'
-        f'{rest}'
-        f'</span>'
+        f"{rest}"
+        f"</span>"
     )
 
 
@@ -900,7 +956,9 @@ def _render_tab_block(lines: list[str]) -> str:
         s = line.strip()
         if _is_tab_header(s):
             title, chord = _parse_tab_header_line(s)
-            parts.append(f'<span class="cifra-tab-title">{html_lib.escape(title)}</span>')
+            parts.append(
+                f'<span class="cifra-tab-title">{html_lib.escape(title)}</span>'
+            )
             if chord:
                 parts.append(
                     f'<span class="cifra-tab-chord">{html_lib.escape(chord)}</span>'
@@ -909,18 +967,20 @@ def _render_tab_block(lines: list[str]) -> str:
             parts.append(f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>')
         elif _is_tab_line(s):
             parts.append(_highlight_tab_line_html(s))
-        elif re.fullmatch(r'\[([^\]]+)\]', s):
+        elif re.fullmatch(r"\[([^\]]+)\]", s):
             token = s[1:-1].strip()
             if is_bracket_chord_name(token):
                 parts.append(
                     f'<span class="cifra-tab-chord">{html_lib.escape(token)}</span>'
                 )
             else:
-                parts.append(f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>')
+                parts.append(
+                    f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>'
+                )
         else:
             parts.append(f'<span class="cifra-tab-meta">{html_lib.escape(s)}</span>')
-    parts.append('</div>')
-    return ''.join(parts)
+    parts.append("</div>")
+    return "".join(parts)
 
 
 def highlight_chords_html(text):
@@ -931,18 +991,18 @@ def highlight_chords_html(text):
     Seguro contra XSS: o conteúdo do usuário é escapado antes de qualquer markup.
     """
     if text is None:
-        text = ''
+        text = ""
     text = sanitize_tab_html_artifacts(text)
-    lines = text.split('\n')
+    lines = text.split("\n")
     result = []
     i = 0
 
-    from chordpro import is_comment_line, parse_chordpro_directive, SECTION_DIRECTIVES
+    from chordpro import SECTION_DIRECTIVES, is_comment_line, parse_chordpro_directive
 
     while i < len(lines):
         line = lines[i]
         if not line.strip():
-            result.append('')
+            result.append("")
             i += 1
             continue
 
@@ -953,22 +1013,38 @@ def highlight_chords_html(text):
         directive = parse_chordpro_directive(line.strip())
         if directive:
             name, value = directive
-            if name == 'comment':
+            if name == "comment":
                 i += 1
                 continue
             elif name in SECTION_DIRECTIVES:
                 label = html_lib.escape(value or SECTION_DIRECTIVES[name].title())
                 result.append(f'<span class="cifra-section">{label}</span>')
-            elif name not in ('title', 't', 'artist', 'subtitle', 'st', 'key', 'capo', 'tempo', 'time'):
-                if not name.startswith('end_of'):
+            elif name not in (
+                "title",
+                "t",
+                "artist",
+                "subtitle",
+                "st",
+                "key",
+                "capo",
+                "tempo",
+                "time",
+            ):
+                if not name.startswith("end_of"):
                     result.append(
                         f'<span class="cifra-directive">{html_lib.escape(line.strip())}</span>'
                     )
             i += 1
             continue
 
-        if _is_tab_header(line) or _is_tab_line(line) or (
-            _is_tab_meta_line(line) and i + 1 < len(lines) and _is_tab_line(lines[i + 1])
+        if (
+            _is_tab_header(line)
+            or _is_tab_line(line)
+            or (
+                _is_tab_meta_line(line)
+                and i + 1 < len(lines)
+                and _is_tab_line(lines[i + 1])
+            )
         ):
             block = []
             while i < len(lines):
@@ -999,25 +1075,25 @@ def highlight_chords_html(text):
         result.append(f'<span class="cifra-lyric">{html_lib.escape(line)}</span>')
         i += 1
 
-    return '\n'.join(result)
+    return "\n".join(result)
 
 
 def highlight_chords_play_html(text):
     """HTML para modo tocar: TAB formatada + acordes acima da letra (sp-line)."""
     if text is None:
-        text = ''
+        text = ""
     text = sanitize_tab_html_artifacts(text)
-    lines = text.split('\n')
+    lines = text.split("\n")
     result = []
     i = 0
-    re_br = re.compile(r'\[([^\]]+)\]([^\[]*)')
+    re_br = re.compile(r"\[([^\]]+)\]([^\[]*)")
 
-    from chordpro import is_comment_line, parse_chordpro_directive, SECTION_DIRECTIVES
+    from chordpro import SECTION_DIRECTIVES, is_comment_line, parse_chordpro_directive
 
     while i < len(lines):
         line = lines[i]
         if not line.strip():
-            result.append('')
+            result.append("")
             i += 1
             continue
 
@@ -1028,22 +1104,38 @@ def highlight_chords_play_html(text):
         directive = parse_chordpro_directive(line.strip())
         if directive:
             name, value = directive
-            if name == 'comment':
+            if name == "comment":
                 i += 1
                 continue
             elif name in SECTION_DIRECTIVES:
                 label = html_lib.escape(value or SECTION_DIRECTIVES[name].title())
                 result.append(f'<span class="cifra-section">{label}</span>')
-            elif name not in ('title', 't', 'artist', 'subtitle', 'st', 'key', 'capo', 'tempo', 'time'):
-                if not name.startswith('end_of'):
+            elif name not in (
+                "title",
+                "t",
+                "artist",
+                "subtitle",
+                "st",
+                "key",
+                "capo",
+                "tempo",
+                "time",
+            ):
+                if not name.startswith("end_of"):
                     result.append(
                         f'<span class="cifra-directive">{html_lib.escape(line.strip())}</span>'
                     )
             i += 1
             continue
 
-        if _is_tab_header(line) or _is_tab_line(line) or (
-            _is_tab_meta_line(line) and i + 1 < len(lines) and _is_tab_line(lines[i + 1])
+        if (
+            _is_tab_header(line)
+            or _is_tab_line(line)
+            or (
+                _is_tab_meta_line(line)
+                and i + 1 < len(lines)
+                and _is_tab_line(lines[i + 1])
+            )
         ):
             block = []
             while i < len(lines):
@@ -1063,29 +1155,29 @@ def highlight_chords_play_html(text):
             result.append(_render_tab_block(block))
             continue
 
-        if re.search(r'\[[^\]]+\]', line):
+        if re.search(r"\[[^\]]+\]", line):
             parts = ['<div class="sp-line">']
             last = 0
             matched = False
             for m in re_br.finditer(line):
                 matched = True
                 if m.start() > last:
-                    prefix = line[last:m.start()]
+                    prefix = line[last : m.start()]
                     if prefix.strip():
                         parts.append(
                             '<span class="sp-item">'
                             '<span class="sp-chord"></span>'
                             f'<span class="sp-word">{html_lib.escape(prefix)}</span>'
-                            '</span>'
+                            "</span>"
                         )
-                token = (m.group(1) or '').strip()
-                lyric = m.group(2) or ''
+                token = (m.group(1) or "").strip()
+                lyric = m.group(2) or ""
                 if is_bracket_chord_name(token):
                     parts.append(
                         '<span class="sp-item">'
                         f'<span class="sp-chord">{html_lib.escape(token)}</span>'
                         f'<span class="sp-word">{html_lib.escape(lyric)}</span>'
-                        '</span>'
+                        "</span>"
                     )
                 else:
                     parts.append(
@@ -1096,7 +1188,7 @@ def highlight_chords_play_html(text):
                             '<span class="sp-item">'
                             '<span class="sp-chord"></span>'
                             f'<span class="sp-word">{html_lib.escape(lyric)}</span>'
-                            '</span>'
+                            "</span>"
                         )
                 last = m.end()
 
@@ -1108,14 +1200,14 @@ def highlight_chords_play_html(text):
                             '<span class="sp-item">'
                             '<span class="sp-chord"></span>'
                             f'<span class="sp-word">{html_lib.escape(suffix)}</span>'
-                            '</span>'
+                            "</span>"
                         )
-                parts.append('</div>')
-                result.append(''.join(parts))
+                parts.append("</div>")
+                result.append("".join(parts))
                 i += 1
                 continue
 
         result.append(f'<span class="cifra-lyric">{html_lib.escape(line)}</span>')
         i += 1
 
-    return '\n'.join(result)
+    return "\n".join(result)

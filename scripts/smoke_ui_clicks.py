@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Smoke UI: clica abas, botões e links críticos (Playwright + sessão Flask)."""
+
 from __future__ import annotations
 
 import sys
@@ -13,10 +14,11 @@ import os
 os.environ.setdefault("SESSION_COOKIE_SECURE", "0")
 os.environ["SETSYNC_CANONICAL_URL"] = ""
 
+from playwright.sync_api import sync_playwright
+
 from app import app
 from db import get_band_cifras, get_user_bands, get_user_by_username
 from models_setlist import get_band_setlists
-from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:5000"
 
@@ -98,7 +100,11 @@ def main() -> int:
         page.wait_for_timeout(2500)
         check_page(page, "after render")
         preview = page.locator("#preview")
-        if preview.count() and preview.inner_text().strip() and not preview.locator(".cs-chart").count():
+        if (
+            preview.count()
+            and preview.inner_text().strip()
+            and not preview.locator(".cs-chart").count()
+        ):
             errors.append("prévia chord sheet sem .cs-chart após render")
 
         safe(page, lambda: go(f"/cifras/{cid}/edit?tab=cifra"), "edit cifra")

@@ -22,8 +22,8 @@ FLOAT_NUM = re.compile(r"^<-\s*(.+)$")
 VOLTA_TOKEN = re.compile(r"^(\d+)\.$")
 VOLTA_LABEL = re.compile(r"^\d+\.")
 BAR_TIMESIG = re.compile(r"^(\d+):(\d+)$")
-REPEAT_GROUP = re.compile(r"^\((.+)\)(?:x(\d+)|(\d+)x)?$", re.I)
-REPEAT_SUFFIX = re.compile(r"^(?:x(\d+)|(\d+)x)", re.I)
+REPEAT_GROUP = re.compile(r"^\((.+)\)(?:x(\d+)|(\d+)x)?$", re.IGNORECASE)
+REPEAT_SUFFIX = re.compile(r"^(?:x(\d+)|(\d+)x)", re.IGNORECASE)
 
 NAV_MARKERS_ORDERED = [
     "D.C. al coda senza rep.",
@@ -90,7 +90,7 @@ class Bar:
         self.pulse_grid = [list(beat) for beat in grid]
         self.chords = _grid_to_chords(self.pulse_grid)
 
-    def clone(self) -> "Bar":
+    def clone(self) -> Bar:
         pg = [list(beat) for beat in self.pulse_grid] if self.pulse_grid else None
         return Bar(
             list(self.chords),
@@ -141,7 +141,7 @@ class ChartMeta:
     style: str = ""
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any] | None) -> "ChartMeta":
+    def from_dict(cls, raw: dict[str, Any] | None) -> ChartMeta:
         m = cls()
         if not raw:
             return m
@@ -303,7 +303,9 @@ def _parse_bar_token(token: str, volta: str = "") -> Bar | None:
 
     raw, left_edge, right_edge = _extract_barline_edges(token)
     if not raw and (left_edge or right_edge):
-        return Bar(["%"], line_left=left_edge or "single", line_right=right_edge or "single")
+        return Bar(
+            ["%"], line_left=left_edge or "single", line_right=right_edge or "single"
+        )
 
     indent = 0
     while raw.startswith("X"):
@@ -311,7 +313,13 @@ def _parse_bar_token(token: str, volta: str = "") -> Bar | None:
         raw = raw[1:]
 
     if not raw:
-        return Bar(["%"], indent=indent, volta=volta, line_left=left_edge or "single", line_right=right_edge or "single")
+        return Bar(
+            ["%"],
+            indent=indent,
+            volta=volta,
+            line_left=left_edge or "single",
+            line_right=right_edge or "single",
+        )
 
     if raw == "*":
         return Bar(
@@ -377,7 +385,9 @@ def _ensure_final_barline(chart: Chart) -> None:
         break
 
 
-def _append_bar(chart: Chart, state: _ParseState, bar: Bar, history: list[Bar], bar_index: int) -> int:
+def _append_bar(
+    chart: Chart, state: _ParseState, bar: Bar, history: list[Bar], bar_index: int
+) -> int:
     if state.pending_float and bar.chords:
         bar.floating_label = state.pending_float
         state.pending_float = ""
@@ -405,7 +415,7 @@ def _merge_quoted_chords(tokens: list[str]) -> list[str]:
     while i < len(tokens):
         tok = tokens[i]
         if i + 1 < len(tokens) and tokens[i + 1].startswith('"'):
-            tok = f'{tok} {tokens[i + 1]}'
+            tok = f"{tok} {tokens[i + 1]}"
             i += 2
             merged.append(tok)
             continue
@@ -515,7 +525,11 @@ def _parse_tokens_into_chart(
             count = int(gm.group(2) or gm.group(3) or 1)
             group_start = len(chart.bars)
             bar_index = _parse_tokens_into_chart(
-                inner_tokens, chart, state, history, bar_index,
+                inner_tokens,
+                chart,
+                state,
+                history,
+                bar_index,
             )
             _mark_repeat_brackets(chart, group_start, len(chart.bars), count)
             i += 1
@@ -671,7 +685,9 @@ def parse_chart(
             continue
 
         if BLANK_LINE.match(line):
-            bar_index = _append_bar(chart, state, Bar([], blank_spacer=True), history, bar_index)
+            bar_index = _append_bar(
+                chart, state, Bar([], blank_spacer=True), history, bar_index
+            )
             continue
 
         lm = LITERAL_LINE.match(raw_line.rstrip())

@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 """Testes rápidos da conversão de colagem Cifra Club → Uníssono."""
+
 from __future__ import annotations
 
 import sys
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 
+import re
+
+from bs4 import BeautifulSoup
+
+from chordpro import conteudo_to_chordpro, parse_conteudo_to_cifra_data
+from cifras_tool.scraper.cifraclub import baixar_html
 from cifras_tool.scraper.comum import (
     converter_html_para_inline,
     looks_like_cifraclub_colagem,
     normalizar_colagem_cifraclub,
 )
-from cifras_tool.scraper.cifraclub import baixar_html
-from chordpro import conteudo_to_chordpro, parse_conteudo_to_cifra_data
-from bs4 import BeautifulSoup
-import re
 
 MIAERO_PLAIN = """[Intro] Bm7  Em7  G6  Bm7  D  C#m7(5-)  F#7  Bm7
 
@@ -101,7 +104,7 @@ def test_miaero_pagina_real():
     pre = soup.select_one(".cifra_cnt pre") or soup.select_one("pre")
     if not pre:
         return
-    inner = re.sub(r"<br\s*/?>", "\n", pre.decode_contents(), flags=re.I)
+    inner = re.sub(r"<br\s*/?>", "\n", pre.decode_contents(), flags=re.IGNORECASE)
     out = converter_html_para_inline(inner)
     assert "bra[C#m7" not in out, out
     assert "brasil[Bm7]eiro" not in out, out
@@ -123,8 +126,7 @@ def test_miaero_texto_plano():
     assert "bra[C#m7" not in cp, cp
     data = parse_conteudo_to_cifra_data(MIAERO_PLAIN)
     assert any(
-        "Depois que eu ganhar dinheiro" in (it.get("texto_letra") or "")
-        for it in data
+        "Depois que eu ganhar dinheiro" in (it.get("texto_letra") or "") for it in data
     ), data
 
 

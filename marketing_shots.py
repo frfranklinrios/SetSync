@@ -11,34 +11,34 @@ from config import app_now_naive
 # Slot 0–6: troca visual a cada dia da semana
 NUM_SLOTS = 7
 
-PACK_BR = 'br'
-PACK_GOSPEL = 'gospel'
-PACK_ESTUDIO = 'estudio'
+PACK_BR = "br"
+PACK_GOSPEL = "gospel"
+PACK_ESTUDIO = "estudio"
 
 # Nomes canônicos usados nos templates (arquivo final do dia)
-SHOT_MODO_TOCAR = 'modo-tocar-mobile'
-SHOT_SETLIST = 'setlist-desktop'
-SHOT_FINANCE_BAND = 'financeiro-banda-desktop'
-SHOT_FINANCE_ME = 'meu-financeiro-desktop'
-SHOT_ESTUDIO_PAINEL = 'estudio-painel-mobile'
-SHOT_ESTUDIO_FINANCE = 'estudio-financeiro-desktop'
+SHOT_MODO_TOCAR = "modo-tocar-mobile"
+SHOT_SETLIST = "setlist-desktop"
+SHOT_FINANCE_BAND = "financeiro-banda-desktop"
+SHOT_FINANCE_ME = "meu-financeiro-desktop"
+SHOT_ESTUDIO_PAINEL = "estudio-painel-mobile"
+SHOT_ESTUDIO_FINANCE = "estudio-financeiro-desktop"
 
-_STATIC_DIR = Path(__file__).resolve().parent / 'static' / 'screenshots'
+_STATIC_DIR = Path(__file__).resolve().parent / "static" / "screenshots"
 
 
 def screenshots_live_dir() -> Path:
     """Pasta persistente (volume ./data/screenshots)."""
-    raw = os.getenv('SETSYNC_SCREENSHOTS_DIR') or ''
+    raw = os.getenv("SETSYNC_SCREENSHOTS_DIR") or ""
     if raw:
         return Path(raw)
-    data = os.getenv('MAIL_DATA_DIR') or os.getenv('SETSYNC_DATA_DIR') or ''
+    data = os.getenv("MAIL_DATA_DIR") or os.getenv("SETSYNC_DATA_DIR") or ""
     if data:
         # MAIL_DATA_DIR costuma ser /app/data/mail → sobe um nível
         base = Path(data)
-        if base.name == 'mail':
+        if base.name == "mail":
             base = base.parent
-        return base / 'screenshots'
-    return Path(__file__).resolve().parent / 'data' / 'screenshots'
+        return base / "screenshots"
+    return Path(__file__).resolve().parent / "data" / "screenshots"
 
 
 def slot_for_date(d: date | None = None) -> int:
@@ -47,32 +47,32 @@ def slot_for_date(d: date | None = None) -> int:
 
 
 def today_cache_bust() -> str:
-    return app_now_naive().strftime('%Y%m%d')
+    return app_now_naive().strftime("%Y%m%d")
 
 
 def live_shot_file(pack: str, name: str, *, slot: int | None = None) -> Path:
     slot = slot_for_date() if slot is None else slot
-    return screenshots_live_dir() / pack / f'slot-{slot}' / f'{name}.png'
+    return screenshots_live_dir() / pack / f"slot-{slot}" / f"{name}.png"
 
 
 def fallback_shot_file(name: str) -> Path | None:
     """Fallbacks estáticos (imagem baked na imagem Docker)."""
     aliases = {
-        SHOT_MODO_TOCAR: 'modo-tocar-mobile.png',
-        SHOT_SETLIST: 'setlist-desktop.png',
-        SHOT_ESTUDIO_PAINEL: 'estudio-painel-mobile.png',
-        SHOT_ESTUDIO_FINANCE: 'estudio-financeiro-desktop.png',
-        SHOT_FINANCE_BAND: 'financeiro-banda-desktop.png',
-        SHOT_FINANCE_ME: 'estudio-financeiro-desktop.png',
+        SHOT_MODO_TOCAR: "modo-tocar-mobile.png",
+        SHOT_SETLIST: "setlist-desktop.png",
+        SHOT_ESTUDIO_PAINEL: "estudio-painel-mobile.png",
+        SHOT_ESTUDIO_FINANCE: "estudio-financeiro-desktop.png",
+        SHOT_FINANCE_BAND: "financeiro-banda-desktop.png",
+        SHOT_FINANCE_ME: "estudio-financeiro-desktop.png",
     }
-    fname = aliases.get(name, f'{name}.png')
+    fname = aliases.get(name, f"{name}.png")
     path = _STATIC_DIR / fname
     return path if path.is_file() else None
 
 
 def resolve_shot_path(pack: str, name: str, *, slot: int | None = None) -> Path | None:
     # 1) cópia estável do dia (current)
-    current = screenshots_live_dir() / pack / 'current' / f'{name}.png'
+    current = screenshots_live_dir() / pack / "current" / f"{name}.png"
     if current.is_file() and current.stat().st_size > 1000:
         return current
     # 2) slot do dia
@@ -82,7 +82,7 @@ def resolve_shot_path(pack: str, name: str, *, slot: int | None = None) -> Path 
     # 3) qualquer slot do pack
     root = screenshots_live_dir() / pack
     if root.is_dir():
-        for child in sorted(root.glob(f'slot-*/{name}.png'), reverse=True):
+        for child in sorted(root.glob(f"slot-*/{name}.png"), reverse=True):
             if child.is_file() and child.stat().st_size > 1000:
                 return child
     return fallback_shot_file(name)
@@ -93,7 +93,7 @@ def marketing_shot_url(pack: str, name: str) -> str:
     from flask import url_for
 
     return url_for(
-        'marketing_shots.serve',
+        "marketing_shots.serve",
         pack=pack,
         name=name,
         v=today_cache_bust(),
@@ -104,11 +104,11 @@ def songs_br() -> list[dict]:
     """Repertório brasileiro para landing de bandas."""
     return [
         {
-            'titulo': 'Evidências',
-            'artista': 'Chitãozinho & Xororó',
-            'tom': 'A',
-            'bpm': 92,
-            'conteudo': """{title: Evidências}
+            "titulo": "Evidências",
+            "artista": "Chitãozinho & Xororó",
+            "tom": "A",
+            "bpm": 92,
+            "conteudo": """{title: Evidências}
 {artist: Chitãozinho & Xororó}
 {key: A}
 {tempo: 92}
@@ -128,11 +128,11 @@ def songs_br() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Tempo Perdido',
-            'artista': 'Legião Urbana',
-            'tom': 'G',
-            'bpm': 98,
-            'conteudo': """{title: Tempo Perdido}
+            "titulo": "Tempo Perdido",
+            "artista": "Legião Urbana",
+            "tom": "G",
+            "bpm": 98,
+            "conteudo": """{title: Tempo Perdido}
 {artist: Legião Urbana}
 {key: G}
 {tempo: 98}
@@ -145,11 +145,11 @@ def songs_br() -> list[dict]:
 {end_of_verse}""",
         },
         {
-            'titulo': 'Anna Júlia',
-            'artista': 'Los Hermanos',
-            'tom': 'A',
-            'bpm': 110,
-            'conteudo': """{title: Anna Júlia}
+            "titulo": "Anna Júlia",
+            "artista": "Los Hermanos",
+            "tom": "A",
+            "bpm": 110,
+            "conteudo": """{title: Anna Júlia}
 {artist: Los Hermanos}
 {key: A}
 {tempo: 110}
@@ -161,11 +161,11 @@ def songs_br() -> list[dict]:
 {end_of_verse}""",
         },
         {
-            'titulo': 'Sutilmente',
-            'artista': 'Skank',
-            'tom': 'E',
-            'bpm': 100,
-            'conteudo': """{title: Sutilmente}
+            "titulo": "Sutilmente",
+            "artista": "Skank",
+            "tom": "E",
+            "bpm": 100,
+            "conteudo": """{title: Sutilmente}
 {artist: Skank}
 {key: E}
 {tempo: 100}
@@ -176,11 +176,11 @@ def songs_br() -> list[dict]:
 {end_of_verse}""",
         },
         {
-            'titulo': 'Do Seu Lado',
-            'artista': 'Jota Quest',
-            'tom': 'G',
-            'bpm': 96,
-            'conteudo': """{title: Do Seu Lado}
+            "titulo": "Do Seu Lado",
+            "artista": "Jota Quest",
+            "tom": "G",
+            "bpm": 96,
+            "conteudo": """{title: Do Seu Lado}
 {artist: Jota Quest}
 {key: G}
 {tempo: 96}
@@ -191,11 +191,11 @@ def songs_br() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Eduardo e Mônica',
-            'artista': 'Legião Urbana',
-            'tom': 'A',
-            'bpm': 120,
-            'conteudo': """{title: Eduardo e Mônica}
+            "titulo": "Eduardo e Mônica",
+            "artista": "Legião Urbana",
+            "tom": "A",
+            "bpm": 120,
+            "conteudo": """{title: Eduardo e Mônica}
 {artist: Legião Urbana}
 {key: A}
 {tempo: 120}
@@ -207,11 +207,11 @@ def songs_br() -> list[dict]:
 {end_of_verse}""",
         },
         {
-            'titulo': 'Ai, Ai, Ai…',
-            'artista': 'Vanessa da Mata',
-            'tom': 'D',
-            'bpm': 88,
-            'conteudo': """{title: Ai, Ai, Ai…}
+            "titulo": "Ai, Ai, Ai…",
+            "artista": "Vanessa da Mata",
+            "tom": "D",
+            "bpm": 88,
+            "conteudo": """{title: Ai, Ai, Ai…}
 {artist: Vanessa da Mata}
 {key: D}
 {tempo: 88}
@@ -222,11 +222,11 @@ def songs_br() -> list[dict]:
 {end_of_verse}""",
         },
         {
-            'titulo': 'Exagerado',
-            'artista': 'Cazuza',
-            'tom': 'C',
-            'bpm': 112,
-            'conteudo': """{title: Exagerado}
+            "titulo": "Exagerado",
+            "artista": "Cazuza",
+            "tom": "C",
+            "bpm": 112,
+            "conteudo": """{title: Exagerado}
 {artist: Cazuza}
 {key: C}
 {tempo: 112}
@@ -243,11 +243,11 @@ def songs_gospel() -> list[dict]:
     """Repertório gospel/louvor para landing de igrejas."""
     return [
         {
-            'titulo': 'Porque Ele Vive',
-            'artista': 'Harpa Cristã / Tradicional',
-            'tom': 'G',
-            'bpm': 76,
-            'conteudo': """{title: Porque Ele Vive}
+            "titulo": "Porque Ele Vive",
+            "artista": "Harpa Cristã / Tradicional",
+            "tom": "G",
+            "bpm": 76,
+            "conteudo": """{title: Porque Ele Vive}
 {artist: Harpa Cristã}
 {key: G}
 {tempo: 76}
@@ -267,11 +267,11 @@ def songs_gospel() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Deus de Promessas',
-            'artista': 'Diante do Trono',
-            'tom': 'A',
-            'bpm': 72,
-            'conteudo': """{title: Deus de Promessas}
+            "titulo": "Deus de Promessas",
+            "artista": "Diante do Trono",
+            "tom": "A",
+            "bpm": 72,
+            "conteudo": """{title: Deus de Promessas}
 {artist: Diante do Trono}
 {key: A}
 {tempo: 72}
@@ -287,11 +287,11 @@ def songs_gospel() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Bondade de Deus',
-            'artista': 'Isadora Pompeo',
-            'tom': 'G',
-            'bpm': 68,
-            'conteudo': """{title: Bondade de Deus}
+            "titulo": "Bondade de Deus",
+            "artista": "Isadora Pompeo",
+            "tom": "G",
+            "bpm": 68,
+            "conteudo": """{title: Bondade de Deus}
 {artist: Isadora Pompeo}
 {key: G}
 {tempo: 68}
@@ -304,11 +304,11 @@ def songs_gospel() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Me Atraiu',
-            'artista': 'Gabriela Rocha',
-            'tom': 'E',
-            'bpm': 70,
-            'conteudo': """{title: Me Atraiu}
+            "titulo": "Me Atraiu",
+            "artista": "Gabriela Rocha",
+            "tom": "E",
+            "bpm": 70,
+            "conteudo": """{title: Me Atraiu}
 {artist: Gabriela Rocha}
 {key: E}
 {tempo: 70}
@@ -324,11 +324,11 @@ def songs_gospel() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Algo Novo',
-            'artista': 'Grove Worship',
-            'tom': 'D',
-            'bpm': 74,
-            'conteudo': """{title: Algo Novo}
+            "titulo": "Algo Novo",
+            "artista": "Grove Worship",
+            "tom": "D",
+            "bpm": 74,
+            "conteudo": """{title: Algo Novo}
 {artist: Grove Worship}
 {key: D}
 {tempo: 74}
@@ -339,11 +339,11 @@ def songs_gospel() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Tua Graça Me Basta',
-            'artista': 'Davi Fernandes',
-            'tom': 'C',
-            'bpm': 66,
-            'conteudo': """{title: Tua Graça Me Basta}
+            "titulo": "Tua Graça Me Basta",
+            "artista": "Davi Fernandes",
+            "tom": "C",
+            "bpm": 66,
+            "conteudo": """{title: Tua Graça Me Basta}
 {artist: Davi Fernandes}
 {key: C}
 {tempo: 66}
@@ -355,11 +355,11 @@ def songs_gospel() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Oceanos',
-            'artista': 'Hillsong / Ana Paula Valadão',
-            'tom': 'D',
-            'bpm': 64,
-            'conteudo': """{title: Oceanos}
+            "titulo": "Oceanos",
+            "artista": "Hillsong / Ana Paula Valadão",
+            "tom": "D",
+            "bpm": 64,
+            "conteudo": """{title: Oceanos}
 {artist: Hillsong United}
 {key: D}
 {tempo: 64}
@@ -375,11 +375,11 @@ def songs_gospel() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Lugar Secreto',
-            'artista': 'Gabriela Rocha',
-            'tom': 'G',
-            'bpm': 62,
-            'conteudo': """{title: Lugar Secreto}
+            "titulo": "Lugar Secreto",
+            "artista": "Gabriela Rocha",
+            "tom": "G",
+            "bpm": 62,
+            "conteudo": """{title: Lugar Secreto}
 {artist: Gabriela Rocha}
 {key: G}
 {tempo: 62}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import re
+
 from chordsheet.format_chord import chord_to_html
 from chordsheet.parser import Bar, Chart
 
@@ -128,7 +129,11 @@ def _render_beat_cell(col: int, beat_chords: list[str], prefs) -> str:
             inner = '<span class="cs-empty">.</span>'
         else:
             ch = chord_to_html(c, prefs)
-            inner = f'<span class="cs-slot">{ch}</span>' if ch else '<span class="cs-empty">.</span>'
+            inner = (
+                f'<span class="cs-slot">{ch}</span>'
+                if ch
+                else '<span class="cs-empty">.</span>'
+            )
         return f'<span class="cs-beat" style="grid-column:{col}">{inner}</span>'
 
     subs: list[str] = []
@@ -138,12 +143,16 @@ def _render_beat_cell(col: int, beat_chords: list[str], prefs) -> str:
         else:
             ch = chord_to_html(c, prefs)
             if ch:
-                subs.append(f'<span class="cs-sub"><span class="cs-slot">{ch}</span></span>')
+                subs.append(
+                    f'<span class="cs-sub"><span class="cs-slot">{ch}</span></span>'
+                )
             else:
-                subs.append('<span class="cs-sub"><span class="cs-empty">.</span></span>')
+                subs.append(
+                    '<span class="cs-sub"><span class="cs-empty">.</span></span>'
+                )
     return (
         f'<span class="cs-beat cs-beat--split" style="grid-column:{col}">'
-        f'{"".join(subs)}</span>'
+        f"{''.join(subs)}</span>"
     )
 
 
@@ -210,7 +219,9 @@ def _align_class(bar: Bar, prefs) -> str:
 
 
 def _repeat_dots() -> str:
-    return '<span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span>'
+    return (
+        '<span class="cs-bl-dots" aria-hidden="true"><span></span><span></span></span>'
+    )
 
 
 def _barline_html(side: str, kind: str) -> str:
@@ -257,7 +268,17 @@ def _annotation_is_section_label(text: str) -> bool:
         return False
     lowered = t.lower()
     if lowered.startswith(
-        ("simile", "empty", "optional", "strokes", "blank", "annotation", "4 bars", "linha", "- ")
+        (
+            "simile",
+            "empty",
+            "optional",
+            "strokes",
+            "blank",
+            "annotation",
+            "4 bars",
+            "linha",
+            "- ",
+        )
     ):
         return False
     return True
@@ -277,7 +298,9 @@ def _render_annotation(bar: Bar) -> str:
         return f'<div class="cs-literal">{text}</div>'
     if "  " in bar.annotation:
         cols = [c for c in re.split(r"  +", bar.annotation) if c]
-        cols_html = "".join(f'<span class="cs-col">{html.escape(c)}</span>' for c in cols)
+        cols_html = "".join(
+            f'<span class="cs-col">{html.escape(c)}</span>' for c in cols
+        )
         return f'<div class="cs-annotation cs-cols-3">{cols_html}</div>'
     if _annotation_is_section_label(bar.annotation):
         return f'<div class="cs-section"><span>{html.escape(bar.annotation.strip())}</span></div>'
@@ -314,7 +337,9 @@ def _render_bar(bar: Bar, chart: Chart, *, is_first_in_chunk: bool = True) -> st
 
     float_lbl = ""
     if bar.floating_label:
-        float_lbl = f'<span class="cs-float-label">{html.escape(bar.floating_label)}</span>'
+        float_lbl = (
+            f'<span class="cs-float-label">{html.escape(bar.floating_label)}</span>'
+        )
 
     left = (
         _barline_html("start", bar.line_left)
@@ -390,7 +415,7 @@ def render_chart_html(chart: Chart) -> str:
         <h1 class="cs-title">{title}</h1>
         {f'<div class="cs-artist">{artist}</div>' if artist else '<div class="cs-artist"></div>'}
       </div>
-      {f'<div class="cs-sub">{subtitle}</div>' if subtitle else ''}
+      {f'<div class="cs-sub">{subtitle}</div>' if subtitle else ""}
       <div class="cs-rule"></div>
     </header>"""
 
@@ -414,7 +439,9 @@ def render_chart_html(chart: Chart) -> str:
             continue
 
         sec = _section_label_at(chart.sections, i)
-        section_row = " cs-row-section-start" if _is_new_section_row(chart.sections, i) else ""
+        section_row = (
+            " cs-row-section-start" if _is_new_section_row(chart.sections, i) else ""
+        )
         chunk: list[Bar] = []
         slots_used = 0
         while i < len(chart.bars):
@@ -435,12 +462,17 @@ def render_chart_html(chart: Chart) -> str:
                 break
 
         chunk = _prepare_chunk_barlines(chunk)
-        chunk, leading_phantoms, last_volta_col = _row_volta_layout(chunk, last_volta_col)
+        chunk, leading_phantoms, last_volta_col = _row_volta_layout(
+            chunk, last_volta_col
+        )
         chunk_slots = sum(b.column_slots() for b in chunk)
         trailing_phantoms = max(0, per_row - leading_phantoms - chunk_slots)
         bars_html = (
             _phantom_bar_html() * leading_phantoms
-            + "".join(_render_bar(b, chart, is_first_in_chunk=(j == 0)) for j, b in enumerate(chunk))
+            + "".join(
+                _render_bar(b, chart, is_first_in_chunk=(j == 0))
+                for j, b in enumerate(chunk)
+            )
             + _phantom_bar_html() * trailing_phantoms
         )
         rows_html.append(
@@ -484,10 +516,8 @@ def render_chart_html(chart: Chart) -> str:
           }}
         }}</style>"""
 
-    chart_style = (
-        f' style="--cs-bars-per-row:{per_row};--cs-tab-lines:{max(3, min(8, int(p.tab_lines)))}"'
-    )
+    chart_style = f' style="--cs-bars-per-row:{per_row};--cs-tab-lines:{max(3, min(8, int(p.tab_lines)))}"'
     return (
         f'<article class="{p.css_classes()}"{chart_style}>'
-        f"{print_margin_css}{header}<div class=\"cs-body\">{''.join(rows_html)}</div>{footer}</article>"
+        f'{print_margin_css}{header}<div class="cs-body">{"".join(rows_html)}</div>{footer}</article>'
     )

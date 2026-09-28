@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
+from config import app_now_naive
 from db import (
     count_band_cifras,
     count_band_members,
@@ -15,12 +16,11 @@ from db import (
     owner_has_individual_ativa,
     owner_has_worship_ativa,
 )
-from config import app_now_naive, app_now_str
 
-PLANO_GRATIS = 'gratis'
-PLANO_INDIVIDUAL = 'individual'
-PLANO_PRO = 'pro'
-PLANO_WORSHIP = 'worship'
+PLANO_GRATIS = "gratis"
+PLANO_INDIVIDUAL = "individual"
+PLANO_PRO = "pro"
+PLANO_WORSHIP = "worship"
 
 PLANOS_PAGOS = (PLANO_INDIVIDUAL, PLANO_PRO, PLANO_WORSHIP)
 PRECO_INDIVIDUAL_ANUAL = 149.0
@@ -33,20 +33,20 @@ TRIAL_DIAS = 7
 TRIAL_AUTO = False  # não inicia trial ao criar banda / setlist / 2º membro
 
 LIMITES_INDIVIDUAL = {
-    'integrante': 1,
-    'banda': 1,
+    "integrante": 1,
+    "banda": 1,
 }
-STATUS_ATIVA = 'ativa'
-STATUS_VOUCHER = 'voucher'
-STATUS_CANCELADA = 'cancelada'
-STATUS_INADIMPLENTE = 'inadimplente'
+STATUS_ATIVA = "ativa"
+STATUS_VOUCHER = "voucher"
+STATUS_CANCELADA = "cancelada"
+STATUS_INADIMPLENTE = "inadimplente"
 
 # Grátis = demo + solo raso. Banda de verdade = Pro.
 LIMITES_GRATIS = {
-    'musica': 3,
-    'integrante': 2,
-    'setlist': 0,
-    'banda': 1,
+    "musica": 3,
+    "integrante": 2,
+    "setlist": 0,
+    "banda": 1,
 }
 # Cifras reais na coleção pessoal (demos de onboarding não contam).
 LIMITES_COLECAO_GRATIS = 3
@@ -69,25 +69,25 @@ class Plano:
 PLANOS: dict[str, Plano] = {
     PLANO_GRATIS: Plano(
         id=PLANO_GRATIS,
-        nome='Grátis',
+        nome="Grátis",
         preco_mensal=None,
         limites=dict(LIMITES_GRATIS),
     ),
     PLANO_INDIVIDUAL: Plano(
         id=PLANO_INDIVIDUAL,
-        nome='Individual',
+        nome="Individual",
         preco_mensal=15.0,
         limites=dict(LIMITES_INDIVIDUAL),
     ),
     PLANO_PRO: Plano(
         id=PLANO_PRO,
-        nome='Pro',
+        nome="Pro",
         preco_mensal=29.0,
         limites=None,
     ),
     PLANO_WORSHIP: Plano(
         id=PLANO_WORSHIP,
-        nome='Worship',
+        nome="Worship",
         preco_mensal=69.0,
         limites=None,
     ),
@@ -106,22 +106,22 @@ class PlanoSite:
     features: tuple[str, ...]
     cta: str
     cta_outline: bool
-    preco_anual_label: str = ''
-    sufixo_anual: str = '/ano'
-    economia_anual: str = ''
-    preco_mensal_equivalente_label: str = ''
-    cobrado_anual_label: str = ''
+    preco_anual_label: str = ""
+    sufixo_anual: str = "/ano"
+    economia_anual: str = ""
+    preco_mensal_equivalente_label: str = ""
+    cobrado_anual_label: str = ""
     desconto_anual_pct: int = 0
-    logo: str = ''
-    badge_label: str = ''
+    logo: str = ""
+    badge_label: str = ""
 
 
 def _preco_label(valor: float | None) -> str:
     if valor is None or valor <= 0:
-        return 'R$ 0'
+        return "R$ 0"
     if valor == int(valor):
-        return f'R$ {int(valor)}'
-    return f'R$ {valor:.2f}'.replace('.', ',')
+        return f"R$ {int(valor)}"
+    return f"R$ {valor:.2f}".replace(".", ",")
 
 
 def _desconto_anual_pct(preco_mensal: float, preco_anual: float) -> int:
@@ -134,19 +134,19 @@ def _desconto_anual_pct(preco_mensal: float, preco_anual: float) -> int:
 def _preco_mensal_equivalente_label(preco_anual: float) -> str:
     equiv = preco_anual / 12
     if equiv == int(equiv):
-        return f'R$ {int(equiv)}/mês'
-    return f'R$ {equiv:.2f}'.replace('.', ',') + '/mês'
+        return f"R$ {int(equiv)}/mês"
+    return f"R$ {equiv:.2f}".replace(".", ",") + "/mês"
 
 
 def _cobrado_anual_label(preco_anual: float) -> str:
-    return f'cobrado anualmente — {_preco_label(preco_anual)}/ano'
+    return f"cobrado anualmente — {_preco_label(preco_anual)}/ano"
 
 
 def _economia_anual_label(preco_mensal: float, preco_anual: float) -> str:
     economia = preco_mensal * 12 - preco_anual
     if economia <= 0:
-        return ''
-    return f'Economize {_preco_label(economia)}/ano'
+        return ""
+    return f"Economize {_preco_label(economia)}/ano"
 
 
 def planos_para_site() -> list[PlanoSite]:
@@ -160,57 +160,65 @@ def planos_para_site() -> list[PlanoSite]:
             id=PLANO_GRATIS,
             nome=PLANOS[PLANO_GRATIS].nome,
             preco_label=_preco_label(None),
-            sufixo='',
+            sufixo="",
             destaque=False,
             features=(
-                f'Até {LIMITES_COLECAO_GRATIS} cifras reais na coleção',
-                'Demo + 1 abertura do Modo Tocar',
-                f'Banda raso: {lim["musica"]} músicas · {lim["integrante"]} pessoas',
-                'Sem setlist de ensaio no Grátis',
-                'PDF / offline / palco de banda: no Pro',
+                f"Até {LIMITES_COLECAO_GRATIS} cifras reais na coleção",
+                "Demo + 1 abertura do Modo Tocar",
+                f"Banda raso: {lim['musica']} músicas · {lim['integrante']} pessoas",
+                "Sem setlist de ensaio no Grátis",
+                "PDF / offline / palco de banda: no Pro",
             ),
-            cta='Começar grátis',
+            cta="Começar grátis",
             cta_outline=True,
         ),
         PlanoSite(
             id=PLANO_INDIVIDUAL,
             nome=individual.nome,
             preco_label=_preco_label(individual.preco_mensal),
-            sufixo='/mês',
+            sufixo="/mês",
             destaque=False,
             features=(
-                'Para quem toca sozinho',
-                'Coleção + Modo Tocar ilimitados',
-                '1 banda · só você no elenco',
-                'PDF e compartilhar',
-                'Offline no aparelho',
+                "Para quem toca sozinho",
+                "Coleção + Modo Tocar ilimitados",
+                "1 banda · só você no elenco",
+                "PDF e compartilhar",
+                "Offline no aparelho",
             ),
-            cta='Sou solo',
+            cta="Sou solo",
             cta_outline=True,
             preco_anual_label=_preco_label(PRECO_INDIVIDUAL_ANUAL),
-            economia_anual=_economia_anual_label(individual.preco_mensal, PRECO_INDIVIDUAL_ANUAL),
-            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(PRECO_INDIVIDUAL_ANUAL),
+            economia_anual=_economia_anual_label(
+                individual.preco_mensal, PRECO_INDIVIDUAL_ANUAL
+            ),
+            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(
+                PRECO_INDIVIDUAL_ANUAL
+            ),
             cobrado_anual_label=_cobrado_anual_label(PRECO_INDIVIDUAL_ANUAL),
-            desconto_anual_pct=_desconto_anual_pct(individual.preco_mensal, PRECO_INDIVIDUAL_ANUAL),
+            desconto_anual_pct=_desconto_anual_pct(
+                individual.preco_mensal, PRECO_INDIVIDUAL_ANUAL
+            ),
         ),
         PlanoSite(
             id=PLANO_PRO,
             nome=pro.nome,
             preco_label=_preco_label(pro.preco_mensal),
-            sufixo='/banda/mês',
+            sufixo="/banda/mês",
             destaque=True,
             features=(
-                'Banda com vários integrantes',
-                'Coleção pessoal + compartilhar com a banda',
-                'Músicas, setlists e membros ilimitados',
-                'Exportar setlist em PDF',
-                'Modo Tocar + offline no palco',
+                "Banda com vários integrantes",
+                "Coleção pessoal + compartilhar com a banda",
+                "Músicas, setlists e membros ilimitados",
+                "Exportar setlist em PDF",
+                "Modo Tocar + offline no palco",
             ),
-            cta='Assinar Pro',
+            cta="Assinar Pro",
             cta_outline=False,
             preco_anual_label=_preco_label(PRECO_PRO_ANUAL),
             economia_anual=_economia_anual_label(pro.preco_mensal, PRECO_PRO_ANUAL),
-            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(PRECO_PRO_ANUAL),
+            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(
+                PRECO_PRO_ANUAL
+            ),
             cobrado_anual_label=_cobrado_anual_label(PRECO_PRO_ANUAL),
             desconto_anual_pct=_desconto_anual_pct(pro.preco_mensal, PRECO_PRO_ANUAL),
         ),
@@ -218,20 +226,26 @@ def planos_para_site() -> list[PlanoSite]:
             id=PLANO_WORSHIP,
             nome=worship.nome,
             preco_label=_preco_label(worship.preco_mensal),
-            sufixo='/conta/mês',
+            sufixo="/conta/mês",
             destaque=False,
             features=(
-                'Múltiplas bandas na mesma conta',
-                'Sem limites por banda',
-                'Agenda, PDF e Modo Tocar em todos os grupos',
+                "Múltiplas bandas na mesma conta",
+                "Sem limites por banda",
+                "Agenda, PDF e Modo Tocar em todos os grupos",
             ),
-            cta='Para igrejas →',
+            cta="Para igrejas →",
             cta_outline=True,
             preco_anual_label=_preco_label(PRECO_WORSHIP_ANUAL),
-            economia_anual=_economia_anual_label(worship.preco_mensal, PRECO_WORSHIP_ANUAL),
-            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(PRECO_WORSHIP_ANUAL),
+            economia_anual=_economia_anual_label(
+                worship.preco_mensal, PRECO_WORSHIP_ANUAL
+            ),
+            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(
+                PRECO_WORSHIP_ANUAL
+            ),
             cobrado_anual_label=_cobrado_anual_label(PRECO_WORSHIP_ANUAL),
-            desconto_anual_pct=_desconto_anual_pct(worship.preco_mensal, PRECO_WORSHIP_ANUAL),
+            desconto_anual_pct=_desconto_anual_pct(
+                worship.preco_mensal, PRECO_WORSHIP_ANUAL
+            ),
         ),
     ]
 
@@ -245,14 +259,14 @@ def plano_worship_para_site() -> PlanoSite | None:
         id=base.id,
         nome=base.nome,
         preco_label=base.preco_label,
-        sufixo='/congregação/mês',
+        sufixo="/congregação/mês",
         destaque=base.destaque,
         features=(
-            'Múltiplas bandas na mesma conta',
-            'Sem limites em todos os ministérios',
-            'Para igrejas e equipes de louvor',
+            "Múltiplas bandas na mesma conta",
+            "Sem limites em todos os ministérios",
+            "Para igrejas e equipes de louvor",
         ),
-        cta='Começar Worship grátis',
+        cta="Começar Worship grátis",
         cta_outline=base.cta_outline,
         preco_anual_label=base.preco_anual_label,
         sufixo_anual=base.sufixo_anual,
@@ -271,51 +285,51 @@ class Assinatura:
 
     @property
     def id(self) -> str:
-        return self._row['id']
+        return self._row["id"]
 
     @property
     def banda_id(self) -> str:
-        return self._row['banda_id']
+        return self._row["banda_id"]
 
     @property
     def plano(self) -> str:
-        return self._row['plano']
+        return self._row["plano"]
 
     @property
     def status(self) -> str:
-        return self._row['status']
+        return self._row["status"]
 
     @property
     def mp_subscription_id(self) -> str | None:
-        return self._row.get('mp_subscription_id')
+        return self._row.get("mp_subscription_id")
 
     @property
     def mp_preapproval_id(self) -> str | None:
-        return self._row.get('mp_preapproval_id')
+        return self._row.get("mp_preapproval_id")
 
     @property
     def data_inicio(self) -> datetime | None:
-        return _parse_dt(self._row.get('data_inicio'))
+        return _parse_dt(self._row.get("data_inicio"))
 
     @property
     def data_proxima_cobranca(self) -> datetime | None:
-        return _parse_dt(self._row.get('data_proxima_cobranca'))
+        return _parse_dt(self._row.get("data_proxima_cobranca"))
 
     @property
     def data_cancelamento(self) -> datetime | None:
-        return _parse_dt(self._row.get('data_cancelamento'))
+        return _parse_dt(self._row.get("data_cancelamento"))
 
     @property
     def trial_inicio(self) -> datetime | None:
-        return _parse_dt(self._row.get('trial_inicio'))
+        return _parse_dt(self._row.get("trial_inicio"))
 
     @property
     def trial_fim(self) -> datetime | None:
-        return _parse_dt(self._row.get('trial_fim'))
+        return _parse_dt(self._row.get("trial_fim"))
 
     @property
     def trial_usado(self) -> bool:
-        return bool(self._row.get('trial_usado'))
+        return bool(self._row.get("trial_usado"))
 
     def trial_ativo(self) -> bool:
         if not self.trial_usado or not self.trial_fim:
@@ -338,10 +352,7 @@ class Assinatura:
         """Pro/Worship com assinatura ativa (paga ou voucher futuro) ou trial Pro."""
         if self.trial_ativo():
             return True
-        return (
-            self.plano in PLANOS_PAGOS
-            and self.status in (STATUS_ATIVA, 'voucher')
-        )
+        return self.plano in PLANOS_PAGOS and self.status in (STATUS_ATIVA, "voucher")
 
 
 def _parse_dt(value: Any) -> datetime | None:
@@ -350,13 +361,13 @@ def _parse_dt(value: Any) -> datetime | None:
     if isinstance(value, datetime):
         return value
     if isinstance(value, str):
-        for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S'):
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
             try:
                 return datetime.strptime(value[:19], fmt[: len(value)])
             except ValueError:
                 continue
         try:
-            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             return None
     return None
@@ -364,8 +375,8 @@ def _parse_dt(value: Any) -> datetime | None:
 
 def _formatar_data_curta(dt: datetime | None) -> str:
     if not dt:
-        return ''
-    return dt.strftime('%d/%m/%Y')
+        return ""
+    return dt.strftime("%d/%m/%Y")
 
 
 def _agora_utc() -> datetime:
@@ -380,57 +391,56 @@ def _dias_calendario(de: datetime, ate: datetime) -> int:
 def _texto_dias_restantes(dias: int, fim: datetime | None) -> str:
     fim_txt = _formatar_data_curta(fim)
     if dias > 30:
-        return f'Restam {dias} dias (até {fim_txt})'
+        return f"Restam {dias} dias (até {fim_txt})"
     if dias > 1:
-        return f'Restam {dias} dias'
+        return f"Restam {dias} dias"
     if dias == 1:
-        return f'Vence amanhã ({fim_txt})'
+        return f"Vence amanhã ({fim_txt})"
     if dias == 0:
-        return f'Vence hoje ({fim_txt})'
+        return f"Vence hoje ({fim_txt})"
     if dias == -1:
-        return f'Venceu ontem ({fim_txt})'
-    return f'Venceu há {abs(dias)} dias ({fim_txt})'
+        return f"Venceu ontem ({fim_txt})"
+    return f"Venceu há {abs(dias)} dias ({fim_txt})"
 
 
 def _texto_renovacao(dias: int, fim: datetime | None) -> str:
     """Copy para assinatura paga (não reutiliza Vence→Renova — gerava 'Renovau')."""
     fim_txt = _formatar_data_curta(fim)
     if dias > 7:
-        return f'Próxima cobrança em {fim_txt}'
+        return f"Próxima cobrança em {fim_txt}"
     if dias > 1:
-        return f'Renova em {dias} dias ({fim_txt})'
+        return f"Renova em {dias} dias ({fim_txt})"
     if dias == 1:
-        return f'Renova amanhã ({fim_txt})'
+        return f"Renova amanhã ({fim_txt})"
     if dias == 0:
-        return f'Renova hoje ({fim_txt})'
+        return f"Renova hoje ({fim_txt})"
     if dias == -1:
-        return f'Renovação pendente desde ontem ({fim_txt})'
-    return f'Renovação pendente desde {fim_txt} (há {abs(dias)} dias)'
+        return f"Renovação pendente desde ontem ({fim_txt})"
+    return f"Renovação pendente desde {fim_txt} (há {abs(dias)} dias)"
 
 
 def _urgencia_periodo(dias_restantes: int, status: str) -> str:
     # Assinatura paga ativa: data de cobrança no passado ≠ voltou ao Grátis.
     if status == STATUS_ATIVA:
         if dias_restantes < 0:
-            return 'atencao'
+            return "atencao"
         if dias_restantes <= 3:
-            return 'critico'
+            return "critico"
         if dias_restantes <= 14:
-            return 'atencao'
-        return 'ok'
-    if status == 'expirado' or dias_restantes < 0:
-        return 'expirado'
+            return "atencao"
+        return "ok"
+    if status == "expirado" or dias_restantes < 0:
+        return "expirado"
     if dias_restantes <= 3:
-        return 'critico'
+        return "critico"
     if dias_restantes <= 14:
-        return 'atencao'
-    return 'ok'
-
+        return "atencao"
+    return "ok"
 
 
 def sincronizar_voucher_vencido(assinatura: Assinatura) -> Assinatura:
     """Rebaixa voucher expirado na leitura (não depende só do cron diário)."""
-    if assinatura.status != 'voucher':
+    if assinatura.status != "voucher":
         return assinatura
     expira = assinatura.data_proxima_cobranca
     if expira and expira.year >= 2090:
@@ -439,11 +449,11 @@ def sincronizar_voucher_vencido(assinatura: Assinatura) -> Assinatura:
         return assinatura
     from db import get_assinatura, update_assinatura
 
-    agora = _agora_utc().strftime('%Y-%m-%d %H:%M:%S')
+    agora = _agora_utc().strftime("%Y-%m-%d %H:%M:%S")
     update_assinatura(
         assinatura.banda_id,
         plano=PLANO_GRATIS,
-        status='expirado',
+        status="expirado",
         data_cancelamento=agora,
     )
     row = get_assinatura(assinatura.banda_id)
@@ -453,21 +463,21 @@ def sincronizar_voucher_vencido(assinatura: Assinatura) -> Assinatura:
 def periodo_assinatura_ui(assinatura: Assinatura) -> dict[str, Any]:
     """Metadados de período (promo, assinatura paga) para templates."""
     vazio: dict[str, Any] = {
-        'tem_periodo': False,
-        'tipo': None,
-        'inicio': None,
-        'fim': None,
-        'dias_restantes': None,
-        'dias_totais': None,
-        'progresso_pct': None,
-        'urgencia': 'ok',
-        'texto_restante': '',
-        'texto_detalhe': '',
+        "tem_periodo": False,
+        "tipo": None,
+        "inicio": None,
+        "fim": None,
+        "dias_restantes": None,
+        "dias_totais": None,
+        "progresso_pct": None,
+        "urgencia": "ok",
+        "texto_restante": "",
+        "texto_detalhe": "",
     }
     status = assinatura.status
     agora = _agora_utc()
 
-    if status == 'voucher':
+    if status == "voucher":
         inicio = assinatura.data_inicio
         fim = assinatura.data_proxima_cobranca
         if not fim:
@@ -475,40 +485,46 @@ def periodo_assinatura_ui(assinatura: Assinatura) -> dict[str, Any]:
         if fim.year >= 2090:
             nome = PLANOS.get(assinatura.plano, PLANOS[PLANO_GRATIS]).nome
             return {
-                'tem_periodo': True,
-                'tipo': 'voucher_vitalicio',
-                'inicio': _formatar_data_curta(inicio),
-                'fim': None,
-                'dias_restantes': None,
-                'dias_totais': None,
-                'progresso_pct': None,
-                'urgencia': 'ok',
-                'texto_restante': 'Acesso vitalício',
-                'texto_dia': None,
-                'texto_detalhe': f'Plano {nome} — sem data de vencimento',
+                "tem_periodo": True,
+                "tipo": "voucher_vitalicio",
+                "inicio": _formatar_data_curta(inicio),
+                "fim": None,
+                "dias_restantes": None,
+                "dias_totais": None,
+                "progresso_pct": None,
+                "urgencia": "ok",
+                "texto_restante": "Acesso vitalício",
+                "texto_dia": None,
+                "texto_detalhe": f"Plano {nome} — sem data de vencimento",
             }
         if not inicio:
             inicio = fim - timedelta(days=max(_dias_calendario(agora, fim), 1))
         dias_totais = max(1, _dias_calendario(inicio, fim))
         dias_restantes = _dias_calendario(agora, fim)
         dias_decorridos = min(dias_totais, max(1, _dias_calendario(inicio, agora) + 1))
-        progresso = min(100, max(1 if dias_decorridos > 0 else 0, round(100 * dias_decorridos / dias_totais)))
+        progresso = min(
+            100,
+            max(
+                1 if dias_decorridos > 0 else 0,
+                round(100 * dias_decorridos / dias_totais),
+            ),
+        )
         urgencia = _urgencia_periodo(dias_restantes, status)
         nome = PLANOS.get(assinatura.plano, PLANOS[PLANO_GRATIS]).nome
         return {
-            'tem_periodo': True,
-            'tipo': 'voucher',
-            'inicio': _formatar_data_curta(inicio),
-            'fim': _formatar_data_curta(fim),
-            'dias_restantes': dias_restantes,
-            'dias_totais': dias_totais,
-            'dias_decorridos': dias_decorridos,
-            'progresso_pct': progresso,
-            'urgencia': urgencia,
-            'texto_restante': _texto_dias_restantes(dias_restantes, fim),
-            'texto_dia': f'Dia {dias_decorridos} de {dias_totais}',
-            'texto_detalhe': (
-                f'Período promocional {nome} · {_formatar_data_curta(inicio)} — {_formatar_data_curta(fim)}'
+            "tem_periodo": True,
+            "tipo": "voucher",
+            "inicio": _formatar_data_curta(inicio),
+            "fim": _formatar_data_curta(fim),
+            "dias_restantes": dias_restantes,
+            "dias_totais": dias_totais,
+            "dias_decorridos": dias_decorridos,
+            "progresso_pct": progresso,
+            "urgencia": urgencia,
+            "texto_restante": _texto_dias_restantes(dias_restantes, fim),
+            "texto_dia": f"Dia {dias_decorridos} de {dias_totais}",
+            "texto_detalhe": (
+                f"Período promocional {nome} · {_formatar_data_curta(inicio)} — {_formatar_data_curta(fim)}"
             ),
         }
 
@@ -519,32 +535,32 @@ def periodo_assinatura_ui(assinatura: Assinatura) -> dict[str, Any]:
         dias_restantes = _dias_calendario(agora, proxima)
         nome = PLANOS.get(assinatura.plano, PLANOS[PLANO_PRO]).nome
         return {
-            'tem_periodo': True,
-            'tipo': 'assinatura',
-            'inicio': _formatar_data_curta(assinatura.data_inicio),
-            'fim': _formatar_data_curta(proxima),
-            'dias_restantes': dias_restantes,
-            'dias_totais': None,
-            'progresso_pct': None,
-            'urgencia': _urgencia_periodo(dias_restantes, status),
-            'texto_restante': _texto_renovacao(dias_restantes, proxima),
-            'texto_detalhe': f'Assinatura {nome} ativa',
+            "tem_periodo": True,
+            "tipo": "assinatura",
+            "inicio": _formatar_data_curta(assinatura.data_inicio),
+            "fim": _formatar_data_curta(proxima),
+            "dias_restantes": dias_restantes,
+            "dias_totais": None,
+            "progresso_pct": None,
+            "urgencia": _urgencia_periodo(dias_restantes, status),
+            "texto_restante": _texto_renovacao(dias_restantes, proxima),
+            "texto_detalhe": f"Assinatura {nome} ativa",
         }
 
-    if status == 'expirado':
+    if status == "expirado":
         fim = assinatura.data_proxima_cobranca or assinatura.data_cancelamento
         dias_restantes = _dias_calendario(agora, fim) if fim else -1
         return {
-            'tem_periodo': True,
-            'tipo': 'expirado',
-            'inicio': _formatar_data_curta(assinatura.data_inicio),
-            'fim': _formatar_data_curta(fim),
-            'dias_restantes': dias_restantes,
-            'dias_totais': None,
-            'progresso_pct': 100,
-            'urgencia': 'expirado',
-            'texto_restante': _texto_dias_restantes(dias_restantes, fim),
-            'texto_detalhe': 'Período promocional encerrado — assine para continuar no Pro',
+            "tem_periodo": True,
+            "tipo": "expirado",
+            "inicio": _formatar_data_curta(assinatura.data_inicio),
+            "fim": _formatar_data_curta(fim),
+            "dias_restantes": dias_restantes,
+            "dias_totais": None,
+            "progresso_pct": 100,
+            "urgencia": "expirado",
+            "texto_restante": _texto_dias_restantes(dias_restantes, fim),
+            "texto_detalhe": "Período promocional encerrado — assine para continuar no Pro",
         }
 
     return vazio
@@ -559,83 +575,86 @@ def plano_badge_ui(banda_id: str) -> dict[str, Any]:
     status = assinatura.status
     nome = PLANOS.get(plano, PLANOS[PLANO_GRATIS]).nome
     periodo = periodo_assinatura_ui(assinatura)
-    badge = 'secondary'
+    badge = "secondary"
     label = nome
     label_curto = nome
 
-    if status == 'voucher':
-        badge = {'ok': 'success', 'atencao': 'warning', 'critico': 'danger'}.get(
-            periodo.get('urgencia'), 'success',
+    if status == "voucher":
+        badge = {"ok": "success", "atencao": "warning", "critico": "danger"}.get(
+            periodo.get("urgencia"),
+            "success",
         )
-        if periodo.get('tipo') == 'voucher_vitalicio':
-            label_curto = f'{nome} · vitalício'
+        if periodo.get("tipo") == "voucher_vitalicio":
+            label_curto = f"{nome} · vitalício"
         else:
-            label_curto = f'{nome} · promocional'
+            label_curto = f"{nome} · promocional"
         label = label_curto
-        if periodo.get('texto_restante'):
-            label = f'{label_curto} · {periodo["texto_restante"]}'
+        if periodo.get("texto_restante"):
+            label = f"{label_curto} · {periodo['texto_restante']}"
     elif plano == PLANO_INDIVIDUAL and status == STATUS_ATIVA:
-        badge = 'primary'
-        label_curto = 'Individual'
-        label = 'Individual · solo'
-        if periodo.get('texto_restante'):
-            label = f'Individual · {periodo["texto_restante"]}'
+        badge = "primary"
+        label_curto = "Individual"
+        label = "Individual · solo"
+        if periodo.get("texto_restante"):
+            label = f"Individual · {periodo['texto_restante']}"
     elif plano == PLANO_PRO and status == STATUS_ATIVA:
-        badge = 'primary'
-        label_curto = 'Pro'
-        label = 'Pro'
-        if periodo.get('texto_restante'):
-            label = f'Pro · {periodo["texto_restante"]}'
+        badge = "primary"
+        label_curto = "Pro"
+        label = "Pro"
+        if periodo.get("texto_restante"):
+            label = f"Pro · {periodo['texto_restante']}"
     elif plano == PLANO_WORSHIP and status == STATUS_ATIVA:
-        badge = 'info'
-        label_curto = 'Worship'
-        label = 'Worship'
-        if periodo.get('texto_restante'):
-            label = f'Worship · {periodo["texto_restante"]}'
+        badge = "info"
+        label_curto = "Worship"
+        label = "Worship"
+        if periodo.get("texto_restante"):
+            label = f"Worship · {periodo['texto_restante']}"
     elif status == STATUS_INADIMPLENTE:
-        badge = 'warning'
-        label = f'{nome} · pagamento pendente'
+        badge = "warning"
+        label = f"{nome} · pagamento pendente"
         label_curto = label
     elif status == STATUS_CANCELADA:
-        badge = 'secondary'
-        label = 'Grátis · assinatura cancelada'
-        label_curto = 'Grátis'
-    elif status == 'expirado':
-        badge = 'secondary'
-        label_curto = 'Grátis · promo encerrada'
-        label = periodo.get('texto_restante') or label_curto
+        badge = "secondary"
+        label = "Grátis · assinatura cancelada"
+        label_curto = "Grátis"
+    elif status == "expirado":
+        badge = "secondary"
+        label_curto = "Grátis · promo encerrada"
+        label = periodo.get("texto_restante") or label_curto
     elif plano == PLANO_GRATIS:
-        badge = 'secondary'
-        label = 'Grátis'
-        label_curto = 'Grátis'
+        badge = "secondary"
+        label = "Grátis"
+        label_curto = "Grátis"
 
     if assinatura.trial_ativo():
         dias = dias_restantes_trial(banda_id)
-        badge = 'success'
-        label_curto = f'Trial Pro · {dias} dias' if dias is not None else 'Trial Pro'
+        badge = "success"
+        label_curto = f"Trial Pro · {dias} dias" if dias is not None else "Trial Pro"
         label = label_curto
         periodo = {
-            'tem_periodo': True,
-            'tipo': 'trial',
-            'inicio': None,
-            'fim': None,
-            'dias_restantes': dias,
-            'dias_totais': None,
-            'progresso_pct': None,
-            'urgencia': 'ok' if (dias or 0) > 3 else 'atencao',
-            'texto_restante': f'{dias} dias restantes' if dias is not None else 'Trial ativo',
-            'texto_dia': None,
-            'texto_detalhe': '',
+            "tem_periodo": True,
+            "tipo": "trial",
+            "inicio": None,
+            "fim": None,
+            "dias_restantes": dias,
+            "dias_totais": None,
+            "progresso_pct": None,
+            "urgencia": "ok" if (dias or 0) > 3 else "atencao",
+            "texto_restante": f"{dias} dias restantes"
+            if dias is not None
+            else "Trial ativo",
+            "texto_dia": None,
+            "texto_detalhe": "",
         }
 
     return {
-        'label': label,
-        'label_curto': label_curto,
-        'badge': badge,
-        'plano_id': plano,
-        'status': status,
-        'premium': assinatura.tem_acesso_premium(),
-        'periodo': periodo,
+        "label": label,
+        "label_curto": label_curto,
+        "badge": badge,
+        "plano_id": plano,
+        "status": status,
+        "premium": assinatura.tem_acesso_premium(),
+        "periodo": periodo,
     }
 
 
@@ -644,7 +663,7 @@ def enrich_bands_plano(bands: list[dict]) -> list[dict]:
     result = []
     for band in bands:
         b = dict(band)
-        b['plano_ui'] = plano_badge_ui(b['id'])
+        b["plano_ui"] = plano_badge_ui(b["id"])
         result.append(b)
     return result
 
@@ -652,16 +671,16 @@ def enrich_bands_plano(bands: list[dict]) -> list[dict]:
 def resumo_planos_usuario(owned_bands: list[dict]) -> dict[str, Any]:
     """Resumo de planos das bandas do usuário (dono) para o dashboard."""
     if not owned_bands:
-        return {'tem_banda': False, 'itens': [], 'destaque': None, 'multiplas': False}
+        return {"tem_banda": False, "itens": [], "destaque": None, "multiplas": False}
     itens = [
-        {'band_name': b['name'], 'band_id': b['id'], **plano_badge_ui(b['id'])}
+        {"band_name": b["name"], "band_id": b["id"], **plano_badge_ui(b["id"])}
         for b in owned_bands
     ]
     return {
-        'tem_banda': True,
-        'itens': itens,
-        'destaque': itens[0] if len(itens) == 1 else None,
-        'multiplas': len(itens) > 1,
+        "tem_banda": True,
+        "itens": itens,
+        "destaque": itens[0] if len(itens) == 1 else None,
+        "multiplas": len(itens) > 1,
     }
 
 
@@ -697,35 +716,35 @@ def check_limite(banda: dict, recurso: str) -> bool:
         True se pode criar; False se atingiu o limite do plano grátis.
     """
     recurso = recurso.lower().strip()
-    banda_id = banda['id']
-    owner_id = banda['owner_id']
+    banda_id = banda["id"]
+    owner_id = banda["owner_id"]
     assinatura = get_assinatura_banda(banda_id)
 
-    if recurso == 'banda':
+    if recurso == "banda":
         if owner_has_worship_ativa(owner_id):
             return True
         if owner_has_individual_ativa(owner_id):
-            return count_owned_bands(owner_id) < LIMITES_INDIVIDUAL['banda']
-        return count_owned_bands(owner_id) < LIMITES_GRATIS['banda']
+            return count_owned_bands(owner_id) < LIMITES_INDIVIDUAL["banda"]
+        return count_owned_bands(owner_id) < LIMITES_GRATIS["banda"]
 
     if _plano_sem_limites_para_banda(banda, assinatura):
         return True
 
     if assinatura.tem_acesso_premium() and assinatura.plano == PLANO_INDIVIDUAL:
-        if recurso == 'integrante':
-            return count_band_members(banda_id) < LIMITES_INDIVIDUAL['integrante']
-        if recurso in ('musica', 'setlist'):
+        if recurso == "integrante":
+            return count_band_members(banda_id) < LIMITES_INDIVIDUAL["integrante"]
+        if recurso in ("musica", "setlist"):
             return True
 
     limite = LIMITES_GRATIS.get(recurso)
     if limite is None:
         return True
 
-    if recurso == 'musica':
+    if recurso == "musica":
         atual = count_band_cifras(banda_id)
-    elif recurso == 'integrante':
+    elif recurso == "integrante":
         atual = count_band_members(banda_id)
-    elif recurso == 'setlist':
+    elif recurso == "setlist":
         atual = count_band_setlists(banda_id)
     else:
         return True
@@ -755,7 +774,7 @@ def user_tem_assinatura_ativa(user_id: str | None) -> bool:
     if owner_has_worship_ativa(user_id):
         return True
     for band in get_owned_bands(user_id) or []:
-        if get_plano_efetivo(band['id']) != PLANO_GRATIS:
+        if get_plano_efetivo(band["id"]) != PLANO_GRATIS:
             return True
     return False
 
@@ -774,8 +793,8 @@ def pode_modo_tocar_colecao(user_id: str, cifras: list | None) -> bool:
         return False
     if user_tem_assinatura_ativa(user_id):
         return True
-    from demo_onboarding import play_list_is_demo_only
     from db import user_play_mode_used
+    from demo_onboarding import play_list_is_demo_only
 
     if play_list_is_demo_only(cifras):
         return True
@@ -794,67 +813,70 @@ def check_limite_colecao_pessoal(user_id: str) -> bool:
     return count_real_personal_cifras(user_id) < LIMITES_COLECAO_GRATIS
 
 
-def resposta_modo_tocar_paywall(*, contexto: str = 'banda'):
+def resposta_modo_tocar_paywall(*, contexto: str = "banda"):
     """HTTP 402 / redirect quando Modo Tocar exige assinatura."""
     from flask import flash, jsonify, redirect, request, session
 
-    motivo = 'premium' if contexto == 'colecao' else 'limite'
-    cta = sugerir_upgrade(session.get('user_id'), motivo=motivo)
-    if contexto == 'colecao':
+    motivo = "premium" if contexto == "colecao" else "limite"
+    cta = sugerir_upgrade(session.get("user_id"), motivo=motivo)
+    if contexto == "colecao":
         msg = (
-            'Você já usou a abertura grátis do Modo Tocar. '
-            f'Continue com o Individual — {cta["preco_linha"]}.'
+            "Você já usou a abertura grátis do Modo Tocar. "
+            f"Continue com o Individual — {cta['preco_linha']}."
         )
     else:
         msg = (
-            'Modo Tocar da banda e setlist de ensaio fazem parte do Pro. '
-            f'{cta["preco_linha"]}.'
+            "Modo Tocar da banda e setlist de ensaio fazem parte do Pro. "
+            f"{cta['preco_linha']}."
         )
     payload = {
-        'erro': 'plano_necessario',
-        'mensagem': msg,
+        "erro": "plano_necessario",
+        "mensagem": msg,
         **cta,
     }
     wants_json = (
-        request.accept_mimetypes.best == 'application/json'
+        request.accept_mimetypes.best == "application/json"
         or request.is_json
-        or (request.headers.get('X-Requested-With') or '').lower() == 'xmlhttprequest'
+        or (request.headers.get("X-Requested-With") or "").lower() == "xmlhttprequest"
     )
     if wants_json:
         return jsonify(payload), 402
-    flash(msg, 'warning')
-    return redirect(payload.get('upgrade_url') or '/assinatura/planos?plano=pro&go=1')
+    flash(msg, "warning")
+    return redirect(payload.get("upgrade_url") or "/assinatura/planos?plano=pro&go=1")
 
 
 def resposta_limite_colecao():
     """Limite de cifras reais na coleção pessoal (Grátis)."""
     from flask import flash, jsonify, redirect, request, session
 
-    cta = sugerir_upgrade(session.get('user_id'), motivo='premium')
+    cta = sugerir_upgrade(session.get("user_id"), motivo="premium")
     msg = (
-        f'No Grátis você guarda até {LIMITES_COLECAO_GRATIS} cifras reais. '
-        f'Assine o Individual para repertório ilimitado — {cta["preco_linha"]}.'
+        f"No Grátis você guarda até {LIMITES_COLECAO_GRATIS} cifras reais. "
+        f"Assine o Individual para repertório ilimitado — {cta['preco_linha']}."
     )
-    payload = {'erro': 'limite_plano', 'mensagem': msg, **cta}
-    if request.accept_mimetypes.best == 'application/json' or request.is_json:
+    payload = {"erro": "limite_plano", "mensagem": msg, **cta}
+    if request.accept_mimetypes.best == "application/json" or request.is_json:
         return jsonify(payload), 402
-    flash(msg, 'warning')
-    return redirect(payload.get('upgrade_url') or '/assinatura/planos?plano=individual&go=1')
+    flash(msg, "warning")
+    return redirect(
+        payload.get("upgrade_url") or "/assinatura/planos?plano=individual&go=1"
+    )
 
 
 def resposta_offline_paywall(banda_id: str | None = None):
     """HTTP 402 amigável para pacote offline."""
     from flask import jsonify, session
 
-    cta = sugerir_upgrade(session.get('user_id'), motivo='offline')
-    return jsonify({
-        'erro': 'plano_necessario',
-        'mensagem': (
-            'Baixar o repertório offline faz parte do Pro. '
-            f'{cta["preco_linha"]}.'
-        ),
-        **cta,
-    }), 402
+    cta = sugerir_upgrade(session.get("user_id"), motivo="offline")
+    return jsonify(
+        {
+            "erro": "plano_necessario",
+            "mensagem": (
+                f"Baixar o repertório offline faz parte do Pro. {cta['preco_linha']}."
+            ),
+            **cta,
+        }
+    ), 402
 
 
 def get_plano_efetivo(banda_id: str) -> str:
@@ -872,11 +894,11 @@ def iniciar_trial_banda(banda_id: str) -> bool:
     from db import get_assinatura, update_assinatura_trial
 
     row = get_assinatura(banda_id)
-    if not row or row.get('trial_usado'):
+    if not row or row.get("trial_usado"):
         return False
     agora = _agora_utc()
     fim = agora + timedelta(days=TRIAL_DIAS)
-    fmt = '%Y-%m-%d %H:%M:%S'
+    fmt = "%Y-%m-%d %H:%M:%S"
     update_assinatura_trial(
         banda_id,
         trial_inicio=agora.strftime(fmt),
@@ -894,9 +916,9 @@ def dias_restantes_trial(banda_id: str) -> int | None:
 
 
 def _studio_trial_ativo(sub: dict[str, Any]) -> bool:
-    if not sub.get('trial_usado') or not sub.get('trial_fim'):
+    if not sub.get("trial_usado") or not sub.get("trial_fim"):
         return False
-    fim = _parse_dt(sub['trial_fim'])
+    fim = _parse_dt(sub["trial_fim"])
     return bool(fim and _agora_utc() < fim)
 
 
@@ -904,11 +926,15 @@ def studio_tem_premium(owner_user_id: str, sub: dict[str, Any] | None = None) ->
     """Premium pago, trial Premium ativo ou voucher Premium válido."""
     if sub is None:
         from models_studio import get_or_create_studio_subscription
+
         sub = get_or_create_studio_subscription(owner_user_id)
-    if sub.get('plano') == PLANO_ESTUDIO_PREMIUM and sub.get('status') == STATUS_ATIVA:
+    if sub.get("plano") == PLANO_ESTUDIO_PREMIUM and sub.get("status") == STATUS_ATIVA:
         return True
-    if sub.get('plano') == PLANO_ESTUDIO_PREMIUM and sub.get('status') == STATUS_VOUCHER:
-        fim = _parse_dt(sub.get('data_proxima_cobranca'))
+    if (
+        sub.get("plano") == PLANO_ESTUDIO_PREMIUM
+        and sub.get("status") == STATUS_VOUCHER
+    ):
+        fim = _parse_dt(sub.get("data_proxima_cobranca"))
         if fim and fim >= _agora_utc():
             return True
     return _studio_trial_ativo(sub)
@@ -920,7 +946,7 @@ def dias_restantes_trial_estudio(user_id: str) -> int | None:
     sub = get_studio_subscription(user_id)
     if not sub or not _studio_trial_ativo(sub):
         return None
-    fim = _parse_dt(sub['trial_fim'])
+    fim = _parse_dt(sub["trial_fim"])
     if not fim:
         return None
     return max(0, _dias_calendario(_agora_utc(), fim))
@@ -931,13 +957,13 @@ def iniciar_trial_estudio(user_id: str) -> bool:
     from models_studio import get_studio_subscription, update_studio_subscription_trial
 
     sub = get_studio_subscription(user_id)
-    if not sub or sub.get('trial_usado'):
+    if not sub or sub.get("trial_usado"):
         return False
-    if sub.get('plano') == PLANO_ESTUDIO_PREMIUM and sub.get('mp_preapproval_id'):
+    if sub.get("plano") == PLANO_ESTUDIO_PREMIUM and sub.get("mp_preapproval_id"):
         return False
     agora = _agora_utc()
     fim = agora + timedelta(days=TRIAL_DIAS)
-    fmt = '%Y-%m-%d %H:%M:%S'
+    fmt = "%Y-%m-%d %H:%M:%S"
     update_studio_subscription_trial(
         user_id,
         trial_inicio=agora.strftime(fmt),
@@ -947,49 +973,48 @@ def iniciar_trial_estudio(user_id: str) -> bool:
     return True
 
 
-def resposta_limite_plano(recurso: str = 'recursos', limite: int | None = None):
+def resposta_limite_plano(recurso: str = "recursos", limite: int | None = None):
     """Resposta HTTP 402 padronizada (JSON ou redirect)."""
-    from flask import jsonify, redirect, flash, request, session
+    from flask import flash, jsonify, redirect, request, session
 
-    limite_val = limite if limite is not None else LIMITES_GRATIS.get(recurso.rstrip('s'), 0)
-    cta = sugerir_upgrade(session.get('user_id'), motivo='limite')
+    limite_val = (
+        limite if limite is not None else LIMITES_GRATIS.get(recurso.rstrip("s"), 0)
+    )
+    cta = sugerir_upgrade(session.get("user_id"), motivo="limite")
     payload = {
-        'status': 'limite_atingido',
-        'erro': 'limite_plano',
-        'recurso': recurso,
-        'limite': limite_val,
-        'plano_atual': 'Grátis',
-        'mensagem': f'Você atingiu o limite do plano Grátis ({limite_val} {recurso}).',
+        "status": "limite_atingido",
+        "erro": "limite_plano",
+        "recurso": recurso,
+        "limite": limite_val,
+        "plano_atual": "Grátis",
+        "mensagem": f"Você atingiu o limite do plano Grátis ({limite_val} {recurso}).",
         **cta,
     }
-    if request.accept_mimetypes.best == 'application/json' or request.is_json:
+    if request.accept_mimetypes.best == "application/json" or request.is_json:
         return jsonify(payload), 402
-    flash(payload['mensagem'], 'warning')
-    return redirect(payload['upgrade_url'])
+    flash(payload["mensagem"], "warning")
+    return redirect(payload["upgrade_url"])
 
 
 def resposta_plano_necessario():
     """Resposta HTTP 402 para feature premium (ex.: PDF de setlist)."""
     from flask import flash, jsonify, redirect, request, session
 
-    cta = sugerir_upgrade(session.get('user_id'), motivo='pdf')
+    cta = sugerir_upgrade(session.get("user_id"), motivo="pdf")
     payload = {
-        'erro': 'plano_necessario',
-        'mensagem': (
-            'Exportar PDF faz parte dos planos pagos. '
-            f'{cta["preco_linha"]}.'
-        ),
+        "erro": "plano_necessario",
+        "mensagem": (f"Exportar PDF faz parte dos planos pagos. {cta['preco_linha']}."),
         **cta,
     }
     wants_json = (
-        request.accept_mimetypes.best == 'application/json'
+        request.accept_mimetypes.best == "application/json"
         or request.is_json
-        or (request.headers.get('X-Requested-With') or '').lower() == 'xmlhttprequest'
+        or (request.headers.get("X-Requested-With") or "").lower() == "xmlhttprequest"
     )
     if wants_json:
         return jsonify(payload), 402
-    flash(payload['mensagem'], 'warning')
-    return redirect(payload.get('upgrade_url') or '/assinatura/planos?plano=pro&go=1')
+    flash(payload["mensagem"], "warning")
+    return redirect(payload.get("upgrade_url") or "/assinatura/planos?plano=pro&go=1")
 
 
 def user_pode_compartilhar_cifras(user_id: str) -> bool:
@@ -1001,7 +1026,7 @@ def user_pode_compartilhar_cifras(user_id: str) -> bool:
     if is_superadmin(user_id):
         return True
     for band in get_owned_bands(user_id):
-        assinatura = get_assinatura_banda(band['id'])
+        assinatura = get_assinatura_banda(band["id"])
         if assinatura.tem_acesso_premium() or assinatura.trial_ativo():
             return True
     return False
@@ -1009,32 +1034,32 @@ def user_pode_compartilhar_cifras(user_id: str) -> bool:
 
 def resposta_compartilhar_cifra_paywall():
     """Paywall amigável para compartilhamento de cifras."""
-    from flask import flash, redirect, url_for, jsonify, request, session
+    from flask import flash, jsonify, redirect, request, session, url_for
 
-    cta = sugerir_upgrade(session.get('user_id'), motivo='compartilhar')
+    cta = sugerir_upgrade(session.get("user_id"), motivo="compartilhar")
     preco_i = int(PLANOS[PLANO_INDIVIDUAL].preco_mensal or 15)
-    if cta.get('plano_sugerido') == PLANO_INDIVIDUAL:
+    if cta.get("plano_sugerido") == PLANO_INDIVIDUAL:
         msg = (
-            'Sua coleção pessoal é gratuita. Para compartilhar cifras, '
-            f'assine o plano Individual (R$ {preco_i}/mês).'
+            "Sua coleção pessoal é gratuita. Para compartilhar cifras, "
+            f"assine o plano Individual (R$ {preco_i}/mês)."
         )
     else:
         msg = (
-            'Sua coleção pessoal é gratuita. Para compartilhar músicas com outros '
-            'músicos ou com uma banda, assine Individual, Pro ou Worship.'
+            "Sua coleção pessoal é gratuita. Para compartilhar músicas com outros "
+            "músicos ou com uma banda, assine Individual, Pro ou Worship."
         )
     payload = {
-        'erro': 'plano_necessario',
-        'mensagem': msg,
+        "erro": "plano_necessario",
+        "mensagem": msg,
         **cta,
     }
-    if request.accept_mimetypes.best == 'application/json' or request.is_json:
+    if request.accept_mimetypes.best == "application/json" or request.is_json:
         return jsonify(payload), 402
-    flash(msg, 'warning')
-    return redirect(cta.get('upgrade_url') or url_for('assinatura_bp.planos'))
+    flash(msg, "warning")
+    return redirect(cta.get("upgrade_url") or url_for("assinatura_bp.planos"))
 
 
-def sugerir_upgrade(user_id: str | None, *, motivo: str = 'limite') -> dict:
+def sugerir_upgrade(user_id: str | None, *, motivo: str = "limite") -> dict:
     """
     CTA de upgrade conforme contexto.
 
@@ -1044,88 +1069,89 @@ def sugerir_upgrade(user_id: str | None, *, motivo: str = 'limite') -> dict:
       - pdf / premium: sem banda própria → Individual; senão Pro
     """
     from flask import url_for
+
     from db import get_owned_bands
 
     owned = get_owned_bands(user_id) if user_id else []
-    banda_id = owned[0]['id'] if owned else None
+    banda_id = owned[0]["id"] if owned else None
     preco_i = int(PLANOS[PLANO_INDIVIDUAL].preco_mensal or 15)
     preco_p = int(PLANOS[PLANO_PRO].preco_mensal or 29)
 
-    quer_individual = motivo == 'compartilhar' and not owned
-    if motivo in ('pdf', 'premium', 'offline') and not owned:
+    quer_individual = motivo == "compartilhar" and not owned
+    if motivo in ("pdf", "premium", "offline") and not owned:
         quer_individual = True
 
     if quer_individual:
         return {
-            'plano_sugerido': PLANO_INDIVIDUAL,
-            'cta_label': f'Assinar Individual — R$ {preco_i}/mês',
-            'upgrade_url': url_for(
-                'assinatura_bp.planos',
+            "plano_sugerido": PLANO_INDIVIDUAL,
+            "cta_label": f"Assinar Individual — R$ {preco_i}/mês",
+            "upgrade_url": url_for(
+                "assinatura_bp.planos",
                 plano=PLANO_INDIVIDUAL,
                 go=1,
             ),
-            'titulo': 'Continue com o Individual',
-            'preco_linha': f'Individual — R$ {preco_i}/mês · PDF e compartilhar',
-            'features': [
-                'Compartilhar cifras da coleção',
-                'Exportar PDF',
-                '1 banda solo · 1 integrante',
-                'Cancele quando quiser · Mercado Pago',
+            "titulo": "Continue com o Individual",
+            "preco_linha": f"Individual — R$ {preco_i}/mês · PDF e compartilhar",
+            "features": [
+                "Compartilhar cifras da coleção",
+                "Exportar PDF",
+                "1 banda solo · 1 integrante",
+                "Cancele quando quiser · Mercado Pago",
             ],
         }
 
     planos_url = (
         url_for(
-            'assinatura_bp.planos',
+            "assinatura_bp.planos",
             banda_id=banda_id,
             plano=PLANO_PRO,
             go=1,
         )
         if banda_id
-        else url_for('assinatura_bp.planos', plano=PLANO_PRO, go=1)
+        else url_for("assinatura_bp.planos", plano=PLANO_PRO, go=1)
     )
     features = [
-        'Músicas, setlists e integrantes ilimitados',
-        'Exportar setlist em PDF para o ensaio',
-        'Repertório offline no palco',
-        'Cancele quando quiser · Mercado Pago',
+        "Músicas, setlists e integrantes ilimitados",
+        "Exportar setlist em PDF para o ensaio",
+        "Repertório offline no palco",
+        "Cancele quando quiser · Mercado Pago",
     ]
-    if motivo == 'offline':
+    if motivo == "offline":
         return {
-            'plano_sugerido': PLANO_PRO,
-            'cta_label': f'Assinar Pro — R$ {preco_p}/mês',
-            'upgrade_url': planos_url,
-            'titulo': 'Offline no palco com o Pro',
-            'preco_linha': f'Pro — R$ {preco_p}/mês · baixe a setlist sem internet',
-            'features': features,
+            "plano_sugerido": PLANO_PRO,
+            "cta_label": f"Assinar Pro — R$ {preco_p}/mês",
+            "upgrade_url": planos_url,
+            "titulo": "Offline no palco com o Pro",
+            "preco_linha": f"Pro — R$ {preco_p}/mês · baixe a setlist sem internet",
+            "features": features,
         }
     return {
-        'plano_sugerido': PLANO_PRO,
-        'cta_label': f'Assinar Pro — R$ {preco_p}/mês',
-        'upgrade_url': planos_url,
-        'titulo': 'Continue com o Pro',
-        'preco_linha': f'Pro — R$ {preco_p}/mês por banda',
-        'features': features,
+        "plano_sugerido": PLANO_PRO,
+        "cta_label": f"Assinar Pro — R$ {preco_p}/mês",
+        "upgrade_url": planos_url,
+        "titulo": "Continue com o Pro",
+        "preco_linha": f"Pro — R$ {preco_p}/mês por banda",
+        "features": features,
     }
 
 
 # ── Plano Estúdio (beta gratuito) ─────────────────────────────────────────
 
-PLANO_ESTUDIO_BASICO = 'estudio_basico'
-PLANO_ESTUDIO_PREMIUM = 'estudio_premium'
+PLANO_ESTUDIO_BASICO = "estudio_basico"
+PLANO_ESTUDIO_PREMIUM = "estudio_premium"
 PLANOS_ESTUDIO_PAGOS = (PLANO_ESTUDIO_PREMIUM,)
-LIMITES_ESTUDIO_BASICO = {'sala': 2}
+LIMITES_ESTUDIO_BASICO = {"sala": 2}
 
 PLANOS_ESTUDIO: dict[str, Plano] = {
     PLANO_ESTUDIO_BASICO: Plano(
         id=PLANO_ESTUDIO_BASICO,
-        nome='Estúdio Básico',
+        nome="Estúdio Básico",
         preco_mensal=None,
         limites=dict(LIMITES_ESTUDIO_BASICO),
     ),
     PLANO_ESTUDIO_PREMIUM: Plano(
         id=PLANO_ESTUDIO_PREMIUM,
-        nome='Estúdio Premium',
+        nome="Estúdio Premium",
         preco_mensal=PRECO_ESTUDIO_PREMIUM,
         limites=None,
     ),
@@ -1138,44 +1164,50 @@ def planos_estudio_para_site() -> list[PlanoSite]:
     return [
         PlanoSite(
             id=PLANO_ESTUDIO_BASICO,
-            nome='Estúdio Básico',
+            nome="Estúdio Básico",
             preco_label=_preco_label(None),
-            sufixo='',
+            sufixo="",
             destaque=False,
             features=(
-                'Até 2 salas após o trial',
-                '30 dias Premium no 1º cadastro',
-                'Painel, calendário e financeiro',
-                'Reservas de bandas pelo app',
-                'Endereço com Google Maps',
+                "Até 2 salas após o trial",
+                "30 dias Premium no 1º cadastro",
+                "Painel, calendário e financeiro",
+                "Reservas de bandas pelo app",
+                "Endereço com Google Maps",
             ),
-            cta='Cadastrar meu estúdio',
+            cta="Cadastrar meu estúdio",
             cta_outline=True,
-            logo='img/planos/estudio-basico.svg',
-            badge_label='Beta gratuito',
+            logo="img/planos/estudio-basico.svg",
+            badge_label="Beta gratuito",
         ),
         PlanoSite(
             id=PLANO_ESTUDIO_PREMIUM,
-            nome='Estúdio Premium',
+            nome="Estúdio Premium",
             preco_label=_preco_label(premium.preco_mensal),
-            sufixo='/mês',
+            sufixo="/mês",
             destaque=True,
             features=(
-                'Salas ilimitadas',
-                'Destaque na busca de estúdios',
-                'Painel completo de agendamentos',
-                'Financeiro com receita e despesas',
-                'Notificações em tempo real + suporte',
+                "Salas ilimitadas",
+                "Destaque na busca de estúdios",
+                "Painel completo de agendamentos",
+                "Financeiro com receita e despesas",
+                "Notificações em tempo real + suporte",
             ),
-            cta='Assinar Premium — R$ 49',
+            cta="Assinar Premium — R$ 49",
             cta_outline=False,
-            logo='img/planos/estudio-premium.svg',
-            badge_label='Recomendado',
+            logo="img/planos/estudio-premium.svg",
+            badge_label="Recomendado",
             preco_anual_label=_preco_label(PRECO_ESTUDIO_PREMIUM_ANUAL),
-            economia_anual=_economia_anual_label(PRECO_ESTUDIO_PREMIUM, PRECO_ESTUDIO_PREMIUM_ANUAL),
-            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(PRECO_ESTUDIO_PREMIUM_ANUAL),
+            economia_anual=_economia_anual_label(
+                PRECO_ESTUDIO_PREMIUM, PRECO_ESTUDIO_PREMIUM_ANUAL
+            ),
+            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(
+                PRECO_ESTUDIO_PREMIUM_ANUAL
+            ),
             cobrado_anual_label=_cobrado_anual_label(PRECO_ESTUDIO_PREMIUM_ANUAL),
-            desconto_anual_pct=_desconto_anual_pct(PRECO_ESTUDIO_PREMIUM, PRECO_ESTUDIO_PREMIUM_ANUAL),
+            desconto_anual_pct=_desconto_anual_pct(
+                PRECO_ESTUDIO_PREMIUM, PRECO_ESTUDIO_PREMIUM_ANUAL
+            ),
         ),
     ]
 
@@ -1185,79 +1217,82 @@ def studio_plano_badge_ui(user_id: str) -> dict[str, Any]:
     from models_studio import get_or_create_studio_subscription
 
     sub = get_or_create_studio_subscription(user_id)
-    plano = sub.get('plano') or PLANO_ESTUDIO_BASICO
+    plano = sub.get("plano") or PLANO_ESTUDIO_BASICO
     definicao = PLANOS_ESTUDIO.get(plano, PLANOS_ESTUDIO[PLANO_ESTUDIO_BASICO])
 
     if _studio_trial_ativo(sub):
         dias = dias_restantes_trial_estudio(user_id)
-        label = f'Trial Premium · {dias} dias' if dias is not None else 'Trial Premium'
+        label = f"Trial Premium · {dias} dias" if dias is not None else "Trial Premium"
         return {
-            'plano_id': PLANO_ESTUDIO_PREMIUM,
-            'nome': 'Estúdio Premium (trial)',
-            'label': label,
-            'label_curto': 'Trial',
-            'badge': 'success',
-            'logo': 'img/planos/estudio-premium.svg',
-            'premium': True,
-            'trial': True,
+            "plano_id": PLANO_ESTUDIO_PREMIUM,
+            "nome": "Estúdio Premium (trial)",
+            "label": label,
+            "label_curto": "Trial",
+            "badge": "success",
+            "logo": "img/planos/estudio-premium.svg",
+            "premium": True,
+            "trial": True,
         }
 
     if (
-        sub.get('plano') == PLANO_ESTUDIO_PREMIUM
-        and sub.get('status') == STATUS_VOUCHER
+        sub.get("plano") == PLANO_ESTUDIO_PREMIUM
+        and sub.get("status") == STATUS_VOUCHER
         and studio_tem_premium(user_id, sub)
     ):
-        fim = _parse_dt(sub.get('data_proxima_cobranca'))
+        fim = _parse_dt(sub.get("data_proxima_cobranca"))
         vitalicio = fim is not None and fim.year >= 2090
         if vitalicio:
-            label = 'Estúdio Premium · voucher vitalício'
+            label = "Estúdio Premium · voucher vitalício"
         else:
             dias = max(0, _dias_calendario(_agora_utc(), fim)) if fim else None
-            label = f'Estúdio Premium · voucher · {dias} dias' if dias is not None else 'Estúdio Premium · voucher'
+            label = (
+                f"Estúdio Premium · voucher · {dias} dias"
+                if dias is not None
+                else "Estúdio Premium · voucher"
+            )
         return {
-            'plano_id': PLANO_ESTUDIO_PREMIUM,
-            'nome': 'Estúdio Premium (voucher)',
-            'label': label,
-            'label_curto': 'Voucher',
-            'badge': 'success',
-            'logo': 'img/planos/estudio-premium.svg',
-            'premium': True,
-            'trial': False,
-            'voucher': True,
+            "plano_id": PLANO_ESTUDIO_PREMIUM,
+            "nome": "Estúdio Premium (voucher)",
+            "label": label,
+            "label_curto": "Voucher",
+            "badge": "success",
+            "logo": "img/planos/estudio-premium.svg",
+            "premium": True,
+            "trial": False,
+            "voucher": True,
         }
 
     if plano == PLANO_ESTUDIO_PREMIUM:
         return {
-            'plano_id': plano,
-            'nome': definicao.nome,
-            'label': 'Estúdio Premium',
-            'label_curto': 'Premium',
-            'badge': 'info',
-            'logo': 'img/planos/estudio-premium.svg',
-            'premium': True,
-            'trial': False,
+            "plano_id": plano,
+            "nome": definicao.nome,
+            "label": "Estúdio Premium",
+            "label_curto": "Premium",
+            "badge": "info",
+            "logo": "img/planos/estudio-premium.svg",
+            "premium": True,
+            "trial": False,
         }
-    trial_expirado = bool(sub.get('trial_usado')) and not _studio_trial_ativo(sub)
-    label = 'Estúdio Básico · beta'
+    trial_expirado = bool(sub.get("trial_usado")) and not _studio_trial_ativo(sub)
+    label = "Estúdio Básico · beta"
     if trial_expirado:
-        label = 'Estúdio Básico · trial encerrado'
+        label = "Estúdio Básico · trial encerrado"
     return {
-        'plano_id': plano,
-        'nome': definicao.nome,
-        'label': label,
-        'label_curto': 'Básico',
-        'badge': 'secondary',
-        'logo': 'img/planos/estudio-basico.svg',
-        'premium': False,
-        'trial': False,
-        'trial_expirado': trial_expirado,
+        "plano_id": plano,
+        "nome": definicao.nome,
+        "label": label,
+        "label_curto": "Básico",
+        "badge": "secondary",
+        "logo": "img/planos/estudio-basico.svg",
+        "premium": False,
+        "trial": False,
+        "trial_expirado": trial_expirado,
     }
 
 
 def check_studio_room_limit(owner_user_id: str) -> bool:
     """True se o dono pode criar mais uma sala."""
     from models_studio import (
-        PLANO_ESTUDIO_PREMIUM,
         count_rooms_for_owner,
         get_or_create_studio_subscription,
     )
@@ -1265,7 +1300,7 @@ def check_studio_room_limit(owner_user_id: str) -> bool:
     sub = get_or_create_studio_subscription(owner_user_id)
     if studio_tem_premium(owner_user_id, sub):
         return True
-    limite = LIMITES_ESTUDIO_BASICO['sala']
+    limite = LIMITES_ESTUDIO_BASICO["sala"]
     return count_rooms_for_owner(owner_user_id) < limite
 
 
@@ -1273,20 +1308,20 @@ def resposta_limite_estudio():
     """HTTP 402 — limite de salas do plano Estúdio."""
     from flask import flash, jsonify, redirect, request
 
-    limite = LIMITES_ESTUDIO_BASICO['sala']
+    limite = LIMITES_ESTUDIO_BASICO["sala"]
     payload = {
-        'status': 'limite_atingido',
-        'erro': 'limite_estudio',
-        'recurso': 'sala',
-        'limite': limite,
-        'mensagem': (
-            f'No Básico cabem {limite} salas. A 3ª sala (e ilimitadas) pedem '
-            'Estúdio Premium — R$ 49/mês.'
+        "status": "limite_atingido",
+        "erro": "limite_estudio",
+        "recurso": "sala",
+        "limite": limite,
+        "mensagem": (
+            f"No Básico cabem {limite} salas. A 3ª sala (e ilimitadas) pedem "
+            "Estúdio Premium — R$ 49/mês."
         ),
-        'upgrade_url': '/assinatura/planos#estudio',
-        'cta_label': 'Assinar Estúdio Premium — R$ 49',
+        "upgrade_url": "/assinatura/planos#estudio",
+        "cta_label": "Assinar Estúdio Premium — R$ 49",
     }
-    if request.accept_mimetypes.best == 'application/json' or request.is_json:
+    if request.accept_mimetypes.best == "application/json" or request.is_json:
         return jsonify(payload), 402
-    flash(payload['mensagem'], 'warning')
-    return redirect(payload['upgrade_url'])
+    flash(payload["mensagem"], "warning")
+    return redirect(payload["upgrade_url"])

@@ -8,7 +8,7 @@ consistente em um só lugar.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from flask import current_app
 from flask_mail import Message
@@ -21,13 +21,17 @@ def _fold_smtp_lines(text: str, max_len: int = 780) -> str:
     out: list[str] = []
     for line in text.splitlines():
         while len(line) > max_len:
-            cut = line.rfind(' ', 0, max_len)
+            cut = line.rfind(" ", 0, max_len)
             if cut < max_len // 2:
                 cut = max_len
             out.append(line[:cut])
-            line = line[cut:].lstrip() if cut < len(line) and line[cut] == ' ' else line[cut:]
+            line = (
+                line[cut:].lstrip()
+                if cut < len(line) and line[cut] == " "
+                else line[cut:]
+            )
         out.append(line)
-    return '\n'.join(out)
+    return "\n".join(out)
 
 
 def is_configured() -> bool:
@@ -36,11 +40,11 @@ def is_configured() -> bool:
     A extensão ``mail`` é sempre registrada em ``app.py``; o sinal de
     "pronto para enviar" é haver ``MAIL_USERNAME`` e ``MAIL_PASSWORD``.
     """
-    if not current_app.extensions.get('mail'):
+    if not current_app.extensions.get("mail"):
         return False
     return bool(
-        current_app.config.get('MAIL_USERNAME')
-        and current_app.config.get('MAIL_PASSWORD')
+        current_app.config.get("MAIL_USERNAME")
+        and current_app.config.get("MAIL_PASSWORD")
     )
 
 
@@ -64,7 +68,7 @@ def send_email(
 
     if not is_configured():
         current_app.logger.warning(
-            'Flask-Mail não configurado; e-mail não enviado: %s', subject
+            "Flask-Mail não configurado; e-mail não enviado: %s", subject
         )
         return False
 
@@ -77,8 +81,8 @@ def send_email(
         html=safe_html,
     )
     try:
-        current_app.extensions['mail'].send(msg)
+        current_app.extensions["mail"].send(msg)
         return True
     except Exception:
-        current_app.logger.exception('Falha ao enviar e-mail: %s', subject)
+        current_app.logger.exception("Falha ao enviar e-mail: %s", subject)
         return False

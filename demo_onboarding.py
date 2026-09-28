@@ -7,18 +7,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-_DEMO_META = json.dumps({'is_demo': True, 'source': 'onboarding'}, ensure_ascii=False)
+_DEMO_META = json.dumps({"is_demo": True, "source": "onboarding"}, ensure_ascii=False)
 
 
 def demo_songs() -> list[dict]:
     """3–4 músicas curtas (gospel conhecido) para o primeiro Modo Tocar."""
     return [
         {
-            'titulo': 'Porque Ele Vive',
-            'artista': 'Harpa Cristã / Tradicional',
-            'tom': 'G',
-            'bpm': 76,
-            'conteudo': """{title: Porque Ele Vive}
+            "titulo": "Porque Ele Vive",
+            "artista": "Harpa Cristã / Tradicional",
+            "tom": "G",
+            "bpm": 76,
+            "conteudo": """{title: Porque Ele Vive}
 {artist: Harpa Cristã}
 {key: G}
 {tempo: 76}
@@ -38,11 +38,11 @@ def demo_songs() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Deus de Promessas',
-            'artista': 'Diante do Trono',
-            'tom': 'A',
-            'bpm': 72,
-            'conteudo': """{title: Deus de Promessas}
+            "titulo": "Deus de Promessas",
+            "artista": "Diante do Trono",
+            "tom": "A",
+            "bpm": 72,
+            "conteudo": """{title: Deus de Promessas}
 {artist: Diante do Trono}
 {key: A}
 {tempo: 72}
@@ -58,11 +58,11 @@ def demo_songs() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Bondade de Deus',
-            'artista': 'Isadora Pompeo',
-            'tom': 'G',
-            'bpm': 68,
-            'conteudo': """{title: Bondade de Deus}
+            "titulo": "Bondade de Deus",
+            "artista": "Isadora Pompeo",
+            "tom": "G",
+            "bpm": 68,
+            "conteudo": """{title: Bondade de Deus}
 {artist: Isadora Pompeo}
 {key: G}
 {tempo: 68}
@@ -75,11 +75,11 @@ def demo_songs() -> list[dict]:
 {end_of_chorus}""",
         },
         {
-            'titulo': 'Me Atraiu',
-            'artista': 'Gabriela Rocha',
-            'tom': 'E',
-            'bpm': 70,
-            'conteudo': """{title: Me Atraiu}
+            "titulo": "Me Atraiu",
+            "artista": "Gabriela Rocha",
+            "tom": "E",
+            "bpm": 70,
+            "conteudo": """{title: Me Atraiu}
 {artist: Gabriela Rocha}
 {key: E}
 {tempo: 70}
@@ -102,32 +102,32 @@ def user_has_demo_library(user_id: str) -> bool:
 
 
 def cifra_is_demo(c: dict) -> bool:
-    raw = c.get('referencia_json') or ''
+    raw = c.get("referencia_json") or ""
     if isinstance(raw, dict):
-        if raw.get('is_demo'):
+        if raw.get("is_demo"):
             return True
     else:
         try:
             meta = json.loads(raw) if raw else {}
         except (TypeError, ValueError):
             meta = {}
-        if meta.get('is_demo'):
+        if meta.get("is_demo"):
             return True
-    titulo = (c.get('titulo') or '').strip()
-    return titulo in {s['titulo'] for s in demo_songs()}
+    titulo = (c.get("titulo") or "").strip()
+    return titulo in {s["titulo"] for s in demo_songs()}
 
 
 def list_demo_cifra_ids_for_user(user_id: str) -> list[str]:
     from db import get_user_personal_cifras
 
-    return [str(c['id']) for c in get_user_personal_cifras(user_id) if cifra_is_demo(c)]
+    return [str(c["id"]) for c in get_user_personal_cifras(user_id) if cifra_is_demo(c)]
 
 
 def delete_demo_library_for_user(user_id: str) -> int:
     """Remove cifras de onboarding da coleção pessoal. Retorna quantas apagou."""
     if not user_id:
         return 0
-    from db import delete_cifra, user_owns_personal_cifra, get_cifra
+    from db import delete_cifra, get_cifra, user_owns_personal_cifra
 
     removed = 0
     for cid in list_demo_cifra_ids_for_user(user_id):
@@ -140,7 +140,7 @@ def delete_demo_library_for_user(user_id: str) -> int:
             delete_cifra(cid)
             removed += 1
         except Exception:
-            logger.exception('Falha ao apagar demo cifra=%s user=%s', cid, user_id)
+            logger.exception("Falha ao apagar demo cifra=%s user=%s", cid, user_id)
     return removed
 
 
@@ -164,17 +164,17 @@ def seed_demo_library_for_user(user_id: str) -> list[str]:
         for song in demo_songs():
             cid = create_personal_cifra(
                 user_id,
-                song['titulo'],
-                song['artista'],
-                song['tom'],
-                song['conteudo'],
-                bpm=song.get('bpm'),
+                song["titulo"],
+                song["artista"],
+                song["tom"],
+                song["conteudo"],
+                bpm=song.get("bpm"),
                 referencia_json=_DEMO_META,
             )
             if cid:
                 created.append(str(cid))
     except Exception:
-        logger.exception('Falha ao seedar biblioteca demo user=%s', user_id)
+        logger.exception("Falha ao seedar biblioteca demo user=%s", user_id)
     return created
 
 
@@ -202,7 +202,7 @@ def user_needs_first_real_song(user_id: str) -> bool:
     if count_real_personal_cifras(user_id) > 0:
         return False
     for b in list(get_owned_bands(user_id) or []) + list(get_user_bands(user_id) or []):
-        if count_band_cifras(b['id']) > 0:
+        if count_band_cifras(b["id"]) > 0:
             return False
     return True
 
@@ -214,43 +214,47 @@ def play_list_is_demo_only(cifras: list[dict] | None) -> bool:
     return all(cifra_is_demo(c) for c in rows)
 
 
-def log_primeira_cifra_real(user_id: str, *, source: str, cifra_id: str | None = None) -> None:
+def log_primeira_cifra_real(
+    user_id: str, *, source: str, cifra_id: str | None = None
+) -> None:
     from product_funnel import log_funnel_step
 
-    meta = {'source': source}
+    meta = {"source": source}
     if cifra_id:
-        meta['cifra_id'] = str(cifra_id)
-    log_funnel_step(user_id, 'primeira_cifra')
-    log_funnel_step(user_id, 'primeira_cifra_real', meta=meta)
+        meta["cifra_id"] = str(cifra_id)
+    log_funnel_step(user_id, "primeira_cifra")
+    log_funnel_step(user_id, "primeira_cifra_real", meta=meta)
     try:
         from google_ads import mark_funnel_event
 
-        mark_funnel_event('primeira_cifra')
+        mark_funnel_event("primeira_cifra")
     except Exception:
         pass
 
 
-def log_play_mode_real(user_id: str, *, source: str = 'play') -> str:
+def log_play_mode_real(user_id: str, *, source: str = "play") -> str:
     from product_funnel import log_funnel_step
 
-    inserted = log_funnel_step(user_id, 'play_mode_real', meta={'source': source})
+    inserted = log_funnel_step(user_id, "play_mode_real", meta={"source": source})
     if not inserted:
-        return ''
+        return ""
     try:
         from db import get_user
         from meta_pixel import marcar_play_mode_real
 
-        return marcar_play_mode_real(get_user(user_id)) or ''
+        return marcar_play_mode_real(get_user(user_id)) or ""
     except Exception:
-        logger.exception('Meta PlayModeReal falhou user=%s', user_id)
-        return ''
+        logger.exception("Meta PlayModeReal falhou user=%s", user_id)
+        return ""
 
 
 # Trial automático desligado (conversão via checkout). Motivos legados ignorados.
 _TRIAL_VALUE_REASONS = frozenset()
 
 
-def maybe_start_trial_on_value(user_id: str, *, reason: str = 'play_mode') -> str | None:
+def maybe_start_trial_on_value(
+    user_id: str, *, reason: str = "play_mode"
+) -> str | None:
     """
     Não inicia mais trial automático.
     Mantido por compatibilidade com callers; use checkout Pro.
@@ -268,22 +272,22 @@ def maybe_start_trial_on_value(user_id: str, *, reason: str = 'play_mode') -> st
     if not owned:
         return None
     for band in owned:
-        band_id = band['id']
-        if reason == 'play_mode_setlist' and count_band_members(band_id) < 2:
+        band_id = band["id"]
+        if reason == "play_mode_setlist" and count_band_members(band_id) < 2:
             continue
-        if reason == 'segundo_membro' and count_band_members(band_id) < 2:
+        if reason == "segundo_membro" and count_band_members(band_id) < 2:
             continue
         if iniciar_trial_banda(band_id):
             try:
                 from google_ads import mark_funnel_event
 
-                mark_funnel_event('trial_iniciado')
+                mark_funnel_event("trial_iniciado")
             except Exception:
                 pass
             log_funnel_step(
                 user_id,
-                'trial_iniciado',
-                meta={'source': reason, 'banda_id': band_id},
+                "trial_iniciado",
+                meta={"source": reason, "banda_id": band_id},
             )
             return band_id
     return None
@@ -298,4 +302,4 @@ def maybe_trial_on_segundo_membro(band_id: str) -> str | None:
     band = get_band(band_id)
     if not band or count_band_members(band_id) < 2:
         return None
-    return maybe_start_trial_on_value(band['owner_id'], reason='segundo_membro')
+    return maybe_start_trial_on_value(band["owner_id"], reason="segundo_membro")

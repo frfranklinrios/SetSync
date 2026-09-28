@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Smoke test: integração importador, tom, leadsheet, rotas."""
+
 from __future__ import annotations
 
 import json
@@ -12,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 # Test client: HTTP local + sem redirect canônico (cookie de sessão usa host localhost).
-os.environ.setdefault('SESSION_COOKIE_SECURE', '0')
-os.environ['SETSYNC_CANONICAL_URL'] = ''
+os.environ.setdefault("SESSION_COOKIE_SECURE", "0")
+os.environ["SETSYNC_CANONICAL_URL"] = ""
 
 FAILURES: list[str] = []
 
@@ -36,11 +37,11 @@ def check(cond: bool, msg: str) -> None:
 
 def canonical_request_headers() -> dict[str, str]:
     """Headers opcionais quando SETSYNC_CANONICAL_URL está definido (smoke em produção real)."""
-    base = (os.getenv('SETSYNC_CANONICAL_URL') or '').strip()
+    base = (os.getenv("SETSYNC_CANONICAL_URL") or "").strip()
     if base:
         host = urlparse(base).hostname
         if host:
-            return {'Host': host}
+            return {"Host": host}
     return {}
 
 
@@ -49,46 +50,46 @@ def csrf_api_headers(app) -> dict[str, str]:
     with app.app_context():
         from flask_wtf.csrf import generate_csrf
 
-        headers['X-CSRFToken'] = generate_csrf()
+        headers["X-CSRFToken"] = generate_csrf()
     return headers
 
 
 def load_smoke_user() -> dict:
     from db import get_db, get_user_by_username
 
-    for uname in ('frfranklin.rios', 'franklin', 'tiagofl'):
+    for uname in ("frfranklin.rios", "franklin", "tiagofl"):
         u = get_user_by_username(uname)
         if u:
             return u
     c = get_db().cursor()
-    c.execute('SELECT * FROM users LIMIT 1')
+    c.execute("SELECT * FROM users LIMIT 1")
     row = c.fetchone()
     if not row:
-        raise RuntimeError('Nenhum usuário no banco para smoke')
+        raise RuntimeError("Nenhum usuário no banco para smoke")
     return dict(row)
 
 
 def main() -> int:
     print("=== Imports ===")
     try:
-        from app import app  # noqa: F401
+        from app import app
+
         ok("app")
     except Exception as e:
         fail(f"app: {e}")
         return 1
 
     from app import app
+    from cifras_tool.pipeline_cifras import validar_url_cifra
+    from leadsheet.converter import is_leadsheet_document, resolve_leadsheet_document
     from util import (
-        normalize_tom_label,
+        get_transposition_options,
         highlight_chords_play_html,
         key_at_transpose,
-        get_transposition_options,
+        normalize_tom_label,
         tom_is_minor,
     )
-    from blueprints.cifras_import import cifras_import_bp
-    from cifras_tool.pipeline_cifras import executar_apenas_cifra, validar_url_cifra
-    from cifras_tool.setsync_export import partes_para_grade_ui
-    from leadsheet.converter import is_leadsheet_document, resolve_leadsheet_document
+
     ok("blueprints + cifras_tool + leadsheet")
 
     print("\n=== Tom (normalize_tom_label) ===")
@@ -107,13 +108,21 @@ def main() -> int:
     check(not tom_is_minor("G"), "G é tom maior")
     check(key_at_transpose("Bm", -4) == "Gm", f"Bm-4 -> {key_at_transpose('Bm', -4)!r}")
     opts = get_transposition_options("Bm")
-    check("Bm (Original)" in opts.values(), "opções de transposição incluem Bm original")
+    check(
+        "Bm (Original)" in opts.values(), "opções de transposição incluem Bm original"
+    )
     check("Gm" in opts.values(), "opções de transposição incluem Gm")
     # Grafia ciente da armadura: transpor para tom bemol gera bemóis (Eb, não D#).
     from util import pychord_transpose_text
-    check(key_at_transpose("C", 3) == "Eb", f"C+3 -> {key_at_transpose('C', 3)!r} (esperado Eb)")
-    check(pychord_transpose_text("G", 3, "C") == "Bb",
-          f"G transposto C->Eb -> {pychord_transpose_text('G', 3, 'C')!r} (esperado Bb)")
+
+    check(
+        key_at_transpose("C", 3) == "Eb",
+        f"C+3 -> {key_at_transpose('C', 3)!r} (esperado Eb)",
+    )
+    check(
+        pychord_transpose_text("G", 3, "C") == "Bb",
+        f"G transposto C->Eb -> {pychord_transpose_text('G', 3, 'C')!r} (esperado Bb)",
+    )
 
     print("\n=== Rotas Flask ===")
     rules = {r.rule: r.endpoint for r in app.url_map.iter_rules()}
@@ -150,14 +159,14 @@ def main() -> int:
         text = (ROOT / rel).read_text(encoding="utf-8")
         if 'method="POST"' in text or "method='POST'" in text:
             check(
-                'csrf_input.html' in text or 'name="csrf_token"' in text,
+                "csrf_input.html" in text or 'name="csrf_token"' in text,
                 f"{rel} inclui CSRF nos formulários POST",
             )
 
     print("\n=== Test client (rotas protegidas redirecionam sem login) ===")
-    app.config['TESTING'] = True
+    app.config["TESTING"] = True
     req_headers = canonical_request_headers()
-    host_label = req_headers.get('Host') or 'localhost (sem redirect canônico no smoke)'
+    host_label = req_headers.get("Host") or "localhost (sem redirect canônico no smoke)"
     ok(f"Host de teste: {host_label}")
 
     with app.test_client() as client:
@@ -183,7 +192,7 @@ def main() -> int:
         )
 
         user = load_smoke_user()
-        dn = (user.get('display_name') or '').strip() or user['username']
+        dn = (user.get("display_name") or "").strip() or user["username"]
         with client.session_transaction() as sess:
             sess["user_id"] = user["id"]
             sess["username"] = user["username"]
@@ -241,11 +250,17 @@ def main() -> int:
     legacy = resolve_leadsheet_document(
         {"grade_json": json.dumps([{"compasso": 1, "acordes": ["C", "%", "%", "%"]}])}
     )
-    check(legacy is not None and "events" in legacy, "resolve legado grade_json -> leadsheet")
+    check(
+        legacy is not None and "events" in legacy,
+        "resolve legado grade_json -> leadsheet",
+    )
 
     print("\n=== enrich + sp-line (util) ===")
     html = highlight_chords_play_html("[Am]Olá [G]mundo")
-    check("sp-line" in html and "sp-chord" in html, "highlight_chords_play_html usa sp-line/sp-chord")
+    check(
+        "sp-line" in html and "sp-chord" in html,
+        "highlight_chords_play_html usa sp-line/sp-chord",
+    )
 
     from blueprints.cifras import enrich_cifra_for_tocar
 
@@ -262,7 +277,7 @@ def main() -> int:
 
         conn = get_db()
         c = conn.cursor()
-        cols = table_columns(c, 'cifras')
+        cols = table_columns(c, "cifras")
         check("leadsheet_json" in cols, "coluna leadsheet_json em cifras")
 
     print("\n=== Resumo ===")

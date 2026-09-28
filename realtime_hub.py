@@ -28,7 +28,7 @@ def unsubscribe(band_id: str, q: queue.Queue[str]) -> None:
 
 
 def publish(band_id: str, event: str, data: dict[str, Any] | None = None) -> None:
-    payload = json.dumps({'event': event, 'data': data or {}}, ensure_ascii=False)
+    payload = json.dumps({"event": event, "data": data or {}}, ensure_ascii=False)
     with _lock:
         subs = list(_subscribers.get(str(band_id), []))
     for q in subs:

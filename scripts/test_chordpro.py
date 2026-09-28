@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Testes de conversão ChordPro."""
+
 from __future__ import annotations
 
 import sys
@@ -36,9 +37,7 @@ def test_strip_comments():
 
 
 def test_parse_skips_comments():
-    data = parse_conteudo_to_cifra_data(
-        "{comment: São João está dormindo}\n[Am] teste"
-    )
+    data = parse_conteudo_to_cifra_data("{comment: São João está dormindo}\n[Am] teste")
     assert len(data) == 1
     assert data[0].get("acorde") == "Am"
     assert is_comment_line("{comment: x}")

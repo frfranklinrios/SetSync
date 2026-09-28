@@ -46,8 +46,12 @@ def main() -> int:
         print()
 
     if failed:
-        print(f"{failed} checagem(ns) falhou/aram. Corrija no DNS (GoDaddy) e rode de novo.")
-        print("Registros prontos: docker exec setsync-mail python -m mail_server.show_dkim")
+        print(
+            f"{failed} checagem(ns) falhou/aram. Corrija no DNS (GoDaddy) e rode de novo."
+        )
+        print(
+            "Registros prontos: docker exec setsync-mail python -m mail_server.show_dkim"
+        )
         return 1
     print("DNS de e-mail parece ok.")
     return 0

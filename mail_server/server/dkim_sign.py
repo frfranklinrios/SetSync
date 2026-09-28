@@ -1,6 +1,5 @@
 import logging
 import subprocess
-from pathlib import Path
 
 from mail_server.config import DATA_DIR, DOMAIN
 
@@ -23,7 +22,15 @@ def ensure_dkim_keys() -> None:
         capture_output=True,
     )
     subprocess.run(
-        ["openssl", "rsa", "-in", str(PRIVATE_KEY_PATH), "-pubout", "-out", str(PUBLIC_KEY_PATH)],
+        [
+            "openssl",
+            "rsa",
+            "-in",
+            str(PRIVATE_KEY_PATH),
+            "-pubout",
+            "-out",
+            str(PUBLIC_KEY_PATH),
+        ],
         check=True,
         capture_output=True,
     )
@@ -45,8 +52,8 @@ def dns_host() -> str:
 
 def _normalize_crlf(message: str) -> bytes:
     """Flask-Mail já manda \\r\\n; normaliza antes do DKIM para evitar \\r solto."""
-    text = message.replace('\r\n', '\n').replace('\r', '\n')
-    return text.replace('\n', '\r\n').encode('utf-8')
+    text = message.replace("\r\n", "\n").replace("\r", "\n")
+    return text.replace("\n", "\r\n").encode("utf-8")
 
 
 def sign_message(message: str) -> bytes:

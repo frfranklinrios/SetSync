@@ -2,54 +2,62 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from config import app_now_naive, app_now_str
+from datetime import timedelta
+
+from config import app_now_naive
 
 
 def seed_testimonials(c) -> None:
-    c.execute('SELECT COUNT(*) AS n FROM testimonials')
-    if (c.fetchone()['n'] or 0) > 0:
+    c.execute("SELECT COUNT(*) AS n FROM testimonials")
+    if (c.fetchone()["n"] or 0) > 0:
         return
     samples = [
         {
-            'nome': 'Rafael Mendes',
-            'cidade': 'Campinas, SP',
-            'descricao': 'Guitarrista — Banda Ágape',
-            'texto': (
-                'Antes do Uníssono a gente perdia 20 minutos de ensaio só transpondo cifra no papel. '
-                'Hoje abrimos o Modo Tocar e cada cantor vê a música no tom certo. Mudou nosso culto.'
+            "nome": "Rafael Mendes",
+            "cidade": "Campinas, SP",
+            "descricao": "Guitarrista — Banda Ágape",
+            "texto": (
+                "Antes do Uníssono a gente perdia 20 minutos de ensaio só transpondo cifra no papel. "
+                "Hoje abrimos o Modo Tocar e cada cantor vê a música no tom certo. Mudou nosso culto."
             ),
-            'foto_url': '',
-            'ordem': 1,
+            "foto_url": "",
+            "ordem": 1,
         },
         {
-            'nome': 'Juliana Costa',
-            'cidade': 'Recife, PE',
-            'descricao': 'Líder de louvor — Igreja Nova Vida',
-            'texto': (
-                'Gerencio três ministérios com o plano Worship. Convidei toda a equipe por link e '
-                'ninguém mais manda print de cifra desatualizada no grupo do WhatsApp.'
+            "nome": "Juliana Costa",
+            "cidade": "Recife, PE",
+            "descricao": "Líder de louvor — Igreja Nova Vida",
+            "texto": (
+                "Gerencio três ministérios com o plano Worship. Convidei toda a equipe por link e "
+                "ninguém mais manda print de cifra desatualizada no grupo do WhatsApp."
             ),
-            'foto_url': '',
-            'ordem': 2,
+            "foto_url": "",
+            "ordem": 2,
         },
         {
-            'nome': 'Marcos Oliveira',
-            'cidade': 'Belo Horizonte, MG',
-            'descricao': 'Baixista — Banda Independente',
-            'texto': (
-                'Uso no bar e na igreja. O app funciona offline no palco e o setlist em PDF '
-                'salvou nosso ensaio de quinta. Vale cada centavo do Pro.'
+            "nome": "Marcos Oliveira",
+            "cidade": "Belo Horizonte, MG",
+            "descricao": "Baixista — Banda Independente",
+            "texto": (
+                "Uso no bar e na igreja. O app funciona offline no palco e o setlist em PDF "
+                "salvou nosso ensaio de quinta. Vale cada centavo do Pro."
             ),
-            'foto_url': '',
-            'ordem': 3,
+            "foto_url": "",
+            "ordem": 3,
         },
     ]
     for s in samples:
         c.execute(
-            '''INSERT INTO testimonials (nome, cidade, descricao, texto, foto_url, ativo, ordem)
-               VALUES (?, ?, ?, ?, ?, 1, ?)''',
-            (s['nome'], s['cidade'], s['descricao'], s['texto'], s['foto_url'], s['ordem']),
+            """INSERT INTO testimonials (nome, cidade, descricao, texto, foto_url, ativo, ordem)
+               VALUES (?, ?, ?, ?, ?, 1, ?)""",
+            (
+                s["nome"],
+                s["cidade"],
+                s["descricao"],
+                s["texto"],
+                s["foto_url"],
+                s["ordem"],
+            ),
         )
 
 
@@ -57,196 +65,213 @@ def _blog_posts_data() -> list[dict]:
     base_date = app_now_naive() - timedelta(days=30)
     posts = [
         {
-            'slug': 'como-transpor-cifra-para-qualquer-tom',
-            'titulo': 'Como transpor cifra para qualquer tom — guia completo para guitarristas',
-            'resumo': 'Aprenda a transpor cifras na prática: intervalos, capotraste, tom do cantor e ferramentas digitais.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'cifras, transposição, guitarra, teoria musical',
-            'meta_title': 'Como transpor cifra — guia para guitarristas',
-            'meta_description': 'Guia prático de transposição de cifras: entenda intervalos, use capotraste e ferramentas como o Uníssono.',
-            'conteudo': _POST_TRANSPOSE,
+            "slug": "como-transpor-cifra-para-qualquer-tom",
+            "titulo": "Como transpor cifra para qualquer tom — guia completo para guitarristas",
+            "resumo": "Aprenda a transpor cifras na prática: intervalos, capotraste, tom do cantor e ferramentas digitais.",
+            "autor": "Equipe Uníssono",
+            "tags": "cifras, transposição, guitarra, teoria musical",
+            "meta_title": "Como transpor cifra — guia para guitarristas",
+            "meta_description": "Guia prático de transposição de cifras: entenda intervalos, use capotraste e ferramentas como o Uníssono.",
+            "conteudo": _POST_TRANSPOSE,
         },
         {
-            'slug': 'montar-setlist-culto-gospel-5-passos',
-            'titulo': 'Como montar um setlist para culto gospel em 5 passos',
-            'resumo': 'Do repertório ao palco: fluxo, tom por cantor, ordem das músicas e link compartilhado com a equipe.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'setlist, culto, louvor, igreja',
-            'meta_title': 'Setlist para culto gospel em 5 passos',
-            'meta_description': 'Monte setlists de culto gospel com ordem, tom por vocalista e compartilhamento com a banda.',
-            'conteudo': _POST_SETLIST,
+            "slug": "montar-setlist-culto-gospel-5-passos",
+            "titulo": "Como montar um setlist para culto gospel em 5 passos",
+            "resumo": "Do repertório ao palco: fluxo, tom por cantor, ordem das músicas e link compartilhado com a equipe.",
+            "autor": "Equipe Uníssono",
+            "tags": "setlist, culto, louvor, igreja",
+            "meta_title": "Setlist para culto gospel em 5 passos",
+            "meta_description": "Monte setlists de culto gospel com ordem, tom por vocalista e compartilhamento com a banda.",
+            "conteudo": _POST_SETLIST,
         },
         {
-            'slug': 'melhores-apps-cifras-banda-2026',
-            'titulo': 'Os melhores aplicativos de cifras para banda em 2026',
-            'resumo': 'Comparativo honesto entre apps de cifra: o que funciona para banda, igreja e ensaio ao vivo.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'apps, cifras, comparativo, banda',
-            'meta_title': 'Melhores apps de cifras para banda 2026',
-            'meta_description': 'Comparativo dos melhores apps de cifras para bandas e ministérios de louvor em 2026.',
-            'conteudo': _POST_APPS,
+            "slug": "melhores-apps-cifras-banda-2026",
+            "titulo": "Os melhores aplicativos de cifras para banda em 2026",
+            "resumo": "Comparativo honesto entre apps de cifra: o que funciona para banda, igreja e ensaio ao vivo.",
+            "autor": "Equipe Uníssono",
+            "tags": "apps, cifras, comparativo, banda",
+            "meta_title": "Melhores apps de cifras para banda 2026",
+            "meta_description": "Comparativo dos melhores apps de cifras para bandas e ministérios de louvor em 2026.",
+            "conteudo": _POST_APPS,
         },
         {
-            'slug': 'organizar-ministerio-louvor-igreja',
-            'titulo': 'Como organizar o ministério de louvor da sua igreja',
-            'resumo': 'Estrutura, repertório compartilhado, ensaios produtivos e ferramentas que reduzem retrabalho.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'ministério, louvor, igreja, organização',
-            'meta_title': 'Organizar ministério de louvor na igreja',
-            'meta_description': 'Dicas práticas para organizar o ministério de louvor: repertório, ensaios e ferramentas digitais.',
-            'conteudo': _POST_MINISTERIO,
+            "slug": "organizar-ministerio-louvor-igreja",
+            "titulo": "Como organizar o ministério de louvor da sua igreja",
+            "resumo": "Estrutura, repertório compartilhado, ensaios produtivos e ferramentas que reduzem retrabalho.",
+            "autor": "Equipe Uníssono",
+            "tags": "ministério, louvor, igreja, organização",
+            "meta_title": "Organizar ministério de louvor na igreja",
+            "meta_description": "Dicas práticas para organizar o ministério de louvor: repertório, ensaios e ferramentas digitais.",
+            "conteudo": _POST_MINISTERIO,
         },
         {
-            'slug': 'diferenca-tom-escala-musica',
-            'titulo': 'Diferença entre tom e escala: o que todo músico precisa saber',
-            'resumo': 'Tom, tonalidade e escala explicados sem jargão — essencial para transpor e comunicar com a banda.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'teoria musical, tom, escala, transposição',
-            'meta_title': 'Tom vs escala — guia para músicos',
-            'meta_description': 'Entenda a diferença entre tom e escala e como isso afeta cifras, setlists e ensaios.',
-            'conteudo': _POST_TOM_ESCALA,
+            "slug": "diferenca-tom-escala-musica",
+            "titulo": "Diferença entre tom e escala: o que todo músico precisa saber",
+            "resumo": "Tom, tonalidade e escala explicados sem jargão — essencial para transpor e comunicar com a banda.",
+            "autor": "Equipe Uníssono",
+            "tags": "teoria musical, tom, escala, transposição",
+            "meta_title": "Tom vs escala — guia para músicos",
+            "meta_description": "Entenda a diferença entre tom e escala e como isso afeta cifras, setlists e ensaios.",
+            "conteudo": _POST_TOM_ESCALA,
         },
         {
-            'slug': 'compartilhar-cifras-com-a-banda',
-            'titulo': 'Como compartilhar cifras com a banda sem perder a versão certa',
-            'resumo': 'Coleção pessoal grátis, compartilhar com assinatura, repertório da banda, convites, setlist e link público de letras.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'compartilhar cifras, coleção, banda, repertório, setlist',
-            'meta_title': 'Compartilhar cifras com a banda — guia Uníssono',
-            'meta_description': 'Guarde cifras na coleção pessoal grátis e compartilhe com a banda ou outros músicos no Uníssono. Repertório, convites e setlists.',
-            'conteudo': _POST_COMPARTILHAR_CIFRAS,
+            "slug": "compartilhar-cifras-com-a-banda",
+            "titulo": "Como compartilhar cifras com a banda sem perder a versão certa",
+            "resumo": "Coleção pessoal grátis, compartilhar com assinatura, repertório da banda, convites, setlist e link público de letras.",
+            "autor": "Equipe Uníssono",
+            "tags": "compartilhar cifras, coleção, banda, repertório, setlist",
+            "meta_title": "Compartilhar cifras com a banda — guia Uníssono",
+            "meta_description": "Guarde cifras na coleção pessoal grátis e compartilhe com a banda ou outros músicos no Uníssono. Repertório, convites e setlists.",
+            "conteudo": _POST_COMPARTILHAR_CIFRAS,
         },
         {
-            'slug': 'gerenciar-bandas-ministerio-louvor',
-            'titulo': 'Como gerenciar bandas e ministérios de louvor no mesmo lugar',
-            'resumo': 'Convites, permissões, várias bandas na conta Worship e agenda com escalação — sem planilha perdida.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'gerenciar bandas, ministério, louvor, igreja',
-            'meta_title': 'Gerenciar bandas de louvor — Uníssono',
-            'meta_description': 'Guia para gerenciar bandas: convidar músicos, organizar repertório, setlists e múltiplos ministérios na igreja.',
-            'conteudo': _POST_GERENCIAR_BANDAS,
+            "slug": "gerenciar-bandas-ministerio-louvor",
+            "titulo": "Como gerenciar bandas e ministérios de louvor no mesmo lugar",
+            "resumo": "Convites, permissões, várias bandas na conta Worship e agenda com escalação — sem planilha perdida.",
+            "autor": "Equipe Uníssono",
+            "tags": "gerenciar bandas, ministério, louvor, igreja",
+            "meta_title": "Gerenciar bandas de louvor — Uníssono",
+            "meta_description": "Guia para gerenciar bandas: convidar músicos, organizar repertório, setlists e múltiplos ministérios na igreja.",
+            "conteudo": _POST_GERENCIAR_BANDAS,
         },
         {
-            'slug': 'como-funciona-chord-sheet-setsync',
-            'titulo': 'Como funciona o Chord Sheet no Uníssono',
-            'resumo': 'Progressão harmônica em grade, editor com prévia ao vivo, salvamento automático, notação brasileira e uso no Modo Tocar — guia completo.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'chord sheet, acordes, progressão harmônica, editor, modo tocar',
-            'meta_title': 'Chord Sheet no Uníssono — guia do editor',
-            'meta_description': 'Aprenda a montar chord sheets no Uníssono: compassos, semi-pulsos, simile, transposição, autosave e visualização no palco.',
-            'conteudo': _POST_CHORDSHEET,
+            "slug": "como-funciona-chord-sheet-setsync",
+            "titulo": "Como funciona o Chord Sheet no Uníssono",
+            "resumo": "Progressão harmônica em grade, editor com prévia ao vivo, salvamento automático, notação brasileira e uso no Modo Tocar — guia completo.",
+            "autor": "Equipe Uníssono",
+            "tags": "chord sheet, acordes, progressão harmônica, editor, modo tocar",
+            "meta_title": "Chord Sheet no Uníssono — guia do editor",
+            "meta_description": "Aprenda a montar chord sheets no Uníssono: compassos, semi-pulsos, simile, transposição, autosave e visualização no palco.",
+            "conteudo": _POST_CHORDSHEET,
         },
         {
-            'slug': 'como-cadastrar-estudio-ensino-setsync',
-            'titulo': 'Como cadastrar seu estúdio de ensaio no Uníssono',
-            'resumo': 'Passo a passo para donos de sala: perfil, fotos, salas, Google Maps, disponibilidade e confirmação de reservas.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'estúdio, ensaio, cadastro, reservas',
-            'meta_title': 'Cadastrar estúdio no Uníssono — tutorial',
-            'meta_description': 'Aprenda a cadastrar seu estúdio de ensaio no Uníssono: salas, horários, bloqueios e painel de reservas beta gratuito.',
-            'conteudo': _POST_ESTUDIO_CADASTRO,
+            "slug": "como-cadastrar-estudio-ensino-setsync",
+            "titulo": "Como cadastrar seu estúdio de ensaio no Uníssono",
+            "resumo": "Passo a passo para donos de sala: perfil, fotos, salas, Google Maps, disponibilidade e confirmação de reservas.",
+            "autor": "Equipe Uníssono",
+            "tags": "estúdio, ensaio, cadastro, reservas",
+            "meta_title": "Cadastrar estúdio no Uníssono — tutorial",
+            "meta_description": "Aprenda a cadastrar seu estúdio de ensaio no Uníssono: salas, horários, bloqueios e painel de reservas beta gratuito.",
+            "conteudo": _POST_ESTUDIO_CADASTRO,
         },
         {
-            'slug': 'como-reservar-sala-ensaio-banda-setsync',
-            'titulo': 'Como reservar sala de ensaio para sua banda',
-            'resumo': 'Busque estúdios por cidade, escolha horário, acompanhe a solicitação e veja o ensaio na agenda quando confirmado.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'estúdio, reserva, banda, ensaio',
-            'meta_title': 'Reservar sala de ensaio — tutorial Uníssono',
-            'meta_description': 'Tutorial para bandas reservarem sala de ensaio no Uníssono: busca, solicitação, status e agenda sincronizada.',
-            'conteudo': _POST_ESTUDIO_RESERVA,
+            "slug": "como-reservar-sala-ensaio-banda-setsync",
+            "titulo": "Como reservar sala de ensaio para sua banda",
+            "resumo": "Busque estúdios por cidade, escolha horário, acompanhe a solicitação e veja o ensaio na agenda quando confirmado.",
+            "autor": "Equipe Uníssono",
+            "tags": "estúdio, reserva, banda, ensaio",
+            "meta_title": "Reservar sala de ensaio — tutorial Uníssono",
+            "meta_description": "Tutorial para bandas reservarem sala de ensaio no Uníssono: busca, solicitação, status e agenda sincronizada.",
+            "conteudo": _POST_ESTUDIO_RESERVA,
         },
         {
-            'slug': 'como-cadastrar-instrumentos-perfil-setsync',
-            'titulo': 'Como cadastrar seus instrumentos no perfil',
-            'resumo': 'Marque violão, guitarra, baixo, vocal, bateria e mais — a banda vê na escalação e na lista de membros.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'perfil, instrumentos, escalação, banda',
-            'meta_title': 'Instrumentos no perfil — tutorial Uníssono',
-            'meta_description': 'Cadastre os instrumentos que você toca no Uníssono e ajude a banda a montar a escalação sem adivinhar funções.',
-            'conteudo': _POST_INSTRUMENTOS,
+            "slug": "como-cadastrar-instrumentos-perfil-setsync",
+            "titulo": "Como cadastrar seus instrumentos no perfil",
+            "resumo": "Marque violão, guitarra, baixo, vocal, bateria e mais — a banda vê na escalação e na lista de membros.",
+            "autor": "Equipe Uníssono",
+            "tags": "perfil, instrumentos, escalação, banda",
+            "meta_title": "Instrumentos no perfil — tutorial Uníssono",
+            "meta_description": "Cadastre os instrumentos que você toca no Uníssono e ajude a banda a montar a escalação sem adivinhar funções.",
+            "conteudo": _POST_INSTRUMENTOS,
         },
         {
-            'slug': 'como-usar-agenda-escalacao-setsync',
-            'titulo': 'Como usar a agenda e escalação no Uníssono',
-            'resumo': 'Crie ensaios e shows, vincule setlist, escale integrantes, confirme por link e receba lembretes automáticos.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'agenda, escalação, ensaio, show',
-            'meta_title': 'Agenda e escalação — tutorial Uníssono',
-            'meta_description': 'Tutorial completo da agenda Uníssono: eventos, escalação com confirmação, formações e lembretes.',
-            'conteudo': _POST_AGENDA,
+            "slug": "como-usar-agenda-escalacao-setsync",
+            "titulo": "Como usar a agenda e escalação no Uníssono",
+            "resumo": "Crie ensaios e shows, vincule setlist, escale integrantes, confirme por link e receba lembretes automáticos.",
+            "autor": "Equipe Uníssono",
+            "tags": "agenda, escalação, ensaio, show",
+            "meta_title": "Agenda e escalação — tutorial Uníssono",
+            "meta_description": "Tutorial completo da agenda Uníssono: eventos, escalação com confirmação, formações e lembretes.",
+            "conteudo": _POST_AGENDA,
         },
         {
-            'slug': 'como-usar-modo-tocar-setsync',
-            'titulo': 'Como usar o Modo Tocar no palco',
-            'resumo': 'Tela cheia, seções, sync da banda, offline auto, pedal, notas de palco, vocalista e atalhos.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'modo tocar, palco, cifras, setlist, pedal, offline',
-            'meta_title': 'Modo Tocar — tutorial Uníssono',
-            'meta_description': 'Modo Tocar no Uníssono: seções, sync, offline automático, pedal Bluetooth, notas de palco e atalhos para o culto.',
-            'conteudo': _POST_MODO_TOCAR,
+            "slug": "como-usar-modo-tocar-setsync",
+            "titulo": "Como usar o Modo Tocar no palco",
+            "resumo": "Tela cheia, seções, sync da banda, offline auto, pedal, notas de palco, vocalista e atalhos.",
+            "autor": "Equipe Uníssono",
+            "tags": "modo tocar, palco, cifras, setlist, pedal, offline",
+            "meta_title": "Modo Tocar — tutorial Uníssono",
+            "meta_description": "Modo Tocar no Uníssono: seções, sync, offline automático, pedal Bluetooth, notas de palco e atalhos para o culto.",
+            "conteudo": _POST_MODO_TOCAR,
         },
         {
-            'slug': 'como-usar-notificacoes-setsync',
-            'titulo': 'Como configurar notificações, push e WhatsApp',
-            'resumo': 'Alertas imediatos de escalação, resumo diário às 21h, lembretes de agenda e preferências por tipo.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'notificações, whatsapp, push, alertas',
-            'meta_title': 'Notificações Uníssono — tutorial',
-            'meta_description': 'Configure push, e-mail e WhatsApp no Uníssono: escalação, convites, estúdio e resumo diário.',
-            'conteudo': _POST_NOTIFICACOES,
+            "slug": "como-usar-notificacoes-setsync",
+            "titulo": "Como configurar notificações, push e WhatsApp",
+            "resumo": "Alertas imediatos de escalação, resumo diário às 21h, lembretes de agenda e preferências por tipo.",
+            "autor": "Equipe Uníssono",
+            "tags": "notificações, whatsapp, push, alertas",
+            "meta_title": "Notificações Uníssono — tutorial",
+            "meta_description": "Configure push, e-mail e WhatsApp no Uníssono: escalação, convites, estúdio e resumo diário.",
+            "conteudo": _POST_NOTIFICACOES,
         },
         {
-            'slug': 'como-usar-versao-pessoal-cifras-setsync',
-            'titulo': 'Como usar a versão pessoal de cifras',
-            'resumo': 'Edite sem alterar a banda na hora, teste no Modo Tocar e publique quando a equipe aprovar.',
-            'autor': 'Equipe Uníssono',
-            'tags': 'versão pessoal, cifras, editor, banda',
-            'meta_title': 'Versão pessoal de cifras — tutorial Uníssono',
-            'meta_description': 'Tutorial da versão pessoal: editar cifras em privado, alternar Banda/Minha e publicar para a equipe.',
-            'conteudo': _POST_VERSAO_PESSOAL,
+            "slug": "como-usar-versao-pessoal-cifras-setsync",
+            "titulo": "Como usar a versão pessoal de cifras",
+            "resumo": "Edite sem alterar a banda na hora, teste no Modo Tocar e publique quando a equipe aprovar.",
+            "autor": "Equipe Uníssono",
+            "tags": "versão pessoal, cifras, editor, banda",
+            "meta_title": "Versão pessoal de cifras — tutorial Uníssono",
+            "meta_description": "Tutorial da versão pessoal: editar cifras em privado, alternar Banda/Minha e publicar para a equipe.",
+            "conteudo": _POST_VERSAO_PESSOAL,
         },
     ]
     for i, p in enumerate(posts):
-        p['publicado'] = True
-        p['publicado_em'] = (base_date + timedelta(days=i * 5)).strftime('%Y-%m-%d %H:%M:%S')
+        p["publicado"] = True
+        p["publicado_em"] = (base_date + timedelta(days=i * 5)).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
     return posts
 
 
 # Posts cujo conteúdo no seed deve sobrescrever o banco (tutoriais atualizados)
-_REFRESH_CONTENT_SLUGS = frozenset({
-    'como-usar-modo-tocar-setsync',
-    'compartilhar-cifras-com-a-banda',
-})
+_REFRESH_CONTENT_SLUGS = frozenset(
+    {
+        "como-usar-modo-tocar-setsync",
+        "compartilhar-cifras-com-a-banda",
+    }
+)
 
 
 def seed_blog_posts(c) -> None:
     """Insere posts iniciais; em deploys seguintes só adiciona slugs novos."""
     for p in _blog_posts_data():
-        c.execute('SELECT id FROM blog_posts WHERE slug = ?', (p['slug'],))
+        c.execute("SELECT id FROM blog_posts WHERE slug = ?", (p["slug"],))
         row = c.fetchone()
         if row:
-            if p['slug'] not in _REFRESH_CONTENT_SLUGS:
+            if p["slug"] not in _REFRESH_CONTENT_SLUGS:
                 continue
             c.execute(
-                '''UPDATE blog_posts SET titulo=?, resumo=?, conteudo=?, meta_title=?,
-                   meta_description=?, tags=?, atualizado_em=? WHERE slug=?''',
+                """UPDATE blog_posts SET titulo=?, resumo=?, conteudo=?, meta_title=?,
+                   meta_description=?, tags=?, atualizado_em=? WHERE slug=?""",
                 (
-                    p['titulo'], p['resumo'], p['conteudo'],
-                    p['meta_title'], p['meta_description'], p['tags'],
-                    p['publicado_em'], p['slug'],
+                    p["titulo"],
+                    p["resumo"],
+                    p["conteudo"],
+                    p["meta_title"],
+                    p["meta_description"],
+                    p["tags"],
+                    p["publicado_em"],
+                    p["slug"],
                 ),
             )
             continue
         c.execute(
-            '''INSERT INTO blog_posts
+            """INSERT INTO blog_posts
                (slug, titulo, resumo, conteudo, autor, publicado, publicado_em,
                 atualizado_em, meta_title, meta_description, imagem_capa, tags)
-               VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)''',
+               VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)""",
             (
-                p['slug'], p['titulo'], p['resumo'], p['conteudo'], p['autor'],
-                p['publicado_em'], p['publicado_em'],
-                p['meta_title'], p['meta_description'], '', p['tags'],
+                p["slug"],
+                p["titulo"],
+                p["resumo"],
+                p["conteudo"],
+                p["autor"],
+                p["publicado_em"],
+                p["publicado_em"],
+                p["meta_title"],
+                p["meta_description"],
+                "",
+                p["tags"],
             ),
         )
 

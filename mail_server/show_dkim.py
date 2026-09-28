@@ -32,11 +32,13 @@ def main() -> None:
     host = dns_host()
 
     print("=== DNS de e-mail Uníssono (GoDaddy / domaincontrol) ===\n")
-    print("1) TXT do apex (substituir o TXT atual que começa com v=DKIM1 — está errado):")
+    print(
+        "1) TXT do apex (substituir o TXT atual que começa com v=DKIM1 — está errado):"
+    )
     print(f"   Nome:  @  (ou {DOMAIN})")
     print(f"   Valor: {spf}\n")
     print("2) TXT DKIM (criar — hoje não existe neste hostname):")
-    print(f"   Nome:  unissono._domainkey")
+    print("   Nome:  unissono._domainkey")
     print(f"   Valor: {dkim}\n")
     print("   FQDN esperado:", host)
     print()
@@ -44,7 +46,7 @@ def main() -> None:
     print("   Nome:  _dmarc")
     print(f"   Valor: {dmarc}\n")
     print("4) MX (opcional, só se o mail local receber mensagem):")
-    print(f"   Nome:  @")
+    print("   Nome:  @")
     print(f"   Valor: {MAIL_HOSTNAME}  (prioridade 10)\n")
     print("5) PTR / Reverse DNS (painel Contabo):")
     print(f"   {ip} → {MAIL_HOSTNAME}")

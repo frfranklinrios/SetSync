@@ -8,16 +8,16 @@ from __future__ import annotations
 import re
 
 # Standard accidentals for chord symbols (U+ED60–U+ED66)
-CSYM_ACCIDENTAL_FLAT = "\uED60"
-CSYM_ACCIDENTAL_SHARP = "\uED62"
+CSYM_ACCIDENTAL_FLAT = "\ued60"
+CSYM_ACCIDENTAL_SHARP = "\ued62"
 
 # Chord symbols (U+E870–U+E87F)
-CSYM_DIMINISHED = "\uE870"
-CSYM_HALF_DIMINISHED = "\uE871"
-CSYM_AUGMENTED = "\uE872"
-CSYM_MAJOR_SEVENTH = "\uE873"
-CSYM_MINOR = "\uE874"
-CSYM_ALTERED_BASS_SLASH = "\uE87B"
+CSYM_DIMINISHED = "\ue870"
+CSYM_HALF_DIMINISHED = "\ue871"
+CSYM_AUGMENTED = "\ue872"
+CSYM_MAJOR_SEVENTH = "\ue873"
+CSYM_MINOR = "\ue874"
+CSYM_ALTERED_BASS_SLASH = "\ue87b"
 
 _ROOT = re.compile(r"^([A-G])([#b]?)(.*)$", re.IGNORECASE)
 

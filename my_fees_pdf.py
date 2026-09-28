@@ -8,12 +8,15 @@ from urllib.parse import urlencode
 from studio_finance_pdf import period_label
 
 
-def build_my_fees_pdf_download_name(year: int, month: int, band_name: str | None = None) -> str:
-    base = f'Meu financeiro {period_label(year, month)}'
+def build_my_fees_pdf_download_name(
+    year: int, month: int, band_name: str | None = None
+) -> str:
+    base = f"Meu financeiro {period_label(year, month)}"
     if band_name:
         from band_finance_pdf import safe_filename
-        return f'{base} — {safe_filename(band_name)}.pdf'
-    return f'{base}.pdf'
+
+        return f"{base} — {safe_filename(band_name)}.pdf"
+    return f"{base}.pdf"
 
 
 def build_my_fees_pdf_url(
@@ -27,16 +30,18 @@ def build_my_fees_pdf_url(
     from security import make_my_fees_pdf_token
 
     token = make_my_fees_pdf_token(user_id)
-    internal = (base_url or os.getenv('SETSYNC_INTERNAL_URL') or 'http://127.0.0.1:5000').rstrip('/')
+    internal = (
+        base_url or os.getenv("SETSYNC_INTERNAL_URL") or "http://127.0.0.1:5000"
+    ).rstrip("/")
     params = {
-        'ano': year,
-        'mes': month,
-        'pdfgen': '1',
-        'pdf_token': token,
+        "ano": year,
+        "mes": month,
+        "pdfgen": "1",
+        "pdf_token": token,
     }
     if band_id:
-        params['banda_id'] = band_id
-    return f'{internal}/bands/meus-caches/imprimir?{urlencode(params)}'
+        params["banda_id"] = band_id
+    return f"{internal}/bands/meus-caches/imprimir?{urlencode(params)}"
 
 
 def generate_my_fees_pdf_bytes(

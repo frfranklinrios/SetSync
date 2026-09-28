@@ -11,17 +11,18 @@ def render_setlist_pdf_html(app, data: dict) -> str:
     """Renderiza HTML para conversão em PDF."""
     with app.app_context():
         return render_template(
-            'pdf/setlist.html',
-            setlist=data['setlist'],
-            band=data['band'],
-            sheets=data.get('sheets', []),
-            printed_at=data.get('printed_at') or datetime.now(),
-            band_logo_data_uri=data.get('band_logo_data_uri'),
-            gorjeta_qr_data_uri=data.get('gorjeta_qr_data_uri'),
-            gorjeta_public_url=data.get('gorjeta_public_url'),
+            "pdf/setlist.html",
+            setlist=data["setlist"],
+            band=data["band"],
+            sheets=data.get("sheets", []),
+            printed_at=data.get("printed_at") or datetime.now(),
+            band_logo_data_uri=data.get("band_logo_data_uri"),
+            gorjeta_qr_data_uri=data.get("gorjeta_qr_data_uri"),
+            gorjeta_public_url=data.get("gorjeta_public_url"),
         )
 
 
 def html_to_pdf_bytes(html: str) -> bytes:
     from weasyprint import HTML
-    return HTML(string=html, base_url='.').write_pdf()
+
+    return HTML(string=html, base_url=".").write_pdf()

@@ -1,4 +1,5 @@
 """Numeração Nashville (graus) para exibição na grade harmônica."""
+
 from __future__ import annotations
 
 import re
@@ -32,7 +33,7 @@ def _parse_root(chord: str) -> tuple[int, str, str] | None:
     token = (chord or "").strip()
     if not token or token in ("%", "*", ".", "NC", "N.C."):
         return None
-    m = re.match(r"^([A-G](?:#|b)?)(.*)$", token, re.I)
+    m = re.match(r"^([A-G](?:#|b)?)(.*)$", token, re.IGNORECASE)
     if not m:
         return None
     root = m.group(1)[0].upper() + m.group(1)[1:]
@@ -43,7 +44,7 @@ def _parse_root(chord: str) -> tuple[int, str, str] | None:
     bass = ""
     if "/" in rest:
         body, bass_raw = rest.split("/", 1)
-        bm = re.match(r"^([A-G](?:#|b)?)", bass_raw.strip(), re.I)
+        bm = re.match(r"^([A-G](?:#|b)?)", bass_raw.strip(), re.IGNORECASE)
         if bm:
             b = bm.group(1)[0].upper() + bm.group(1)[1:]
             bass = b
@@ -79,7 +80,7 @@ def chord_to_nashville(chord: str, key: str) -> str:
         num += "°"
     elif "aug" in ql or "+" in q:
         num += "+"
-    ext = re.sub(r"^(m(in)?|maj)", "", q, flags=re.I)
+    ext = re.sub(r"^(m(in)?|maj)", "", q, flags=re.IGNORECASE)
     if ext and ext.lower() not in ("", "m"):
         num += ext
     if bass:

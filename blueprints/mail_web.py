@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
-import os
-
-from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from blueprints.admin import superadmin_required
 from db import get_user
@@ -109,7 +116,9 @@ def compose():
         to_raw = (request.form.get("to") or "").strip()
         subject = (request.form.get("subject") or "").strip()
         body = (request.form.get("body") or "").strip()
-        recipients = [a.strip() for a in to_raw.replace(";", ",").split(",") if a.strip()]
+        recipients = [
+            a.strip() for a in to_raw.replace(";", ",").split(",") if a.strip()
+        ]
         if not recipients or not subject or not body:
             flash("Preencha destinatário, assunto e mensagem.", "warning")
             return render_template(
@@ -140,7 +149,9 @@ def compose():
             subject=subject,
             body=body,
         )
-    return render_template("mail/compose.html", mailbox=owner, to="", subject="", body="")
+    return render_template(
+        "mail/compose.html", mailbox=owner, to="", subject="", body=""
+    )
 
 
 @mail_web_bp.route("/<int:email_id>")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -18,7 +18,7 @@ _token_mem = {"access": "", "exp": ""}
 
 
 def _agora() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _token_valido() -> str:
@@ -28,7 +28,7 @@ def _token_valido() -> str:
         try:
             ts = datetime.fromisoformat(exp.replace("Z", "+00:00"))
             if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=timezone.utc)
+                ts = ts.replace(tzinfo=UTC)
             if ts > _agora():
                 _token_mem["access"] = token
                 _token_mem["exp"] = exp
@@ -38,12 +38,18 @@ def _token_valido() -> str:
     refresh = get_meta("cj_refresh_token") or ""
     if refresh:
         try:
-            data = _post("/authentication/refreshAccessToken", {"refreshToken": refresh}, auth=False)
+            data = _post(
+                "/authentication/refreshAccessToken",
+                {"refreshToken": refresh},
+                auth=False,
+            )
             _guardar_token(data)
             return str(data.get("accessToken") or "")
         except Exception:
             log.warning("Refresh CJ falhou; pedindo token novo")
-    data = _post("/authentication/getAccessToken", {"apiKey": config.CJ_API_KEY}, auth=False)
+    data = _post(
+        "/authentication/getAccessToken", {"apiKey": config.CJ_API_KEY}, auth=False
+    )
     _guardar_token(data)
     return str(data.get("accessToken") or "")
 
@@ -67,11 +73,20 @@ def _guardar_token(data: dict[str, Any]) -> None:
 def _unwrap(res: httpx.Response) -> Any:
     body = res.json()
     if not (body.get("success") or body.get("code") == 200):
-        raise RuntimeError(str(body.get("message") or body.get("code") or "CJ recusou a chamada"))
+        raise RuntimeError(
+            str(body.get("message") or body.get("code") or "CJ recusou a chamada")
+        )
     return body.get("data")
 
 
-def _chamar(method: str, path: str, *, auth: bool, json_body: dict | None = None, params: dict | None = None) -> Any:
+def _chamar(
+    method: str,
+    path: str,
+    *,
+    auth: bool,
+    json_body: dict | None = None,
+    params: dict | None = None,
+) -> Any:
     headers = {"Content-Type": "application/json"}
     if auth:
         headers["CJ-Access-Token"] = _token_valido()
@@ -79,7 +94,9 @@ def _chamar(method: str, path: str, *, auth: bool, json_body: dict | None = None
     ultimo: Exception | None = None
     for tentativa in range(4):
         with httpx.Client(timeout=40.0) as client:
-            res = client.request(method, f"{_BASE}{path}", headers=headers, json=json_body, params=params)
+            res = client.request(
+                method, f"{_BASE}{path}", headers=headers, json=json_body, params=params
+            )
         if res.status_code == 429:
             time.sleep(2.0 * (tentativa + 1))
             ultimo = RuntimeError("CJ limitou as consultas (429)")
@@ -122,7 +139,12 @@ def _categoria(keyword: str, titulo: str = "") -> str:
 
 
 def _variante(item: dict[str, Any]) -> dict[str, Any] | None:
-    variantes = item.get("variants") or item.get("productVariant") or item.get("variantList") or []
+    variantes = (
+        item.get("variants")
+        or item.get("productVariant")
+        or item.get("variantList")
+        or []
+    )
     if isinstance(variantes, dict):
         variantes = [variantes]
     for var in variantes:
@@ -131,14 +153,37 @@ def _variante(item: dict[str, Any]) -> dict[str, Any] | None:
         vid = str(var.get("vid") or var.get("variantId") or "")
         if not vid:
             continue
-        estoque = int(float(var.get("inventoryNum") or var.get("variantQuantity") or var.get("inventory") or 0))
-        preco = float(var.get("variantSellPrice") or var.get("variantPrice") or var.get("sellPrice") or 0)
-        return {"vid": vid, "estoque": estoque, "preco": preco, "imagem": str(var.get("variantImage") or "")}
+        estoque = int(
+            float(
+                var.get("inventoryNum")
+                or var.get("variantQuantity")
+                or var.get("inventory")
+                or 0
+            )
+        )
+        preco = float(
+            var.get("variantSellPrice")
+            or var.get("variantPrice")
+            or var.get("sellPrice")
+            or 0
+        )
+        return {
+            "vid": vid,
+            "estoque": estoque,
+            "preco": preco,
+            "imagem": str(var.get("variantImage") or ""),
+        }
     return None
 
 
 def _titulo(item: dict[str, Any], pid: str) -> str:
-    bruto = item.get("nameEn") or item.get("productNameEn") or item.get("productName") or item.get("name") or pid
+    bruto = (
+        item.get("nameEn")
+        or item.get("productNameEn")
+        or item.get("productName")
+        or item.get("name")
+        or pid
+    )
     if isinstance(bruto, list):
         bruto = next((x for x in bruto if isinstance(x, str) and x.strip()), pid)
     return str(bruto)[:160]
@@ -196,7 +241,10 @@ def preview_busca(keyword: str, *, tamanho: int = 12) -> list[dict[str, Any]]:
     termo = (keyword or "").strip()
     if len(termo) < 2:
         raise ValueError("Digite pelo menos 2 letras para buscar.")
-    data = _get("/product/listV2", {"page": 1, "size": max(1, min(tamanho, 20)), "keyWord": termo})
+    data = _get(
+        "/product/listV2",
+        {"page": 1, "size": max(1, min(tamanho, 20)), "keyWord": termo},
+    )
     saida = []
     for raw in _produtos_da_busca(data)[:tamanho]:
         pid = str(raw.get("id") or raw.get("pid") or "")
@@ -209,7 +257,9 @@ def preview_busca(keyword: str, *, tamanho: int = 12) -> list[dict[str, Any]]:
                 "titulo": _titulo(raw, pid),
                 "imagem_url": _imagem(raw),
                 "preco_base_usd": round(preco, 2) if preco else 0,
-                "estoque": int(float(raw.get("warehouseInventoryNum") or raw.get("listedNum") or 0)),
+                "estoque": int(
+                    float(raw.get("warehouseInventoryNum") or raw.get("listedNum") or 0)
+                ),
                 "url": f"https://www.cjdropshipping.com/product/{pid}.html",
             }
         )
@@ -241,7 +291,11 @@ def buscar_catalogo() -> list[dict[str, Any]]:
         try:
             data = _get(
                 "/product/listV2",
-                {"page": 1, "size": max(1, config.CJ_MAX_POR_BUSCA), "keyWord": keyword},
+                {
+                    "page": 1,
+                    "size": max(1, config.CJ_MAX_POR_BUSCA),
+                    "keyWord": keyword,
+                },
             )
         except Exception as exc:
             log.warning("CJ busca '%s' falhou: %s", keyword, exc)
@@ -259,7 +313,9 @@ def buscar_catalogo() -> list[dict[str, Any]]:
     return saida
 
 
-def criar_pedido_fornecedor(*, pedido_id: str, cliente: dict, itens: list[dict]) -> dict[str, Any]:
+def criar_pedido_fornecedor(
+    *, pedido_id: str, cliente: dict, itens: list[dict]
+) -> dict[str, Any]:
     if not config.cj_configurada():
         raise RuntimeError("CJ_API_KEY não configurada.")
     produtos = []
@@ -305,7 +361,9 @@ def criar_pedido_fornecedor(*, pedido_id: str, cliente: dict, itens: list[dict])
     return {
         "ok": True,
         "fornecedor": "cj",
-        "cj_order_id": str(data.get("orderId") or data.get("cjOrderId") or data.get("pid") or ""),
+        "cj_order_id": str(
+            data.get("orderId") or data.get("cjOrderId") or data.get("pid") or ""
+        ),
         "pay_url": str(data.get("cjPayUrl") or ""),
         "resposta": data,
     }

@@ -126,9 +126,7 @@ def detectar_compasso(
     )
 
 
-def _pontuar_compasso(
-    strengths: np.ndarray, beats_per_bar: int, offset: int
-) -> float:
+def _pontuar_compasso(strengths: np.ndarray, beats_per_bar: int, offset: int) -> float:
     import numpy as np
 
     downbeats: list[float] = []
@@ -147,7 +145,6 @@ def _sugere_composto(y: np.ndarray, sr: int) -> bool:
     """Heurística leve para 6/8: subdivisão ternária mais clara que binária."""
     try:
         import librosa
-        import numpy as np
 
         onset_env = librosa.onset.onset_strength(y=y, sr=sr)
         ac = librosa.autocorrelate(onset_env, max_size=3 * sr // 512)
@@ -166,9 +163,7 @@ def _sugere_composto(y: np.ndarray, sr: int) -> bool:
         return False
 
 
-def alinhar_pulsos_ao_compasso(
-    pulsos: list[str], compasso: CompassoInfo
-) -> list[str]:
+def alinhar_pulsos_ao_compasso(pulsos: list[str], compasso: CompassoInfo) -> list[str]:
     """Rotaciona a lista para o primeiro pulso coincidir com o downbeat."""
     if not pulsos or compasso.downbeat_offset == 0:
         return pulsos

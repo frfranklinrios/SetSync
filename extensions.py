@@ -14,7 +14,7 @@ def init_scheduler(app) -> None:
     global _scheduler
     if _scheduler is not None:
         return
-    if app.config.get('TESTING'):
+    if app.config.get("TESTING"):
         return
 
     _tz = app_tz()
@@ -25,91 +25,101 @@ def init_scheduler(app) -> None:
     def _job():
         with app.app_context():
             from scheduler_jobs import run_daily_voucher_jobs, run_metrics_snapshot_job
+
             try:
                 run_daily_voucher_jobs()
             except Exception as exc:
-                app.logger.exception('Erro no job de vouchers: %s', exc)
+                app.logger.exception("Erro no job de vouchers: %s", exc)
             try:
                 run_metrics_snapshot_job()
             except Exception as exc:
-                app.logger.exception('Erro no snapshot de métricas: %s', exc)
+                app.logger.exception("Erro no snapshot de métricas: %s", exc)
 
-    _scheduler.add_job(_job, 'cron', hour=6, minute=0, timezone=_tz, id='voucher_daily')
+    _scheduler.add_job(_job, "cron", hour=6, minute=0, timezone=_tz, id="voucher_daily")
     _scheduler.start()
-    app.logger.info('APScheduler: jobs diários (vouchers, onboarding, retenção) às 06:00 (%s)', _tz_name)
+    app.logger.info(
+        "APScheduler: jobs diários (vouchers, onboarding, retenção) às 06:00 (%s)",
+        _tz_name,
+    )
 
     def _agenda_job():
         with app.app_context():
             from scheduler_jobs import run_agenda_reminder_jobs
+
             try:
                 run_agenda_reminder_jobs()
             except Exception as exc:
-                app.logger.exception('Erro no job de lembretes da agenda: %s', exc)
+                app.logger.exception("Erro no job de lembretes da agenda: %s", exc)
 
-    _scheduler.add_job(_agenda_job, 'cron', minute=0, timezone=_tz, id='agenda_reminders_hourly')
-    app.logger.info('APScheduler: lembretes de agenda a cada hora (%s)', _tz_name)
+    _scheduler.add_job(
+        _agenda_job, "cron", minute=0, timezone=_tz, id="agenda_reminders_hourly"
+    )
+    app.logger.info("APScheduler: lembretes de agenda a cada hora (%s)", _tz_name)
 
     def _prep_job():
         with app.app_context():
             from scheduler_jobs import run_event_prep_jobs
+
             try:
                 run_event_prep_jobs()
             except Exception as exc:
-                app.logger.exception('Erro no job de preparação de eventos: %s', exc)
+                app.logger.exception("Erro no job de preparação de eventos: %s", exc)
 
     _scheduler.add_job(
         _prep_job,
-        'cron',
+        "cron",
         hour=10,
         minute=0,
         timezone=_tz,
-        id='event_prep_daily',
+        id="event_prep_daily",
     )
     app.logger.info(
-        'APScheduler: alertas de evento incompleto às 10:00 (%s)',
+        "APScheduler: alertas de evento incompleto às 10:00 (%s)",
         _tz_name,
     )
 
     def _marketing_shots_job():
         with app.app_context():
             from scheduler_jobs import run_marketing_screenshots_job
+
             try:
                 run_marketing_screenshots_job()
             except Exception as exc:
-                app.logger.exception('Erro no job de screenshots de marketing: %s', exc)
+                app.logger.exception("Erro no job de screenshots de marketing: %s", exc)
 
     # 03:15 — regenera capturas do dia (persiste em ./data/screenshots)
     _scheduler.add_job(
         _marketing_shots_job,
-        'cron',
+        "cron",
         hour=3,
         minute=15,
         timezone=_tz,
-        id='marketing_screenshots_daily',
+        id="marketing_screenshots_daily",
     )
     app.logger.info(
-        'APScheduler: screenshots de marketing às 03:15 (%s)',
+        "APScheduler: screenshots de marketing às 03:15 (%s)",
         _tz_name,
     )
 
     def _digest_job():
         with app.app_context():
             from scheduler_jobs import run_notification_digest_jobs
+
             try:
                 run_notification_digest_jobs()
             except Exception as exc:
-                app.logger.exception('Erro no resumo diário de notificações: %s', exc)
+                app.logger.exception("Erro no resumo diário de notificações: %s", exc)
 
     _scheduler.add_job(
         _digest_job,
-        'cron',
+        "cron",
         hour=21,
         minute=0,
         timezone=_tz,
-        id='notification_digest_daily',
+        id="notification_digest_daily",
     )
     app.logger.info(
-        'APScheduler: resumo diário de notificações às 21:00 (%s)',
+        "APScheduler: resumo diário de notificações às 21:00 (%s)",
         _tz_name,
     )
 
@@ -120,7 +130,7 @@ def _init_whatsapp_server(app) -> None:
     """Garante instância Evolution ao subir (provider evolution)."""
     from whatsapp_config import whatsapp_provider
 
-    if whatsapp_provider() != 'evolution':
+    if whatsapp_provider() != "evolution":
         return
     with app.app_context():
         try:
@@ -128,10 +138,10 @@ def _init_whatsapp_server(app) -> None:
 
             if not is_reachable():
                 app.logger.warning(
-                    'Evolution API indisponível — WhatsApp ficará offline até o container subir'
+                    "Evolution API indisponível — WhatsApp ficará offline até o container subir"
                 )
                 return
             if ensure_instance():
-                app.logger.info('WhatsApp Evolution: instância pronta')
+                app.logger.info("WhatsApp Evolution: instância pronta")
         except Exception as exc:
-            app.logger.warning('WhatsApp Evolution: init falhou: %s', exc)
+            app.logger.warning("WhatsApp Evolution: init falhou: %s", exc)

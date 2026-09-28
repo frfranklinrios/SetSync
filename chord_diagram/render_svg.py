@@ -3,22 +3,26 @@
 from __future__ import annotations
 
 import html
-from typing import Sequence
+from collections.abc import Sequence
 
-from chord_diagram.instruments import InstrumentSpec, get_instrument
-from chord_diagram.voicing import adapt_guitar_voicing_to_four_strings, detect_barres, string_on_barre
+from chord_diagram.instruments import InstrumentSpec
+from chord_diagram.voicing import (
+    adapt_guitar_voicing_to_four_strings,
+    detect_barres,
+    string_on_barre,
+)
 
 LAYOUT = {
-    'col_gap': 32,
-    'row_gap': 30,
-    'margin_x': 46,
-    'margin_y': 26,
-    'dot_r': 12,
-    'root_dot_r': 12,
-    'barre_h': 26,
-    'open_r': 7,
-    'mute_s': 6.5,
-    'rows': 5,
+    "col_gap": 32,
+    "row_gap": 30,
+    "margin_x": 46,
+    "margin_y": 26,
+    "dot_r": 12,
+    "root_dot_r": 12,
+    "barre_h": 26,
+    "open_r": 7,
+    "mute_s": 6.5,
+    "rows": 5,
 }
 
 SVG_STYLE = """
@@ -42,7 +46,7 @@ def _esc(s: str) -> str:
 
 
 def _tuning_labels(spec: InstrumentSpec) -> list[str]:
-    return [p.rstrip('0123456789') for p in spec.tuning_pitches]
+    return [p.rstrip("0123456789") for p in spec.tuning_pitches]
 
 
 def _compute_window(frets: Sequence, rows: int = 5) -> tuple[int, int]:
@@ -73,15 +77,17 @@ def _fret_y(margin_y: int, row_gap: int, fret: int, start_fret: int) -> float:
 def _barre_pill(x1: float, x2: float, y: float, h: float) -> str:
     left = min(x1, x2) - h / 2
     w = abs(x2 - x1) + h
-    return f'<rect class="barre" x="{left}" y="{y - h/2}" width="{w}" height="{h}" rx="{h/2}"/>'
+    return f'<rect class="barre" x="{left}" y="{y - h / 2}" width="{w}" height="{h}" rx="{h / 2}"/>'
 
 
-def _barre_draw_range(bar: dict, frets: list, string_count: int) -> tuple[int, int] | None:
-    from_s = max(0, bar['startString'] - 1)
-    to_s = min(bar['endString'] - 1, string_count - 1)
-    while from_s <= to_s and frets[from_s] in ('x', 'X'):
+def _barre_draw_range(
+    bar: dict, frets: list, string_count: int
+) -> tuple[int, int] | None:
+    from_s = max(0, bar["startString"] - 1)
+    to_s = min(bar["endString"] - 1, string_count - 1)
+    while from_s <= to_s and frets[from_s] in ("x", "X"):
         from_s += 1
-    while to_s >= from_s and frets[to_s] in ('x', 'X'):
+    while to_s >= from_s and frets[to_s] in ("x", "X"):
         to_s -= 1
     if from_s >= to_s:
         return None
@@ -89,10 +95,10 @@ def _barre_draw_range(bar: dict, frets: list, string_count: int) -> tuple[int, i
 
 
 def _barre_finger_label(bar: dict, frets: list, fingers: list[int] | None) -> int:
-    s0 = bar['startString'] - 1
-    s1 = bar['endString'] - 1
+    s0 = bar["startString"] - 1
+    s1 = bar["endString"] - 1
     for si in range(s0, min(s1, len(frets) - 1) + 1):
-        if frets[si] != bar['fret']:
+        if frets[si] != bar["fret"]:
             continue
         if fingers and si < len(fingers) and fingers[si] == 1:
             return 1
@@ -106,20 +112,22 @@ def render_fretboard_svg(
     frets: list,
     *,
     fingers: list[int] | None = None,
-    title: str = '',
-    label_mode: str = 'fingers',
+    title: str = "",
+    label_mode: str = "fingers",
 ) -> str:
     n = spec.strings
     if len(frets) == 6 and n == 4:
-        adapted = adapt_guitar_voicing_to_four_strings({'frets': list(frets), 'fingers': fingers})
-        frets = adapted['frets']
-        fingers = adapted.get('fingers')
+        adapted = adapt_guitar_voicing_to_four_strings(
+            {"frets": list(frets), "fingers": fingers}
+        )
+        frets = adapted["frets"]
+        fingers = adapted.get("fingers")
     frets = list(frets)[:n]
     if fingers:
         fingers = list(fingers)[:n]
-    start, rows = _compute_window(frets, LAYOUT['rows'])
-    mx, my = LAYOUT['margin_x'], LAYOUT['margin_y']
-    cg, rg = LAYOUT['col_gap'], LAYOUT['row_gap']
+    start, rows = _compute_window(frets, LAYOUT["rows"])
+    mx, my = LAYOUT["margin_x"], LAYOUT["margin_y"]
+    cg, rg = LAYOUT["col_gap"], LAYOUT["row_gap"]
     pad_x, pad_y = 8, 8
     board_w = (n - 1) * cg
     board_h = rows * rg
@@ -130,7 +138,7 @@ def render_fretboard_svg(
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_w}" height="{svg_h}" '
         f'viewBox="0 0 {svg_w} {svg_h}" role="img">',
-        f'<style>{SVG_STYLE}</style>',
+        f"<style>{SVG_STYLE}</style>",
     ]
     if title:
         parts.append(f'<text class="title" x="{mx}" y="16">{_esc(title)}</text>')
@@ -143,7 +151,7 @@ def render_fretboard_svg(
     y0 = my
     for row in range(rows + 1):
         y = y0 + row * rg
-        cls = 'nut' if start == 0 and row == 0 else 'fret'
+        cls = "nut" if start == 0 and row == 0 else "fret"
         parts.append(
             f'<line class="{cls}" x1="{mx - 2}" y1="{y}" '
             f'x2="{mx + board_w + 2}" y2="{y}"/>'
@@ -166,14 +174,14 @@ def render_fretboard_svg(
         span = _barre_draw_range(b, list(frets), n)
         if not span:
             continue
-        yb = _fret_y(y0, rg, b['fret'], start)
+        yb = _fret_y(y0, rg, b["fret"], start)
         x1 = _string_x(mx, cg, span[0])
         x2 = _string_x(mx, cg, span[1])
-        parts.append(_barre_pill(x1, x2, yb, LAYOUT['barre_h']))
+        parts.append(_barre_pill(x1, x2, yb, LAYOUT["barre_h"]))
 
     for si, f in enumerate(frets):
         x = _string_x(mx, cg, si)
-        if f == 'x' or f == 'X':
+        if f == "x" or f == "X":
             parts.append(f'<text class="mark" x="{x}" y="{top_y}">X</text>')
         elif f == 0 and start == 0:
             parts.append(f'<text class="mark" x="{x}" y="{top_y}">o</text>')
@@ -181,7 +189,7 @@ def render_fretboard_svg(
     for si, f in enumerate(frets):
         if string_on_barre(si, list(frets), barres):
             continue
-        if f in ('x', 'X'):
+        if f in ("x", "X"):
             continue
         if f == 0 and start == 0:
             continue
@@ -193,9 +201,9 @@ def render_fretboard_svg(
         x = _string_x(mx, cg, si)
         parts.append(f'<circle class="dot" cx="{x}" cy="{cy}" r="{LAYOUT["dot_r"]}"/>')
 
-    if fingers and label_mode == 'fingers':
+    if fingers and label_mode == "fingers":
         for b in barres:
-            yb = _fret_y(y0, rg, b['fret'], start)
+            yb = _fret_y(y0, rg, b["fret"], start)
             if yb < y0 or yb > y0 + board_h:
                 continue
             span = _barre_draw_range(b, list(frets), n)
@@ -204,11 +212,13 @@ def render_fretboard_svg(
             x1 = _string_x(mx, cg, span[0])
             x2 = _string_x(mx, cg, span[1])
             finger = _barre_finger_label(b, list(frets), fingers)
-            parts.append(f'<text class="finger" x="{(x1 + x2) / 2}" y="{yb}">{finger}</text>')
+            parts.append(
+                f'<text class="finger" x="{(x1 + x2) / 2}" y="{yb}">{finger}</text>'
+            )
         for si, f in enumerate(frets):
             if string_on_barre(si, list(frets), barres):
                 continue
-            if f in ('x', 'X'):
+            if f in ("x", "X"):
                 continue
             if f == 0 and start == 0:
                 continue
@@ -228,8 +238,8 @@ def render_fretboard_svg(
         x = _string_x(mx, cg, si)
         parts.append(f'<text class="tuning" x="{x}" y="{tuning_y}">{_esc(note)}</text>')
 
-    parts.append('</svg>')
-    return ''.join(parts)
+    parts.append("</svg>")
+    return "".join(parts)
 
 
 def render_piano_svg(
@@ -242,17 +252,19 @@ def render_piano_svg(
     bw, bh = 18, 72
     w = key_count * nw + 40
     h = nh + 40
-    active = {k['midiId'] for k in key_mappings}
+    active = {k["midiId"] for k in key_mappings}
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
-        '<style>.nat{fill:#fffff0;stroke:#333}.sh{fill:#36454f}.on{fill:#f33}</style>',
+        "<style>.nat{fill:#fffff0;stroke:#333}.sh{fill:#36454f}.on{fill:#f33}</style>",
     ]
     ox = 20
     for i in range(key_count):
         midi = start_midi + i
         x = ox + i * nw
-        cls = 'nat on' if midi in active else 'nat'
-        parts.append(f'<rect class="{cls}" x="{x}" y="20" width="{nw-2}" height="{nh}"/>')
+        cls = "nat on" if midi in active else "nat"
+        parts.append(
+            f'<rect class="{cls}" x="{x}" y="20" width="{nw - 2}" height="{nh}"/>'
+        )
     black_pos = {1, 3, 6, 8, 10}
     for i in range(key_count):
         pc = (start_midi + i) % 12
@@ -260,7 +272,7 @@ def render_piano_svg(
             continue
         midi = start_midi + i
         x = ox + i * nw + nw // 2 - bw // 2
-        cls = 'sh on' if midi in active else 'sh'
+        cls = "sh on" if midi in active else "sh"
         parts.append(f'<rect class="{cls}" x="{x}" y="20" width="{bw}" height="{bh}"/>')
-    parts.append('</svg>')
-    return ''.join(parts)
+    parts.append("</svg>")
+    return "".join(parts)

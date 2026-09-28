@@ -56,10 +56,7 @@ def transpose_chart(
         nb = bar.clone()
         grid = bar.get_pulse_grid()
         nb.set_pulse_grid(
-            [
-                [transpose_chord(c, semitones, origin) for c in beat]
-                for beat in grid
-            ]
+            [[transpose_chord(c, semitones, origin) for c in beat] for beat in grid]
         )
         out.bars.append(nb)
     return out

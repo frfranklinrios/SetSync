@@ -24,7 +24,9 @@ def _txt(name: str) -> list[str]:
         answers = dns.resolver.resolve(name, "TXT")
         out: list[str] = []
         for rdata in answers:
-            parts = [p.decode() if isinstance(p, bytes) else str(p) for p in rdata.strings]
+            parts = [
+                p.decode() if isinstance(p, bytes) else str(p) for p in rdata.strings
+            ]
             out.append("".join(parts))
         return out
     except Exception as exc:
@@ -76,7 +78,9 @@ def check_mail_dns(
     domain = (domain or MAIL_DOMAIN or "unissono.app").strip().lower()
     mail_host = (mail_host or os.getenv("MAIL_HOSTNAME") or f"mail.{domain}").strip()
     ips = _a(mail_host)
-    ip = (outbound_ip or os.getenv("MAIL_OUTBOUND_IP") or (ips[0] if ips else "")).strip()
+    ip = (
+        outbound_ip or os.getenv("MAIL_OUTBOUND_IP") or (ips[0] if ips else "")
+    ).strip()
 
     checks: list[DnsCheck] = []
 
@@ -152,7 +156,9 @@ def check_mail_dns(
         DnsCheck(
             name=f"MX {domain}",
             ok=has_mx,
-            detail=", ".join(mxs) if mxs else "(nenhum — recebimento @domínio não funciona)",
+            detail=", ".join(mxs)
+            if mxs
+            else "(nenhum — recebimento @domínio não funciona)",
             expected=f"10 {mail_host}",
         )
     )

@@ -61,7 +61,9 @@ def _float(valor: object, default: float = 0.0) -> float:
 
 def _meta(soup: BeautifulSoup, *keys: str) -> str:
     for key in keys:
-        tag = soup.find("meta", attrs={"property": key}) or soup.find("meta", attrs={"name": key})
+        tag = soup.find("meta", attrs={"property": key}) or soup.find(
+            "meta", attrs={"name": key}
+        )
         if tag and tag.get("content"):
             return str(tag["content"]).strip()
     return ""
@@ -73,7 +75,7 @@ def _json_embutido(html: str) -> dict[str, Any]:
         r"window\.__INIT_DATA__\s*=\s*(\{.+?\});",
         r"window\._dida_config_\s*=\s*(\{.+?\});",
     ):
-        m = re.search(padrao, html, re.S)
+        m = re.search(padrao, html, re.DOTALL)
         if not m:
             continue
         try:
@@ -121,7 +123,7 @@ def _precos_no_html(html: str) -> float:
         r'"price"\s*:\s*"?(?P<p>[\d.]+)"?',
         r"US\s*\$\s*(?P<p>[\d]+(?:\.\d{1,2})?)",
     ):
-        m = re.search(padrao, html, re.I)
+        m = re.search(padrao, html, re.IGNORECASE)
         if not m:
             continue
         preco = _preco_valido(_float(m.group("p").replace(",", "")))
@@ -192,7 +194,9 @@ def extrair_da_pagina(html: str, url: str) -> dict[str, Any]:
         _meta(soup, "product:price:currency", "og:price:currency")
         or str(offers.get("priceCurrency") or "USD")
     ).upper()
-    preco = _float(_meta(soup, "product:price:amount", "og:price:amount")) or _float(offers.get("price"))
+    preco = _float(_meta(soup, "product:price:amount", "og:price:amount")) or _float(
+        offers.get("price")
+    )
     frete = 0.0
     estoque = None
     sku = str(ld.get("sku") or "")
@@ -211,7 +215,9 @@ def extrair_da_pagina(html: str, url: str) -> dict[str, Any]:
             )
         ship = data.get("shippingModule") or data.get("shipping") or {}
         if isinstance(ship, dict):
-            frete = _float(ship.get("freightAmount") or (ship.get("freight") or {}).get("value"))
+            frete = _float(
+                ship.get("freightAmount") or (ship.get("freight") or {}).get("value")
+            )
         qty = data.get("quantityModule") or data.get("inventory") or {}
         if isinstance(qty, dict) and qty.get("totalAvailableInventory") is not None:
             estoque = int(_float(qty.get("totalAvailableInventory")))
@@ -234,7 +240,9 @@ def extrair_da_pagina(html: str, url: str) -> dict[str, Any]:
 
     return {
         "url": url,
-        "titulo": re.sub(r"\s+", " ", (titulo or "").replace("| AliExpress", "").strip())[:160],
+        "titulo": re.sub(
+            r"\s+", " ", (titulo or "").replace("| AliExpress", "").strip()
+        )[:160],
         "imagem_url": imagem,
         "preco_base_usd": preco,
         "frete_usd": frete,
@@ -271,11 +279,18 @@ async def varrer_produto(seed: dict[str, Any]) -> dict[str, Any]:
             item["frete_usd"] = extraido["frete_usd"]
         if extraido.get("estoque") is not None:
             item["estoque"] = extraido["estoque"]
-        if extraido.get("imagem_url") and str(extraido["imagem_url"]).startswith("https://"):
+        if extraido.get("imagem_url") and str(extraido["imagem_url"]).startswith(
+            "https://"
+        ):
             item["imagem_url"] = extraido["imagem_url"]
         if extraido.get("titulo") and len(extraido["titulo"]) > 8:
             item["titulo"] = extraido["titulo"][:160]
-        log.info("Scrape %s fonte=%s preco=%s", item.get("id"), item.get("fonte"), item.get("preco_base_usd"))
+        log.info(
+            "Scrape %s fonte=%s preco=%s",
+            item.get("id"),
+            item.get("fonte"),
+            item.get("preco_base_usd"),
+        )
     except Exception as exc:
         log.warning("Scrape falhou %s: %s", item.get("id"), exc)
         item["fonte"] = "semente"
@@ -300,9 +315,15 @@ def _titulo_da_url(url: str) -> str:
     return ""
 
 
-def _montar_importado(url: str, extraido: dict[str, Any], categoria: str = "", marca: str = "") -> dict[str, Any]:
+def _montar_importado(
+    url: str, extraido: dict[str, Any], categoria: str = "", marca: str = ""
+) -> dict[str, Any]:
     titulo = extraido.get("titulo") or _titulo_da_url(url) or "Produto do fornecedor"
-    if titulo.lower() in {"produto do fornecedor", "aliexpress", "captcha verification"}:
+    if titulo.lower() in {
+        "produto do fornecedor",
+        "aliexpress",
+        "captcha verification",
+    }:
         titulo = _titulo_da_url(url) or titulo
     pid = _id_da_url(url) or _slug(titulo)
     preco = float(extraido.get("preco_base_usd") or 0)
@@ -323,16 +344,25 @@ def _montar_importado(url: str, extraido: dict[str, Any], categoria: str = "", m
     }
 
 
-async def importar_url(url: str, *, categoria: str = "", marca: str = "") -> dict[str, Any]:
+async def importar_url(
+    url: str, *, categoria: str = "", marca: str = ""
+) -> dict[str, Any]:
     destino = (url or "").strip()
     if not destino.startswith("http"):
         raise ValueError("Informe o link completo do produto no AliExpress ou Shopee.")
-    async with httpx.AsyncClient(timeout=config.SCRAPER_TIMEOUT, follow_redirects=True, headers=_HEADERS) as client:
+    async with httpx.AsyncClient(
+        timeout=config.SCRAPER_TIMEOUT, follow_redirects=True, headers=_HEADERS
+    ) as client:
         res = await client.get(destino)
         res.raise_for_status()
         final = str(res.url)
         html = res.text
     extraido = extrair_da_pagina(html, final)
     produto = _montar_importado(final, extraido, categoria=categoria, marca=marca)
-    log.info("Import %s preco=%s titulo=%s", produto["id"], produto["preco_base_usd"], produto["titulo"][:40])
+    log.info(
+        "Import %s preco=%s titulo=%s",
+        produto["id"],
+        produto["preco_base_usd"],
+        produto["titulo"][:40],
+    )
     return produto

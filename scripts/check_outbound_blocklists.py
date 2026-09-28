@@ -68,6 +68,7 @@ def main() -> int:
     if args.send:
         from flask import Flask
         from flask_mail import Mail
+
         import email_config
         from email_service import send_email
 
@@ -84,7 +85,9 @@ def main() -> int:
                 )
                 print(f"[{'OK' if ok else 'FAIL'}] send → {dest}")
 
-    print("\nSe Outlook falhar com S3150: https://sender.office.com/ ou MAIL_OUTBOUND_RELAY_*")
+    print(
+        "\nSe Outlook falhar com S3150: https://sender.office.com/ ou MAIL_OUTBOUND_RELAY_*"
+    )
     return 0
 
 

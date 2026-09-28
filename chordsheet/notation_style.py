@@ -55,7 +55,11 @@ def effective_quality_prefs(prefs: Prefs) -> tuple[str, str, str]:
     """Retorna (maj7_style, dim_style, half_dim_style) conforme o preset."""
     style = normalize_notation_style(prefs.notation_style)
     if style == "intl":
-        maj7 = prefs.maj7_style if prefs.maj7_style in ("delta", "MA7", "maj7") else "delta"
+        maj7 = (
+            prefs.maj7_style
+            if prefs.maj7_style in ("delta", "MA7", "maj7")
+            else "delta"
+        )
         dim = prefs.dim_style if prefs.dim_style in ("circle", "dim") else "circle"
         half = (
             prefs.half_dim_style

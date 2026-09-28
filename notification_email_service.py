@@ -8,11 +8,11 @@ import os
 from email_service import is_configured, send_email
 from security import external_url_for
 
-logger = logging.getLogger('setsync.email_notify')
+logger = logging.getLogger("setsync.email_notify")
 
 
 def _app_base_url() -> str:
-    return (os.getenv('SETSYNC_CANONICAL_URL') or '').strip().rstrip('/')
+    return (os.getenv("SETSYNC_CANONICAL_URL") or "").strip().rstrip("/")
 
 
 def _notification_link(url_path: str | None) -> str | None:
@@ -20,64 +20,66 @@ def _notification_link(url_path: str | None) -> str | None:
         return _app_base_url() or None
     base = _app_base_url()
     if base:
-        return f'{base}{url_path}'
+        return f"{base}{url_path}"
     return url_path
 
 
-def _html_wrapper(title: str, body_html: str, button_url: str | None, button_label: str) -> str:
+def _html_wrapper(
+    title: str, body_html: str, button_url: str | None, button_label: str
+) -> str:
     """HTML simples com quebras de linha (SMTP RFC5321: linha ≤998 chars)."""
-    btn = ''
+    btn = ""
     if button_url:
         btn = (
             '<p style="margin:24px 0 0">\n'
             f'<a href="{button_url}"\n'
             ' style="display:inline-block;padding:12px 24px;'
-            'background:#ea580c;color:#fff;text-decoration:none;'
+            "background:#ea580c;color:#fff;text-decoration:none;"
             'border-radius:8px;font-weight:600">'
-            f'{button_label}</a></p>\n'
+            f"{button_label}</a></p>\n"
         )
-    perfil = external_url_for('auth.perfil')
+    perfil = external_url_for("auth.perfil")
     return (
         '<div style="font-family:system-ui,sans-serif;color:#1c1917;'
         'max-width:520px">\n'
         '<p style="color:#78716c;font-size:13px;margin:0 0 8px">Uníssono</p>\n'
         f'<h2 style="margin:0 0 12px;font-size:1.25rem">{title}</h2>\n'
-        f'{body_html}\n'
-        f'{btn}'
+        f"{body_html}\n"
+        f"{btn}"
         '<p style="margin:28px 0 0;font-size:12px;color:#a8a29e">\n'
-        'Você recebe este e-mail porque ativou alertas no Uníssono.\n'
-        'Alertas urgentes (escalação, convites e lembretes) chegam na hora;\n'
-        'demais atualizações vão em um resumo diário.\n'
+        "Você recebe este e-mail porque ativou alertas no Uníssono.\n"
+        "Alertas urgentes (escalação, convites e lembretes) chegam na hora;\n"
+        "demais atualizações vão em um resumo diário.\n"
         f'<a href="{perfil}">Ajustar preferências</a>\n'
-        '</p></div>\n'
+        "</p></div>\n"
     )
 
 
 def send_notification_email(
     to_email: str,
     title: str,
-    body: str = '',
+    body: str = "",
     url_path: str | None = None,
 ) -> bool:
     link = _notification_link(url_path)
-    body_html = f'<p>{body}</p>' if body else ''
-    html = _html_wrapper(title, body_html, link, 'Abrir no Uníssono')
+    body_html = f"<p>{body}</p>" if body else ""
+    html = _html_wrapper(title, body_html, link, "Abrir no Uníssono")
     text_lines = [title]
     if body:
         text_lines.append(body)
     if link:
         text_lines.append(link)
-    text = '\n\n'.join(text_lines)
-    return send_email([to_email], f'Uníssono — {title}', html, text)
+    text = "\n\n".join(text_lines)
+    return send_email([to_email], f"Uníssono — {title}", html, text)
 
 
 def dispatch_notification_email(
     user_id: str,
     *,
     title: str,
-    body: str = '',
+    body: str = "",
     url_path: str | None = None,
-    notification_type: str = '',
+    notification_type: str = "",
 ) -> bool:
     """Envia e-mail ao usuário se tiver opt-in e SMTP configurado."""
     if not is_configured() or not user_id:
@@ -85,13 +87,15 @@ def dispatch_notification_email(
     from db import get_user, user_wants_notification_channel
 
     user = get_user(user_id)
-    if not user or not user_wants_notification_channel(user, 'email', notification_type):
+    if not user or not user_wants_notification_channel(
+        user, "email", notification_type
+    ):
         return False
-    email = (user.get('email') or '').strip()
+    email = (user.get("email") or "").strip()
     if not email:
         return False
     try:
         return send_notification_email(email, title, body, url_path)
     except Exception:
-        logger.exception('Falha ao enviar notificação por e-mail para %s', user_id)
+        logger.exception("Falha ao enviar notificação por e-mail para %s", user_id)
         return False
