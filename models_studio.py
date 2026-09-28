@@ -10,6 +10,8 @@ from db import get_db
 from studio_scheduling import (
     BOOKING_CONFIRMADO,
     BOOKING_PENDENTE,
+    BOOKING_CANCELADO,
+    BOOKING_RECUSADO,
 )
 
 PLANO_ESTUDIO_BASICO = "estudio_basico"
