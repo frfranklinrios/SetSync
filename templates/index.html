@@ -497,9 +497,6 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('ajuda.index') }}">Ajuda</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-outline-secondary ms-lg-1" href="{{ loja_url }}">Loja</a>
-                        </li>
                         <li class="nav-item ss-notif-wrap" id="ss-notif-wrap"
                             data-list-url="{{ url_for('notifications.api_list') }}"
                             data-read-url="{{ url_for('notifications.api_mark_read', notification_id='__ID__') }}"
@@ -568,9 +565,6 @@
                             <a class="nav-link" href="{{ url_for('assinatura_bp.bandas') }}#planos">Planos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ loja_url }}">Loja</a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('guia.guia_index') }}">Guia</a>
                         </li>
                         <li class="nav-item">
@@ -621,7 +615,6 @@
         &copy; 2026 Uníssono
         · <a href="{{ url_for('legal.privacidade') }}" class="text-muted">Privacidade</a>
         · <a href="{{ url_for('legal.termos') }}" class="text-muted">Termos</a>
-        · <a href="{{ loja_url }}" class="text-muted">Loja</a>
         {% if not current_user.is_authenticated %}
         · <a href="{{ url_for('auth.register') }}" class="text-muted">Criar conta grátis</a>
         · <a href="{{ url_for('assinatura_bp.bandas') }}#planos" class="text-muted">Planos</a>
