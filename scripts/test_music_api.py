@@ -90,6 +90,7 @@ def main():
         )
 
     doc_cav_g = build_chord_document("Gmaj7", instrument="cavaquinho")
+    check("positions" in doc_cav_g and bool(doc_cav_g.get("theory")), "cavaquinho Gmaj7 doc")
 
     scale = build_scale_document("E", "minor_pentatonic", instrument="violao")
     check(scale.get("type") == "scale_map", "scale map")

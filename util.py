@@ -528,7 +528,6 @@ def transpose_text(text, semitones):
 
         new_note = transpose_note(base_note, semitones)
         new_chord = new_note + modifier
-        old_chord = match.group(0)
 
         # Substituir no resultado
         start = match.start()

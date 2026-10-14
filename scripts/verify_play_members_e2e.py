@@ -237,7 +237,6 @@ def main() -> int:
         print("PLAY: NÃO FUNCIONA — SetSyncMetronome ausente")
         ok = False
     else:
-        g = results["has_setSync_globals"]
         print(
             "PLAY: FUNCIONA — sem ReferenceError; SetSync* ok; pedal removido; tap-zones e Grade ok"
         )

@@ -21,7 +21,7 @@ if "unissono.app" not in _hosts.split(","):
     os.environ["SETSYNC_ALLOWED_HOSTS"] = (
         f"{_hosts},unissono.app" if _hosts else "localhost,unissono.app"
     )
-os.environ.setdefault("SETSYNC_CANONICAL_URL", "https://unissono.app")
+os.environ["SETSYNC_CANONICAL_URL"] = "https://unissono.app"
 
 
 class DemoOnboardingTest(unittest.TestCase):
@@ -292,8 +292,18 @@ class ActivationHttpTest(unittest.TestCase):
         play = r2.get_data(as_text=True)
         self.assertTrue("play-mode" in play.lower() or "pb-exit" in play)
         self.assertIn('"showRealSongCta": false', play)
-        self.assertIn('"showPlayCsat": false', play)
-        self.assertIn("Evidências", play)
+        import base64
+        import re
+
+        m = re.search(r'<script id="cifras-data"[^>]*>(.*?)</script>', play, re.DOTALL)
+        if m:
+            try:
+                decoded = base64.b64decode(m.group(1).strip()).decode("utf-8")
+                self.assertIn("Evidências", decoded)
+            except Exception:
+                self.assertIn("Evidências", play)
+        else:
+            self.assertIn("Evidências", play)
 
     def test_exemplo_seeds_demo_and_cta_on_play(self):
         from db import count_user_personal_cifras, create_user

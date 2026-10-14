@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from chord_diagram.instruments import get_instrument, open_string_pcs
+from chord_diagram.instruments import get_instrument
 
 
 def chord_to_vextab(
@@ -16,7 +16,6 @@ def chord_to_vextab(
     if not spec or spec.family != "fretted":
         return f"tabstave notation=true tablature=true clef={clef} time={time}\n"
 
-    open_pcs = open_string_pcs(spec)
     tab_parts = []
     for si, f in enumerate(frets):
         string_num = spec.strings - si

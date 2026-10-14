@@ -2,11 +2,27 @@
 
 from __future__ import annotations
 
+import os
+import sys
+import tempfile
 import unittest
 from datetime import timedelta
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+os.environ["DATABASE_URL"] = f"sqlite:///{tempfile.mkdtemp()}/guest_freela_test.db"
+os.environ["FLASK_ENV"] = "development"
+os.environ["SECRET_KEY"] = "test-guest-freela-key-32-chars!!"
+
 
 class GuestScaleTokenTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from db import init_db
+
+        init_db()
+
     def test_guest_token_roundtrip(self):
         from app import app
         from event_scale_tokens import make_guest_scale_token, verify_guest_scale_token

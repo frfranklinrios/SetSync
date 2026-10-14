@@ -45,7 +45,9 @@ def _format_digest_lines(entries: list[dict]) -> tuple[str, str, str]:
         lines.append(f"• … e mais {count - _MAX_ITEMS}")
 
     body_text = "\n".join(lines)
-    body_html = "".join(f'<p style="margin:0 0 8px">{escape(l)}</p>' for l in lines)
+    body_html = "".join(
+        f'<p style="margin:0 0 8px">{escape(line)}</p>' for line in lines
+    )
     return title, body_text, body_html
 
 

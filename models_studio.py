@@ -8,11 +8,18 @@ import uuid
 from config import app_now_str
 from db import get_db
 from studio_scheduling import (
+    BOOKING_CANCELADO,
     BOOKING_CONFIRMADO,
     BOOKING_PENDENTE,
-    BOOKING_CANCELADO,
     BOOKING_RECUSADO,
 )
+
+__all__ = [
+    "BOOKING_CANCELADO",
+    "BOOKING_CONFIRMADO",
+    "BOOKING_PENDENTE",
+    "BOOKING_RECUSADO",
+]
 
 PLANO_ESTUDIO_BASICO = "estudio_basico"
 PLANO_ESTUDIO_PREMIUM = "estudio_premium"

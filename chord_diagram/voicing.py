@@ -247,7 +247,6 @@ def assign_fingers(frets: list, barres: list[dict]) -> list[int]:
             barre_strings.add(s - 1)
 
     fingers = [0] * len(frets)
-    used = set()
     nums = sorted({f for f in frets if isinstance(f, int) and f > 0})
     fret_to_finger = {f: i + 1 for i, f in enumerate(nums[:4])}
 

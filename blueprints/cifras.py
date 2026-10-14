@@ -19,6 +19,7 @@ from flask import (
 
 import band_notifications as bn
 from blueprints.auth import login_required
+from config import app_now_naive
 from db import (
     cifra_is_personal,
     copy_cifra_to_band,
@@ -67,18 +68,6 @@ from leadsheet.converter import (
     resolve_leadsheet_document,
     resolve_to_grade_flat,
 )
-
-
-def _notify_band_realtime(band_id, event: str, **data) -> None:
-    try:
-        from blueprints.realtime import notify_band
-
-        notify_band(str(band_id), event, dict(data))
-    except Exception:
-        pass
-
-
-from config import app_now_naive
 from util import (
     build_transpose_map,
     content_has_tablatura,
@@ -93,6 +82,16 @@ from util import (
     render_grouped_cifra_html,
     sanitize_tab_html_artifacts,
 )
+
+
+def _notify_band_realtime(band_id, event: str, **data) -> None:
+    try:
+        from blueprints.realtime import notify_band
+
+        notify_band(str(band_id), event, dict(data))
+    except Exception:
+        pass
+
 
 cifras_bp = Blueprint("cifras", __name__, url_prefix="/cifras")
 
@@ -862,7 +861,9 @@ def play_cifras_json_for_client(all_cifras, setlist_id=None, is_virtual=False):
     for c in all_cifras or []:
         try:
             items.append(
-                play_cifra_client_payload(c, setlist_id=setlist_id, is_virtual=is_virtual)
+                play_cifra_client_payload(
+                    c, setlist_id=setlist_id, is_virtual=is_virtual
+                )
             )
         except Exception:
             current_app.logger.exception(
@@ -871,18 +872,21 @@ def play_cifras_json_for_client(all_cifras, setlist_id=None, is_virtual=False):
             )
             # Fallback mínimo para a lista não sumir no cliente
             try:
-                items.append({
-                    "id": c.get("id"),
-                    "titulo": c.get("titulo") or "Música",
-                    "artista": c.get("artista") or "",
-                    "tom": "",
-                    "html": c.get("html") or '<p class="grade-empty-play">Cifra indisponível</p>',
-                    "lyrics_plain": "",
-                    "transpose_semitones": 0,
-                    "transpose_by_vocalist": {},
-                    "has_tablatura": False,
-                    "has_personal_draft": False,
-                })
+                items.append(
+                    {
+                        "id": c.get("id"),
+                        "titulo": c.get("titulo") or "Música",
+                        "artista": c.get("artista") or "",
+                        "tom": "",
+                        "html": c.get("html")
+                        or '<p class="grade-empty-play">Cifra indisponível</p>',
+                        "lyrics_plain": "",
+                        "transpose_semitones": 0,
+                        "transpose_by_vocalist": {},
+                        "has_tablatura": False,
+                        "has_personal_draft": False,
+                    }
+                )
             except Exception:
                 continue
     return json.dumps(items, ensure_ascii=False, default=str).replace("</", "<\\/")
@@ -903,7 +907,6 @@ def _safe_url_for(endpoint: str, **values):
         return url_for(endpoint, **values)
     except Exception:
         return None
-
 
 
 def _build_play_boot_configs(
@@ -936,76 +939,87 @@ def _build_play_boot_configs(
     """Monta configs JSON no Python — evita BuildError de url_for no Jinja."""
     from security import external_url_for
 
-    band_id = band['id'] if band else None
-    setlist_id = setlist.get('id') if setlist and not is_virtual else None
+    band_id = band["id"] if band else None
+    setlist_id = setlist.get("id") if setlist and not is_virtual else None
 
     if exit_url:
         resolved_exit = exit_url
     elif is_virtual and band_id:
-        resolved_exit = _safe_url_for('bands.view', band_id=band_id) or '/'
+        resolved_exit = _safe_url_for("bands.view", band_id=band_id) or "/"
     elif setlist_id is not None:
-        resolved_exit = _safe_url_for('setlists.view', setlist_id=setlist_id) or '/'
+        resolved_exit = _safe_url_for("setlists.view", setlist_id=setlist_id) or "/"
     else:
-        resolved_exit = _safe_url_for('dashboard') or '/'
+        resolved_exit = _safe_url_for("dashboard") or "/"
 
     try:
-        site_url = external_url_for('index')
+        site_url = external_url_for("index")
     except Exception:
-        site_url = '/'
+        site_url = "/"
 
     features = {
-        'bandId': band_id,
-        'bandName': (band.get('name') if band else '') or '',
-        'setlistId': setlist_id,
-        'songCount': len(all_cifras or []),
-        'playStateUrl': play_state_url,
-        'offlinePackUrl': offline_pack_url,
-        'playNotesUrlTpl': play_notes_url_tpl,
-        'canEdit': bool(can_edit),
-        'userId': user_id,
-        'event': event_context,
-        'autoFollowLeader': bool(auto_follow_leader),
+        "bandId": band_id,
+        "bandName": (band.get("name") if band else "") or "",
+        "setlistId": setlist_id,
+        "songCount": len(all_cifras or []),
+        "playStateUrl": play_state_url,
+        "offlinePackUrl": offline_pack_url,
+        "playNotesUrlTpl": play_notes_url_tpl,
+        "canEdit": bool(can_edit),
+        "userId": user_id,
+        "event": event_context,
+        "autoFollowLeader": bool(auto_follow_leader),
     }
     boot = {
-        'startIdx': start_idx or 0,
-        'bandId': band_id,
-        'exitUrl': resolved_exit,
-        'publicLetrasUrl': public_letras_url,
-        'setlistId': setlist_id,
-        'setlistVocalistUrl': (
-            _safe_url_for('setlists.set_vocalist', setlist_id=setlist_id)
-            if setlist_id is not None else None
+        "startIdx": start_idx or 0,
+        "bandId": band_id,
+        "exitUrl": resolved_exit,
+        "publicLetrasUrl": public_letras_url,
+        "setlistId": setlist_id,
+        "setlistVocalistUrl": (
+            _safe_url_for("setlists.set_vocalist", setlist_id=setlist_id)
+            if setlist_id is not None
+            else None
         ),
-        'addVocalistUrl': (
-            _safe_url_for('bands.add_vocalist_api', band_id=band_id) if band_id else None
+        "addVocalistUrl": (
+            _safe_url_for("bands.add_vocalist_api", band_id=band_id)
+            if band_id
+            else None
         ),
-        'vocalistIds': [v.get('id') for v in (vocalists or []) if v.get('id') is not None],
-        'activeVocalistId': active_vocalist_id or '',
-        'vocalistName': vocalist_name or '',
-        'playTargetKey': play_target_key or '',
-        'startVersao': start_versao or '',
-        'chordsheetRenderUrlTpl': _safe_url_for('cifras.chordsheet_render', cifra_id='__ID__'),
-        'transposedUrlTpl': _safe_url_for('cifras.get_transposed', cifra_id='__ID__'),
-        'saveTransposeUrlTpl': _safe_url_for('cifras.save_transpose', cifra_id='__ID__'),
-        'drawApiUrlTpl': _safe_url_for('cifras.api_get_play_draw', cifra_id='__ID__'),
-        'bandName': (band.get('name') if band else '') or '',
-        'canEdit': bool(can_edit),
-        'membersUrl': (
-            _safe_url_for('bands.members', band_id=band_id) if band_id and can_edit else None
+        "vocalistIds": [
+            v.get("id") for v in (vocalists or []) if v.get("id") is not None
+        ],
+        "activeVocalistId": active_vocalist_id or "",
+        "vocalistName": vocalist_name or "",
+        "playTargetKey": play_target_key or "",
+        "startVersao": start_versao or "",
+        "chordsheetRenderUrlTpl": _safe_url_for(
+            "cifras.chordsheet_render", cifra_id="__ID__"
         ),
-        'bandInviteUrl': band_invite_url,
-        'indicarUrl': _safe_url_for('assinatura_bp.voucher_indicar'),
-        'siteUrl': site_url,
-        'showPlayCsat': bool(show_play_csat),
-        'playCsatUrl': _safe_url_for('ajuda.play_csat_submit'),
-        'showPlayPwa': bool(show_play_pwa),
-        'showRealSongCta': bool(show_real_song_cta),
-        'realSongUrl': real_song_url,
-        'pwaDismissUrl': _safe_url_for('ajuda.pwa_dismiss'),
+        "transposedUrlTpl": _safe_url_for("cifras.get_transposed", cifra_id="__ID__"),
+        "saveTransposeUrlTpl": _safe_url_for(
+            "cifras.save_transpose", cifra_id="__ID__"
+        ),
+        "drawApiUrlTpl": _safe_url_for("cifras.api_get_play_draw", cifra_id="__ID__"),
+        "bandName": (band.get("name") if band else "") or "",
+        "canEdit": bool(can_edit),
+        "membersUrl": (
+            _safe_url_for("bands.members", band_id=band_id)
+            if band_id and can_edit
+            else None
+        ),
+        "bandInviteUrl": band_invite_url,
+        "indicarUrl": _safe_url_for("assinatura_bp.voucher_indicar"),
+        "siteUrl": site_url,
+        "showPlayCsat": bool(show_play_csat),
+        "playCsatUrl": _safe_url_for("ajuda.play_csat_submit"),
+        "showPlayPwa": bool(show_play_pwa),
+        "showRealSongCta": bool(show_real_song_cta),
+        "realSongUrl": real_song_url,
+        "pwaDismissUrl": _safe_url_for("ajuda.pwa_dismiss"),
     }
     return (
-        json.dumps(features, ensure_ascii=False, default=str).replace('</', '<\\/'),
-        json.dumps(boot, ensure_ascii=False, default=str).replace('</', '<\\/'),
+        json.dumps(features, ensure_ascii=False, default=str).replace("</", "<\\/"),
+        json.dumps(boot, ensure_ascii=False, default=str).replace("</", "<\\/"),
     )
 
 
@@ -1459,7 +1473,6 @@ def view(cifra_id):
     leadsheet_document = _load_display_leadsheet(display_source, current_transpose)
 
     grouped_cifra = _group_cifra_data(cifra_data) if cifra_data else None
-    has_tab = content_has_tablatura(conteudo)
     conteudo_html = None
     if grouped_cifra:
         conteudo_html = render_grouped_cifra_html(grouped_cifra)
@@ -1542,7 +1555,8 @@ def render_play_mode(
     event_context=None,
 ):
     """Renderiza o modo tocar (mesmo layout para banda e setlist)."""
-    from flask import request as _req, current_app
+    from flask import current_app
+    from flask import request as _req
 
     user_id = session.get("user_id")
     vocalists = []
@@ -1574,7 +1588,9 @@ def render_play_mode(
             offline_unlocked = False
 
         try:
-            play_state_url = _safe_url_for("realtime.set_play_state", band_id=band["id"])
+            play_state_url = _safe_url_for(
+                "realtime.set_play_state", band_id=band["id"]
+            )
             if setlist and not is_virtual and setlist.get("id"):
                 offline_pack_url = _safe_url_for(
                     "setlists.offline_pack", setlist_id=setlist["id"]
@@ -1789,12 +1805,12 @@ def render_play_mode(
         gorjeta_total=gorjeta_total,
         gorjeta_requests_count=gorjeta_requests_count,
         song_request_status_url=(
-            _safe_url_for("gorjeta.pedido_status", band_id=band["id"], request_id="__ID__")
+            _safe_url_for(
+                "gorjeta.pedido_status", band_id=band["id"], request_id="__ID__"
+            )
             if band
             else None
         ),
-    )
-
     )
 
 
@@ -1850,7 +1866,10 @@ def tocar_band(band_id):
 
         started = maybe_start_trial_on_value(user_id, reason="play_mode")
         if started:
-            flash("Trial Pro de 30 dias ativado — PDF e limites liberados nesta banda.", "info")
+            flash(
+                "Trial Pro de 30 dias ativado — PDF e limites liberados nesta banda.",
+                "info",
+            )
     except Exception:
         pass
 
@@ -1902,7 +1921,9 @@ def tocar_colecao():
         try:
             all_cifras.append(enrich_cifra_for_tocar(c, user_id=user_id))
         except Exception:
-            current_app.logger.exception("Cifra pessoal %s ignorada no Modo Tocar", c.get("id"))
+            current_app.logger.exception(
+                "Cifra pessoal %s ignorada no Modo Tocar", c.get("id")
+            )
     if not all_cifras:
         flash("Adicione uma música à sua coleção para abrir o Modo Tocar.", "warning")
         return redirect(url_for("cifras.comecar"))
@@ -1914,15 +1935,17 @@ def tocar_colecao():
 
     try:
         from db import mark_user_play_mode_used
+        from demo_onboarding import maybe_start_trial_on_value, play_list_is_demo_only
         from product_funnel import log_funnel_step
-        from demo_onboarding import play_list_is_demo_only, maybe_start_trial_on_value
 
         mark_user_play_mode_used(user_id)
         log_funnel_step(user_id, "play_mode")
         demo_only = play_list_is_demo_only(all_cifras)
         if not demo_only:
             try:
-                started = maybe_start_trial_on_value(user_id, reason="play_mode_colecao")
+                started = maybe_start_trial_on_value(
+                    user_id, reason="play_mode_colecao"
+                )
                 if started:
                     flash("Trial Pro de 30 dias ativado na sua banda.", "info")
             except Exception:
@@ -1952,7 +1975,6 @@ def tocar_colecao():
         current_app.logger.exception("Modo Tocar falhou (coleção)")
         flash("Não foi possível abrir o Modo Tocar. Tente de novo.", "danger")
         return redirect(url_for("cifras.my_library"))
-
 
 
 @cifras_bp.route("/band/<band_id>/add", methods=["GET", "POST"])
@@ -2227,7 +2249,6 @@ def delete(cifra_id):
 
     titulo = cifra["titulo"]
     band_id = cifra.get("band_id")
-    personal = cifra_is_personal(cifra)
     delete_cifra(cifra_id)
     if band_id:
         bn.cifra_deleted(band_id, user_id, titulo)
@@ -2292,7 +2313,6 @@ def get_transposed(cifra_id):
 
     semitones = request.args.get("semitones", 0, type=int)
     want_html = request.args.get("html", "0") == "1"
-    want_play = request.args.get("play", "0") == "1"
     want_structured = request.args.get("structured", "0") == "1"
     want_grade = request.args.get("grade", "0") == "1"
     want_lyrics = request.args.get("lyrics", "0") == "1"

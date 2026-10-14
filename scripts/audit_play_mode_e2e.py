@@ -280,7 +280,7 @@ def main() -> int:
         # ── Nashville ──
         page.keyboard.press("n")
         page.wait_for_timeout(200)
-        sn = snap()
+        snap()
         # may flash hint if not grade — still toggles btn
         page.click("#view-mode-btn", force=True)
         page.click('#view-mode-menu [data-view-mode="chordsheet"]', force=True)

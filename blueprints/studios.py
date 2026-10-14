@@ -715,7 +715,6 @@ def edit_studio(studio_id):
             update_studio(studio_id, **data)
             flash("Estúdio atualizado.", "success")
             return redirect(url_for("studios.owner_dashboard", studio_id=studio_id))
-    photos = list_studio_photos(studio_id)
     return _render_studio_form(studio)
 
 

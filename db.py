@@ -1543,11 +1543,6 @@ def remove_push_subscription_by_endpoint(endpoint: str) -> None:
     c.execute("DELETE FROM push_subscriptions WHERE endpoint = ?", (endpoint,))
     db.commit()
     db.close()
-    if not user:
-        return False
-    if user.get("email_notify") is None:
-        return True
-    return int(user.get("email_notify") or 0) == 1
 
 
 # ── Users ──────────────────────────────────────────────────────────────────

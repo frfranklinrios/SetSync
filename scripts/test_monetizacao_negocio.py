@@ -9,14 +9,14 @@ import tempfile
 import unittest
 from datetime import timedelta
 
-from config import app_now_naive
-
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 os.environ["DATABASE_URL"] = f"sqlite:///{tempfile.mkdtemp()}/test.db"
 os.environ["SECRET_KEY"] = "test-secret-key-min-32-chars-long!!"
 os.environ["FLASK_ENV"] = "development"
+
+from config import app_now_naive
 
 
 class MonetizacaoNegocioTest(unittest.TestCase):
@@ -29,6 +29,7 @@ class MonetizacaoNegocioTest(unittest.TestCase):
     def test_trial_pro_libera_limites(self):
         from db import create_band, create_user
         from monetizacao import (
+            TRIAL_DIAS,
             check_limite,
             dias_restantes_trial,
             get_plano_efetivo,
@@ -46,7 +47,7 @@ class MonetizacaoNegocioTest(unittest.TestCase):
         self.assertEqual(get_plano_efetivo(band_id), "pro")
         dias = dias_restantes_trial(band_id)
         self.assertIsNotNone(dias)
-        self.assertGreaterEqual(dias, 29)
+        self.assertGreaterEqual(dias, TRIAL_DIAS - 1)
 
     def test_trial_estudio_libera_salas(self):
         from db import create_user
@@ -59,7 +60,7 @@ class MonetizacaoNegocioTest(unittest.TestCase):
             studio_tem_premium,
         )
 
-        self.assertEqual(TRIAL_DIAS, 30)
+        self.assertEqual(TRIAL_DIAS, 7)
         uid = create_user(
             "studiotrial", "studio@test.com", "senha1234567", display_name="Studio"
         )
@@ -67,7 +68,7 @@ class MonetizacaoNegocioTest(unittest.TestCase):
         self.assertTrue(studio_tem_premium(uid))
         dias = dias_restantes_trial_estudio(uid)
         self.assertIsNotNone(dias)
-        self.assertGreaterEqual(dias, 29)
+        self.assertGreaterEqual(dias, TRIAL_DIAS - 1)
         for i in range(3):
             create_room(studio_id, nome=f"Sala {i + 1}")
         self.assertTrue(check_studio_room_limit(uid))

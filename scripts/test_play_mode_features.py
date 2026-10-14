@@ -41,13 +41,6 @@ def test_pedal_defaults():
 
 
 def test_play_state_route_registered():
-    from blueprints.realtime import realtime_bp
-
-    rules = (
-        {r.rule for r in realtime_bp.url_map.iter_rules()}
-        if hasattr(realtime_bp, "url_map")
-        else set()
-    )
     # Blueprint isolado não expõe url_map; verifica função registrada no módulo.
     from blueprints import realtime as rt_mod
 

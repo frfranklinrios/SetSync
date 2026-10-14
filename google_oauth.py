@@ -1,7 +1,7 @@
 import requests
 from flask import current_app
 
-from security import external_url_for
+from security import external_url_for, make_oauth_state
 
 
 def get_google_provider_cfg():

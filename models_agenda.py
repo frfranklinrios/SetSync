@@ -345,7 +345,6 @@ def set_event_assignments(
     for uid, item in new_map.items():
         role = (item.get("role_label") or "").strip() or None
         if uid in existing:
-            prev = existing[uid]
             c.execute(
                 """UPDATE band_event_assignments
                    SET role_label = ?, assigned_by = COALESCE(?, assigned_by)

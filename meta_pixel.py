@@ -235,6 +235,8 @@ def _enviar_capi_async(
                 log.warning("Meta CAPI %s: %s", res.status_code, (res.text or "")[:240])
             else:
                 log.info("Meta CAPI %s ok event_id=%s", event_name, event_id)
+        except ImportError:
+            log.debug("httpx não instalado — envio Meta CAPI ignorado")
         except Exception:
             log.exception("Meta CAPI falhou")
 

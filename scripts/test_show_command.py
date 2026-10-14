@@ -2,10 +2,26 @@
 
 from __future__ import annotations
 
+import os
+import sys
+import tempfile
 import unittest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+os.environ["DATABASE_URL"] = f"sqlite:///{tempfile.mkdtemp()}/show_command_test.db"
+os.environ["FLASK_ENV"] = "development"
+os.environ["SECRET_KEY"] = "test-show-command-key-32-chars!!"
 
 
 class ShowCommandImportTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from db import init_db
+
+        init_db()
+
     def test_imports(self):
         from models_band_team import list_band_freela_pool
         from show_command import build_show_command_cards
