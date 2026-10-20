@@ -28,7 +28,7 @@
 <script>
 (function () {
     var dest = {{ next_url|tojson }};
-    var delay = {{ 2800 if needs_activation else 2200 }};
+    var delay = {{ 600 if needs_activation else 400 }};
     setTimeout(function () { window.location.replace(dest); }, delay);
 })();
 </script>

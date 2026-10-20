@@ -41,15 +41,15 @@ STATUS_VOUCHER = "voucher"
 STATUS_CANCELADA = "cancelada"
 STATUS_INADIMPLENTE = "inadimplente"
 
-# Grátis = demo + solo raso. Banda de verdade = Pro.
+# Grátis = 1 ensaio real completo. Banda contínua = Pro.
 LIMITES_GRATIS = {
-    "musica": 3,
-    "integrante": 2,
-    "setlist": 0,
+    "musica": 10,
+    "integrante": 3,
+    "setlist": 1,
     "banda": 1,
 }
 # Cifras reais na coleção pessoal (demos de onboarding não contam).
-LIMITES_COLECAO_GRATIS = 3
+LIMITES_COLECAO_GRATIS = 10
 
 
 @dataclass(frozen=True)
@@ -164,10 +164,10 @@ def planos_para_site() -> list[PlanoSite]:
             destaque=False,
             features=(
                 f"Até {LIMITES_COLECAO_GRATIS} cifras reais na coleção",
-                "Demo + 1 abertura do Modo Tocar",
-                f"Banda raso: {lim['musica']} músicas · {lim['integrante']} pessoas",
-                "Sem setlist de ensaio no Grátis",
-                "PDF / offline / palco de banda: no Pro",
+                "Modo Tocar liberado no repertório grátis",
+                f"1 banda · até {lim['musica']} músicas · {lim['integrante']} pessoas",
+                f"{lim['setlist']} setlist de ensaio ativa",
+                "PDF, offline e setlists ilimitadas: no Pro",
             ),
             cta="Começar grátis",
             cta_outline=True,
@@ -780,26 +780,31 @@ def user_tem_assinatura_ativa(user_id: str | None) -> bool:
 
 
 def pode_modo_tocar_banda(banda_id: str) -> bool:
-    """Ensaio/palco de banda exige Pro (ou trial legado ainda ativo)."""
-    return get_plano_efetivo(banda_id) != PLANO_GRATIS
+    """Ensaio/palco da banda: livre dentro da cota do Grátis (1 setlist / até 10 músicas) ou Pro."""
+    if not banda_id:
+        return False
+    if get_plano_efetivo(banda_id) != PLANO_GRATIS:
+        return True
+    return (
+        count_band_cifras(banda_id) <= LIMITES_GRATIS["musica"]
+        and count_band_setlists(banda_id) <= LIMITES_GRATIS["setlist"]
+    )
 
 
 def pode_modo_tocar_colecao(user_id: str, cifras: list | None) -> bool:
     """
-    Coleção pessoal: demo sempre livre; 1 abertura com repertório real no Grátis;
-    depois Individual/Pro.
+    Coleção pessoal: demo sempre livre; repertório real livre dentro da cota
+    de LIMITES_COLECAO_GRATIS; acima disso exige Individual/Pro.
     """
     if not user_id:
         return False
     if user_tem_assinatura_ativa(user_id):
         return True
-    from db import user_play_mode_used
-    from demo_onboarding import play_list_is_demo_only
+    from demo_onboarding import count_real_personal_cifras, play_list_is_demo_only
 
     if play_list_is_demo_only(cifras):
         return True
-    # Primeira abertura com música real — aha moment.
-    return not user_play_mode_used(user_id)
+    return count_real_personal_cifras(user_id) <= LIMITES_COLECAO_GRATIS
 
 
 def check_limite_colecao_pessoal(user_id: str) -> bool:

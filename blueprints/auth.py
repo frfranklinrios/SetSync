@@ -49,7 +49,29 @@ from security import (
 from whatsapp_service import normalize_whatsapp_phone
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
-MIN_PASSWORD_LEN = 10
+MIN_PASSWORD_LEN = 8
+
+
+def _generate_unique_username(email: str, display_name: str) -> str:
+    """Gera username único a partir do e-mail ou nome quando não informado no form."""
+    import re
+    import unicodedata
+
+    local_part = (email or "").split("@", 1)[0].strip().lower()
+    raw_base = local_part or (display_name or "").strip().lower()
+    norm = unicodedata.normalize("NFKD", raw_base)
+    ascii_base = "".join(c for c in norm if not unicodedata.combining(c))
+    clean = re.sub(r"[^a-z0-9._-]+", "", ascii_base).strip("._-")
+    if len(clean) < 3:
+        clean = f"musico{clean}" if clean else "musico"
+    clean = clean[:24]
+    candidate = clean
+    suffix = 2
+    while get_user_by_username(candidate):
+        candidate = f"{clean[:20]}{suffix}"
+        suffix += 1
+    return candidate
+
 
 # Rotas isentas de pedir nome ou WhatsApp (evita loop de redirect).
 _SETUP_PROMPT_EXEMPT = frozenset(
@@ -479,15 +501,22 @@ def register():
         )
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        username_raw = request.form.get("username", "").strip()
         display_name = request.form.get("display_name", "").strip()
         email = request.form.get("email", "").strip()
         phone_raw = request.form.get("phone", "").strip()
         whatsapp_notify = request.form.get("whatsapp_notify") == "1"
         password = request.form.get("password", "")
-        confirm = request.form.get("confirm", "")
+        confirm = (
+            request.form.get("confirm", "") if "confirm" in request.form else password
+        )
+        username = username_raw or (
+            _generate_unique_username(email, display_name)
+            if (email or display_name)
+            else ""
+        )
         form_values = _register_ctx(
-            username=username,
+            username=username_raw,
             display_name=display_name,
             email=email,
             phone=phone_raw,
@@ -509,7 +538,7 @@ def register():
             return render_template("register.html", **form_values)
 
         if not username or not display_name or not email or not password:
-            flash("Preencha usuário, nome, e-mail e senha", "danger")
+            flash("Preencha nome, e-mail e senha", "danger")
             return render_template("register.html", **form_values)
 
         if len(display_name) < 2:

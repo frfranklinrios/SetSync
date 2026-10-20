@@ -7,7 +7,7 @@
   'use strict';
 
   var STORAGE_KEY = 'setsync.play.sharePrompt.v1';
-  var MIN_MS = 15 * 1000;
+  var MIN_MS = 90 * 1000;
   var COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
   var started = Date.now();
   var pendingExit = null;
@@ -90,7 +90,7 @@
       var url = boot.playCsatUrl || '/ajuda/play-csat';
       if (answer) postJson(url, { answer: answer });
       root.classList.remove('is-open');
-      continueExitFlow(boot);
+      goExit(pendingExit);
     }
 
     root.addEventListener('click', function (e) {

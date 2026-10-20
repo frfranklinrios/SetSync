@@ -70,17 +70,17 @@ def get_dashboard_upsells(
 
         n_cifras = count_real_personal_cifras(user_id)
         played = user_play_mode_used(user_id)
-        if played:
+        if played and n_cifras >= max(3, LIMITES_COLECAO_GRATIS - 2):
             alerts.insert(
                 0,
                 {
                     "level": "warning",
-                    "title": f"1 toque: Individual R$ {_PRECO_INDIVIDUAL}",
+                    "title": f"Coleção quase cheia · Individual R$ {_PRECO_INDIVIDUAL}",
                     "message": (
-                        "Você já tocou de verdade. Individual libera Modo Tocar ilimitado, "
-                        "PDF, compartilhar e offline — sem montar banda."
+                        f"Você tem {n_cifras}/{LIMITES_COLECAO_GRATIS} cifras no Grátis. "
+                        "Individual libera repertório e Modo Tocar ilimitados, PDF e offline."
                     ),
-                    "cta_label": f"Assinar Individual agora — R$ {_PRECO_INDIVIDUAL}",
+                    "cta_label": f"Assinar Individual — R$ {_PRECO_INDIVIDUAL}",
                     "cta_url": _planos_checkout(PLANO_INDIVIDUAL),
                 },
             )
@@ -91,7 +91,7 @@ def get_dashboard_upsells(
                     "title": "Plano Individual — toca só",
                     "message": (
                         f"Você tem {n_cifras}/{LIMITES_COLECAO_GRATIS} cifras no Grátis. "
-                        f"Individual (R$ {_PRECO_INDIVIDUAL}/mês) libera repertório ilimitado."
+                        f"Individual (R$ {_PRECO_INDIVIDUAL}/mês) libera repertório ilimitado, PDF e offline."
                     ),
                     "cta_label": f"Assinar Individual — R$ {_PRECO_INDIVIDUAL}",
                     "cta_url": _planos_checkout(PLANO_INDIVIDUAL),
@@ -101,13 +101,13 @@ def get_dashboard_upsells(
             alerts.append(
                 {
                     "level": "success",
-                    "title": f"Ensaio em grupo? Pro R$ {_PRECO_PRO}/mês",
+                    "title": "Toca em banda ou ministério?",
                     "message": (
-                        "Crie a banda e assine o Pro para setlist, Modo Tocar no ensaio, "
-                        "PDF e offline no palco."
+                        "Crie sua banda grátis para montar a 1ª setlist do ensaio "
+                        "e chamar o grupo no WhatsApp."
                     ),
-                    "cta_label": f"Assinar Pro — R$ {_PRECO_PRO}",
-                    "cta_url": _planos_checkout(PLANO_PRO),
+                    "cta_label": "Criar minha banda grátis",
+                    "cta_url": url_for("bands.create", bem_vindo=1),
                 }
             )
 
@@ -136,38 +136,6 @@ def get_dashboard_upsells(
         if plano != PLANO_GRATIS:
             continue
 
-        alerts.append(
-            {
-                "level": "warning",
-                "title": f"{name} precisa do Pro",
-                "message": (
-                    f"Noite pronta: setlist + Modo Tocar + PDF + offline + freelas. "
-                    f"R$ {_PRECO_PRO}/mês."
-                ),
-                "cta_label": f"Assinar Pro — R$ {_PRECO_PRO}",
-                "cta_url": planos_url,
-            }
-        )
-
-        try:
-            from conversion_levers import count_band_scale_events_30d
-
-            n_scale = count_band_scale_events_30d(band_id)
-            if n_scale >= 3:
-                alerts.append(
-                    {
-                        "level": "info",
-                        "title": f"Você usou escala {n_scale}× · {name}",
-                        "message": (
-                            f"Pro libera PDF do ensaio e offline no palco — R$ {_PRECO_PRO}/mês."
-                        ),
-                        "cta_label": f"Assinar Pro — R$ {_PRECO_PRO}",
-                        "cta_url": planos_url,
-                    }
-                )
-        except Exception:
-            pass
-
         for label, limit, counter, recurso in (
             ("músicas", LIMITES_GRATIS["musica"], count_band_cifras, "músicas"),
             ("setlists", LIMITES_GRATIS["setlist"], count_band_setlists, "setlists"),
@@ -190,6 +158,19 @@ def get_dashboard_upsells(
                     }
                 )
                 break
+        else:
+            alerts.append(
+                {
+                    "level": "info",
+                    "title": f"Quer PDF, offline e setlists ilimitadas em {name}?",
+                    "message": (
+                        f"O Pro libera exportação em PDF, pacote offline no palco, "
+                        f"setlists e músicas ilimitadas por R$ {_PRECO_PRO}/mês."
+                    ),
+                    "cta_label": f"Conhecer o Pro — R$ {_PRECO_PRO}",
+                    "cta_url": planos_url,
+                }
+            )
 
     # Estúdio
     try:

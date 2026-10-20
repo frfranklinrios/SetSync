@@ -4,9 +4,9 @@
 
 {% block seo %}
 <link rel="canonical" href="{{ external_url_for('auth.register') }}">
-<meta name="description" content="Cadastre-se grátis no Uníssono: 30 dias Pro sem cartão, cifras, setlists e Modo Tocar para bandas e igrejas.">
+<meta name="description" content="Cadastre-se grátis no Uníssono: organize cifras, 1ª setlist de ensaio e Modo Tocar para sua banda ou ministério.">
 <meta property="og:title" content="Criar conta grátis — Uníssono">
-<meta property="og:description" content="30 dias Pro grátis. Organize cifras e setlists da sua banda em minutos.">
+<meta property="og:description" content="Monte o repertório do próximo ensaio e abra no Modo Tocar. Comece grátis sem cartão.">
 <meta property="og:url" content="{{ external_url_for('auth.register') }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{ site_og_image }}">
@@ -22,8 +22,8 @@
 
         <div class="text-center mb-3">
             <img src="{{ url_for('static', filename='logoUnissono-stack.png') }}" alt="{{ app_name }}" style="height:88px; width:auto; max-width:220px; object-fit:contain;">
-            <h1 class="h4 mt-3 mb-1">Comece em menos de 2 minutos</h1>
-            <p class="text-muted small mb-0">30 dias Pro grátis · sem cartão · cancele quando quiser</p>
+            <h1 class="h4 mt-3 mb-1">Criar conta grátis</h1>
+            <p class="text-muted small mb-0">Cifras, 1ª setlist de ensaio e Modo Tocar liberados · sem cartão</p>
         </div>
 
         {% if invite_band %}
@@ -71,13 +71,8 @@
                 <input type="text" id="fax_number" name="fax_number" tabindex="-1" autocomplete="off">
             </div>
             <div class="mb-3">
-                <label for="username" class="form-label">Usuário</label>
-                <input type="text" class="form-control" id="username" name="username" required autofocus
-                       value="{{ username or '' }}" autocomplete="username" minlength="3">
-            </div>
-            <div class="mb-3">
                 <label for="display_name" class="form-label">Seu nome</label>
-                <input type="text" class="form-control" id="display_name" name="display_name" required
+                <input type="text" class="form-control" id="display_name" name="display_name" required autofocus
                        placeholder="Como aparece para a banda"
                        value="{{ display_name or '' }}" autocomplete="name">
             </div>
@@ -87,15 +82,21 @@
                        value="{{ email or '' }}" autocomplete="email">
             </div>
             <div class="mb-3">
+                <label for="password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="password" name="password" required
+                       autocomplete="new-password" minlength="8">
+                <div class="form-text">Mínimo 8 caracteres</div>
+            </div>
+            <div class="mb-3">
                 <label for="phone" class="form-label">WhatsApp <span class="text-muted fw-normal">(opcional)</span></label>
                 <input type="tel" class="form-control" id="phone" name="phone"
                        placeholder="DDD + número" inputmode="tel"
                        value="{{ phone or '' }}" autocomplete="tel">
             </div>
             <input type="hidden" name="whatsapp_notify" value="{% if whatsapp_notify %}1{% else %}0{% endif %}">
-            <div class="form-check mb-3">
+            <div class="form-check mb-4">
                 <input class="form-check-input" type="checkbox" id="aceite_privacidade" name="aceite_privacidade"
-                       value="1" required{% if aceite_privacidade %} checked{% endif %}>
+                       value="1" required checked>
                 <label class="form-check-label" for="aceite_privacidade" style="font-size: var(--text-sm);">
                     Aceito a
                     <a href="{{ url_for('legal.privacidade') }}" target="_blank" rel="noopener">Privacidade</a>
@@ -103,19 +104,8 @@
                     <a href="{{ url_for('legal.termos') }}" target="_blank" rel="noopener">Termos</a>.
                 </label>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Senha</label>
-                <input type="password" class="form-control" id="password" name="password" required
-                       autocomplete="new-password" minlength="10">
-                <div class="form-text">Mínimo 10 caracteres</div>
-            </div>
-            <div class="mb-4">
-                <label for="confirm" class="form-label">Confirmar senha</label>
-                <input type="password" class="form-control" id="confirm" name="confirm" required
-                       autocomplete="new-password">
-            </div>
-            <button type="submit" class="btn btn-primary w-100 btn-lg">Começar 30 dias grátis</button>
-            <p class="text-center text-muted small mt-2 mb-0">Sem cartão agora. O Pro ativa ao criar a primeira banda.</p>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">Criar conta grátis</button>
+            <p class="text-center text-muted small mt-2 mb-0">Grátis até 10 músicas e 1 setlist de ensaio · sem cartão.</p>
         </form>
 
         <p class="text-center text-muted mt-4 mb-1" style="font-size: var(--text-sm);">

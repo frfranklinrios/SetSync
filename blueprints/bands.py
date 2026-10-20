@@ -94,22 +94,55 @@ def create():
                 return resp
 
         band_id = create_band(name, description, user_id)
-        from db import get_owned_bands
+        from db import copy_cifra_to_band, get_owned_bands, get_user_personal_cifras
+        from demo_onboarding import cifra_is_demo
         from google_ads import mark_funnel_event
+        from models_setlist import add_cifra_to_setlist, create_setlist
         from product_funnel import log_funnel_step
 
         is_first_band = len(get_owned_bands(user_id)) == 1
+        copied_count = 0
         if is_first_band:
             mark_funnel_event("primeira_banda")
             log_funnel_step(user_id, "primeira_banda")
+            try:
+                band_obj = {"id": band_id, "owner_id": user_id}
+                real_personal = [
+                    c
+                    for c in (get_user_personal_cifras(user_id) or [])
+                    if not cifra_is_demo(c)
+                ]
+                copied_ids: list[str] = []
+                for c in real_personal:
+                    if not check_limite(band_obj, "musica"):
+                        break
+                    new_cid = copy_cifra_to_band(c, band_id, owner_user_id=user_id)
+                    if new_cid:
+                        copied_ids.append(str(new_cid))
+                copied_count = len(copied_ids)
+                if copied_ids and check_limite(band_obj, "setlist"):
+                    sl_id = create_setlist(
+                        band_id,
+                        "Repertório do Ensaio",
+                        "Setlist inicial criada automaticamente com suas músicas",
+                    )
+                    if sl_id:
+                        for idx, cid in enumerate(copied_ids, start=1):
+                            add_cifra_to_setlist(sl_id, cid, idx)
+                        log_funnel_step(user_id, "primeira_setlist")
+            except Exception:
+                current_app.logger.exception(
+                    "Falha ao copiar repertório inicial para a 1ª banda %s", band_id
+                )
         import admin_notifications as an
 
         an.band_created(band_id, user_id)
         flash(f'Banda "{name}" criada com sucesso!', "success")
-        flash(
-            "Para Modo Tocar, setlist de ensaio, PDF e offline: assine o Pro (R$ 29/mês).",
-            "info",
-        )
+        if copied_count:
+            flash(
+                f"Já trouxemos {copied_count} música(s) da sua coleção e montamos a 1ª setlist do ensaio!",
+                "info",
+            )
         if is_first_band:
             flash(
                 "Agora chama quem toca com você — um link no WhatsApp.",

@@ -1339,8 +1339,7 @@ def share_cifra(cifra_id):
         user_pode_compartilhar_cifras,
     )
 
-    if not user_pode_compartilhar_cifras(user_id):
-        return resposta_compartilhar_cifra_paywall()
+    can_share_direct = user_pode_compartilhar_cifras(user_id)
 
     editable_bands = []
     seen = set()
@@ -1350,6 +1349,9 @@ def share_cifra(cifra_id):
         seen.add(b["id"])
         if is_band_editor(b["id"], user_id):
             editable_bands.append(b)
+
+    if not can_share_direct and not editable_bands:
+        return resposta_compartilhar_cifra_paywall()
 
     shares = list_cifra_shares(cifra_id)
 
@@ -1375,6 +1377,8 @@ def share_cifra(cifra_id):
             return redirect(url_for("cifras.view", cifra_id=new_id))
 
         if action == "user":
+            if not can_share_direct:
+                return resposta_compartilhar_cifra_paywall()
             ident = (request.form.get("user_login") or "").strip()
             target = get_user_by_login(ident) if ident else None
             if not target:
@@ -1817,10 +1821,15 @@ def render_play_mode(
 def _should_show_play_csat(user_id: str | None) -> bool:
     if not user_id:
         return False
-    from db import get_user
+    from db import get_owned_bands, get_user, get_user_bands
+    from demo_onboarding import count_real_personal_cifras
 
     u = get_user(user_id) or {}
-    return not u.get("play_csat_submitted_at")
+    if u.get("play_csat_submitted_at"):
+        return False
+    # Evita interromper a 1ª abertura logo após o cadastro antes de ter repertório ou banda
+    has_band = bool(get_owned_bands(user_id) or get_user_bands(user_id))
+    return has_band or count_real_personal_cifras(user_id) >= 2
 
 
 def _should_show_play_pwa(user_id: str | None) -> bool:
@@ -1938,10 +1947,10 @@ def tocar_colecao():
         from demo_onboarding import maybe_start_trial_on_value, play_list_is_demo_only
         from product_funnel import log_funnel_step
 
-        mark_user_play_mode_used(user_id)
         log_funnel_step(user_id, "play_mode")
         demo_only = play_list_is_demo_only(all_cifras)
         if not demo_only:
+            mark_user_play_mode_used(user_id)
             try:
                 started = maybe_start_trial_on_value(
                     user_id, reason="play_mode_colecao"

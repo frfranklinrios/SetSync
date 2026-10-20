@@ -334,6 +334,9 @@ class ActivationHttpTest(unittest.TestCase):
         )
         body = r2.get_data(as_text=True)
         self.assertIn('"showRealSongCta": true', body)
+        from db import user_play_mode_used
+
+        self.assertFalse(user_play_mode_used(uid))
 
     def test_primeira_cifra_real_despite_existing_demos(self):
         from db import create_personal_cifra, create_user
@@ -440,6 +443,39 @@ class ActivationHttpTest(unittest.TestCase):
         loc = r.headers.get("Location") or ""
         self.assertIn("/members", loc)
         self.assertNotIn("/agenda", loc)
+        from db import count_band_cifras, count_band_setlists, get_owned_bands
+
+        owned = get_owned_bands(uid)
+        self.assertEqual(len(owned), 1)
+        self.assertEqual(count_band_cifras(owned[0]["id"]), 1)
+        self.assertEqual(count_band_setlists(owned[0]["id"]), 1)
+
+    def test_register_without_username_and_8char_password(self):
+        from unittest.mock import patch
+
+        from db import get_user_by_email
+
+        client = self.app.test_client()
+        with patch("signup_guard.signup_filled_too_fast", return_value=False):
+            r = client.post(
+                "/auth/register",
+                data={
+                    "display_name": "Carlos Baterista",
+                    "email": "carlos.batera@test.com",
+                    "password": "senha123",
+                    "aceite_privacidade": "1",
+                    "website": "",
+                    "company_url": "",
+                    "fax_number": "",
+                },
+                base_url=self.BASE,
+                follow_redirects=False,
+            )
+        self.assertIn(r.status_code, (302, 303), r.get_data(as_text=True)[:300])
+        u = get_user_by_email("carlos.batera@test.com")
+        self.assertIsNotNone(u)
+        self.assertEqual(u["display_name"], "Carlos Baterista")
+        self.assertTrue(u["username"].startswith("carlos.batera"))
 
     def test_dashboard_invite_after_play_real(self):
         from db import create_personal_cifra, create_user

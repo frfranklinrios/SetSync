@@ -139,6 +139,39 @@ class MonetizacaoNegocioTest(unittest.TestCase):
         self.assertFalse(check_limite(band, "integrante"))
         self.assertFalse(check_limite(band, "banda"))
 
+    def test_gratis_permite_primeiro_ensaio_completo(self):
+        from db import create_band, create_cifra, create_personal_cifra, create_user
+        from models_setlist import create_setlist
+        from monetizacao import (
+            LIMITES_COLECAO_GRATIS,
+            LIMITES_GRATIS,
+            check_limite,
+            pode_modo_tocar_banda,
+            pode_modo_tocar_colecao,
+        )
+
+        self.assertEqual(LIMITES_GRATIS["setlist"], 1)
+        self.assertEqual(LIMITES_GRATIS["musica"], 10)
+        self.assertEqual(LIMITES_COLECAO_GRATIS, 10)
+
+        uid = create_user(
+            "freeband", "freeband@test.com", "senha1234", display_name="Free"
+        )
+        cid_p = create_personal_cifra(uid, "Minha 1", "Artista", "C", "[C] Oi")
+        self.assertTrue(
+            pode_modo_tocar_colecao(uid, [{"id": cid_p, "titulo": "Minha 1"}])
+        )
+
+        band_id = create_band("Banda Grátis", "", uid)
+        band = {"id": band_id, "owner_id": uid}
+        self.assertTrue(check_limite(band, "setlist"))
+        self.assertTrue(check_limite(band, "musica"))
+        create_cifra("Song 1", "Art", "G", "[G] Oi", band_id)
+        create_setlist(band_id, "Ensaio 1", "")
+        self.assertTrue(pode_modo_tocar_banda(band_id))
+        # A 2ª setlist no Grátis deve ser bloqueada pelo paywall
+        self.assertFalse(check_limite(band, "setlist"))
+
 
 if __name__ == "__main__":
     unittest.main()

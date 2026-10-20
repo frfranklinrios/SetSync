@@ -538,18 +538,18 @@ def create(band_id):
     if not band or not is_band_editor(band_id, user_id):
         flash("Sem permissão", "danger")
         return redirect(url_for("bands.view", band_id=band_id))
+    from monetizacao import LIMITES_GRATIS, check_limite, resposta_limite_plano
+
+    if not check_limite(band, "setlist"):
+        resp = resposta_limite_plano("setlists", LIMITES_GRATIS["setlist"])
+        if resp:
+            return resp
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         description = request.form.get("description", "").strip()
         if not name:
             flash("Nome obrigatório", "danger")
             return render_template("setlists/create.html", band=band)
-        from monetizacao import LIMITES_GRATIS, check_limite, resposta_limite_plano
-
-        if not check_limite(band, "setlist"):
-            resp = resposta_limite_plano("setlists", LIMITES_GRATIS["setlist"])
-            if resp:
-                return resp
         from db import count_band_setlists
 
         antes = count_band_setlists(band_id)

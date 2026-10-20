@@ -111,8 +111,9 @@ Exemplos comuns:
 
 | Plano | Preço | Limites |
 |-------|-------|---------|
-| Grátis | R$ 0 | 15 músicas, 3 integrantes, 5 setlists, 1 banda (owner); PDF/offline/compartilhar no pago |
-| Pro | R$ 29/banda/mês | Sem limites + PDF |
+| Grátis | R$ 0 | 10 cifras reais na coleção, 10 músicas na banda, 3 integrantes, 1 setlist de ensaio ativa, 1 banda (owner), Modo Tocar liberado nas cotas do Grátis; PDF/offline/compartilhar direto no pago |
+| Individual | R$ 15/mês | Coleção e Modo Tocar ilimitados, 1 banda solo (1 integrante), PDF e offline |
+| Pro | R$ 29/banda/mês | Sem limites + PDF + offline |
 | Worship | R$ 69/congregação/mês | Múltiplas bandas, sem limites |
 
 ## 8. Vouchers
