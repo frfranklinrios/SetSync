@@ -1,15 +1,16 @@
 <ul class="nav nav-tabs mb-3" role="tablist">
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bands" type="button">Bandas</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-studios" type="button">Estúdios</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-convites" type="button">Histórico convites</button></li>
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">Usuários <span class="badge text-bg-light border ms-1">{{ users|length }}</span></button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bands" type="button">Bandas <span class="badge text-bg-light border ms-1">{{ bands|length }}</span></button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-studios" type="button">Estúdios <span class="badge text-bg-light border ms-1">{{ studios|length }}</span></button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cifras" type="button">Cifras</button></li>
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">Usuários</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-convites" type="button">Histórico convites</button></li>
 </ul>
 
 <div class="tab-content">
     <div class="tab-pane fade" id="tab-bands">
         <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-admin-demo-filter="bands">
-            <span class="text-muted" style="font-size: var(--text-sm);">Exibir:</span>
+            <input type="search" class="form-control form-control-sm" id="admin-band-search"
+                   placeholder="Buscar por banda ou titular…" style="max-width: 280px;">
             <div class="btn-group btn-group-sm" role="group" aria-label="Filtro demo bandas">
                 <button type="button" class="btn btn-outline-secondary" data-demo-filter="all">Todos</button>
                 <button type="button" class="btn btn-outline-secondary active" data-demo-filter="real">Só reais</button>
@@ -24,6 +25,7 @@
                         <tr>
                             <th>Banda</th>
                             <th>Titular</th>
+                            <th>Plano</th>
                             <th>Membros</th>
                             <th>Cifras</th>
                             <th></th>
@@ -31,20 +33,46 @@
                     </thead>
                     <tbody>
                         {% for band in bands %}
-                        <tr class="{% if band.is_demo %}admin-row-demo{% endif %}" data-demo="{{ '1' if band.is_demo else '0' }}">
+                        <tr class="{% if band.is_demo %}admin-row-demo{% endif %}"
+                            data-demo="{{ '1' if band.is_demo else '0' }}"
+                            data-search="{{ (band.name ~ ' ' ~ (user_display_name(band.owner) if band.owner else '') ~ ' ' ~ (band.owner.username if band.owner else ''))|lower }}">
                             <td>
-                                <strong>{{ band.name }}</strong>
+                                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="text-decoration-none">
+                                    <strong>{{ band.name }}</strong>
+                                </a>
                                 {% if band.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
                             </td>
-                            <td>{{ user_display_name(band.owner) if band.owner else '—' }}</td>
+                            <td>
+                                {% if band.owner and band.owner.id %}
+                                <a href="{{ url_for('admin.usuario_detalhe', user_id=band.owner.id) }}" class="text-decoration-none">
+                                    {{ user_display_name(band.owner) }}
+                                </a>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% if band.plano_ui %}
+                                <span class="badge bg-{{ band.plano_ui.badge|default('secondary') }}">{{ band.plano_ui.label_curto|default(band.plano_ui.label) }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                             <td>{{ band.members_count }}</td>
-                            <td>{{ band.cifras_count }}</td>
-                            <td class="text-end">
+                            <td>
+                                {% if band.cifras_count %}
+                                <span class="badge bg-light text-dark border">{{ band.cifras_count }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">0</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-nowrap">
                                 <a href="{{ url_for('bands.view', band_id=band.id) }}" class="btn btn-sm btn-outline-primary">Abrir</a>
+                                {% if band.owner and band.owner.id %}
+                                <a href="{{ url_for('admin.usuario_detalhe', user_id=band.owner.id) }}" class="btn btn-sm btn-outline-secondary">Ficha dono</a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
-                        <tr data-demo-empty="1"><td colspan="5" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
+                        <tr data-demo-empty="1"><td colspan="6" class="text-muted text-center py-4">Nenhuma banda.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -281,11 +309,10 @@
                             <th>Usuário</th>
                             <th>E-mail</th>
                             <th>Bandas</th>
-                            <th>Cifras</th>
+                            <th>Cifras reais</th>
                             <th>WhatsApp</th>
                             <th>Cadastro</th>
                             <th>Último login</th>
-                            <th>Superadmin</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -300,6 +327,7 @@
                                 </a>
                                 <span class="text-muted" style="font-size: var(--text-sm);">@{{ u.username }}</span>
                                 {% if u.is_demo %}<span class="admin-badge-demo ms-1">Demo</span>{% endif %}
+                                {% if u.is_env_admin %}<span class="admin-badge-sa ms-1">Superadmin</span>{% endif %}
                             </td>
                             <td>{{ u.email }}</td>
                             <td>
@@ -310,22 +338,22 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if u.cifras_count %}
-                                <span class="badge bg-light text-dark border" title="Coleção pessoal">{{ u.cifras_count }}</span>
+                                {% if u.real_cifras_count|default(0) > 0 %}
+                                <span class="badge bg-success" title="Cifras próprias na coleção">{{ u.real_cifras_count }}</span>
+                                {% elif u.cifras_count %}
+                                <span class="badge bg-light text-muted border" title="Apenas cifras demo ({{ u.cifras_count }})">0 <small>(demo)</small></span>
                                 {% else %}
                                 <span class="badge bg-warning text-dark" title="Sem cifras na coleção pessoal">0</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if u.phone %}
-                                <a href="https://wa.me/{{ u.phone }}" target="_blank" rel="noopener noreferrer"
+                                <a href="https://wa.me/{{ u.phone|whatsapp_wa }}" target="_blank" rel="noopener noreferrer"
                                    class="text-decoration-none" title="Abrir no WhatsApp">
                                     <i class="fab fa-whatsapp text-success me-1"></i>{{ u.phone|whatsapp_display }}
                                 </a>
                                 {% if u.whatsapp_notify %}
-                                <span class="text-muted" style="font-size: var(--text-sm);" title="Alertas WhatsApp ativos">· alertas</span>
-                                {% else %}
-                                <span class="text-muted" style="font-size: var(--text-sm);" title="Sem opt-in de alertas">· sem alertas</span>
+                                <span class="text-muted" style="font-size: var(--text-xs);" title="Alertas WhatsApp ativos">· alertas</span>
                                 {% endif %}
                                 {% else %}
                                 <span class="text-muted">—</span>
@@ -335,18 +363,6 @@
                             <td class="text-nowrap">
                                 {% if u.last_login_at %}{{ u.last_login_at|date_short }}{% else %}
                                 <span class="text-muted">—</span>{% endif %}
-                            </td>
-                            <td>
-                                {% if u.is_env_admin %}
-                                <span class="admin-badge-sa">Sim</span>
-                                {% if u.is_superadmin_env %}
-                                <span class="text-muted" style="font-size: var(--text-xs);"> (.env)</span>
-                                {% elif u.is_superadmin_db %}
-                                <span class="text-muted" style="font-size: var(--text-xs);"> (banco)</span>
-                                {% endif %}
-                                {% else %}
-                                <span class="text-muted">Não</span>
-                                {% endif %}
                             </td>
                             <td class="text-end text-nowrap">
                                 <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}"
@@ -358,39 +374,55 @@
                                             title="Ver o app como este usuário">Entrar</button>
                                 </form>
                                 {% endif %}
-                                {% if u.is_demo_manual %}
-                                <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="enabled" value="0">
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
-                                            title="Remove a marcação manual de teste">Desmarcar teste</button>
-                                </form>
-                                {% elif not u.is_demo %}
-                                <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="enabled" value="1">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning"
-                                            title="Marca como conta de teste/QA">Marcar como teste</button>
-                                </form>
-                                {% else %}
-                                <span class="text-muted" style="font-size: var(--text-sm);"
-                                      title="Detectada por username/e-mail showcase ou SETSYNC_DEMO_*">Demo automática</span>
-                                {% endif %}
-                                {% if u.is_superadmin_db %}
-                                <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="enabled" value="0">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">Revogar superadmin</button>
-                                </form>
-                                {% elif u.is_superadmin_env %}
-                                <span class="text-muted" style="font-size: var(--text-sm);">Definido no .env</span>
-                                {% else %}
-                                <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}" class="d-inline">
-                                    {% include 'partials/csrf_input.html' %}
-                                    <input type="hidden" name="enabled" value="1">
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Tornar superadmin</button>
-                                </form>
-                                {% endif %}
+                                <div class="dropdown d-inline-block">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle px-2" type="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false" title="Mais ações administrativas">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" style="font-size: var(--text-sm);">
+                                        {% if u.is_demo_manual %}
+                                        <li>
+                                            <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}">
+                                                {% include 'partials/csrf_input.html' %}
+                                                <input type="hidden" name="enabled" value="0">
+                                                <button type="submit" class="dropdown-item">Desmarcar conta de teste</button>
+                                            </form>
+                                        </li>
+                                        {% elif not u.is_demo %}
+                                        <li>
+                                            <form method="post" action="{{ url_for('admin.toggle_user_demo', user_id=u.id) }}">
+                                                {% include 'partials/csrf_input.html' %}
+                                                <input type="hidden" name="enabled" value="1">
+                                                <button type="submit" class="dropdown-item">Marcar como conta de teste</button>
+                                            </form>
+                                        </li>
+                                        {% else %}
+                                        <li><span class="dropdown-item-text text-muted small">Demo detectada automaticamente</span></li>
+                                        {% endif %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        {% if u.is_superadmin_db %}
+                                        <li>
+                                            <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}"
+                                                  onsubmit="return confirm('Revogar acesso Superadmin de {{ user_display_name(u) }}?');">
+                                                {% include 'partials/csrf_input.html' %}
+                                                <input type="hidden" name="enabled" value="0">
+                                                <button type="submit" class="dropdown-item text-danger">Revogar superadmin</button>
+                                            </form>
+                                        </li>
+                                        {% elif u.is_superadmin_env %}
+                                        <li><span class="dropdown-item-text text-muted small">Superadmin definido no .env</span></li>
+                                        {% else %}
+                                        <li>
+                                            <form method="post" action="{{ url_for('admin.toggle_superadmin', user_id=u.id) }}"
+                                                  onsubmit="return confirm('ATENÇÃO: Tornar {{ user_display_name(u) }} (@{{ u.username }}) Superadmin com acesso total ao sistema?');">
+                                                {% include 'partials/csrf_input.html' %}
+                                                <input type="hidden" name="enabled" value="1">
+                                                <button type="submit" class="dropdown-item text-warning">Tornar superadmin…</button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}

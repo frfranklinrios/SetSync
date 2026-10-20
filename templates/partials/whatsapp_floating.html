@@ -47,11 +47,16 @@ body.play-mode .wa-floating-btn {
 @media print {
     .wa-floating-btn { display: none !important; }
 }
+@media (max-width: 991.98px) {
+    body:has(.ss-tabbar) .wa-floating-btn {
+        bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px));
+    }
+}
 @media (max-width: 480px) {
     .wa-floating-btn {
-        width: 3.1rem;
-        height: 3.1rem;
-        font-size: 1.5rem;
+        width: 2.85rem;
+        height: 2.85rem;
+        font-size: 1.4rem;
     }
 }
 </style>

@@ -60,7 +60,7 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border);
     font-size: var(--text-sm); font-weight: 600;
 }
-.admin-queue-card .qb { padding: 0.5rem 0.85rem; flex: 1; }
+.admin-queue-card .qb { padding: 0.5rem 0.85rem; flex: 1; max-height: 220px; overflow-y: auto; }
 .admin-queue-card .qf { padding: 0.4rem 0.85rem 0.65rem; border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--muted); }
 .admin-nav-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .admin-nav-links .btn { font-size: var(--text-sm); }
@@ -90,7 +90,7 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     <span class="text-nowrap">
         <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
         {% if u.phone %}
-        <a href="https://wa.me/{{ u.phone }}{% if wa_text %}?text={{ wa_text|urlencode }}{% endif %}"
+        <a href="https://wa.me/{{ u.phone|whatsapp_wa }}{% if wa_text %}?text={{ wa_text|urlencode }}{% endif %}"
            target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
         {% endif %}
         {% if u.id != current_user.id %}
@@ -111,7 +111,7 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         {% endif %}
         {% set ph = phone or item.phone %}
         {% if ph %}
-        <a href="https://wa.me/{{ ph }}{% if wa_text %}?text={{ wa_text|urlencode }}{% endif %}"
+        <a href="https://wa.me/{{ ph|whatsapp_wa }}{% if wa_text %}?text={{ wa_text|urlencode }}{% endif %}"
            target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
         {% endif %}
     </span>
@@ -130,6 +130,8 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         </p>
     </div>
     <div class="admin-nav-links">
+        <a href="#tab-users" class="btn btn-outline-primary btn-sm"><i class="fas fa-users me-1"></i>Buscar usuário</a>
+        <a href="#tab-bands" class="btn btn-outline-primary btn-sm"><i class="fas fa-guitar me-1"></i>Bandas</a>
         <a href="{{ url_for('admin.jornada') }}" class="btn btn-primary btn-sm"><i class="fas fa-route me-1"></i>Jornada pós-cadastro</a>
         <a href="{{ url_for('mail_web.inbox') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-inbox me-1"></i>E-mail</a>
         <a href="{{ url_for('whatsapp_admin.index') }}" class="btn btn-success btn-sm"><i class="fab fa-whatsapp me-1"></i>WhatsApp</a>
@@ -218,7 +220,13 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     · bandas com escala {{ monetization.bands_with_scale|default(0) }} · com freela {{ monetization.bands_with_guest|default(0) }}
     · churn trial {{ monetization.trial_churn.churn_pct }}% · fundador excluído de pagantes
 </p>
-{# ── B. CONCIERGE (14 dias) ─────────────────────────────────────────────── #}
+{# ── B. INVENTÁRIO (Busca rápida de usuários, bandas e estúdios) ───────── #}
+<div id="admin-inventario" class="mb-4">
+    <p class="admin-section-title">Inventário — Usuários, Bandas e Estúdios</p>
+    {% include 'admin/partials/inventory_tabs.html' %}
+</div>
+
+{# ── C. CONCIERGE (14 dias) ─────────────────────────────────────────────── #}
 <p class="admin-section-title">Concierge — cifra real e palco</p>
 {% set eq = engagement_queues %}
 {% set et = eq.totals or {} %}
@@ -277,10 +285,13 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     {{ et.solo_activated }} tocaram reais e ainda estão sozinhos.
 </p>
 
-{# ── C. OUTRAS FILAS ─────────────────────────────────────────────────────── #}
+{# ── C. OUTRAS FILAS (oculta cards zerados para evitar poluição visual) ── #}
+{% set has_secondary_queues = (eq.scale_champions|length > 0) or (eq.trials_churned|length > 0) or (eq.shows_no_scale|length > 0) or (eq.bands_no_events|length > 0) or (eq.trials_ending|length > 0) %}
+{% if has_secondary_queues %}
 <p class="admin-section-title">Fila de ação (depois do palco)</p>
 <div class="row g-3 mb-3">
-    <div class="col-md-6 col-xl-3">
+    {% if eq.scale_champions %}
+    <div class="col-md-6 col-xl-4">
         <div class="admin-queue-card">
             <div class="qh text-info">
                 Campeões de escala <span class="badge text-bg-info">{{ eq.scale_champions|length }}</span>
@@ -297,19 +308,19 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                         <span class="text-nowrap">
                             <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
                             {% if u.phone %}
-                            <a href="https://wa.me/{{ u.phone }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+                            <a href="https://wa.me/{{ u.phone|whatsapp_wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
                             {% endif %}
                         </span>
                     </li>
-                    {% else %}
-                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Ninguém ainda.</li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="qf">Pedir feedback do Comando do show + pool de freela</div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
+    {% endif %}
+    {% if eq.trials_churned %}
+    <div class="col-md-6 col-xl-4">
         <div class="admin-queue-card">
             <div class="qh text-danger">
                 Trial caiu (14d) <span class="badge bg-danger">{{ eq.trials_churned|length }}</span>
@@ -328,19 +339,19 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                         <a href="{{ url_for('admin.usuario_detalhe', user_id=t.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
                         {% endif %}
                         {% if t.phone %}
-                        <a href="https://wa.me/{{ t.phone }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+                        <a href="https://wa.me/{{ t.phone|whatsapp_wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
                         {% endif %}
                         </span>
                     </li>
-                    {% else %}
-                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nenhum churn recente.</li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="qf">WhatsApp: “montamos o próximo show juntos?”</div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
+    {% endif %}
+    {% if eq.shows_no_scale %}
+    <div class="col-md-6 col-xl-4">
         <div class="admin-queue-card">
             <div class="qh text-warning">
                 Show sem escala <span class="badge bg-warning text-dark">{{ eq.shows_no_scale|length }}</span>
@@ -359,19 +370,19 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                         <a href="{{ url_for('admin.usuario_detalhe', user_id=e.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
                         {% endif %}
                         {% if e.phone %}
-                        <a href="https://wa.me/{{ e.phone }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+                        <a href="https://wa.me/{{ e.phone|whatsapp_wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
                         {% endif %}
                         </span>
                     </li>
-                    {% else %}
-                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nada na fila.</li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="qf">Empurrar Comando do show</div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
+    {% endif %}
+    {% if eq.bands_no_events %}
+    <div class="col-md-6 col-xl-4">
         <div class="admin-queue-card">
             <div class="qh" style="color:#7c3aed;">
                 Bandas sem evento <span class="badge text-bg-light border">{{ eq.bands_no_events|length }}</span>
@@ -390,19 +401,19 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                         <a href="{{ url_for('admin.usuario_detalhe', user_id=b.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
                         {% endif %}
                         {% if b.phone %}
-                        <a href="https://wa.me/{{ b.phone }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
+                        <a href="https://wa.me/{{ b.phone|whatsapp_wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
                         {% endif %}
                         </span>
                     </li>
-                    {% else %}
-                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nenhuma na fila.</li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="qf">{{ et.bands_no_events|default(0) }} no total — 1º show = ativação</div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
+    {% endif %}
+    {% if eq.trials_ending %}
+    <div class="col-md-6 col-xl-4">
         <div class="admin-queue-card">
             <div class="qh">
                 Trial a vencer (7d) <span class="badge text-bg-light border">{{ eq.trials_ending|length }}</span>
@@ -419,15 +430,15 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
                         <a href="{{ url_for('admin.usuario_detalhe', user_id=t.user_id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
                         {% endif %}
                     </li>
-                    {% else %}
-                    <li class="text-muted py-2" style="font-size: var(--text-sm);">Nenhum trial acabando.</li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="qf">Converter antes de cair pra grátis</div>
         </div>
     </div>
+    {% endif %}
 </div>
+{% endif %}
 
 {# ── D. DIAGNÓSTICO ─────────────────────────────────────────────────────── #}
 <p class="admin-section-title">Diagnóstico</p>
@@ -688,10 +699,6 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     </div>
 </div>
 
-{# ── D. INVENTÁRIO ──────────────────────────────────────────────────────── #}
-<p class="admin-section-title">Inventário</p>
-{% include 'admin/partials/inventory_tabs.html' %}
-
 <script>
 (function () {
     function showAdminTab(hash) {
@@ -713,6 +720,9 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         if (hash === 'tab-users') {
             var search = document.getElementById('admin-user-search');
             if (search) setTimeout(function () { search.focus(); }, 200);
+        } else if (hash === 'tab-bands') {
+            var bsearch = document.getElementById('admin-band-search');
+            if (bsearch) setTimeout(function () { bsearch.focus(); }, 200);
         }
     }
     var hash = (window.location.hash || '').replace('#', '');
@@ -752,6 +762,9 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
         if (key === 'users') {
             var input = document.getElementById('admin-user-search');
             searchQ = (input && input.value || '').trim().toLowerCase();
+        } else if (key === 'bands') {
+            var binput = document.getElementById('admin-band-search');
+            searchQ = (binput && binput.value || '').trim().toLowerCase();
         }
         var visible = 0;
         var total = 0;
@@ -782,6 +795,12 @@ tr.admin-row-demo td { border-color: rgba(245, 158, 11, 0.18); }
     var userSearch = document.getElementById('admin-user-search');
     if (userSearch) {
         userSearch.addEventListener('input', function () {
+            setFilter(currentFilter());
+        });
+    }
+    var bandSearch = document.getElementById('admin-band-search');
+    if (bandSearch) {
+        bandSearch.addEventListener('input', function () {
             setFilter(currentFilter());
         });
     }

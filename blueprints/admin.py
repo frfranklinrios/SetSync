@@ -86,6 +86,9 @@ def index():
         u["is_demo_auto"] = is_demo_heuristic(u)
         u["is_demo"] = is_demo_user(u)
 
+    from monetizacao import enrich_bands_plano
+
+    bands = enrich_bands_plano(bands)
     for band in bands:
         band["is_demo"] = is_demo_band(band, owner=band.get("owner"))
 
@@ -95,9 +98,24 @@ def index():
     # Listagem leve (inventário): só as mais recentes — evita carregar o catálogo inteiro
     from database import IS_POSTGRES
     from db import get_db
+    from demo_onboarding import cifra_is_demo
 
     db = get_db()
     c = db.cursor()
+    c.execute(
+        """SELECT owner_user_id, titulo, referencia_json
+           FROM cifras
+           WHERE band_id IS NULL AND owner_user_id IS NOT NULL"""
+    )
+    real_cifras_by_user: dict[str, int] = {}
+    for r in c.fetchall():
+        row_dict = dict(r)
+        if not cifra_is_demo(row_dict):
+            uid_key = str(row_dict["owner_user_id"])
+            real_cifras_by_user[uid_key] = real_cifras_by_user.get(uid_key, 0) + 1
+    for u in users:
+        u["real_cifras_count"] = real_cifras_by_user.get(str(u["id"]), 0)
+
     order = (
         "cifras.created_at DESC NULLS LAST" if IS_POSTGRES else "cifras.created_at DESC"
     )

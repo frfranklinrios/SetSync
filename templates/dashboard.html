@@ -278,27 +278,29 @@
     <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 gap-md-3 mb-3 dashboard-header">
         <div>
             <h1 class="mb-0">Olá, {{ current_user.name }}</h1>
-            <p class="lead">
+            <p class="lead mb-0">
                 {% if is_superadmin %}Grade de bandas e estúdios — visão global
                 {% elif my_studios %}Seus estúdios{% if owned_bands or bands %} e bandas{% endif %}
-                {% else %}Atalhos, bandas, agenda e financeiro num só lugar{% endif %}
+                {% else %}Suas bandas, repertórios e agenda de ensaios{% endif %}
             </p>
-            {% if api_cifras_stats and api_cifras_stats.available %}
-            <p class="api-cifras-stat mb-0" title="Cifras na biblioteca local para importar ao adicionar música">
-                <i class="fas fa-book-open" aria-hidden="true"></i>
-                <span><strong>Centenas de milhares</strong> de cifras na nossa biblioteca</span>
-            </p>
-            {% endif %}
         </div>
         <div class="d-flex gap-2 flex-wrap">
             {% if is_superadmin %}
             <a href="{{ url_for('admin.index') }}" class="btn btn-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-shield-halved me-1"></i> Painel Admin
             </a>
-            <a href="{{ url_for('bands.list_bands') }}" class="btn btn-outline-secondary btn-sm dashboard-action-btn">
-                Lista de bandas
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm dashboard-action-btn">
+                Minhas bandas
             </a>
             {% else %}
+            {% if current_user.is_superadmin %}
+            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary btn-sm dashboard-action-btn">
+                <i class="fas fa-shield-halved me-1"></i> Admin
+            </a>
+            {% endif %}
+            <a href="{{ url_for('cifras.add_personal') if not (owned_bands or bands) else url_for('cifras.add', band_id=(owned_bands[0].id if owned_bands else bands[0].id)) }}" class="btn btn-outline-primary btn-sm dashboard-action-btn">
+                <i class="fas fa-music me-1"></i> Nova Música
+            </a>
             <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-plus me-1"></i> Nova Banda
             </a>
@@ -308,65 +310,14 @@
 
     <div class="dashboard-grid">
         <div class="dashboard-primary d-flex flex-column gap-3">
-            {% if not is_superadmin %}
-            {% include 'partials/dashboard_summary.html' %}
-            {% include 'partials/dashboard_hub.html' %}
-            {% include 'partials/activation_hero.html' %}
-            {% include 'partials/invite_hero.html' %}
-            {% endif %}
             {% include 'partials/pending_band_invites.html' %}
             {% include 'partials/pending_scale.html' %}
             {% include 'partials/pending_scale_admin.html' %}
+            {% if not is_superadmin %}
+            {% include 'partials/activation_hero.html' %}
+            {% endif %}
             {% if not is_superadmin and show_commands %}
             {% include 'partials/show_command_card.html' %}
-            {% endif %}
-            {% if not is_superadmin and onboarding and onboarding.done_count > 0 %}
-            {% include 'partials/onboarding_checklist.html' %}
-            {% endif %}
-            {% if not needs_activation and not is_superadmin and not invite_cta %}
-            {% include 'partials/dashboard_upsell.html' %}
-            {% include 'partials/dashboard_referral.html' %}
-            {% include 'partials/pwa_install_prompt.html' %}
-            {% endif %}
-
-            {% if trial_ui and trial_ui.ativo %}
-            <div class="alert alert-success dashboard-compact-alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <div>
-                    🎸 <strong>Pro liberado no trial</strong> — faltam {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %}
-                    em <strong>{{ trial_ui.band_name }}</strong>. Use PDF e Modo Tocar agora.
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    {% if trial_ui.band_id %}
-                    <a href="{{ url_for('cifras.tocar_band', band_id=trial_ui.band_id) }}" class="btn btn-sm btn-success">Abrir Modo Tocar</a>
-                    {% endif %}
-                    <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id, plano=('individual' if trial_ui.solo else 'pro'), go=1) if trial_ui.band_id else url_for('assinatura_bp.planos', plano=('individual' if trial_ui.solo else 'pro'), go=1) }}" class="btn btn-sm btn-outline-success">{% if trial_ui.solo %}Assinar Individual — R$ 15{% else %}Assinar Pro — R$ 29{% endif %}</a>
-                </div>
-            </div>
-            {% elif trial_ui and trial_ui.expirado %}
-            <div class="alert alert-warning dashboard-compact-alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <div>
-                    O trial Pro de <strong>{{ trial_ui.band_name }}</strong> terminou —
-                    {% if trial_ui.solo %}
-                    no solo, o <strong>Individual (R$ 15)</strong> libera PDF e compartilhar.
-                    {% else %}
-                    PDF e limites ilimitados voltam com o Pro.
-                    {% endif %}
-                </div>
-                <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id, plano=('individual' if trial_ui.solo else 'pro'), go=1) if trial_ui.band_id else url_for('assinatura_bp.planos', plano=('individual' if trial_ui.solo else 'pro'), go=1) }}" class="btn btn-sm btn-warning">{% if trial_ui.solo %}Assinar Individual — R$ 15{% else %}Assinar Pro — R$ 29{% endif %}</a>
-            </div>
-            {% include 'partials/churn_survey.html' %}
-            {% endif %}
-
-            {% if planos_resumo and planos_resumo.tem_banda and not is_superadmin %}
-            <div class="planos-resumo-card">
-                <div class="fw-semibold mb-2" style="font-size: var(--text-base);">
-                    <i class="fas fa-chart-line me-1 text-muted"></i>
-                    {% if planos_resumo.multiplas %}Acompanhamento dos planos{% else %}Seu plano{% endif %}
-                </div>
-                {% for item in planos_resumo.itens %}
-                {% include 'partials/plano_periodo_card.html' %}
-                {% endfor %}
-            </div>
             {% endif %}
 
             {% if my_studios and not is_superadmin %}
@@ -499,12 +450,65 @@
             {% if not needs_activation %}
             {% with icon='fa-guitar',
                     title='Você ainda não está em nenhuma banda',
-                    text='Crie uma banda para começar — ou aceite um convite por e-mail ou WhatsApp.',
+                    text='Crie uma banda para organizar o repertório do ensaio — suas músicas pessoais entram automaticamente.',
                     cta_url=url_for('bands.create', bem_vindo=1),
                     cta_label='Criar minha banda' %}
             {% include 'partials/empty_state.html' %}
             {% endwith %}
             {% endif %}
+            {% endif %}
+
+            {% include 'partials/invite_hero.html' %}
+            {% if onboarding and onboarding.done_count > 0 %}
+            {% include 'partials/onboarding_checklist.html' %}
+            {% endif %}
+            {% include 'partials/dashboard_hub.html' %}
+            {% include 'partials/dashboard_summary.html' %}
+
+            {% if trial_ui and trial_ui.ativo %}
+            <div class="alert alert-success dashboard-compact-alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    🎸 <strong>Pro liberado no trial</strong> — faltam {{ trial_ui.dias }} dia{% if trial_ui.dias != 1 %}s{% endif %}
+                    em <strong>{{ trial_ui.band_name }}</strong>. Use PDF e Modo Tocar agora.
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if trial_ui.band_id %}
+                    <a href="{{ url_for('cifras.tocar_band', band_id=trial_ui.band_id) }}" class="btn btn-sm btn-success">Abrir Modo Tocar</a>
+                    {% endif %}
+                    <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id, plano=('individual' if trial_ui.solo else 'pro'), go=1) if trial_ui.band_id else url_for('assinatura_bp.planos', plano=('individual' if trial_ui.solo else 'pro'), go=1) }}" class="btn btn-sm btn-outline-success">{% if trial_ui.solo %}Assinar Individual — R$ 15{% else %}Assinar Pro — R$ 29{% endif %}</a>
+                </div>
+            </div>
+            {% elif trial_ui and trial_ui.expirado %}
+            <div class="alert alert-warning dashboard-compact-alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    O trial Pro de <strong>{{ trial_ui.band_name }}</strong> terminou —
+                    {% if trial_ui.solo %}
+                    no solo, o <strong>Individual (R$ 15)</strong> libera PDF e compartilhar.
+                    {% else %}
+                    PDF e limites ilimitados voltam com o Pro.
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('assinatura_bp.planos', banda_id=trial_ui.band_id, plano=('individual' if trial_ui.solo else 'pro'), go=1) if trial_ui.band_id else url_for('assinatura_bp.planos', plano=('individual' if trial_ui.solo else 'pro'), go=1) }}" class="btn btn-sm btn-warning">{% if trial_ui.solo %}Assinar Individual — R$ 15{% else %}Assinar Pro — R$ 29{% endif %}</a>
+            </div>
+            {% include 'partials/churn_survey.html' %}
+            {% endif %}
+
+            {% if planos_resumo and planos_resumo.tem_banda %}
+            <div class="planos-resumo-card">
+                <div class="fw-semibold mb-2" style="font-size: var(--text-base);">
+                    <i class="fas fa-chart-line me-1 text-muted"></i>
+                    {% if planos_resumo.multiplas %}Acompanhamento dos planos{% else %}Seu plano{% endif %}
+                </div>
+                {% for item in planos_resumo.itens %}
+                {% include 'partials/plano_periodo_card.html' %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if not needs_activation and not invite_cta %}
+            {% include 'partials/dashboard_upsell.html' %}
+            {% include 'partials/dashboard_referral.html' %}
+            {% include 'partials/pwa_install_prompt.html' %}
             {% endif %}
             {% endif %}
         </div>

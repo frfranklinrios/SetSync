@@ -6,8 +6,8 @@
     <div>
         <h1 class="h4 mb-1"><i class="fas fa-folder-open me-1 text-muted"></i> Minha coleção</h1>
         <p class="text-muted mb-0 small">
-            Suas músicas pessoais — <strong>até 3 cifras reais no Grátis</strong>.
-            Compartilhar com outros músicos ou com uma banda exige assinatura.
+            Suas músicas pessoais — <strong>até 10 cifras reais no Grátis</strong>.
+            Você pode enviar qualquer música para a sua banda gratuitamente.
         </p>
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -32,11 +32,6 @@
             <i class="fas fa-plus me-1"></i> Nova música
         </a>
         {% endif %}
-        {% if not can_share %}
-        <a href="{{ url_for('assinatura_bp.planos') }}" class="btn btn-outline-secondary btn-sm">
-            Individual — compartilhar
-        </a>
-        {% endif %}
     </div>
 </div>
 
@@ -48,52 +43,41 @@
 </div>
 {% endif %}
 
-{% if not can_share %}
-<div class="alert alert-light border small mb-3">
-    <i class="fas fa-info-circle text-primary me-1"></i>
-    Guarde quantas cifras quiser aqui. Para enviar à banda ou liberar para outro usuário,
-    <a href="{{ url_for('assinatura_bp.planos') }}">assine Individual</a>
-    (ou Pro/Worship se já tem banda).
-</div>
-{% endif %}
-
 {% if cifras %}
-<div class="table-responsive mb-4">
-    <table class="table table-sm align-middle" style="font-size: var(--text-sm);">
-        <thead>
-            <tr>
-                <th>Música</th>
-                <th>Artista</th>
-                <th>Tom</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for c in cifras %}
-            <tr>
-                <td>
-                    <a href="{{ url_for('cifras.view', cifra_id=c.id) }}">{{ c.titulo }}</a>
-                    {% if c.is_demo %}<span class="badge text-bg-light border text-muted ms-1">Demo</span>{% endif %}
-                </td>
-                <td>{{ c.artista }}</td>
-                <td>{{ c.tom_original or '—' }}</td>
-                <td class="text-end text-nowrap">
-                    <a href="{{ url_for('cifras.tocar_colecao', start=c.id) }}" class="btn btn-primary btn-sm"
-                       title="Modo Tocar">
-                        <i class="fas fa-play"></i>
-                    </a>
-                    <a href="{{ url_for('cifras.share_cifra', cifra_id=c.id) }}" class="btn btn-outline-primary btn-sm"
-                       title="{% if can_share %}Compartilhar{% else %}Assinatura necessária{% endif %}">
-                        <i class="fas fa-share-alt"></i>
-                    </a>
-                    <a href="{{ url_for('cifras.edit', cifra_id=c.id) }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-pen"></i>
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="row-card mb-4">
+    {% for c in cifras %}
+    <div class="row-item row-item--numbered">
+        <div class="row-prefix">
+            <span class="row-num">{{ loop.index }}</span>
+        </div>
+        <div class="row-info">
+            <a href="{{ url_for('cifras.view', cifra_id=c.id) }}" class="row-title">
+                {{ c.titulo }}
+                {% if c.is_demo %}<span class="badge text-bg-light border text-muted ms-1" style="font-weight:500;">Demo</span>{% endif %}
+            </a>
+            {% if c.artista %}
+            <div class="row-sub">{{ c.artista }}</div>
+            {% endif %}
+        </div>
+        {% if c.tom_original %}
+        <span class="row-badge" title="Tom">{{ c.tom_original }}</span>
+        {% endif %}
+        <div class="row-actions">
+            <a href="{{ url_for('cifras.tocar_colecao', start=c.id) }}" class="btn btn-primary btn-sm"
+               title="Modo Tocar">
+                <i class="fas fa-play"></i>
+            </a>
+            <a href="{{ url_for('cifras.share_cifra', cifra_id=c.id) }}" class="btn btn-outline-primary btn-sm"
+               title="Enviar para banda ou compartilhar">
+                <i class="fas fa-share-alt"></i>
+            </a>
+            <a href="{{ url_for('cifras.edit', cifra_id=c.id) }}" class="btn btn-outline-secondary btn-sm"
+               title="Editar cifra">
+                <i class="fas fa-pen"></i>
+            </a>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% else %}
 {% with icon='fa-music',
@@ -107,25 +91,17 @@
 
 {% if shared_cifras %}
 <h2 class="h6 mb-2">Compartilhadas comigo</h2>
-<div class="table-responsive">
-    <table class="table table-sm align-middle" style="font-size: var(--text-sm);">
-        <thead>
-            <tr>
-                <th>Música</th>
-                <th>Artista</th>
-                <th>De</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for c in shared_cifras %}
-            <tr>
-                <td><a href="{{ url_for('cifras.view', cifra_id=c.id) }}">{{ c.titulo }}</a></td>
-                <td>{{ c.artista }}</td>
-                <td>{{ c.shared_by_name or c.shared_by_username or '—' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="row-card">
+    {% for c in shared_cifras %}
+    <div class="row-item">
+        <div class="row-info">
+            <a href="{{ url_for('cifras.view', cifra_id=c.id) }}" class="row-title">{{ c.titulo }}</a>
+            <div class="row-sub">
+                {{ c.artista }}{% if c.shared_by_name or c.shared_by_username %} · De {{ c.shared_by_name or c.shared_by_username }}{% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% endif %}
 {% endblock %}

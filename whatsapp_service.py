@@ -56,6 +56,14 @@ def normalize_whatsapp_phone(raw: str | None) -> str | None:
     return None
 
 
+def format_whatsapp_wa(phone: str | None) -> str:
+    """Retorna apenas dígitos normalizados com DDI 55 para links https://wa.me/."""
+    norm = normalize_whatsapp_phone(phone)
+    if norm:
+        return norm
+    return re.sub(r"\D", "", phone or "")
+
+
 def format_whatsapp_display(phone: str | None) -> str:
     """Formata número armazenado para exibição (ex.: +55 (11) 99999-9999)."""
     digits = re.sub(r"\D", "", phone or "")

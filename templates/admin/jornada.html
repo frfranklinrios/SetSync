@@ -33,7 +33,7 @@
     padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border);
     font-size: var(--text-sm); font-weight: 600;
 }
-.admin-queue-card .qb { padding: 0.5rem 0.85rem; flex: 1; }
+.admin-queue-card .qb { padding: 0.5rem 0.85rem; flex: 1; max-height: 240px; overflow-y: auto; }
 .admin-queue-card .qf { padding: 0.4rem 0.85rem 0.65rem; border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--muted); }
 .jornada-callout {
     border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.1rem;
@@ -60,7 +60,7 @@
     <span class="text-nowrap">
         <a href="{{ url_for('admin.usuario_detalhe', user_id=u.id) }}" class="btn btn-sm btn-outline-primary py-0">Ficha</a>
         {% if u.phone %}
-        <a href="https://wa.me/{{ u.phone }}{% if wa_text %}?text={{ wa_text|urlencode }}{% endif %}"
+        <a href="https://wa.me/{{ u.phone|whatsapp_wa }}{% if wa_text %}?text={{ wa_text|urlencode }}{% endif %}"
            target="_blank" rel="noopener" class="btn btn-sm btn-outline-success py-0">WA</a>
         {% endif %}
         {% if u.id != current_user.id %}

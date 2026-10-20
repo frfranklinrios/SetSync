@@ -358,6 +358,34 @@
         </div>
         {% endif %}
 
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 p-2 rounded border" style="background: var(--card-bg, #fff);">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-muted fw-semibold" style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em;">Tom</span>
+                <div class="transpose-stepper" role="group" aria-label="Transpor rápido" style="max-width: 11rem;">
+                    <button type="button" class="transpose-step-btn js-transpose-down" aria-label="Descer meio tom" style="padding: 0.3rem 0.7rem;">−</button>
+                    <span class="transpose-key-lbl" title="Tom atual" style="padding: 0.3rem 0.6rem;">{{ display_key }}</span>
+                    <button type="button" class="transpose-step-btn js-transpose-up" aria-label="Subir meio tom" style="padding: 0.3rem 0.7rem;">+</button>
+                </div>
+                {% if current_transpose != 0 %}
+                <a href="{{ url_for('cifras.view', cifra_id=cifra.id, transpose=0, vocalist=active_vocalist_id if active_vocalist_id else none) }}"
+                   class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: var(--text-xs);">
+                    Original ({{ cifra.tom_original|normalize_tom }})
+                </a>
+                {% endif %}
+            </div>
+            {% if vocalists|length > 1 %}
+            <div class="d-flex align-items-center gap-2">
+                <label for="vocalist-sel-top" class="text-muted mb-0" style="font-size: var(--text-xs);">Voz:</label>
+                <select class="form-select form-select-sm py-1" id="vocalist-sel-top" style="width: auto; font-size: var(--text-xs);"
+                        onchange="location.href=CIFRA_BASE+'?vocalist='+encodeURIComponent(this.value)">
+                    {% for v in vocalists %}
+                    <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </div>
+
         <ul class="nav nav-tabs cifra-content-tabs" id="cifraViewTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link{% if active_tab == 'cifra' %} active{% endif %}" id="tab-cifra-btn"
@@ -553,8 +581,8 @@ const TOCAR_URL  = {% if band %}"{{ url_for('cifras.tocar_band', band_id=band.id
     }
 
     var current = normalizeSemitones(parseInt(stepper.dataset.transpose, 10) || 0);
-    var btnDown = document.getElementById('transpose-down');
-    var btnUp = document.getElementById('transpose-up');
+    var btnsDown = document.querySelectorAll('#transpose-down, .js-transpose-down');
+    var btnsUp = document.querySelectorAll('#transpose-up, .js-transpose-up');
 
     function goTranspose(delta) {
         var next = normalizeSemitones(current + delta);
@@ -564,14 +592,14 @@ const TOCAR_URL  = {% if band %}"{{ url_for('cifras.tocar_band', band_id=band.id
         location.href = url;
     }
 
-    if (btnDown) {
-        btnDown.disabled = current <= TRANSPOSE_MIN;
-        btnDown.addEventListener('click', function () { goTranspose(-1); });
-    }
-    if (btnUp) {
-        btnUp.disabled = current >= TRANSPOSE_MAX;
-        btnUp.addEventListener('click', function () { goTranspose(1); });
-    }
+    btnsDown.forEach(function (btn) {
+        btn.disabled = current <= TRANSPOSE_MIN;
+        btn.addEventListener('click', function () { goTranspose(-1); });
+    });
+    btnsUp.forEach(function (btn) {
+        btn.disabled = current >= TRANSPOSE_MAX;
+        btn.addEventListener('click', function () { goTranspose(1); });
+    });
 })();
 
 {% if can_edit and band %}

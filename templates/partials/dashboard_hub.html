@@ -1,36 +1,15 @@
-{# Hub de atalhos — todas as áreas do app em um olhar. #}
+{# Hub de atalhos — ações principais sem duplicar a barra de navegação. #}
 {% set hub_band = (owned_bands[0] if owned_bands else (bands[0] if bands else none)) %}
 <nav class="dash-hub" aria-label="Atalhos do Uníssono">
     <div class="dash-hub-head">
-        <p class="section-title mb-0">Atalhos</p>
-        <span class="dash-hub-hint">Tudo que você usa no dia a dia</span>
+        <p class="section-title mb-0">Ações rápidas</p>
     </div>
     <div class="dash-hub-grid">
-        <a href="{{ url_for('cifras.my_library') }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-folder-open"></i></span>
-            <span class="dhi-label">Coleção</span>
-            <span class="dhi-sub">Suas cifras</span>
-        </a>
-        <a href="{{ url_for('agenda.minha_agenda') }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-calendar-alt"></i></span>
-            <span class="dhi-label">Agenda</span>
-            <span class="dhi-sub">Shows e ensaios</span>
-        </a>
-        <a href="{{ url_for('bands.my_fees') }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-wallet"></i></span>
-            <span class="dhi-label">Financeiro</span>
-            <span class="dhi-sub">Meus cachês</span>
-        </a>
         {% if hub_band %}
         <a href="{{ url_for('cifras.tocar_band', band_id=hub_band.id) }}" class="dash-hub-item dash-hub-item--accent">
             <span class="dhi-icon" aria-hidden="true"><i class="fas fa-play"></i></span>
             <span class="dhi-label">Modo Tocar</span>
             <span class="dhi-sub">{{ hub_band.name }}</span>
-        </a>
-        <a href="{{ url_for('setlists.list_setlists', band_id=hub_band.id) }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-list-ol"></i></span>
-            <span class="dhi-label">Setlists</span>
-            <span class="dhi-sub">Ensaio / show</span>
         </a>
         {% else %}
         <a href="{{ url_for('cifras.comecar') }}" class="dash-hub-item dash-hub-item--accent">
@@ -38,44 +17,22 @@
             <span class="dhi-label">Buscar cifra</span>
             <span class="dhi-sub">Primeira música</span>
         </a>
-        <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-plus"></i></span>
-            <span class="dhi-label">Nova banda</span>
-            <span class="dhi-sub">Começar ensaio</span>
-        </a>
         {% endif %}
         <a href="{{ url_for('cifras.add_personal') if not hub_band else url_for('cifras.add', band_id=hub_band.id) }}" class="dash-hub-item">
             <span class="dhi-icon" aria-hidden="true"><i class="fas fa-music"></i></span>
             <span class="dhi-label">Nova música</span>
             <span class="dhi-sub">Importar cifra</span>
         </a>
-        <a href="{{ url_for('assinatura_bp.planos') }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-crown"></i></span>
-            <span class="dhi-label">Planos</span>
-            <span class="dhi-sub">Pro · Individual</span>
+        <a href="{{ url_for('cifras.my_library') }}" class="dash-hub-item">
+            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-folder-open"></i></span>
+            <span class="dhi-label">Coleção</span>
+            <span class="dhi-sub">Cifras pessoais</span>
         </a>
         <a href="{{ url_for('studios.search') }}" class="dash-hub-item">
             <span class="dhi-icon" aria-hidden="true"><i class="fas fa-building"></i></span>
             <span class="dhi-label">Estúdios</span>
             <span class="dhi-sub">Reservar sala</span>
         </a>
-        <a href="{{ url_for('assinatura_bp.voucher_indicar') }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-gift"></i></span>
-            <span class="dhi-label">Indicar</span>
-            <span class="dhi-sub">Ganhe 3 meses</span>
-        </a>
-        <a href="{{ url_for('ajuda.index') }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-circle-question"></i></span>
-            <span class="dhi-label">Ajuda</span>
-            <span class="dhi-sub">Como usar</span>
-        </a>
-        {% if hub_band and owned_bands %}
-        <a href="{{ url_for('agenda.create', band_id=hub_band.id, tipo='show', kit=1) }}" class="dash-hub-item">
-            <span class="dhi-icon" aria-hidden="true"><i class="fas fa-star"></i></span>
-            <span class="dhi-label">Novo show</span>
-            <span class="dhi-sub">Comando da noite</span>
-        </a>
-        {% endif %}
     </div>
 </nav>
 <style>
@@ -90,20 +47,13 @@
     flex-wrap: wrap;
     margin-bottom: 0.55rem;
 }
-.dash-hub-hint {
-    font-size: var(--text-xs);
-    color: var(--muted);
-}
 .dash-hub-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem;
 }
-@media (min-width: 576px) {
-    .dash-hub-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@media (min-width: 992px) {
-    .dash-hub-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.65rem; }
+@media (min-width: 768px) {
+    .dash-hub-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.65rem; }
 }
 .dash-hub-item {
     display: flex;

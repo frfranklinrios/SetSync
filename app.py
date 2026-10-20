@@ -49,7 +49,7 @@ from util import (
     highlight_chords_html,
     normalize_tom_label,
 )
-from whatsapp_service import format_whatsapp_display
+from whatsapp_service import format_whatsapp_display, format_whatsapp_wa
 
 app = Flask(__name__)
 env = os.getenv("FLASK_ENV", "development")
@@ -196,6 +196,7 @@ app.jinja_env.filters["datetime_br"] = format_datetime_br
 app.jinja_env.filters["format_event_datetime"] = format_event_datetime
 app.jinja_env.filters["event_relative_label"] = event_relative_label
 app.jinja_env.filters["whatsapp_display"] = format_whatsapp_display
+app.jinja_env.filters["whatsapp_wa"] = format_whatsapp_wa
 
 
 def _faq_to_schema(item: dict) -> dict:
@@ -600,8 +601,7 @@ def dashboard():
 
     user_id = session["user_id"]
     sa = is_superadmin(user_id)
-    if sa and request.args.get("view") != "bands":
-        return redirect(url_for("admin.index"))
+    global_bands_view = bool(sa and request.args.get("view") == "bands")
 
     if not sa and not session.get("impersonator_id"):
         from demo_onboarding import user_needs_first_real_song
@@ -615,7 +615,6 @@ def dashboard():
     needs_activation = user_needs_band_activation(user_id)
     invite_cta = None if sa else get_invite_loop_cta(user_id)
     pending_band_invites = list_pending_invites_for_user(user_id)
-    sa = is_superadmin(user_id)
 
     def _trial_ctx(bands_list):
         from db import count_band_members
@@ -665,7 +664,7 @@ def dashboard():
 
     pending_scale = list_pending_assignments_for_user(user_id)
     pending_scale_admin = list_events_pending_responses_for_editor(user_id)
-    my_studios = enrich_studios_for_dashboard(user_id) if not sa else []
+    my_studios = enrich_studios_for_dashboard(user_id) if not global_bands_view else []
 
     def _enrich_upcoming(events):
         ids = [e["id"] for e in events]
@@ -695,7 +694,7 @@ def dashboard():
             "show_churn_survey": user_should_see_churn_survey(user_id),
         }
 
-    if sa:
+    if global_bands_view:
         all_bands = enrich_bands_plano(enrich_bands_for_display(get_all_bands()))
         owned_bands = enrich_bands_plano(
             enrich_bands_for_display(get_owned_bands(user_id))
@@ -916,14 +915,11 @@ def inject_user():
     unread = count_unread_notifications(user_id) if user_id else 0
     is_studio_primary = bool(user_id and is_studio_primary_user(user_id))
     nav_home_url = url_for("dashboard")
-    if user_id:
-        if _is_superadmin(user_id) and not impersonator_id:
-            nav_home_url = url_for("admin.index")
-        else:
-            studio_home = studio_primary_home_endpoint(user_id)
-            if studio_home:
-                ep, kwargs = studio_home
-                nav_home_url = url_for(ep, **kwargs)
+    if user_id and not _is_superadmin(user_id):
+        studio_home = studio_primary_home_endpoint(user_id)
+        if studio_home:
+            ep, kwargs = studio_home
+            nav_home_url = url_for(ep, **kwargs)
     return dict(
         cifra_display_key=cifra_display_key,
         user_display_name=user_display_name,

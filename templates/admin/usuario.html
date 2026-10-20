@@ -52,7 +52,7 @@
                 <div class="text-muted mb-2">WhatsApp</div>
                 <div class="fw-semibold mb-3">
                     {% if user.phone %}
-                    <a href="https://wa.me/{{ user.phone }}" target="_blank" rel="noopener noreferrer">
+                    <a href="https://wa.me/{{ user.phone|whatsapp_wa }}" target="_blank" rel="noopener noreferrer">
                         {{ user.phone|whatsapp_display }}
                     </a>
                     {% else %}—{% endif %}
@@ -64,11 +64,11 @@
                     {% set wa2 = 'Oi! Vi que você já tem cifra no Uníssono. Abre o Modo Tocar nela no ensaio — é a tela cheia. Qualquer trava, me chama.' %}
                     {% set wa3 = 'Oi! Já tocou no palco. Manda o link no grupo do ensaio — a banda entra no mesmo tom. Te mando o convite se quiser.' %}
                     <a class="btn btn-sm btn-outline-success text-start" target="_blank" rel="noopener"
-                       href="https://wa.me/{{ user.phone }}?text={{ wa1|urlencode }}">WA · qual música?</a>
+                       href="https://wa.me/{{ user.phone|whatsapp_wa }}?text={{ wa1|urlencode }}">WA · qual música?</a>
                     <a class="btn btn-sm btn-outline-success text-start" target="_blank" rel="noopener"
-                       href="https://wa.me/{{ user.phone }}?text={{ wa2|urlencode }}">WA · abrir palco</a>
+                       href="https://wa.me/{{ user.phone|whatsapp_wa }}?text={{ wa2|urlencode }}">WA · abrir palco</a>
                     <a class="btn btn-sm btn-outline-success text-start" target="_blank" rel="noopener"
-                       href="https://wa.me/{{ user.phone }}?text={{ wa3|urlencode }}">WA · chamar banda</a>
+                       href="https://wa.me/{{ user.phone|whatsapp_wa }}?text={{ wa3|urlencode }}">WA · chamar banda</a>
                 </div>
                 {% endif %}
             </div>

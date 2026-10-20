@@ -91,12 +91,12 @@
         {% if can_view_finance %}
         <a href="{{ url_for('bands.finance', band_id=band.id) }}" class="btn btn-outline-primary btn-sm"
            title="Financeiro completo da banda">
-            <i class="fas fa-coins me-1"></i> Financeiro da banda
+            <i class="fas fa-coins me-1"></i> Financeiro
         </a>
         {% endif %}
-        <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}" class="btn btn-primary btn-sm"
+        <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}" class="btn btn-outline-secondary btn-sm"
            title="Seus cachês nesta e nas outras bandas">
-            <i class="fas fa-wallet me-1"></i> Meu financeiro
+            <i class="fas fa-wallet me-1"></i> Meus cachês
         </a>
         {% if is_admin %}
         {% if gorjeta_pronta and gorjeta_public_url %}
@@ -104,14 +104,10 @@
            title="Página pública do QR Pix e pedidos de música">
             <i class="fas fa-qrcode me-1"></i> Gorjeta Pix
         </a>
-        <a href="{{ url_for('bands.settings', band_id=band.id) }}#gorjeta" class="btn btn-outline-success btn-sm"
-           title="Editar chave Pix e opções">
-            <i class="fas fa-sliders-h me-1"></i> Config. gorjeta
-        </a>
         {% else %}
-        <a href="{{ url_for('bands.settings', band_id=band.id) }}#gorjeta" class="btn btn-success btn-sm"
+        <a href="{{ url_for('bands.settings', band_id=band.id) }}#gorjeta" class="btn btn-outline-success btn-sm"
            title="Ativar QR de gorjeta Pix e pedidos de música">
-            <i class="fas fa-qrcode me-1"></i> Ativar gorjeta Pix
+            <i class="fas fa-qrcode me-1"></i> Gorjeta Pix
         </a>
         {% endif %}
         <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
@@ -121,39 +117,7 @@
     </div>
 </div>
 
-{% if is_admin and not gorjeta_pronta %}
-<div class="alert alert-success border small mb-3" role="status">
-    <i class="fas fa-qrcode me-1" aria-hidden="true"></i>
-    <strong>Gorjeta Pix:</strong> cadastre a chave Pix em
-    <a href="{{ url_for('bands.settings', band_id=band.id) }}#gorjeta" class="alert-link">Configurações → Gorjeta Pix</a>
-    para o público pagar no show e pedir música. O dinheiro cai 100% na sua chave.
-</div>
-{% elif is_admin and gorjeta_public_url %}
-<div class="alert alert-light border small mb-3" role="status">
-    <i class="fas fa-qrcode text-success me-1" aria-hidden="true"></i>
-    <strong>Gorjeta ativa:</strong>
-    <a href="{{ gorjeta_public_url }}" target="_blank" rel="noopener">{{ gorjeta_public_url }}</a>
-    · no <strong>Modo Tocar</strong> aparece o total no rodapé ·
-    <a href="{{ url_for('bands.finance', band_id=band.id) }}">ver placar no Financeiro</a>
-</div>
-{% endif %}
-
-<div class="alert alert-light border small mb-3 ux-band-guide" role="note">
-    <i class="fas fa-route text-primary me-1" aria-hidden="true"></i>
-    <strong>Próximo valor:</strong>
-    repertório (Músicas) → roteiro → <strong>Modo Tocar</strong> no ensaio.
-    Use <strong>Agenda</strong> para ensaios.
-    {% if can_view_finance %}
-    <strong>Financeiro da banda</strong> é o caixa completo — só dono/admin (ou liberado).
-    {% else %}
-    Seus valores ficam em <strong>Meu financeiro</strong> (menu do topo).
-    {% endif %}
-    {% if is_admin %}
-    <strong>Gorjeta Pix</strong> fica em Configurações (ou no botão verde acima).
-    {% endif %}
-</div>
-
-<ul class="nav nav-tabs mb-1" id="bandTabs" role="tablist">
+<ul class="nav nav-tabs mb-3" id="bandTabs" role="tablist">
     <li class="nav-item">
         <a class="nav-link active" data-bs-toggle="tab" href="#tab-cifras" id="tab-cifras-btn">
             <i class="fas fa-music me-1"></i> Músicas
@@ -179,7 +143,6 @@
         </a>
     </li>
 </ul>
-<p class="text-muted small mb-3">Toque em cada aba para ver o conteúdo. Os números mostram quantos itens existem.</p>
 
 <div class="tab-content" data-realtime-band="{{ band.id }}">
     <!-- ───────────── CIFRAS ───────────── -->

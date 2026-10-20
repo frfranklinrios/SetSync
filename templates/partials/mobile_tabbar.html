@@ -1,5 +1,5 @@
-{# Barra inferior mobile: as 4 ações core + "+" (adicionar música). Só usuário logado comum. #}
-{% if current_user.is_authenticated and not current_user.is_superadmin and not pdfgen and not is_print_view %}
+{# Barra inferior mobile: as 4 ações core + "+" (adicionar música). #}
+{% if current_user.is_authenticated and not pdfgen and not is_print_view %}
 {% set ep = request.endpoint or '' %}
 <nav class="ss-tabbar d-lg-none" aria-label="Navegação principal">
     <a href="{{ url_for('dashboard') }}" class="ss-tab{% if ep == 'dashboard' %} active{% endif %}">

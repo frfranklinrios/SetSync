@@ -20,6 +20,14 @@
 body:has(.wa-floating-btn) .help-chat-fab {
     bottom: max(4.85rem, calc(env(safe-area-inset-bottom, 0px) + 3.7rem));
 }
+@media (max-width: 991.98px) {
+    body:has(.ss-tabbar) .help-chat-fab {
+        bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px));
+    }
+    body:has(.wa-floating-btn) .help-chat-fab {
+        display: none !important;
+    }
+}
 .help-chat-fab:hover {
     transform: scale(1.05);
     color: #fff;
