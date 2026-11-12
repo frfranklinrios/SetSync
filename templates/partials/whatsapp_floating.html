@@ -1,5 +1,4 @@
-{# Botão flutuante WhatsApp — exibido quando WHATSAPP_NUMBER / SETSYNC_WHATSAPP está configurado #}
-{% if whatsapp_number %}
+{% if whatsapp_number and whatsapp_enabled %}
 <a href="https://wa.me/{{ whatsapp_number }}?text={{ whatsapp_message|urlencode }}"
    class="wa-floating-btn"
    target="_blank"

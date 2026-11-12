@@ -17,6 +17,15 @@
       <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary btn-sm">← Admin</a>
     </div>
 
+    {% if not status.enabled %}
+    <div class="alert alert-secondary py-2 mb-3 small d-flex align-items-center gap-2">
+      <i class="fas fa-pause-circle text-muted fs-5"></i>
+      <div>
+        <strong>WhatsApp desativado no momento:</strong> Nenhuma notificação automática está sendo enviada via WhatsApp. O sistema opera normalmente via e-mail e notificações internas.
+      </div>
+    </div>
+    {% endif %}
+
     <div class="card mb-3">
       <div class="card-body">
         <h3 class="h6 mb-3">Status</h3>
@@ -26,7 +35,7 @@
           </li>
           <li class="mb-2">
             <strong>Notificações:</strong>
-            {% if status.enabled %}ativas{% else %}desativadas{% endif %}
+            {% if status.enabled %}<span class="badge bg-success">ativas</span>{% else %}<span class="badge bg-secondary">desativadas no sistema</span>{% endif %}
           </li>
           {% if not meta_mode %}
           <li class="mb-2">

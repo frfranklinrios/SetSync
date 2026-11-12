@@ -1,137 +1,248 @@
 {% extends "index.html" %}
-{% block title %}Planos — Uníssono{% endblock %}
+{% block title %}Planos & Preços — Uníssono{% endblock %}
 
 {% block content %}
 {% include 'partials/plano_periodo_styles.html' %}
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-1">Planos</h1>
-        <p class="text-muted mb-0">
-            {% if bandas %}
-            <strong>Pro</strong> para a banda ensaiar de verdade — Modo Tocar, setlist, PDF e offline.
-            {% else %}
-            Solo: <strong>Individual R$ 15</strong>. Banda: <strong>Pro R$ 29</strong>.
-            {% endif %}
-        </p>
-        <div class="mt-2">
-            {% with variant='inline' %}
-            {% include 'partials/mercadopago_trust.html' %}
-            {% endwith %}
-        </div>
+
+<style>
+.planos-comercial-header {
+    text-align: center;
+    max-width: 820px;
+    margin: 0 auto 2rem;
+}
+.planos-comercial-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(234, 88, 12, 0.12);
+    color: var(--accent, #ea580c);
+    border: 1px solid rgba(234, 88, 12, 0.25);
+    margin-bottom: 0.85rem;
+}
+[data-theme="dark"] .planos-comercial-badge {
+    background: rgba(45, 212, 191, 0.12);
+    color: #5eead4;
+    border-color: rgba(45, 212, 191, 0.3);
+}
+.planos-garantia-banner {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(20, 184, 166, 0.08));
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.planos-card-pro {
+    border: 2px solid var(--accent, #ea580c) !important;
+    position: relative;
+    box-shadow: 0 10px 25px -5px rgba(234, 88, 12, 0.15), 0 8px 10px -6px rgba(234, 88, 12, 0.1);
+}
+[data-theme="dark"] .planos-card-pro {
+    border-color: #2dd4bf !important;
+    box-shadow: 0 10px 25px -5px rgba(45, 212, 191, 0.15);
+}
+.planos-card-destaque-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent, #ea580c);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.25rem 0.85rem;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    white-space: nowrap;
+}
+[data-theme="dark"] .planos-card-destaque-badge {
+    background: #0d9488;
+    color: #f0fdfa;
+}
+.planos-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+}
+.planos-feature-list li {
+    font-size: var(--text-sm);
+    margin-bottom: 0.55rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    line-height: 1.45;
+}
+.planos-feature-list li i.fa-check {
+    color: #16a34a;
+    font-size: 0.9rem;
+    margin-top: 0.2rem;
+    flex-shrink: 0;
+}
+[data-theme="dark"] .planos-feature-list li i.fa-check {
+    color: #4ade80;
+}
+.planos-trust-strip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem 2rem;
+    font-size: var(--text-sm);
+    color: var(--muted);
+    margin: 1.5rem 0 2.5rem;
+}
+.planos-trust-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.planos-trust-item i {
+    font-size: 1.1rem;
+    color: var(--accent, #ea580c);
+}
+[data-theme="dark"] .planos-trust-item i {
+    color: #2dd4bf;
+}
+.planos-faq-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card-bg, #fff);
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+.planos-faq-card summary {
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: var(--text-base);
+    color: var(--text);
+}
+.planos-faq-card summary:hover {
+    background: var(--bg);
+}
+.planos-faq-content {
+    padding: 0 1.25rem 1rem;
+    font-size: var(--text-sm);
+    color: var(--muted);
+    line-height: 1.6;
+}
+</style>
+
+<div class="planos-comercial-header">
+    <span class="planos-comercial-badge">
+        <i class="fas fa-crown"></i> Invista no ensaio da sua banda
+    </span>
+    <h1 class="display-6 fw-bold mb-2">Escolha o melhor plano para o seu som</h1>
+    <p class="lead text-muted mb-3" style="font-size:1.1rem;">
+        Chega de pastas pesadas, cifras desatualizadas e estresse no WhatsApp.
+        No Uníssono, sua banda ensaia e toca no tom certo com Modo Tocar 100% offline.
+    </p>
+
+    <div class="planos-trust-strip">
+        <span class="planos-trust-item">
+            <i class="fas fa-shield-halved text-success"></i> <strong>7 dias de garantia incondicional</strong>
+        </span>
+        <span class="planos-trust-item">
+            <i class="fas fa-bolt text-warning"></i> <strong>Liberação imediata no Pix</strong> ou Cartão em 12x
+        </span>
+        <span class="planos-trust-item">
+            <i class="fas fa-users-slash text-info"></i> <strong>Apenas 1 pessoa paga na banda</strong>
+        </span>
     </div>
-    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
 </div>
 
 {% if mp_status and not mp_status.pronto_checkout %}
 <div class="alert alert-warning py-2 mb-4 small">
     <i class="fas fa-info-circle me-1"></i>
-    Assinaturas pagas estão temporariamente indisponíveis. Tente novamente mais tarde ou use um voucher.
-</div>
-{% endif %}
-
-{% if bandas %}
-<form class="mb-4" method="get">
-    <label class="form-label">Banda para assinar</label>
-    <select name="banda_id" class="form-select" onchange="this.form.submit()">
-        {% for b in bandas %}
-        <option value="{{ b.id }}" {% if b.id == banda_id %}selected{% endif %}>{{ b.name }}</option>
-        {% endfor %}
-    </select>
-</form>
-{% else %}
-<div class="alert alert-light border d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
-    <div>
-        <strong>Você ainda não tem banda</strong>
-        <p class="small text-muted mb-2 mb-md-0">
-            Grátis: demo + até 3 cifras e 1 abertura do Modo Tocar.
-            <strong>Individual</strong> (R$&nbsp;15/mês) libera solo ilimitado.
-            Ensaio em grupo: crie a banda e assine o <strong>Pro</strong> (R$&nbsp;29/mês).
-        </p>
-    </div>
-    <a href="{{ url_for('assinatura_bp.planos', plano='pro', go=1) }}" class="btn btn-warning btn-sm flex-shrink-0">
-        Assinar Pro — R$ 29
-    </a>
+    Assinaturas pagas estão temporariamente indisponíveis no Mercado Pago. Tente novamente mais tarde ou use um voucher.
 </div>
 {% endif %}
 
 {% if plano_ui and banda_id %}
-<div class="planos-resumo-card mb-4" style="border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;background:var(--bg);">
-    <div class="fw-semibold mb-2" style="font-size: var(--text-base);"><i class="fas fa-tag me-1 text-muted"></i> Plano atual</div>
+<div class="planos-resumo-card mb-4" style="border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;background:var(--bg);">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <div class="fw-semibold" style="font-size: var(--text-base);">
+            <i class="fas fa-crown me-1 text-warning"></i> Sua assinatura ativa
+        </div>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Ir para o Dashboard</a>
+    </div>
     {% with item=plano_ui, hide_action=true %}
     {% include 'partials/plano_periodo_card.html' %}
     {% endwith %}
 </div>
 {% endif %}
 
-<div class="alert alert-dark border-0 mb-4" style="background:linear-gradient(135deg,#1c1917,#292524);color:#fafaf9;">
-    <div class="fw-semibold mb-1"><i class="fas fa-moon me-1" style="color:#fb923c;"></i> Pack Noite pronta — Pro R$ 29/mês</div>
-    <p class="mb-2 small" style="opacity:.9;">
-        Escala + freela + setlist + Modo Tocar + PDF + offline + fechamento de cachê.
-        Tudo que a banda precisa no dia do show, sem planilha e sem zap infinito.
-    </p>
-    <ul class="small mb-3" style="opacity:.85;columns:2;gap:1rem;">
-        <li>Setlists e integrantes ilimitados</li>
-        <li>PDF do ensaio e pack offline</li>
-        <li>Freelas e Comando do show</li>
-        <li>Financeiro da banda (caixa + PDF)</li>
-    </ul>
-    {% if banda_id %}
-    <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}" class="js-checkout-form d-inline">
-        {% include 'partials/csrf_input.html' %}
-        <input type="hidden" name="banda_id" value="{{ banda_id }}">
-        <input type="hidden" name="billing_period" value="monthly">
-        <button type="submit" class="btn btn-warning btn-sm"
-                {% if mp_status and not mp_status.pronto_checkout %}disabled{% endif %}>
-            Assinar Noite pronta — R$ 29
-        </button>
+{% if bandas %}
+<div class="card mb-4 p-3 border-0" style="background:var(--bg);border-radius:10px;">
+    <form class="d-flex align-items-center gap-3 flex-wrap" method="get">
+        <label class="form-label mb-0 fw-bold"><i class="fas fa-music me-1 text-muted"></i> Selecione a banda que vai assinar:</label>
+        <select name="banda_id" class="form-select form-select-sm" style="max-width:280px;" onchange="this.form.submit()">
+            {% for b in bandas %}
+            <option value="{{ b.id }}" {% if b.id == banda_id %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+        </select>
+        <span class="small text-muted">Ao assinar, <strong>todos os integrantes</strong> da banda ganham acesso Pro automaticamente.</span>
     </form>
-    {% else %}
-    <a href="{{ url_for('assinatura_bp.planos', plano='pro', go=1) }}" class="btn btn-warning btn-sm">
-        Assinar Noite pronta — R$ 29
-    </a>
-    {% endif %}
 </div>
-
-<div class="row g-3 mb-3 align-items-stretch">
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body d-flex flex-column">
-                <h2 class="h5">Grátis</h2>
-                <p class="display-6 fw-bold mb-1">R$ 0</p>
-                <p class="small text-muted">Demo + solo raso</p>
-                <ul class="small text-muted mb-0">
-                    <li>Até 3 cifras reais na coleção</li>
-                    <li>1 abertura do Modo Tocar</li>
-                    <li>1 evento · 1 freela · 1 fechamento de cachê</li>
-                    <li>Banda: 3 músicas · 2 pessoas · sem setlist</li>
-                </ul>
-            </div>
-        </div>
+{% else %}
+<div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 p-3" style="border-radius:10px;">
+    <div>
+        <strong><i class="fas fa-info-circle text-primary me-1"></i> Você ainda não cadastrou sua banda?</strong>
+        <p class="small text-muted mb-0">
+            Não se preocupe: ao escolher o plano <strong>Pro</strong> ou <strong>Worship</strong> abaixo, nosso checkout cria a sua banda automaticamente no mesmo instante.
+        </p>
     </div>
-    <div class="col-md-4">
-        <div class="card h-100 {% if not bandas %}border-primary shadow-sm{% else %}border-secondary{% endif %} position-relative js-plan-card"
+    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+        <i class="fas fa-check me-1"></i> Setup automático no checkout
+    </span>
+</div>
+{% endif %}
+
+<!-- TRIO DE PLANOS COMERCIAIS -->
+<div class="row g-4 mb-4 align-items-stretch">
+    <!-- PLANO INDIVIDUAL -->
+    <div class="col-lg-4">
+        <div class="card h-100 js-plan-card border"
              data-monthly-label="R$ 15/mês"
              data-annual-label="R$ 12/mês"
              data-annual-hint="Cobrado R$ 149/ano · economize R$ 31">
-            {% if not bandas %}
-            <span class="badge text-bg-primary position-absolute top-0 start-50 translate-middle">Para quem toca só</span>
-            {% endif %}
-            <div class="card-body d-flex flex-column{% if not bandas %} pt-4{% endif %}">
-                <h2 class="h5">Individual</h2>
-                <p class="display-6 fw-bold mb-1 js-plan-price">R$ 15<small class="fs-6 text-muted">/mês</small></p>
-                <p class="small js-plan-hint text-muted mb-2">Solo · PDF · compartilhar</p>
-                <ul class="small mb-3">
-                    <li>Repertório ilimitado (1 integrante)</li>
-                    <li>Exportar PDF e compartilhar cifras</li>
-                    <li>{% if bandas %}1 banda só sua{% else %}Cria sua banda solo no checkout{% endif %}</li>
+            <div class="card-body d-flex flex-column p-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h2 class="h4 mb-0 fw-bold">Individual</h2>
+                    <span class="badge bg-secondary-subtle text-secondary border">Músicos Solo</span>
+                </div>
+                <p class="text-muted small mb-3">Ideal para quem toca sozinho em barzinho, igreja, eventos ou estudos.</p>
+                <div class="mb-3">
+                    <p class="display-6 fw-bold mb-0 js-plan-price">R$ 15<small class="fs-6 text-muted">/mês</small></p>
+                    <p class="small js-plan-hint text-muted mb-0">Repertório solo completo</p>
+                </div>
+
+                <ul class="planos-feature-list mb-4">
+                    <li><i class="fas fa-check"></i> <strong>Repertório solo ilimitado</strong> (todas as suas cifras)</li>
+                    <li><i class="fas fa-check"></i> <strong>Modo Tocar completo</strong> com transposição de tom</li>
+                    <li><i class="fas fa-check"></i> <strong>Exportação em PDF</strong> profissional para imprimir</li>
+                    <li><i class="fas fa-check"></i> <strong>Modo Offline</strong> no celular ou tablet</li>
+                    <li><i class="fas fa-check"></i> 1 banda individual exclusiva para seus shows solo</li>
                 </ul>
+
                 <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='individual') }}" class="js-checkout-form mt-auto">
                     {% include 'partials/csrf_input.html' %}
                     {% if banda_id %}
                     <input type="hidden" name="banda_id" value="{{ banda_id }}">
                     {% endif %}
                     {% include 'partials/billing_period_toggle.html' %}
-                    <button type="submit" class="btn {% if not bandas %}btn-primary{% else %}btn-outline-primary{% endif %} w-100"
+                    <button type="submit" class="btn btn-outline-primary btn-lg w-100 fw-semibold"
                             {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
                         Assinar Individual
                     </button>
@@ -139,138 +250,261 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card h-100 {% if bandas %}border-primary shadow-sm{% else %}border-secondary{% endif %} position-relative js-plan-card"
+
+    <!-- PLANO PRO (DESTAQUE / RECOMENDADO) -->
+    <div class="col-lg-4">
+        <div class="card h-100 js-plan-card planos-card-pro"
              data-monthly-label="R$ 29/mês"
              data-annual-label="R$ 21/mês"
-             data-annual-hint="Cobrado R$ 249/ano · 2 meses grátis">
-            {% if bandas %}
-            <span class="badge text-bg-primary position-absolute top-0 start-50 translate-middle">Recomendado</span>
-            {% endif %}
-            <div class="card-body d-flex flex-column{% if bandas %} pt-4{% endif %}">
-                <h2 class="h5">Pro</h2>
-                <p class="display-6 fw-bold mb-1 js-plan-price">R$ 29<small class="fs-6 text-muted">/mês</small></p>
-                <p class="small js-plan-hint text-muted mb-2">Por banda · sem limites · PDF</p>
-                <ul class="small mb-3">
-                    <li>Modo Tocar da banda e setlist de ensaio</li>
-                    <li>PDF + offline no palco</li>
-                    <li>Músicas e integrantes ilimitados</li>
+             data-annual-hint="Cobrado R$ 249/ano · 2 meses grátis (Economize R$ 99)">
+            <span class="planos-card-destaque-badge">
+                <i class="fas fa-fire me-1"></i> Mais Vendido · Recomendado
+            </span>
+            <div class="card-body d-flex flex-column p-4 pt-4">
+                <div class="d-flex align-items-center justify-content-between mb-2 mt-2">
+                    <h2 class="h4 mb-0 fw-bold">Pro</h2>
+                    <span class="badge bg-warning text-dark fw-bold">Banda Completa</span>
+                </div>
+                <p class="text-muted small mb-3">Tudo que a banda precisa para ensaiar e fazer shows memoráveis sem papel.</p>
+                <div class="mb-3">
+                    <p class="display-6 fw-bold mb-0 js-plan-price text-warning-emphasis">R$ 29<small class="fs-6 text-muted">/mês</small></p>
+                    <p class="small js-plan-hint text-muted mb-0">1 assinatura cobre todos os integrantes da banda</p>
+                </div>
+
+                <ul class="planos-feature-list mb-4">
+                    <li><i class="fas fa-check"></i> <strong>Integrantes e músicos ilimitados</strong> (ninguém mais paga)</li>
+                    <li><i class="fas fa-check"></i> <strong>Modo Tocar de Palco</strong> (auto-scroll, pedais e diapasão)</li>
+                    <li><i class="fas fa-check"></i> <strong>100% Offline no Palco</strong> (funciona sem sinal de internet)</li>
+                    <li><i class="fas fa-check"></i> <strong>Setlists com tom por cantor</strong> e troca rápida</li>
+                    <li><i class="fas fa-check"></i> <strong>Exportação de PDF do ensaio</strong> em alta qualidade</li>
+                    <li><i class="fas fa-check"></i> <strong>Escalação de membros e freelas</strong> com confirmação</li>
+                    <li><i class="fas fa-check"></i> <strong>Fechamento de Cachê da Noite</strong> (financeiro da banda)</li>
                 </ul>
-                {% if banda_id %}
+
                 <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}" class="js-checkout-form mt-auto">
                     {% include 'partials/csrf_input.html' %}
+                    {% if banda_id %}
                     <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    {% endif %}
                     {% include 'partials/billing_period_toggle.html' %}
-                    <button type="submit" class="btn btn-primary w-100"
+                    <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold text-dark shadow-sm"
                             {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
-                        Assinar Pro — R$ 29
+                        <i class="fas fa-bolt me-1"></i> Assinar Pro — R$ 29
                     </button>
                 </form>
-                {% else %}
-                <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='pro') }}" class="js-checkout-form mt-auto">
-                    {% include 'partials/csrf_input.html' %}
-                    {% include 'partials/billing_period_toggle.html' %}
-                    <button type="submit" class="btn btn-primary w-100"
-                            {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
-                        Assinar Pro — R$ 29
-                    </button>
-                </form>
-                <p class="small text-muted mt-2 mb-0">Sem banda? O checkout cria uma banda solo para você.</p>
-                {% endif %}
+                <p class="small text-center text-muted mt-2 mb-0">
+                    <i class="fas fa-lock me-1"></i> Garantia de 7 dias ou seu dinheiro de volta
+                </p>
             </div>
         </div>
     </div>
-</div>
 
-<details class="mb-4">
-    <summary class="text-muted" style="cursor:pointer;font-size:var(--text-sm);">Igreja (Worship), estúdio ou voucher?</summary>
-    <div class="row g-3 mt-2 align-items-stretch">
-    <div class="col-md-6">
-        <div class="card h-100 js-plan-card"
+    <!-- PLANO WORSHIP (IGREJAS) -->
+    <div class="col-lg-4">
+        <div class="card h-100 js-plan-card border"
              data-monthly-label="R$ 69/mês"
              data-annual-label="R$ 50/mês"
-             data-annual-hint="Cobrado R$ 599/ano · vs 3× Pro = R$ 87/mês">
-            <div class="card-body d-flex flex-column">
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <h2 class="h5 mb-0">Worship</h2>
-                    <span class="badge bg-warning-subtle text-dark border">Igrejas</span>
+             data-annual-hint="Cobrado R$ 599/ano · economize R$ 229 vs mensal">
+            <div class="card-body d-flex flex-column p-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h2 class="h4 mb-0 fw-bold">Worship</h2>
+                    <span class="badge bg-primary-subtle text-primary border">Igrejas & Ministérios</span>
                 </div>
-                <p class="display-6 fw-bold mb-1 js-plan-price">R$ 69<small class="fs-6 text-muted">/mês</small></p>
-                <p class="small js-plan-hint text-muted mb-2">Várias bandas · músicos não pagam</p>
-                <ul class="small mb-2">
-                    <li>Uma conta pastoral, vários ministérios</li>
-                    <li>Mais barato que 3× Pro (R$ 87)</li>
+                <p class="text-muted small mb-3">Uma conta institucional para gerenciar todas as equipes e cultos da igreja.</p>
+                <div class="mb-3">
+                    <p class="display-6 fw-bold mb-0 js-plan-price">R$ 69<small class="fs-6 text-muted">/mês</small></p>
+                    <p class="small js-plan-hint text-muted mb-0">Múltiplos ministérios de louvor</p>
+                </div>
+
+                <ul class="planos-feature-list mb-4">
+                    <li><i class="fas fa-check"></i> <strong>Múltiplos ministérios/bandas</strong> sob a mesma conta</li>
+                    <li><i class="fas fa-check"></i> <strong>Todos os músicos da igreja inclusos</strong> sem taxas extras</li>
+                    <li><i class="fas fa-check"></i> <strong>Repertório central da igreja</strong> com tom por ministro</li>
+                    <li><i class="fas fa-check"></i> <strong>Culto dos Jovens, Domingo, Terça, etc.</strong> em bandas separadas</li>
+                    <li><i class="fas fa-check"></i> <strong>Todos os recursos Pro</strong> em todos os ministérios</li>
+                    <li><i class="fas fa-check"></i> Economia gigante vs pagar bandas avulsas (3× Pro seria R$ 87)</li>
                 </ul>
-                <p class="small mb-3"><a href="{{ url_for('assinatura_bp.igrejas') }}">Por que igrejas escolhem Worship →</a></p>
-                {% if banda_id %}
+
                 <form method="post" action="{{ url_for('assinatura_bp.iniciar', plano='worship') }}" class="js-checkout-form mt-auto">
                     {% include 'partials/csrf_input.html' %}
+                    {% if banda_id %}
                     <input type="hidden" name="banda_id" value="{{ banda_id }}">
+                    {% endif %}
                     {% include 'partials/billing_period_toggle.html' %}
-                    <button type="submit" class="btn btn-outline-primary w-100"
+                    <button type="submit" class="btn btn-outline-primary btn-lg w-100 fw-semibold"
                             {% if mp_status and not mp_status.pronto_checkout %}disabled title="Indisponível no momento"{% endif %}>
                         Assinar Worship — R$ 69
                     </button>
                 </form>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="h5">Estúdios</h2>
-                <p class="small text-muted mb-2">Salas, reservas e financeiro — plano separado do produto de banda.</p>
-                <a href="{{ url_for('studios.landing') }}" class="btn btn-outline-secondary btn-sm">Ver Uníssono para Estúdios</a>
-            </div>
-        </div>
-    </div>
-    </div>
-
-    {% include 'partials/mercadopago_trust.html' %}
-
-    <div class="mt-3 mb-2">
-    {% if studio_plano_ui %}
-    <div class="planos-resumo-card mb-3" style="border:1px solid var(--border);border-radius:10px;padding:0.85rem 1rem;background:var(--bg);">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            {% if studio_plano_ui.logo %}
-            <img src="{{ url_for('static', filename=studio_plano_ui.logo) }}" alt="" width="40" height="40" style="border-radius:8px;">
-            {% endif %}
-            <div>
-                <span class="small text-muted">Seu plano estúdio</span>
-                <div class="fw-semibold">{{ studio_plano_ui.label }}
-                    <span class="badge bg-{{ studio_plano_ui.badge }}">{{ studio_plano_ui.label_curto }}</span>
+                <div class="text-center mt-2">
+                    <a href="{{ url_for('assinatura_bp.igrejas') }}" class="small text-decoration-none">
+                        Saiba mais sobre a solução para Igrejas →
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-    {% include 'partials/planos_estudio_cards.html' %}
-    {% endif %}
-    </div>
+</div>
 
-    <div class="card mt-3">
-        <div class="card-body">
-            <h3 class="h6">Tem um voucher?</h3>
-            <p class="small text-muted mb-2">
-                Vouchers de <strong>banda</strong> aplicam no plano da banda selecionada acima.
-                {% if tem_estudio %}
-                Vouchers de <strong>estúdio</strong> ativam Premium na sua conta de estúdio.
-                {% else %}
-                Para vouchers de estúdio, <a href="{{ url_for('studios.landing') }}">cadastre um estúdio</a> primeiro.
-                {% endif %}
-            </p>
-            <div class="input-group">
-            <input type="text" id="voucher-codigo" class="form-control" placeholder="Digite o código aqui" autocomplete="off">
-            <button type="button" class="btn btn-success" id="voucher-resgatar-btn">Resgatar</button>
+<!-- SELO MERCADO PAGO E SEGURANÇA -->
+<div class="planos-garantia-banner">
+    <div class="d-flex align-items-center gap-3">
+        <div style="font-size: 2.2rem; color: #16a34a;">
+            <i class="fas fa-shield-heart"></i>
         </div>
-        <div id="voucher-toast" class="mt-2 small" role="status"></div>
+        <div>
+            <h3 class="h5 fw-bold mb-1">Garantia Blindada de 7 Dias</h3>
+            <p class="small text-muted mb-0">
+                Assine, teste no ensaio do fim de semana. Se você ou seus músicos acharem que não valeu cada centavo,
+                basta solicitar o cancelamento e devolvemos 100% do seu dinheiro. Sem perguntas e sem letras miúdas.
+            </p>
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        {% with variant='inline' %}
+        {% include 'partials/mercadopago_trust.html' %}
+        {% endwith %}
     </div>
 </div>
+
+<!-- SEÇÃO POR QUE VALE CADA CENTAVO -->
+<div class="card mb-4 border-0" style="background:var(--bg);border-radius:12px;padding:2rem 1.5rem;">
+    <h2 class="h4 text-center fw-bold mb-3">Por que o Uníssono Pro se paga no 1º ensaio?</h2>
+    <div class="row g-3 mt-1">
+        <div class="col-md-3">
+            <div class="p-3 bg-white rounded-3 h-100 border" style="background:var(--card-bg, #fff);">
+                <div class="text-primary mb-2" style="font-size:1.5rem;"><i class="fas fa-eye-slash"></i></div>
+                <h3 class="h6 fw-bold">Chega de perder tempo afinando tom</h3>
+                <p class="small text-muted mb-0">Cada cantor no seu tom certo salvo no setlist. Sem parar o ensaio para transpor acordes de cabeça.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-white rounded-3 h-100 border" style="background:var(--card-bg, #fff);">
+                <div class="text-warning mb-2" style="font-size:1.5rem;"><i class="fas fa-wifi"></i></div>
+                <h3 class="h6 fw-bold">Zero pânico de Wi-Fi no palco</h3>
+                <p class="small text-muted mb-0">O Modo Tocar roda direto no navegador mesmo em modo avião ou sem internet no porão do pub.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-white rounded-3 h-100 border" style="background:var(--card-bg, #fff);">
+                <div class="text-success mb-2" style="font-size:1.5rem;"><i class="fas fa-shoe-prints"></i></div>
+                <h3 class="h6 fw-bold">Mãos 100% no instrumento</h3>
+                <p class="small text-muted mb-0">Auto-scroll inteligente, pedais Bluetooth AirTurn/PageFlip e atalhos rápidos de teclado.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-white rounded-3 h-100 border" style="background:var(--card-bg, #fff);">
+                <div class="text-danger mb-2" style="font-size:1.5rem;"><i class="fas fa-hand-holding-dollar"></i></div>
+                <h3 class="h6 fw-bold">Fechamento justo de cachê</h3>
+                <p class="small text-muted mb-0">Rateio automático de portaria e cachê com PDF assinado para evitar qualquer mal-entendido.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DEPOIMENTOS REAIS (PROVA SOCIAL) -->
+{% if testimonials %}
+<div class="mb-4">
+    <div class="text-center mb-3">
+        <h2 class="h4 fw-bold mb-1">Quem ensaia com o Uníssono recomenda</h2>
+        <p class="text-muted small">Músicos e líderes que abandonaram papel e bagunça no ensaio.</p>
+    </div>
+    <div class="row g-3">
+        {% for t in testimonials[:3] %}
+        <div class="col-md-4">
+            <div class="card h-100 p-3 border">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div style="width:36px;height:36px;border-radius:50%;background:var(--accent,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                        {{ t.nome[:1] }}
+                    </div>
+                    <div>
+                        <div class="fw-bold small">{{ t.nome }}</div>
+                        <div class="text-muted" style="font-size:var(--text-xs);">{{ t.descricao }}{% if t.cidade %} · {{ t.cidade }}{% endif %}</div>
+                    </div>
+                </div>
+                <div class="text-warning small mb-2">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+                <p class="small text-muted mb-0 fst-italic">"{{ t.texto }}"</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- FAQ DE CONVERSÃO -->
+<div class="mb-4">
+    <h2 class="h4 text-center fw-bold mb-3">Perguntas Frequentes</h2>
+    <div style="max-width:760px;margin:0 auto;">
+        <details class="planos-faq-card" open>
+            <summary>Todos os membros da banda precisam pagar a assinatura?</summary>
+            <div class="planos-faq-content">
+                <strong>Não!</strong> Apenas uma pessoa assina o plano <strong>Pro</strong> (ou o líder assina o <strong>Worship</strong>).
+                Todos os outros músicos, cantores e convidados da banda usam o sistema 100% de graça, acessando as cifras, o Modo Tocar e as setlists no celular ou tablet.
+            </div>
+        </details>
+        <details class="planos-faq-card">
+            <summary>Como funciona o pagamento por Pix? É liberado na hora?</summary>
+            <div class="planos-faq-content">
+                Sim! Ao escolher Pix, o Mercado Pago gera o QR Code / Copia e Cola na hora. Assim que o pagamento é concluído no app do seu banco, o sistema reconhece a transação e libera o acesso Pro imediatamente.
+            </div>
+        </details>
+        <details class="planos-faq-card">
+            <summary>E se não tiver internet no local do ensaio ou no palco?</summary>
+            <div class="planos-faq-content">
+                O Modo Tocar e as setlists do Uníssono foram construídos com tecnologia Progressive Web App (PWA) e funcionam <strong>100% offline</strong>. Você pode abrir as músicas mesmo sem conexão, sem se preocupar com sinal caindo durante o show.
+            </div>
+        </details>
+        <details class="planos-faq-card">
+            <summary>Posso cancelar quando quiser? Tem multa ou fidelidade?</summary>
+            <div class="planos-faq-content">
+                Zero fidelidade e zero burocracia. Você pode cancelar sua assinatura com apenas um clique a qualquer momento no seu painel. Se estiver dentro dos 7 primeiros dias, você ainda recebe 100% do seu dinheiro de volta.
+            </div>
+        </details>
+        <details class="planos-faq-card">
+            <summary>Qual a diferença entre o Pro e o Worship?</summary>
+            <div class="planos-faq-content">
+                O plano <strong>Pro</strong> é por banda (uma banda com todos os seus membros). O plano <strong>Worship</strong> foi feito sob medida para igrejas que têm múltiplos ministérios (louvor principal, jovens, adolescentes, cultos de oração), permitindo gerenciar todas essas bandas sob uma única conta com custo muito menor que pagar assinaturas separadas.
+            </div>
+        </details>
+    </div>
+</div>
+
+<!-- OPÇÕES SECUNDÁRIAS (VOUCHERS E ESTÚDIOS) -->
+<details class="mb-4">
+    <summary class="text-muted text-center" style="cursor:pointer;font-size:var(--text-sm);">
+        <i class="fas fa-ticket me-1"></i> Tem um cupom de desconto / voucher ou é dono de estúdio?
+    </summary>
+    <div class="row g-3 mt-3 align-items-stretch" style="max-width:800px;margin:0 auto;">
+        <div class="col-md-6">
+            <div class="card h-100 p-3">
+                <h3 class="h6 fw-bold mb-1"><i class="fas fa-ticket me-1 text-success"></i> Resgatar Voucher</h3>
+                <p class="small text-muted mb-2">Digite o código promocional recebido para ativar meses Pro ou Premium.</p>
+                <div class="input-group input-group-sm">
+                    <input type="text" id="voucher-codigo" class="form-control" placeholder="Ex: PRO3MESES" autocomplete="off">
+                    <button type="button" class="btn btn-success" id="voucher-resgatar-btn">Resgatar</button>
+                </div>
+                <div id="voucher-toast" class="mt-2 small" role="status"></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100 p-3">
+                <h3 class="h6 fw-bold mb-1"><i class="fas fa-door-open me-1 text-primary"></i> Para Estúdios de Ensaio</h3>
+                <p class="small text-muted mb-2">Gerencie salas, horários de ensaio e financeiro do seu estúdio de música.</p>
+                <a href="{{ url_for('studios.landing') }}" class="btn btn-outline-secondary btn-sm mt-auto">
+                    Conhecer Uníssono para Estúdios →
+                </a>
+            </div>
+        </div>
+    </div>
 </details>
 
-<p class="mt-3 small">
-    <a href="{{ url_for('assinatura_bp.voucher_indicar') }}">Indique uma banda ou o estúdio e ganhe 3 meses Pro</a>
-</p>
+<div class="text-center mt-3 small text-muted">
+    <a href="{{ url_for('assinatura_bp.voucher_indicar') }}" class="text-muted text-decoration-none">
+        <i class="fas fa-share-nodes me-1"></i> Indique uma banda amiga e ganhe <strong>3 meses Pro grátis</strong>
+    </a>
+</div>
 {% endblock %}
 
 {% block scripts %}

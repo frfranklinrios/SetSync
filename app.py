@@ -358,7 +358,7 @@ def index():
         return redirect(url_for("dashboard"))
     from cifras_tool.api_cifras_client import get_api_cifras_public_stats
     from db import count_bands, count_cifras, count_setlists, list_testimonials
-    from monetizacao import planos_estudio_para_site
+    from monetizacao import planos_estudio_para_site, planos_para_site
 
     stats = {
         "bandas": count_bands(),
@@ -371,6 +371,7 @@ def index():
 
     return render_template(
         "home.html",
+        planos_site=planos_para_site(),
         planos_estudio=planos_estudio_para_site(),
         stats=stats,
         testimonials=list_testimonials(active_only=True),
@@ -874,6 +875,7 @@ def inject_site_config():
 
     from branding import APP_NAME, APP_NAME_FULL, APP_NAME_SHORT, APP_TAGLINE
     from seo_pages import faq_entries as _faq_entries
+    from whatsapp_config import whatsapp_notifications_enabled as _wa_enabled
 
     ep = _request.endpoint if _request else None
     site_url = _external_url_for("index")
@@ -885,6 +887,7 @@ def inject_site_config():
         faq_entries=_faq_entries(),
         whatsapp_number=whatsapp_number(),
         whatsapp_message=whatsapp_message(),
+        whatsapp_enabled=_wa_enabled(),
         webmail_url=mail_inbox_url,
         mail_inbox_url=mail_inbox_url,
         external_url_for=_external_url_for,
@@ -914,6 +917,9 @@ def inject_user():
 
     unread = count_unread_notifications(user_id) if user_id else 0
     is_studio_primary = bool(user_id and is_studio_primary_user(user_id))
+    from monetizacao import user_tem_assinatura_ativa
+
+    has_pro = bool(user_id and user_tem_assinatura_ativa(user_id))
     nav_home_url = url_for("dashboard")
     if user_id and not _is_superadmin(user_id):
         studio_home = studio_primary_home_endpoint(user_id)
@@ -927,6 +933,7 @@ def inject_user():
         notifications_unread=unread,
         is_studio_primary=is_studio_primary,
         nav_home_url=nav_home_url,
+        user_has_pro=has_pro,
         loja_url=(os.getenv("LOJA_PUBLIC_URL") or "https://loja.unissono.app").rstrip(
             "/"
         ),
@@ -948,6 +955,7 @@ def inject_user():
                 user_id and _is_superadmin(user_id) and not impersonator_id
             ),
             "is_impersonating": bool(impersonator_id),
+            "has_pro": has_pro,
         },
         cifras_import_tool_url=cifras_import_tool_url,
     )

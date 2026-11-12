@@ -520,14 +520,27 @@
                                     <div class="ss-notif-empty">Carregando…</div>
                                 </div>
                             </div>
+                        {% if not user_has_pro %}
+                        <li class="nav-item d-none d-sm-inline-block me-1">
+                            <a class="btn btn-warning btn-sm fw-semibold text-dark px-2 py-1 shadow-sm d-inline-flex align-items-center gap-1"
+                               href="{{ url_for('assinatura_bp.planos') }}"
+                               title="Liberar Modo Tocar, setlists e PDF ilimitados para sua banda">
+                                <i class="fas fa-crown text-dark"></i>
+                                <span>Assinar Pro</span>
+                            </a>
                         </li>
+                        {% endif %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle d-inline-flex align-items-center gap-1" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                {% if user_has_pro %}<i class="fas fa-crown text-warning me-1" title="Assinante Pro"></i>{% endif %}
                                 {{ current_user.name }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li class="dropdown-header text-muted" style="font-size:var(--text-sm);">
                                     @{{ current_user.username }}
+                                    {% if user_has_pro %}
+                                    <span class="badge bg-warning text-dark ms-1" style="font-size:var(--text-xs);"><i class="fas fa-crown"></i> Pro</span>
+                                    {% endif %}
                                     {% if current_user.is_superadmin %}
                                     <span class="badge bg-primary ms-1" style="font-size:var(--text-xs);">sistema</span>
                                     {% endif %}
@@ -539,8 +552,9 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ url_for('assinatura_bp.planos') }}">
-                                        <i class="fas fa-star me-1"></i> Planos e assinatura
+                                    <a class="dropdown-item {% if not user_has_pro %}fw-semibold text-warning-emphasis{% endif %}" href="{{ url_for('assinatura_bp.planos') }}">
+                                        <i class="fas fa-crown me-1 text-warning"></i>
+                                        {% if user_has_pro %}Minha assinatura Pro{% else %}Assinar Pro (2 meses grátis){% endif %}
                                     </a>
                                 </li>
                                 {% if current_user.is_superadmin and mail_inbox_url %}

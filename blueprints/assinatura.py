@@ -175,6 +175,9 @@ def planos():
     from models_studio import list_studios_by_owner
 
     tem_estudio = bool(list_studios_by_owner(user_id))
+    from db import list_testimonials
+
+    testimonials = list_testimonials(active_only=True)
     return render_template(
         "assinatura/planos.html",
         planos=PLANOS,
@@ -186,6 +189,7 @@ def planos():
         assinatura=assinatura.to_dict() if assinatura else None,
         plano_ui=plano_ui,
         mp_status=mp_status,
+        testimonials=testimonials,
     )
 
 
@@ -199,18 +203,15 @@ def iniciar(plano):
 
     banda_id = request.form.get("banda_id", "").strip()
     band = _banda_do_usuario(banda_id, session["user_id"]) if banda_id else None
-    # Individual / Pro: sem banda, cria automaticamente para o checkout.
+    # Individual / Pro / Worship: sem banda, cria automaticamente para o checkout.
     if not band and plano == PLANO_INDIVIDUAL:
         band = _ensure_banda_para_individual(session["user_id"])
         banda_id = (band or {}).get("id") or ""
-    if not band and plano == PLANO_PRO:
+    if not band and plano in (PLANO_PRO, PLANO_WORSHIP):
         band = _ensure_banda_para_pro(session["user_id"])
         banda_id = (band or {}).get("id") or ""
     if not band:
-        if plano in (PLANO_INDIVIDUAL, PLANO_PRO):
-            flash("Não foi possível preparar sua banda. Tente de novo.", "danger")
-        else:
-            flash("Selecione uma banda da qual você é dona/dono", "danger")
+        flash("Não foi possível preparar sua banda para o checkout. Tente de novo.", "danger")
         return redirect(url_for("assinatura_bp.planos"))
 
     email = _user_email(session["user_id"])

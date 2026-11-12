@@ -35,7 +35,7 @@ def whatsapp_template_name() -> str:
 
 
 def whatsapp_notifications_enabled() -> bool:
-    return os.getenv("WHATSAPP_NOTIFICATIONS_ENABLED", "1").lower() in (
+    return os.getenv("WHATSAPP_NOTIFICATIONS_ENABLED", "0").lower() in (
         "1",
         "true",
         "yes",

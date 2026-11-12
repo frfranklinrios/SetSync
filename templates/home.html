@@ -851,31 +851,19 @@
     <h2>Pronto para o próximo ensaio?</h2>
     <p>Crie a conta grátis, sinta o Modo Tocar — e assine o Pro quando for ensaiar de verdade.</p>
     <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2 mb-2">Criar conta grátis</a>
-    <a href="{{ url_for('assinatura_bp.bandas') }}#planos" class="btn btn-outline-secondary btn-lg mb-2">Ver planos</a>
+    <a href="#planos" class="btn btn-outline-secondary btn-lg mb-2">Ver planos & preços</a>
 </section>
 
-<section class="home-section home-planos" id="planos-solo">
+<section class="home-section home-planos" id="planos">
     <div class="home-planos-inner">
-        <h2 class="text-center mb-2">Toca sozinho?</h2>
-        <p class="section-sub text-center mb-4">
-            Coleção + Modo Tocar são grátis. PDF e compartilhar saem no <strong>Individual</strong> por R$&nbsp;15/mês —
-            sem montar banda de ensaio.
+        <h2 class="text-center mb-1">Planos & Preços Uníssono</h2>
+        <p class="section-sub text-center mx-auto mb-4" style="max-width: 42rem;">
+            Do músico solo à banda completa e ministérios de louvor. 7 dias de garantia incondicional e liberação imediata via Pix ou Cartão.
         </p>
-        <div class="planos-publicos-grid" style="max-width:420px;margin:0 auto;">
-            <article style="border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.35rem;background:var(--card,#fff);">
-                <h3 class="h5 mb-1">Individual</h3>
-                <p class="mb-2" style="font-size:1.75rem;font-weight:700;line-height:1;">R$ 15<small style="font-size:0.95rem;font-weight:500;color:var(--muted);">/mês</small></p>
-                <ul class="mb-3" style="font-size:var(--text-sm);padding-left:1.1rem;">
-                    <li>Compartilhar cifras</li>
-                    <li>Exportar PDF</li>
-                    <li>1 banda solo (checkout cria pra você)</li>
-                </ul>
-                <a href="{{ url_for('assinatura_bp.planos') }}" class="btn btn-primary w-100">Ver Individual</a>
-            </article>
-        </div>
-        <p class="home-planos-note">Banda completa? <a href="{{ url_for('assinatura_bp.bandas') }}#planos">Pro R$ 29</a> · Igreja:
-            <a href="{{ url_for('assinatura_bp.igrejas') }}">Worship</a> · Comparar
-            <a href="{{ url_for('guia.comparativo', slug='ipraise') }}">vs iPraise</a></p>
+        {% include 'partials/planos_publicos.html' %}
+        <p class="home-planos-note mt-3">
+            Igrejas com múltiplos ministérios? <a href="{{ url_for('assinatura_bp.igrejas') }}">Conheça a solução Worship</a> · Estúdios de ensaio? <a href="{{ url_for('studios.landing') }}">Uníssono para Estúdios</a>
+        </p>
     </div>
 </section>
 {% endblock %}

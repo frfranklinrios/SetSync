@@ -2,12 +2,21 @@
 
 ## 2026-11-12
 
-### Otimizações, Tecnologias e Novas Features de Palco
-- **Diapasão Acústico de Referência (Pitch Pipe)**: Síntese de fundamental e harmônicos via Web Audio API nativo com envelope sonoro suave ao tocar no badge do Tom (ou atalho `O`).
-- **Suporte Total a Pedais Bluetooth**: Assistente `#play-pedal-wizard` e captura de teclas personalizadas no Modo Tocar com carregamento dos módulos de pedal e suporte a PageFlip, AirTurn, Donner e Lekato.
-- **Otimização de Inicialização e Resiliência**: Verificação de status da Evolution API com timeout cirúrgico não-bloqueante (1.5s/2.5s), reduzindo tempo de subida e execução de suítes de testes em mais de 50%.
-- **Padronização de Dependências (uv)**: Sincronização e integração completa de pacotes no `pyproject.toml` (ruff, pytest, flask-wtf, psycopg2, pywebpush, qrcode, gunicorn) gerenciados estritamente pelo Astral uv.
-- **Gerenciamento Admin WhatsApp**: Rota de desconexão e status aprimorado com modo pareamento.
+### Desativação Temporária do WhatsApp
+- **Suspensão de Notificações e Envio Automático**: Configuração padrão `WHATSAPP_NOTIFICATIONS_ENABLED=0`, pulando inicialização de contêineres e bloqueando disparos em segundo plano.
+- **Botão Flutuante e Painel Admin**: Ocultação automática do botão flutuante e exibição de aviso claro no painel administrativo de que o WhatsApp está desativado no momento.
+
+### Transformação Comercial & Máxima Conversão de Planos
+- **Redesign Completo da Página de Planos (`/assinatura/planos`)**:
+  - Exibição em destaque dos 3 planos comerciais: **Individual** (R$ 15), **Pro** (R$ 29 - Mais Popular) e **Worship** (R$ 69 - Igrejas & Ministérios), tirando o plano Worship de dentro de detalhes ocultos.
+  - **Garantia Blindada de 7 Dias**: Selo de confiança e 100% de reembolso sem perguntas caso a banda não se adapte.
+  - **Facilidade de Pagamento Mercado Pago**: Destaque para Pix com liberação imediata e Cartão em até 12x.
+  - **Zero Fricção no Checkout**: Criação automática de banda no checkout do Worship caso o usuário ainda não tenha banda criada.
+  - **Prova Social**: Bloco de depoimentos reais de líderes de ministério e músicos que usam a plataforma.
+  - **FAQ de Conversão**: Respostas diretas quebrando as principais objeções de compra (rateio, multi-bandas, funcionamento offline).
+- **Navbar Comercial Global**: Botão chamativo "Assinar Pro" com ícone de coroa dourada para usuários logados e badge de status Pro para assinantes.
+- **Vitrine Comercial na Home**: Seção `#planos` na página inicial com os 3 planos e alternador dinâmico de faturamento Mensal/Anual (2 meses grátis).
+- **Testes Automatizados**: Suíte de validação dedicada (`scripts/test_comercial_e_whatsapp_disabled.py`) com 100% de cobertura nos fluxos comerciais.
 
 ## 2026-07-13
 

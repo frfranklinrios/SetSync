@@ -128,9 +128,9 @@ def init_scheduler(app) -> None:
 
 def _init_whatsapp_server(app) -> None:
     """Garante instância Evolution ao subir (provider evolution)."""
-    from whatsapp_config import whatsapp_provider
+    from whatsapp_config import whatsapp_notifications_enabled, whatsapp_provider
 
-    if whatsapp_provider() != "evolution":
+    if not whatsapp_notifications_enabled() or whatsapp_provider() != "evolution":
         return
     with app.app_context():
         try:

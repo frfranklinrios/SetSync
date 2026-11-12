@@ -26,11 +26,11 @@
 - **Transposição** — em tempo real; tom salvo para toda a banda e por cantor na setlist
 - **Setlists** — ordenação por arrastar, cantor/tom por música, link público de letras
 - **PDF e impressão** — folha de palco (lista simples) + cifras em sequência (A4, 2 colunas)
-- **Modo Tocar** — tela cheia, setlist lateral, auto-scroll, gestos e atalhos de teclado
-- **PWA** — instalar no celular (Android/iOS)
-- **Planos** — Grátis, Pro e Worship (Mercado Pago); vouchers promocionais
+- **Modo Tocar & Palco** — tela cheia, setlist lateral, auto-scroll, gestos, atalhos de teclado, diapasão de referência (pitch pipe) e pedais Bluetooth (PageFlip, AirTurn, Donner, Lekato)
+- **PWA** — instalar no celular (Android/iOS) com suporte a Modo Tocar 100% offline
+- **Planos Comerciais de Alta Conversão** — Grátis, Individual (R$ 15), Pro (R$ 29 - Mais Popular) e Worship (R$ 69 - Igrejas), Pix imediato e Cartão 12x via Mercado Pago com garantia incondicional de 7 dias
 - **Login** — e-mail/senha e Google OAuth (opcional)
-- **Notificações** — convites, assinatura e avisos na banda
+- **Notificações** — convites, assinatura e avisos na banda (WhatsApp desativável via `WHATSAPP_NOTIFICATIONS_ENABLED=0`)
 
 ## Tech stack
 

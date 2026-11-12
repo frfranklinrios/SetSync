@@ -625,8 +625,7 @@
         <p class="section-sub text-center mx-auto" style="max-width: 40rem;">
             Planos para bandas e músicos. Donos de estúdio começam no <strong>beta gratuito</strong> — veja abaixo.
         </p>
-        {% set plano_worship = planos_site | selectattr('id', 'equalto', 'worship') | first %}
-        {% set planos_grid = planos_site | rejectattr('id', 'equalto', 'worship') | list %}
+        {% set planos_grid = planos_site %}
         {% include 'partials/planos_publicos.html' %}
         <p class="home-planos-note">
             Após criar a conta, gerencie a assinatura em <strong>Planos</strong> no app.
