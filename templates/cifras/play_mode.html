@@ -48,6 +48,18 @@
 .play-pwa-banner .play-pwa-dismiss {
   border: 0; background: transparent; color: #94a3b8; font-size: 1.25rem; line-height: 1; cursor: pointer;
 }
+.transpose-key-lbl { cursor: pointer; transition: color 0.2s ease, text-shadow 0.2s ease; }
+.transpose-key-lbl:hover { color: #fbbf24; }
+.transpose-key-lbl.pitch-playing {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.85);
+  animation: pitchPulse 0.9s ease-in-out infinite alternate;
+}
+@keyframes pitchPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.18); }
+}
+#play-pitch-pipe-btn.active { color: #fbbf24; border-color: rgba(251, 191, 36, 0.6); }
 </style>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -125,7 +137,11 @@
                  aria-label="{% if vocalist_name %}Tom para {{ vocalist_name }}{% else %}Transpor{% endif %}">
                 <button type="button" class="transpose-step-btn" id="transpose-down"
                         onclick="onTransposeStep(-1)" aria-label="Descer meio tom">−</button>
-                <span id="transpose-key-lbl" class="transpose-key-lbl" title="Tom atual">—</span>
+                <span id="transpose-key-lbl" class="transpose-key-lbl" title="Tom atual — toque para ouvir o tom (diapasão)" onclick="playCurrentKeyPitch()">—</span>
+                <button type="button" class="transpose-step-btn" id="play-pitch-pipe-btn"
+                        onclick="playCurrentKeyPitch()" title="Ouvir tom de referência (diapasão) (O)" aria-label="Ouvir tom">
+                    <i class="fas fa-volume-up" style="font-size: 0.72rem;"></i>
+                </button>
                 <button type="button" class="transpose-step-btn" id="transpose-up"
                         onclick="onTransposeStep(1)" aria-label="Subir meio tom">+</button>
             </div>
@@ -206,6 +222,12 @@
                 {% endif %}
                 <button class="pb-btn" id="metronome-btn" onclick="toggleMetronome()" title="Metrônomo (M)" aria-label="Metrônomo" data-count-in="4">
                     <i class="fas fa-drum"></i><span class="pb-label-text">&nbsp;Metro</span>
+                </button>
+                <button class="pb-btn" id="pitch-pipe-btn" onclick="playCurrentKeyPitch()" title="Ouvir tom de referência / Diapasão (O)" aria-label="Diapasão">
+                    <i class="fas fa-volume-up"></i><span class="pb-label-text">&nbsp;Tom</span>
+                </button>
+                <button class="pb-btn" id="pedal-wizard-open-btn" onclick="openPedalWizard()" title="Pedal Bluetooth (Configurar)" aria-label="Pedal Bluetooth">
+                    <i class="fas fa-shoe-prints"></i><span class="pb-label-text">&nbsp;Pedal</span>
                 </button>
                 <button class="pb-btn" id="draw-btn" onclick="toggleDraw()" title="Desenhar na cifra (D)" aria-label="Anotações">
                     <i class="fas fa-pen"></i>
@@ -321,10 +343,29 @@
 </div>
 {% endif %}
 
+<div id="play-pedal-wizard" class="d-none" role="dialog" aria-modal="true" aria-labelledby="pedal-wizard-title">
+    <div class="play-pedal-wizard-card play-onboard-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="play-pedal-wizard-title h6 mb-0" id="pedal-wizard-title">Configurar pedal</h3>
+            <button type="button" class="btn-close btn-close-white" data-pedal-wizard-dismiss aria-label="Fechar"></button>
+        </div>
+        <div class="progress mb-3" style="height: 6px; background: rgba(255,255,255,0.1);">
+            <div class="progress-bar play-pedal-wizard-progress bg-warning" style="width: 16%;"></div>
+        </div>
+        <p class="play-pedal-wizard-body mb-4 text-muted small"></p>
+        <div class="d-flex justify-content-between gap-2">
+            <button type="button" class="pb-btn btn-sm" data-pedal-wizard-skip style="display:none;">Pular</button>
+            <button type="button" class="pb-btn btn-sm btn-primary ms-auto" data-pedal-wizard-next>Avançar</button>
+        </div>
+    </div>
+</div>
+
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=16"></script>
 <script src="{{ url_for('static', filename='js/offline-store.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/play-metronome.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/play-draw-overlay.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/play-pedal-config.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/play-pedal-wizard.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/play-mode-boot.js') }}?v=1"></script>
 <script id="play-features-config" type="application/json">{{ play_features_json | safe }}</script>
 <script id="play-boot-config" type="application/json">{{ play_boot_json | safe }}</script>
@@ -1797,11 +1838,95 @@
         if (window.SetSyncDrawOverlay) window.SetSyncDrawOverlay.clear();
     }
 
+    // ── Diapasão de referência / Pitch Pipe (Web Audio) ──
+    var _pitchAudioCtx = null;
+    var _NOTE_FREQS = {
+        'C': 261.63, 'C#': 277.18, 'DB': 277.18,
+        'D': 293.66, 'D#': 311.13, 'EB': 311.13,
+        'E': 329.63,
+        'F': 349.23, 'F#': 369.99, 'GB': 369.99,
+        'G': 392.00, 'G#': 415.30, 'AB': 415.30,
+        'A': 440.00, 'A#': 466.16, 'BB': 466.16,
+        'B': 493.88
+    };
+
+    function playPitch(freq, durationSec) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!_pitchAudioCtx) _pitchAudioCtx = new AC();
+        if (_pitchAudioCtx.state === 'suspended') _pitchAudioCtx.resume();
+        durationSec = durationSec || 1.8;
+        var now = _pitchAudioCtx.currentTime;
+
+        var osc = _pitchAudioCtx.createOscillator();
+        var osc2 = _pitchAudioCtx.createOscillator();
+        var gain = _pitchAudioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+
+        // Segundo harmônico para timbre acústico quente
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(freq * 2, now);
+
+        var gain2 = _pitchAudioCtx.createGain();
+        gain2.gain.value = 0.16;
+        osc2.connect(gain2);
+        gain2.connect(gain);
+
+        osc.connect(gain);
+        gain.connect(_pitchAudioCtx.destination);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.22, now + 0.04);
+        gain.gain.setValueAtTime(0.20, now + 0.8);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + durationSec + 0.05);
+        osc2.stop(now + durationSec + 0.05);
+    }
+
+    function playCurrentKeyPitch() {
+        var lbl = document.getElementById('transpose-key-lbl');
+        var raw = (lbl ? lbl.textContent : '').trim();
+        if (!raw || raw === '—') {
+            var c = getCurrent();
+            raw = (c && (c.tom || c.tom_original || c.tom_root)) || 'C';
+        }
+        var m = raw.match(/^([A-G][#b]?)/i);
+        var root = m ? m[1].toUpperCase() : 'C';
+        if (root.length === 2) {
+            root = root[0] + (root[1] === '#' ? '#' : 'B');
+        }
+        var freq = _NOTE_FREQS[root] || 440.0;
+        playPitch(freq, 1.8);
+
+        if (lbl) {
+            lbl.classList.add('pitch-playing');
+            setTimeout(function () { lbl.classList.remove('pitch-playing'); }, 1800);
+        }
+        var pipeBtn = document.getElementById('play-pitch-pipe-btn');
+        if (pipeBtn) {
+            pipeBtn.classList.add('active');
+            setTimeout(function () { pipeBtn.classList.remove('active'); }, 1800);
+        }
+    }
+
+    function openPedalWizard() {
+        if (window.SetSyncPedalWizard && typeof SetSyncPedalWizard.show === 'function') {
+            SetSyncPedalWizard.show(true);
+        }
+    }
+
     window.toggleDraw = toggleDraw;
     window.setDrawPen = setDrawPen;
     window.setDrawEraser = setDrawEraser;
     window.clearDraw = clearDraw;
     window.toggleMetronome = toggleMetronome;
+    window.playCurrentKeyPitch = playCurrentKeyPitch;
+    window.openPedalWizard = openPedalWizard;
     window.setVersionMode = setVersionMode;
     window.cycleVersionMode = cycleVersionMode;
 
@@ -1842,6 +1967,9 @@
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         var tag = e.target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (window.SetSyncPedalConfig && window.SetSyncPedalConfig.handleKeydown(e)) {
+            return;
+        }
         switch (e.key) {
             case 'ArrowRight': case 'PageDown': e.preventDefault(); tapScrollDown(); break;
             case 'ArrowLeft': case 'PageUp': e.preventDefault(); tapScrollUp(); break;
@@ -1849,6 +1977,7 @@
             case 'ArrowUp': e.preventDefault(); prevSong(); break;
             case ' ': case 'Spacebar': e.preventDefault(); toggleScroll(); break;
             case 'm': case 'M': toggleMetronome(); break;
+            case 'o': case 'O': playCurrentKeyPitch(); break;
             case 'f': case 'F': toggleFullscreen(); break;
             case 'l': case 'L': toggleDrawer(); break;
             case '+': case '=': changeFontSize(1); break;

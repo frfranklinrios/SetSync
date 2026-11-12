@@ -45,8 +45,10 @@
             <strong>Conexão WhatsApp:</strong>
             {% if status.connected %}
               <span class="badge bg-success">conectado</span>
-            {% else %}
+            {% elif pairing_mode %}
               <span class="badge bg-warning text-dark">aguardando pareamento</span>
+            {% else %}
+              <span class="badge bg-secondary">desconectado</span>
             {% endif %}
           </li>
         </ul>
@@ -70,13 +72,24 @@
         <p class="text-muted mb-3" style="font-size: var(--text-sm);">
           Usuários precisam cadastrar o WhatsApp em <strong>Meu perfil</strong> e manter o opt-in ativo.
         </p>
-        <form method="POST" action="{{ url_for('whatsapp_admin.reconectar') }}">
-          {% include 'partials/csrf_input.html' %}
-          <button type="submit" class="btn btn-outline-warning btn-sm">Trocar número (novo QR)</button>
-        </form>
+        <div class="d-flex flex-wrap gap-2">
+          <form method="POST" action="{{ url_for('whatsapp_admin.reconectar') }}">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-outline-warning btn-sm">
+              <i class="fas fa-sync-alt me-1"></i> Trocar número (novo QR)
+            </button>
+          </form>
+          <form method="POST" action="{{ url_for('whatsapp_admin.desconectar') }}"
+                onsubmit="return confirm('Deseja desconectar o WhatsApp? As notificações automáticas pararão de ser enviadas até conectar novamente.');">
+            {% include 'partials/csrf_input.html' %}
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+              <i class="fas fa-power-off me-1"></i> Desconectar WhatsApp
+            </button>
+          </form>
+        </div>
       </div>
     </div>
-    {% else %}
+    {% elif pairing_mode %}
     <div class="card">
       <div class="card-body text-center">
         <h3 class="h6 mb-3">Escaneie o QR Code</h3>
@@ -101,17 +114,40 @@
           e abra <a href="http://127.0.0.1:8088/manager" target="_blank" rel="noopener">Evolution Manager</a>.
         </p>
         {% else %}
-        <p class="text-muted">Carregando QR… <a href="">Atualizar página</a></p>
+        <p class="text-muted">Carregando QR… <a href="{{ url_for('whatsapp_admin.index', qr=1) }}">Atualizar página</a></p>
         {% endif %}
-        <p class="text-muted mt-3 mb-0" style="font-size: var(--text-sm);">
+        <p class="text-muted mt-3 mb-3" style="font-size: var(--text-sm);">
           A página recarrega a cada 25s. O QR expira rápido — escaneie assim que aparecer.
         </p>
+        <form method="POST" action="{{ url_for('whatsapp_admin.desconectar') }}">
+          {% include 'partials/csrf_input.html' %}
+          <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="fas fa-times me-1"></i> Cancelar e manter desconectado
+          </button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-body">
+        <p class="text-muted mb-2">
+          <i class="fab fa-whatsapp me-1"></i> O WhatsApp está <strong>desconectado</strong>.
+        </p>
+        <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+          Nenhuma notificação automática está sendo enviada por WhatsApp no momento. Quando quiser parear novamente, clique no botão abaixo para gerar um novo QR Code.
+        </p>
+        <form method="POST" action="{{ url_for('whatsapp_admin.conectar') }}">
+          {% include 'partials/csrf_input.html' %}
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="fab fa-whatsapp me-1"></i> Conectar WhatsApp (gerar QR Code)
+          </button>
+        </form>
       </div>
     </div>
     {% endif %}
   </div>
 </div>
-{% if not status.connected and not meta_mode %}
+{% if pairing_mode and not status.connected and not meta_mode %}
 <script>
 setTimeout(function () { window.location.reload(); }, 25000);
 </script>

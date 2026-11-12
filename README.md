@@ -125,6 +125,8 @@ Lista completa: **`.env.example`**.
 | `←` `→` (bordas) | Rolar uma página; no fim/início troca de música |
 | `←` `→` (barra superior) | Música anterior / próxima |
 | `Espaço` | Auto-scroll |
+| `O` / clique no Tom | Diapasão acústico de referência (Pitch Pipe Web Audio) |
+| `Pedal Bluetooth` | Próxima/anterior página ou música (assistente de pareamento) |
 | `+` `-` | Fonte maior / menor |
 | `C` | 1 ou 2 colunas |
 | `L` | Abrir / fechar lista (setlist) |

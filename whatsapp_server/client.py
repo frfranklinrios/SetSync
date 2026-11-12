@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from whatsapp_server.config import (
+from .config import (
     evolution_api_key,
     evolution_api_url,
     evolution_instance,
@@ -25,9 +25,10 @@ def _headers() -> dict[str, str]:
 
 def _request(method: str, path: str, **kwargs) -> requests.Response | None:
     url = f"{evolution_api_url()}{path}"
+    kwargs.setdefault("timeout", _TIMEOUT)
     try:
         return requests.request(
-            method, url, headers=_headers(), timeout=_TIMEOUT, **kwargs
+            method, url, headers=_headers(), **kwargs
         )
     except requests.exceptions.RequestException as exc:
         # Evolution offline é operacional (não é bug): 1 linha, sem stack trace.
@@ -44,7 +45,7 @@ def _request(method: str, path: str, **kwargs) -> requests.Response | None:
 
 
 def is_reachable() -> bool:
-    resp = _request("GET", "/")
+    resp = _request("GET", "/", timeout=(1.5, 2.5))
     if resp is None:
         return False
     return resp.status_code < 500

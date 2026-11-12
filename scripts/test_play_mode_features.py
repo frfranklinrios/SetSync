@@ -63,12 +63,33 @@ def test_setlist_play_notes_model():
     assert callable(set_setlist_cifra_play_notes)
 
 
+def test_play_mode_template_pedal_and_pitch():
+    tpl_path = ROOT / "templates" / "cifras" / "play_mode.html"
+    text = tpl_path.read_text(encoding="utf-8")
+    assert "play-pedal-config.js" in text
+    assert "play-pedal-wizard.js" in text
+    assert 'id="play-pedal-wizard"' in text
+    assert 'id="pitch-pipe-btn"' in text
+    assert 'id="play-pitch-pipe-btn"' in text
+    assert "playCurrentKeyPitch" in text
+    assert "SetSyncPedalConfig.handleKeydown" in text
+
+
+def test_whatsapp_client_timeout():
+    client_path = ROOT / "whatsapp_server" / "client.py"
+    text = client_path.read_text(encoding="utf-8")
+    assert "timeout=(1.5, 2.5)" in text
+    assert "kwargs.setdefault(\"timeout\", _TIMEOUT)" in text
+
+
 def main() -> None:
     test_leadsheet_meta_capo()
     test_pedal_defaults()
     test_play_state_route_registered()
     test_play_notes_resolve()
     test_setlist_play_notes_model()
+    test_play_mode_template_pedal_and_pitch()
+    test_whatsapp_client_timeout()
     print("ok test_play_mode_features")
 
 

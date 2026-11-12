@@ -1,5 +1,14 @@
 # Changelog — Uníssono
 
+## 2026-11-12
+
+### Otimizações, Tecnologias e Novas Features de Palco
+- **Diapasão Acústico de Referência (Pitch Pipe)**: Síntese de fundamental e harmônicos via Web Audio API nativo com envelope sonoro suave ao tocar no badge do Tom (ou atalho `O`).
+- **Suporte Total a Pedais Bluetooth**: Assistente `#play-pedal-wizard` e captura de teclas personalizadas no Modo Tocar com carregamento dos módulos de pedal e suporte a PageFlip, AirTurn, Donner e Lekato.
+- **Otimização de Inicialização e Resiliência**: Verificação de status da Evolution API com timeout cirúrgico não-bloqueante (1.5s/2.5s), reduzindo tempo de subida e execução de suítes de testes em mais de 50%.
+- **Padronização de Dependências (uv)**: Sincronização e integração completa de pacotes no `pyproject.toml` (ruff, pytest, flask-wtf, psycopg2, pywebpush, qrcode, gunicorn) gerenciados estritamente pelo Astral uv.
+- **Gerenciamento Admin WhatsApp**: Rota de desconexão e status aprimorado com modo pareamento.
+
 ## 2026-07-13
 
 ### Camadas de ativação, retenção e conversão in-app
