@@ -1145,12 +1145,12 @@ def sugerir_upgrade(user_id: str | None, *, motivo: str = "limite") -> dict:
 PLANO_ESTUDIO_BASICO = "estudio_basico"
 PLANO_ESTUDIO_PREMIUM = "estudio_premium"
 PLANOS_ESTUDIO_PAGOS = (PLANO_ESTUDIO_PREMIUM,)
-LIMITES_ESTUDIO_BASICO = {"sala": 2}
+LIMITES_ESTUDIO_BASICO = {"sala": 999}
 
 PLANOS_ESTUDIO: dict[str, Plano] = {
     PLANO_ESTUDIO_BASICO: Plano(
         id=PLANO_ESTUDIO_BASICO,
-        nome="Estúdio Básico",
+        nome="Estúdio Parceiro Oficial",
         preco_mensal=None,
         limites=dict(LIMITES_ESTUDIO_BASICO),
     ),
@@ -1165,54 +1165,25 @@ PLANOS_ESTUDIO: dict[str, Plano] = {
 
 def planos_estudio_para_site() -> list[PlanoSite]:
     """Planos de estúdio para landings e página de assinatura."""
-    premium = PLANOS_ESTUDIO[PLANO_ESTUDIO_PREMIUM]
     return [
         PlanoSite(
             id=PLANO_ESTUDIO_BASICO,
-            nome="Estúdio Básico",
-            preco_label=_preco_label(None),
+            nome="Estúdio Parceiro Oficial",
+            preco_label="100% Gratuito",
             sufixo="",
-            destaque=False,
-            features=(
-                "Até 2 salas após o trial",
-                "30 dias Premium no 1º cadastro",
-                "Painel, calendário e financeiro",
-                "Reservas de bandas pelo app",
-                "Endereço com Google Maps",
-            ),
-            cta="Cadastrar meu estúdio",
-            cta_outline=True,
-            logo="img/planos/estudio-basico.svg",
-            badge_label="Beta gratuito",
-        ),
-        PlanoSite(
-            id=PLANO_ESTUDIO_PREMIUM,
-            nome="Estúdio Premium",
-            preco_label=_preco_label(premium.preco_mensal),
-            sufixo="/mês",
             destaque=True,
             features=(
-                "Salas ilimitadas",
-                "Destaque na busca de estúdios",
-                "Painel completo de agendamentos",
-                "Financeiro com receita e despesas",
-                "Notificações em tempo real + suporte",
+                "Salas de ensaio ilimitadas",
+                "Agendamentos online de bandas",
+                "Calendário e controle de disponibilidade",
+                "Financeiro completo de reservas e despesas",
+                "Kit Parceiro: Cartaz A4 e QR Code para salas",
+                "Vouchers exclusivos de presente para suas bandas",
             ),
-            cta="Assinar Premium — R$ 49",
+            cta="Cadastrar meu estúdio grátis",
             cta_outline=False,
             logo="img/planos/estudio-premium.svg",
-            badge_label="Recomendado",
-            preco_anual_label=_preco_label(PRECO_ESTUDIO_PREMIUM_ANUAL),
-            economia_anual=_economia_anual_label(
-                PRECO_ESTUDIO_PREMIUM, PRECO_ESTUDIO_PREMIUM_ANUAL
-            ),
-            preco_mensal_equivalente_label=_preco_mensal_equivalente_label(
-                PRECO_ESTUDIO_PREMIUM_ANUAL
-            ),
-            cobrado_anual_label=_cobrado_anual_label(PRECO_ESTUDIO_PREMIUM_ANUAL),
-            desconto_anual_pct=_desconto_anual_pct(
-                PRECO_ESTUDIO_PREMIUM, PRECO_ESTUDIO_PREMIUM_ANUAL
-            ),
+            badge_label="Parceiro Oficial",
         ),
     ]
 
@@ -1225,19 +1196,6 @@ def studio_plano_badge_ui(user_id: str) -> dict[str, Any]:
     plano = sub.get("plano") or PLANO_ESTUDIO_BASICO
     definicao = PLANOS_ESTUDIO.get(plano, PLANOS_ESTUDIO[PLANO_ESTUDIO_BASICO])
 
-    if _studio_trial_ativo(sub):
-        dias = dias_restantes_trial_estudio(user_id)
-        label = f"Trial Premium · {dias} dias" if dias is not None else "Trial Premium"
-        return {
-            "plano_id": PLANO_ESTUDIO_PREMIUM,
-            "nome": "Estúdio Premium (trial)",
-            "label": label,
-            "label_curto": "Trial",
-            "badge": "success",
-            "logo": "img/planos/estudio-premium.svg",
-            "premium": True,
-            "trial": True,
-        }
 
     if (
         sub.get("plano") == PLANO_ESTUDIO_PREMIUM
@@ -1264,6 +1222,7 @@ def studio_plano_badge_ui(user_id: str) -> dict[str, Any]:
             "logo": "img/planos/estudio-premium.svg",
             "premium": True,
             "trial": False,
+            "trial_expirado": False,
             "voucher": True,
         }
 
@@ -1271,62 +1230,38 @@ def studio_plano_badge_ui(user_id: str) -> dict[str, Any]:
         return {
             "plano_id": plano,
             "nome": definicao.nome,
-            "label": "Estúdio Premium",
-            "label_curto": "Premium",
-            "badge": "info",
+            "label": "Estúdio Parceiro Oficial",
+            "label_curto": "Parceiro Oficial",
+            "badge": "success",
             "logo": "img/planos/estudio-premium.svg",
             "premium": True,
             "trial": False,
+            "trial_expirado": False,
         }
-    trial_expirado = bool(sub.get("trial_usado")) and not _studio_trial_ativo(sub)
-    label = "Estúdio Básico · beta"
-    if trial_expirado:
-        label = "Estúdio Básico · trial encerrado"
     return {
         "plano_id": plano,
-        "nome": definicao.nome,
-        "label": label,
-        "label_curto": "Básico",
-        "badge": "secondary",
-        "logo": "img/planos/estudio-basico.svg",
-        "premium": False,
+        "nome": "Estúdio Parceiro Oficial",
+        "label": "Parceiro Oficial · Salas Ilimitadas Grátis",
+        "label_curto": "Parceiro Oficial",
+        "badge": "success",
+        "logo": "img/planos/estudio-premium.svg",
+        "premium": True,
         "trial": False,
-        "trial_expirado": trial_expirado,
+        "trial_expirado": False,
     }
 
 
 def check_studio_room_limit(owner_user_id: str) -> bool:
-    """True se o dono pode criar mais uma sala."""
-    from models_studio import (
-        count_rooms_for_owner,
-        get_or_create_studio_subscription,
-    )
+    """True se o dono pode criar mais uma sala.
 
-    sub = get_or_create_studio_subscription(owner_user_id)
-    if studio_tem_premium(owner_user_id, sub):
-        return True
-    limite = LIMITES_ESTUDIO_BASICO["sala"]
-    return count_rooms_for_owner(owner_user_id) < limite
+    Estratégia Parceiro Oficial: salas 100% liberadas gratuitamente para todos os estúdios,
+    funcionando como hub de atração e retenção de bandas no Uníssono.
+    """
+    return True
 
 
 def resposta_limite_estudio():
-    """HTTP 402 — limite de salas do plano Estúdio."""
-    from flask import flash, jsonify, redirect, request
+    """HTTP 402 mantido por compatibilidade com rotas legadas."""
+    from flask import redirect
 
-    limite = LIMITES_ESTUDIO_BASICO["sala"]
-    payload = {
-        "status": "limite_atingido",
-        "erro": "limite_estudio",
-        "recurso": "sala",
-        "limite": limite,
-        "mensagem": (
-            f"No Básico cabem {limite} salas. A 3ª sala (e ilimitadas) pedem "
-            "Estúdio Premium — R$ 49/mês."
-        ),
-        "upgrade_url": "/assinatura/planos#estudio",
-        "cta_label": "Assinar Estúdio Premium — R$ 49",
-    }
-    if request.accept_mimetypes.best == "application/json" or request.is_json:
-        return jsonify(payload), 402
-    flash(payload["mensagem"], "warning")
-    return redirect(payload["upgrade_url"])
+    return redirect("/estudios")

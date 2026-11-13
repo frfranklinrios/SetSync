@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cartaz da Sala de Ensaio — {{ studio.nome }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.2cm;
+        }
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .poster-container {
+            max-width: 720px;
+            margin: 2rem auto;
+            background: #ffffff;
+            border: 2px solid #0f172a;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12);
+            text-align: center;
+        }
+        .poster-header {
+            border-bottom: 2px dashed #cbd5e1;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .studio-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.35rem;
+            letter-spacing: -0.02em;
+        }
+        .partner-badge {
+            display: inline-block;
+            background: #10b981;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.35rem 1rem;
+            border-radius: 999px;
+        }
+        .poster-main-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ea580c;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+        .poster-sub {
+            font-size: 1.15rem;
+            color: #475569;
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+        .qr-card {
+            display: inline-block;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .qr-image {
+            width: 240px;
+            height: 240px;
+            display: block;
+            margin: 0 auto 1rem;
+        }
+        .qr-caption {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #334155;
+        }
+        .steps-row {
+            display: flex;
+            justify-content: space-around;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px dashed #cbd5e1;
+        }
+        .step-item {
+            flex: 1;
+            font-size: 0.85rem;
+            color: #334155;
+        }
+        .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #0f172a;
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+        .poster-footer {
+            margin-top: 2rem;
+            font-size: 0.82rem;
+            color: #64748b;
+        }
+        @media print {
+            body { background: transparent; }
+            .poster-container {
+                border: 2px solid #0f172a;
+                box-shadow: none;
+                margin: 0;
+                max-width: 100%;
+                padding: 1.5cm;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print text-center py-3 bg-dark text-white sticky-top">
+        <span class="me-3 small">Dica: Imprima em folha A4 e cole na porta ou parede da sala de ensaio!</span>
+        <button type="button" class="btn btn-success btn-sm px-4 fw-bold" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> Imprimir Cartaz da Sala
+        </button>
+        <button type="button" class="btn btn-outline-light btn-sm ms-2" onclick="window.close()">
+            Fechar
+        </button>
+    </div>
+
+    <div class="poster-container">
+        <div class="poster-header">
+            <div class="studio-name">{{ studio.nome }}</div>
+            <div class="partner-badge"><i class="fas fa-check-circle me-1"></i> Estúdio Parceiro Uníssono</div>
+        </div>
+
+        <div class="poster-main-title">
+            🎸 Suas Cifras & Letras<br>Direto no Ensaio
+        </div>
+
+        <div class="poster-sub">
+            Escaneie o QR Code abaixo com o celular para acessar as músicas,<br>
+            usar o <strong>Modo Tocar com auto-scroll</strong> e afinar os instrumentos!
+        </div>
+
+        <div class="qr-card">
+            <img src="{{ url_for('studios.booking_qr', studio_id=studio.id) }}" alt="QR Code da Sala" class="qr-image">
+            <div class="qr-caption">Aponte a câmera do seu celular aqui</div>
+        </div>
+
+        <div class="steps-row">
+            <div class="step-item">
+                <div class="step-num">1</div>
+                <div>Aponte a câmera e abra o link</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">2</div>
+                <div>Monte a setlist do ensaio de hoje</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">3</div>
+                <div>Toque com rolagem e metrônomo sincronizados</div>
+            </div>
+        </div>
+
+        <div class="poster-footer">
+            <strong>unissono.app</strong> · O aplicativo oficial de bandas e estúdios de ensaio.
+        </div>
+    </div>
+</body>
+</html>

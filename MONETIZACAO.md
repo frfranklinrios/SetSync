@@ -281,15 +281,24 @@ python3 scripts/test_adsense_eligibility.py
 
 > **LGPD:** se exigir consentimento de cookies para publicidade, adicione um banner de opt-in antes de carregar o script — o Uníssono hoje só prepara a carga condicional por plano.
 
-## Plano Estúdio
+## Plano Estúdio (Parceiro Oficial — 100% Gratuito)
 
-Módulo de agendamento de salas de ensaio (`/estudios`).
+Módulo de agendamento de salas de ensaio e gestão musical (`/estudios`).
 
-| Plano | ID interno | Preço | Limite |
-|-------|------------|-------|--------|
-| Estúdio básico | `estudio_basico` | grátis | até **2 salas** por dono |
-| Estúdio premium | `estudio_premium` | **R$ 49/mês** (ou R$ 490/ano) | salas ilimitadas |
+### Estratégia de Crescimento B2B2C (Product-Led Growth)
 
-- Assinatura em `studio_subscriptions` (por `user_id` do dono).
-- Checkout: `POST /assinatura/estudio/iniciar/estudio_premium` via Mercado Pago (mesmo webhook de `/assinatura/webhook`).
-- Trial premium pode ser iniciado no app (`iniciar_trial_estudio`).
+Em vez de cobrar mensalidade dos estúdios de ensaio (que gerava atrito de vendas e baixa conversão), o módulo de estúdios agora opera no modelo **Estúdio Parceiro Oficial 100% Gratuito**, com **salas de ensaio ilimitadas**:
+
+| Plano | ID interno | Preço | Salas | Benefícios |
+|-------|------------|-------|-------|------------|
+| **Estúdio Parceiro Oficial** | `estudio_basico` / `estudio_premium` | **100% Grátis** (R$ 0) | **Ilimitadas** | Agendamento online, link público do estúdio, controle financeiro de ensaios, Cartaz da Sala A4 imprimível com QR Code |
+
+### Motor de Conversão de Bandas
+- **Ponto de Contato Físico:** Cada estúdio imprime o **Cartaz da Sala A4** (`/<studio_id>/cartaz-sala`) e afixa nas portas das salas de ensaio.
+- **Onboarding no Momento Crítico:** Os músicos chegam para ensaiar, escaneiam o QR Code e abrem o Uníssono direto no celular/tablet para acessar o repertório, o metrônomo e o Modo Tocar.
+- **Conversão em Planos Pro/Worship:** As bandas que utilizam o app nas salas de ensaio convertem organicamente para os planos pagos:
+  - **Individual:** R$ 15/mês
+  - **Pro:** R$ 29/mês
+  - **Worship:** R$ 69/mês
+- **Economia Comparada:** Enquanto uma assinatura de estúdio cobraria R$ 49/mês (com CAC alto e pouca retenção), 3 a 5 bandas ativas pagando Pro/Worship geram de R$ 87 a R$ 345/mês com CAC zero para o Uníssono.
+- **Cupons para Bandas:** O painel do estúdio disponibiliza cupons de degustação via `/voucher/indicar` para distribuir às bandas clientes.

@@ -37,6 +37,7 @@
   - **Colas Pessoais de Palco (Personal Musician Cues)** — anotações particulares salvas localmente por integrante (tecla `Q`) sem poluir a cifra coletiva da banda
   - Diapasão de referência (pitch pipe) com síntese harmônica precisa
 - **PWA** — instalar no celular (Android/iOS) com suporte a Modo Tocar 100% offline
+- **Estúdios de Ensaio Parceiros (100% Gratuito & Salas Ilimitadas)** — gestão de salas, agenda online de ensaios e geração do **Cartaz da Sala A4 imprimível** com QR Code para portas de estúdios
 - **Planos Comerciais de Alta Conversão** — Grátis, Individual (R$ 15), Pro (R$ 29 - Mais Popular) e Worship (R$ 69 - Igrejas), Pix imediato e Cartão 12x via Mercado Pago com garantia incondicional de 7 dias
 - **Login** — e-mail/senha e Google OAuth (opcional)
 - **Notificações** — convites, assinatura e avisos na banda (WhatsApp desativável via `WHATSAPP_NOTIFICATIONS_ENABLED=0`)

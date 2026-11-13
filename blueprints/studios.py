@@ -312,6 +312,19 @@ def booking_qr(studio_id):
     )
 
 
+@studios_bp.route("/<studio_id>/cartaz-sala")
+@login_required
+def print_room_poster(studio_id):
+    """Página imprimível A4 de cartaz de sala de ensaio para estúdios parceiros."""
+    studio, _uid = _require_studio_owner(studio_id)
+    if not studio:
+        abort(404)
+    return render_template(
+        "studios/owner/print_room_poster.html",
+        studio=studio,
+    )
+
+
 # ── Detalhe público (bandas) ──────────────────────────────────────────────
 
 

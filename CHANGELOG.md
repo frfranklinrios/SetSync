@@ -2,6 +2,21 @@
 
 ## 2026-11-13
 
+### Estúdios Parceiros Oficiais 100% Grátis (Canal de Crescimento B2B2C / Product-Led Growth)
+- **Acesso Gratuito com Salas Ilimitadas**:
+  - Eliminação de fricção de cobrança de R$ 49/mês para estúdios de ensaio. Todos os donos de estúdio contam com salas ilimitadas, agendamento online e controle financeiro de forma 100% gratuita.
+  - O estúdio passa a atuar como hub parceiro de distribuição física e digital do Uníssono para as bandas que ensaiam no local.
+- **Cartaz da Sala de Ensaio Imprimível em Folha A4 (`/<studio_id>/cartaz-sala`)**:
+  - Template de altíssima definição formatado em folha A4 com instruções de 3 passos para os músicos.
+  - QR Code dinâmico do estúdio para que as bandas abram na hora as cifras, letras, metrônomo e modo tocar na sala de ensaio.
+  - Botão de 1 clique para imprimir ou salvar como PDF no painel do estúdio.
+- **Painel do Estúdio Modernizado**:
+  - Substituição dos alertas de trial expirado por cartão de boas-vindas do Parceiro Oficial.
+  - Acesso direto ao download do QR Code da sala e geração de cupons promocionais para bandas clientes.
+- **Validação Automatizada de Testes**:
+  - Novo teste `scripts/test_studio_free_partner.py` cobrindo checagem de salas ilimitadas, badge de parceiro oficial, rota do cartaz A4 e vitrine de planos.
+  - 32 testes executados com 100% de sucesso.
+
 ### Aprimoramentos de Alta Performance para Palco & Show ao Vivo
 - **Quick Song Jumper (Paleta Spotlight de Busca Rápida de Músicas)**:
   - Busca instantânea e salto direto para qualquer música do setlist sem sair da tela ou abrir a gaveta lateral (atalhos `/` ou `J`, ou botão de lupa na barra superior).
