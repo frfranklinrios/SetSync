@@ -60,6 +60,114 @@
   to { transform: scale(1.18); }
 }
 #play-pitch-pipe-btn.active { color: #fbbf24; border-color: rgba(251, 191, 36, 0.6); }
+
+/* Pulso visual do metrônomo */
+.metro-visual-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  user-select: none;
+  vertical-align: middle;
+}
+.metro-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: transform 0.06s ease, background-color 0.06s ease, box-shadow 0.06s ease;
+}
+.metro-dot.active {
+  background: #38bdf8;
+  transform: scale(1.4);
+  box-shadow: 0 0 10px #38bdf8;
+}
+.metro-dot.active-accent {
+  background: #f59e0b;
+  transform: scale(1.55);
+  box-shadow: 0 0 12px #f59e0b;
+}
+.metro-visual-bar.is-muted {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+/* Indicador de cola pessoal */
+.cue-indicator-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+  margin-left: 3px;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.9);
+}
+
+/* Modais de Capo e Cola */
+.play-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.play-modal-card {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 1.25rem;
+  width: min(94vw, 440px);
+  color: #f8fafc;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+}
+.capo-fret-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.capo-fret-btn {
+  padding: 8px 4px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s ease;
+}
+.capo-fret-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.capo-fret-btn.active {
+  background: #10b981;
+  color: #022c22;
+  border-color: #34d399;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+.capo-fret-btn.suggested {
+  border-color: #f59e0b;
+}
+.capo-fret-btn .shape-hint {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: normal;
+  opacity: 0.85;
+}
+#play-capo-btn.capo-active {
+  background: rgba(16, 185, 129, 0.25) !important;
+  color: #34d399 !important;
+  border-color: rgba(52, 211, 153, 0.6) !important;
+}
 </style>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -223,6 +331,22 @@
                 <button class="pb-btn" id="metronome-btn" onclick="toggleMetronome()" title="Metrônomo (M)" aria-label="Metrônomo" data-count-in="4">
                     <i class="fas fa-drum"></i><span class="pb-label-text">&nbsp;Metro</span>
                 </button>
+                <button class="pb-btn" id="tap-tempo-btn" onclick="handleTapTempo()" title="Tap Tempo (B) — toque 3-4x no ritmo" aria-label="Tap Tempo">
+                    <i class="fas fa-hand-pointer"></i><span class="pb-label-text">&nbsp;Tap</span>
+                </button>
+                <div class="metro-visual-bar" id="metro-visual-bar" title="Pulso visual do metrônomo (clique para mutar/desmutar som)" onclick="toggleMetroAudio()">
+                    <span class="metro-dot" data-beat="1"></span>
+                    <span class="metro-dot" data-beat="2"></span>
+                    <span class="metro-dot" data-beat="3"></span>
+                    <span class="metro-dot" data-beat="4"></span>
+                </div>
+                <button class="pb-btn" id="play-capo-btn" onclick="openCapoModal()" title="Calculadora e Transpositor de Capotraste (K)" aria-label="Capotraste">
+                    <i class="fas fa-grip-lines-vertical"></i><span class="pb-label-text">&nbsp;<span id="capo-btn-label">Capo</span></span>
+                </button>
+                <button class="pb-btn" id="cue-btn" onclick="openCueModal()" title="Minha Cola de Palco (Q) — anotação privada" aria-label="Minha Cola">
+                    <i class="fas fa-sticky-note"></i><span class="pb-label-text">&nbsp;Cola</span>
+                    <span id="cue-badge-dot" class="cue-indicator-dot d-none"></span>
+                </button>
                 <button class="pb-btn" id="pitch-pipe-btn" onclick="playCurrentKeyPitch()" title="Ouvir tom de referência / Diapasão (O)" aria-label="Diapasão">
                     <i class="fas fa-volume-up"></i><span class="pb-label-text">&nbsp;Tom</span>
                 </button>
@@ -265,6 +389,7 @@
             <i class="fas fa-chevron-left" aria-hidden="true"></i>
         </button>
         <div id="cifra-scroll" class="cifra-scroll-port">
+            <div id="play-cue-banner-wrap"></div>
             <div class="cifra-body cifra-sheet-paper" id="cifra-content">{% if all_cifras and all_cifras|length > start_idx|default(0) and all_cifras[start_idx|default(0)].html %}{{ all_cifras[start_idx|default(0)].html | safe }}{% endif %}</div>
         </div>
         <button type="button" class="tap-zone right" id="tap-next" aria-label="Próxima página da cifra">
@@ -360,9 +485,46 @@
     </div>
 </div>
 
+<div id="play-capo-modal" class="play-modal-overlay d-none" role="dialog" aria-modal="true" aria-labelledby="capo-modal-title">
+    <div class="play-modal-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h3 class="h6 mb-0" id="capo-modal-title"><i class="fas fa-grip-lines-vertical me-2 text-warning"></i>Capotraste Inteligente</h3>
+            <button type="button" class="btn-close btn-close-white" onclick="closeCapoModal()" aria-label="Fechar"></button>
+        </div>
+        <p class="small text-muted mb-2">Escolha a casa do Capo. A cifra transpõe para você tocar com formas abertas sem pestana enquanto a música continua no tom real.</p>
+        <div class="alert alert-dark p-2 small mb-2 d-flex justify-content-between align-items-center" id="capo-suggestion-box">
+            <span id="capo-suggestion-text">Carregando sugestões…</span>
+        </div>
+        <div class="capo-fret-grid" id="capo-fret-grid"></div>
+        <div class="d-flex justify-content-end mt-3">
+            <button type="button" class="pb-btn btn-sm" onclick="closeCapoModal()">Concluir</button>
+        </div>
+    </div>
+</div>
+
+<div id="play-cue-modal" class="play-modal-overlay d-none" role="dialog" aria-modal="true" aria-labelledby="cue-modal-title">
+    <div class="play-modal-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h3 class="h6 mb-0" id="cue-modal-title"><i class="fas fa-sticky-note me-2 text-warning"></i>Minha Cola de Palco</h3>
+            <button type="button" class="btn-close btn-close-white" onclick="closeCueModal()" aria-label="Fechar"></button>
+        </div>
+        <p class="small text-muted mb-2">Esta anotação é <strong>100% pessoal e privada</strong>. Fica salva no seu aparelho e só você vê no palco.</p>
+        <textarea id="play-cue-input" class="form-control mb-3" rows="3" placeholder="Ex: Solo na 2ª volta em Am; Entrar no chimbal; Segunda voz no refrão..." style="background: rgba(0,0,0,0.35); color: #fef08a; border-color: rgba(255,255,255,0.2); font-size: 0.95rem;"></textarea>
+        <div class="d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteCurrentCue()">Limpar</button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeCueModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveCurrentCue()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=16"></script>
 <script src="{{ url_for('static', filename='js/offline-store.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/play-metronome.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/capo-calculator.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/play-personal-cues.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/play-draw-overlay.js') }}?v=5"></script>
 <script src="{{ url_for('static', filename='js/play-pedal-config.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/play-pedal-wizard.js') }}?v=2"></script>
@@ -1145,8 +1307,23 @@
         window.scrollTo(0, 0);
 
         var t = getTranspose(c);
+        var currentCapo = getSongCapo(c.id);
+        var renderTranspose = t - currentCapo;
+        updateCapoUi(c);
+
+        var cueWrap = document.getElementById('play-cue-banner-wrap');
+        if (window.SetSyncPersonalCues) {
+            SetSyncPersonalCues.renderCueBanner(c.id, cueWrap);
+            var cueDot = document.getElementById('cue-badge-dot');
+            if (cueDot) cueDot.classList.toggle('d-none', !SetSyncPersonalCues.hasCue(c.id));
+        }
+
         document.getElementById('bar-title').textContent = c.titulo;
         var tomLabel = 'Tom ' + getDisplayKey(c);
+        if (currentCapo > 0 && window.SetSyncCapo) {
+            var capoInfo = SetSyncCapo.calculateCapo(getDisplayKey(c), currentCapo);
+            if (capoInfo) tomLabel += ' (Capo ' + currentCapo + ' forma ' + capoInfo.shapeKey + ')';
+        }
         var vSel = document.getElementById('vocalist-sel');
         var vName = '';
         if (vSel && vSel.options && vSel.selectedIndex >= 0 && vSel.options[vSel.selectedIndex]) {
@@ -1194,25 +1371,25 @@
 
         if (viewMode === 'chordsheet') {
             el.classList.add('grade-mode');
-            fetchChordSheetHtml(c.id, t, function (html) {
+            fetchChordSheetHtml(c.id, renderTranspose, function (html) {
                 if (html) {
                     renderHtml('<div class="cs-play-embed setsync-cs-sheet">' + html + '</div>');
                     return;
                 }
-                fetchGrade(c.id, t, function (gd) {
+                fetchGrade(c.id, renderTranspose, function (gd) {
                     renderHtml(buildLeadSheetHtml(gd, c));
                 });
             });
         } else if (viewMode === 'letra') {
             el.classList.add('letra-mode');
             if (twoColActive) el.classList.add('two-col');
-            fetchLyrics(c.id, t, function (text) {
+            fetchLyrics(c.id, renderTranspose, function (text) {
                 renderHtml(buildLyricsHtml(text));
             });
         } else {
             if (twoColActive) el.classList.add('two-col');
             el.classList.add('structured-mode');
-            fetchTransposed(c.id, t, renderHtml, c.has_tablatura);
+            fetchTransposed(c.id, renderTranspose, renderHtml, c.has_tablatura);
         }
     }
 
@@ -1797,6 +1974,7 @@
     window.setViewMode = setViewMode;
     window.cycleViewMode = cycleViewMode;
     window.toggleNashville = toggleNashville;
+    // ── Metrônomo Profissional, Tap Tempo e Pulso Visual ──
     function toggleMetronome() {
         var c = getCurrent();
         var bpm = (c && c.bpm) ? Number(c.bpm) : 120;
@@ -1814,6 +1992,176 @@
                 });
             }
         }
+    }
+
+    function handleTapTempo() {
+        if (window.SetSyncMetronome && SetSyncMetronome.tap) {
+            var newBpm = SetSyncMetronome.tap();
+            if (newBpm) {
+                var btn = document.getElementById('tap-tempo-btn');
+                if (btn) {
+                    btn.classList.add('pb-on');
+                    setTimeout(function () { btn.classList.remove('pb-on'); }, 180);
+                }
+                var c = getCurrent();
+                if (c) {
+                    c.bpm = newBpm;
+                    var artista = c.artista || '';
+                    var tomLabel = 'Tom ' + getDisplayKey(c);
+                    var el = document.getElementById('bar-meta');
+                    if (el) {
+                        el.textContent = artista + formatSongMetaExtras(c) + ' · ' + tomLabel + ' · ' + (current + 1) + '/' + CIFRAS.length;
+                    }
+                }
+            }
+        }
+    }
+
+    function toggleMetroAudio() {
+        if (window.SetSyncMetronome) {
+            var currentSound = SetSyncMetronome.isSoundEnabled();
+            SetSyncMetronome.setSoundEnabled(!currentSound);
+            var bar = document.getElementById('metro-visual-bar');
+            if (bar) bar.classList.toggle('is-muted', currentSound);
+        }
+    }
+
+    if (window.SetSyncMetronome) {
+        SetSyncMetronome.onBeat(function (beat, totalBeats, isAccent) {
+            var dots = document.querySelectorAll('#metro-visual-bar .metro-dot');
+            dots.forEach(function (d, idx) {
+                d.classList.remove('active', 'active-accent');
+                if (beat > 0 && idx === (beat - 1)) {
+                    d.classList.add(isAccent ? 'active-accent' : 'active');
+                }
+            });
+        });
+        SetSyncMetronome.onBpmChange(function (newBpm) {
+            var c = getCurrent();
+            if (c) {
+                c.bpm = newBpm;
+                var el = document.getElementById('bar-meta');
+                if (el) {
+                    var tomLabel = 'Tom ' + getDisplayKey(c);
+                    el.textContent = (c.artista || '') + formatSongMetaExtras(c) + ' · ' + tomLabel + ' · ' + (current + 1) + '/' + CIFRAS.length;
+                }
+            }
+        });
+    }
+
+    // ── Calculadora e Transpositor de Capotraste Inteligente (CAGED) ──
+    var songCapos = {};
+    function getSongCapo(id) {
+        return songCapos[id] || 0;
+    }
+    function setSongCapo(fret) {
+        var c = getCurrent();
+        if (!c) return;
+        songCapos[c.id] = fret;
+        updateCapoUi(c);
+        render();
+    }
+    function updateCapoUi(c) {
+        if (!c) return;
+        var fret = getSongCapo(c.id);
+        var btn = document.getElementById('play-capo-btn');
+        var lbl = document.getElementById('capo-btn-label');
+        if (!btn || !lbl) return;
+        if (fret > 0) {
+            btn.classList.add('capo-active');
+            var realKey = getDisplayKey(c);
+            var info = (window.SetSyncCapo && SetSyncCapo.calculateCapo) ? SetSyncCapo.calculateCapo(realKey, fret) : null;
+            lbl.textContent = 'Capo ' + fret + (info ? ' (' + info.shapeKey + ')' : '');
+        } else {
+            btn.classList.remove('capo-active');
+            lbl.textContent = 'Capo';
+        }
+    }
+    function openCapoModal() {
+        var c = getCurrent();
+        if (!c) return;
+        var modal = document.getElementById('play-capo-modal');
+        var grid = document.getElementById('capo-fret-grid');
+        var boxText = document.getElementById('capo-suggestion-text');
+        var realKey = getDisplayKey(c);
+        var currentFret = getSongCapo(c.id);
+
+        if (window.SetSyncCapo && SetSyncCapo.getSuggestions) {
+            var suggs = SetSyncCapo.getSuggestions(realKey);
+            if (suggs && suggs.length > 0 && boxText) {
+                boxText.innerHTML = '💡 <strong>Dica para tom ' + realKey + ':</strong> Use <strong>Capo ' + suggs[0].fret + '</strong> para tocar formas de <em>' + suggs[0].shapeKey + '</em> sem pestana!';
+            } else if (boxText) {
+                boxText.textContent = 'Tom atual: ' + realKey + ' (escolha uma casa para transpor os acordes)';
+            }
+        }
+
+        if (grid) {
+            grid.innerHTML = '';
+            for (var f = 0; f <= 7; f++) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'capo-fret-btn' + (f === currentFret ? ' active' : '');
+                var shapeInfo = (window.SetSyncCapo && SetSyncCapo.calculateCapo) ? SetSyncCapo.calculateCapo(realKey, f) : null;
+                var shapeText = shapeInfo ? shapeInfo.shapeKey : '';
+                btn.innerHTML = (f === 0 ? 'Sem Capo' : 'Casa ' + f) + (shapeText ? '<span class="shape-hint">Forma ' + shapeText + '</span>' : '');
+                btn.setAttribute('data-fret', String(f));
+                btn.onclick = (function (fretNum) {
+                    return function () {
+                        setSongCapo(fretNum);
+                        closeCapoModal();
+                    };
+                })(f);
+                grid.appendChild(btn);
+            }
+        }
+        if (modal) modal.classList.remove('d-none');
+    }
+    function closeCapoModal() {
+        var modal = document.getElementById('play-capo-modal');
+        if (modal) modal.classList.add('d-none');
+    }
+
+    // ── Colas Pessoais de Palco (Personal Musician Cues) ──
+    function openCueModal() {
+        var c = getCurrent();
+        if (!c) return;
+        var modal = document.getElementById('play-cue-modal');
+        var input = document.getElementById('play-cue-input');
+        if (modal && input) {
+            var existing = (window.SetSyncPersonalCues && SetSyncPersonalCues.getCue) ? SetSyncPersonalCues.getCue(c.id) : '';
+            input.value = existing;
+            modal.classList.remove('d-none');
+            setTimeout(function () { input.focus(); }, 60);
+        }
+    }
+    function closeCueModal() {
+        var modal = document.getElementById('play-cue-modal');
+        if (modal) modal.classList.add('d-none');
+    }
+    function saveCurrentCue() {
+        var c = getCurrent();
+        if (!c) return;
+        var input = document.getElementById('play-cue-input');
+        if (input && window.SetSyncPersonalCues) {
+            SetSyncPersonalCues.saveCue(c.id, input.value.trim());
+            var cueWrap = document.getElementById('play-cue-banner-wrap');
+            SetSyncPersonalCues.renderCueBanner(c.id, cueWrap);
+            var cueDot = document.getElementById('cue-badge-dot');
+            if (cueDot) cueDot.classList.toggle('d-none', !SetSyncPersonalCues.hasCue(c.id));
+        }
+        closeCueModal();
+    }
+    function deleteCurrentCue() {
+        var c = getCurrent();
+        if (!c) return;
+        if (window.SetSyncPersonalCues) {
+            SetSyncPersonalCues.saveCue(c.id, '');
+            var cueWrap = document.getElementById('play-cue-banner-wrap');
+            SetSyncPersonalCues.renderCueBanner(c.id, cueWrap);
+            var cueDot = document.getElementById('cue-badge-dot');
+            if (cueDot) cueDot.classList.add('d-none');
+        }
+        closeCueModal();
     }
 
     function toggleDraw() {
@@ -1925,6 +2273,15 @@
     window.setDrawEraser = setDrawEraser;
     window.clearDraw = clearDraw;
     window.toggleMetronome = toggleMetronome;
+    window.handleTapTempo = handleTapTempo;
+    window.toggleMetroAudio = toggleMetroAudio;
+    window.openCapoModal = openCapoModal;
+    window.closeCapoModal = closeCapoModal;
+    window.setSongCapo = setSongCapo;
+    window.openCueModal = openCueModal;
+    window.closeCueModal = closeCueModal;
+    window.saveCurrentCue = saveCurrentCue;
+    window.deleteCurrentCue = deleteCurrentCue;
     window.playCurrentKeyPitch = playCurrentKeyPitch;
     window.openPedalWizard = openPedalWizard;
     window.setVersionMode = setVersionMode;
@@ -1977,6 +2334,9 @@
             case 'ArrowUp': e.preventDefault(); prevSong(); break;
             case ' ': case 'Spacebar': e.preventDefault(); toggleScroll(); break;
             case 'm': case 'M': toggleMetronome(); break;
+            case 'b': case 'B': handleTapTempo(); break;
+            case 'k': case 'K': openCapoModal(); break;
+            case 'q': case 'Q': openCueModal(); break;
             case 'o': case 'O': playCurrentKeyPitch(); break;
             case 'f': case 'F': toggleFullscreen(); break;
             case 'l': case 'L': toggleDrawer(); break;

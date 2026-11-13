@@ -9,6 +9,16 @@
             {% endif %}
         </a>
     </div>
+    {% set readiness = cifra.readiness or 'pronta' %}
+    {% if readiness == 'ensaio' %}
+    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" title="Precisa de ensaio" style="font-size: 0.72rem; font-weight: 500;">
+        <i class="fas fa-clock me-1"></i>Ensaio
+    </span>
+    {% elif readiness == 'aprender' %}
+    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="Aprender/tirar música" style="font-size: 0.72rem; font-weight: 500;">
+        <i class="fas fa-book-open me-1"></i>Aprender
+    </span>
+    {% endif %}
     {% if cifra.tom_original %}
     <span class="row-badge">{{ cifra_display_key(cifra) }}</span>
     {% endif %}

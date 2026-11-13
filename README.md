@@ -24,9 +24,14 @@
 - **Cantores** — vários vocalistas por banda, tom de transposição por cantor
 - **Cifras** — ChordPro, colagem de sites, lead sheet, **chord sheet** (chordsheet.com), tablatura, tons maiores/menores
 - **Transposição** — em tempo real; tom salvo para toda a banda e por cantor na setlist
-- **Setlists** — ordenação por arrastar, cantor/tom por música, link público de letras
+- **Setlists & Prontidão do Show** — ordenação por arrastar, cantor/tom por música, link público de letras e **Status de Prontidão do Repertório** (pronta, ensaio, aprender com estatísticas e barra de progresso do show)
 - **PDF e impressão** — folha de palco (lista simples) + cifras em sequência (A4, 2 colunas)
-- **Modo Tocar & Palco** — tela cheia, setlist lateral, auto-scroll, gestos, atalhos de teclado, diapasão de referência (pitch pipe) e pedais Bluetooth (PageFlip, AirTurn, Donner, Lekato)
+- **Modo Tocar & Ferramentas de Palco**:
+  - Tela cheia, setlist lateral, auto-scroll, gestos, pedais Bluetooth (PageFlip, AirTurn, Donner, Lekato)
+  - **Metrônomo com Tap Tempo & Pulso Visual Silencioso** — oscilador Web Audio, medição de BPM em tempo real (Tap Tempo tecla `B`) e LEDs visuais com acento no tempo 1 para palco mudo
+  - **Calculadora & Transpositor de Capotraste (CAGED)** — sugestões de casas ideais para formas abertas sem pestana (tecla `K`) com transposição visual instantânea na cifra
+  - **Colas Pessoais de Palco (Personal Musician Cues)** — anotações particulares salvas localmente por integrante (tecla `Q`) sem poluir a cifra coletiva da banda
+  - Diapasão de referência (pitch pipe) com síntese harmônica precisa
 - **PWA** — instalar no celular (Android/iOS) com suporte a Modo Tocar 100% offline
 - **Planos Comerciais de Alta Conversão** — Grátis, Individual (R$ 15), Pro (R$ 29 - Mais Popular) e Worship (R$ 69 - Igrejas), Pix imediato e Cartão 12x via Mercado Pago com garantia incondicional de 7 dias
 - **Login** — e-mail/senha e Google OAuth (opcional)

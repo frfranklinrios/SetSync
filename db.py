@@ -382,6 +382,7 @@ def _migrate_core_legacy_columns(c) -> None:
         ("leadsheet_json", "TEXT"),
         ("transpose_semitones", "INTEGER DEFAULT 0"),
         ("referencia_json", "TEXT"),
+        ("readiness", "TEXT DEFAULT 'pronta'"),
     ]:
         add_column_if_missing(c, "cifras", col, typedef)
 
@@ -3863,6 +3864,52 @@ def update_cifra(
     )
     db.commit()
     db.close()
+
+
+def update_cifra_readiness(cifra_id: str, readiness: str) -> bool:
+    """Atualiza status de prontidão da música: 'pronta', 'ensaio' ou 'aprender'."""
+    val = (readiness or "").strip().lower()
+    if val not in ("pronta", "ensaio", "aprender"):
+        val = "pronta"
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        "UPDATE cifras SET readiness = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (val, cifra_id),
+    )
+    db.commit()
+    db.close()
+    return True
+
+
+def get_setlist_readiness_stats(setlist_id: int) -> dict:
+    """Calcula estatísticas de prontidão do repertório do setlist."""
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        """SELECT COALESCE(c.readiness, 'pronta') AS readiness, COUNT(*) AS qtd
+           FROM setlist_cifras sc
+           JOIN cifras c ON c.id = sc.cifra_id
+           WHERE sc.setlist_id = ?
+           GROUP BY COALESCE(c.readiness, 'pronta')""",
+        (setlist_id,),
+    )
+    rows = c.fetchall()
+    db.close()
+
+    stats = {"pronta": 0, "ensaio": 0, "aprender": 0, "total": 0, "pct_pronta": 100, "percent_ready": 100}
+    for r in rows:
+        st = r["readiness"]
+        if st in stats:
+            stats[st] = int(r["qtd"] or 0)
+        stats["total"] += int(r["qtd"] or 0)
+
+    if stats["total"] > 0:
+        pct = round((stats["pronta"] / stats["total"]) * 100)
+        stats["pct_pronta"] = pct
+        stats["percent_ready"] = pct
+    return stats
+
 
 
 def delete_cifra(cifra_id):

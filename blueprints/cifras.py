@@ -1067,6 +1067,27 @@ def save_cifra_play_notes(cifra_id):
     return jsonify({"ok": True, "play_notes": notes})
 
 
+@cifras_bp.route("/<cifra_id>/readiness", methods=["POST"])
+@login_required
+def set_readiness(cifra_id):
+    """Atualiza o status de prontidão da música ('pronta', 'ensaio', 'aprender')."""
+    from db import get_cifra, is_band_editor, update_cifra_readiness
+
+    user_id = session["user_id"]
+    cifra = get_cifra(cifra_id)
+    if not cifra:
+        return jsonify({"ok": False, "error": "Cifra não encontrada"}), 404
+    band_id = cifra.get("band_id")
+    if not band_id or not is_band_editor(band_id, user_id):
+        return jsonify({"ok": False, "error": "Sem permissão"}), 403
+    data = request.get_json(silent=True) or {}
+    readiness = (data.get("readiness") or "").strip().lower()
+    if readiness not in ("pronta", "ensaio", "aprender"):
+        return jsonify({"ok": False, "error": "Status de prontidão inválido"}), 400
+    update_cifra_readiness(cifra_id, readiness)
+    return jsonify({"ok": True, "readiness": readiness})
+
+
 @cifras_bp.route("/minha-colecao")
 @login_required
 def my_library():

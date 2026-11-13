@@ -692,7 +692,7 @@ def view(setlist_id):
 
     from blueprints.cifras import cifra_display_key, vocalist_entry_display_name
     from chordsheet_bridge import cifra_has_chordsheet
-    from db import get_band_vocalist, get_band_vocalists
+    from db import get_band_vocalist, get_band_vocalists, get_setlist_readiness_stats
     from setlist_public import lyrics_from_cifra
 
     cifras_raw = get_setlist_cifras(setlist_id)
@@ -713,6 +713,8 @@ def view(setlist_id):
         row["has_chordsheet"] = cifra_has_chordsheet(c)
         cifras.append(row)
 
+    readiness_stats = get_setlist_readiness_stats(setlist_id)
+
     share_on = bool(setlist.get("public_share_enabled"))
     share_token = (setlist.get("public_share_token") or "").strip()
     public_letras_url = None
@@ -728,6 +730,7 @@ def view(setlist_id):
         band=band,
         cifras=cifras,
         vocalists=vocalists,
+        readiness_stats=readiness_stats,
         public_share_enabled=share_on,
         public_letras_url=public_letras_url,
         can_edit=is_band_editor(band["id"], user_id),

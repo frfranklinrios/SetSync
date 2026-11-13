@@ -1,5 +1,6 @@
 /**
- * Metrônomo — Web Audio + flash visual, acento no tempo 1, count-in e compassos.
+ * Metrônomo Profissional — Web Audio API + Flash Visual + Tap Tempo + Visual Pulse.
+ * Inspirado nas melhores implementações open-source de palco (chordbook/metronome & Resonate).
  */
 (function (global) {
   'use strict';
@@ -15,6 +16,19 @@
   var countInBeats = 0;
   var countInRemaining = 0;
   var onCountInDone = null;
+  var onBeatCallback = null;
+  var onBpmChangeCallback = null;
+
+  var SOUND_PREF_KEY = 'setsync.metronome.sound';
+  var soundEnabled = true;
+  try {
+    var storedSound = localStorage.getItem(SOUND_PREF_KEY);
+    if (storedSound !== null) soundEnabled = storedSound === '1';
+  } catch (e) {}
+
+  // Tap tempo state
+  var tapTimes = [];
+  var TAP_TIMEOUT = 2500; // Reset tap after 2.5s
 
   function getCtx() {
     if (!audioCtx) {
@@ -25,25 +39,37 @@
   }
 
   function click(accent) {
-    var ctx = getCtx();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    var o = ctx.createOscillator();
-    var g = ctx.createGain();
-    o.type = 'square';
-    o.frequency.value = accent ? 1400 : 1000;
-    g.gain.value = accent ? 0.12 : 0.08;
-    o.connect(g);
-    g.connect(ctx.destination);
-    var t = ctx.currentTime;
-    o.start(t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + (accent ? 0.07 : 0.05));
-    o.stop(t + (accent ? 0.08 : 0.06));
+    if (soundEnabled) {
+      try {
+        var ctx = getCtx();
+        if (ctx) {
+          if (ctx.state === 'suspended') ctx.resume();
+          var o = ctx.createOscillator();
+          var g = ctx.createGain();
+          o.type = 'square';
+          o.frequency.value = accent ? 1400 : 1000;
+          g.gain.value = accent ? 0.12 : 0.08;
+          o.connect(g);
+          g.connect(ctx.destination);
+          var t = ctx.currentTime;
+          o.start(t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + (accent ? 0.07 : 0.05));
+          o.stop(t + (accent ? 0.08 : 0.06));
+        }
+      } catch (e) {}
+    }
+
     if (flashEl) {
       flashEl.classList.add(accent ? 'metronome-flash-accent' : 'metronome-flash');
       setTimeout(function () {
-        flashEl.classList.remove('metronome-flash', 'metronome-flash-accent');
+        if (flashEl) flashEl.classList.remove('metronome-flash', 'metronome-flash-accent');
       }, accent ? 100 : 80);
+    }
+
+    if (typeof onBeatCallback === 'function') {
+      try {
+        onBeatCallback(beatInBar, beatsPerBar, accent);
+      } catch (e) {}
     }
   }
 
@@ -73,7 +99,7 @@
   function start(newBpm, opts) {
     stop(false);
     opts = opts || {};
-    bpm = Math.max(40, Math.min(240, Number(newBpm) || 120));
+    bpm = Math.max(40, Math.min(240, Number(newBpm) || bpm || 120));
     beatsPerBar = parseTimeSignature(opts.timeSignature);
     accentBeatOne = opts.accentBeatOne !== false;
     beatInBar = 0;
@@ -82,13 +108,9 @@
     countInBeats = Math.max(0, Math.min(8, parseInt(opts.countIn, 10) || 0));
     countInRemaining = countInBeats;
     onCountInDone = opts.onCountInDone || null;
-    if (countInRemaining > 0) {
-      tick();
-      timer = setInterval(tick, interval);
-    } else {
-      tick();
-      timer = setInterval(tick, interval);
-    }
+
+    tick();
+    timer = setInterval(tick, interval);
     updateUi();
   }
 
@@ -103,6 +125,11 @@
       clearInterval(timer);
       timer = null;
     }
+    if (typeof onBeatCallback === 'function') {
+      try {
+        onBeatCallback(0, beatsPerBar, false);
+      } catch (e) {}
+    }
     updateUi();
   }
 
@@ -114,6 +141,77 @@
 
   function isActive() {
     return active;
+  }
+
+  function getBpm() {
+    return bpm;
+  }
+
+  function setBpm(val) {
+    var num = Math.max(40, Math.min(240, Math.round(Number(val) || 120)));
+    bpm = num;
+    if (typeof onBpmChangeCallback === 'function') {
+      onBpmChangeCallback(bpm);
+    }
+    var btn = document.getElementById('metronome-btn');
+    if (btn) btn.setAttribute('data-bpm', String(bpm));
+    if (active) {
+      start(bpm, {
+        timeSignature: String(beatsPerBar) + '/4',
+        accentBeatOne: accentBeatOne,
+        countIn: 0,
+      });
+    }
+    return bpm;
+  }
+
+  function setSoundEnabled(enable) {
+    soundEnabled = !!enable;
+    try {
+      localStorage.setItem(SOUND_PREF_KEY, soundEnabled ? '1' : '0');
+    } catch (e) {}
+    updateUi();
+    return soundEnabled;
+  }
+
+  function isSoundEnabled() {
+    return soundEnabled;
+  }
+
+  /**
+   * Tap Tempo: Calcula BPM com base nos intervalos dos toques.
+   * Retorna o novo BPM calculado ou null se ainda precisa de mais toques.
+   */
+  function tap() {
+    var now = Date.now();
+    if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > TAP_TIMEOUT) {
+      tapTimes = [];
+    }
+    tapTimes.push(now);
+    if (tapTimes.length > 5) {
+      tapTimes.shift();
+    }
+    if (tapTimes.length < 2) {
+      return null;
+    }
+    var intervals = [];
+    for (var i = 1; i < tapTimes.length; i++) {
+      intervals.push(tapTimes[i] - tapTimes[i - 1]);
+    }
+    var sum = intervals.reduce(function (a, b) { return a + b; }, 0);
+    var avg = sum / intervals.length;
+    if (avg <= 0) return null;
+    var calcBpm = Math.max(40, Math.min(240, Math.round(60000 / avg)));
+    setBpm(calcBpm);
+    return calcBpm;
+  }
+
+  function onBeat(fn) {
+    onBeatCallback = fn;
+  }
+
+  function onBpmChange(fn) {
+    onBpmChangeCallback = fn;
   }
 
   function bindUi(btnId, flashTargetId) {
@@ -150,8 +248,14 @@
   function updateSongContext(song) {
     var btn = document.getElementById('metronome-btn');
     if (!btn || !song) return;
-    if (song.bpm) btn.setAttribute('data-bpm', String(song.bpm));
-    if (song.time_signature) btn.setAttribute('data-time-sig', song.time_signature);
+    if (song.bpm) {
+      bpm = Math.max(40, Math.min(240, Number(song.bpm) || 120));
+      btn.setAttribute('data-bpm', String(bpm));
+    }
+    if (song.time_signature) {
+      btn.setAttribute('data-time-sig', song.time_signature);
+      beatsPerBar = parseTimeSignature(song.time_signature);
+    }
   }
 
   global.SetSyncMetronome = {
@@ -159,6 +263,13 @@
     stop: stop,
     toggle: toggle,
     isActive: isActive,
+    getBpm: getBpm,
+    setBpm: setBpm,
+    tap: tap,
+    setSoundEnabled: setSoundEnabled,
+    isSoundEnabled: isSoundEnabled,
+    onBeat: onBeat,
+    onBpmChange: onBpmChange,
     bindUi: bindUi,
     setCountInDefault: setCountInDefault,
     updateSongContext: updateSongContext,

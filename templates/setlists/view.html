@@ -239,6 +239,32 @@
 {% endif %}
 
 {% if cifras %}
+{% if readiness_stats and readiness_stats.total > 0 %}
+<div class="card mb-3 p-3 border-0 shadow-sm" style="background: var(--surface, #ffffff); border-radius: 12px; border: 1px solid var(--border) !important;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                <i class="fas fa-check-circle me-1"></i>{{ readiness_stats.percent_ready }}% Prontas para o Show
+            </span>
+            <span class="small text-muted">({{ readiness_stats.total }} músicas no repertório)</span>
+        </div>
+        <div class="small d-flex gap-3">
+            <span class="text-success"><i class="fas fa-check me-1"></i><strong>{{ readiness_stats.pronta }}</strong> prontas</span>
+            <span class="text-warning-emphasis"><i class="fas fa-clock me-1"></i><strong>{{ readiness_stats.ensaio }}</strong> em ensaio</span>
+            <span class="text-danger"><i class="fas fa-book-open me-1"></i><strong>{{ readiness_stats.aprender }}</strong> aprender</span>
+        </div>
+    </div>
+    <div class="progress" style="height: 7px; border-radius: 4px; overflow: hidden; background: rgba(0,0,0,0.06);">
+        {% set p_pronta = ((readiness_stats.pronta / readiness_stats.total) * 100)|round %}
+        {% set p_ensaio = ((readiness_stats.ensaio / readiness_stats.total) * 100)|round %}
+        {% set p_aprender = ((readiness_stats.aprender / readiness_stats.total) * 100)|round %}
+        <div class="progress-bar bg-success" role="progressbar" style="width: {{ p_pronta }}%" title="{{ readiness_stats.pronta }} prontas"></div>
+        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ p_ensaio }}%" title="{{ readiness_stats.ensaio }} em ensaio"></div>
+        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ p_aprender }}%" title="{{ readiness_stats.aprender }} aprender"></div>
+    </div>
+</div>
+{% endif %}
+
 {% if can_edit %}
 <div class="tip">
     <i class="fas fa-grip-vertical"></i>
@@ -273,6 +299,26 @@
             <div class="row-play-notes-read text-muted small mt-1">
                 <i class="fas fa-sticky-note me-1"></i>{{ cifra.setlist_play_notes or cifra.play_notes }}
             </div>
+            {% endif %}
+        </div>
+        <div class="row-readiness-col me-1">
+            {% set c_ready = cifra.readiness or 'pronta' %}
+            {% if can_edit %}
+            <select class="row-readiness-sel form-select form-select-sm" data-cifra-id="{{ cifra.id }}"
+                    aria-label="Status de prontidão de {{ cifra.titulo }}"
+                    style="font-size: 0.75rem; padding: 0.2rem 0.5rem; height: auto; width: auto; border-radius: 6px;">
+                <option value="pronta" {% if c_ready == 'pronta' %}selected{% endif %}>✓ Pronta</option>
+                <option value="ensaio" {% if c_ready == 'ensaio' %}selected{% endif %}>⏱ Ensaio</option>
+                <option value="aprender" {% if c_ready == 'aprender' %}selected{% endif %}>📖 Aprender</option>
+            </select>
+            {% else %}
+                {% if c_ready == 'ensaio' %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.72rem;">Ensaio</span>
+                {% elif c_ready == 'aprender' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.72rem;">Aprender</span>
+                {% else %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.72rem;">Pronta</span>
+                {% endif %}
             {% endif %}
         </div>
         {% if cifra.tom_original and vocalists %}
@@ -427,6 +473,29 @@
 
     document.querySelectorAll('.row-play-notes').forEach(function (inp) {
         inp.setAttribute('data-saved-value', (inp.value || '').trim());
+    });
+
+    document.querySelectorAll('.row-readiness-sel').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+            var cid = sel.getAttribute('data-cifra-id');
+            var val = sel.value;
+            showStatus('Atualizando status…');
+            var headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+            if (window.csrfToken) headers['X-CSRFToken'] = window.csrfToken;
+            (window.ssFetch || window.fetch)('/cifras/' + encodeURIComponent(cid) + '/readiness', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: headers,
+                body: JSON.stringify({ readiness: val })
+            }).then(function (r) { return r.json(); })
+              .then(function (res) {
+                  if (!res.ok) throw new Error(res.error || 'falha');
+                  showStatus('Status salvo ✓', 'ok');
+              })
+              .catch(function () {
+                  showStatus('Erro ao atualizar status', 'err');
+              });
+        });
     });
 
     function showStatus(text, klass) {

@@ -1,5 +1,26 @@
 # Changelog — Uníssono
 
+## 2026-11-13
+
+### Inovações Inspiradas em Referências de Palco Open-Source (GitHub)
+- **Metrônomo Profissional com Tap Tempo & Pulso Visual Silencioso** (*chordbook/metronome* & *Rexaintreal/Resonate*):
+  - Botão **Tap Tempo** integrado à barra do Modo Tocar (atalho `B`), permitindo marcar o andamento em 3–4 batidas.
+  - **Barra de Pulso Visual de LEDs** sincronizada com o compasso: acento no tempo 1 (âmbar) e pulso rítmico nos demais tempos (ciano).
+  - Modo silencioso/mudo com um toque na barra de LEDs, permitindo aos músicos seguirem o tempo no palco sem ruído sonoro.
+- **Calculadora e Transpositor de Capotraste Inteligente (CAGED)** (*sepandhaghighi/capo* & *VitamintK/Capoless*):
+  - Módulo `capo-calculator.js` que calcula a equivalência matemática de casas 1 a 7 e formas abertas sem pestana.
+  - Sugestões automáticas baseadas no tom real da música, destacando a melhor casa para tocar com digitações simples do CAGED (C, A, G, E, D).
+  - Transposição visual instantânea na cifra (atalho `K`), permitindo ao instrumentista ler os acordes relativos ao Capo enquanto a banda e o vocalista mantêm o tom original de apresentação.
+- **Colas Pessoais de Palco (Personal Musician Cues)** (*ParriauxMaxime/open-setlist*):
+  - Sistema de anotações 100% privadas por música para cada integrante da banda (atalho `Q`).
+  - Permite ao baterista, baixista ou guitarrista salvar observações particulares (ex: "Começar no chimbal", "Solo na 2ª volta em Am") sem poluir a cifra compartilhada da equipe.
+  - Banner destacado no topo da cifra no Modo Tocar com modal rápido de edição e persistência local.
+- **Status de Prontidão da Música no Repertório (Song Readiness)** (*ParriauxMaxime/open-setlist*):
+  - Classificação do repertório em `pronta`, `ensaio` ou `aprender`, com indicador visual nos cards e badges da banda.
+  - Barra de Prontidão Geral do Show no Setlist (`85% Prontas para o Show`), com contadores e gráfico proporcional.
+  - Dropdown interativo na lista do setlist com atualização assíncrona instantânea via API `/cifras/<id>/readiness`.
+  - Testes automatizados dedicados em `scripts/test_github_features.py` (30/30 testes com 100% de sucesso).
+
 ## 2026-11-12
 
 ### Desativação Temporária do WhatsApp
