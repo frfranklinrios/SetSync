@@ -220,6 +220,9 @@
         <button class="pb-btn pb-chrome-ctrl" onclick="toggleDrawer()" title="Lista (L)" aria-label="Abrir lista">
             <i class="fas fa-list"></i>
         </button>
+        <button class="pb-btn pb-chrome-ctrl" id="play-jumper-btn" onclick="openSongJumper()" title="Busca Rápida de Músicas (J ou /)" aria-label="Buscar música">
+            <i class="fas fa-search"></i>
+        </button>
         <button class="pb-btn pb-chrome-ctrl" id="btn-prev" onclick="prevSong()" title="Música anterior" aria-label="Música anterior">
             <i class="fas fa-chevron-left"></i>
         </button>
@@ -239,6 +242,21 @@
         <button class="pb-btn pb-chrome-ctrl" id="btn-next" onclick="nextSong()" title="Próxima música" aria-label="Próxima música">
             <i class="fas fa-chevron-right"></i>
         </button>
+
+        <div class="stage-clock-widget pb-chrome-ctrl" id="stage-clock-widget" title="Clique para alternar entre Hora Atual e Cronômetro do Show">
+            <div class="stage-clock-display" id="stage-clock-display">
+                <i class="fas fa-clock stage-clock-icon text-info" id="stage-clock-icon"></i>
+                <span id="stage-clock-time">--:--</span>
+            </div>
+            <div class="stage-timer-ctrls d-none" id="stage-timer-ctrls">
+                <button type="button" class="stage-timer-btn" id="stage-timer-toggle" title="Iniciar/Pausar cronômetro">
+                    <i class="fas fa-play" id="stage-timer-play-icon"></i>
+                </button>
+                <button type="button" class="stage-timer-btn" id="stage-timer-reset" title="Zerar cronômetro">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+        </div>
 
         <div class="bar-group-extra pb-chrome-ctrl">
             <div class="transpose-stepper transpose-mini" role="group"
@@ -410,6 +428,9 @@
     <button type="button" onclick="adjustSpeed(-1)" title="Mais lento" aria-label="Diminuir velocidade">−</button>
     <span class="label" id="speed-label">Médio</span>
     <button type="button" onclick="adjustSpeed(1)" title="Mais rápido" aria-label="Aumentar velocidade">+</button>
+    <button type="button" class="speed-duration-btn" id="speed-duration-btn" onclick="openDurationModal()" title="Ajustar duração da música para auto-scroll (ex: 3:30 min)">
+        <i class="fas fa-stopwatch"></i>&nbsp;<span id="speed-duration-lbl">Tempo</span>
+    </button>
 </div>
 
 <!-- Auto-scroll badge -->
@@ -520,11 +541,42 @@
     </div>
 </div>
 
+<div id="play-duration-modal" class="play-modal-overlay d-none" role="dialog" aria-modal="true" aria-labelledby="duration-modal-title">
+    <div class="play-modal-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h3 class="h6 mb-0" id="duration-modal-title"><i class="fas fa-stopwatch me-2 text-info"></i>Duração do Auto-Scroll</h3>
+            <button type="button" class="btn-close btn-close-white" onclick="closeDurationModal()" aria-label="Fechar"></button>
+        </div>
+        <p class="small text-muted mb-2">A rolagem é sincronizada exatamente para o tempo da música com 3 segundos de preparação inicial.</p>
+        <div class="duration-preset-grid">
+            <button type="button" class="duration-preset-btn" onclick="applySongDuration(120)">2:00 min</button>
+            <button type="button" class="duration-preset-btn" onclick="applySongDuration(150)">2:30 min</button>
+            <button type="button" class="duration-preset-btn" onclick="applySongDuration(180)">3:00 min</button>
+            <button type="button" class="duration-preset-btn" onclick="applySongDuration(210)">3:30 min</button>
+            <button type="button" class="duration-preset-btn" onclick="applySongDuration(240)">4:00 min</button>
+            <button type="button" class="duration-preset-btn" onclick="applySongDuration(300)">5:00 min</button>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <label class="small text-muted text-nowrap" for="custom-duration-min">Personalizado:</label>
+            <input type="number" id="custom-duration-min" class="form-control form-control-sm text-center" min="1" max="59" placeholder="Min" style="width: 70px; background: rgba(0,0,0,0.3); color: #fff;">
+            <span class="text-muted">:</span>
+            <input type="number" id="custom-duration-sec" class="form-control form-control-sm text-center" min="0" max="59" placeholder="Seg" style="width: 70px; background: rgba(0,0,0,0.3); color: #fff;">
+            <button type="button" class="btn btn-outline-info btn-sm" onclick="applyCustomDuration()">Aplicar</button>
+        </div>
+        <div class="d-flex justify-content-end">
+            <button type="button" class="pb-btn btn-sm" onclick="closeDurationModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
 <script src="{{ url_for('static', filename='js/leadsheet-play-render.js') }}?v=16"></script>
 <script src="{{ url_for('static', filename='js/offline-store.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/play-metronome.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/capo-calculator.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/play-personal-cues.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/play-song-jumper.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/play-stage-clock.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/play-chord-hud.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/play-draw-overlay.js') }}?v=5"></script>
 <script src="{{ url_for('static', filename='js/play-pedal-config.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/play-pedal-wizard.js') }}?v=2"></script>
@@ -663,18 +715,20 @@
         return SPEED_PRESETS[speedIdx].v;
     }
 
-    function applyDurationScrollSpeed() {
+    function applyDurationScrollSpeed(overrideDurationSec) {
         durationScrollPxMs = null;
         if (viewMode !== 'cifra' && viewMode !== 'letra') return;
         var c = getCurrent();
-        if (!c || !c.duracao_seg) return;
+        var dur = overrideDurationSec || (c && c.duracao_seg ? Number(c.duracao_seg) : null);
+        if (!dur) return;
         var wrap = scrollWrap();
         if (!wrap) return;
         var scrollable = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
         if (scrollable < 24) return;
-        var dur = Number(c.duracao_seg);
-        if (dur >= 30 && dur <= 3600) {
-            durationScrollPxMs = scrollable / (dur * 1000);
+        dur = Number(dur);
+        if (dur >= 20 && dur <= 3600) {
+            var effectiveMs = Math.max(4000, (dur * 1000) - 3000);
+            durationScrollPxMs = scrollable / effectiveMs;
         }
     }
 
@@ -1862,11 +1916,59 @@
     function updateSpeedLabel() {
         var lbl = document.getElementById('speed-label');
         if (!lbl) return;
+        var durLbl = document.getElementById('speed-duration-lbl');
+        var c = getCurrent();
+        if (durLbl && c && c.duracao_seg) {
+            var m = Math.floor(c.duracao_seg / 60);
+            var s = c.duracao_seg % 60;
+            durLbl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+        } else if (durLbl) {
+            durLbl.textContent = 'Tempo';
+        }
         if (durationScrollPxMs != null && isScrolling) {
             lbl.textContent = 'Auto';
             return;
         }
         lbl.textContent = SPEED_PRESETS[speedIdx].label;
+    }
+
+    function openDurationModal() {
+        var modal = document.getElementById('play-duration-modal');
+        var c = getCurrent();
+        if (modal) {
+            var dur = (c && c.duracao_seg) ? Number(c.duracao_seg) : 210;
+            var minInp = document.getElementById('custom-duration-min');
+            var secInp = document.getElementById('custom-duration-sec');
+            if (minInp) minInp.value = Math.floor(dur / 60);
+            if (secInp) secInp.value = dur % 60;
+            modal.classList.remove('d-none');
+        }
+    }
+    function closeDurationModal() {
+        var modal = document.getElementById('play-duration-modal');
+        if (modal) modal.classList.add('d-none');
+    }
+    function applySongDuration(seconds) {
+        var c = getCurrent();
+        if (c) c.duracao_seg = seconds;
+        applyDurationScrollSpeed(seconds);
+        closeDurationModal();
+        updateSpeedLabel();
+        if (!isScrolling) startScroll();
+    }
+    function applyCustomDuration() {
+        var min = parseInt(document.getElementById('custom-duration-min').value, 10) || 0;
+        var sec = parseInt(document.getElementById('custom-duration-sec').value, 10) || 0;
+        var totalSec = (min * 60) + sec;
+        if (totalSec >= 20 && totalSec <= 3600) {
+            applySongDuration(totalSec);
+        }
+    }
+
+    function openSongJumper() {
+        if (window.SetSyncSongJumper) {
+            window.SetSyncSongJumper.open();
+        }
     }
 
     // ── Wake Lock (mantém tela acesa durante o show) ──
@@ -2282,6 +2384,11 @@
     window.closeCueModal = closeCueModal;
     window.saveCurrentCue = saveCurrentCue;
     window.deleteCurrentCue = deleteCurrentCue;
+    window.openDurationModal = openDurationModal;
+    window.closeDurationModal = closeDurationModal;
+    window.applySongDuration = applySongDuration;
+    window.applyCustomDuration = applyCustomDuration;
+    window.openSongJumper = openSongJumper;
     window.playCurrentKeyPitch = playCurrentKeyPitch;
     window.openPedalWizard = openPedalWizard;
     window.setVersionMode = setVersionMode;
@@ -2333,6 +2440,7 @@
             case 'ArrowDown': e.preventDefault(); nextSong(); break;
             case 'ArrowUp': e.preventDefault(); prevSong(); break;
             case ' ': case 'Spacebar': e.preventDefault(); toggleScroll(); break;
+            case 'j': case 'J': case '/': e.preventDefault(); openSongJumper(); break;
             case 'm': case 'M': toggleMetronome(); break;
             case 'b': case 'B': handleTapTempo(); break;
             case 'k': case 'K': openCapoModal(); break;
@@ -2368,6 +2476,8 @@
             case 'Escape':
                 if (document.getElementById('play-drawer').classList.contains('open')) {
                     closeDrawer();
+                } else if (window.SetSyncSongJumper && SetSyncSongJumper.isOpen()) {
+                    SetSyncSongJumper.close();
                 } else if (window.SetSyncPlayShare && SetSyncPlayShare.tryExit) {
                     SetSyncPlayShare.tryExit(EXIT_URL);
                 } else {
@@ -2487,6 +2597,20 @@
         showChrome();
         preloadSong(current + 1);
 
+        if (window.SetSyncSongJumper) {
+            window.SetSyncSongJumper.init({
+                cifras: CIFRAS,
+                onSelect: function (idx) { goTo(idx); },
+                getCurrentIndex: function () { return current; }
+            });
+        }
+        if (window.SetSyncStageClock) {
+            window.SetSyncStageClock.init('stage-clock-widget');
+        }
+        if (window.SetSyncChordHud) {
+            window.SetSyncChordHud.init();
+        }
+
         window.SetSyncPlayApi = {
             getCurrent: getCurrent,
             getCurrentRaw: getCurrentRaw,
@@ -2549,6 +2673,9 @@
     window.addEventListener('pagehide', function () {
         document.body.classList.remove('play-mode', 'chrome-hidden', 'edges-hint');
         if (window.SetSyncMetronome) window.SetSyncMetronome.stop();
+        if (window.SetSyncStageClock) window.SetSyncStageClock.destroy();
+        if (window.SetSyncChordHud) window.SetSyncChordHud.hide();
+        if (window.SetSyncSongJumper) window.SetSyncSongJumper.close();
         releaseWakeLock();
     });
 })();

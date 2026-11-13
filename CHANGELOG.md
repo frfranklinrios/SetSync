@@ -2,6 +2,32 @@
 
 ## 2026-11-13
 
+### Aprimoramentos de Alta Performance para Palco & Show ao Vivo
+- **Quick Song Jumper (Paleta Spotlight de Busca Rápida de Músicas)**:
+  - Busca instantânea e salto direto para qualquer música do setlist sem sair da tela ou abrir a gaveta lateral (atalhos `/` ou `J`, ou botão de lupa na barra superior).
+  - Filtragem em tempo real com relevância ponderada por número da faixa (ex: `#3`), título (com suporte a acentuação fonética), artista e tom da música.
+  - Navegação suave e ergonômica por teclado (`ArrowDown`, `ArrowUp`, `Enter` para saltar imediatamente e `Esc` para fechar).
+  - Badges informativos de status: "Tocando agora", versão pessoal ("Minha") e tom da cifra.
+- **Relógio de Palco & Cronômetro de Apresentação (Show Clock & Live Timer)**:
+  - Widget integrado no topo da barra do Modo Tocar com display digital tabular.
+  - Alternância imediata com um clique entre **Relógio Real** (hora local `21:45`) e **Cronômetro do Show** (`⏱ 34:12`).
+  - Controles compactos de iniciar, pausar e zerar o tempo da apresentação.
+  - Persistência em `sessionStorage` para resistir a recarregamentos acidentais da página durante a apresentação ao vivo.
+- **Auto-Scroll Inteligente Sincronizado por Duração Musical**:
+  - Botão de duração (`⏱ Tempo`) integrado diretamente à pílula flutuante de velocidade (`#speed-pill`) e modal de ajuste rápido com presets de 1 toque (2:00, 2:30, 3:00, 3:30, 4:00, 5:00 min) ou minutos/segundos customizados.
+  - Cálculo preciso de velocidade de rolagem em `px/ms` baseado na distância restante (`scrollHeight - clientHeight`) e tempo da música.
+  - Preparação inicial suave (lead-in delay de 3 segundos) para o músico começar a tocar antes do movimento da cifra.
+  - Rótulo dinâmico na barra de rolagem informando o tempo restante ou ritmo do auto-scroll.
+- **Mini HUD Flutuante de Acordes no Modo Tocar (Quick Chord HUD Popover)**:
+  - Popover compacto, suspenso e não intrusivo acionado ao tocar em qualquer acorde (`.chord`) da cifra no palco.
+  - Substitui o modal escurecedor em tela cheia do Bootstrap durante o show, mantendo a visibilidade total da letra e cifras.
+  - Renderização instantânea do diagrama SVG em altíssima resolução com pestanas e dedos.
+  - Alternador rápido de instrumento (Violão, Guitarra, Ukulele, Cavaco e Baixo) e navegador de inversões/shapes (1/3, 2/3, etc.).
+  - Opção discreta "Teoria ↗" para quem desejar abrir a análise harmônica completa de escalas e arpejos.
+- **Suíte de Testes Automatizados**:
+  - Novo script `scripts/test_stage_enhancements.py` cobrindo validação de módulos JS em Node.js, cálculos de rolagem por tempo e integração dos novos elementos no template Flask.
+  - Total geral de 31 testes aprovados com 100% de sucesso e 0 falhas.
+
 ### Inovações Inspiradas em Referências de Palco Open-Source (GitHub)
 - **Metrônomo Profissional com Tap Tempo & Pulso Visual Silencioso** (*chordbook/metronome* & *Rexaintreal/Resonate*):
   - Botão **Tap Tempo** integrado à barra do Modo Tocar (atalho `B`), permitindo marcar o andamento em 3–4 batidas.

@@ -28,6 +28,10 @@
 - **PDF e impressão** — folha de palco (lista simples) + cifras em sequência (A4, 2 colunas)
 - **Modo Tocar & Ferramentas de Palco**:
   - Tela cheia, setlist lateral, auto-scroll, gestos, pedais Bluetooth (PageFlip, AirTurn, Donner, Lekato)
+  - **Quick Song Jumper (Spotlight Palette)** — busca instantânea e salto direto para qualquer música do setlist sem sair da tela (teclas `/` ou `J` ou botão de lupa na barra superior)
+  - **Relógio de Palco & Cronômetro de Show** — widget digital integrado com alternância de 1 toque entre hora local real e cronômetro progressivo da apresentação
+  - **Auto-Scroll Inteligente por Duração** — sincronização da velocidade de rolagem pelo tempo da música (presets rápidos ou MM:SS) com lead-in delay inicial de 3s
+  - **Mini HUD Flutuante de Acordes** — popover compacto ao tocar em qualquer acorde da cifra, exibindo digitações SVG em alta resolução, troca de instrumentos (violão, cavaquinho, ukulele, baixo) e formas sem cobrir a tela
   - **Metrônomo com Tap Tempo & Pulso Visual Silencioso** — oscilador Web Audio, medição de BPM em tempo real (Tap Tempo tecla `B`) e LEDs visuais com acento no tempo 1 para palco mudo
   - **Calculadora & Transpositor de Capotraste (CAGED)** — sugestões de casas ideais para formas abertas sem pestana (tecla `K`) com transposição visual instantânea na cifra
   - **Colas Pessoais de Palco (Personal Musician Cues)** — anotações particulares salvas localmente por integrante (tecla `Q`) sem poluir a cifra coletiva da banda
