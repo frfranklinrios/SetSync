@@ -168,20 +168,14 @@
             Cadastre salas, fotos, disponibilidade — e acompanhe <strong>receita, pagamentos e despesas</strong> no módulo financeiro.
         </p>
         <ul class="estudios-hero-points">
-            <li><i class="fas fa-check"></i> 30 dias Premium grátis no 1º cadastro</li>
-            <li><i class="fas fa-check"></i> Sem cartão para começar</li>
-            <li><i class="fas fa-check"></i> Reservas online pelas bandas</li>
-            <li><i class="fas fa-check"></i> Financeiro com preço/hora por sala</li>
+            <li><i class="fas fa-check-circle text-success"></i> 100% Gratuito · Salas Ilimitadas</li>
+            <li><i class="fas fa-check-circle text-success"></i> Sem mensalidade nem pegadinhas</li>
+            <li><i class="fas fa-check-circle text-success"></i> Kit Cartaz A4 com QR Code para portas de salas</li>
+            <li><i class="fas fa-check-circle text-success"></i> Gestão de agendamentos e financeiro completo</li>
         </ul>
         <div class="estudios-cta-row">
-            <a href="{{ url_for('studios.register_studio') }}" class="btn btn-primary btn-lg">Cadastrar meu estúdio</a>
-            <a href="#planos-estudio" class="btn btn-outline-secondary btn-lg">Ver planos</a>
-            {% if whatsapp %}
-            <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
-               class="btn btn-success btn-lg" target="_blank" rel="noopener">
-                <i class="fab fa-whatsapp me-1"></i> WhatsApp
-            </a>
-            {% endif %}
+            <a href="{{ url_for('studios.register_studio') }}" class="btn btn-primary btn-lg">Cadastrar meu estúdio grátis</a>
+            <a href="#como-funciona-parceiro" class="btn btn-outline-secondary btn-lg">Como funciona a parceria</a>
         </div>
     </div>
 </section>
@@ -227,58 +221,37 @@
 
 {% include 'partials/secao_screenshots_estudio.html' %}
 
-<section class="estudios-section estudios-compare">
-    <h2>Básico gratuito ou Premium?</h2>
-    <p class="estudios-section-sub">
-        Comece sem pagar nada. Quando precisar de mais salas ou prioridade no suporte, faça upgrade.
-    </p>
-    <div class="table-responsive">
-        <table class="estudios-compare-table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Estúdio Básico</th>
-                    <th class="col-premium">Estúdio Premium</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Preço</td>
-                    <td>Grátis <span class="muted d-block">beta — 2 salas</span></td>
-                    <td class="col-premium">R$ {{ premium_mensal|int }}/mês <span class="muted d-block">salas ilimitadas</span></td>
-                </tr>
-                <tr>
-                    <td>Salas de ensaio</td>
-                    <td>Até 2</td>
-                    <td class="col-premium">Ilimitadas</td>
-                </tr>
-                <tr>
-                    <td>Reservas de bandas</td>
-                    <td>Sim</td>
-                    <td class="col-premium">Sim</td>
-                </tr>
-                <tr>
-                    <td>Calendário e bloqueios</td>
-                    <td>Sim</td>
-                    <td class="col-premium">Sim</td>
-                </tr>
-                <tr>
-                    <td>Financeiro (receita e despesas)</td>
-                    <td>Sim</td>
-                    <td class="col-premium">Sim</td>
-                </tr>
-                <tr>
-                    <td>Notificações</td>
-                    <td>Sim</td>
-                    <td class="col-premium">Sim + suporte prioritário</td>
-                </tr>
-                <tr>
-                    <td>Ideal para</td>
-                    <td>Testar ou estúdio pequeno</td>
-                    <td class="col-premium">Várias salas ou alta demanda</td>
-                </tr>
-            </tbody>
-        </table>
+<section class="estudios-section estudios-compare" id="como-funciona-parceiro">
+    <div class="text-center mb-4">
+        <span class="badge bg-success mb-2 px-3 py-2"><i class="fas fa-handshake me-1"></i> Modelo Estúdio Parceiro Oficial</span>
+        <h2>Por que o Uníssono é 100% gratuito para o seu estúdio?</h2>
+        <p class="estudios-section-sub mx-auto" style="max-width: 48rem;">
+            Acreditamos no modelo ganha-ganha: você profissionaliza a gestão do seu espaço de ensaio sem pagar nada,
+            e suas bandas descobrem a melhor ferramenta de palco e repertório do Brasil.
+        </p>
+    </div>
+    <div class="row g-4 mt-2">
+        <div class="col-md-4">
+            <div class="estudios-feature-card h-100 p-4 border-success shadow-sm" style="background: rgba(34, 197, 94, 0.04);">
+                <div class="h4 text-success mb-3"><i class="fas fa-door-open"></i></div>
+                <h3 class="h5 fw-bold mb-2">1. Salas Ilimitadas & Gestão Total</h3>
+                <p class="text-muted mb-0">Cadastre todas as suas salas, fotos e equipamentos. Controle disponibilidade, receba reservas de bandas e acompanhe pagamentos e despesas no financeiro sem gastar R$ 1.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="estudios-feature-card h-100 p-4 border-primary shadow-sm" style="background: rgba(59, 130, 246, 0.04);">
+                <div class="h4 text-primary mb-3"><i class="fas fa-qrcode"></i></div>
+                <h3 class="h5 fw-bold mb-2">2. Cartaz A4 com QR Code na Porta</h3>
+                <p class="text-muted mb-0">Imprima com 1 clique o cartaz A4 oficial da sala. Os músicos chegam para ensaiar, escaneiam o QR Code na porta e já abrem as cifras, o metrônomo e a setlist do ensaio.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="estudios-feature-card h-100 p-4 border-warning shadow-sm" style="background: rgba(245, 158, 11, 0.04);">
+                <div class="h4 text-warning mb-3"><i class="fas fa-guitar"></i></div>
+                <h3 class="h5 fw-bold mb-2">3. Músicos Encantados</h3>
+                <p class="text-muted mb-0">Ao vivenciarem a tecnologia do Uníssono dentro da sua sala de ensaio, as bandas passam a assinar nossos planos Pro e Worship para seus shows. O seu estúdio é o nosso grande parceiro.</p>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -350,52 +323,43 @@
 
 <section class="estudios-section estudios-faq" id="faq">
     <h2>Perguntas frequentes</h2>
-    <p class="estudios-section-sub">Dúvidas de donos de sala de ensaio.</p>
+    <p class="estudios-section-sub">Dúvidas comuns de donos de estúdio de ensaio.</p>
     <details>
-        <summary>Preciso pagar para começar?</summary>
-        <p>Não. Ao cadastrar seu primeiro estúdio, você ganha <strong>30 dias de trial Premium</strong> (salas ilimitadas). Depois, o plano Básico gratuito cobre até 2 salas.</p>
+        <summary>O Uníssono é realmente 100% gratuito para estúdios?</summary>
+        <p>Sim! Não cobramos mensalidade, não exigimos cartão de crédito e não há pegadinhas. Você tem salas ilimitadas, agenda online e gestão financeira liberadas como Estúdio Parceiro Oficial.</p>
     </details>
     <details>
-        <summary>As bandas pagam para reservar?</summary>
-        <p>No Uníssono a reserva é de horário de ensaio — a cobrança da sala continua sendo entre você e a banda, do jeito que vocês já combinam. No painel, o <strong>financeiro</strong> ajuda a registrar o que foi cobrado e o que ainda falta receber.</p>
+        <summary>Quantas salas de ensaio posso cadastrar?</summary>
+        <p>Salas ilimitadas. Você pode cadastrar todas as salas do seu estúdio com fotos, equipamentos e preços específicos.</p>
+    </details>
+    <details>
+        <summary>Como funciona o Cartaz A4 para as salas?</summary>
+        <p>No painel do estúdio, você clica em <strong>Imprimir Cartaz da Sala (A4)</strong>. Ele já sai formatado com o QR Code oficial do seu estúdio para colar na porta das salas. Os músicos escaneiam e abrem na hora as cifras e ferramentas no ensaio.</p>
+    </details>
+    <details>
+        <summary>As bandas pagam para reservar o horário?</summary>
+        <p>No Uníssono a reserva é de horário na agenda — o pagamento do valor da sala continua sendo acertado diretamente entre você e a banda (via Pix, cartão ou dinheiro). No painel, o <strong>módulo financeiro</strong> permite registrar quem já pagou e o que está pendente.</p>
     </details>
     <details>
         <summary>Tem controle financeiro das reservas?</summary>
-        <p>Sim. No painel do estúdio, abra <strong>Financeiro</strong>: veja receita das reservas confirmadas, marque pagamentos, cadastre despesas e configure preço/hora por sala. Disponível no plano Básico e no Premium.</p>
+        <p>Sim. No painel do estúdio, acesse <strong>Financeiro</strong> para ver estimativa de receita das reservas confirmadas, marcar pagamentos recebidos/pendentes e registrar despesas do mês (aluguel, energia, manutenção).</p>
     </details>
     <details>
-        <summary>Tem voucher ou código promocional Premium?</summary>
-        <p>Sim. Donos de estúdio podem resgatar um <strong>voucher Estúdio Premium</strong> em
-        <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Planos</a> (seção <em>Tem um voucher?</em>).
-        O código libera salas ilimitadas pelo período da campanha ou vitalício.
-        <a href="{{ url_for('ajuda.index') }}#estudio-voucher">Saiba mais na Ajuda</a>.</p>
-    </details>
-    <details>
-        <summary>Quantas salas posso cadastrar?</summary>
-        <p>No Básico, até 2 salas ativas. No Premium, ilimitadas. <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Ver planos</a>.</p>
-    </details>
-    <details>
-        <summary>E se eu já uso outro sistema de agenda?</summary>
-        <p>Você pode começar só com o Uníssono para receber bandas que já usam o app. Bloqueios manuais cobrem horários reservados fora da plataforma.</p>
+        <summary>E se eu já uso outro sistema de agenda ou caderno?</summary>
+        <p>Você pode usar o Uníssono em conjunto com o que já tem. Os bloqueios manuais de horário garantem que você feche horários reservados fora da plataforma.</p>
     </details>
     <details>
         <summary>Sou banda — posso reservar estúdio aqui?</summary>
-        <p>Sim. Crie conta, entre no menu <strong>Estúdios</strong> e busque por cidade. <a href="{{ url_for('auth.login', next=url_for('studios.search')) }}">Buscar estúdios</a>.</p>
+        <p>Sim! Crie sua conta, vá no menu <strong>Estúdios</strong> e busque salas por cidade e bairro. <a href="{{ url_for('auth.login', next=url_for('studios.search')) }}">Buscar estúdios parceiros</a>.</p>
     </details>
 </section>
 
 <section class="estudios-final-cta">
     <h2>Coloque seu estúdio no mapa hoje</h2>
-    <p>Cadastro em minutos. Plano básico gratuito. Bandas já procuram sala de ensaio no Uníssono.</p>
+    <p>Cadastro rápido em 2 minutos. Salas ilimitadas. 100% gratuito para estúdios parceiros.</p>
     <div class="estudios-cta-row justify-content-center">
-        <a href="{{ url_for('studios.register_studio') }}" class="btn btn-primary btn-lg">Cadastrar meu estúdio</a>
-        <a href="{{ url_for('index') }}#para-estudios" class="btn btn-outline-secondary btn-lg">Voltar à home</a>
-        {% if whatsapp %}
-        <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
-           class="btn btn-success btn-lg" target="_blank" rel="noopener">
-            <i class="fab fa-whatsapp me-1"></i> Tirar dúvidas
-        </a>
-        {% endif %}
+        <a href="{{ url_for('studios.register_studio') }}" class="btn btn-primary btn-lg">Cadastrar meu estúdio grátis</a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg">Voltar à home</a>
     </div>
 </section>
 {% endblock %}

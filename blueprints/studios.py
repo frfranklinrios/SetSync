@@ -171,18 +171,18 @@ def _slots_for_room_date(room_id: str, date_iso: str, slot_minutes: int = 60):
 # ── Landing pública ───────────────────────────────────────────────────────
 
 
+@studios_bp.route("")
 @studios_bp.route("/")
 def landing():
     """Landing page para donos de estúdio de ensaio."""
-    from config import whatsapp_message, whatsapp_number
     from monetizacao import PRECO_ESTUDIO_PREMIUM, planos_estudio_para_site
 
     return render_template(
         "estudios.html",
         planos_estudio=planos_estudio_para_site(),
         premium_mensal=PRECO_ESTUDIO_PREMIUM,
-        whatsapp=whatsapp_number(),
-        whatsapp_message=whatsapp_message(),
+        whatsapp=None,
+        whatsapp_message=None,
     )
 
 

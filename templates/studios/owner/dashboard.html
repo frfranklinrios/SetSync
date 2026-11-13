@@ -133,11 +133,7 @@
 {% else %}
 <p class="text-muted small mb-3">Nenhuma sala ainda. <a href="{{ url_for('studios.new_room', studio_id=studio.id) }}">Criar primeira sala</a></p>
 {% endif %}
-{% if not can_add_room and rooms %}
-<p class="small text-muted mb-4">Limite do plano básico: <strong>2 salas</strong>. A 3ª sala exige Premium (R$ 49/mês). <a href="{{ url_for('assinatura_bp.planos') }}#estudio">Assinar Premium</a></p>
-{% else %}
 <div class="mb-4"></div>
-{% endif %}
 
 {% if studio %}
 <h2 class="h6 mt-2" id="studio-qr-agendamento">QR Code — agendamento</h2>

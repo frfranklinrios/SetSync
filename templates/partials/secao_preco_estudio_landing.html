@@ -4,41 +4,27 @@
     <div class="estudios-planos-bg" aria-hidden="true"></div>
     <div class="estudios-planos-inner">
         <div class="estudios-planos-copy">
-            <span class="estudios-planos-kicker"><i class="fas fa-door-open me-1"></i> Planos Estúdio</span>
-            <h2 id="estudios-planos-title">Comece grátis, cresça no Premium</h2>
+            <span class="estudios-planos-kicker"><i class="fas fa-door-open me-1"></i> Parceiro Oficial Uníssono</span>
+            <h2 id="estudios-planos-title">100% Gratuito para Estúdios de Ensaio</h2>
             <p>
-                O <strong>plano Básico</strong> é gratuito (até 2 salas após o trial).
-                No <strong>primeiro cadastro</strong> você ganha <strong>30 dias de Premium</strong> grátis.
+                Sem mensalidades nem cobranças ocultas. Cadastre <strong>salas de ensaio ilimitadas</strong>,
+                receba reservas direto no painel e conecte suas bandas parceiras com facilidade.
             </p>
             <ul class="estudios-planos-features">
-                <li><i class="fas fa-check" aria-hidden="true"></i>Painel do dono com solicitações pendentes</li>
-                <li><i class="fas fa-check" aria-hidden="true"></i>Calendário, bloqueios e disponibilidade semanal</li>
-                <li><i class="fas fa-check" aria-hidden="true"></i>Financeiro — receita, pagamentos e despesas do mês</li>
-                <li><i class="fas fa-check" aria-hidden="true"></i>Bandas reservam pelo app — ensaio na agenda delas ao confirmar</li>
-                <li><i class="fas fa-check" aria-hidden="true"></i>Endereço com Google Maps no cadastro</li>
-                <li><i class="fas fa-check" aria-hidden="true"></i>Notificações de pedido, confirmação e cancelamento</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Salas de ensaio ilimitadas para o seu espaço</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Painel do dono com solicitações e confirmação de ensaios</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Calendário, bloqueios manuais e disponibilidade por dia</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Financeiro completo — acompanhe receita, pagamentos e despesas</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Kit da Sala: Cartaz A4 com QR Code para portas de ensaio</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Cupons exclusivos de presente para suas bandas clientes</li>
             </ul>
             <div class="estudios-planos-cta">
-                <a href="{{ url_for('studios.register_studio') }}" class="btn btn-light btn-lg">Cadastrar meu estúdio</a>
-                {% if whatsapp %}
-                <a href="https://wa.me/{{ whatsapp }}?text={{ whatsapp_message|urlencode }}"
-                   class="btn btn-outline-light btn-lg" target="_blank" rel="noopener">
-                    <i class="fab fa-whatsapp me-1"></i> Falar com a equipe
-                </a>
-                {% endif %}
+                <a href="{{ url_for('studios.register_studio') }}" class="btn btn-light btn-lg">Cadastrar meu estúdio grátis</a>
             </div>
-            <p class="estudios-planos-note">
+            <p class="estudios-planos-note mt-3">
                 <strong>É banda?</strong>
                 <a href="{{ url_for('auth.login', next=url_for('studios.search')) }}" class="estudios-link-muted">Entre e busque estúdios na sua cidade</a>
             </p>
-            <p class="estudios-planos-note mb-0">
-                Recebeu um <strong>código promocional</strong>?
-                <a href="{{ url_for('auth.login', next=url_for('assinatura_bp.planos') ~ '#estudio') }}" class="estudios-link-muted">Resgate em Planos</a>
-                · <a href="{{ url_for('ajuda.index') }}#estudio-voucher" class="estudios-link-muted">Como funciona</a>
-            </p>
-            {% with variant='dark' %}
-            {% include 'partials/mercadopago_trust.html' %}
-            {% endwith %}
         </div>
         <div class="estudios-planos-cards">
             {% for p in planos_estudio %}
