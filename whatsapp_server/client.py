@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 import requests
@@ -73,30 +74,45 @@ def instance_exists(name: str | None = None) -> bool:
 
 
 def ensure_instance() -> bool:
-    """Cria a instância Uníssono se ainda não existir."""
+    """Cria a instância Uníssono se ainda não existir e garante o webhook configurado."""
     inst = evolution_instance()
+    created_or_exists = False
     if instance_exists(inst):
-        return True
-    resp = _request(
-        "POST",
-        "/instance/create",
-        json={
-            "instanceName": inst,
-            "integration": "WHATSAPP-BAILEYS",
-            "qrcode": True,
-        },
-    )
-    if resp is None:
-        return False
-    if resp.ok:
-        logger.info("Instância Evolution criada: %s", inst)
-        return True
-    if resp.status_code == 403 and "already in use" in (resp.text or "").lower():
-        return True
-    logger.error(
-        "Falha ao criar instância %s: %s %s", inst, resp.status_code, resp.text[:300]
-    )
-    return False
+        created_or_exists = True
+    else:
+        resp = _request(
+            "POST",
+            "/instance/create",
+            json={
+                "instanceName": inst,
+                "integration": "WHATSAPP-BAILEYS",
+                "qrcode": True,
+            },
+        )
+        if resp is not None and resp.ok:
+            logger.info("Instância Evolution criada: %s", inst)
+            created_or_exists = True
+        elif resp is not None and resp.status_code == 403 and "already in use" in (resp.text or "").lower():
+            created_or_exists = True
+        else:
+            logger.error(
+                "Falha ao criar instância %s: %s %s",
+                inst,
+                resp.status_code if resp is not None else "?",
+                resp.text[:300] if resp is not None else "",
+            )
+            return False
+
+    if created_or_exists:
+        try:
+            webhook_url = os.getenv("WHATSAPP_GATEWAY_URL") or "http://setsync-web-1:5000/api/whatsapp/gateway"
+            current_wh = find_webhook(inst)
+            if not current_wh or not current_wh.get("enabled") or current_wh.get("url") != webhook_url:
+                set_webhook(webhook_url, name=inst)
+        except Exception:
+            logger.debug("Não foi possível sincronizar webhook imediatamente (instância ainda inicializando)")
+
+    return True
 
 
 def connection_state(name: str | None = None) -> dict[str, Any]:
@@ -213,3 +229,44 @@ def send_text(
         ((last_resp.text if last_resp else "") or "")[:500],
     )
     return False
+
+
+def find_webhook(name: str | None = None) -> dict[str, Any] | None:
+    """Retorna configuração de webhook da instância na Evolution API."""
+    inst = name or evolution_instance()
+    resp = _request("GET", f"/webhook/find/{inst}")
+    if resp is None or not resp.ok:
+        return None
+    try:
+        return resp.json()
+    except ValueError:
+        return None
+
+
+def set_webhook(
+    webhook_url: str,
+    name: str | None = None,
+    events: list[str] | None = None,
+) -> bool:
+    """Configura o endpoint do Gateway Roteador na Evolution API."""
+    inst = name or evolution_instance()
+    selected_events = events or ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "SEND_MESSAGE"]
+    payload = {
+        "webhook": {
+            "enabled": True,
+            "url": webhook_url,
+            "byEvents": False,
+            "events": selected_events,
+        }
+    }
+    resp = _request("POST", f"/webhook/set/{inst}", json=payload)
+    if resp is not None and resp.ok:
+        logger.info("Webhook da instância %s configurado com sucesso para %s", inst, webhook_url)
+        return True
+    logger.error(
+        "Falha ao configurar webhook da instância %s: %s",
+        inst,
+        resp.text[:300] if resp is not None else "sem resposta",
+    )
+    return False
+

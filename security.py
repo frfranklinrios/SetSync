@@ -50,8 +50,8 @@ def get_allowed_hosts() -> set[str]:
     if canonical:
         host = urlparse(canonical).hostname
         if host:
-            return {host.lower(), "localhost", "127.0.0.1"}
-    return {"localhost", "127.0.0.1"}
+            return {host.lower(), "localhost", "127.0.0.1", "setsync-web-1", "web"}
+    return {"localhost", "127.0.0.1", "setsync-web-1", "web"}
 
 
 _SEO_PUBLIC_PATHS = frozenset(
@@ -63,6 +63,8 @@ _SEO_PUBLIC_PATHS = frozenset(
         "/robots.txt",
         "/sitemap.xml",
         "/google47ebf77ba640d99c.html",
+        "/api/whatsapp/gateway",
+        "/api/whatsapp/gateway/status",
     }
 )
 
@@ -71,7 +73,7 @@ def validate_request_host():
     """Bloqueia Host header poisoning (403). Redireciona hosts legados ao canônico."""
     from flask import redirect
 
-    if request.path in _SEO_PUBLIC_PATHS:
+    if request.path in _SEO_PUBLIC_PATHS or request.path.startswith("/api/whatsapp/gateway"):
         return
     host = (request.host or "").split(":")[0].lower()
     if not host:

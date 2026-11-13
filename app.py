@@ -40,6 +40,7 @@ from blueprints.roadmap import roadmap_bp
 from blueprints.setlists import setlists_bp
 from blueprints.studios import studios_bp
 from blueprints.whatsapp_admin import whatsapp_admin_bp
+from blueprints.whatsapp_gateway import whatsapp_gateway_bp
 from config import config
 from db import init_db
 from extensions import init_scheduler
@@ -278,6 +279,7 @@ app.register_blueprint(blog_bp)
 app.register_blueprint(guia_bp)
 app.register_blueprint(mail_web_bp)
 app.register_blueprint(whatsapp_admin_bp)
+app.register_blueprint(whatsapp_gateway_bp)
 app.register_blueprint(agenda_bp)
 app.register_blueprint(convites_bp)
 app.register_blueprint(music_api_bp)
@@ -292,8 +294,12 @@ except Exception:
     pass
 init_scheduler(app)
 
-# Webhook Mercado Pago: POST externo sem CSRF de formulário
+# Webhooks externos sem CSRF de formulário
 csrf.exempt(mp_webhook_view)
+_gw_view = app.view_functions.get("whatsapp_gateway.gateway_webhook")
+if _gw_view:
+    csrf.exempt(_gw_view)
+
 
 # API musical v1 — JSON/SVG para clientes externos
 for _music_ep in (
