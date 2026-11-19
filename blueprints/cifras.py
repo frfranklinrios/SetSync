@@ -1088,6 +1088,191 @@ def set_readiness(cifra_id):
     return jsonify({"ok": True, "readiness": readiness})
 
 
+@cifras_bp.route("/api/quick-nav", methods=["GET"])
+@login_required
+def api_quick_nav():
+    """Retorna índice leve para a paleta global de busca e comando (Ctrl+K)."""
+    from agenda_util import format_event_datetime
+    from models_agenda import get_upcoming_events_for_user
+    from models_setlist import get_band_setlists
+
+    user_id = session["user_id"]
+    owned = get_owned_bands(user_id) or []
+    member_of = get_user_bands(user_id) or []
+    owned_ids = {str(b["id"]) for b in owned}
+
+    bands_map: dict[str, dict] = {}
+    for b in owned + member_of:
+        bid = str(b["id"])
+        if bid not in bands_map:
+            bands_map[bid] = dict(b)
+
+    bands_out: list[dict] = []
+    setlists_out: list[dict] = []
+    cifras_out: list[dict] = []
+
+    for bid, b in bands_map.items():
+        b_name = b.get("name") or "Banda"
+        b_cifras = get_band_cifras(bid) or []
+        role = "admin" if bid in owned_ids else "member"
+        bands_out.append(
+            {
+                "id": bid,
+                "name": b_name,
+                "role": role,
+                "cifras_count": len(b_cifras),
+                "url": url_for("bands.view", band_id=bid),
+                "play_url": url_for("cifras.tocar_band", band_id=bid),
+            }
+        )
+
+        for sl in get_band_setlists(bid) or []:
+            sl_dict = dict(sl)
+            sid = str(sl_dict["id"])
+            setlists_out.append(
+                {
+                    "id": sid,
+                    "name": sl_dict.get("name") or "Setlist",
+                    "band_name": b_name,
+                    "url": url_for("setlists.view", setlist_id=sid),
+                    "play_url": url_for("setlists.tocar", setlist_id=sid),
+                }
+            )
+
+        for c in b_cifras:
+            if len(cifras_out) >= 250:
+                break
+            cid = str(c["id"])
+            tom_label = (
+                cifra_display_key(c)
+                if c.get("tom_original")
+                else normalize_tom_label(c.get("tom_original") or "")
+            )
+            cifras_out.append(
+                {
+                    "id": cid,
+                    "titulo": c.get("titulo") or c.get("titulo_original") or "Sem título",
+                    "artista": c.get("artista") or "",
+                    "tom": tom_label or "",
+                    "readiness": (c.get("readiness") or "pronta").lower(),
+                    "scope": b_name,
+                    "url": url_for("cifras.view", cifra_id=cid),
+                    "play_url": url_for("cifras.tocar_band", band_id=bid, start=cid),
+                }
+            )
+
+    personal = get_user_personal_cifras(user_id) or []
+    for c in personal:
+        if len(cifras_out) >= 250:
+            break
+        cid = str(c["id"])
+        tom_label = normalize_tom_label(c.get("tom_original") or "")
+        cifras_out.append(
+            {
+                "id": cid,
+                "titulo": c.get("titulo") or "Sem título",
+                "artista": c.get("artista") or "",
+                "tom": tom_label or "",
+                "readiness": (c.get("readiness") or "pronta").lower(),
+                "scope": "Minha Coleção",
+                "url": url_for("cifras.view", cifra_id=cid),
+                "play_url": url_for("cifras.tocar_colecao", start=cid),
+            }
+        )
+
+    events_raw = get_upcoming_events_for_user(user_id, limit=6) or []
+    events_out = [
+        {
+            "id": str(ev["id"]),
+            "title": ev.get("title") or "Evento",
+            "band_name": ev.get("band_name") or "",
+            "starts_at": format_event_datetime(ev.get("starts_at")),
+            "event_type": ev.get("event_type") or "ensaio",
+            "url": url_for("agenda.view", event_id=ev["id"]),
+        }
+        for ev in events_raw
+    ]
+
+    first_band_id = bands_out[0]["id"] if bands_out else None
+    tocar_url = (
+        url_for("cifras.tocar_band", band_id=first_band_id)
+        if first_band_id
+        else url_for("cifras.tocar_colecao")
+    )
+    add_cifra_url = (
+        url_for("cifras.add", band_id=first_band_id)
+        if first_band_id
+        else url_for("cifras.add_personal")
+    )
+
+    actions_out = [
+        {
+            "id": "play_mode",
+            "label": "Modo Tocar (Palco)",
+            "subtitle": (
+                f"Abrir palco de {bands_out[0]['name']}"
+                if first_band_id
+                else "Abrir palco da coleção pessoal"
+            ),
+            "icon": "fa-play",
+            "url": tocar_url,
+        },
+        {
+            "id": "add_song",
+            "label": "Nova Música / Importar Cifra",
+            "subtitle": "Buscar na biblioteca ou colar cifra",
+            "icon": "fa-music",
+            "url": add_cifra_url,
+        },
+        {
+            "id": "my_library",
+            "label": "Minha Coleção Pessoal",
+            "subtitle": "Cifras pessoais e rascunhos",
+            "icon": "fa-folder-open",
+            "url": url_for("cifras.my_library"),
+        },
+        {
+            "id": "my_agenda",
+            "label": "Minha Agenda de Ensaios & Shows",
+            "subtitle": "Calendário unificado e escalas",
+            "icon": "fa-calendar-alt",
+            "url": url_for("agenda.minha_agenda"),
+        },
+        {
+            "id": "my_fees",
+            "label": "Meu Financeiro & Cachês",
+            "subtitle": "Valores recebidos e pendentes",
+            "icon": "fa-wallet",
+            "url": url_for("bands.my_fees"),
+        },
+        {
+            "id": "studios",
+            "label": "Estúdios de Ensaio",
+            "subtitle": "Buscar e reservar salas",
+            "icon": "fa-building",
+            "url": url_for("studios.search"),
+        },
+        {
+            "id": "create_band",
+            "label": "Criar Nova Banda",
+            "subtitle": "Organizar repertório e integrantes",
+            "icon": "fa-plus",
+            "url": url_for("bands.create", bem_vindo=1),
+        },
+    ]
+
+    return jsonify(
+        {
+            "ok": True,
+            "bands": bands_out,
+            "setlists": setlists_out,
+            "cifras": cifras_out,
+            "events": events_out,
+            "actions": actions_out,
+        }
+    )
+
+
 @cifras_bp.route("/minha-colecao")
 @login_required
 def my_library():

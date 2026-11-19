@@ -44,40 +44,65 @@
 {% endif %}
 
 {% if cifras %}
-<div class="row-card mb-4">
-    {% for c in cifras %}
-    <div class="row-item row-item--numbered">
-        <div class="row-prefix">
-            <span class="row-num">{{ loop.index }}</span>
+<div data-repertoire-scope>
+    <div class="repertoire-toolbar">
+        <div class="repertoire-search-wrap">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input type="search" class="form-control form-control-sm" id="library-cifra-filter" data-rep-search
+                   placeholder="Filtrar sua coleção por título, artista ou tom…" autocomplete="off" aria-label="Filtrar coleção">
         </div>
-        <div class="row-info">
-            <a href="{{ url_for('cifras.view', cifra_id=c.id) }}" class="row-title">
-                {{ c.titulo }}
-                {% if c.is_demo %}<span class="badge text-bg-light border text-muted ms-1" style="font-weight:500;">Demo</span>{% endif %}
-            </a>
-            {% if c.artista %}
-            <div class="row-sub">{{ c.artista }}</div>
-            {% endif %}
-        </div>
-        {% if c.tom_original %}
-        <span class="row-badge" title="Tom">{{ c.tom_original }}</span>
-        {% endif %}
-        <div class="row-actions">
-            <a href="{{ url_for('cifras.tocar_colecao', start=c.id) }}" class="btn btn-primary btn-sm"
-               title="Modo Tocar">
-                <i class="fas fa-play"></i>
-            </a>
-            <a href="{{ url_for('cifras.share_cifra', cifra_id=c.id) }}" class="btn btn-outline-primary btn-sm"
-               title="Enviar para banda ou compartilhar">
-                <i class="fas fa-share-alt"></i>
-            </a>
-            <a href="{{ url_for('cifras.edit', cifra_id=c.id) }}" class="btn btn-outline-secondary btn-sm"
-               title="Editar cifra">
-                <i class="fas fa-pen"></i>
-            </a>
-        </div>
+        <select class="form-select form-select-sm" data-rep-sort aria-label="Ordenar coleção" style="width: auto;">
+            <option value="default">Ordem padrão</option>
+            <option value="title">Título (A–Z)</option>
+            <option value="artist">Artista (A–Z)</option>
+            <option value="tom">Tom</option>
+        </select>
+        <span class="small text-muted" data-rep-count></span>
     </div>
-    {% endfor %}
+    <div class="row-card mb-4" id="library-cifras-rows" data-rep-rows>
+        {% for c in cifras %}
+        <div class="row-item row-item--numbered"
+             data-cifra-id="{{ c.id }}"
+             data-title="{{ (c.titulo or '')|lower }}"
+             data-artist="{{ (c.artista or '')|lower }}"
+             data-tom="{{ (c.tom_original or '')|lower }}"
+             data-readiness="pronta">
+            <div class="row-prefix">
+                <span class="row-num">{{ loop.index }}</span>
+            </div>
+            <div class="row-info">
+                <a href="{{ url_for('cifras.view', cifra_id=c.id) }}" class="row-title">
+                    {{ c.titulo }}
+                    {% if c.is_demo %}<span class="badge text-bg-light border text-muted ms-1" style="font-weight:500;">Demo</span>{% endif %}
+                </a>
+                {% if c.artista %}
+                <div class="row-sub">{{ c.artista }}</div>
+                {% endif %}
+            </div>
+            {% if c.tom_original %}
+            <span class="row-badge" title="Tom">{{ c.tom_original }}</span>
+            {% endif %}
+            <div class="row-actions">
+                <a href="{{ url_for('cifras.tocar_colecao', start=c.id) }}" class="btn btn-primary btn-sm"
+                   title="Modo Tocar">
+                    <i class="fas fa-play"></i>
+                </a>
+                <a href="{{ url_for('cifras.share_cifra', cifra_id=c.id) }}" class="btn btn-outline-primary btn-sm"
+                   title="Enviar para banda ou compartilhar">
+                    <i class="fas fa-share-alt"></i>
+                </a>
+                <a href="{{ url_for('cifras.edit', cifra_id=c.id) }}" class="btn btn-outline-secondary btn-sm"
+                   title="Editar cifra">
+                    <i class="fas fa-pen"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="empty mb-4 d-none" data-rep-empty>
+        <i class="fas fa-filter"></i>
+        <p class="mb-0">Nenhuma música corresponde ao filtro atual.</p>
+    </div>
 </div>
 {% else %}
 {% with icon='fa-music',
@@ -104,4 +129,8 @@
     {% endfor %}
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/repertoire-filter.js') }}?v=1"></script>
 {% endblock %}

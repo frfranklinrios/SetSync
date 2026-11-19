@@ -298,10 +298,23 @@
                 <i class="fas fa-shield-halved me-1"></i> Admin
             </a>
             {% endif %}
+            {% set primary_band = (owned_bands[0] if owned_bands else (bands[0] if bands else none)) %}
+            {% if primary_band %}
+            <a href="{{ url_for('cifras.tocar_band', band_id=primary_band.id) }}" class="btn btn-primary btn-sm dashboard-action-btn">
+                <i class="fas fa-play me-1"></i> Modo Tocar
+            </a>
+            {% elif dashboard_summary and dashboard_summary.cifras > 0 %}
+            <a href="{{ url_for('cifras.tocar_colecao') }}" class="btn btn-primary btn-sm dashboard-action-btn">
+                <i class="fas fa-play me-1"></i> Modo Tocar
+            </a>
+            {% endif %}
+            <button type="button" class="btn btn-outline-secondary btn-sm dashboard-action-btn" data-open-command-palette title="Busca rápida (Ctrl+K)">
+                <i class="fas fa-search me-1"></i> Buscar <kbd class="d-none d-md-inline ms-1" style="font-size:0.72em;">Ctrl K</kbd>
+            </button>
             <a href="{{ url_for('cifras.add_personal') if not (owned_bands or bands) else url_for('cifras.add', band_id=(owned_bands[0].id if owned_bands else bands[0].id)) }}" class="btn btn-outline-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-music me-1"></i> Nova Música
             </a>
-            <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary btn-sm dashboard-action-btn">
+            <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn {% if primary_band or (dashboard_summary and dashboard_summary.cifras > 0) %}btn-outline-primary{% else %}btn-primary{% endif %} btn-sm dashboard-action-btn">
                 <i class="fas fa-plus me-1"></i> Nova Banda
             </a>
             {% endif %}
@@ -315,6 +328,8 @@
             {% include 'partials/pending_scale_admin.html' %}
             {% if not is_superadmin %}
             {% include 'partials/activation_hero.html' %}
+            {% include 'partials/dashboard_summary.html' %}
+            {% include 'partials/dashboard_hub.html' %}
             {% endif %}
             {% if not is_superadmin and show_commands %}
             {% include 'partials/show_command_card.html' %}
@@ -462,8 +477,6 @@
             {% if onboarding and onboarding.done_count > 0 %}
             {% include 'partials/onboarding_checklist.html' %}
             {% endif %}
-            {% include 'partials/dashboard_hub.html' %}
-            {% include 'partials/dashboard_summary.html' %}
 
             {% if trial_ui and trial_ui.ativo %}
             <div class="alert alert-success dashboard-compact-alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -513,7 +526,7 @@
             {% endif %}
         </div>
 
-        {% if upcoming_events %}
+        {% if upcoming_events or not is_superadmin %}
         <aside class="dashboard-sidebar">
             <div class="upcoming-events-card">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
@@ -524,6 +537,7 @@
                         Ver calendário <i class="fas fa-chevron-right" style="font-size: 0.7em;"></i>
                     </a>
                 </div>
+                {% if upcoming_events %}
                 {% for event in upcoming_events %}
                 <a href="{{ url_for('agenda.view', event_id=event.id) }}" class="upcoming-event-item">
                     <div class="min-width-0">
@@ -549,6 +563,20 @@
                     {% endif %}
                 </a>
                 {% endfor %}
+                {% else %}
+                <div class="py-2 text-center">
+                    <p class="text-muted small mb-2">Nenhum ensaio ou show agendado para os próximos dias.</p>
+                    {% if owned_bands %}
+                    <a href="{{ url_for('agenda.create', band_id=owned_bands[0].id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-calendar-plus me-1"></i> Agendar ensaio ou show
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('agenda.minha_agenda') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-calendar-alt me-1"></i> Abrir minha agenda
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </aside>
         {% endif %}

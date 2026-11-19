@@ -1,6 +1,13 @@
 {# Linha de cifra — mesma estrutura em /cifras, aba da banda e listas. #}
 {% macro cifra_row(cifra, band, show_edit=false, show_delete=false, play_url=None) %}
-<div class="row-item">
+{% set readiness = (cifra.readiness or 'pronta')|lower %}
+{% set tom_label = (cifra_display_key(cifra) if cifra.tom_original else '') %}
+<div class="row-item"
+     data-cifra-id="{{ cifra.id }}"
+     data-title="{{ (cifra.titulo or cifra.titulo_original or '')|lower }}"
+     data-artist="{{ (cifra.artista or '')|lower }}"
+     data-tom="{{ tom_label|lower }}"
+     data-readiness="{{ readiness }}">
     <div class="row-info">
         <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">
             <div class="row-title">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</div>
@@ -9,8 +16,15 @@
             {% endif %}
         </a>
     </div>
-    {% set readiness = cifra.readiness or 'pronta' %}
-    {% if readiness == 'ensaio' %}
+    {% if show_edit and band %}
+    <select class="row-readiness-sel form-select form-select-sm"
+            data-cifra-id="{{ cifra.id }}"
+            aria-label="Status de prontidão de {{ cifra.titulo or cifra.titulo_original or 'música' }}">
+        <option value="pronta" {% if readiness == 'pronta' %}selected{% endif %}>✓ Pronta</option>
+        <option value="ensaio" {% if readiness == 'ensaio' %}selected{% endif %}>⏱ Ensaio</option>
+        <option value="aprender" {% if readiness == 'aprender' %}selected{% endif %}>📖 Aprender</option>
+    </select>
+    {% elif readiness == 'ensaio' %}
     <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" title="Precisa de ensaio" style="font-size: 0.72rem; font-weight: 500;">
         <i class="fas fa-clock me-1"></i>Ensaio
     </span>
@@ -20,7 +34,7 @@
     </span>
     {% endif %}
     {% if cifra.tom_original %}
-    <span class="row-badge">{{ cifra_display_key(cifra) }}</span>
+    <span class="row-badge">{{ tom_label }}</span>
     {% endif %}
     <div class="row-actions">
         <a href="{{ play_url or url_for('cifras.tocar_band', band_id=band.id, start=cifra.id) }}"

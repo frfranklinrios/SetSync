@@ -6,7 +6,7 @@
 {% block main_class %}container-fluid app-page{% endblock %}
 
 {% block content %}
-<div class="app-inner app-list-wide">
+<div class="app-inner app-list-wide" data-repertoire-scope>
     <nav aria-label="breadcrumb" class="mb-2">
         <ol class="breadcrumb mb-0" style="font-size: var(--text-sm);">
             <li class="breadcrumb-item"><a href="{{ url_for('bands.list_bands') }}">Bandas</a></li>
@@ -40,14 +40,34 @@
     </div>
 
     {% if cifras %}
-    <div class="mb-3">
-        <input type="search" class="form-control form-control-sm" id="cifra-list-filter"
-               placeholder="Filtrar repertório…" autocomplete="off" aria-label="Filtrar cifras">
+    <div class="repertoire-toolbar">
+        <div class="repertoire-search-wrap">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input type="search" class="form-control form-control-sm" id="cifra-list-filter" data-rep-search
+                   placeholder="Filtrar repertório por título, artista ou tom…" autocomplete="off" aria-label="Filtrar cifras">
+        </div>
+        <div class="repertoire-chips" role="group" aria-label="Filtrar por prontidão">
+            <button type="button" class="filter-chip active" data-readiness-filter="all">Todas</button>
+            <button type="button" class="filter-chip" data-readiness-filter="pronta">✓ Prontas</button>
+            <button type="button" class="filter-chip" data-readiness-filter="ensaio">⏱ Ensaio</button>
+            <button type="button" class="filter-chip" data-readiness-filter="aprender">📖 Aprender</button>
+        </div>
+        <select class="form-select form-select-sm" data-rep-sort aria-label="Ordenar cifras" style="width: auto;">
+            <option value="default">Ordem padrão</option>
+            <option value="title">Título (A–Z)</option>
+            <option value="artist">Artista (A–Z)</option>
+            <option value="tom">Tom</option>
+        </select>
+        <span class="small text-muted" data-rep-count></span>
     </div>
-    <div class="row-card" id="cifra-list-rows">
+    <div class="row-card" id="cifra-list-rows" data-rep-rows>
         {% for cifra in cifras %}
         {{ cifra_row(cifra, band, show_edit=can_edit, show_delete=can_edit) }}
         {% endfor %}
+    </div>
+    <div class="empty mt-2 d-none" data-rep-empty>
+        <i class="fas fa-filter"></i>
+        <p class="mb-0">Nenhuma música corresponde ao filtro atual.</p>
     </div>
     {% else %}
     {% with icon='fa-music',
@@ -74,21 +94,8 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/repertoire-filter.js') }}?v=1"></script>
 {% if can_edit %}
 {% include 'cifras/_cifra_search_scripts.html' %}
-<script>
-(function () {
-  var input = document.getElementById('cifra-list-filter');
-  var rows = document.getElementById('cifra-list-rows');
-  if (!input || !rows) return;
-  input.addEventListener('input', function () {
-    var q = (input.value || '').trim().toLowerCase();
-    rows.querySelectorAll('.row-item').forEach(function (el) {
-      var text = (el.textContent || '').toLowerCase();
-      el.style.display = !q || text.indexOf(q) >= 0 ? '' : 'none';
-    });
-  });
-})();
-</script>
 {% endif %}
 {% endblock %}

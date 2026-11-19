@@ -386,6 +386,39 @@
             {% endif %}
         </div>
 
+        <div class="study-toolbar" id="cifra-study-toolbar" aria-label="Ferramentas de estudo">
+            <div class="study-toolbar-group">
+                <button type="button" class="study-pill-btn" id="view-pitch-pipe-btn"
+                        data-key="{{ display_key }}"
+                        title="Ouvir nota/acorde de referência no tom atual ({{ display_key }})">
+                    <i class="fas fa-volume-up"></i>
+                    <span>Diapasão ({{ display_key or 'C' }})</span>
+                </button>
+                <div class="d-inline-flex align-items-center gap-1" role="group" aria-label="Tamanho da fonte">
+                    <button type="button" class="study-pill-btn" id="view-font-down" title="Diminuir fonte">A−</button>
+                    <span class="small text-muted fw-semibold px-1" id="view-font-val" style="min-width: 2.8rem; text-align: center;">100%</span>
+                    <button type="button" class="study-pill-btn" id="view-font-up" title="Aumentar fonte">A+</button>
+                </div>
+                <button type="button" class="study-pill-btn d-none d-md-inline-flex" id="view-cols-toggle"
+                        aria-pressed="false" title="Alternar entre 1 e 2 colunas">
+                    <i class="fas fa-columns"></i>
+                    <span>2 colunas</span>
+                </button>
+            </div>
+            <div class="study-toolbar-group">
+                <button type="button" class="study-pill-btn" id="view-autoscroll-toggle" title="Rolagem automática para estudo">
+                    <i class="fas fa-angle-double-down"></i>
+                    <span>Auto-scroll</span>
+                </button>
+                <select class="form-select form-select-sm" id="view-autoscroll-speed" aria-label="Velocidade da rolagem"
+                        style="width: auto; font-size: var(--text-xs); padding: 0.25rem 1.75rem 0.25rem 0.55rem;">
+                    <option value="18">1x Lento</option>
+                    <option value="28" selected>2x Médio</option>
+                    <option value="44">3x Rápido</option>
+                </select>
+            </div>
+        </div>
+
         <ul class="nav nav-tabs cifra-content-tabs" id="cifraViewTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link{% if active_tab == 'cifra' %} active{% endif %}" id="tab-cifra-btn"
@@ -412,6 +445,10 @@
 
         <div class="tab-content" id="cifraViewTabContent">
             <div class="tab-pane fade{% if active_tab == 'cifra' %} show active{% endif %}" id="tab-cifra" role="tabpanel" aria-labelledby="tab-cifra-btn">
+                <div class="study-chords-bar d-none" id="cifra-unique-chords-bar" aria-label="Acordes usados nesta música">
+                    <span class="study-chords-label"><i class="fas fa-guitar me-1"></i>Acordes:</span>
+                    <div class="d-flex flex-wrap gap-1" id="cifra-unique-chords-list"></div>
+                </div>
                 <div class="cifra-container cifra-sheet-paper{% if conteudo_html or grouped_cifra %} play-layout{% endif %}" id="cifra-body">
                     {% if conteudo_html %}
                         {{ conteudo_html | safe }}
@@ -760,5 +797,6 @@ document.addEventListener('keydown', function (e) {
     }
 });
 </script>
+<script src="{{ url_for('static', filename='js/cifra-study-tools.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/realtime-sync.js') }}?v=1"></script>
 {% endblock %}

@@ -1,5 +1,26 @@
 # Changelog — Uníssono
 
+## 2026-11-19
+
+### Repaginação de UX/UI & Produtividade Musical (*Studio Glass & Stage Dark*)
+- **Paleta de Comando & Busca Global Instantânea (`Ctrl+K` / `/cifras/api/quick-nav`)**:
+  - Barra de busca Spotlight acessível de qualquer tela autenticada (`Ctrl+K` / `Cmd+K` ou botão na navbar) com abas por tipo (`Tudo`, `Músicas`, `Roteiros`, `Bandas`, `Agenda`, `Ações`).
+  - Busca tolerante a acentos por título, artista, banda ou tom (`tom:G`), com navegação por teclado (`↑`/`↓`, `Enter` para abrir, `Shift+Enter` para ir direto ao **Modo Tocar**).
+- **Sistema Visual *Studio Glass & Stage Dark* (`ux-revamp.css`)**:
+  - Navbar translúcida com `backdrop-filter`, ícones, destaque automático de rota ativa e acesso direto à **Agenda** no menu principal.
+  - Tabbar mobile com efeito *Glass Dock*, indicador luminoso na aba ativa e botão `+` destacado.
+  - Superfícies, cards e listas refinados nos temas claro e escuro.
+- **Dashboard *Cockpit do Músico***:
+  - Resumo numérico e **Ações Rápidas** promovidos ao topo da tela, acesso ao **Modo Tocar** e busca global no cabeçalho, cards de banda com ações ilustradas e barra lateral de eventos sempre equilibrada.
+- **Hub da Banda & Coleção com Filtro Instantâneo e Prontidão Interativa (`repertoire-filter.js`)**:
+  - Barra de busca em tempo real por título, artista ou tom, chips de filtro por prontidão (`Todas`, `✓ Prontas`, `⏱ Ensaio`, `📖 Aprender`), ordenação rápida e barra de progresso geral do repertório.
+  - Edição direta de prontidão na própria linha da música via AJAX (`/cifras/<id>/readiness`).
+- **Estúdio de Prática na Visualização da Cifra (`cifra-study-tools.js`)**:
+  - Faixa **Acordes desta música** (`#cifra-unique-chords-bar`) listando os acordes únicos clicáveis para abrir instantaneamente o diagrama SVG.
+  - Barra de estudo integrada com **Diapasão Web Audio** no tom atual, ajuste de fonte (`85%`–`160%`), alternância de 1/2 colunas e **Auto-scroll** com seletor de velocidade.
+- **Roteiros (Setlists) Inteligentes**:
+  - Cálculo automático do **tempo estimado de show** (`~X min de show`) no cabeçalho e filtro instantâneo por status de prontidão.
+
 ## 2026-11-13
 
 ### Estúdios Parceiros Oficiais 100% Grátis (Canal de Crescimento B2B2C / Product-Led Growth)

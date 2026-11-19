@@ -20,7 +20,7 @@
 </nav>
 <style>
 @media (max-width: 991.98px) {
-    body { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+    body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
     .ss-tabbar {
         position: fixed;
         left: 0; right: 0; bottom: 0;
@@ -28,41 +28,62 @@
         display: flex;
         align-items: stretch;
         justify-content: space-around;
-        background: var(--card-bg, #fff);
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border-top: 1px solid var(--border);
         padding-bottom: env(safe-area-inset-bottom, 0px);
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.08);
     }
-    [data-theme="dark"] .ss-tabbar { background: #0b1422; }
+    [data-theme="dark"] .ss-tabbar {
+        background: rgba(11, 20, 34, 0.88);
+        border-top-color: rgba(51, 65, 85, 0.85);
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.45);
+    }
     .ss-tab {
+        position: relative;
         flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 2px;
-        padding: 0.4rem 0.25rem 0.35rem;
+        gap: 3px;
+        padding: 0.45rem 0.25rem 0.4rem;
         color: var(--muted);
         text-decoration: none;
         font-size: 0.68rem;
         font-weight: 600;
         line-height: 1;
-        min-height: 56px;
+        min-height: 58px;
+        transition: color 0.14s ease;
     }
     .ss-tab i { font-size: 1.15rem; }
     .ss-tab.active { color: var(--accent); }
+    .ss-tab.active::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 24%;
+        right: 24%;
+        height: 2.5px;
+        border-radius: 0 0 999px 999px;
+        background: var(--accent);
+        box-shadow: 0 2px 10px var(--chord-highlight-ring);
+    }
     .ss-tab-add { justify-content: flex-start; }
     .ss-tab-add-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 46px; height: 46px;
-        margin-top: -14px;
+        width: 48px; height: 48px;
+        margin-top: -16px;
         border-radius: 50%;
-        background: var(--accent);
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
         color: #fff;
-        box-shadow: 0 3px 10px rgba(234,88,12,0.4);
+        box-shadow: 0 6px 16px var(--chord-highlight-ring);
+        transition: transform 0.14s ease;
     }
+    .ss-tab-add:active .ss-tab-add-btn { transform: scale(0.94); }
     .ss-tab-add-btn i { font-size: 1.15rem; }
 }
 </style>

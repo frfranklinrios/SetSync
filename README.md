@@ -21,10 +21,13 @@
 ## Funcionalidades
 
 - **Bandas e membros** — convites por e-mail, papéis (admin/membro), logo da banda
+- **Paleta de Comando Global (`Ctrl+K`)** — busca instantânea em músicas (por título, artista ou `tom:G`), roteiros, bandas, agenda e ações rápidas com atalho direto ao palco (`Shift+Enter`)
+- **Cockpit do Músico & Filtro Instantâneo de Repertório** — dashboard orientado à ação, busca em tempo real, ordenação (título/artista/tom) e controle interativo de prontidão (`Pronta`, `Ensaio`, `Aprender`)
+- **Estúdio de Prática na Visualização da Cifra** — faixa de acordes únicos clicáveis para abrir diagramas SVG, diapasão Web Audio no tom atual, ajuste de fonte, modo 1/2 colunas e auto-scroll de estudo
 - **Cantores** — vários vocalistas por banda, tom de transposição por cantor
 - **Cifras** — ChordPro, colagem de sites, lead sheet, **chord sheet** (chordsheet.com), tablatura, tons maiores/menores
 - **Transposição** — em tempo real; tom salvo para toda a banda e por cantor na setlist
-- **Setlists & Prontidão do Show** — ordenação por arrastar, cantor/tom por música, link público de letras e **Status de Prontidão do Repertório** (pronta, ensaio, aprender com estatísticas e barra de progresso do show)
+- **Setlists & Prontidão do Show** — ordenação por arrastar, cantor/tom por música, tempo estimado de duração do show, link público de letras e **Status de Prontidão do Repertório** (pronta, ensaio, aprender com estatísticas, filtro e barra de progresso do show)
 - **PDF e impressão** — folha de palco (lista simples) + cifras em sequência (A4, 2 colunas)
 - **Modo Tocar & Ferramentas de Palco**:
   - Tela cheia, setlist lateral, auto-scroll, gestos, pedais Bluetooth (PageFlip, AirTurn, Donner, Lekato)

@@ -1,0 +1,322 @@
+/**
+ * Uníssono — Paleta de Comando Global (Ctrl+K / Spotlight)
+ * Design Studio Glass com suporte total a tema claro e escuro.
+ */
+
+.cmd-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 34px;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+  white-space: nowrap;
+}
+.cmd-trigger-btn:hover,
+.cmd-trigger-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--card-bg);
+  box-shadow: 0 0 0 3px var(--chord-highlight-ring);
+  outline: none;
+}
+[data-theme="dark"] .cmd-trigger-btn {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(148, 163, 184, 0.28);
+}
+.cmd-trigger-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0.1rem 0.38rem;
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  line-height: 1.25;
+}
+[data-theme="dark"] .cmd-trigger-kbd {
+  background: #0b1422;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11050;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(1rem, 7vh, 4.5rem) 0.85rem 1.5rem;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: cmdFadeIn 0.14s ease-out;
+}
+.cmd-overlay.d-none {
+  display: none !important;
+}
+@keyframes cmdFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cmd-dialog {
+  width: min(680px, 100%);
+  max-height: min(82vh, 620px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+  overflow: hidden;
+  animation: cmdSlideUp 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-theme="dark"] .cmd-dialog {
+  background: rgba(11, 20, 34, 0.94);
+  border-color: rgba(94, 234, 212, 0.22);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.62);
+}
+@keyframes cmdSlideUp {
+  from { opacity: 0; transform: translateY(-8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cmd-search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.cmd-search-icon {
+  color: var(--accent);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.cmd-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: 500;
+  outline: none;
+}
+.cmd-input::placeholder {
+  color: var(--placeholder);
+}
+.cmd-close-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 7px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cmd-close-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.cmd-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cmd-tabs::-webkit-scrollbar { display: none; }
+.cmd-tab {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.25rem 0.68rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+.cmd-tab:hover {
+  color: var(--text);
+  background: var(--chord-highlight-ghost);
+}
+.cmd-tab.active {
+  color: var(--chord-highlight);
+  background: var(--chord-highlight-bg);
+  border-color: var(--chord-highlight-border);
+}
+
+.cmd-list-wrap {
+  flex: 1;
+  min-height: 160px;
+  overflow-y: auto;
+  padding: 0.45rem;
+}
+.cmd-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.cmd-item:hover,
+.cmd-item.active {
+  background: var(--chord-highlight-bg);
+  border-color: var(--chord-highlight-border);
+}
+.cmd-item-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .cmd-item-icon {
+  background: #0f172a;
+}
+.cmd-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.cmd-item-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cmd-item-sub {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cmd-item-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+.cmd-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cmd-pill--key {
+  color: var(--chord-highlight);
+  background: var(--chord-highlight-bg);
+  border-color: var(--chord-highlight-border);
+}
+.cmd-pill--ensaio {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+[data-theme="dark"] .cmd-pill--ensaio { color: #fbbf24; }
+.cmd-pill--aprender {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+[data-theme="dark"] .cmd-pill--aprender { color: #f87171; }
+.cmd-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--chord-highlight-border);
+  background: var(--chord-highlight-bg);
+  color: var(--chord-highlight);
+  border-radius: 7px;
+  padding: 0.26rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cmd-play-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff !important;
+}
+.cmd-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.cmd-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.55rem 0.95rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+[data-theme="dark"] .cmd-footer {
+  background: #080f1e;
+}
+.cmd-footer kbd {
+  padding: 0.08rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.7rem;
+}
+@media (max-width: 575.98px) {
+  .cmd-footer { display: none; }
+  .cmd-trigger-kbd { display: none; }
+}

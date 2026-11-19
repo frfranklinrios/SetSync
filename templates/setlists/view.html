@@ -17,8 +17,18 @@
         {% if setlist.description %}
         <p class="text-muted mb-0" style="font-size: var(--text-base);">{{ setlist.description }}</p>
         {% endif %}
-        <p class="text-muted mb-0" style="font-size: var(--text-sm); margin-top:0.4rem;">
-            {{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }}
+        {% set sl_time = namespace(total_sec=0) %}
+        {% for c in cifras %}
+            {% set sl_time.total_sec = sl_time.total_sec + (c.duracao_seg|int if c.duracao_seg else 210) %}
+        {% endfor %}
+        {% set sl_mins = (sl_time.total_sec / 60)|round|int %}
+        <p class="text-muted mb-0 d-flex flex-wrap align-items-center gap-2" style="font-size: var(--text-sm); margin-top:0.4rem;">
+            <span>{{ cifras|length }} música{{ '' if cifras|length == 1 else 's' }}</span>
+            {% if cifras|length > 0 %}
+            <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle" id="setlist-duration-badge" title="Estimativa usando a duração cadastrada ou 3m30s por música">
+                <i class="fas fa-clock me-1"></i>{% if sl_mins >= 60 %}~{{ sl_mins // 60 }}h{{ '%02d'|format(sl_mins % 60) }} ({{ sl_mins }} min) de show{% else %}~{{ sl_mins }} min de show{% endif %}
+            </span>
+            {% endif %}
             <span id="order-status"></span>
         </p>
     </div>
@@ -240,27 +250,28 @@
 
 {% if cifras %}
 {% if readiness_stats and readiness_stats.total > 0 %}
-<div class="card mb-3 p-3 border-0 shadow-sm" style="background: var(--surface, #ffffff); border-radius: 12px; border: 1px solid var(--border) !important;">
+<div class="readiness-summary-card mb-3" id="setlist-readiness-card">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
         <div class="d-flex align-items-center gap-2">
             <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                <i class="fas fa-check-circle me-1"></i>{{ readiness_stats.percent_ready }}% Prontas para o Show
+                <i class="fas fa-check-circle me-1"></i><span id="sl-rs-percent">{{ readiness_stats.percent_ready }}%</span> Prontas para o Show
             </span>
-            <span class="small text-muted">({{ readiness_stats.total }} músicas no repertório)</span>
+            <span class="small text-muted">({{ readiness_stats.total }} músicas no roteiro)</span>
         </div>
-        <div class="small d-flex gap-3">
-            <span class="text-success"><i class="fas fa-check me-1"></i><strong>{{ readiness_stats.pronta }}</strong> prontas</span>
-            <span class="text-warning-emphasis"><i class="fas fa-clock me-1"></i><strong>{{ readiness_stats.ensaio }}</strong> em ensaio</span>
-            <span class="text-danger"><i class="fas fa-book-open me-1"></i><strong>{{ readiness_stats.aprender }}</strong> aprender</span>
+        <div class="repertoire-chips" id="setlist-readiness-chips" role="group" aria-label="Filtrar roteiro por prontidão">
+            <button type="button" class="filter-chip active" data-sl-filter="all">Todas ({{ readiness_stats.total }})</button>
+            <button type="button" class="filter-chip" data-sl-filter="pronta"><i class="fas fa-check text-success me-1"></i><strong id="sl-rs-pronta">{{ readiness_stats.pronta }}</strong> prontas</button>
+            <button type="button" class="filter-chip" data-sl-filter="ensaio"><i class="fas fa-clock text-warning me-1"></i><strong id="sl-rs-ensaio">{{ readiness_stats.ensaio }}</strong> em ensaio</button>
+            <button type="button" class="filter-chip" data-sl-filter="aprender"><i class="fas fa-book-open text-danger me-1"></i><strong id="sl-rs-aprender">{{ readiness_stats.aprender }}</strong> aprender</button>
         </div>
     </div>
-    <div class="progress" style="height: 7px; border-radius: 4px; overflow: hidden; background: rgba(0,0,0,0.06);">
+    <div class="progress" style="height: 7px; border-radius: 999px; overflow: hidden; background: rgba(148,163,184,0.18);">
         {% set p_pronta = ((readiness_stats.pronta / readiness_stats.total) * 100)|round %}
         {% set p_ensaio = ((readiness_stats.ensaio / readiness_stats.total) * 100)|round %}
         {% set p_aprender = ((readiness_stats.aprender / readiness_stats.total) * 100)|round %}
-        <div class="progress-bar bg-success" role="progressbar" style="width: {{ p_pronta }}%" title="{{ readiness_stats.pronta }} prontas"></div>
-        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ p_ensaio }}%" title="{{ readiness_stats.ensaio }} em ensaio"></div>
-        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ p_aprender }}%" title="{{ readiness_stats.aprender }} aprender"></div>
+        <div class="progress-bar bg-success" id="sl-rs-bar-pronta" role="progressbar" style="width: {{ p_pronta }}%" title="{{ readiness_stats.pronta }} prontas"></div>
+        <div class="progress-bar bg-warning" id="sl-rs-bar-ensaio" role="progressbar" style="width: {{ p_ensaio }}%" title="{{ readiness_stats.ensaio }} em ensaio"></div>
+        <div class="progress-bar bg-danger" id="sl-rs-bar-aprender" role="progressbar" style="width: {{ p_aprender }}%" title="{{ readiness_stats.aprender }} aprender"></div>
     </div>
 </div>
 {% endif %}
@@ -275,7 +286,7 @@
 <div class="row-card" id="setlist-card">
     <div id="sortable-cifras">
     {% for cifra in cifras %}
-    <div class="row-item row-item--sortable row-item--numbered" data-cifra-id="{{ cifra.id }}">
+    <div class="row-item row-item--sortable row-item--numbered" data-cifra-id="{{ cifra.id }}" data-readiness="{{ (cifra.readiness or 'pronta')|lower }}">
         <div class="row-prefix">
             {% if can_edit %}
             <span class="row-handle" title="Arraste para reordenar"><i class="fas fa-grip-vertical"></i></span>
@@ -490,6 +501,9 @@
             }).then(function (r) { return r.json(); })
               .then(function (res) {
                   if (!res.ok) throw new Error(res.error || 'falha');
+                  var row = sel.closest('.row-item');
+                  if (row) row.setAttribute('data-readiness', val);
+                  document.dispatchEvent(new CustomEvent('setsync-setlist-readiness-changed'));
                   showStatus('Status salvo ✓', 'ok');
               })
               .catch(function () {
@@ -554,6 +568,75 @@
 })();
 </script>
 {% endif %}
+
+<div class="empty mt-2 d-none" id="sl-filter-empty">
+    <i class="fas fa-filter"></i>
+    <p class="mb-0">Nenhuma música deste roteiro neste status de prontidão.</p>
+</div>
+
+<script>
+(function () {
+    var chipsWrap = document.getElementById('setlist-readiness-chips');
+    var listWrap = document.getElementById('sortable-cifras');
+    var emptyEl = document.getElementById('sl-filter-empty');
+    if (!chipsWrap || !listWrap) return;
+    var activeFilter = 'all';
+
+    function refreshStats() {
+        var rows = Array.prototype.slice.call(listWrap.querySelectorAll('.row-item'));
+        var total = rows.length;
+        if (!total) return;
+        var pronta = 0, ensaio = 0, aprender = 0;
+        rows.forEach(function (r) {
+            var st = (r.getAttribute('data-readiness') || 'pronta').toLowerCase();
+            if (st === 'ensaio') ensaio += 1;
+            else if (st === 'aprender') aprender += 1;
+            else pronta += 1;
+        });
+        var pEl = document.getElementById('sl-rs-percent');
+        var cP = document.getElementById('sl-rs-pronta');
+        var cE = document.getElementById('sl-rs-ensaio');
+        var cA = document.getElementById('sl-rs-aprender');
+        var bP = document.getElementById('sl-rs-bar-pronta');
+        var bE = document.getElementById('sl-rs-bar-ensaio');
+        var bA = document.getElementById('sl-rs-bar-aprender');
+        if (pEl) pEl.textContent = Math.round((pronta / total) * 100) + '%';
+        if (cP) cP.textContent = pronta;
+        if (cE) cE.textContent = ensaio;
+        if (cA) cA.textContent = aprender;
+        if (bP) bP.style.width = Math.round((pronta / total) * 100) + '%';
+        if (bE) bE.style.width = Math.round((ensaio / total) * 100) + '%';
+        if (bA) bA.style.width = Math.round((aprender / total) * 100) + '%';
+    }
+
+    function applyFilter() {
+        var rows = Array.prototype.slice.call(listWrap.querySelectorAll('.row-item'));
+        var visible = 0;
+        rows.forEach(function (r) {
+            var st = (r.getAttribute('data-readiness') || 'pronta').toLowerCase();
+            var show = activeFilter === 'all' || st === activeFilter;
+            r.style.display = show ? '' : 'none';
+            if (show) visible += 1;
+        });
+        if (emptyEl) emptyEl.classList.toggle('d-none', visible > 0 || rows.length === 0);
+    }
+
+    chipsWrap.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-sl-filter]');
+        if (!btn) return;
+        activeFilter = btn.getAttribute('data-sl-filter') || 'all';
+        chipsWrap.querySelectorAll('[data-sl-filter]').forEach(function (b) {
+            b.classList.toggle('active', b === btn);
+        });
+        applyFilter();
+    });
+
+    document.addEventListener('setsync-setlist-readiness-changed', function () {
+        refreshStats();
+        applyFilter();
+    });
+})();
+</script>
 
 {% else %}
 {% with icon='fa-music',
