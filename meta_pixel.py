@@ -12,7 +12,7 @@ import uuid
 from typing import Any
 
 _PIXEL_ID_RE = re.compile(r"^\d{5,20}$")
-_DEFAULT_PIXEL = "1577987043861182"
+_DEFAULT_PIXEL = "914092528361106"
 log = logging.getLogger("unissono.meta_pixel")
 
 
