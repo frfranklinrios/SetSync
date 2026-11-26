@@ -303,20 +303,24 @@
             <a href="{{ url_for('cifras.tocar_band', band_id=primary_band.id) }}" class="btn btn-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-play me-1"></i> Modo Tocar
             </a>
+            <a href="{{ url_for('cifras.add', band_id=primary_band.id) }}" class="btn btn-outline-primary btn-sm dashboard-action-btn">
+                <i class="fas fa-plus me-1"></i> Nova Música
+            </a>
             {% elif dashboard_summary and dashboard_summary.cifras > 0 %}
             <a href="{{ url_for('cifras.tocar_colecao') }}" class="btn btn-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-play me-1"></i> Modo Tocar
             </a>
-            {% endif %}
-            <button type="button" class="btn btn-outline-secondary btn-sm dashboard-action-btn" data-open-command-palette title="Busca rápida (Ctrl+K)">
-                <i class="fas fa-search me-1"></i> Buscar <kbd class="d-none d-md-inline ms-1" style="font-size:0.72em;">Ctrl K</kbd>
-            </button>
-            <a href="{{ url_for('cifras.add_personal') if not (owned_bands or bands) else url_for('cifras.add', band_id=(owned_bands[0].id if owned_bands else bands[0].id)) }}" class="btn btn-outline-primary btn-sm dashboard-action-btn">
-                <i class="fas fa-music me-1"></i> Nova Música
-            </a>
-            <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn {% if primary_band or (dashboard_summary and dashboard_summary.cifras > 0) %}btn-outline-primary{% else %}btn-primary{% endif %} btn-sm dashboard-action-btn">
+            <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-outline-primary btn-sm dashboard-action-btn">
                 <i class="fas fa-plus me-1"></i> Nova Banda
             </a>
+            {% else %}
+            <a href="{{ url_for('bands.create', bem_vindo=1) }}" class="btn btn-primary btn-sm dashboard-action-btn">
+                <i class="fas fa-plus me-1"></i> Nova Banda
+            </a>
+            <a href="{{ url_for('cifras.add_personal') }}" class="btn btn-outline-primary btn-sm dashboard-action-btn">
+                <i class="fas fa-music me-1"></i> Nova Música
+            </a>
+            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -329,7 +333,6 @@
             {% if not is_superadmin %}
             {% include 'partials/activation_hero.html' %}
             {% include 'partials/dashboard_summary.html' %}
-            {% include 'partials/dashboard_hub.html' %}
             {% endif %}
             {% if not is_superadmin and show_commands %}
             {% include 'partials/show_command_card.html' %}
@@ -397,9 +400,20 @@
             {% endif %}
 
             <p class="section-title">Todas as bandas ({{ bands|length }})</p>
-            <div class="bands-grid mb-1">
+            {% if bands|length > 1 %}
+            <div class="row-sort-header row-sort-header--standalone" data-sort-target="#sa-bands-grid">
+                <span class="row-sort-label">Ordenar:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Nome</button>
+                <button type="button" class="row-sort-btn" data-sort-col="cifras" data-sort-type="number">Músicas</button>
+                <button type="button" class="row-sort-btn" data-sort-col="members" data-sort-type="number">Integrantes</button>
+            </div>
+            {% endif %}
+            <div class="bands-grid mb-1" id="sa-bands-grid" data-sortable-list>
                 {% for band in bands %}
-                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile">
+                <a href="{{ url_for('bands.view', band_id=band.id) }}" class="band-tile"
+                   data-name="{{ (band.name or '')|lower }}"
+                   data-cifras="{{ band.cifras|length }}"
+                   data-members="{{ band.members|length }}">
                     {% set desc = 'Titular: ' ~ (user_display_name(band.owner) if band.owner else '—') %}
                     {% include 'partials/band_tile_head.html' %}
                     <div class="band-meta">
@@ -418,9 +432,20 @@
 
             {% if owned_bands %}
             <p class="section-title">Minhas Bandas</p>
-            <div class="bands-grid mb-1">
+            {% if owned_bands|length > 1 %}
+            <div class="row-sort-header row-sort-header--standalone" data-sort-target="#owned-bands-grid">
+                <span class="row-sort-label">Ordenar:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Nome</button>
+                <button type="button" class="row-sort-btn" data-sort-col="cifras" data-sort-type="number">Músicas</button>
+                <button type="button" class="row-sort-btn" data-sort-col="members" data-sort-type="number">Integrantes</button>
+            </div>
+            {% endif %}
+            <div class="bands-grid mb-1" id="owned-bands-grid" data-sortable-list>
                 {% for band in owned_bands %}
-                <div class="band-tile">
+                <div class="band-tile"
+                     data-name="{{ (band.name or '')|lower }}"
+                     data-cifras="{{ band.cifras|length }}"
+                     data-members="{{ band.members|length }}">
                     <a href="{{ url_for('bands.view', band_id=band.id) }}" class="text-decoration-none" style="color: inherit;">
                         {% set desc = band.description or '—' %}
                         {% include 'partials/band_tile_head.html' %}
@@ -441,9 +466,20 @@
 
             {% if member_only %}
             <p class="section-title">Bandas que Participo</p>
-            <div class="bands-grid mb-1">
+            {% if member_only|length > 1 %}
+            <div class="row-sort-header row-sort-header--standalone" data-sort-target="#member-bands-grid">
+                <span class="row-sort-label">Ordenar:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Nome</button>
+                <button type="button" class="row-sort-btn" data-sort-col="cifras" data-sort-type="number">Músicas</button>
+                <button type="button" class="row-sort-btn" data-sort-col="members" data-sort-type="number">Integrantes</button>
+            </div>
+            {% endif %}
+            <div class="bands-grid mb-1" id="member-bands-grid" data-sortable-list>
                 {% for band in member_only %}
-                <div class="band-tile">
+                <div class="band-tile"
+                     data-name="{{ (band.name or '')|lower }}"
+                     data-cifras="{{ band.cifras|length }}"
+                     data-members="{{ band.members|length }}">
                     <a href="{{ url_for('bands.view', band_id=band.id) }}" class="text-decoration-none" style="color: inherit;">
                         {% set desc = 'Por ' ~ (user_display_name(band.owner) if band.owner else '—') %}
                         {% include 'partials/band_tile_head.html' %}
@@ -507,15 +543,17 @@
             {% endif %}
 
             {% if planos_resumo and planos_resumo.tem_banda %}
-            <div class="planos-resumo-card">
-                <div class="fw-semibold mb-2" style="font-size: var(--text-base);">
+            <details class="planos-resumo-card">
+                <summary class="fw-semibold" style="font-size: var(--text-base); cursor: pointer;">
                     <i class="fas fa-chart-line me-1 text-muted"></i>
                     {% if planos_resumo.multiplas %}Acompanhamento dos planos{% else %}Seu plano{% endif %}
-                </div>
+                </summary>
+                <div class="mt-2">
                 {% for item in planos_resumo.itens %}
                 {% include 'partials/plano_periodo_card.html' %}
                 {% endfor %}
-            </div>
+                </div>
+            </details>
             {% endif %}
 
             {% if not needs_activation and not invite_cta %}

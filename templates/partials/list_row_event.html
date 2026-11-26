@@ -1,6 +1,11 @@
 {# Linha de evento na agenda da banda #}
 {% macro event_row(event, band, can_edit=false, is_admin=false, show_band=false) %}
-<div class="row-item">
+<div class="row-item"
+     data-title="{{ (event.title or '')|lower }}"
+     data-date="{{ event.starts_at or '' }}"
+     data-type="{{ event.event_type or 'ensaio' }}"
+     data-band="{{ (event.band_name or (band.name if band else ''))|lower }}"
+     data-location="{{ (event.location or '')|lower }}">
     <div class="row-info">
         <a href="{{ url_for('agenda.view', event_id=event.id) }}">
             <div class="row-title">

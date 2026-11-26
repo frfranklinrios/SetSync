@@ -43,19 +43,39 @@
     {% if events_upcoming %}
     <h3 class="h6 text-muted mb-2">Próximos</h3>
     <div class="row-card mb-4 app-list-wide">
-        {% for event in events_upcoming %}
-        {% set band = {'id': event.band_id, 'name': event.band_name} %}
-        {{ event_row(event, band, can_edit=event.can_edit, is_admin=event.is_admin, show_band=true) }}
-        {% endfor %}
+        <div class="row-sort-header" data-sort-target="#minha-agenda-upcoming">
+            <span class="row-sort-label">Ordenar por:</span>
+            <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Evento</button>
+            <button type="button" class="row-sort-btn" data-sort-col="date" data-sort-type="date">Data</button>
+            <button type="button" class="row-sort-btn" data-sort-col="band" data-sort-type="text">Banda</button>
+            <button type="button" class="row-sort-btn" data-sort-col="type" data-sort-type="text">Tipo</button>
+            <button type="button" class="row-sort-btn" data-sort-col="location" data-sort-type="text">Local</button>
+        </div>
+        <div id="minha-agenda-upcoming" data-sortable-list>
+            {% for event in events_upcoming %}
+            {% set band = {'id': event.band_id, 'name': event.band_name} %}
+            {{ event_row(event, band, can_edit=event.can_edit, is_admin=event.is_admin, show_band=true) }}
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
     {% if events_past %}
     <h3 class="h6 text-muted mb-2">Anteriores</h3>
     <div class="row-card app-list-wide">
-        {% for event in events_past %}
-        {% set band = {'id': event.band_id, 'name': event.band_name} %}
-        {{ event_row(event, band, can_edit=event.can_edit, is_admin=event.is_admin, show_band=true) }}
-        {% endfor %}
+        <div class="row-sort-header" data-sort-target="#minha-agenda-past">
+            <span class="row-sort-label">Ordenar por:</span>
+            <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Evento</button>
+            <button type="button" class="row-sort-btn" data-sort-col="date" data-sort-type="date">Data</button>
+            <button type="button" class="row-sort-btn" data-sort-col="band" data-sort-type="text">Banda</button>
+            <button type="button" class="row-sort-btn" data-sort-col="type" data-sort-type="text">Tipo</button>
+            <button type="button" class="row-sort-btn" data-sort-col="location" data-sort-type="text">Local</button>
+        </div>
+        <div id="minha-agenda-past" data-sortable-list>
+            {% for event in events_past %}
+            {% set band = {'id': event.band_id, 'name': event.band_name} %}
+            {{ event_row(event, band, can_edit=event.can_edit, is_admin=event.is_admin, show_band=true) }}
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
     {% else %}

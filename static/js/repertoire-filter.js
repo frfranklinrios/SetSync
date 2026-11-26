@@ -73,7 +73,7 @@
             var sortBy = sortSelect ? sortSelect.value : 'default';
             var currentRows = Array.prototype.slice.call(rowsWrap.querySelectorAll('.row-item'));
 
-            if (sortBy && sortBy !== 'default') {
+            if (sortSelect && sortBy && sortBy !== 'default') {
                 currentRows.sort(function (a, b) {
                     var va = '';
                     var vb = '';
@@ -89,16 +89,18 @@
                     }
                     return va.localeCompare(vb, 'pt-BR');
                 });
-            } else {
+                currentRows.forEach(function (r) {
+                    rowsWrap.appendChild(r);
+                });
+            } else if (sortSelect) {
                 currentRows.sort(function (a, b) {
                     return (parseInt(a.getAttribute('data-orig-index') || '0', 10)) -
                            (parseInt(b.getAttribute('data-orig-index') || '0', 10));
                 });
+                currentRows.forEach(function (r) {
+                    rowsWrap.appendChild(r);
+                });
             }
-
-            currentRows.forEach(function (r) {
-                rowsWrap.appendChild(r);
-            });
 
             var visible = 0;
             currentRows.forEach(function (r) {
@@ -126,10 +128,10 @@
         }
 
         if (searchInput) {
-            searchInput.addEventListener('input', applyFiltersAndSort);
+            searchInput.addEventListener('input', function () { applyFiltersAndSort(false); });
         }
         if (sortSelect) {
-            sortSelect.addEventListener('change', applyFiltersAndSort);
+            sortSelect.addEventListener('change', function () { applyFiltersAndSort(true); });
         }
         chips.forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -137,7 +139,7 @@
                 chips.forEach(function (c) {
                     c.classList.toggle('active', c === btn);
                 });
-                applyFiltersAndSort();
+                applyFiltersAndSort(false);
             });
         });
 
@@ -169,7 +171,10 @@
                 })
                 .then(function (data) {
                     if (!data || !data.ok) throw new Error('fail');
-                    if (row) row.setAttribute('data-readiness', val);
+                    if (row) {
+                        row.setAttribute('data-readiness', val);
+                        row.setAttribute('data-readiness-rank', val === 'aprender' ? '1' : (val === 'ensaio' ? '2' : '3'));
+                    }
                     sel.classList.add('is-saved');
                     updateReadinessSummary(scope);
                     applyFiltersAndSort();
@@ -185,7 +190,7 @@
                 });
         });
 
-        applyFiltersAndSort();
+        applyFiltersAndSort(false);
     }
 
     function initAll() {

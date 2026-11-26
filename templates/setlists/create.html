@@ -1,25 +1,153 @@
 {% extends "index.html" %}
 {% block title %}Novo roteiro — {{ band.name }}{% endblock %}
 {% block content %}
-<div style="max-width: 36rem;">
-  <h2 class="h4 mb-1">Monte o roteiro do ensaio</h2>
-  <p class="text-muted small mb-4">
-    A ordem das músicas vira o <strong>Modo Tocar</strong> no culto ou no show.
+<div style="max-width: 46rem;">
+  <nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0" style="font-size: var(--text-sm);">
+      <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+      <li class="breadcrumb-item active">Novo roteiro</li>
+    </ol>
+  </nav>
+
+  <h2 class="h4 mb-1">Novo roteiro</h2>
+  <p class="text-muted small mb-3">
+    Dê um nome e já marque as músicas para abrir direto no <strong>Modo Tocar</strong>.
   </p>
-  <form method="POST">
+
+  <form method="POST" id="create-setlist-form">
     {% include 'partials/csrf_input.html' %}
     <div class="mb-3">
-      <label for="name" class="form-label">Nome do roteiro</label>
+      <label for="name" class="form-label fw-semibold">Nome do roteiro</label>
       <input type="text" class="form-control" id="name" name="name" required
-             placeholder="Ex.: Culto domingo / Show 15 · Ensaio sexta" autofocus>
+             placeholder="Ex.: Culto domingo · Ensaio sexta · Show sábado" autofocus>
+      <div class="d-flex flex-wrap gap-1 mt-2" aria-label="Sugestões de nome">
+        {% for preset in ['Culto domingo', 'Ensaio semanal', 'Show sábado', 'Acústico'] %}
+        <button type="button" class="filter-chip js-name-preset" data-preset="{{ preset }}">{{ preset }}</button>
+        {% endfor %}
+      </div>
     </div>
-    <div class="mb-4">
-      <label for="description" class="form-label">Observações <span class="text-muted fw-normal">(opcional)</span></label>
-      <textarea class="form-control" id="description" name="description" rows="2"
-                placeholder="Tom do cantor, intervalo, etc."></textarea>
+
+    <details class="mb-3">
+      <summary class="text-muted small" style="cursor: pointer;">+ Adicionar observações (opcional)</summary>
+      <div class="mt-2">
+        <textarea class="form-control" id="description" name="description" rows="2"
+                  placeholder="Tom do cantor, intervalo, observações para a equipe…"></textarea>
+      </div>
+    </details>
+
+    {% if cifras %}
+    <div class="mb-3">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <label class="form-label fw-semibold mb-0">Músicas do roteiro <span class="text-muted fw-normal">(opcional)</span></label>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-muted" id="sl-picked-count">0 selecionada(s)</span>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="sl-pick-all">Marcar visíveis</button>
+        </div>
+      </div>
+
+      <div class="repertoire-search-wrap mb-2">
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <input type="search" class="form-control form-control-sm" id="sl-pick-search"
+               placeholder="Filtrar músicas por título, artista ou tom…" autocomplete="off">
+      </div>
+
+      <div class="row-card">
+        <div class="row-sort-header" data-sort-target="#create-setlist-cifras">
+          <span class="row-sort-label">Ordenar:</span>
+          <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Música</button>
+          <button type="button" class="row-sort-btn" data-sort-col="artist" data-sort-type="text">Artista</button>
+          <button type="button" class="row-sort-btn" data-sort-col="readiness-rank" data-sort-type="number">Prontidão</button>
+          <button type="button" class="row-sort-btn" data-sort-col="tom" data-sort-type="text">Tom</button>
+        </div>
+        <div id="create-setlist-cifras" data-sortable-list style="max-height: 22rem; overflow-y: auto;">
+          {% for cifra in cifras %}
+          {% set title_val = cifra.titulo or cifra.titulo_original or 'Sem título' %}
+          {% set r_val = (cifra.readiness or 'pronta')|lower %}
+          {% set r_rank = 1 if r_val == 'aprender' else (2 if r_val == 'ensaio' else 3) %}
+          {% set tom_val = cifra_display_key(cifra) if cifra.tom_original else '' %}
+          <label class="row-item" style="cursor: pointer;"
+                 data-title="{{ title_val|lower }}"
+                 data-artist="{{ (cifra.artista or '')|lower }}"
+                 data-readiness-rank="{{ r_rank }}"
+                 data-tom="{{ tom_val|lower }}">
+            <input type="checkbox" class="form-check-input mt-0 flex-shrink-0 js-pick-cb"
+                   name="cifra_ids" value="{{ cifra.id }}">
+            <div class="row-info">
+              <div class="row-title">{{ title_val }}</div>
+              {% if cifra.artista %}<div class="row-sub">{{ cifra.artista }}</div>{% endif %}
+            </div>
+            <span class="row-badge {% if r_val == 'aprender' %}text-danger{% elif r_val == 'ensaio' %}text-warning{% else %}text-success{% endif %}">
+              {% if r_val == 'aprender' %}Aprender{% elif r_val == 'ensaio' %}Ensaio{% else %}Pronta{% endif %}
+            </span>
+            {% if tom_val %}<span class="row-badge">{{ tom_val }}</span>{% endif %}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
     </div>
-    <button type="submit" class="btn btn-primary">Criar e adicionar músicas</button>
-    <a href="{{ url_for('bands.view', band_id=band.id) }}#tab-setlists" class="btn btn-outline-secondary">Cancelar</a>
+    {% endif %}
+
+    <div class="d-flex flex-wrap gap-2">
+      <button type="submit" class="btn btn-primary" id="sl-create-submit">Criar roteiro</button>
+      <a href="{{ url_for('bands.view', band_id=band.id) }}#tab-setlists" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
   </form>
 </div>
+<script>
+(function () {
+  var nameInput = document.getElementById('name');
+  document.querySelectorAll('.js-name-preset').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (nameInput) {
+        nameInput.value = btn.getAttribute('data-preset') || '';
+        nameInput.focus();
+      }
+    });
+  });
+
+  var list = document.getElementById('create-setlist-cifras');
+  var search = document.getElementById('sl-pick-search');
+  var countEl = document.getElementById('sl-picked-count');
+  var submitBtn = document.getElementById('sl-create-submit');
+  var pickAllBtn = document.getElementById('sl-pick-all');
+  if (!list) return;
+
+  function updateCount() {
+    var checked = list.querySelectorAll('.js-pick-cb:checked').length;
+    if (countEl) countEl.textContent = checked + ' selecionada' + (checked === 1 ? '' : 's');
+    if (submitBtn) {
+      submitBtn.textContent = checked > 0
+        ? 'Criar roteiro com ' + checked + ' música' + (checked === 1 ? '' : 's')
+        : 'Criar roteiro';
+    }
+  }
+  list.addEventListener('change', updateCount);
+
+  if (search) {
+    search.addEventListener('input', function () {
+      var q = (search.value || '').trim().toLowerCase();
+      list.querySelectorAll('.row-item').forEach(function (row) {
+        var hay = [row.getAttribute('data-title'), row.getAttribute('data-artist'), row.getAttribute('data-tom')].join(' ');
+        row.style.display = !q || hay.indexOf(q) !== -1 ? '' : 'none';
+      });
+    });
+  }
+
+  if (pickAllBtn) {
+    pickAllBtn.addEventListener('click', function () {
+      var visibleCbs = [];
+      list.querySelectorAll('.row-item').forEach(function (row) {
+        if (row.style.display !== 'none') {
+          var cb = row.querySelector('.js-pick-cb');
+          if (cb) visibleCbs.push(cb);
+        }
+      });
+      var allChecked = visibleCbs.length > 0 && visibleCbs.every(function (cb) { return cb.checked; });
+      visibleCbs.forEach(function (cb) { cb.checked = !allChecked; });
+      pickAllBtn.textContent = allChecked ? 'Marcar visíveis' : 'Desmarcar visíveis';
+      updateCount();
+    });
+  }
+})();
+</script>
 {% endblock %}

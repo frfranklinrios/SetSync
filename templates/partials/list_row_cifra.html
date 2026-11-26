@@ -1,13 +1,15 @@
 {# Linha de cifra — mesma estrutura em /cifras, aba da banda e listas. #}
 {% macro cifra_row(cifra, band, show_edit=false, show_delete=false, play_url=None) %}
 {% set readiness = (cifra.readiness or 'pronta')|lower %}
+{% set readiness_rank = 1 if readiness == 'aprender' else (2 if readiness == 'ensaio' else 3) %}
 {% set tom_label = (cifra_display_key(cifra) if cifra.tom_original else '') %}
 <div class="row-item"
      data-cifra-id="{{ cifra.id }}"
      data-title="{{ (cifra.titulo or cifra.titulo_original or '')|lower }}"
      data-artist="{{ (cifra.artista or '')|lower }}"
      data-tom="{{ tom_label|lower }}"
-     data-readiness="{{ readiness }}">
+     data-readiness="{{ readiness }}"
+     data-readiness-rank="{{ readiness_rank }}">
     <div class="row-info">
         <a href="{{ url_for('cifras.view', cifra_id=cifra.id) }}">
             <div class="row-title">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</div>

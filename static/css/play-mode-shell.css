@@ -811,30 +811,64 @@ body.play-mode {
     #kbd-hint { display: none !important; }
 }
 
-/* Hide bar groups on very small screens */
+/* Floating popover panel for secondary stage tools */
 .bar-group-extra {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    gap: 0.45rem;
+    flex-wrap: nowrap;
 }
 .bar-secondary-tools {
-    display: contents;
+    display: none;
+    position: fixed;
+    top: calc(3.35rem + env(safe-area-inset-top, 0px));
+    right: max(0.75rem, env(safe-area-inset-right, 0px));
+    width: min(26rem, calc(100vw - 1.5rem));
+    max-height: calc(100vh - 5.5rem);
+    overflow-y: auto;
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 0.85rem;
+    background: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 12px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+    z-index: 120;
 }
-@media (max-width: 991.98px) {
-    .bar-secondary-tools {
-        display: none;
-        width: 100%;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.4rem;
-        padding-top: 0.45rem;
-        margin-top: 0.25rem;
-        border-top: 1px solid rgba(148, 163, 184, 0.2);
-    }
-    .bar-secondary-tools.is-open {
-        display: flex;
-    }
+.bar-secondary-tools.is-open {
+    display: flex;
+}
+[data-theme="light"] .bar-secondary-tools {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+}
+.play-tools-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+.play-tools-section:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+.play-tools-heading {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+[data-theme="light"] .play-tools-heading {
+    color: #64748b;
+}
+.play-tools-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
 }
 @media (max-width: 640px) {
     .bar-group-extra .pb-label-text { display: none; }

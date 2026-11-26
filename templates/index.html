@@ -434,8 +434,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cifra-sheet-print.css') }}?v=20">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chord-diagram.css') }}?v=15">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ux-revamp.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ux-revamp.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/command-palette.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/universal-sort.css') }}?v=1">
     {% block extra_head %}{% endblock %}
     {% if not pdfgen and not is_print_view %}{% include 'partials/google_ads_head.html' %}{% endif %}
     {% if not pdfgen and not is_print_view %}{% include 'partials/meta_pixel.html' %}{% endif %}
@@ -512,18 +513,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link{% if ep == 'bands.my_fees' %} active{% endif %}" href="{{ url_for('bands.my_fees') }}" title="Seus cachês em todas as bandas">
-                                <i class="fas fa-wallet d-none d-xl-inline"></i> Meu financeiro
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link{% if ep.startswith('studios.') %} active{% endif %}" href="{{ url_for('studios.search') }}">
                                 <i class="fas fa-building d-none d-xl-inline"></i> Estúdios
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link{% if ep.startswith('ajuda.') %} active{% endif %}" href="{{ url_for('ajuda.index') }}">
-                                <i class="fas fa-circle-question d-none d-xl-inline"></i> Ajuda
                             </a>
                         </li>
                         <li class="nav-item ss-notif-wrap" id="ss-notif-wrap"
@@ -584,6 +575,16 @@
                                     </a>
                                 </li>
                                 <li>
+                                    <a class="dropdown-item" href="{{ url_for('bands.my_fees') }}">
+                                        <i class="fas fa-wallet me-1"></i> Meu financeiro
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('ajuda.index') }}">
+                                        <i class="fas fa-circle-question me-1"></i> Ajuda
+                                    </a>
+                                </li>
+                                <li>
                                     <a class="dropdown-item {% if not user_has_pro %}fw-semibold text-warning-emphasis{% endif %}" href="{{ url_for('assinatura_bp.planos') }}">
                                         <i class="fas fa-crown me-1 text-warning"></i>
                                         {% if user_has_pro %}Minha assinatura Pro{% else %}Assinar Pro (2 meses grátis){% endif %}
@@ -635,7 +636,6 @@
             </div>
         </div>
     </nav>
-    {% include 'partials/rebrand_notice.html' %}
     <main id="conteudo-principal" class="{% block main_class %}container my-4{% endblock %}" tabindex="-1">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -769,6 +769,7 @@
     {% include 'partials/google_ads_funnel.html' %}
     {% endif %}
     {% include 'partials/cookie_consent.html' %}
+    <script src="{{ url_for('static', filename='js/universal-sort.js') }}?v=1"></script>
     {% if current_user.is_authenticated %}
     <script src="{{ url_for('static', filename='js/global-command-palette.js') }}?v=1"></script>
     {% endif %}

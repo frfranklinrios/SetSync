@@ -22,8 +22,9 @@
 
 - **Bandas e membros** — convites por e-mail, papéis (admin/membro), logo da banda
 - **Paleta de Comando Global (`Ctrl+K`)** — busca instantânea em músicas (por título, artista ou `tom:G`), roteiros, bandas, agenda e ações rápidas com atalho direto ao palco (`Shift+Enter`)
-- **Cockpit do Músico & Filtro Instantâneo de Repertório** — dashboard orientado à ação, busca em tempo real, ordenação (título/artista/tom) e controle interativo de prontidão (`Pronta`, `Ensaio`, `Aprender`)
-- **Estúdio de Prática na Visualização da Cifra** — faixa de acordes únicos clicáveis para abrir diagramas SVG, diapasão Web Audio no tom atual, ajuste de fonte, modo 1/2 colunas e auto-scroll de estudo
+- **Cockpit do Músico & Ordenação Universal por Colunas (`universal-sort.js`)** — dashboard enxuto orientado à ação, busca em tempo real, prontidão interativa (`Pronta`, `Ensaio`, `Aprender`) e ordenação clicável por coluna em todas as listas e tabelas do app
+- **Roteiros em 1 Passo & Seleção em Lote** — crie setlists escolhendo múltiplas músicas na mesma tela e adicione músicas em lote com filtro e ordenação por coluna
+- **Estúdio de Prática na Visualização da Cifra** — faixa de acordes únicos clicáveis para abrir diagramas SVG, transposição unificada, diapasão Web Audio no tom atual, ajuste de fonte, modo 1/2 colunas e auto-scroll de estudo
 - **Cantores** — vários vocalistas por banda, tom de transposição por cantor
 - **Cifras** — ChordPro, colagem de sites, lead sheet, **chord sheet** (chordsheet.com), tablatura, tons maiores/menores
 - **Transposição** — em tempo real; tom salvo para toda a banda e por cantor na setlist

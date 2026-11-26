@@ -1,6 +1,9 @@
 {# Linha de setlist — lista e aba da banda. #}
 {% macro setlist_row(setlist, band, can_edit=false, is_admin=false) %}
-<div class="row-item">
+{% set n_songs = setlist.cifras_count if setlist.cifras_count is defined else 0 %}
+<div class="row-item"
+     data-name="{{ (setlist.name or '')|lower }}"
+     data-count="{{ n_songs }}">
     <div class="row-info">
         <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}">
             <div class="row-title">{{ setlist.name }}</div>

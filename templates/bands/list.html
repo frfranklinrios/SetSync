@@ -112,9 +112,20 @@
 
     {% if owned %}
     <p class="section-title">Administradas</p>
-    <div class="bands-grid mb-2">
+    {% if owned|length > 1 %}
+    <div class="row-sort-header row-sort-header--standalone" data-sort-target="#bands-owned-grid">
+        <span class="row-sort-label">Ordenar:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Nome</button>
+        <button type="button" class="row-sort-btn" data-sort-col="cifras" data-sort-type="number">Músicas</button>
+        <button type="button" class="row-sort-btn" data-sort-col="members" data-sort-type="number">Integrantes</button>
+    </div>
+    {% endif %}
+    <div class="bands-grid mb-2" id="bands-owned-grid" data-sortable-list>
         {% for band in owned %}
-        <div class="band-tile">
+        <div class="band-tile"
+             data-name="{{ (band.name or '')|lower }}"
+             data-cifras="{{ band.cifras|length }}"
+             data-members="{{ band.members|length }}">
             <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
             {% set desc = band.description or '—' %}
             {% include 'partials/band_tile_head.html' %}
@@ -132,9 +143,20 @@
 
     {% if extra %}
     <p class="section-title">Participo</p>
-    <div class="bands-grid mb-2">
+    {% if extra|length > 1 %}
+    <div class="row-sort-header row-sort-header--standalone" data-sort-target="#bands-extra-grid">
+        <span class="row-sort-label">Ordenar:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Nome</button>
+        <button type="button" class="row-sort-btn" data-sort-col="cifras" data-sort-type="number">Músicas</button>
+        <button type="button" class="row-sort-btn" data-sort-col="members" data-sort-type="number">Integrantes</button>
+    </div>
+    {% endif %}
+    <div class="bands-grid mb-2" id="bands-extra-grid" data-sortable-list>
         {% for band in extra %}
-        <div class="band-tile">
+        <div class="band-tile"
+             data-name="{{ (band.name or '')|lower }}"
+             data-cifras="{{ band.cifras|length }}"
+             data-members="{{ band.members|length }}">
             <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
             {% set desc = band.description or '—' %}
             {% include 'partials/band_tile_head.html' %}
@@ -150,9 +172,20 @@
 
     {% if is_superadmin and all_bands %}
     <p class="section-title">Todas as bandas (admin)</p>
-    <div class="bands-grid mb-2">
+    {% if all_bands|length > 1 %}
+    <div class="row-sort-header row-sort-header--standalone" data-sort-target="#bands-all-grid">
+        <span class="row-sort-label">Ordenar:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Nome</button>
+        <button type="button" class="row-sort-btn" data-sort-col="cifras" data-sort-type="number">Músicas</button>
+        <button type="button" class="row-sort-btn" data-sort-col="members" data-sort-type="number">Integrantes</button>
+    </div>
+    {% endif %}
+    <div class="bands-grid mb-2" id="bands-all-grid" data-sortable-list>
         {% for band in all_bands %}
-        <div class="band-tile">
+        <div class="band-tile"
+             data-name="{{ (band.name or '')|lower }}"
+             data-cifras="{{ band.cifras|length }}"
+             data-members="{{ band.members|length }}">
             <a href="{{ url_for('bands.view', band_id=band.id) }}" class="stretched-link" aria-label="{{ band.name }}"></a>
             {% set desc = band.description or '—' %}
             {% include 'partials/band_tile_head.html' %}

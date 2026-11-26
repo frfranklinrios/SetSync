@@ -358,42 +358,41 @@
         </div>
         {% endif %}
 
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 p-2 rounded border" style="background: var(--card-bg, #fff);">
-            <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="study-toolbar" id="cifra-study-toolbar" aria-label="Ferramentas de estudo">
+            <div class="study-toolbar-group">
                 <span class="text-muted fw-semibold" style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em;">Tom</span>
-                <div class="transpose-stepper" role="group" aria-label="Transpor rápido" style="max-width: 11rem;">
-                    <button type="button" class="transpose-step-btn js-transpose-down" aria-label="Descer meio tom" style="padding: 0.3rem 0.7rem;">−</button>
-                    <span class="transpose-key-lbl" title="Tom atual" style="padding: 0.3rem 0.6rem;">{{ display_key }}</span>
-                    <button type="button" class="transpose-step-btn js-transpose-up" aria-label="Subir meio tom" style="padding: 0.3rem 0.7rem;">+</button>
+                <div class="transpose-stepper" id="transpose-stepper" role="group" aria-label="Transpor"
+                     data-transpose="{{ current_transpose }}"
+                     data-vocalist="{{ active_vocalist_id or '' }}"
+                     style="max-width: 11rem;">
+                    <button type="button" class="transpose-step-btn" id="transpose-down" aria-label="Descer meio tom" style="padding: 0.28rem 0.65rem;">−</button>
+                    <span class="transpose-key-lbl" id="transpose-key-lbl" title="Tom atual" style="padding: 0.28rem 0.55rem;">{{ display_key }}</span>
+                    <button type="button" class="transpose-step-btn" id="transpose-up" aria-label="Subir meio tom" style="padding: 0.28rem 0.65rem;">+</button>
                 </div>
                 {% if current_transpose != 0 %}
                 <a href="{{ url_for('cifras.view', cifra_id=cifra.id, transpose=0, vocalist=active_vocalist_id if active_vocalist_id else none) }}"
-                   class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: var(--text-xs);">
-                    Original ({{ cifra.tom_original|normalize_tom }})
+                   class="study-pill-btn" title="Voltar ao tom original">
+                    Orig. ({{ cifra.tom_original|normalize_tom }})
                 </a>
                 {% endif %}
-            </div>
-            {% if vocalists|length > 1 %}
-            <div class="d-flex align-items-center gap-2">
-                <label for="vocalist-sel-top" class="text-muted mb-0" style="font-size: var(--text-xs);">Voz:</label>
-                <select class="form-select form-select-sm py-1" id="vocalist-sel-top" style="width: auto; font-size: var(--text-xs);"
+                {% if vocalists|length > 1 %}
+                <select class="form-select form-select-sm py-1" id="vocalist-sel-top" aria-label="Cantor(a)" style="width: auto; font-size: var(--text-xs);"
                         onchange="location.href=CIFRA_BASE+'?vocalist='+encodeURIComponent(this.value)">
                     {% for v in vocalists %}
                     <option value="{{ v.id }}" {% if v.id == active_vocalist_id %}selected{% endif %}>{{ v.name }}</option>
                     {% endfor %}
                 </select>
-            </div>
-            {% endif %}
-        </div>
-
-        <div class="study-toolbar" id="cifra-study-toolbar" aria-label="Ferramentas de estudo">
-            <div class="study-toolbar-group">
+                {% elif vocalists|length == 1 %}
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border" style="font-size: var(--text-xs);">{{ vocalists[0].name }}</span>
+                {% endif %}
                 <button type="button" class="study-pill-btn" id="view-pitch-pipe-btn"
                         data-key="{{ display_key }}"
                         title="Ouvir nota/acorde de referência no tom atual ({{ display_key }})">
                     <i class="fas fa-volume-up"></i>
                     <span>Diapasão ({{ display_key or 'C' }})</span>
                 </button>
+            </div>
+            <div class="study-toolbar-group">
                 <div class="d-inline-flex align-items-center gap-1" role="group" aria-label="Tamanho da fonte">
                     <button type="button" class="study-pill-btn" id="view-font-down" title="Diminuir fonte">A−</button>
                     <span class="small text-muted fw-semibold px-1" id="view-font-val" style="min-width: 2.8rem; text-align: center;">100%</span>
@@ -404,8 +403,6 @@
                     <i class="fas fa-columns"></i>
                     <span>2 colunas</span>
                 </button>
-            </div>
-            <div class="study-toolbar-group">
                 <button type="button" class="study-pill-btn" id="view-autoscroll-toggle" title="Rolagem automática para estudo">
                     <i class="fas fa-angle-double-down"></i>
                     <span>Auto-scroll</span>
@@ -506,14 +503,11 @@
     </div>
 
     <div id="normal-sidebar" class="col-lg-4">
+        {% if band and (can_edit or vocalists|length > 0) %}
         <div class="card mb-3">
-            <div class="card-header">Transpor</div>
+            <div class="card-header">Cantora / Cantor</div>
             <div class="card-body">
-                <p class="text-muted mb-2" style="font-size: var(--text-sm);">
-                    Tom cadastrado: <strong>{{ cifra.tom_original|normalize_tom }}</strong>
-                </p>
                 {% if vocalists|length > 1 %}
-                <div class="vocalist-field-label">Cantora/cantor</div>
                 <select class="form-select form-select-sm mb-2" id="vocalist-sel"
                         onchange="location.href=CIFRA_BASE+'?vocalist='+encodeURIComponent(this.value)">
                     {% for v in vocalists %}
@@ -523,12 +517,7 @@
                     {% endfor %}
                 </select>
                 {% elif vocalists|length == 1 %}
-                <div class="vocalist-field-label">Cantora/cantor</div>
-                <div class="vocalist-current" id="vocalist-current">{{ vocalists[0].name }}</div>
-                {% else %}
-                <p class="text-muted mb-2" style="font-size: var(--text-xs);">
-                    Nenhuma cantora/cantor cadastrada. O tom vale para toda a banda.
-                </p>
+                <div class="vocalist-current mb-2" id="vocalist-current">{{ vocalists[0].name }}</div>
                 {% endif %}
                 {% if can_edit %}
                 <div id="vocalist-add-wrap" class="{% if vocalists|length > 0 %}d-none{% endif %}">
@@ -539,26 +528,14 @@
                         <button type="button" class="btn btn-sm btn-primary" id="vocalist-add-btn">Salvar</button>
                     </div>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary vocalist-add-toggle mb-2{% if vocalists|length == 0 %} d-none{% endif %}"
+                <button type="button" class="btn btn-sm btn-outline-secondary vocalist-add-toggle{% if vocalists|length == 0 %} d-none{% endif %}"
                         id="vocalist-add-toggle">
                     <i class="fas fa-plus me-1"></i>Adicionar cantor
                 </button>
-                {% elif not vocalists %}
-                <p class="text-muted mb-2" style="font-size: var(--text-xs);">
-                    Peça a um editor da banda para cadastrar cantoras/cantores.
-                </p>
                 {% endif %}
-                <div class="transpose-stepper" id="transpose-stepper" role="group" aria-label="Transpor"
-                     data-transpose="{{ current_transpose }}"
-                     data-vocalist="{{ active_vocalist_id or '' }}">
-                    <button type="button" class="transpose-step-btn" id="transpose-down"
-                            aria-label="Descer meio tom">−</button>
-                    <span class="transpose-key-lbl" id="transpose-key-lbl" title="Tom atual">{{ display_key }}</span>
-                    <button type="button" class="transpose-step-btn" id="transpose-up"
-                            aria-label="Subir meio tom">+</button>
-                </div>
             </div>
         </div>
+        {% endif %}
 
         {% if setlist|length > 1 %}
         <div class="card mb-3">
@@ -582,13 +559,10 @@
         <div class="card">
             <div class="card-header">Informações</div>
             <div class="card-body" style="font-size:0.825rem;">
-                <p class="mb-1 text-muted">Tom</p>
-                <p class="fw-bold mb-3" style="color:var(--accent);">{{ display_key }}</p>
-                {% if current_transpose != 0 %}
-                <p class="mb-3 text-muted" style="font-size: var(--text-sm);">Cadastro: {{ cifra.tom_original|normalize_tom }}</p>
-                {% endif %}
+                <p class="mb-1 text-muted">Tom atual</p>
+                <p class="fw-bold mb-2" style="color:var(--accent);">{{ display_key }}{% if current_transpose != 0 %} <span class="text-muted fw-normal">(cadastro: {{ cifra.tom_original|normalize_tom }})</span>{% endif %}</p>
                 <p class="mb-1 text-muted">{% if band %}Banda{% else %}Coleção{% endif %}</p>
-                <p class="fw-semibold mb-3">{% if band %}{{ band.name }}{% else %}Pessoal{% endif %}</p>
+                <p class="fw-semibold mb-2">{% if band %}{{ band.name }}{% else %}Pessoal{% endif %}</p>
                 <p class="mb-1 text-muted">Adicionada</p>
                 <p class="mb-0">{{ cifra.created_at|date_short }}</p>
             </div>

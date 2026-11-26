@@ -87,7 +87,7 @@
         {% endif %}
     </div>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
         {% if cifras %}
         <a href="{{ url_for('cifras.tocar_band', band_id=band.id) }}" class="btn btn-primary btn-sm"
            title="Abre as cifras em tela cheia para tocar no palco">
@@ -95,37 +95,55 @@
         </a>
         {% endif %}
         {% if can_edit %}
-        <a href="{{ url_for('setlists.create', band_id=band.id) }}" class="btn btn-outline-primary btn-sm"
-           title="Criar novo roteiro de show">
-            <i class="fas fa-list-ol me-1"></i> Novo roteiro
-        </a>
+        <button type="button" class="btn btn-outline-primary btn-sm" data-open-cifra-search
+                title="Procura na biblioteca do Uníssono e adiciona à banda">
+            <i class="fas fa-plus me-1"></i> Música
+        </button>
         {% endif %}
-        {% if can_view_finance %}
-        <a href="{{ url_for('bands.finance', band_id=band.id) }}" class="btn btn-outline-primary btn-sm"
-           title="Financeiro completo da banda">
-            <i class="fas fa-coins me-1"></i> Financeiro
-        </a>
-        {% endif %}
-        <a href="{{ url_for('bands.my_fees', banda_id=band.id) }}" class="btn btn-outline-secondary btn-sm"
-           title="Seus cachês nesta e nas outras bandas">
-            <i class="fas fa-wallet me-1"></i> Meus cachês
-        </a>
-        {% if is_admin %}
-        {% if gorjeta_pronta and gorjeta_public_url %}
-        <a href="{{ gorjeta_public_url }}" class="btn btn-success btn-sm" target="_blank" rel="noopener"
-           title="Página pública do QR Pix e pedidos de música">
-            <i class="fas fa-qrcode me-1"></i> Gorjeta Pix
-        </a>
-        {% else %}
-        <a href="{{ url_for('bands.settings', band_id=band.id) }}#gorjeta" class="btn btn-outline-success btn-sm"
-           title="Ativar QR de gorjeta Pix e pedidos de música">
-            <i class="fas fa-qrcode me-1"></i> Gorjeta Pix
-        </a>
-        {% endif %}
-        <a href="{{ url_for('bands.settings', band_id=band.id) }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-cog me-1"></i> Configurações
-        </a>
-        {% endif %}
+        <div class="dropdown">
+            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-ellipsis-h me-1"></i> Gerenciar
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                {% if can_edit %}
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('setlists.create', band_id=band.id) }}">
+                        <i class="fas fa-list-ol me-2 text-muted"></i>Novo roteiro
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('cifras.add', band_id=band.id) }}">
+                        <i class="fas fa-file-circle-plus me-2 text-muted"></i>Cadastrar música manualmente
+                    </a>
+                </li>
+                {% endif %}
+                {% if can_view_finance %}
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('bands.finance', band_id=band.id) }}">
+                        <i class="fas fa-coins me-2 text-muted"></i>Financeiro da banda
+                    </a>
+                </li>
+                {% endif %}
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('bands.my_fees', banda_id=band.id) }}">
+                        <i class="fas fa-wallet me-2 text-muted"></i>Meus cachês
+                    </a>
+                </li>
+                {% if is_admin %}
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ gorjeta_public_url if (gorjeta_pronta and gorjeta_public_url) else (url_for('bands.settings', band_id=band.id) ~ '#gorjeta') }}" {% if gorjeta_pronta and gorjeta_public_url %}target="_blank" rel="noopener"{% endif %}>
+                        <i class="fas fa-qrcode me-2 text-success"></i>Gorjeta Pix
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('bands.settings', band_id=band.id) }}">
+                        <i class="fas fa-cog me-2 text-muted"></i>Configurações
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
     </div>
 </div>
 
@@ -180,10 +198,6 @@
             </div>
         </div>
 
-        {% if can_edit %}
-        {% include 'partials/offline_panel.html' %}
-        {% endif %}
-
         {% if cifras %}
         {% set ns = namespace(pronta=0, ensaio=0, aprender=0) %}
         {% for c in cifras %}
@@ -234,23 +248,36 @@
                 <button type="button" class="filter-chip" data-readiness-filter="ensaio">⏱ Ensaio</button>
                 <button type="button" class="filter-chip" data-readiness-filter="aprender">📖 Aprender</button>
             </div>
-            <select class="form-select form-select-sm" id="band-cifra-sort" data-rep-sort aria-label="Ordenar repertório" style="width: auto;">
-                <option value="default">Ordem padrão</option>
-                <option value="title">Título (A–Z)</option>
-                <option value="artist">Artista (A–Z)</option>
-                <option value="tom">Tom</option>
-            </select>
         </div>
 
-        <div class="row-card" id="band-cifra-rows" data-rep-rows>
-            {% for cifra in cifras %}
-            {{ cifra_row(cifra, band, show_edit=can_edit, show_delete=can_edit) }}
-            {% endfor %}
+        <div class="row-card">
+            <div class="row-sort-header" data-sort-target="#band-cifra-rows">
+                <span class="row-sort-label">Ordenar por:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Música</button>
+                <button type="button" class="row-sort-btn" data-sort-col="artist" data-sort-type="text">Artista</button>
+                <button type="button" class="row-sort-btn" data-sort-col="readiness-rank" data-sort-type="number">Prontidão</button>
+                <button type="button" class="row-sort-btn" data-sort-col="tom" data-sort-type="text">Tom</button>
+            </div>
+            <div id="band-cifra-rows" data-rep-rows data-sortable-list>
+                {% for cifra in cifras %}
+                {{ cifra_row(cifra, band, show_edit=can_edit, show_delete=can_edit) }}
+                {% endfor %}
+            </div>
         </div>
         <div class="empty mt-2 d-none" data-rep-empty>
             <i class="fas fa-filter"></i>
             <p class="mb-0">Nenhuma música corresponde ao filtro atual.</p>
         </div>
+        {% if can_edit %}
+        <details class="mt-3">
+            <summary class="small text-muted fw-semibold" style="cursor: pointer;">
+                <i class="fas fa-wifi-off me-1"></i> Baixar repertório offline no aparelho
+            </summary>
+            <div class="mt-2">
+                {% include 'partials/offline_panel.html' %}
+            </div>
+        </details>
+        {% endif %}
         {% else %}
         {% with icon='fa-music',
                 title='Sem repertório ainda',
@@ -285,9 +312,16 @@
 
         {% if setlists %}
         <div class="row-card">
-            {% for setlist in setlists %}
-            {{ setlist_row(setlist, band, can_edit=can_edit) }}
-            {% endfor %}
+            <div class="row-sort-header" data-sort-target="#band-setlists-rows">
+                <span class="row-sort-label">Ordenar por:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Roteiro</button>
+                <button type="button" class="row-sort-btn" data-sort-col="count" data-sort-type="number">Músicas</button>
+            </div>
+            <div id="band-setlists-rows" data-sortable-list>
+                {% for setlist in setlists %}
+                {{ setlist_row(setlist, band, can_edit=can_edit) }}
+                {% endfor %}
+            </div>
         </div>
         {% else %}
         {% with icon='fa-list',
@@ -329,17 +363,35 @@
         {% if events_upcoming %}
         <h3 class="h6 text-muted mb-2">Próximos</h3>
         <div class="row-card mb-4">
-            {% for event in events_upcoming %}
-            {{ event_row(event, band, can_edit=is_admin, is_admin=is_admin) }}
-            {% endfor %}
+            <div class="row-sort-header" data-sort-target="#band-events-upcoming-rows">
+                <span class="row-sort-label">Ordenar por:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Evento</button>
+                <button type="button" class="row-sort-btn" data-sort-col="date" data-sort-type="date">Data</button>
+                <button type="button" class="row-sort-btn" data-sort-col="type" data-sort-type="text">Tipo</button>
+                <button type="button" class="row-sort-btn" data-sort-col="location" data-sort-type="text">Local</button>
+            </div>
+            <div id="band-events-upcoming-rows" data-sortable-list>
+                {% for event in events_upcoming %}
+                {{ event_row(event, band, can_edit=is_admin, is_admin=is_admin) }}
+                {% endfor %}
+            </div>
         </div>
         {% endif %}
         {% if events_past %}
         <h3 class="h6 text-muted mb-2">Anteriores</h3>
         <div class="row-card">
-            {% for event in events_past %}
-            {{ event_row(event, band, can_edit=is_admin, is_admin=is_admin) }}
-            {% endfor %}
+            <div class="row-sort-header" data-sort-target="#band-events-past-rows">
+                <span class="row-sort-label">Ordenar por:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Evento</button>
+                <button type="button" class="row-sort-btn" data-sort-col="date" data-sort-type="date">Data</button>
+                <button type="button" class="row-sort-btn" data-sort-col="type" data-sort-type="text">Tipo</button>
+                <button type="button" class="row-sort-btn" data-sort-col="location" data-sort-type="text">Local</button>
+            </div>
+            <div id="band-events-past-rows" data-sortable-list>
+                {% for event in events_past %}
+                {{ event_row(event, band, can_edit=is_admin, is_admin=is_admin) }}
+                {% endfor %}
+            </div>
         </div>
         {% endif %}
         {% else %}
@@ -367,21 +419,33 @@
         </div>
 
         <div class="row-card">
-            {% for member in members %}
-            <div class="row-item">
-                <div class="row-info">
-                    <div class="row-title">{{ user_display_name(member) }}</div>
-                    <div class="row-sub">{{ member.email }}</div>
-                </div>
-                {% if member.role == 'owner' %}
-                <span class="row-badge owner" title="Quem criou a banda">Dono</span>
-                {% elif member.role == 'admin' %}
-                <span class="row-badge owner" title="Pode configurar a banda e convidar pessoas">Administrador</span>
-                {% else %}
-                <span class="row-badge neutral" title="Participa da banda">Integrante</span>
-                {% endif %}
+            <div class="row-sort-header" data-sort-target="#band-members-rows">
+                <span class="row-sort-label">Ordenar por:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Integrante</button>
+                <button type="button" class="row-sort-btn" data-sort-col="email" data-sort-type="text">E-mail</button>
+                <button type="button" class="row-sort-btn" data-sort-col="role-rank" data-sort-type="number">Função</button>
             </div>
-            {% endfor %}
+            <div id="band-members-rows" data-sortable-list>
+                {% for member in members %}
+                {% set r_rank = 1 if member.role == 'owner' else (2 if member.role == 'admin' else 3) %}
+                <div class="row-item"
+                     data-name="{{ user_display_name(member)|lower }}"
+                     data-email="{{ (member.email or '')|lower }}"
+                     data-role-rank="{{ r_rank }}">
+                    <div class="row-info">
+                        <div class="row-title">{{ user_display_name(member) }}</div>
+                        <div class="row-sub">{{ member.email }}</div>
+                    </div>
+                    {% if member.role == 'owner' %}
+                    <span class="row-badge owner" title="Quem criou a banda">Dono</span>
+                    {% elif member.role == 'admin' %}
+                    <span class="row-badge owner" title="Pode configurar a banda e convidar pessoas">Administrador</span>
+                    {% else %}
+                    <span class="row-badge neutral" title="Participa da banda">Integrante</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>

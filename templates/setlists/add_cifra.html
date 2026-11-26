@@ -1,19 +1,136 @@
 {% extends "index.html" %}
-{% block title %}Adicionar Música à Setlist{% endblock %}
+{% block title %}Adicionar músicas — {{ setlist.name }}{% endblock %}
 {% block content %}
-<h2>Adicionar Música à Setlist: {{ setlist.name }}</h2>
-<form method="POST">
-  {% include 'partials/csrf_input.html' %}
-  <div class="mb-3">
-    <label for="cifra_id" class="form-label">Escolha a música</label>
-    <select class="form-select" id="cifra_id" name="cifra_id" required>
-      <option value="">Selecione...</option>
-      {% for cifra in cifras %}
-        <option value="{{ cifra.id }}">{{ cifra.titulo or cifra.titulo_original or 'Sem título' }}</option>
-      {% endfor %}
-    </select>
+<div style="max-width: 46rem;">
+  <nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0" style="font-size: var(--text-sm);">
+      <li class="breadcrumb-item"><a href="{{ url_for('bands.view', band_id=band.id) }}">{{ band.name }}</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}">{{ setlist.name }}</a></li>
+      <li class="breadcrumb-item active">Adicionar músicas</li>
+    </ol>
+  </nav>
+
+  <div class="page-head">
+    <div>
+      <h2 class="h4 mb-0">Adicionar músicas ao roteiro</h2>
+      <p class="text-muted mb-0" style="font-size: var(--text-sm);">{{ setlist.name }}</p>
+    </div>
   </div>
-  <button type="submit" class="btn btn-success">Adicionar</button>
-  <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-secondary">Cancelar</a>
-</form>
+
+  {% if cifras %}
+  <form method="POST" id="add-cifras-batch-form">
+    {% include 'partials/csrf_input.html' %}
+    <div class="repertoire-toolbar mb-2">
+      <div class="repertoire-search-wrap">
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <input type="search" class="form-control form-control-sm" id="add-pick-search"
+               placeholder="Filtrar músicas por título, artista ou tom…" autocomplete="off" autofocus>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="small text-muted" id="add-picked-count">0 selecionada(s)</span>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="add-pick-all">Marcar todas</button>
+      </div>
+    </div>
+
+    <div class="row-card mb-3">
+      <div class="row-sort-header" data-sort-target="#add-setlist-cifras">
+        <span class="row-sort-label">Ordenar:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Música</button>
+        <button type="button" class="row-sort-btn" data-sort-col="artist" data-sort-type="text">Artista</button>
+        <button type="button" class="row-sort-btn" data-sort-col="readiness-rank" data-sort-type="number">Prontidão</button>
+        <button type="button" class="row-sort-btn" data-sort-col="tom" data-sort-type="text">Tom</button>
+      </div>
+      <div id="add-setlist-cifras" data-sortable-list>
+        {% for cifra in cifras %}
+        {% set title_val = cifra.titulo or cifra.titulo_original or 'Sem título' %}
+        {% set r_val = (cifra.readiness or 'pronta')|lower %}
+        {% set r_rank = 1 if r_val == 'aprender' else (2 if r_val == 'ensaio' else 3) %}
+        {% set tom_val = cifra_display_key(cifra) if cifra.tom_original else '' %}
+        <label class="row-item" style="cursor: pointer;"
+               data-title="{{ title_val|lower }}"
+               data-artist="{{ (cifra.artista or '')|lower }}"
+               data-readiness-rank="{{ r_rank }}"
+               data-tom="{{ tom_val|lower }}">
+          <input type="checkbox" class="form-check-input mt-0 flex-shrink-0 js-add-cb"
+                 name="cifra_ids" value="{{ cifra.id }}">
+          <div class="row-info">
+            <div class="row-title">{{ title_val }}</div>
+            {% if cifra.artista %}<div class="row-sub">{{ cifra.artista }}</div>{% endif %}
+          </div>
+          <span class="row-badge {% if r_val == 'aprender' %}text-danger{% elif r_val == 'ensaio' %}text-warning{% else %}text-success{% endif %}">
+            {% if r_val == 'aprender' %}Aprender{% elif r_val == 'ensaio' %}Ensaio{% else %}Pronta{% endif %}
+          </span>
+          {% if tom_val %}<span class="row-badge">{{ tom_val }}</span>{% endif %}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 sticky-bottom py-2" style="background: var(--bg);">
+      <button type="submit" class="btn btn-primary" id="add-batch-submit" disabled>Adicionar ao roteiro</button>
+      <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-outline-secondary">Voltar</a>
+    </div>
+  </form>
+  {% else %}
+  <div class="card">
+    <div class="card-body text-center py-4">
+      <p class="text-muted mb-3">Todas as cifras da banda já estão neste roteiro.</p>
+      <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <a href="{{ url_for('cifras.add', band_id=band.id) }}" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus me-1"></i> Cadastrar nova música na banda
+        </a>
+        <a href="{{ url_for('setlists.view', setlist_id=setlist.id) }}" class="btn btn-outline-secondary btn-sm">Voltar ao roteiro</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+<script>
+(function () {
+  var list = document.getElementById('add-setlist-cifras');
+  if (!list) return;
+  var search = document.getElementById('add-pick-search');
+  var countEl = document.getElementById('add-picked-count');
+  var submitBtn = document.getElementById('add-batch-submit');
+  var pickAllBtn = document.getElementById('add-pick-all');
+
+  function updateCount() {
+    var checked = list.querySelectorAll('.js-add-cb:checked').length;
+    if (countEl) countEl.textContent = checked + ' selecionada' + (checked === 1 ? '' : 's');
+    if (submitBtn) {
+      submitBtn.disabled = checked === 0;
+      submitBtn.textContent = checked > 0
+        ? 'Adicionar ' + checked + ' música' + (checked === 1 ? '' : 's')
+        : 'Adicionar ao roteiro';
+    }
+  }
+  list.addEventListener('change', updateCount);
+
+  if (search) {
+    search.addEventListener('input', function () {
+      var q = (search.value || '').trim().toLowerCase();
+      list.querySelectorAll('.row-item').forEach(function (row) {
+        var hay = [row.getAttribute('data-title'), row.getAttribute('data-artist'), row.getAttribute('data-tom')].join(' ');
+        row.style.display = !q || hay.indexOf(q) !== -1 ? '' : 'none';
+      });
+    });
+  }
+
+  if (pickAllBtn) {
+    pickAllBtn.addEventListener('click', function () {
+      var visibleCbs = [];
+      list.querySelectorAll('.row-item').forEach(function (row) {
+        if (row.style.display !== 'none') {
+          var cb = row.querySelector('.js-add-cb');
+          if (cb) visibleCbs.push(cb);
+        }
+      });
+      var allChecked = visibleCbs.length > 0 && visibleCbs.every(function (cb) { return cb.checked; });
+      visibleCbs.forEach(function (cb) { cb.checked = !allChecked; });
+      pickAllBtn.textContent = allChecked ? 'Marcar todas' : 'Desmarcar todas';
+      updateCount();
+    });
+  }
+})();
+</script>
 {% endblock %}

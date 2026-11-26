@@ -284,9 +284,26 @@
 {% endif %}
 
 <div class="row-card" id="setlist-card">
-    <div id="sortable-cifras">
+    <div class="row-sort-header" data-sort-target="#setlist-card">
+        <span class="row-sort-label">Ordenar por:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="orig-index" data-sort-type="number" aria-sort="ascending">Ordem</button>
+        <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Música</button>
+        <button type="button" class="row-sort-btn" data-sort-col="artist" data-sort-type="text">Artista</button>
+        <button type="button" class="row-sort-btn" data-sort-col="readiness-rank" data-sort-type="number">Prontidão</button>
+        <button type="button" class="row-sort-btn" data-sort-col="tom" data-sort-type="text">Tom</button>
+    </div>
+    <div id="sortable-cifras" data-sortable-list>
     {% for cifra in cifras %}
-    <div class="row-item row-item--sortable row-item--numbered" data-cifra-id="{{ cifra.id }}" data-readiness="{{ (cifra.readiness or 'pronta')|lower }}">
+    {% set sl_readiness = (cifra.readiness or 'pronta')|lower %}
+    {% set sl_rank = 1 if sl_readiness == 'aprender' else (2 if sl_readiness == 'ensaio' else 3) %}
+    {% set sl_tom = (cifra.row_display_key if (cifra.tom_original and vocalists) else (cifra_display_key(cifra) if cifra.tom_original else '')) %}
+    <div class="row-item row-item--sortable row-item--numbered"
+         data-cifra-id="{{ cifra.id }}"
+         data-readiness="{{ sl_readiness }}"
+         data-readiness-rank="{{ sl_rank }}"
+         data-title="{{ (cifra.titulo or cifra.titulo_original or '')|lower }}"
+         data-artist="{{ (cifra.artista or '')|lower }}"
+         data-tom="{{ sl_tom|lower }}">
         <div class="row-prefix">
             {% if can_edit %}
             <span class="row-handle" title="Arraste para reordenar"><i class="fas fa-grip-vertical"></i></span>
@@ -502,7 +519,10 @@
               .then(function (res) {
                   if (!res.ok) throw new Error(res.error || 'falha');
                   var row = sel.closest('.row-item');
-                  if (row) row.setAttribute('data-readiness', val);
+                  if (row) {
+                      row.setAttribute('data-readiness', val);
+                      row.setAttribute('data-readiness-rank', val === 'aprender' ? '1' : (val === 'ensaio' ? '2' : '3'));
+                  }
                   document.dispatchEvent(new CustomEvent('setsync-setlist-readiness-changed'));
                   showStatus('Status salvo ✓', 'ok');
               })

@@ -35,27 +35,18 @@
                                placeholder="Ex.: Banda da Igreja, Cover Rock, Ministério de Louvor">
                         <div class="form-text">Pode mudar depois nas configurações.</div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Descrição <span class="text-muted fw-normal">(opcional)</span></label>
-                        <textarea class="form-control" id="description" name="description" rows="2"
-                                  placeholder="Ex.: Louvor do culto de domingo, banda de covers…"></textarea>
-                    </div>
 
-                    {% if bem_vindo or is_first_band %}
-                    <div class="alert alert-success small mb-3 mb-md-4">
-                        <i class="fas fa-gift me-1"></i>
-                        <strong>Trial Pro de 30 dias</strong> ativa automaticamente nesta banda — sem cartão.
-                    </div>
-                    {% endif %}
-                    
+                    <details class="mb-3 mb-md-4">
+                        <summary class="text-muted small" style="cursor: pointer;">+ Adicionar descrição (opcional)</summary>
+                        <div class="mt-2">
+                            <textarea class="form-control" id="description" name="description" rows="2"
+                                      placeholder="Ex.: Louvor do culto de domingo, banda de covers…"></textarea>
+                        </div>
+                    </details>
+
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            {% if bem_vindo or is_first_band %}
-                            Criar banda · liberar Pro
-                            {% else %}
-                            Criar Banda
-                            {% endif %}
+                            Criar banda
                         </button>
                         {% if not bem_vindo and not is_first_band %}
                         <a href="{{ url_for('bands.list_bands') }}" class="btn btn-outline-secondary">Cancelar</a>

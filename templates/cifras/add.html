@@ -86,14 +86,14 @@
 
 <h2 class="mb-1">{% if personal %}{% if welcome %}Adicione sua primeira música{% else %}Nova música na coleção{% endif %}{% elif welcome %}Adicione sua primeira música{% else %}Adicionar Nova Cifra{% endif %}</h2>
 <p class="text-muted mb-4" style="font-size:.875rem;">
-    {% if personal %}Minha coleção · até 3 cifras no Grátis
+    {% if personal %}Minha coleção · até 10 cifras reais no Grátis
     {% else %}{{ band.name }}{% endif %}
 </p>
 
 {% if welcome %}
 <div class="alert alert-success border-0 mb-3" role="status">
-    <strong>Banda criada · Pro liberado por 30 dias.</strong>
-    Agora cadastre ou busque uma música — em seguida monte o roteiro e abra o Modo Tocar.
+    <strong>Tudo pronto para começar.</strong>
+    Cadastre ou busque uma música — depois monte o roteiro e abra o Modo Tocar.
 </div>
 <ol class="small text-muted mb-4 ps-3">
     <li class="mb-1"><strong>Agora:</strong> adicionar a música</li>
@@ -123,11 +123,17 @@
                    placeholder="Ex.: B, F#m">
             <div class="form-text">Referência para transposição</div>
         </div>
-        <div class="col-md-1">
-            <label class="form-label">BPM</label>
-            <input type="number" class="form-control" name="bpm" step="0.1" placeholder="120">
-        </div>
     </div>
+
+    <details class="mb-3">
+        <summary class="text-muted small" style="cursor: pointer;">+ BPM e opções avançadas</summary>
+        <div class="row g-3 mt-1">
+            <div class="col-6 col-md-3">
+                <label class="form-label small">BPM <span class="text-muted">(opcional)</span></label>
+                <input type="number" class="form-control form-control-sm" name="bpm" step="0.1" placeholder="120">
+            </div>
+        </div>
+    </details>
 
     <div class="editor-grid mb-3">
         <!-- Coluna esquerda: textarea de entrada -->
@@ -187,7 +193,7 @@
 
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary">{% if welcome %}Salvar e continuar{% else %}Salvar Cifra{% endif %}</button>
-        <a href="{{ url_for('bands.view', band_id=band.id) }}"
+        <a href="{{ url_for('cifras.my_library') if personal else url_for('bands.view', band_id=band.id) }}"
            class="btn btn-outline-secondary">Cancelar</a>
     </div>
 </form>

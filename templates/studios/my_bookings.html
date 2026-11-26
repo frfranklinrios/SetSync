@@ -8,8 +8,18 @@
 </p>
 {% if bookings %}
 <div class="list-group">
+    <div class="row-sort-header" data-sort-target="#my-bookings-rows">
+        <span class="row-sort-label">Ordenar por:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="studio" data-sort-type="text">Estúdio</button>
+        <button type="button" class="row-sort-btn" data-sort-col="date" data-sort-type="date">Data</button>
+        <button type="button" class="row-sort-btn" data-sort-col="status" data-sort-type="text">Status</button>
+    </div>
+    <div id="my-bookings-rows" data-sortable-list>
     {% for b in bookings %}
-    <div class="list-group-item">
+    <div class="list-group-item"
+         data-studio="{{ ((b.studio_nome or '') ~ ' ' ~ (b.room_nome or ''))|lower }}"
+         data-date="{{ (b.data or '') ~ ' ' ~ (b.hora_inicio or '') }}"
+         data-status="{{ (b.status or '')|lower }}">
         <div class="d-flex justify-content-between flex-wrap gap-2">
             <div>
                 <strong>{{ b.studio_nome }} / {{ b.room_nome }}</strong>
@@ -40,6 +50,7 @@
         </div>
     </div>
     {% endfor %}
+    </div>
 </div>
 {% else %}
 <div class="empty py-4">

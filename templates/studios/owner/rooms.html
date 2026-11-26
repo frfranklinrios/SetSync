@@ -34,9 +34,20 @@
 </div>
 {% else %}
 <div class="list-group mb-4">
+    <div class="row-sort-header" data-sort-target="#owner-rooms-rows">
+        <span class="row-sort-label">Ordenar por:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Sala</button>
+        <button type="button" class="row-sort-btn" data-sort-col="price" data-sort-type="number">Preço/h</button>
+        <button type="button" class="row-sort-btn" data-sort-col="status" data-sort-type="text">Status</button>
+    </div>
+    <div id="owner-rooms-rows" data-sortable-list>
     {% for room in rooms %}
   {% set n_reservas = booking_counts.get(room.id, 0) %}
-    <div class="list-group-item">
+  {% set eff_price = room.preco_hora if room.preco_hora is not none else (studio.preco_hora if studio.preco_hora is not none else 0) %}
+    <div class="list-group-item"
+         data-name="{{ (room.nome or '')|lower }}"
+         data-price="{{ eff_price }}"
+         data-status="{{ 'ativa' if room.ativa else 'inativa' }}">
         <div class="d-flex justify-content-between flex-wrap gap-3 align-items-start">
             <div>
                 <div class="fw-semibold">
@@ -73,6 +84,7 @@
         </div>
     </div>
     {% endfor %}
+    </div>
 </div>
 {% endif %}
 

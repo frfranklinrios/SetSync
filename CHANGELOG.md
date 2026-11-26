@@ -1,5 +1,22 @@
 # Changelog — Uníssono
 
+## 2026-11-26
+
+### Auditoria Crítica de Usabilidade & Ordenação Universal por Colunas
+- **Ordenação Clicável em Todas as Listas e Tabelas (`universal-sort.js` / `universal-sort.css`)**:
+  - Motor universal automático para todas as tabelas (`<table class="table">`, com detecção de moeda `R$`, datas ISO e `DD/MM/YYYY`, números, texto PT-BR e suporte a linhas `tr.collapse`) e listas declarativas (`.row-sort-header` + `[data-sortable-list]`).
+  - Barras clicáveis de ordenação (crescente/decrescente/ordem original) adicionadas nas listas de cifras, minha coleção, roteiros/setlists, hub da banda, membros, agenda pessoal, convites, bandas, reservas e salas de estúdio.
+- **Setlist em 1 Passo & Seleção em Lote (`blueprints/setlists.py`, `templates/setlists/create.html`, `templates/setlists/add_cifra.html`)**:
+  - Criação de roteiro com sugestões rápidas de nome e seleção múltipla imediata das músicas (com filtro e ordenação por coluna), eliminando ida obrigatória à página intermediária.
+  - Tela de adicionar músicas à setlist repaginada com checkboxes em lote, busca instantânea e ação "Marcar todas".
+- **Navegação & Dashboard Enxutos (`templates/index.html`, `templates/dashboard.html`)**:
+  - Navbar superior focada nos 5 fluxos principais (`Início`, `Bandas`, `Coleção`, `Agenda`, `Estúdios`), movendo links secundários ao menu do usuário e removendo o aviso antigo de rebrand e blocos duplicados no dashboard (`dash-hub`).
+- **Modo Tocar Limpo em 1 Linha & Estúdio Unificado (`templates/cifras/play_mode.html`, `templates/cifras/view.html`)**:
+  - Barra superior do Modo Tocar condensada em 1 linha limpa no desktop e no celular, agrupando controles avançados no popover `Ferramentas` (`Leitura`, `Ritmo & Tom`, `Palco & Extras`) com fechamento via `Esc` e clique externo.
+  - Barra de estudo unificada em `cifras/view.html` sem duplicar controles de transposição na barra lateral.
+- **Correções de Onboarding e Fluxo Solo (`templates/cifras/add.html`, `templates/cifras/comecar.html`, `templates/bands/create.html`)**:
+  - Correção do botão "Cancelar" ao cadastrar música na coleção pessoal (`/cifras/minha-colecao/add`), alinhamento da cópia do plano gratuito (`até 10 cifras reais no Grátis`) e simplificação dos formulários de entrada.
+
 ## 2026-11-19
 
 ### Repaginação de UX/UI & Produtividade Musical (*Studio Glass & Stage Dark*)

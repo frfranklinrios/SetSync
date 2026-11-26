@@ -436,20 +436,37 @@ def add_cifra(setlist_id):
         flash("Sem permissão", "danger")
         return redirect(url_for("setlists.view", setlist_id=setlist_id))
     if request.method == "POST":
-        cifra_id = request.form.get("cifra_id")
-        if cifra_id:
-            add_cifra_to_setlist(setlist_id, cifra_id)
-            cifra = get_cifra(cifra_id)
-            song = (cifra or {}).get("titulo") or "Música"
-            bn.setlist_song_added(
-                band["id"],
-                user_id,
-                setlist_id,
-                setlist["name"],
-                song,
+        raw_ids = [cid.strip() for cid in request.form.getlist("cifra_ids") if cid and cid.strip()]
+        single_id = (request.form.get("cifra_id") or "").strip()
+        if not raw_ids and single_id:
+            raw_ids = [single_id]
+        selected_ids = list(dict.fromkeys(raw_ids))
+        todas = get_band_cifras(band["id"])
+        atuais_set = {c["id"] for c in get_setlist_cifras(setlist_id)}
+        by_id = {c["id"]: c for c in todas}
+        added_titles = []
+        for cid in selected_ids:
+            if cid in by_id and cid not in atuais_set:
+                add_cifra_to_setlist(setlist_id, cid)
+                atuais_set.add(cid)
+                song = by_id[cid].get("titulo") or by_id[cid].get("titulo_original") or "Música"
+                added_titles.append(song)
+                bn.setlist_song_added(
+                    band["id"],
+                    user_id,
+                    setlist_id,
+                    setlist["name"],
+                    song,
+                )
+        if added_titles:
+            msg = (
+                "Música adicionada!"
+                if len(added_titles) == 1
+                else f"{len(added_titles)} músicas adicionadas ao roteiro!"
             )
-            flash("Música adicionada!", "success")
+            flash(msg, "success")
             return redirect(url_for("setlists.view", setlist_id=setlist_id))
+        flash("Selecione pelo menos uma música.", "warning")
     # Listar cifras da banda que não estão na setlist
     todas = get_band_cifras(band["id"])
     atuais = [c["id"] for c in get_setlist_cifras(setlist_id)]
@@ -544,24 +561,38 @@ def create(band_id):
         resp = resposta_limite_plano("setlists", LIMITES_GRATIS["setlist"])
         if resp:
             return resp
+    band_cifras = get_band_cifras(band_id)
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         description = request.form.get("description", "").strip()
         if not name:
             flash("Nome obrigatório", "danger")
-            return render_template("setlists/create.html", band=band)
+            return render_template("setlists/create.html", band=band, cifras=band_cifras)
         from db import count_band_setlists
 
         antes = count_band_setlists(band_id)
         setlist_id = create_setlist(band_id, name, description)
+        raw_ids = [cid.strip() for cid in request.form.getlist("cifra_ids") if cid and cid.strip()]
+        valid_ids = {c["id"] for c in band_cifras}
+        added_count = 0
+        for cid in dict.fromkeys(raw_ids):
+            if cid in valid_ids:
+                add_cifra_to_setlist(setlist_id, cid)
+                added_count += 1
         if antes == 0:
             from product_funnel import log_funnel_step
 
             log_funnel_step(user_id, "primeira_setlist")
         bn.setlist_created(band_id, user_id, setlist_id, name)
-        flash("Setlist criada!", "success")
+        if added_count:
+            flash(
+                f"Setlist criada com {added_count} música{'s' if added_count != 1 else ''}!",
+                "success",
+            )
+        else:
+            flash("Setlist criada!", "success")
         return redirect(url_for("setlists.view", setlist_id=setlist_id))
-    return render_template("setlists/create.html", band=band)
+    return render_template("setlists/create.html", band=band, cifras=band_cifras)
 
 
 @setlists_bp.route("/<setlist_id>/cifra/<cifra_id>/vocalist", methods=["POST"])

@@ -51,15 +51,15 @@
             <input type="search" class="form-control form-control-sm" id="library-cifra-filter" data-rep-search
                    placeholder="Filtrar sua coleção por título, artista ou tom…" autocomplete="off" aria-label="Filtrar coleção">
         </div>
-        <select class="form-select form-select-sm" data-rep-sort aria-label="Ordenar coleção" style="width: auto;">
-            <option value="default">Ordem padrão</option>
-            <option value="title">Título (A–Z)</option>
-            <option value="artist">Artista (A–Z)</option>
-            <option value="tom">Tom</option>
-        </select>
-        <span class="small text-muted" data-rep-count></span>
+        <span class="small text-muted ms-auto" data-rep-count></span>
     </div>
-    <div class="row-card mb-4" id="library-cifras-rows" data-rep-rows>
+    <div class="row-card mb-4" id="library-cifras-rows" data-rep-rows data-sortable-list>
+        <div class="row-sort-header" data-sort-target="#library-cifras-rows" role="group" aria-label="Ordenar coleção por coluna">
+            <span class="row-sort-label">Ordenar:</span>
+            <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Música</button>
+            <button type="button" class="row-sort-btn" data-sort-col="artist" data-sort-type="text">Artista</button>
+            <button type="button" class="row-sort-btn" data-sort-col="tom" data-sort-type="text">Tom</button>
+        </div>
         {% for c in cifras %}
         <div class="row-item row-item--numbered"
              data-cifra-id="{{ c.id }}"
@@ -116,9 +116,16 @@
 
 {% if shared_cifras %}
 <h2 class="h6 mb-2">Compartilhadas comigo</h2>
-<div class="row-card">
+<div class="row-card" id="library-shared-rows" data-sortable-list>
+    <div class="row-sort-header" data-sort-target="#library-shared-rows" role="group" aria-label="Ordenar músicas compartilhadas">
+        <span class="row-sort-label">Ordenar:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="title" data-sort-type="text">Música</button>
+        <button type="button" class="row-sort-btn" data-sort-col="artist" data-sort-type="text">Artista</button>
+    </div>
     {% for c in shared_cifras %}
-    <div class="row-item">
+    <div class="row-item"
+         data-title="{{ (c.titulo or '')|lower }}"
+         data-artist="{{ (c.artista or '')|lower }}">
         <div class="row-info">
             <a href="{{ url_for('cifras.view', cifra_id=c.id) }}" class="row-title">{{ c.titulo }}</a>
             <div class="row-sub">

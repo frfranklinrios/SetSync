@@ -163,11 +163,13 @@ class UxRevampTest(unittest.TestCase):
 
         self.assertIn("global-cmd-trigger", html)
         self.assertIn("global-command-palette.js", html)
+        self.assertIn("universal-sort.js", html)
+        self.assertIn("universal-sort.css", html)
         self.assertIn("ux-revamp.css", html)
         self.assertIn("/agenda/minha", html)
         self.assertIn("Modo Tocar", html)
         self.assertIn("dash-summary", html)
-        self.assertIn("dash-hub", html)
+        self.assertNotIn("dash-hub", html)
 
     def test_band_hub_filter_and_readiness(self):
         client = self._auth_client()
@@ -177,7 +179,9 @@ class UxRevampTest(unittest.TestCase):
 
         self.assertIn("band-repertoire-toolbar", html)
         self.assertIn("band-cifra-filter", html)
-        self.assertIn("band-cifra-sort", html)
+        self.assertIn('data-sort-target="#band-cifra-rows"', html)
+        self.assertIn("data-sortable-list", html)
+        self.assertIn("data-readiness-rank", html)
         self.assertIn("data-readiness-summary", html)
         self.assertIn("row-readiness-sel", html)
         self.assertIn("repertoire-filter.js", html)
@@ -189,6 +193,7 @@ class UxRevampTest(unittest.TestCase):
         html = resp.get_data(as_text=True)
 
         self.assertIn("cifra-study-toolbar", html)
+        self.assertIn("transpose-stepper", html)
         self.assertIn("view-pitch-pipe-btn", html)
         self.assertIn("view-font-down", html)
         self.assertIn("view-font-up", html)
@@ -206,6 +211,146 @@ class UxRevampTest(unittest.TestCase):
         self.assertIn("setlist-duration-badge", html)
         self.assertIn("min de show", html)
         self.assertIn("setlist-readiness-chips", html)
+        self.assertIn('data-sort-target="#setlist-card"', html)
+
+    def test_setlist_one_step_create_and_batch_add(self):
+        client = self._auth_client()
+
+        with flask_app.app_context():
+            band2_id = db.create_band("Banda Dois", "Rock", self.user_id)
+            c_a = db.create_cifra(
+                titulo="Asa Branca",
+                artista="Luiz Gonzaga",
+                tom_original="C",
+                conteudo="[C]Quando olhei a terra ardendo",
+                band_id=band2_id,
+                owner_user_id=self.user_id,
+            )
+            c_b = db.create_cifra(
+                titulo="Chega de Saudade",
+                artista="João Gilberto",
+                tom_original="Dm",
+                conteudo="[Dm]Vai minha tristeza",
+                band_id=band2_id,
+                owner_user_id=self.user_id,
+            )
+            c_c = db.create_cifra(
+                titulo="Trem das Onze",
+                artista="Adoniran Barbosa",
+                tom_original="Am",
+                conteudo="[Am]Não posso ficar nem mais um minuto",
+                band_id=band2_id,
+                owner_user_id=self.user_id,
+            )
+            c_d = db.create_cifra(
+                titulo="Garota de Ipanema",
+                artista="Tom Jobim",
+                tom_original="F",
+                conteudo="[F7M]Olha que coisa mais linda",
+                band_id=band2_id,
+                owner_user_id=self.user_id,
+            )
+
+        resp_get = client.get(f"/setlists/create/{band2_id}")
+        self.assertEqual(resp_get.status_code, 200)
+        html_get = resp_get.get_data(as_text=True)
+        self.assertIn('name="cifra_ids"', html_get)
+        self.assertIn('data-sort-target="#create-setlist-cifras"', html_get)
+
+        resp_post = client.post(
+            f"/setlists/create/{band2_id}",
+            data={
+                "name": "Culto Domingo",
+                "cifra_ids": [c_a, c_b],
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(resp_post.status_code, 302)
+        loc = resp_post.headers["Location"]
+        new_sl_id = loc.rstrip("/").split("/")[-1]
+        with flask_app.app_context():
+            from models_setlist import get_setlist_cifras
+
+            sl_cifras = get_setlist_cifras(new_sl_id)
+            self.assertEqual([c["id"] for c in sl_cifras], [c_a, c_b])
+
+        # Batch add endpoint into the newly created setlist
+        resp_add_get = client.get(f"/setlists/{new_sl_id}/add")
+        self.assertEqual(resp_add_get.status_code, 200)
+        self.assertIn('name="cifra_ids"', resp_add_get.get_data(as_text=True))
+
+        resp_add_post = client.post(
+            f"/setlists/{new_sl_id}/add",
+            data={"cifra_ids": [c_c, c_d]},
+            follow_redirects=False,
+        )
+        self.assertEqual(resp_add_post.status_code, 302)
+        with flask_app.app_context():
+            from models_setlist import get_setlist_cifras
+
+            added = get_setlist_cifras(new_sl_id)
+            self.assertEqual([c["id"] for c in added], [c_a, c_b, c_c, c_d])
+
+    def test_personal_add_page_and_play_mode_popover(self):
+        client = self._auth_client()
+
+        resp_personal = client.get("/cifras/minha-colecao/add")
+        self.assertEqual(resp_personal.status_code, 200)
+        html_p = resp_personal.get_data(as_text=True)
+        self.assertNotIn("até 3 cifras", html_p)
+        self.assertIn("/cifras/minha-colecao", html_p)
+
+        resp_play = client.get(f"/setlists/{self.setlist_id}/tocar")
+        self.assertEqual(resp_play.status_code, 200)
+        html_play = resp_play.get_data(as_text=True)
+        self.assertIn('id="play-more-tools-btn"', html_play)
+        self.assertNotIn('id="play-more-tools-btn" class="pb-btn d-lg-none"', html_play)
+        self.assertNotIn('class="pb-btn d-lg-none" id="play-more-tools-btn"', html_play)
+        self.assertIn("play-tools-section", html_play)
+
+    def test_all_primary_list_pages_have_sort_headers(self):
+        client = self._auth_client()
+        for url in [
+            "/agenda/minha",
+            f"/bands/{self.band_id}/members",
+            f"/cifras/band/{self.band_id}",
+            "/cifras/minha-colecao",
+            f"/setlists/band/{self.band_id}",
+        ]:
+            resp = client.get(url)
+            self.assertEqual(resp.status_code, 200, url)
+            self.assertIn("row-sort-header", resp.get_data(as_text=True), url)
+
+    def test_universal_sort_js_with_node(self):
+        node_script = """
+        const assert = require('assert');
+        const Sort = require('./static/js/universal-sort.js');
+
+        // Moeda R$
+        assert.ok(Sort.compareValues('R$ 150,00', 'R$ 1.200,50', 'asc', 'currency') < 0);
+        assert.ok(Sort.compareValues('R$ 150,00', 'R$ 1.200,50', 'desc', 'currency') > 0);
+
+        // Datas BR e ISO
+        assert.ok(Sort.compareValues('05/03/2026', '12/01/2026', 'asc', 'date') > 0);
+        assert.ok(Sort.compareValues('2026-01-12', '2026-03-05', 'asc', 'date') < 0);
+
+        // Texto acentuado PT-BR
+        assert.ok(Sort.compareValues('Águas de Março', 'Banda Aurora', 'asc', 'text') < 0);
+        assert.ok(Sort.compareValues('—', 'Evidências', 'asc', 'text') > 0);
+        assert.ok(Sort.compareValues('—', 'Evidências', 'desc', 'text') > 0);
+
+        // Números
+        assert.ok(Sort.compareValues('2', '10', 'asc', 'number') < 0);
+
+        console.log('node universal-sort ok');
+        """
+        res = subprocess.run(
+            ["node", "-e", node_script],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(res.returncode, 0, res.stderr)
 
 
 if __name__ == "__main__":

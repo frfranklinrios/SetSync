@@ -105,6 +105,7 @@
         </div>
     </div>
     {% endfor %}
+    </div>
 </div>
 {% else %}
 <p class="text-muted mb-4">Nenhuma solicitação pendente.</p>
@@ -121,14 +122,26 @@
 </h2>
 {% if rooms %}
 <div class="list-group mb-3">
+    <div class="row-sort-header" data-sort-target="#studio-dash-rooms">
+        <span class="row-sort-label">Ordenar por:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Sala</button>
+        <button type="button" class="row-sort-btn" data-sort-col="price" data-sort-type="number">Preço/h</button>
+        <button type="button" class="row-sort-btn" data-sort-col="status" data-sort-type="text">Status</button>
+    </div>
+    <div id="studio-dash-rooms" data-sortable-list>
     {% for room in rooms %}
-    <div class="list-group-item d-flex justify-content-between flex-wrap gap-2">
+    {% set eff_price = room.preco_hora if room.preco_hora is not none else 0 %}
+    <div class="list-group-item d-flex justify-content-between flex-wrap gap-2"
+         data-name="{{ (room.nome or '')|lower }}"
+         data-price="{{ eff_price }}"
+         data-status="{{ 'ativa' if room.ativa else 'inativa' }}">
         <span><strong>{{ room.nome }}</strong>{% if not room.ativa %} <span class="badge bg-secondary">inativa</span>{% endif %}
         {% if room.preco_hora is not none %}<span class="text-muted small"> · R$ {{ '%.2f'|format(room.preco_hora) }}/h</span>{% endif %}
         </span>
         <a href="{{ url_for('studios.edit_room', studio_id=studio.id, room_id=room.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
     </div>
     {% endfor %}
+    </div>
 </div>
 {% else %}
 <p class="text-muted small mb-3">Nenhuma sala ainda. <a href="{{ url_for('studios.new_room', studio_id=studio.id) }}">Criar primeira sala</a></p>

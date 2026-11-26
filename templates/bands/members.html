@@ -22,7 +22,62 @@
 </div>
 
 <div class="row g-3">
-    <div class="col-lg-8">
+    <div class="col-lg-4 order-lg-2 d-flex flex-column gap-3">
+        <div class="card border-success-subtle">
+            <div class="card-header"><i class="fab fa-whatsapp text-success me-1"></i> Convidar integrantes</div>
+            <div class="card-body">
+                <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+                    Quem se cadastrar por este link entra direto na banda — não precisa já ter conta.
+                </p>
+                <a class="btn btn-success w-100 mb-2"
+                   href="https://wa.me/?text={{ ('Entra na banda ' ~ band.name ~ ' no Uníssono (cifras + Modo Tocar): ' ~ invite_url)|urlencode }}"
+                   target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp me-1" aria-hidden="true"></i> Mandar convite no WhatsApp
+                </a>
+                <label for="invite-link" class="form-label">Ou copie o link</label>
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control" id="invite-link" readonly value="{{ invite_url }}">
+                    <button type="button" class="btn btn-outline-secondary" id="copy-invite-btn" title="Copiar">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <small class="text-muted">Válido por 14 dias.</small>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Por e-mail (já cadastrado)</div>
+            <div class="card-body">
+                <form action="{{ url_for('bands.invite', band_id=band.id) }}" method="POST">
+                    {% include 'partials/csrf_input.html' %}
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="usuario@email.com" autocomplete="off">
+                        <small class="text-muted">A pessoa recebe um convite e precisa aceitar para entrar na banda.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-paper-plane me-1"></i> Enviar convite
+                    </button>
+                </form>
+            </div>
+        </div>
+        <details class="card">
+            <summary class="card-header" style="cursor: pointer;">Papéis e permissões na banda</summary>
+            <div class="card-body">
+                <p class="text-muted mb-0" style="font-size: var(--text-sm);">
+                    <strong>Membro</strong> — vê cifras, toca no palco e usa setlists.<br>
+                    <strong>Editor</strong> — cria, edita e exclui cifras, letras, chord sheets e setlists.<br>
+                    <strong>Admin</strong> — gerencia membros, convites, configurações e <strong>financeiro da banda</strong>.<br>
+                    <strong>Liberar financeiro</strong> — indica um membro para ver o painel completo (totais e despesas), sem virar admin.<br>
+                    <strong>Meu financeiro</strong> — todo músico vê a própria fatia dos shows em todas as bandas.<br>
+                    <strong>Fechamento de noite</strong> — no show, o admin marca cada um como <em>fundador</em> (divide o líquido) ou <em>sideman</em> (taxa fixa).<br>
+                    <strong>Proprietário</strong> — controle total, incluindo promover admins.
+                </p>
+            </div>
+        </details>
+    </div>
+
+    <div class="col-lg-8 order-lg-1">
         {% if pending_invites %}
         <div class="alert alert-info py-2 mb-3" style="font-size: var(--text-sm);">
             <strong>{{ pending_invites|length }} convite{{ '' if pending_invites|length == 1 else 's' }} pendente{{ '' if pending_invites|length == 1 else 's' }}</strong>
@@ -45,8 +100,19 @@
         </div>
         {% endif %}
         <div class="row-card">
+            <div class="row-sort-header" data-sort-target="#members-manage-rows">
+                <span class="row-sort-label">Ordenar por:</span>
+                <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Integrante</button>
+                <button type="button" class="row-sort-btn" data-sort-col="email" data-sort-type="text">E-mail</button>
+                <button type="button" class="row-sort-btn" data-sort-col="role-rank" data-sort-type="number">Função</button>
+            </div>
+            <div id="members-manage-rows" data-sortable-list>
             {% for member in band_members %}
-            <div class="row-item">
+            {% set r_rank = 1 if band.owner_id == member.id else (2 if member.role == 'admin' else (3 if member.role == 'editor' else 4)) %}
+            <div class="row-item"
+                 data-name="{{ user_display_name(member)|lower }}"
+                 data-email="{{ (member.email or '')|lower }}"
+                 data-role-rank="{{ r_rank }}">
                 <div class="row-info">
                     <div class="row-title">{{ user_display_name(member) }}</div>
                     <div class="row-sub">{{ member.email }}</div>
@@ -112,60 +178,6 @@
                 {% endif %}
             </div>
             {% endfor %}
-        </div>
-    </div>
-
-    <div class="col-lg-4 d-flex flex-column gap-3">
-        <div class="card">
-            <div class="card-header">Link de convite</div>
-            <div class="card-body">
-                <p class="text-muted mb-3" style="font-size: var(--text-sm);">
-                    Quem se cadastrar por este link entra direto na banda — não precisa já ter conta.
-                </p>
-                <label for="invite-link" class="form-label">Copiar link</label>
-                <div class="input-group mb-2">
-                    <input type="text" class="form-control" id="invite-link" readonly value="{{ invite_url }}">
-                    <button type="button" class="btn btn-outline-secondary" id="copy-invite-btn" title="Copiar">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                </div>
-                <a class="btn btn-success w-100 mb-2"
-                   href="https://wa.me/?text={{ ('Entra na banda ' ~ band.name ~ ' no Uníssono (cifras + Modo Tocar): ' ~ invite_url)|urlencode }}"
-                   target="_blank" rel="noopener">
-                    <i class="fab fa-whatsapp me-1" aria-hidden="true"></i> Mandar convite no WhatsApp
-                </a>
-                <small class="text-muted">Válido por 14 dias.</small>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header">Papéis na banda</div>
-            <div class="card-body">
-                <p class="text-muted mb-0" style="font-size: var(--text-sm);">
-                    <strong>Membro</strong> — vê cifras, toca no palco e usa setlists.<br>
-                    <strong>Editor</strong> — cria, edita e exclui cifras, letras, chord sheets e setlists.<br>
-                    <strong>Admin</strong> — gerencia membros, convites, configurações e <strong>financeiro da banda</strong>.<br>
-                    <strong>Liberar financeiro</strong> — indica um membro para ver o painel completo (totais e despesas), sem virar admin.<br>
-                    <strong>Meu financeiro</strong> — todo músico vê a própria fatia dos shows em todas as bandas.<br>
-                    <strong>Fechamento de noite</strong> — no show, o admin marca cada um como <em>fundador</em> (divide o líquido) ou <em>sideman</em> (taxa fixa).<br>
-                    <strong>Proprietário</strong> — controle total, incluindo promover admins.
-                </p>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header">Por e-mail (já cadastrado)</div>
-            <div class="card-body">
-                <form action="{{ url_for('bands.invite', band_id=band.id) }}" method="POST">
-                    {% include 'partials/csrf_input.html' %}
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required
-                               placeholder="usuario@email.com" autocomplete="off">
-                        <small class="text-muted">A pessoa recebe um convite e precisa aceitar para entrar na banda.</small>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-paper-plane me-1"></i> Enviar convite
-                    </button>
-                </form>
             </div>
         </div>
     </div>
