@@ -5,6 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, render_template, request
 
 from lgpd import (
+    apply_consent_cookie,
     dpo_label,
     privacy_contact_email,
     set_session_tracking_consent,
@@ -37,8 +38,17 @@ def cookie_consent():
     choice = (data.get("choice") or "").strip().lower()
     if choice not in ("accept", "reject", "essential"):
         return jsonify({"ok": False, "erro": "Escolha inválida"}), 400
-    set_session_tracking_consent(choice == "accept")
-    return jsonify({"ok": True, "tracking": choice == "accept"})
+    allowed = choice == "accept"
+    set_session_tracking_consent(allowed)
+    resp = jsonify(
+        {
+            "ok": True,
+            "tracking": allowed,
+            "choice": "accept" if allowed else "essential",
+        }
+    )
+    apply_consent_cookie(resp, allowed)
+    return resp
 
 
 @legal_bp.app_context_processor

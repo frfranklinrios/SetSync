@@ -146,7 +146,10 @@ def _invite_token_from_request():
 
 
 def _login_user_session(user):
+    prior_consent = session.get("cookie_consent_tracking")
     session.clear()
+    if prior_consent is not None:
+        session["cookie_consent_tracking"] = bool(prior_consent)
     session["user_id"] = user["id"]
     session["username"] = user["username"]
     session["display_name"] = (user.get("display_name") or "").strip()
@@ -720,7 +723,10 @@ def login():
 
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
+    prior_consent = session.get("cookie_consent_tracking")
     session.clear()
+    if prior_consent is not None:
+        session["cookie_consent_tracking"] = bool(prior_consent)
     flash("Você saiu da conta", "info")
     dest = safe_redirect_path(request.form.get("next") or request.args.get("next"))
     return redirect(dest or url_for("auth.login"))
@@ -728,7 +734,10 @@ def logout():
 
 @auth_bp.route("/sair")
 def sair():
+    prior_consent = session.get("cookie_consent_tracking")
     session.clear()
+    if prior_consent is not None:
+        session["cookie_consent_tracking"] = bool(prior_consent)
     dest = safe_redirect_path(request.args.get("next")) or url_for("auth.login")
     return redirect(dest)
 
