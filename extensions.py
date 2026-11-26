@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from config import app_timezone_name, app_tz
@@ -78,28 +80,37 @@ def init_scheduler(app) -> None:
         _tz_name,
     )
 
-    def _marketing_shots_job():
-        with app.app_context():
-            from scheduler_jobs import run_marketing_screenshots_job
+    if os.getenv("ENABLE_MARKETING_SCREENSHOTS_JOB", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        def _marketing_shots_job():
+            with app.app_context():
+                from scheduler_jobs import run_marketing_screenshots_job
 
-            try:
-                run_marketing_screenshots_job()
-            except Exception as exc:
-                app.logger.exception("Erro no job de screenshots de marketing: %s", exc)
+                try:
+                    run_marketing_screenshots_job()
+                except Exception as exc:
+                    app.logger.exception("Erro no job de screenshots de marketing: %s", exc)
 
-    # 03:15 — regenera capturas do dia (persiste em ./data/screenshots)
-    _scheduler.add_job(
-        _marketing_shots_job,
-        "cron",
-        hour=3,
-        minute=15,
-        timezone=_tz,
-        id="marketing_screenshots_daily",
-    )
-    app.logger.info(
-        "APScheduler: screenshots de marketing às 03:15 (%s)",
-        _tz_name,
-    )
+        # 03:15 — regenera capturas do dia (persiste em ./data/screenshots)
+        _scheduler.add_job(
+            _marketing_shots_job,
+            "cron",
+            hour=3,
+            minute=15,
+            timezone=_tz,
+            id="marketing_screenshots_daily",
+        )
+        app.logger.info(
+            "APScheduler: screenshots de marketing às 03:15 (%s)",
+            _tz_name,
+        )
+    else:
+        app.logger.info(
+            "APScheduler: screenshots de marketing desativado (ENABLE_MARKETING_SCREENSHOTS_JOB!=1)"
+        )
 
     def _digest_job():
         with app.app_context():
