@@ -41,6 +41,7 @@ th.ss-sortable[aria-sort="descending"] .ss-sort-ind {
 /* ── Cabeçalho de Colunas Ordenáveis para Listas (.row-card / .list-group / .bands-grid) ── */
 .row-sort-header {
   display: flex;
+  flex-shrink: 0;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.5rem;
@@ -109,6 +110,21 @@ th.ss-sortable[aria-sort="descending"] .ss-sort-ind {
   .row-sort-btn {
     border-color: var(--border);
     padding: 0.24rem 0.58rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-list-wide .row-card {
+    box-shadow: none !important;
+  }
+  .app-list-wide .row-card > .row-sort-header {
+    grid-column: 1 / -1;
+    align-self: start;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .app-list-wide .row-card > [data-sortable-list] {
+    display: contents;
   }
 }
 

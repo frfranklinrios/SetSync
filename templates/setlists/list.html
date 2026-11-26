@@ -30,17 +30,15 @@
     </div>
 
     {% if setlists %}
-    <div class="row-card">
-        <div class="row-sort-header" data-sort-target="#setlists-page-rows">
-            <span class="row-sort-label">Ordenar por:</span>
-            <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Roteiro</button>
-            <button type="button" class="row-sort-btn" data-sort-col="count" data-sort-type="number">Músicas</button>
-        </div>
-        <div id="setlists-page-rows" data-sortable-list>
-            {% for setlist in setlists %}
-            {{ setlist_row(setlist, band, can_edit=can_edit) }}
-            {% endfor %}
-        </div>
+    <div class="row-sort-header row-sort-header--standalone" data-sort-target="#setlists-page-rows" role="group" aria-label="Ordenar setlists por coluna">
+        <span class="row-sort-label">Ordenar por:</span>
+        <button type="button" class="row-sort-btn" data-sort-col="name" data-sort-type="text">Roteiro</button>
+        <button type="button" class="row-sort-btn" data-sort-col="count" data-sort-type="number">Músicas</button>
+    </div>
+    <div class="row-card" id="setlists-page-rows" data-sortable-list>
+        {% for setlist in setlists %}
+        {{ setlist_row(setlist, band, can_edit=can_edit) }}
+        {% endfor %}
     </div>
     {% else %}
     {% with icon='fa-list',

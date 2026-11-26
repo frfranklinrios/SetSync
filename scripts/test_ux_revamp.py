@@ -321,6 +321,11 @@ class UxRevampTest(unittest.TestCase):
             self.assertEqual(resp.status_code, 200, url)
             self.assertIn("row-sort-header", resp.get_data(as_text=True), url)
 
+        resp_sl = client.get(f"/setlists/band/{self.band_id}")
+        html_sl = resp_sl.get_data(as_text=True)
+        self.assertIn("row-sort-header--standalone", html_sl)
+        self.assertIn('<div class="row-card" id="setlists-page-rows" data-sortable-list>', html_sl)
+
     def test_universal_sort_js_with_node(self):
         node_script = """
         const assert = require('assert');
